@@ -26,13 +26,16 @@ const vite = read("vite.config.js");
   "isReleasedCurrentDrawing",
   "superseded_by",
   "Contractor Current",
-  // New: BOQ + Inventory ledger
+  // New: BOQ + Inventory ledger + Estimate
   "BOQTab",
   "LedgerTab",
+  "EstimateTab",
   "INIT_BOQ",
   "INIT_LEDGER",
+  "INIT_ESTIMATE",
   "Bill of Quantities",
   "Stock Ledger",
+  "Project Estimate",
   // New: photo metadata capture
   "captured_at",
   "navigator.geolocation",
@@ -82,9 +85,18 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "vitest.config.js",
   "scripts/supabase/01_schema.sql",
   "scripts/supabase/02_rls.sql",
+  "scripts/supabase/04_rls_tests.sql",
   "scripts/supabase/README.md",
   "CHANGELOG.md",
+  // Tech Lead gate #4: ESLint + Prettier
+  "eslint.config.js",
+  ".prettierrc.json",
+  ".prettierignore",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
+
+// CI workflow must run real lint, not the placeholder
+const ci = read("docs/CI_WORKFLOW.yml");
+add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint") && !ci.includes("placeholder"));
 
 // Dead-code cleanup: these paths must NOT exist
 [

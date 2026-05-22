@@ -25,9 +25,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint check (placeholder — wire ESLint later)
-        run: |
-          node -e "console.log('No linter configured yet. See BACKLOG.md.')"
+      - name: Lint (ESLint flat config)
+        run: npm run lint
+        # Prettier format:check intentionally NOT in CI yet — the codebase
+        # has not been bulk-formatted. Run `npm run format` locally then
+        # add `npm run format:check` here once a separate "format" PR lands.
 
       - name: Build
         run: npm run build
