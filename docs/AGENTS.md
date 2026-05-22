@@ -44,6 +44,7 @@ This document defines how AI agents and human contributors work together on Site
 
 SiteTrack has multiple ownership layers. These boundaries keep work clean:
 
+- Super Admin (Operations) owns multi-tenant coordination: creating customer orgs, managing user accounts across all 4 tenant roles, billing oversight, system-wide feature flags, integration credentials, and impersonation for support. The role sits OUTSIDE any single org and SHOULD only be assigned to the SaaS owner/operator (typically 1-3 individuals). Backend RLS bypasses for this role are intentional; UI clearly marks it with slate-gold styling.
 - Product Owner owns feature priority, acceptance criteria, release scope, and business language.
 - Architect / Domain Expert owns construction workflow correctness, drawing release rules, site terminology, and client-facing expectations.
 - Tech Lead owns architecture, code review, technical debt decisions, dependency choices, and merge readiness.

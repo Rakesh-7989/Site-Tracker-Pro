@@ -62,7 +62,9 @@ The full SQL lives in `/scripts/supabase/01_schema.sql` (to be created in B1). H
 profiles (extends auth.users)
   ├── id (uuid, FK to auth.users)
   ├── name, avatar
-  └── role: architect | pm | contractor | client
+  └── role: superadmin | architect | pm | contractor | client
+        ─ superadmin sits OUTSIDE org boundary; manages every org from the
+          Admin Console (docs/AGENTS.md "Super Admin Operations" role).
 
 organizations
   └── slug, name, plan: basic | pro | business | custom

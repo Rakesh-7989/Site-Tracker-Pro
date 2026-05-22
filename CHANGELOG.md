@@ -4,6 +4,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — Super Admin (Operations) role for multi-tenant coordination
+- New 5th role `superadmin` in `src/lib/permissions.js` with admin-only capabilities (manageUsers, manageOrgs, manageBilling, manageSettings, impersonate) and dedicated nav (admin-dashboard, admin-orgs, admin-users, admin-billing, admin-settings).
+- `INIT_ORGS` (5 mock customer orgs across Hyderabad/Bangalore/Chennai/Kochi/Pune with mixed Basic/Pro/Business/Trial plans) + `INIT_ADMIN_USERS` (15 mock users across roles) + `PLAN_META` (Basic ₹999, Pro ₹2999, Business ₹7999, Custom).
+- Login screen now shows **5 role tiles** including "Super Admin (Operations)" with slate-gold styling that signals operations-grade vs editorial-grade.
+- Sidebar splits into **— Operations** (admin-only) and **— Tenant view** (everyone) sections for superadmin.
+- 5 new editorial-styled admin views:
+  - **SuperAdminDashboard**: MRR hero card, plan distribution bars, recent signups, churn-risk callout (orgs with no activity in 7 days), cross-org activity feed.
+  - **OrgsAdminView**: list with plan/MRR/users/projects/status; inline plan change, suspend/activate, "Add Organization" with 15-day trial default.
+  - **UsersAdminView**: search + role filter, invite flow, inline role change, deactivate/reactivate, super-admin row is protected from edits.
+  - **BillingAdminView**: total MRR + ARR + active/trial/suspended chips, revenue mix by plan with share-of-MRR bars, Razorpay Subscriptions roadmap callout.
+  - **SettingsAdminView**: toggle 6 feature flags (drawing markup, AI, DPR auto, WhatsApp, e-sign, offline queue) + integration status panel (Anthropic/OpenAI, Razorpay UPI, Supabase, WhatsApp Business, GitHub Actions CI).
+- `scripts/supabase/01_schema.sql`: profiles.role check constraint now includes `superadmin`.
+- `scripts/supabase/02_rls.sql`: new `is_superadmin()` helper, `user_project_ids()` unions in all projects for superadmin, new policies on `organizations`, `org_members`, `profiles` (read) for cross-tenant admin access.
+- `scripts/supabase/04_rls_tests.sql`: Scenario 6 — 6 assertions verifying super admin sees both Alpha + Beta, can read organizations table, can insert projects.
+- `docs/AGENTS.md`: ownership table now defines Super Admin role at the top of the boundaries section.
+- `docs/BACKEND_PLAN.md`: schema diagram includes `superadmin` as a role value.
+- 10 new vitest cases covering PERMS shape, isSuperAdmin, cross-tenant overrides, admin nav visibility, quick-capture extension.
+
 ### Added — Competitive weaknesses pack (closes 9 gaps vs Powerplay/RDash/Procore)
 - **Daily Report (DPR) PDF + WhatsApp share** (gap #5): Editorial-styled HTML→PDF auto-built from today's updates/issues/materials/worklogs/attendance/photos. WhatsApp button opens `wa.me` with formatted summary. Closes Powerplay's #1 hook for India market.
 - **Measurement Book → RA Bills** (gap #8): Expandable MB grid per RA bill with location, item, qty, unit, rate. Auto-computed amount, drift detection vs bill total, "Set bill = MB total" recomputation. Closes RDash contractor-billing gap.

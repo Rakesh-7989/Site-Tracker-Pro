@@ -14,7 +14,9 @@ create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
   avatar text,
-  role text not null check (role in ('architect','pm','contractor','client')),
+  -- superadmin sits OUTSIDE the org boundary and can access every row.
+  -- Only assign superadmin via direct SQL on the dev project, never via UI.
+  role text not null check (role in ('superadmin','architect','pm','contractor','client')),
   created_at timestamptz default now()
 );
 

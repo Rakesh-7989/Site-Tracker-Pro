@@ -214,6 +214,47 @@ begin
 end $$;
 
 -- ============================================================================
+-- SCENARIO 6 — SUPER ADMIN sees everything across all orgs
+-- ============================================================================
+
+insert into auth.users(id, email)
+  values ('99999999-9999-9999-9999-999999999999'::uuid, 'super@sitetrack.in')
+  on conflict do nothing;
+insert into profiles(id, name, role)
+  values ('99999999-9999-9999-9999-999999999999'::uuid, 'Super User', 'superadmin')
+  on conflict (id) do update set role = 'superadmin';
+
+set local "request.jwt.claim.sub" to '99999999-9999-9999-9999-999999999999';
+
+do $$ declare n int;
+begin
+  select count(*) into n from projects;
+  perform assert_eq('Super admin sees ALL projects (both Alpha and Beta)', n, 2);
+
+  select count(*) into n from organizations;
+  perform assert_eq('Super admin sees organizations table', n, 1);
+
+  select count(*) into n from invoices;
+  perform assert_eq('Super admin sees invoices across all projects', n, 1);
+
+  select count(*) into n from labour_register;
+  perform assert_eq('Super admin sees labour (no role-based redaction)', n, 1);
+
+  -- Super admin CAN create projects (insert into projects)
+  begin
+    insert into projects(id, org_id, name, client_name, client_email)
+      values ('cccccccc-cccc-cccc-cccc-cccccccccccc'::uuid,
+              '00000000-0000-0000-0000-000000000001'::uuid,
+              'Super-Created Project','SuperCo','sup@super.in');
+    raise notice 'PASS  Super admin CAN insert into projects';
+    -- cleanup test row
+    delete from projects where id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'::uuid;
+  exception when others then
+    raise warning 'FAIL  Super admin insert blocked: %', sqlerrm;
+  end;
+end $$;
+
+-- ============================================================================
 -- CLEANUP (optional — leaves test data in place for manual inspection)
 -- ============================================================================
 

@@ -19,6 +19,10 @@ $$;
 
 create or replace function user_project_ids() returns setof uuid
 language sql stable security definer as $$
+  -- Super admins see every project across every org (no org filter)
+  select p.id from public.projects p
+    where current_role_text() = 'superadmin'
+  union
   -- Project members directly assigned
   select project_id from public.project_members where profile_id = auth.uid()
   union
@@ -31,6 +35,11 @@ language sql stable security definer as $$
   select p.id from public.projects p
     where current_role_text() = 'client'
       and p.client_email = current_email()
+$$;
+
+create or replace function is_superadmin() returns boolean
+language sql stable security definer as $$
+  select current_role_text() = 'superadmin'
 $$;
 
 -- ============================================================================
@@ -125,11 +134,26 @@ create policy read_drawings_role on drawings for select
 -- ============================================================================
 
 create policy create_project_architect on projects for insert
-  with check (current_role_text() = 'architect');
+  with check (current_role_text() = 'architect' or is_superadmin());
 
 create policy update_project_architect on projects for update
-  using (current_role_text() = 'architect'
-         and id in (select user_project_ids()));
+  using ((current_role_text() = 'architect' and id in (select user_project_ids()))
+         or is_superadmin());
+
+-- Super admin admin-only tables ----------------------------------------------
+create policy admin_orgs on organizations for all
+  using (is_superadmin())
+  with check (is_superadmin());
+
+create policy admin_org_members on org_members for all
+  using (is_superadmin() or profile_id = auth.uid())
+  with check (is_superadmin());
+
+create policy admin_profiles_read on profiles for select
+  using (is_superadmin() or id = auth.uid() or exists (
+    select 1 from project_members pm
+    where pm.profile_id = profiles.id and pm.project_id in (select user_project_ids())
+  ));
 
 create policy write_milestones on milestones for all
   using (current_role_text() in ('architect','pm')
