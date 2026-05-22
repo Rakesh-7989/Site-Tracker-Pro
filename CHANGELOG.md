@@ -4,7 +4,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
-### Added
+### Added — Competitive weaknesses pack (closes 9 gaps vs Powerplay/RDash/Procore)
+- **Daily Report (DPR) PDF + WhatsApp share** (gap #5): Editorial-styled HTML→PDF auto-built from today's updates/issues/materials/worklogs/attendance/photos. WhatsApp button opens `wa.me` with formatted summary. Closes Powerplay's #1 hook for India market.
+- **Measurement Book → RA Bills** (gap #8): Expandable MB grid per RA bill with location, item, qty, unit, rate. Auto-computed amount, drift detection vs bill total, "Set bill = MB total" recomputation. Closes RDash contractor-billing gap.
+- **E-signature for change orders** (gap #7): Typed-name + consent-checkbox + timestamp + role + user-agent capture. Signature card renders inline with the change order. Closes CoConstruct gap.
+- **Drawing markup viewer** (gap #2): Canvas overlay on image attachments with 4 colors, 3 widths, undo, clear, save. Marked-up image becomes a new attachment with `markup_of` link. Closes PlanGrid/Procore phone-redline gap.
+- **Offline-first IndexedDB layer + sync queue** (gap #4): New `src/lib/offline.js` with IDB blob store, sync queue, online/offline event listener. Top bar shows offline pill + pending-op count. Site update writes queue ops when offline. Closes Onsite/Powerplay gap (Phase 1).
+- **AI Insights LLM upgrade** (gap #10): New `src/lib/ai.js` with deterministic risk-score engine + Claude/OpenAI integration. Settings panel inside AI tab to paste API key (stays in browser). Editorial narrative summary on demand. Closes Procore Agent Builder direction.
+- **Razorpay UPI payment** (gap #6): New `src/lib/razorpay.js` with UPI deep-link builder + Payment Link request payload. Architect configures UPI ID once → every invoice gets a "Pay via UPI" button for clients. Closes Buildertrend/Houzz Pro payment loop.
+- **Capacitor native mobile scaffold** (gap #3): `capacitor.config.json` + comprehensive `docs/MOBILE_BUILD.md` with plugin list, app-store flow, known gotchas. Build to iOS/Android with one `npx cap sync`.
+- **Supabase persistence switch** (gap #1 prep): `src/lib/supabase.js` with `BACKEND_MODE` env flag, dynamic SDK import (no bundle bloat in demo), table mapping for all `INIT_*` keys. `.env.example` documents activation.
 - **ESLint flat config (ESLint 9)** + **Prettier** with `npm run lint`, `lint:fix`, `format`, `format:check` scripts. `npm test` now runs lint first. CI workflow upgraded from placeholder to real lint step.
 - **`scripts/supabase/04_rls_tests.sql`** — 18-assertion RLS verification matrix across 4 roles (Architect/PM/Contractor/Client) covering project visibility, drawing released_to rules, financial table isolation, PII access, and write blocking for clients. Tech Lead gate #2 closed.
 - **Estimate tab** (feature #18 in 50-feature matrix): generates client-facing quote from BOQ totals with editable markup/overhead/contingency/GST percentages. Versioned per save. Architect/PM edit; Client read-only; Contractor hidden.

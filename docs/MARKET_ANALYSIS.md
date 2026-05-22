@@ -81,10 +81,10 @@ This section maps the user-provided 50 competitor features against current SiteT
 | 3 | Contractor login | Partial | Demo contractor role exists; needs real membership and permissions. |
 | 4 | Site engineer mobile app | Partial | Responsive web app exists; native app/offline capture can come later. |
 | 5 | Offline mode | Partial | PWA shell exists; true offline data queue and conflict sync still needed. |
-| 6 | Daily progress report | Partial | Updates/diary exist; scheduled DPR PDF/WhatsApp is roadmap. |
+| 6 | Daily progress report | Present | "Daily Report" button generates editorial PDF from today's updates/issues/materials/worklogs/attendance/photos + WhatsApp share with text summary. Scheduled 6PM auto-delivery queued for Supabase Edge Functions. |
 | 7 | Photo with date/time/location | Present | `captured_at` + `navigator.geolocation` captured on site-update photos; overlay shows date/time/lat,lng. Server-side anti-backdating queued in BACKEND_PLAN.md. |
 | 8 | Drawing/blueprint upload | Present | Drawing upload exists. Current pass adds revision governance. |
-| 9 | Drawing markup | Missing | Add markup viewer after document register is stable. |
+| 9 | Drawing markup | Present | `MarkupModal` opens any drawing image in canvas overlay with 4 colors, 3 widths, undo, clear, save-as-new-revision. PDF markup is roadmap (needs pdf.js). |
 | 10 | Drawing version control | Partial | Auto-supersede/current-only rules added; backend audit still needed. |
 | 11 | Task assignment | Present | Tasks exist. |
 | 12 | Checklist system | Present | Field Ops checklists exist. |
@@ -102,10 +102,10 @@ This section maps the user-provided 50 competitor features against current SiteT
 | 24 | Material inward/outward | Present | Inventory ledger transaction model added (date, material, qty, direction, source, ref_no, by). |
 | 25 | Labour attendance | Present | Attendance exists. |
 | 26 | Labour wage calculation | Partial | Labour wage fields exist; payroll calculations need hardening. |
-| 27 | Contractor work measurement | Partial | Worklogs/RA bills exist; measurement book still needed. |
-| 28 | RA bill generation | Present | RA bills exist. |
+| 27 | Contractor work measurement | Present | Measurement Book grid per RA bill (location, item, qty, unit, rate, auto-amount). Drift detector + "Set bill = MB total" recompute. RDash parity. |
+| 28 | RA bill generation | Present | RA bills with MB backing exist. |
 | 29 | Invoice generation | Present | Invoice module exists. |
-| 30 | Payment tracking | Partial | Invoice/RA status exists; receipts/reconciliation missing. |
+| 30 | Payment tracking | Present | UPI deep-link per invoice (architect configures UPI ID); "Pay via UPI" CTA for client; "Copy UPI link" for share. Razorpay Payment Link payload helper ready for backend wiring. |
 | 31 | Expense approvals | Partial | Expenses exist; approval chain missing. |
 | 32 | GST/TDS tracking | Present | GST/TDS fields/calculations exist. |
 | 33 | Budget vs actual cost | Present | Budget summary exists. |
