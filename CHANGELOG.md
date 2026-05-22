@@ -4,6 +4,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — Live activation (Supabase real backend + realtime + more admin features)
+- **`src/lib/usePersistent.js`**: drop-in `useLS` replacement that auto-routes to Supabase when `VITE_BACKEND=supabase`, falls back to localStorage. First paint reads from cache for instant load; remote refresh happens async; writes debounced 500ms; offline writes go to queue.
+- **`src/lib/supabase.js` upgrade**: `saveKey()` now actually upserts to mapped tables in batches of 100. `subscribeTable(table, onInsert)` opens a Postgres-changes channel for realtime. `migrateLocalToBackend()` walks the full localStorage blob and upserts row-by-row.
+- **Real magic-link auth** in `LoginScreen`: when `VITE_BACKEND=supabase`, the login screen shows an email input that triggers `signInWithMagicLink`. Demo role tiles still appear below.
+- **Session restore at mount**: `getCurrentUser()` runs on cold load and hydrates the user state from the `profiles` row.
+- **Realtime subscriptions**: `subscribeTable("activity_log")`, `subscribeTable("messages")`, `subscribeTable("issues")` mounted at app level. New rows push live into the in-memory state. High-severity issues fire a `Notification`.
+- **localStorage → Supabase migration** button in Admin → System Settings panel with summary feedback (keys migrated, rows migrated).
+- **`AuditAdminView`** (Admin → Audit Log): cross-tenant activity stream with org/user/type/date-range filters and CSV export.
+- **Impersonation** ("View as" button in Users tab → super admin assumes target user's role and view, persistent yellow banner with "Stop & return to admin").
+- **`UsageAdminView`** (Admin → Usage Analytics): DAU/WAU/MAU + feature adoption bars + per-org engagement health with traffic-light dots.
+- **`SupportAdminView`** (Admin → Support Inbox): cross-tenant ticket inbox with reply UI, status (open/replied/closed). 4 seeded mock tickets from sample orgs.
+- **`docs/GOLIVE.md`**: 30-minute step-by-step runbook (Supabase provisioning → schema → env vars → Vercel deploy → smoke → first customer invite). Cost projection for first 12 months.
+- **`scripts/provision.sh`**: one-shot local bootstrap (tooling check, deps, `.env.local` wizard, optional SDK install, full test pipeline).
+- **`@supabase/supabase-js`** added as a regular dependency so the dynamic import resolves at build time (still lazy-loaded at runtime via `BACKEND_MODE` gate).
+
 ### Added — Super Admin (Operations) role for multi-tenant coordination
 - New 5th role `superadmin` in `src/lib/permissions.js` with admin-only capabilities (manageUsers, manageOrgs, manageBilling, manageSettings, impersonate) and dedicated nav (admin-dashboard, admin-orgs, admin-users, admin-billing, admin-settings).
 - `INIT_ORGS` (5 mock customer orgs across Hyderabad/Bangalore/Chennai/Kochi/Pune with mixed Basic/Pro/Business/Trial plans) + `INIT_ADMIN_USERS` (15 mock users across roles) + `PLAN_META` (Basic ₹999, Pro ₹2999, Business ₹7999, Custom).
