@@ -720,7 +720,7 @@ function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
   return(
     <>
       {mobileOpen&&<div className="fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm md:hidden" onClick={()=>setMobileOpen(false)}/>}
-      <div className={`fixed md:relative inset-y-0 left-0 z-40 w-64 min-h-screen flex flex-col transform transition-transform duration-300 ${mobileOpen?"translate-x-0":"-translate-x-full"} md:translate-x-0`} style={{backgroundColor:"#1c1917",borderRight:"1px solid rgba(217,119,6,.12)"}}>
+      <div className={`fixed md:relative inset-y-0 left-0 z-40 w-64 h-screen md:h-full flex flex-col transform transition-transform duration-300 flex-shrink-0 ${mobileOpen?"translate-x-0":"-translate-x-full"} md:translate-x-0`} style={{backgroundColor:"#1c1917",borderRight:"1px solid rgba(217,119,6,.12)"}}>
         {/* Refined warm glow */}
         <div className="absolute top-0 left-0 w-full h-40 pointer-events-none" style={{background:"radial-gradient(ellipse at top left, rgba(217,119,6,.10) 0%, transparent 70%)"}}/>
 
@@ -2585,23 +2585,23 @@ export default function App(){
   const DCSS=`.dark .bg-white{background-color:#1e293b!important}.dark .bg-slate-50{background-color:#0f172a!important}.dark .bg-slate-100{background-color:#1e293b!important}.dark .border-slate-200{border-color:#334155!important}.dark .border-slate-100{border-color:#293548!important}.dark .text-slate-800{color:#f1f5f9!important}.dark .text-slate-700{color:#e2e8f0!important}.dark .text-slate-600{color:#cbd5e1!important}.dark .text-slate-500{color:#94a3b8!important}.dark .text-slate-400{color:#64748b!important}.dark .divide-slate-50>*+*{border-color:#1e293b!important}.dark input,.dark textarea,.dark select{background-color:#1e293b!important;color:#f1f5f9!important;border-color:#334155!important}.dark .hover\\:bg-slate-50:hover{background-color:#1e293b!important}`;
 
   return(
-    <div className={`flex min-h-screen ${dark?"dark bg-ink-900":"bg-cream"} font-sans`}>
+    <div className={`flex h-screen overflow-hidden ${dark?"dark bg-ink-900":"bg-cream"} font-sans`}>
       <style>{`*{box-sizing:border-box;}.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}.line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}${DCSS}`}</style>
       <Sidebar user={user} active={effectiveView} setView={setView} uc={uc} ac={user.role==="architect"?ac:0} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}/>
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
         {/* Mobile header */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
-          <button onClick={()=>setMobileOpen(true)} className="text-slate-400 hover:text-white p-1"><Ic n="menu" s={22}/></button>
-          <div className="flex items-center gap-2"><div className="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center"><Ic n="hardhat" s={14} c="text-white"/></div><span className="text-white font-black">SiteTrack</span></div>
-          <button onClick={()=>setDark(p=>!p)} className="text-slate-400 hover:text-white p-1"><Ic n={dark?"sun2":"moon"} s={18}/></button>
+        <div className="md:hidden flex-shrink-0 flex items-center justify-between px-4 py-3" style={{backgroundColor:"#1c1917",borderBottom:"1px solid rgba(217,119,6,.12)"}}>
+          <button onClick={()=>setMobileOpen(true)} className="text-cream/70 hover:text-cream p-1"><Ic n="menu" s={22}/></button>
+          <div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-gradient-gold flex items-center justify-center"><Ic n="hardhat" s={14} c="text-white"/></div><span className="font-display text-cream font-bold text-lg tracking-editorial">SiteTrack</span></div>
+          <button onClick={()=>setDark(p=>!p)} className="text-cream/70 hover:text-cream p-1"><Ic n={dark?"sun2":"moon"} s={18}/></button>
         </div>
-        {/* Desktop top bar */}
-        <div className="hidden md:flex items-center justify-between gap-4 px-6 py-2.5 bg-white border-b border-slate-100">
-          <div className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0 ${ROLE_META[user.role].bg} ${ROLE_META[user.role].text}`}><Ic n="shield" s={12}/>{ROLE_META[user.role].label}</div>
+        {/* Desktop top bar — stays put while main scrolls below */}
+        <div className="hidden md:flex flex-shrink-0 items-center justify-between gap-4 px-6 py-3 bg-white" style={{borderBottom:"1px solid var(--st-line)",boxShadow:"0 1px 2px rgba(28,25,23,.03)"}}>
+          <div className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 ${ROLE_META[user.role].bg} ${ROLE_META[user.role].text}`}><Ic n="shield" s={11}/>{ROLE_META[user.role].label}</div>
           <GlobalSearch projects={projects} milestones={milestones} issues={issues} vendors={vendors} setView={setView} setSP={setSP} lang={lang} user={user}/>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <select value={lang} onChange={e=>setLang(e.target.value)} className="px-2.5 py-1.5 text-xs font-bold bg-slate-100 border border-slate-200 rounded-lg outline-none cursor-pointer"><option value="en">EN</option><option value="te">తె</option><option value="hi">हि</option></select>
-            <button onClick={()=>setDark(p=>!p)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${dark?"bg-slate-800 text-orange-400":"bg-slate-100 text-slate-600 hover:bg-slate-200"}`}><Ic n={dark?"sun2":"moon"} s={14}/>{dark?t(lang,"lightMode"):t(lang,"darkMode")}</button>
+            <select value={lang} onChange={e=>setLang(e.target.value)} className="px-2.5 py-1.5 text-[11px] font-bold bg-cream-200 border border-stone-200 rounded-lg outline-none cursor-pointer tracking-wider"><option value="en">EN</option><option value="te">తె</option><option value="hi">हि</option></select>
+            <button onClick={()=>setDark(p=>!p)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider transition-all ${dark?"bg-ink-900 text-amber-500":"bg-cream-200 text-ink-700 hover:bg-cream-100"}`}><Ic n={dark?"sun2":"moon"} s={13}/>{dark?t(lang,"lightMode"):t(lang,"darkMode")}</button>
           </div>
         </div>
         <main className="flex-1 overflow-y-auto">{renderView()}</main>
