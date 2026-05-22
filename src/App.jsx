@@ -271,6 +271,11 @@ const INIT_BOQ = {
     {id:"bq10",code:"2.1",description:"RCC M25 columns",category:"Civil",unit:"cum",qty:140,rate:7800,sort:2},
   ],
 };
+// ── NEW: Estimate (versioned client-facing quote on top of BOQ) ──────────────
+const INIT_ESTIMATE = {
+  p1:{markup:12,overhead:8,contingency:5,gst:18,note:"Initial estimate for client approval — premium fit-out included",version:1,updated:"2025-04-10"},
+  p2:{markup:10,overhead:7,contingency:4,gst:18,note:"",version:1,updated:"2025-04-12"},
+};
 // ── NEW: Inventory ledger (inward / outward / GRN) ───────────────────────────
 const INIT_LEDGER = {
   p1:[
@@ -343,7 +348,7 @@ const CAT_COLORS = {Materials:"bg-blue-50 text-blue-600",Labour:"bg-violet-50 te
 const ATT_STATUS = {present:{label:"Present",bg:"bg-emerald-100",text:"text-emerald-700"},absent:{label:"Absent",bg:"bg-red-100",text:"text-red-600"},half_day:{label:"Half Day",bg:"bg-amber-100",text:"text-amber-700"}};
 const ACTIVITY_ICONS = {update:"hardhat",issue:"alert",milestone:"flag",material:"truck",drawing:"doc",expense:"wallet",team:"users",general:"bell"};
 const CHART_COLORS = ["#f97316","#3b82f6","#10b981","#8b5cf6","#f59e0b","#ef4444"];
-const TAB_LABELS = {fieldops:"Field Ops",approvals:"Approvals",changeorders:"Change Orders",punchlist:"Punch List",rabills:"RA Bills",po:"PO",rfi:"RFI",ai:"AI",map:"Map",boq:"BOQ",ledger:"Stock Ledger"};
+const TAB_LABELS = {fieldops:"Field Ops",approvals:"Approvals",changeorders:"Change Orders",punchlist:"Punch List",rabills:"RA Bills",po:"PO",rfi:"RFI",ai:"AI",map:"Map",boq:"BOQ",ledger:"Stock Ledger",estimate:"Estimate"};
 const BOQ_UNITS = ["cum","sqm","sqft","kg","ton","nos","rmt","ltr","bag","trip"];
 const LEDGER_DIRS = {inward:{label:"Inward",bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200"},outward:{label:"Outward",bg:"bg-amber-50",text:"text-amber-700",border:"border-amber-200"},return:{label:"Return",bg:"bg-blue-50",text:"text-blue-700",border:"border-blue-200"},wastage:{label:"Wastage",bg:"bg-red-50",text:"text-red-700",border:"border-red-200"}};
 
@@ -795,7 +800,7 @@ function QuickCaptureDrawer({quick,setQuick,onSave}){
   );
 }
 
-function DetailView({pid,user,setView,projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,lang}){
+function DetailView({pid,user,setView,projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang}){
   const proj=projects.find(p=>p.id===pid);
   const ms=milestones[pid]||[], us=updates[pid]||[], ex=expenses[pid]||[];
   const tm=teams[pid]||[], att=attendance[pid]||{};
@@ -806,6 +811,7 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   const eqs=equipment[pid]||[], dys=diary[pid]||[], wls=worklogs[pid]||[], cls=checklists[pid]||[];
   const subs=submittals[pid]||[], prs=permits[pid]||[], msgs=messages[pid]||[];
   const bq=boq[pid]||[], lg=ledger[pid]||[];
+  const est=estimate[pid]||{markup:10,overhead:7,contingency:4,gst:18,note:"",version:1,updated:""};
   const[tab,setTab]=useState("overview");
   const[showUpd,setShowUpd]=useState(false);const[nu,setNu]=useState({notes:"",weather:"",workers:""});const[nph,setNph]=useState([]);
   const[geoOn,setGeoOn]=useState(false); // opt-in for photo geolocation
@@ -1293,6 +1299,9 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
       {/* ── BOQ (Bill of Quantities) ── */}
       {tab==="boq"&&<BOQTab pid={pid} bq={bq} setBoq={setBoq} user={user} can={can} addActivity={addActivity} proj={proj}/>}
 
+      {/* ── ESTIMATE (client-facing quote on top of BOQ) ── */}
+      {tab==="estimate"&&<EstimateTab pid={pid} bq={bq} est={est} setEstimate={setEstimate} user={user} addActivity={addActivity} proj={proj}/>}
+
       {/* ── INVENTORY LEDGER ── */}
       {tab==="ledger"&&<LedgerTab pid={pid} lg={lg} setLedger={setLedger} mats={mats} user={user} can={can} addActivity={addActivity} proj={proj}/>}
 
@@ -1721,6 +1730,132 @@ function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
   );
 }
 
+// ── Estimate Tab (client-facing quote built on top of BOQ) ───────────────────
+function EstimateTab({pid,bq,est,setEstimate,user,addActivity,proj}){
+  const canEdit=user.role==="architect"||user.role==="pm";
+  const[draft,setDraft]=useState(null);   // null = view mode; object = editing
+  const[err,setErr]=useState("");
+
+  // Base = sum of all BOQ line amounts. Estimate is purely derived from BOQ.
+  const baseCost = bq.reduce((s,x)=>s+(x.qty*x.rate||0),0);
+  const e = draft||est;
+  const overhead = Math.round(baseCost*(+e.overhead||0)/100);
+  const markup = Math.round(baseCost*(+e.markup||0)/100);
+  const contingency = Math.round(baseCost*(+e.contingency||0)/100);
+  const subtotal = baseCost + overhead + markup + contingency;
+  const gst = Math.round(subtotal*(+e.gst||0)/100);
+  const total = subtotal + gst;
+
+  const validate=()=>{
+    const ks=["markup","overhead","contingency","gst"];
+    for(const k of ks){
+      const v=+draft[k];
+      if(!Number.isFinite(v)||v<0) return `${k} must be zero or positive.`;
+      if(v>100) return `${k} cannot exceed 100%.`;
+    }
+    return "";
+  };
+  const save=()=>{
+    const v=validate();if(v){setErr(v);return;}
+    const next={...draft,version:(est.version||0)+1,updated:new Date().toISOString().split("T")[0]};
+    setEstimate(p=>({...p,[pid]:next}));
+    addActivity(pid,proj.name,"general","Updated estimate",`v${next.version} · markup ${next.markup}% · overhead ${next.overhead}%`,user.name,user.role);
+    setDraft(null);setErr("");
+  };
+  const startEdit=()=>{setDraft({...e});setErr("");};
+  const cancelEdit=()=>{setDraft(null);setErr("");};
+
+  if(bq.length===0) return (
+    <div className="text-center py-20 text-slate-400">
+      <Ic n="receipt" s={32} c="mx-auto mb-3 opacity-30"/>
+      <p className="font-semibold mb-1">No BOQ lines yet</p>
+      <p className="text-xs">Add Bill of Quantities first, then come back to generate an estimate.</p>
+    </div>
+  );
+
+  const fld=(k,label,suffix="%")=>(
+    <div>
+      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">{label}</label>
+      {draft?<div className="flex items-center gap-1"><input type="number" min="0" max="100" step="0.1" value={draft[k]} onChange=
+        {ev=>{setDraft(p=>({...p,[k]:ev.target.value}));setErr("");}} className="w-20 p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-orange-400"/><span className="text-xs text-slate-400">{suffix}</span></div>
+      :<div className="text-lg font-black text-slate-800">{e[k]}{suffix}</div>}
+    </div>
+  );
+
+  return(
+    <div>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="font-bold text-slate-800">Project Estimate</h2>
+          <p className="text-xs text-slate-400 mt-0.5">v{e.version||1}{e.updated?` · updated ${fmtDate(e.updated)}`:""} · derived from {bq.length} BOQ lines</p>
+        </div>
+        {canEdit&&!draft&&<button onClick={startEdit} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="pencil" s={14}/>Edit Estimate</button>}
+        {canEdit&&draft&&<div className="flex gap-2"><button onClick={save} className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl text-sm">Save Version</button><button onClick={cancelEdit} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-sm">Cancel</button></div>}
+      </div>
+
+      {/* Cost waterfall */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
+        <h3 className="font-bold text-slate-800 text-sm mb-4">Cost Build-Up</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Base (BOQ)</div>
+            <div className="text-lg font-black text-slate-800">{fmtCur(baseCost)}</div>
+            <div className="text-xs text-slate-400 mt-0.5">100%</div>
+          </div>
+          {fld("overhead","Overhead")}
+          {fld("markup","Markup / Profit")}
+          {fld("contingency","Contingency")}
+          {fld("gst","GST")}
+        </div>
+        {err&&<div className="mt-4 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold">{err}</div>}
+      </div>
+
+      {/* Breakdown table */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-5">
+        <div className="px-5 py-3 border-b border-slate-100"><h3 className="font-bold text-slate-700 text-sm">Estimate Breakdown</h3></div>
+        <div className="divide-y divide-slate-50">
+          {[
+            ["Base cost (sum of BOQ amounts)",baseCost,"text-slate-700"],
+            [`Overhead (${e.overhead}%)`,overhead,"text-slate-700"],
+            [`Markup / Profit (${e.markup}%)`,markup,"text-slate-700"],
+            [`Contingency (${e.contingency}%)`,contingency,"text-slate-700"],
+          ].map(([label,amt,col])=>(
+            <div key={label} className="px-5 py-3 flex items-center justify-between text-sm">
+              <span className={col}>{label}</span>
+              <span className="font-semibold text-slate-800">{fmtCur(amt)}</span>
+            </div>
+          ))}
+          <div className="px-5 py-3 flex items-center justify-between text-sm bg-slate-50">
+            <span className="font-bold text-slate-800">Subtotal (before GST)</span>
+            <span className="font-bold text-slate-800">{fmtCur(subtotal)}</span>
+          </div>
+          <div className="px-5 py-3 flex items-center justify-between text-sm">
+            <span className="text-slate-700">GST ({e.gst}%)</span>
+            <span className="font-semibold text-slate-800">{fmtCur(gst)}</span>
+          </div>
+          <div className="px-5 py-4 flex items-center justify-between text-base bg-orange-50 border-t-2 border-orange-200">
+            <span className="font-black text-orange-800">Total Estimate</span>
+            <span className="font-black text-orange-700 text-lg">{fmtCur(total)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Note */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <h3 className="font-bold text-slate-700 text-sm mb-2">Notes for Client</h3>
+        {draft?
+          <textarea value={draft.note} onChange={ev=>setDraft(p=>({...p,note:ev.target.value}))} placeholder="Scope, exclusions, payment terms..." className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-24"/>
+          :<p className="text-sm text-slate-600 whitespace-pre-line">{e.note||<span className="text-slate-400 italic">No notes added.</span>}</p>
+        }
+      </div>
+
+      <p className="text-xs text-slate-400 mt-4">
+        This estimate is auto-derived from BOQ totals. Save creates a new version; previous versions are kept in localStorage history (backend audit log when migrated per BACKEND_PLAN.md).
+      </p>
+    </div>
+  );
+}
+
 // ── Inventory Ledger Tab (inward / outward / GRN) ────────────────────────────
 function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
   const[show,setShow]=useState(false);
@@ -1829,8 +1964,9 @@ function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
 
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
 function CreateView({user,setView,setProjects}){
-  if(!can(user,"createProject")) return <div className="p-8"><AccessDenied msg="Only Architects can create new projects."/></div>;
+  // Hooks must be called unconditionally (react-hooks/rules-of-hooks).
   const[f,setF]=useState({name:"",cn:"",ce:"",loc:"",sd:"",ed:"",budget:"",desc:""});const[done,setDone]=useState(false);const[err,setErr]=useState({});
+  if(!can(user,"createProject")) return <div className="p-8"><AccessDenied msg="Only Architects can create new projects."/></div>;
   const val=()=>{const e={};if(!f.name.trim())e.name="Required";if(!f.cn.trim())e.cn="Required";if(!f.loc.trim())e.loc="Required";if(!f.sd)e.sd="Required";return e;};
   const sub=()=>{const e=val();if(Object.keys(e).length){setErr(e);return;}setProjects(p=>[...p,{id:"p_"+Date.now(),name:f.name,client_name:f.cn,client_email:f.ce,location:f.loc,start_date:f.sd,expected_end_date:f.ed,budget:parseFloat(f.budget)||0,description:f.desc,status:"active",progress:0}]);setDone(true);setTimeout(()=>setView("projects"),1800);};
   if(done) return <div className="p-8 flex items-center justify-center min-h-96"><div className="text-center"><div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4"><Ic n="check" s={28} c="text-emerald-600"/></div><h2 className="text-xl font-black text-slate-800 mb-2">Project Created!</h2></div></div>;
@@ -1926,9 +2062,10 @@ function CalendarView({user,projects,milestones,tasks,invoices}){
 
 // ── VENDORS VIEW ─────────────────────────────────────────────────────────────
 function VendorsView({user,vendors,setVendors}){
-  if(!can(user,"manageTeam")&&user.role!=="pm") return <div className="p-8"><AccessDenied msg="Vendors visible to Architect & PM only."/></div>;
+  // Hooks first (react-hooks/rules-of-hooks).
   const[show,setShow]=useState(false);const[q,setQ]=useState("");
   const[nv,setNv]=useState({name:"",category:"Steel",contact:"",phone:"",gst:"",rating:4});
+  if(!can(user,"manageTeam")&&user.role!=="pm") return <div className="p-8"><AccessDenied msg="Vendors visible to Architect & PM only."/></div>;
   const add=()=>{
     if(!nv.name.trim())return;
     setVendors(p=>[...p,{id:"v_"+Date.now(),...nv,rating:+nv.rating,projects:0}]);
@@ -2087,6 +2224,7 @@ export default function App(){
   const[messages,setMessages]=useLS("messages",INIT_MESSAGES);
   const[boq,setBoq]=useLS("boq",INIT_BOQ);
   const[ledger,setLedger]=useLS("ledger",INIT_LEDGER);
+  const[estimate,setEstimate]=useLS("estimate",INIT_ESTIMATE);
   const[lang,setLang]=useLS("lang","en");
   const[dark,setDark]=useLS("dark",false);
   const[mobileOpen,setMobileOpen]=useState(false);
@@ -2114,7 +2252,7 @@ export default function App(){
   const selectedProject=projects.find(p=>p.id===sp);
   const effectiveView=(canOpenView(user,view) && (view!=="detail" || !selectedProject || canAccessProject(user,selectedProject))) ? view : fallbackViewForUser(user);
   const dp={projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,
-    tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,lang};
+    tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang};
 
   const renderView=()=>{
     switch(effectiveView){

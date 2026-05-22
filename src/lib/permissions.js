@@ -25,7 +25,7 @@ export const PERMS = {
     viewActivity: true,
     tabs: [
       "overview", "milestones", "tasks", "updates", "issues", "punchlist",
-      "materials", "ledger", "boq", "drawings", "rfi", "changeorders",
+      "materials", "ledger", "boq", "estimate", "drawings", "rfi", "changeorders",
       "fieldops", "approvals", "inspections", "safety", "team", "attendance",
       "budget", "po", "invoices", "labour", "rabills", "map", "ai", "gantt",
     ],
@@ -50,7 +50,7 @@ export const PERMS = {
     viewActivity: false,
     tabs: [
       "overview", "milestones", "tasks", "updates", "issues", "punchlist",
-      "materials", "ledger", "boq", "drawings", "rfi", "changeorders",
+      "materials", "ledger", "boq", "estimate", "drawings", "rfi", "changeorders",
       "fieldops", "approvals", "inspections", "safety", "team", "attendance",
       "budget", "po", "labour", "rabills", "map", "ai", "gantt",
     ],
@@ -96,7 +96,7 @@ export const PERMS = {
     deleteMaterial: false,
     manageDrawings: false,
     viewActivity: false,
-    tabs: ["overview", "milestones", "updates", "drawings", "boq", "changeorders", "approvals", "invoices", "map", "ai", "gantt"],
+    tabs: ["overview", "milestones", "updates", "drawings", "boq", "estimate", "changeorders", "approvals", "invoices", "map", "ai", "gantt"],
     nav: ["dashboard", "calendar", "client", "notifications"],
   },
 };

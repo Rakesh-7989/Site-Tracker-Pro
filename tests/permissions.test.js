@@ -74,6 +74,13 @@ describe("PERMS shape", () => {
     expect(PERMS.contractor.tabs.includes("boq")).toBe(false);
   });
 
+  it("Estimate tab visibility — mirrors BOQ (client read-only, contractor hidden)", () => {
+    expect(PERMS.architect.tabs.includes("estimate")).toBe(true);
+    expect(PERMS.pm.tabs.includes("estimate")).toBe(true);
+    expect(PERMS.client.tabs.includes("estimate")).toBe(true);
+    expect(PERMS.contractor.tabs.includes("estimate")).toBe(false);
+  });
+
   it("invoices are never visible to contractor (financial exposure fix)", () => {
     expect(PERMS.contractor.tabs.includes("invoices")).toBe(false);
   });
