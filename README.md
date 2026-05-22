@@ -18,11 +18,14 @@ Construction site management web app — role-based access (Architect / PM / Con
 - **Invoices** — milestone-based billing with GST + TDS
 - **Labour Register** — statutory worker register (Aadhaar, EPF, ESI, daily wage)
 - **RA Bills** — subcontractor running account bills with retention
+- **BOQ (Bill of Quantities)** — line items per project with code/category/unit/qty/rate; category totals + grand total; client read-only
+- **Stock Ledger** — inward/outward/return/wastage transactions with GRN/DC ref no and material-wise balance summary
 - **Calendar** — cross-project deadlines (milestones + tasks + invoices)
 - **Global Search** — across projects, milestones, issues, vendors
 - **Today's Entry** — quick field capture for updates, issues, worklogs, and materials
 - **Role-safe access guards** — client search/detail/share links stay scoped to assigned projects
 - **Drawing revision governance** - same title/type new release auto-supersedes older current revision; PM/contractor/client/share views show only current drawings explicitly released to that role
+- **Photo metadata** — date/time + GPS location captured on site-update photos; visible on hover overlay
 - **Comments** — threaded discussion on issues
 - **WhatsApp Share** — share project status directly
 - **GST/TDS** — built-in calculation on expenses & invoices
@@ -111,6 +114,18 @@ For production multi-user use, replace `useLS` hook with a real backend (Supabas
 - `docs/PRICING.md` - starter plan tiers, setup fees, custom/private deployment notes.
 - `docs/MARKET_ANALYSIS.md` - top competitors, India-local competitors, 50-feature traceability matrix.
 - `docs/DEPLOYMENT.md` - free static deployment and demo vs paid-pilot vs production boundaries.
+- `docs/BACKEND_PLAN.md` - Supabase schema, RLS policies, file storage, 7-phase migration plan, cost model (drafted by Backend Engineer Agent, awaiting Tech Lead approval).
+- `docs/AGENTS.md`, `docs/WORKFLOW.md`, `docs/BACKLOG.md`, `docs/QUALITY.md` - agent operating guide, workflow, backlog, QA.
+
+## Tests
+
+```sh
+npm test        # build + smoke + vitest
+npm run test:unit       # vitest only
+npm run smoke   # string-marker smoke check
+```
+
+CI runs all of the above on every push and PR (`.github/workflows/ci.yml`).
 
 ## Tech stack
 
