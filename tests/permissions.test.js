@@ -62,6 +62,21 @@ describe("PERMS shape", () => {
     expect(PERMS.pm.tabs.includes("ledger")).toBe(true);
     expect(PERMS.contractor.tabs.includes("ledger")).toBe(true);
   });
+
+  it("client never sees the stock ledger (financial sensitivity)", () => {
+    expect(PERMS.client.tabs.includes("ledger")).toBe(false);
+  });
+
+  it("BOQ tab visibility — Tech Lead regression matrix", () => {
+    expect(PERMS.architect.tabs.includes("boq")).toBe(true);
+    expect(PERMS.pm.tabs.includes("boq")).toBe(true);
+    expect(PERMS.client.tabs.includes("boq")).toBe(true);
+    expect(PERMS.contractor.tabs.includes("boq")).toBe(false);
+  });
+
+  it("invoices are never visible to contractor (financial exposure fix)", () => {
+    expect(PERMS.contractor.tabs.includes("invoices")).toBe(false);
+  });
 });
 
 describe("can(user, capability)", () => {
@@ -152,7 +167,15 @@ describe("quick capture & drawings", () => {
   it("drawingKey normalizes title and type", () => {
     expect(drawingKey({ title: "  Floor Plan ", type: "Architectural" }))
       .toBe("floor plan::architectural");
-    expect(drawingKey({})).toBe("::");
+  });
+
+  it("drawingKey returns null for blank inputs (no collision)", () => {
+    // Previously returned "::" for every blank drawing — collision risk.
+    expect(drawingKey({})).toBe(null);
+    expect(drawingKey({ title: "  ", type: "  " })).toBe(null);
+    expect(drawingKey({ title: "Foo" })).toBe(null);
+    expect(drawingKey({ type: "Architectural" })).toBe(null);
+    expect(drawingKey(null)).toBe(null);
   });
 
   it("isReleasedCurrentDrawing requires status=current and released_to contains role", () => {
