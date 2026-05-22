@@ -128,17 +128,30 @@ MVP should not claim production readiness until backend auth, real permissions, 
 - **Smoke test strengthened**: 60+ markers including BOQ, Ledger, photo metadata, backend plan, CI workflow, and cleanup verification.
 - **Work-board audit trail**: logged retroactive correction of Phase 1 "agents inside app" mistake (2026-05-20).
 
+## Completed 2026-05-22 Tech Lead Review
+
+- **CRITICAL: PERMS drift killed**. `App.jsx` now imports PERMS + helpers from `src/lib/permissions.js`. Local definitions removed. Smoke + regex check prevent regression.
+- **HIGH: BOQ + Ledger input validation**. Numeric range guards (>0, <1e9), trimmed strings, date upper bound = today, outward/wastage refused when greater than current stock balance.
+- **HIGH: Destructive delete now requires confirmation** in BOQ + Ledger (`window.confirm` with line summary).
+- **HIGH: BACKEND_PLAN.md materialized into SQL**. `scripts/supabase/01_schema.sql` + `02_rls.sql` + `README.md` are runnable by a Tech Lead on a Supabase dev project.
+- **MEDIUM: Geolocation opt-in toggle** so users are not surprised by permission popups on every photo upload.
+- **MEDIUM: BOQ/Ledger role visibility tests** added; vitest now 24 cases.
+- **MEDIUM: `drawingKey({})` no longer returns `"::"`**; returns `null` for blank inputs; callsites in `addDrawing` + `setDrawingStatus` guard against null key.
+- **LOW: CHANGELOG.md** created in Keep-a-Changelog format.
+- **LOW: Tech Lead approval entry** added to `.agents/sitetrack-pro/work-board.md`.
+
 ## Next Sprint Candidates (carry-over)
 
 | Sprint candidate | Why now | Risk |
 | --- | --- | --- |
 | Refactor App.jsx into `src/components/`, `src/views/`, `src/data/`, `src/lib/` | File is 2,200+ lines; PRs touching one area show entire file diff. | Medium - smoke string markers protect against accidental removal. |
-| App.jsx should import PERMS from `src/lib/permissions.js` instead of inlining | Two copies will drift; tests already use the extracted file. | Low |
-| Provision Supabase dev project per BACKEND_PLAN.md (Phase B1) | Backend Engineer Agent's plan is ready for Tech Lead approval. | High - production data implications. |
+| Provision Supabase dev project per BACKEND_PLAN.md (Phase B1) | `01_schema.sql` + `02_rls.sql` ready to run; Tech Lead Agent approved the plan. | High - production data implications. |
 | Add ESLint + Prettier configs | CI placeholder lint step needs a real linter. | Low |
+| Add `04_rls_tests.sql` — scripted 4-role RLS verification matrix | Manual matrix in `scripts/supabase/README.md` is error-prone for repeat runs. | Medium |
 | Drawing markup viewer (feature #9 in 50-feature matrix) | Remaining Missing item; high competitor pressure from PlanGrid/Autodesk. | Medium |
 | Estimate builder (#18) on top of BOQ | BOQ now exists; estimates are the natural pre-construction extension. | Medium |
 | Payment receipts and reconciliation (#30) | Connects invoices + RA bills to actual money received. | Medium - touches financial data. |
+| Playwright e2e for one role-access scenario per role | Vitest covers pure logic; nothing covers actual rendering + role-gated routes. | Low |
 
 ## Feature Acceptance Checklist
 

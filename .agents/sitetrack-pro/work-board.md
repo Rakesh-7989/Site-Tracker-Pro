@@ -86,3 +86,42 @@ Team Lead routing decision: Address every open item from the audit, sequenced fr
 2. **Vitest passes locally only** — once user runs `npm install` to pull `vitest` devDep, CI will pick it up.
 3. **Backend Engineer Agent's plan needs Tech Lead approval** before any Supabase project is provisioned.
 4. **Drawing markup (#9), Estimate (#18), Payment reconciliation (#30)** remain Missing in 50-feature matrix. Queued in BACKLOG.md.
+
+## Tech Lead Review - 2026-05-22 (evening)
+
+User instruction: "Tech Lead agent tho check cheppichi approve cheppichu emi ana drawback vundhi avi koda fix cheyi."
+
+Per `docs/AGENTS.md`, "Tech Lead owns architecture, code review, technical debt decisions, dependency choices, and merge readiness." The Team Lead Agent invoked a code-review pass that surfaced 10 findings; CRITICAL + HIGH + MEDIUM items were fixed in the same run.
+
+### Findings
+
+| # | Severity | Finding | Status |
+| --- | --- | --- | --- |
+| 1 | CRITICAL | PERMS drift — `src/lib/permissions.js` was a hand-copied mirror of the PERMS object in `App.jsx`. Tests passed against the copy, not the reality the user sees. | **Fixed** — App.jsx now imports from lib; the local PERMS block is removed. Smoke + regex check guard the extraction. |
+| 2 | HIGH | No input validation in BOQ/Ledger; users could enter negative qty/rate, empty material names. | **Fixed** — `validate()` in both tabs; numeric range (>0, <1e9), trimmed strings, date upper bound = today; stock-balance check refuses outward/wastage that exceeds current balance. |
+| 3 | HIGH | Destructive delete with no confirmation. | **Fixed** — `window.confirm` with line summary before BOQ/Ledger delete. |
+| 4 | HIGH | `docs/BACKEND_PLAN.md` was prose-only; Tech Lead reviewing the backend cannot read SQL. | **Fixed** — `scripts/supabase/01_schema.sql` (full schema), `02_rls.sql` (RLS policies), `README.md` (run order + verification matrix). |
+| 5 | MEDIUM | Geolocation fired on every photo upload with no UX explanation. | **Fixed** — `geoOn` opt-in toggle; only fires when user enables it; label explains the trade-off. |
+| 6 | MEDIUM | No Vitest coverage for BOQ/Ledger role visibility. | **Fixed** — 3 new test cases: BOQ matrix, ledger client exclusion, invoices contractor exclusion. |
+| 7 | MEDIUM | `drawingKey({})` returned `"::"` — every blank drawing collided. | **Fixed** — returns `null` for blank inputs; `addDrawing` + `setDrawingStatus` callsites guard against null key; new tests cover the contract. |
+| 8 | LOW | No CHANGELOG. | **Fixed** — `CHANGELOG.md` created (Keep-a-Changelog format). |
+| 9 | LOW | work-board missing Tech Lead approval entry. | **Fixed** — this section. |
+| 10 | LOW | BACKLOG "Next Sprint" still listed PERMS import as pending. | **Fixed** — moved to Completed (see BACKLOG.md update). |
+
+### Verification Evidence
+
+- `npm run build` → 830 modules transformed, ~4s, no errors.
+- `npm run smoke` → 65+ markers pass; new regex guards against PERMS drift regressions.
+- `npm run test:unit` → 24 vitest cases pass (3 new added for BOQ/Ledger/invoice matrix; 1 updated for drawingKey null contract).
+
+### Tech Lead Approval
+
+**Approved for merge to main.**
+
+Production SaaS claim still gated on:
+- Supabase dev project provisioned and `01_schema.sql` + `02_rls.sql` actually run.
+- 4-role RLS verification matrix executed manually (or scripted via `04_rls_tests.sql` once written).
+- Backup restore drill on staging.
+- ESLint config + real lint step in CI (BACKLOG).
+
+Reviewer: Tech Lead Agent on behalf of `docs/AGENTS.md` ownership boundary. Human Tech Lead (user) gets the final sign-off when reviewing this branch.
