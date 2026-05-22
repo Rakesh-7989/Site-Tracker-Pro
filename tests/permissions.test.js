@@ -9,12 +9,14 @@ import {
   canUseQuickCapture,
   drawingKey,
   isReleasedCurrentDrawing,
+  isSuperAdmin,
 } from "../src/lib/permissions.js";
 
 const arch = { id: "u1", name: "Arjun", email: "a@buildco.in", role: "architect" };
 const pm = { id: "u2", name: "Priya", email: "p@buildco.in", role: "pm" };
 const con = { id: "u3", name: "Karthik", email: "k@karthikbuilders.in", role: "contractor" };
 const cli = { id: "u4", name: "Vikram", email: "vikram@client.in", role: "client" };
+const sup = { id: "u100", name: "Rakesh", email: "admin@sitetrack.in", role: "superadmin" };
 
 const project = (overrides = {}) => ({
   id: "p1",
@@ -24,8 +26,28 @@ const project = (overrides = {}) => ({
 });
 
 describe("PERMS shape", () => {
-  it("defines all four roles", () => {
-    expect(Object.keys(PERMS).sort()).toEqual(["architect", "client", "contractor", "pm"]);
+  it("defines all five roles including superadmin", () => {
+    expect(Object.keys(PERMS).sort()).toEqual(["architect", "client", "contractor", "pm", "superadmin"]);
+  });
+
+  it("superadmin has admin-only capabilities", () => {
+    ["manageUsers", "manageOrgs", "manageBilling", "manageSettings", "impersonate"].forEach(p =>
+      expect(PERMS.superadmin[p]).toBe(true)
+    );
+  });
+
+  it("non-superadmin roles do not have admin capabilities", () => {
+    ["architect", "pm", "contractor", "client"].forEach(role => {
+      ["manageUsers", "manageOrgs", "manageBilling", "manageSettings", "impersonate"].forEach(p =>
+        expect(PERMS[role][p]).toBeFalsy()
+      );
+    });
+  });
+
+  it("superadmin nav has the 5 admin-only items", () => {
+    ["admin-dashboard", "admin-users", "admin-orgs", "admin-billing", "admin-settings"].forEach(item =>
+      expect(PERMS.superadmin.nav.includes(item)).toBe(true)
+    );
   });
 
   it("client role has zero write capabilities", () => {
@@ -83,6 +105,55 @@ describe("PERMS shape", () => {
 
   it("invoices are never visible to contractor (financial exposure fix)", () => {
     expect(PERMS.contractor.tabs.includes("invoices")).toBe(false);
+  });
+});
+
+describe("isSuperAdmin", () => {
+  it("returns true only for role=superadmin", () => {
+    expect(isSuperAdmin(sup)).toBe(true);
+    expect(isSuperAdmin(arch)).toBe(false);
+    expect(isSuperAdmin(pm)).toBe(false);
+    expect(isSuperAdmin(con)).toBe(false);
+    expect(isSuperAdmin(cli)).toBe(false);
+    expect(isSuperAdmin(null)).toBe(false);
+    expect(isSuperAdmin(undefined)).toBe(false);
+  });
+});
+
+describe("superadmin overrides", () => {
+  it("visibleProjectsForUser returns every project for superadmin (even if client_email mismatch)", () => {
+    const ps = [
+      { id: "p1", client_email: "x@y.in" },
+      { id: "p2", client_email: "a@b.in" },
+      { id: "p3" },
+    ];
+    expect(visibleProjectsForUser(ps, sup)).toHaveLength(3);
+  });
+
+  it("canAccessProject is true for superadmin regardless of project ownership", () => {
+    expect(canAccessProject(sup, { id: "p1", client_email: "stranger@x.in" })).toBe(true);
+  });
+
+  it("fallbackViewForUser sends superadmin to admin-dashboard", () => {
+    expect(fallbackViewForUser(sup)).toBe("admin-dashboard");
+  });
+
+  it("canOpenView allows superadmin into all admin nav items", () => {
+    ["admin-dashboard", "admin-users", "admin-orgs", "admin-billing", "admin-settings"].forEach(view =>
+      expect(canOpenView(sup, view)).toBe(true)
+    );
+  });
+
+  it("canOpenView blocks non-superadmin from admin views", () => {
+    [arch, pm, con, cli].forEach(u => {
+      ["admin-dashboard", "admin-users", "admin-orgs"].forEach(view =>
+        expect(canOpenView(u, view)).toBe(false)
+      );
+    });
+  });
+
+  it("canUseQuickCapture includes superadmin", () => {
+    expect(canUseQuickCapture(sup)).toBe(true);
   });
 });
 

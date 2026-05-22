@@ -6,6 +6,42 @@
 // App.jsx import from this module so the two cannot drift.
 
 export const PERMS = {
+  superadmin: {
+    createProject: true,
+    editProgress: true,
+    addUpdate: true,
+    manageTeam: true,
+    markAttendance: true,
+    addExpense: true,
+    deleteExpense: true,
+    export: true,
+    share: true,
+    changeMilestone: true,
+    addIssue: true,
+    resolveIssue: true,
+    addMaterial: true,
+    deleteMaterial: true,
+    manageDrawings: true,
+    viewActivity: true,
+    // Cross-tenant admin-only capabilities
+    manageUsers: true,
+    manageOrgs: true,
+    manageBilling: true,
+    manageSettings: true,
+    impersonate: true,
+    // Sees every tab inside any project, plus admin-only top-level nav
+    tabs: [
+      "overview", "milestones", "tasks", "updates", "issues", "punchlist",
+      "materials", "ledger", "boq", "estimate", "drawings", "rfi", "changeorders",
+      "fieldops", "approvals", "inspections", "safety", "team", "attendance",
+      "budget", "po", "invoices", "labour", "rabills", "map", "ai", "gantt",
+    ],
+    nav: [
+      "admin-dashboard", "admin-users", "admin-orgs", "admin-billing",
+      "admin-settings", "activity", "dashboard", "projects", "calendar",
+      "vendors", "po", "analytics", "messages", "notifications",
+    ],
+  },
   architect: {
     createProject: true,
     editProgress: true,
@@ -101,15 +137,28 @@ export const PERMS = {
   },
 };
 
+export const isSuperAdmin = user => user?.role === "superadmin";
+
 export const can = (user, p) => !!(user && PERMS[user.role]?.[p]);
 
-export const visibleProjectsForUser = (projects, user) =>
-  user?.role === "client" ? projects.filter(p => p.client_email === user.email) : projects;
+export const visibleProjectsForUser = (projects, user) => {
+  if (isSuperAdmin(user)) return projects;
+  if (user?.role === "client") return projects.filter(p => p.client_email === user.email);
+  return projects;
+};
 
-export const canAccessProject = (user, project) =>
-  !!(user && project && (user.role !== "client" || project.client_email === user.email));
+export const canAccessProject = (user, project) => {
+  if (!user || !project) return false;
+  if (isSuperAdmin(user)) return true;
+  if (user.role === "client") return project.client_email === user.email;
+  return true;
+};
 
-export const fallbackViewForUser = user => (user?.role === "client" ? "client" : "dashboard");
+export const fallbackViewForUser = user => {
+  if (isSuperAdmin(user)) return "admin-dashboard";
+  if (user?.role === "client") return "client";
+  return "dashboard";
+};
 
 export const canOpenView = (user, view) => {
   if (!user) return false;
@@ -118,7 +167,7 @@ export const canOpenView = (user, view) => {
   return PERMS[user.role]?.nav.includes(view);
 };
 
-export const canUseQuickCapture = user => ["architect", "pm", "contractor"].includes(user?.role);
+export const canUseQuickCapture = user => ["architect", "pm", "contractor", "superadmin"].includes(user?.role);
 
 export const drawingKey = d => {
   const title = (d?.title || "").trim().toLowerCase();
