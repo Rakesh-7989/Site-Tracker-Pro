@@ -121,12 +121,81 @@ export async function loadKey(key, defaultValue) {
   return data;
 }
 
-export async function saveKey(/* key, value */) {
-  // TODO: This is a stub. Real implementation needs row-level diff vs cached
-  // state + .upsert with conflict on id. See docs/BACKEND_PLAN.md Phase B3.
-  // Returning a no-op promise lets the existing useLS hook continue to write
-  // to localStorage as a cache layer until this is implemented.
-  return Promise.resolve();
+// saveKey: pushes the entire keyed value to its mapped table.
+//
+// SiteTrack's frontend state is shaped as { [projectId]: [rows...] } for most
+// keys. We flatten to rows + upsert by id. This works because the schema in
+// 01_schema.sql has matching column names. Rows are scoped by RLS so a
+// caller without permission silently writes nothing — caller should use
+// loadKey() to verify the round-trip.
+//
+// For "flat" keys (vendors, profiles, orgs) the value is already a row list.
+export async function saveKey(key, value) {
+  const sb = await getSupabaseClient();
+  if (!sb) return;
+  const table = TABLE_BY_KEY[key];
+  if (!table) return;
+
+  // Flatten { pid: [rows] } shape into a single rows array with project_id.
+  const rows = [];
+  if (Array.isArray(value)) {
+    rows.push(...value);
+  } else if (value && typeof value === "object") {
+    for (const [pid, list] of Object.entries(value)) {
+      if (Array.isArray(list)) list.forEach(row => rows.push({ ...row, project_id: pid }));
+    }
+  }
+
+  if (rows.length === 0) return;
+  // Upsert in batches of 100 to stay under Postgres argument limits.
+  const BATCH = 100;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH);
+    const { error } = await sb.from(table).upsert(batch, { onConflict: "id" });
+    if (error) {
+      console.warn(`saveKey(${table}) batch failed:`, error.message);
+      throw error;
+    }
+  }
+}
+
+// Subscribe to realtime changes on a table. Returns an unsubscribe function.
+//
+//   const off = subscribeTable("activity_log", row => addActivityToFeed(row));
+//   off();   // call when component unmounts
+//
+// In production this is gated by RLS — clients only get rows they can SELECT.
+export async function subscribeTable(table, onInsert) {
+  const sb = await getSupabaseClient();
+  if (!sb) return () => {};
+  const channel = sb
+    .channel(`rt:${table}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table }, payload => {
+      onInsert(payload.new);
+    })
+    .subscribe();
+  return () => sb.removeChannel(channel);
+}
+
+// Migration: copy entire localStorage sitetrack_v2 blob into Supabase.
+// Idempotent — uses upsert. Returns { keys: number, rows: number } summary.
+export async function migrateLocalToBackend() {
+  const sb = await getSupabaseClient();
+  if (!sb) throw new Error("Supabase is not enabled.");
+  const all = JSON.parse(localStorage.getItem("sitetrack_v2") || "{}");
+  let totalKeys = 0, totalRows = 0;
+  for (const [key, value] of Object.entries(all)) {
+    if (!TABLE_BY_KEY[key]) continue;
+    try {
+      await saveKey(key, value);
+      totalKeys++;
+      if (Array.isArray(value)) totalRows += value.length;
+      else if (value && typeof value === "object") totalRows += Object.values(value).flat().length;
+    } catch (err) {
+      console.warn(`Migration ${key} failed:`, err.message);
+    }
+  }
+  return { keys: totalKeys, rows: totalRows };
 }
 
 // Helper for the auth UI — replaces the demo role picker once enabled.
