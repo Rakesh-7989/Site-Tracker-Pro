@@ -38,7 +38,8 @@ export const PERMS = {
     ],
     nav: [
       "admin-dashboard", "admin-users", "admin-orgs", "admin-billing",
-      "admin-settings", "activity", "dashboard", "projects", "calendar",
+      "admin-audit", "admin-usage", "admin-support", "admin-settings",
+      "activity", "dashboard", "projects", "calendar",
       "vendors", "po", "analytics", "messages", "notifications",
     ],
   },

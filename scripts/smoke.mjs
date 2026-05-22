@@ -67,6 +67,21 @@ const vite = read("vite.config.js");
   "Customer Organizations",
   "Billing & MRR",
   "System Settings",
+  // Live activation
+  "isSupabaseEnabled",
+  "signInWithMagicLink",
+  "migrateLocalToBackend",
+  "subscribeTable",
+  "Magic link",
+  // More admin features
+  "AuditAdminView",
+  "UsageAdminView",
+  "SupportAdminView",
+  "INIT_SUPPORT",
+  "Impersonating",
+  "startImpersonate",
+  "Audit Log",
+  "Usage Analytics",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -128,6 +143,10 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "capacitor.config.json",
   "docs/MOBILE_BUILD.md",
   ".env.example",
+  // Live activation
+  "src/lib/usePersistent.js",
+  "docs/GOLIVE.md",
+  "scripts/provision.sh",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder

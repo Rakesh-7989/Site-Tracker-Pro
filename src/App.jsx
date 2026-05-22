@@ -14,20 +14,13 @@ import {
 import { isOnline, onConnectivityChange, queueLength, queueOpAdd } from "./lib/offline.js";
 import { computeRiskScore, fetchLLMInsight, getProviderConfig, saveProviderConfig, clearProviderConfig } from "./lib/ai.js";
 import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "./lib/razorpay.js";
+import { usePersistent as useLS } from "./lib/usePersistent.js";
+import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurrentUser, migrateLocalToBackend, subscribeTable } from "./lib/supabase.js";
 
-// ── PERSISTENCE (localStorage) ───────────────────────────────────────────────
-const LS_KEY = "sitetrack_v2";
-const useLS = (k, def) => {
-  const [v, setV] = useState(() => {
-    try { const all = JSON.parse(localStorage.getItem(LS_KEY)||"{}"); return all[k]!==undefined ? all[k] : def; }
-    catch { return def; }
-  });
-  useEffect(() => {
-    try { const all = JSON.parse(localStorage.getItem(LS_KEY)||"{}"); all[k]=v; localStorage.setItem(LS_KEY, JSON.stringify(all)); }
-    catch {}
-  }, [k, v]);
-  return [v, setV];
-};
+// ── PERSISTENCE adapter ─────────────────────────────────────────────────────
+// useLS is the import above — it auto-routes to Supabase when env is set,
+// falls back to localStorage. See src/lib/usePersistent.js.
+const LS_KEY = "sitetrack_v2";  // referenced by docs + smoke; do not remove.
 
 // ── i18n (Telugu / Hindi / English) ──────────────────────────────────────────
 const I18N = {
@@ -88,6 +81,13 @@ const PLAN_META = {
   business:{label:"Business",price:7999,color:"orange"},
   custom:{label:"Custom",price:0,color:"violet"},
 };
+// Mock customer-support tickets — admin uses these from the Support Inbox.
+const INIT_SUPPORT = [
+  {id:"st1",org_id:"org1",subject:"How do I add a new contractor user?",from:"Priya Sharma <priya@buildco.in>",body:"Hi team,\n\nA new contractor joined our project this week. How do I send them an invite so they can log in and submit worklogs from the field?\n\nThanks,\nPriya",status:"open",created:"2025-05-20T11:30:00Z",messages:[]},
+  {id:"st2",org_id:"org2",subject:"GST percentage in invoices — can we customize per project?",from:"Anika Iyer <anika@skyline.in>",body:"For some commercial projects we're billing at 12% GST instead of the default 18%. Where do I change this per invoice?\n\nAnika",status:"open",created:"2025-05-19T14:00:00Z",messages:[]},
+  {id:"st3",org_id:"org4",subject:"WhatsApp DPR not sending automatically",from:"Lakshmi Krishnan <lakshmi@nair.in>",body:"We configured the daily report but it isn't going out at 6PM. Could you check our WhatsApp Business integration?",status:"replied",created:"2025-05-18T09:00:00Z",replied_at:"2025-05-18T11:30:00Z",messages:[{id:"sr1",by:"Rakesh Boyapati",role:"superadmin",text:"Hi Lakshmi — the WhatsApp Business automation is queued behind the Supabase Edge Function rollout per docs/BACKEND_PLAN.md Phase B6. Right now the 'Daily Report' button generates the PDF + a wa.me link you can tap manually. Auto-send goes live next sprint.",time:"2025-05-18T11:30:00Z"}]},
+  {id:"st4",org_id:"org3",subject:"Trial extension request",from:"Suresh Reddy <suresh@premier.in>",body:"Our 15-day trial is about to end but we are still evaluating with our team. Could we get a 7-day extension?",status:"open",created:"2025-05-21T10:00:00Z",messages:[]},
+];
 const INIT_PROJECTS = [
   {id:"p1",name:"Skyline Tower Phase II",client_name:"Nair Holdings",client_email:"vikram@client.in",location:"Jubilee Hills, Hyderabad",lat:17.4326,lng:78.4071,status:"active",start_date:"2024-11-01",expected_end_date:"2026-06-30",budget:45000000,description:"28-floor commercial tower with underground parking.",progress:62},
   {id:"p2",name:"Green Valley Residences",client_name:"Greenfield Developers",client_email:"gf@green.in",location:"Gachibowli, Hyderabad",lat:17.4401,lng:78.3489,status:"active",start_date:"2025-01-15",expected_end_date:"2026-12-31",budget:18000000,description:"Eco-friendly residential complex with 120 units.",progress:34},
@@ -828,6 +828,19 @@ function ActivityView({user,activity,setActivity,projects}){
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 function LoginScreen({onLogin,dark,toggleDark}){
+  // When backend is enabled, show the magic-link flow ABOVE the demo picker.
+  // The demo picker stays available so paid pilots can still showcase any role
+  // to a prospect without provisioning four real accounts.
+  const backendEnabled = isSupabaseEnabled();
+  const[email,setEmail]=useState("");
+  const[mlState,setMlState]=useState({state:"idle",msg:""});
+  const sendMagicLink=async()=>{
+    if(!email.trim()){setMlState({state:"err",msg:"Enter your email."});return;}
+    setMlState({state:"sending",msg:""});
+    const res=await signInWithMagicLink(email.trim());
+    if(res.ok)setMlState({state:"sent",msg:`Check ${email} — open the link to finish signing in.`});
+    else setMlState({state:"err",msg:res.error||"Failed to send. Try again."});
+  };
   const[role,setRole]=useState("architect");const[anim,setAnim]=useState(false);
   const roles=[
     {key:"superadmin",label:"Super Admin (Operations)",sub:"Multi-tenant — all orgs, users, billing, system settings",ini:"RB",col:"slate",perms:["All Orgs","User Management","Billing","System Settings","Impersonate"]},
@@ -895,8 +908,19 @@ function LoginScreen({onLogin,dark,toggleDark}){
             <h2 className="font-display text-4xl md:text-5xl font-light leading-tight tracking-editorial text-ink-900">
               Welcome back.
             </h2>
-            <p className="text-ink-600 text-sm mt-3 leading-relaxed">Select your role — permissions and visible modules are applied automatically.</p>
+            <p className="text-ink-600 text-sm mt-3 leading-relaxed">{backendEnabled?"Enter your work email. You'll receive a one-time sign-in link.":"Select your role — permissions and visible modules are applied automatically."}</p>
           </div>
+
+          {backendEnabled&&<div className="mb-6 bg-white rounded-2xl p-5 shadow-editorial-hover" style={{border:"1px solid var(--st-line)"}}>
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-2">— Magic link · production</div>
+            <input value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")sendMagicLink();}} type="email" placeholder="you@yourcompany.in" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 mb-3"/>
+            <button onClick={sendMagicLink} disabled={mlState.state==="sending"} className="w-full py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{mlState.state==="sending"?"Sending…":"Send sign-in link"}</button>
+            {mlState.state==="sent"&&<p className="mt-3 px-3 py-2 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
+            {mlState.state==="err"&&<p className="mt-3 px-3 py-2 bg-red-50 text-red-700 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
+            <div className="mt-4 pt-4 border-t border-stone-100">
+              <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">— Or try a demo role below</div>
+            </div>
+          </div>}
 
           {/* Role tiles */}
           <div className="space-y-2.5 mb-7">
@@ -1102,6 +1126,9 @@ function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"admin-orgs",icon:"building",label:"Organizations",group:"admin"},
     {id:"admin-users",icon:"users",label:"Users",group:"admin"},
     {id:"admin-billing",icon:"wallet",label:"Billing & MRR",group:"admin"},
+    {id:"admin-usage",icon:"barChart",label:"Usage Analytics",group:"admin"},
+    {id:"admin-audit",icon:"activity",label:"Audit Log",group:"admin"},
+    {id:"admin-support",icon:"msgcircle",label:"Support Inbox",group:"admin"},
     {id:"admin-settings",icon:"sliders",label:"System Settings",group:"admin"},
     // Tenant nav (visible to all roles per their PERMS.nav)
     {id:"dashboard",icon:"dashboard",label:"Dashboard"},
@@ -1534,7 +1561,7 @@ function OrgsAdminView({user,orgs,setOrgs,adminUsers,projects}){
   );
 }
 
-function UsersAdminView({user,adminUsers,setAdminUsers,orgs}){
+function UsersAdminView({user,adminUsers,setAdminUsers,orgs,onImpersonate}){
   const[show,setShow]=useState(false);
   const[nu,setNu]=useState({name:"",email:"",role:"pm",org_id:orgs[0]?.id||""});
   const[q,setQ]=useState("");
@@ -1626,6 +1653,7 @@ function UsersAdminView({user,adminUsers,setAdminUsers,orgs}){
               <div className="col-span-2 text-[11px] text-ink-500">{u.last_seen?fmtTime(u.last_seen):"never"}</div>
               <div className="col-span-1 text-right">
                 <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full mr-2 ${u.status==="active"?"bg-emerald-50 text-emerald-700":"bg-red-50 text-red-700"}`} style={{border:"1px solid var(--st-line)"}}>{u.status}</span>
+                {u.role!=="superadmin"&&u.status==="active"&&onImpersonate&&<button onClick={()=>onImpersonate(u)} className="text-[11px] font-bold text-amber-700 hover:text-amber-900 mr-2" title="Log in as this user temporarily">View as</button>}
                 {u.role!=="superadmin"&&<button onClick={()=>toggleStatus(u.id)} className="text-[11px] font-bold text-ink-500 hover:text-amber-700">{u.status==="active"?"Disable":"Enable"}</button>}
               </div>
             </div>
@@ -1706,6 +1734,18 @@ function SettingsAdminView({user,flags,setFlags}){
   const aiCfg=getProviderConfig();
   const rzCfg=getRazorpayConfig();
   const toggle=(k)=>setFlags(p=>({...p,[k]:!p[k]}));
+  const[migrating,setMigrating]=useState({state:"idle",summary:null,err:""});
+  const runMigration=async()=>{
+    if(!isSupabaseEnabled()){alert("Set VITE_BACKEND=supabase + URL + anon key first (see docs/GOLIVE.md).");return;}
+    if(!window.confirm("Migrate this browser's localStorage data into the Supabase backend?\n\nThis upserts every row from sitetrack_v2 into the matching tables. Existing rows with matching id are overwritten."))return;
+    setMigrating({state:"running",summary:null,err:""});
+    try{
+      const summary=await migrateLocalToBackend();
+      setMigrating({state:"done",summary,err:""});
+    }catch(err){
+      setMigrating({state:"err",summary:null,err:err.message||String(err)});
+    }
+  };
   const FLAG_LIST=[
     {k:"drawing_markup",label:"Drawing Markup Viewer",desc:"Canvas overlay on image attachments. Required for PlanGrid/Procore parity."},
     {k:"ai_insights",label:"AI Insights (LLM)",desc:"Claude/OpenAI-powered risk narratives. Requires API key per super admin."},
@@ -1736,6 +1776,17 @@ function SettingsAdminView({user,flags,setFlags}){
         )}</div>
         <p className="text-[11px] text-ink-500 mt-4">Flags are stored in localStorage for the demo. In production they live on the org row (per-tenant) or on a global config table.</p>
       </div>
+      <div className="bg-white rounded-2xl p-6 shadow-editorial mb-6" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Data</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-3 tracking-editorial">localStorage → Supabase migration</h2>
+        <p className="text-sm text-ink-600 mb-4 leading-relaxed">Run once after provisioning your Supabase project. Reads every row from your current browser's <code className="text-[11px] bg-cream-200 px-1.5 py-0.5 rounded">sitetrack_v2</code> data and upserts it into matching tables. Idempotent.</p>
+        <button onClick={runMigration} disabled={migrating.state==="running"} className="px-5 py-2.5 bg-ink-900 text-amber-400 font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">
+          {migrating.state==="running"?"Migrating…":"Run migration now"}
+        </button>
+        {migrating.state==="done"&&migrating.summary&&<div className="mt-3 px-3 py-2 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-lg">✓ Migrated {migrating.summary.keys} table(s) · {migrating.summary.rows} row(s).</div>}
+        {migrating.state==="err"&&<div className="mt-3 px-3 py-2 bg-red-50 text-red-700 text-xs font-semibold rounded-lg">Migration failed: {migrating.err}</div>}
+        {!isSupabaseEnabled()&&<div className="mt-3 px-3 py-2 bg-amber-50 text-amber-800 text-xs font-semibold rounded-lg">Backend is OFF. Set <code className="bg-amber-100 px-1 rounded">VITE_BACKEND=supabase</code> with URL + anon key in <code className="bg-amber-100 px-1 rounded">.env.local</code> first.</div>}
+      </div>
       <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
         <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Integrations</div>
         <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">External services</h2>
@@ -1756,6 +1807,249 @@ function SettingsAdminView({user,flags,setFlags}){
               <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-full ${it.ok?"bg-emerald-50 text-emerald-700":"bg-stone-100 text-ink-500"}`}>{it.ok?"connected":"off"}</span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── More admin: filtered Audit Log ──────────────────────────────────────────
+function AuditAdminView({user,activity,orgs,adminUsers,projects}){
+  const[orgFilter,setOrgFilter]=useState("all");
+  const[userFilter,setUserFilter]=useState("all");
+  const[typeFilter,setTypeFilter]=useState("all");
+  const[range,setRange]=useState("30");
+  const projectOrgMap=Object.fromEntries(projects.map(p=>[p.id,p.org_id||""]));
+  const usersByName=Object.fromEntries(adminUsers.map(u=>[u.name,u]));
+  const cutoff=range==="all"?0:Date.now()-(+range*86400*1000);
+  const filtered=activity.filter(a=>{
+    if(orgFilter!=="all"&&projectOrgMap[a.pid]!==orgFilter)return false;
+    if(userFilter!=="all"&&a.by!==userFilter)return false;
+    if(typeFilter!=="all"&&a.type!==typeFilter)return false;
+    if(cutoff>0&&new Date(a.time).getTime()<cutoff)return false;
+    return true;
+  });
+  const types=Array.from(new Set(activity.map(a=>a.type))).filter(Boolean);
+  const exportCSV=()=>{
+    const rows=[["Timestamp","Org","Project","Type","By","Role","Action","Detail"]];
+    filtered.forEach(a=>{
+      const orgName=orgs.find(o=>o.id===projectOrgMap[a.pid])?.name||"—";
+      rows.push([a.time,orgName,a.pname,a.type,a.by,a.role,a.action,`"${(a.detail||"").replace(/"/g,'""')}"`]);
+    });
+    const csv=rows.map(r=>r.join(",")).join("\n");
+    const link=document.createElement("a");
+    link.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+    link.download=`sitetrack-audit-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+  return(
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Compliance</div>
+          <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">Audit Log</h1>
+          <p className="text-ink-500 text-sm mt-2">Cross-tenant activity stream · {filtered.length} of {activity.length} events match filters</p>
+        </div>
+        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-cream-200 text-ink-700 font-semibold rounded-xl text-xs tracking-wide" style={{border:"1px solid var(--st-line)"}}><Ic n="download" s={14}/>Export CSV</button>
+      </div>
+      <div className="grid md:grid-cols-4 gap-3 mb-5">
+        <select value={orgFilter} onChange={e=>setOrgFilter(e.target.value)} className="p-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">
+          <option value="all">All organizations</option>
+          {orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+        <select value={userFilter} onChange={e=>setUserFilter(e.target.value)} className="p-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">
+          <option value="all">All users</option>
+          {Array.from(new Set(activity.map(a=>a.by))).filter(Boolean).map(n=><option key={n} value={n}>{n}</option>)}
+        </select>
+        <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} className="p-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">
+          <option value="all">All event types</option>
+          {types.map(t=><option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={range} onChange={e=>setRange(e.target.value)} className="p-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">
+          <option value="1">Last 24 hours</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="all">All time</option>
+        </select>
+      </div>
+      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 bg-cream-200/60 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div className="col-span-2">Timestamp</div>
+          <div className="col-span-2">Org</div>
+          <div className="col-span-2">User</div>
+          <div className="col-span-2">Type</div>
+          <div className="col-span-4">Action</div>
+        </div>
+        <div className="divide-y divide-stone-100 max-h-[60vh] overflow-y-auto">{filtered.slice(0,200).map(a=>{
+          const orgName=orgs.find(o=>o.id===projectOrgMap[a.pid])?.name||"—";
+          return(
+            <div key={a.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-start text-sm hover:bg-cream-200/30">
+              <div className="col-span-2 text-[11px] text-ink-500 font-mono">{fmtTime(a.time)}</div>
+              <div className="col-span-2 text-ink-700 text-xs">{orgName}</div>
+              <div className="col-span-2 text-ink-800 text-xs font-semibold">{a.by}<span className="text-ink-500 font-normal ml-1">· {a.role}</span></div>
+              <div className="col-span-2"><span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-cream-200 text-ink-700">{a.type}</span></div>
+              <div className="col-span-4 text-ink-700 text-xs truncate"><strong>{a.action}</strong>{a.detail?` — ${a.detail}`:""}</div>
+            </div>
+          );
+        })}{filtered.length===0&&<div className="text-center py-12 text-ink-500 italic">No events match.</div>}{filtered.length>200&&<div className="text-center py-3 text-[11px] text-ink-500 italic" style={{borderTop:"1px solid var(--st-line)"}}>Showing first 200 of {filtered.length}. Export CSV for the full set.</div>}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── More admin: Usage Analytics ─────────────────────────────────────────────
+function UsageAdminView({user,orgs,adminUsers,projects,updates,issues,boq,ra,invoices,activity,drawings}){
+  const today=new Date();const ms=86400*1000;
+  const since=days=>new Date(today.getTime()-days*ms);
+  const within=(d,days)=>d&&new Date(d).getTime()>=since(days).getTime();
+  const DAU=Array.from(new Set(adminUsers.filter(u=>within(u.last_seen,1)).map(u=>u.id))).length;
+  const WAU=Array.from(new Set(adminUsers.filter(u=>within(u.last_seen,7)).map(u=>u.id))).length;
+  const MAU=Array.from(new Set(adminUsers.filter(u=>within(u.last_seen,30)).map(u=>u.id))).length;
+  const flat=arr=>(Array.isArray(arr)?arr:Object.values(arr||{}).flat());
+  const allUpdates=flat(updates);
+  const allIssues=flat(issues);
+  const allBoq=flat(boq);
+  const allRa=flat(ra);
+  const allInv=flat(invoices);
+  const allDrws=flat(drawings);
+  const features=[
+    {key:"Site updates",count:allUpdates.length,week:allUpdates.filter(x=>within(x.update_date,7)).length},
+    {key:"Issues reported",count:allIssues.length,week:allIssues.filter(x=>within(x.reported_date,7)).length},
+    {key:"BOQ lines",count:allBoq.length,week:0},
+    {key:"Drawings released",count:allDrws.filter(d=>d.status==="current").length,week:allDrws.filter(d=>within(d.date,7)).length},
+    {key:"RA bills",count:allRa.length,week:allRa.filter(r=>within(r.bill_date,7)).length},
+    {key:"Invoices",count:allInv.length,week:allInv.filter(i=>within(i.issued,7)).length},
+  ];
+  const orgUsage=orgs.map(o=>{
+    const orgUsers=adminUsers.filter(u=>u.org_id===o.id&&u.status==="active");
+    const orgProjects=projects.filter(p=>p.org_id===o.id);
+    const lastSeen=orgUsers.length?Math.max(...orgUsers.map(u=>new Date(u.last_seen||0).getTime())):0;
+    const daysAgo=lastSeen?Math.floor((today.getTime()-lastSeen)/ms):999;
+    return{...o,activeUsers:orgUsers.length,projectsCount:orgProjects.length,daysSinceActivity:daysAgo};
+  }).sort((a,b)=>a.daysSinceActivity-b.daysSinceActivity);
+  return(
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Engagement</div>
+        <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">Usage Analytics</h1>
+        <p className="text-ink-500 text-sm mt-2">Activity across all tenants. Use this to spot churn and growth opportunities.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <SC icon="users" label="DAU (24h)" value={DAU} accent="blue"/>
+        <SC icon="trend" label="WAU (7d)" value={WAU} accent="emerald"/>
+        <SC icon="building" label="MAU (30d)" value={MAU} accent="violet"/>
+      </div>
+      <div className="grid md:grid-cols-2 gap-5 mb-8">
+        <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Feature adoption</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-4 tracking-editorial">Last 7 days</h2>
+          <div className="space-y-3">{features.map(f=>{
+            const pct=f.count?Math.min(100,Math.round((f.week/Math.max(f.count,1))*100*4)):0;
+            return(
+              <div key={f.key}>
+                <div className="flex items-baseline justify-between mb-1">
+                  <span className="text-sm text-ink-800 font-semibold">{f.key}</span>
+                  <span className="text-xs text-ink-500"><strong className="text-ink-900">{f.week}</strong> this week / {f.count} total</span>
+                </div>
+                <div className="w-full bg-cream-200 rounded-full h-1.5 overflow-hidden">
+                  <div className="h-full bg-gradient-gold" style={{width:`${pct}%`}}/>
+                </div>
+              </div>
+            );
+          })}</div>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Per organization</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-4 tracking-editorial">Engagement health</h2>
+          <div className="space-y-2 max-h-72 overflow-y-auto">{orgUsage.map(o=>
+            <div key={o.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-cream-200/30">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${o.daysSinceActivity<=2?"bg-emerald-500":o.daysSinceActivity<=7?"bg-amber-500":"bg-red-500"}`}/>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-ink-900 text-sm truncate">{o.name}</div>
+                <div className="text-[11px] text-ink-500">{o.activeUsers} users · {o.projectsCount} projects · {o.daysSinceActivity>365?"never":`${o.daysSinceActivity}d ago`}</div>
+              </div>
+              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-cream-200 text-ink-700">{PLAN_META[o.plan]?.label||o.plan}</span>
+            </div>
+          )}</div>
+        </div>
+      </div>
+      <div className="bg-amber-50 rounded-2xl p-5 border-l-4 border-amber-500">
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-800 mb-1">— Roadmap</div>
+        <p className="text-sm text-amber-900 leading-relaxed">In production, this view reads aggregates from a materialized view on activity_log, refreshed every hour via a Supabase cron. Demo numbers come from current localStorage and admin_users.last_seen.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── More admin: Customer Support Inbox ──────────────────────────────────────
+function SupportAdminView({user,supportTickets,setSupportTickets,orgs,adminUsers}){
+  const[active,setActive]=useState(supportTickets[0]?.id||null);
+  const[reply,setReply]=useState("");
+  const ticket=supportTickets.find(t=>t.id===active);
+  const filter=useState("open");
+  const open=supportTickets.filter(t=>t.status==="open").length;
+  const orgsById=Object.fromEntries(orgs.map(o=>[o.id,o]));
+  const sendReply=()=>{
+    if(!reply.trim()||!ticket)return;
+    const msg={id:"sr_"+Date.now(),by:user.name,role:user.role,text:reply.trim(),time:new Date().toISOString()};
+    setSupportTickets(p=>p.map(t=>t.id===ticket.id?{...t,messages:[...(t.messages||[]),msg],status:"replied",replied_at:new Date().toISOString()}:t));
+    setReply("");
+  };
+  const close=()=>{
+    if(!ticket||!window.confirm("Close this ticket?"))return;
+    setSupportTickets(p=>p.map(t=>t.id===ticket.id?{...t,status:"closed",closed_at:new Date().toISOString()}:t));
+  };
+  return(
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Customer support</div>
+        <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">Inbox</h1>
+        <p className="text-ink-500 text-sm mt-2">{open} open · {supportTickets.length} total tickets across all customer orgs</p>
+      </div>
+      <div className="grid grid-cols-12 gap-5 h-[60vh]">
+        {/* Ticket list */}
+        <div className="col-span-4 bg-white rounded-2xl overflow-hidden shadow-editorial flex flex-col" style={{border:"1px solid var(--st-line)"}}>
+          <div className="px-4 py-3 bg-cream-200/60 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500" style={{borderBottom:"1px solid var(--st-line)"}}>{supportTickets.length} tickets</div>
+          <div className="flex-1 overflow-y-auto divide-y divide-stone-100">{supportTickets.map(t=>
+            <button key={t.id} onClick={()=>setActive(t.id)} className={`w-full text-left p-4 hover:bg-cream-200/30 ${active===t.id?"bg-amber-50":""}`}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="font-semibold text-ink-900 text-sm truncate flex-1">{t.subject}</div>
+                <span className={`text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ml-2 flex-shrink-0 ${t.status==="open"?"bg-red-100 text-red-700":t.status==="replied"?"bg-amber-100 text-amber-700":"bg-emerald-100 text-emerald-700"}`}>{t.status}</span>
+              </div>
+              <div className="text-[11px] text-ink-500">{orgsById[t.org_id]?.name||"—"} · {t.from}</div>
+              <div className="text-[11px] text-ink-500 mt-1">{fmtTime(t.created)}</div>
+            </button>
+          )}{supportTickets.length===0&&<div className="p-6 text-center text-ink-500 italic text-sm">No tickets yet.</div>}</div>
+        </div>
+        {/* Ticket detail */}
+        <div className="col-span-8 bg-white rounded-2xl overflow-hidden shadow-editorial flex flex-col" style={{border:"1px solid var(--st-line)"}}>
+          {ticket?<>
+            <div className="px-5 py-4 flex items-center justify-between" style={{borderBottom:"1px solid var(--st-line)"}}>
+              <div>
+                <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial">{ticket.subject}</div>
+                <div className="text-[11px] text-ink-500 mt-0.5">{orgsById[ticket.org_id]?.name||"—"} · from {ticket.from} · {fmtTime(ticket.created)}</div>
+              </div>
+              {ticket.status!=="closed"&&<button onClick={close} className="px-3 py-1.5 bg-cream-200 text-ink-700 text-xs font-bold rounded-lg" style={{border:"1px solid var(--st-line)"}}>Close ticket</button>}
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="bg-cream-200/40 rounded-xl p-4" style={{border:"1px solid var(--st-line)"}}>
+                <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-2">— Initial message</div>
+                <p className="text-sm text-ink-800 leading-relaxed whitespace-pre-line">{ticket.body}</p>
+              </div>
+              {(ticket.messages||[]).map(m=>
+                <div key={m.id} className="bg-amber-50 rounded-xl p-4" style={{border:"1px solid rgba(217,119,6,.15)"}}>
+                  <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-800 mb-2">— Reply · {m.by} · {fmtTime(m.time)}</div>
+                  <p className="text-sm text-ink-800 leading-relaxed whitespace-pre-line">{m.text}</p>
+                </div>
+              )}
+            </div>
+            {ticket.status!=="closed"&&<div className="p-4" style={{borderTop:"1px solid var(--st-line)"}}>
+              <textarea value={reply} onChange={e=>setReply(e.target.value)} placeholder="Type your reply…" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 resize-none h-24 mb-3"/>
+              <button onClick={sendReply} className="px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Send reply</button>
+              <p className="text-[11px] text-ink-500 mt-2">In production this sends an email via Supabase Edge Function + Resend.</p>
+            </div>}
+          </>:<div className="flex-1 flex items-center justify-center text-ink-500 italic text-sm">Select a ticket to view conversation</div>}
         </div>
       </div>
     </div>
@@ -3664,6 +3958,32 @@ function Comments({entityId,comments,setComments,user}){
 export default function App(){
   const initialView = () => new URLSearchParams(window.location.search).get("view") || "dashboard";
   const[user,setUser]=useLS("user",null);const[view,setViewRaw]=useState(initialView);const[sp,setSP]=useState(null);
+  // Restore Supabase session on cold load when backend is enabled.
+  useEffect(()=>{
+    if(!isSupabaseEnabled())return;
+    let cancelled=false;
+    getCurrentUser().then(u=>{
+      if(cancelled||!u)return;
+      // u carries the profile row (name, role, avatar). Convert to SiteTrack shape.
+      setUser({id:u.id,name:u.name||u.email?.split("@")[0]||"User",email:u.email,role:u.role||"client",avatar:(u.name||"U").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase()});
+    }).catch(()=>{});
+    return ()=>{cancelled=true;};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  const[impersonating,setImpersonating]=useState(null);   // {realUser, asUser}
+  const startImpersonate=(targetUser)=>{
+    if(!user||user.role!=="superadmin"){alert("Only super admin can impersonate.");return;}
+    if(!window.confirm(`Impersonate ${targetUser.name} (${targetUser.role})?\n\nA banner stays visible the whole time. Click "Stop" to return to your super admin session.`))return;
+    setImpersonating({realUser:user,asUser:targetUser});
+    setUser({...targetUser,avatar:(targetUser.name||"U").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase()});
+    setViewRaw(targetUser.role==="client"?"client":"dashboard");
+  };
+  const stopImpersonate=()=>{
+    if(!impersonating)return;
+    setUser(impersonating.realUser);
+    setViewRaw("admin-dashboard");
+    setImpersonating(null);
+  };
   const[projects,setProjects]=useLS("projects",INIT_PROJECTS);
   const[milestones,setMilestones]=useLS("milestones",INIT_MILESTONES);
   const[updates,setUpdates]=useLS("updates",INIT_UPDATES);
@@ -3701,6 +4021,7 @@ export default function App(){
   const[orgs,setOrgs]=useLS("orgs",INIT_ORGS);
   const[adminUsers,setAdminUsers]=useLS("admin_users",INIT_ADMIN_USERS);
   const[adminFlags,setAdminFlags]=useLS("admin_flags",{drawing_markup:true,ai_insights:true,dpr_auto:false,whatsapp_share:true,e_signature:true,offline_queue:true});
+  const[supportTickets,setSupportTickets]=useLS("support_tickets",INIT_SUPPORT);
   const[lang,setLang]=useLS("lang","en");
   // Offline-first state — surfaced as a pill in the top bar
   const[online,setOnline]=useState(isOnline());
@@ -3710,6 +4031,27 @@ export default function App(){
     const tick=setInterval(()=>setPendingOps(queueLength()),3000);
     return ()=>{off();clearInterval(tick);};
   },[]);
+  // Realtime: when backend is on, push live activity/message inserts.
+  useEffect(()=>{
+    if(!isSupabaseEnabled()||!user)return;
+    let unsubs=[];
+    (async()=>{
+      unsubs.push(await subscribeTable("activity_log",row=>{
+        setActivity(p=>[{id:row.id,pid:row.project_id,pname:row.detail||"",type:row.type,by:row.by_name,role:row.by_role,action:row.action,detail:row.detail,time:row.created_at,read:false},...p].slice(0,500));
+      }));
+      unsubs.push(await subscribeTable("messages",row=>{
+        setMessages(p=>({...p,[row.project_id]:[...((p||{})[row.project_id]||[]),row]}));
+      }));
+      unsubs.push(await subscribeTable("issues",row=>{
+        if(row.severity==="high"){
+          // light toast — uses native confirm UI for now; production should use a toast component.
+          try{new Notification("New HIGH-severity issue",{body:row.title});}catch{}
+        }
+      }));
+    })();
+    return ()=>{unsubs.forEach(u=>u&&u());};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user?.id]);
   const[dark,setDark]=useLS("dark",false);
   const[mobileOpen,setMobileOpen]=useState(false);
 
@@ -3755,8 +4097,11 @@ export default function App(){
       case"po": return <POsView user={user} projects={projects} pos={pos} vendors={vendors} setView={setView} setSP={setSP}/>;
       case"admin-dashboard": return <SuperAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView}/>;
       case"admin-orgs": return <OrgsAdminView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects}/>;
-      case"admin-users": return <UsersAdminView user={user} adminUsers={adminUsers} setAdminUsers={setAdminUsers} orgs={orgs}/>;
+      case"admin-users": return <UsersAdminView user={user} adminUsers={adminUsers} setAdminUsers={setAdminUsers} orgs={orgs} onImpersonate={startImpersonate}/>;
       case"admin-billing": return <BillingAdminView user={user} orgs={orgs} setOrgs={setOrgs}/>;
+      case"admin-audit": return <AuditAdminView user={user} activity={activity} orgs={orgs} adminUsers={adminUsers} projects={projects}/>;
+      case"admin-usage": return <UsageAdminView user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} updates={updates} issues={issues} boq={boq} ra={ra} invoices={invoices} activity={activity} drawings={drawings}/>;
+      case"admin-support": return <SupportAdminView user={user} supportTickets={supportTickets} setSupportTickets={setSupportTickets} orgs={orgs} adminUsers={adminUsers}/>;
       case"admin-settings": return <SettingsAdminView user={user} flags={adminFlags} setFlags={setAdminFlags}/>;
       default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
     }
@@ -3767,6 +4112,10 @@ export default function App(){
   return(
     <div className={`flex h-screen overflow-hidden ${dark?"dark bg-ink-900":"bg-cream"} font-sans`}>
       <style>{`*{box-sizing:border-box;}.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}.line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}${DCSS}`}</style>
+      {impersonating&&<div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-ink-900 flex items-center justify-between gap-3 px-4 py-2 shadow-md">
+        <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-2 flex-1 truncate"><Ic n="eye" s={14}/>Impersonating <span className="font-display italic">{impersonating.asUser.name}</span> ({impersonating.asUser.role}) — as <span className="font-display italic">{impersonating.realUser.name}</span></div>
+        <button onClick={stopImpersonate} className="px-3 py-1 bg-ink-900 text-amber-400 text-xs font-bold rounded-lg tracking-wide">Stop &amp; return to admin</button>
+      </div>}
       <Sidebar user={user} active={effectiveView} setView={setView} uc={uc} ac={user.role==="architect"?ac:0} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}/>
       <div className="flex-1 flex flex-col min-w-0 h-screen">
         {/* Mobile header */}
