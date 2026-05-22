@@ -11,6 +11,9 @@ import {
   drawingKey,
   isReleasedCurrentDrawing,
 } from "./lib/permissions.js";
+import { isOnline, onConnectivityChange, queueLength, queueOpAdd } from "./lib/offline.js";
+import { computeRiskScore, fetchLLMInsight, getProviderConfig, saveProviderConfig, clearProviderConfig } from "./lib/ai.js";
+import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "./lib/razorpay.js";
 
 // ── PERSISTENCE (localStorage) ───────────────────────────────────────────────
 const LS_KEY = "sitetrack_v2";
@@ -244,8 +247,17 @@ const INIT_LABOUR = {
 // ── NEW: RA Bills (Subcontractor Running Account) ────────────────────────────
 const INIT_RA = {
   p1:[
-    {id:"ra1",no:"RA-01",subcontractor:"BuildMax Civil Works",scope:"Structural work floors 1-10",bill_amount:8500000,cumulative:8500000,retention_pct:5,paid_amount:8075000,status:"paid",bill_date:"2025-04-01"},
-    {id:"ra2",no:"RA-02",subcontractor:"BuildMax Civil Works",scope:"Structural work floors 11-20",bill_amount:9200000,cumulative:17700000,retention_pct:5,paid_amount:0,status:"submitted",bill_date:"2025-07-05"},
+    {id:"ra1",no:"RA-01",subcontractor:"BuildMax Civil Works",scope:"Structural work floors 1-10",bill_amount:8500000,cumulative:8500000,retention_pct:5,paid_amount:8075000,status:"paid",bill_date:"2025-04-01",mb:[
+      {id:"mb1",location:"Floor 1-5 columns",item:"RCC M30",unit:"cum",qty:240,rate:8200,amount:1968000},
+      {id:"mb2",location:"Floor 1-5 slabs",item:"RCC M30",unit:"cum",qty:180,rate:8200,amount:1476000},
+      {id:"mb3",location:"Floor 6-10 columns",item:"RCC M30",unit:"cum",qty:240,rate:8200,amount:1968000},
+      {id:"mb4",location:"Floor 6-10 slabs",item:"RCC M30",unit:"cum",qty:180,rate:8200,amount:1476000},
+      {id:"mb5",location:"Reinforcement floors 1-10",item:"TMT Fe500",unit:"ton",qty:22,rate:71500,amount:1573000},
+    ]},
+    {id:"ra2",no:"RA-02",subcontractor:"BuildMax Civil Works",scope:"Structural work floors 11-20",bill_amount:9200000,cumulative:17700000,retention_pct:5,paid_amount:0,status:"submitted",bill_date:"2025-07-05",mb:[
+      {id:"mb6",location:"Floor 11-20 columns + slabs",item:"RCC M30",unit:"cum",qty:840,rate:8200,amount:6888000},
+      {id:"mb7",location:"Reinforcement floors 11-20",item:"TMT Fe500",unit:"ton",qty:32.4,rate:71500,amount:2316600},
+    ]},
   ],
   p2:[],
 };
@@ -374,6 +386,191 @@ const exportPDF = (proj,ms,us,ex,iss) => {
 const exportCSV = (proj,ex) => {
   const rows = [["Date","Category","Description","Amount(INR)"],...ex.map(e=>[e.date,e.category,`"${e.description}"`,e.amount]),["","","TOTAL",ex.reduce((s,e)=>s+e.amount,0)]];
   const a = document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n")); a.download=`${proj.name.replace(/\s+/g,"-")}-expenses.csv`; a.click();
+};
+
+// ── Daily Report (DPR) generator — Powerplay/Raken parity for India market ───
+// Builds an editorial-styled HTML PDF from today's site data.
+// Returns the HTML string so callers can open print dialog OR upload to share.
+const buildDPR = (proj, opts) => {
+  const today = opts.date || new Date().toISOString().split("T")[0];
+  const dispDate = new Date(today).toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const todayUpdates = (opts.updates||[]).filter(u=>u.update_date===today);
+  const openIssues = (opts.issues||[]).filter(i=>i.status==="open");
+  const newIssues = openIssues.filter(i=>i.reported_date===today);
+  const todayMats = (opts.materials||[]).filter(m=>m.date===today);
+  const todayWorklogs = (opts.worklogs||[]).filter(w=>w.date===today);
+  const attMap = (opts.attendance||{})[today]||{};
+  const team = opts.team||[];
+  const present = Object.values(attMap).filter(v=>v==="present").length;
+  const half = Object.values(attMap).filter(v=>v==="half_day").length;
+  const absent = Object.values(attMap).filter(v=>v==="absent").length;
+  const totalWorkers = todayUpdates.reduce((s,u)=>s+(u.workers_count||0),0) || present + Math.round(half/2);
+  const photos = todayUpdates.flatMap(u=>u.photos||[]).slice(0,6);
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${proj.name} — DPR ${today}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;600;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',sans-serif;color:#1c1917;background:#fdfbf6;padding:40px 56px;}
+    .font-display{font-family:'Fraunces',serif;letter-spacing:-.015em;}
+    .pre-rule{font-size:10px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:#b45309;margin-bottom:8px;}
+    h1{font-family:'Fraunces',serif;font-weight:300;font-size:42px;line-height:1.05;letter-spacing:-.015em;color:#1c1917;margin-bottom:12px;}
+    h2{font-family:'Fraunces',serif;font-weight:600;font-size:20px;color:#1c1917;margin:0 0 16px;letter-spacing:-.01em;}
+    .masthead{border-bottom:1px solid #e7e5e4;padding-bottom:20px;margin-bottom:32px;display:flex;justify-content:space-between;align-items:end;}
+    .brand{display:flex;align-items:center;gap:10px;}
+    .brand-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);}
+    .brand-name{font-family:'Fraunces',serif;font-weight:700;font-size:18px;letter-spacing:-.01em;}
+    .brand-sub{font-size:9px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:#b45309;}
+    .meta{font-size:11px;color:#78716c;text-align:right;}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:24px 0;border-top:1px solid #e7e5e4;border-bottom:1px solid #e7e5e4;margin-bottom:32px;}
+    .metric .label{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#78716c;margin-bottom:6px;}
+    .metric .value{font-family:'Fraunces',serif;font-size:28px;font-weight:300;letter-spacing:-.015em;}
+    .metric .value strong{font-weight:600;color:#b45309;}
+    section{margin-bottom:36px;}
+    .row{padding:14px 0;border-bottom:1px solid #f5f1e8;}
+    .row:last-child{border:0;}
+    .row .label{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#b45309;margin-bottom:4px;}
+    .row .text{font-size:14px;line-height:1.55;color:#1c1917;}
+    .row .meta{font-size:11px;color:#78716c;margin-top:4px;text-align:left;}
+    .pill{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:3px 8px;border-radius:999px;margin-right:6px;}
+    .pill-high{background:#fef2f2;color:#b91c1c;}
+    .pill-med{background:#fffbeb;color:#a16207;}
+    .pill-low{background:#eff6ff;color:#2563eb;}
+    .pill-amber{background:#fef3c7;color:#92400e;}
+    .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+    .photo-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid #e7e5e4;}
+    .footer{margin-top:48px;padding-top:20px;border-top:1px solid #e7e5e4;text-align:center;font-size:10px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:#78716c;}
+    .empty{font-size:13px;color:#78716c;font-style:italic;padding:14px 0;}
+    @media print{body{padding:24px 32px;}}
+  </style></head><body>
+
+  <div class="masthead">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">SiteTrack</div>
+        <div class="brand-sub">Daily Site Report</div>
+      </div>
+    </div>
+    <div class="meta">Generated ${new Date().toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}<br/>Confidential — for ${proj.client_name||"project stakeholders"}</div>
+  </div>
+
+  <div class="pre-rule">— ${dispDate}</div>
+  <h1>${proj.name}</h1>
+  <div style="font-size:13px;color:#78716c;margin-top:6px;">${proj.location||""}</div>
+
+  <div class="metrics">
+    <div class="metric"><div class="label">Workers</div><div class="value"><strong>${totalWorkers||"—"}</strong></div></div>
+    <div class="metric"><div class="label">Updates</div><div class="value"><strong>${todayUpdates.length}</strong></div></div>
+    <div class="metric"><div class="label">New Issues</div><div class="value"><strong>${newIssues.length}</strong><span style="font-size:14px;color:#78716c;"> / ${openIssues.length} open</span></div></div>
+    <div class="metric"><div class="label">Progress</div><div class="value"><strong>${proj.progress||0}</strong>%</div></div>
+  </div>
+
+  <section>
+    <div class="pre-rule">— Field</div>
+    <h2>Today's site activity</h2>
+    ${todayUpdates.length===0?'<div class="empty">No updates recorded for today.</div>':todayUpdates.map(u=>`
+      <div class="row">
+        <div class="label">${u.weather||"site notes"}</div>
+        <p class="text">"${u.notes}"</p>
+        ${u.workers_count?`<div class="meta">${u.workers_count} workers on site</div>`:""}
+      </div>
+    `).join("")}
+  </section>
+
+  ${photos.length>0?`<section>
+    <div class="pre-rule">— Photo log</div>
+    <h2>${photos.length} photos from today</h2>
+    <div class="photo-grid">${photos.map(p=>`<img src="${p.url}" alt=""/>`).join("")}</div>
+  </section>`:""}
+
+  <section>
+    <div class="pre-rule">— Quality</div>
+    <h2>Issues reported today (${newIssues.length})</h2>
+    ${newIssues.length===0?'<div class="empty">No new issues today. All open: '+openIssues.length+'.</div>':newIssues.map(i=>`
+      <div class="row">
+        <span class="pill pill-${i.severity==="high"?"high":i.severity==="medium"?"med":"low"}">${i.severity}</span>
+        <span class="text" style="font-weight:600;">${i.title}</span>
+        <div class="meta">Reported by ${i.reported_by||"—"}</div>
+      </div>
+    `).join("")}
+  </section>
+
+  ${todayMats.length>0?`<section>
+    <div class="pre-rule">— Inward</div>
+    <h2>Material deliveries today</h2>
+    ${todayMats.map(m=>`
+      <div class="row">
+        <span class="pill pill-amber">${m.status}</span>
+        <span class="text" style="font-weight:600;">${m.material}</span>
+        <span style="color:#b45309;font-weight:600;"> — ${m.quantity||""}</span>
+        <div class="meta">${m.supplier||""}</div>
+      </div>
+    `).join("")}
+  </section>`:""}
+
+  ${todayWorklogs.length>0?`<section>
+    <div class="pre-rule">— Worklogs</div>
+    <h2>Contractor worklogs (${todayWorklogs.length})</h2>
+    ${todayWorklogs.map(w=>`
+      <div class="row">
+        <div class="label">${w.contractor||"contractor"} · ${w.location||""}</div>
+        <p class="text">${w.work}</p>
+        <div class="meta">${w.workers} workers · ${w.hours} hrs · ${w.status}</div>
+      </div>
+    `).join("")}
+  </section>`:""}
+
+  <section>
+    <div class="pre-rule">— Attendance</div>
+    <h2>Today's roll-call</h2>
+    <div class="row">
+      <div class="text">
+        <strong style="color:#059669;">${present} present</strong> ·
+        <strong style="color:#a16207;">${half} half day</strong> ·
+        <strong style="color:#b91c1c;">${absent} absent</strong>
+        <span style="color:#78716c;"> · of ${team.length} team members</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">— SiteTrack Pro · Construction Suite · ${proj.name} —</div>
+
+  </body></html>`;
+};
+
+// Open in a new window and trigger print. Caller can also use the HTML for upload.
+const exportDPR = (proj, opts) => {
+  const html = buildDPR(proj, opts);
+  const w = window.open("","_blank");
+  if(!w){ alert("Pop-ups blocked — please allow pop-ups to generate the Daily Report."); return; }
+  w.document.write(html); w.document.close();
+  setTimeout(()=>w.print(), 700);
+};
+
+// Build a WhatsApp-friendly text summary (the link goes to the share page; PDF
+// generation is via print-to-PDF on the open window).
+const buildDPRWhatsAppText = (proj, opts) => {
+  const today = opts.date || new Date().toISOString().split("T")[0];
+  const dispDate = new Date(today).toLocaleDateString("en-IN",{month:"short",day:"numeric",year:"numeric"});
+  const todayUpdates = (opts.updates||[]).filter(u=>u.update_date===today);
+  const openIssues = (opts.issues||[]).filter(i=>i.status==="open");
+  const totalWorkers = todayUpdates.reduce((s,u)=>s+(u.workers_count||0),0);
+  const lines = [
+    `*${proj.name} — Daily Site Report*`,
+    `📅 ${dispDate}`,
+    ``,
+    `👷 *Workers:* ${totalWorkers||"—"}`,
+    `📊 *Progress:* ${proj.progress||0}%`,
+    `⚠️ *Open issues:* ${openIssues.length}`,
+    ``,
+    `📝 *Today's notes:*`,
+    ...todayUpdates.map(u=>`• ${u.notes}`),
+    todayUpdates.length===0 ? "_No updates recorded._" : "",
+    ``,
+    `— Sent via SiteTrack Pro`,
+  ];
+  return lines.filter(l=>l!=="").join("\n");
 };
 
 // ── ICONS ─────────────────────────────────────────────────────────────────────
@@ -700,6 +897,168 @@ function LoginScreen({onLogin,dark,toggleDark}){
   );
 }
 
+// ── Drawing Markup Modal (canvas overlay on image) ───────────────────────────
+function MarkupModal({open, imageUrl, sourceName, onClose, onSave}){
+  const canvasRef = useRef(null);
+  const imgRef = useRef(null);
+  const [strokes, setStrokes] = useState([]);   // [{color, width, points:[{x,y}]}]
+  const [color, setColor] = useState("#dc2626"); // red default
+  const [width, setWidth] = useState(4);
+  const [drawing, setDrawing] = useState(false);
+  const [imgReady, setImgReady] = useState(false);
+
+  useEffect(() => {
+    if (!open) { setStrokes([]); setDrawing(false); setImgReady(false); }
+  }, [open]);
+
+  const COLORS = [
+    {hex:"#dc2626", label:"Red"},
+    {hex:"#d97706", label:"Amber"},
+    {hex:"#2563eb", label:"Blue"},
+    {hex:"#1c1917", label:"Ink"},
+  ];
+
+  const redraw = () => {
+    const cv = canvasRef.current; if (!cv) return;
+    const ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (const s of strokes) {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      s.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+  };
+
+  useEffect(() => { redraw(); }, [strokes]);
+
+  const onImgLoad = () => {
+    const img = imgRef.current; const cv = canvasRef.current;
+    if (!img || !cv) return;
+    // Match canvas to displayed image size
+    cv.width = img.clientWidth;
+    cv.height = img.clientHeight;
+    setImgReady(true);
+  };
+
+  const getPos = e => {
+    const cv = canvasRef.current; const rect = cv.getBoundingClientRect();
+    const t = e.touches?.[0] || e.changedTouches?.[0];
+    const x = (t?.clientX ?? e.clientX) - rect.left;
+    const y = (t?.clientY ?? e.clientY) - rect.top;
+    return { x, y };
+  };
+
+  const start = e => {
+    e.preventDefault();
+    const p = getPos(e);
+    setStrokes(prev => [...prev, { color, width, points: [p] }]);
+    setDrawing(true);
+  };
+  const move = e => {
+    if (!drawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    setStrokes(prev => {
+      const last = prev[prev.length - 1];
+      const updated = { ...last, points: [...last.points, p] };
+      return [...prev.slice(0, -1), updated];
+    });
+  };
+  const end = () => setDrawing(false);
+
+  const undo = () => setStrokes(p => p.slice(0, -1));
+  const clear = () => { if (strokes.length === 0 || window.confirm("Clear all markups?")) setStrokes([]); };
+
+  const save = () => {
+    const img = imgRef.current;
+    if (!img || strokes.length === 0) { alert("Add at least one markup stroke before saving."); return; }
+    // Render image + strokes to a single canvas at natural image resolution
+    const exportCv = document.createElement("canvas");
+    const scaleX = img.naturalWidth / img.clientWidth;
+    const scaleY = img.naturalHeight / img.clientHeight;
+    exportCv.width = img.naturalWidth;
+    exportCv.height = img.naturalHeight;
+    const ctx = exportCv.getContext("2d");
+    ctx.drawImage(img, 0, 0, exportCv.width, exportCv.height);
+    for (const s of strokes) {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width * Math.max(scaleX, scaleY);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      s.points.forEach((p, i) => {
+        const sx = p.x * scaleX, sy = p.y * scaleY;
+        i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+      });
+      ctx.stroke();
+    }
+    const dataUrl = exportCv.toDataURL("image/png");
+    onSave({
+      id: `att_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      name: `${(sourceName||"drawing").replace(/\.[^.]+$/, "")}-markup-${Date.now()}.png`,
+      size: Math.round(dataUrl.length * 0.75),
+      type: "image/png",
+      kind: "image",
+      dataUrl,
+      url: dataUrl,
+      uploaded_at: new Date().toISOString(),
+      markup_of: sourceName || "",
+      strokes_count: strokes.length,
+    });
+    onClose();
+  };
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 bg-ink-900/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="bg-white rounded-2xl shadow-editorial-deep max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col" style={{border:"1px solid var(--st-line)"}}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700">— Drawing markup</div>
+            <h3 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">Markup &amp; annotate</h3>
+          </div>
+          <button onClick={onClose}><Ic n="x" s={22} c="text-ink-500"/></button>
+        </div>
+        {/* Tools */}
+        <div className="flex items-center gap-3 px-6 py-3 flex-wrap bg-cream-200/40" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-ink-500">Color</span>
+          {COLORS.map(c => (
+            <button key={c.hex} onClick={()=>setColor(c.hex)} title={c.label} className={`w-7 h-7 rounded-full border-2 transition-all ${color===c.hex?"scale-110 border-ink-900":"border-stone-300"}`} style={{backgroundColor:c.hex}}/>
+          ))}
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-ink-500 ml-3">Width</span>
+          {[2,4,8].map(w => (
+            <button key={w} onClick={()=>setWidth(w)} className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center ${width===w?"border-amber-600 bg-amber-50":"border-stone-200 bg-white"}`}>
+              <div className="rounded-full bg-ink-900" style={{width:w*1.5,height:w*1.5}}/>
+            </button>
+          ))}
+          <div className="flex-1"/>
+          <button onClick={undo} disabled={strokes.length===0} className="px-3 py-2 text-xs font-semibold rounded-lg bg-white text-ink-700 disabled:opacity-40" style={{border:"1px solid var(--st-line)"}}>↶ Undo</button>
+          <button onClick={clear} disabled={strokes.length===0} className="px-3 py-2 text-xs font-semibold rounded-lg bg-white text-ink-700 disabled:opacity-40" style={{border:"1px solid var(--st-line)"}}>Clear</button>
+          <button onClick={save} className="px-5 py-2 bg-gradient-gold text-white font-bold rounded-lg text-xs tracking-wide flex items-center gap-1.5"><Ic n="download" s={13}/>Save markup</button>
+        </div>
+        {/* Canvas + image */}
+        <div className="flex-1 overflow-auto p-6 bg-ink-900/5 flex items-center justify-center">
+          <div className="relative inline-block max-w-full">
+            <img ref={imgRef} src={imageUrl} alt="drawing" onLoad={onImgLoad} className="max-w-full max-h-[68vh] block select-none" draggable="false"/>
+            {imgReady&&<canvas
+              ref={canvasRef}
+              className="absolute inset-0 cursor-crosshair touch-none"
+              onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+              onTouchStart={start} onTouchMove={move} onTouchEnd={end}
+            />}
+          </div>
+        </div>
+        <div className="px-6 py-3 text-[11px] text-ink-500 text-center" style={{borderTop:"1px solid var(--st-line)"}}>{strokes.length} stroke{strokes.length===1?"":"s"} · Markup saves as a new image attachment linked to this drawing.</div>
+      </div>
+    </div>
+  );
+}
+
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
 function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
   const allItems=[
@@ -989,6 +1348,8 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   const[showMember,setShowMember]=useState(false);const[nm,setNm]=useState({name:"",role:"Site Engineer",phone:""});
   const[lb,setLb]=useState(null);const[editProg,setEditProg]=useState(false);const[tp,setTp]=useState(0);
   const[shareModal,setShareModal]=useState(false);const[copied,setCopied]=useState(false);
+  const[dprModal,setDprModal]=useState(false);const[dprDate,setDprDate]=useState(new Date().toISOString().split("T")[0]);
+  const[markupTarget,setMarkupTarget]=useState(null);   // {drawingId, attachment}
   const[attDate,setAttDate]=useState(new Date().toISOString().split("T")[0]);
   const[showIssue,setShowIssue]=useState(false);const[ni,setNi]=useState({title:"",severity:"high",description:"",attachments:[]});
   const[showMat,setShowMat]=useState(false);const[nmat,setNmat]=useState({date:"",material:"",quantity:"",supplier:"",status:"expected",notes:"",attachments:[]});
@@ -1036,8 +1397,12 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   };
   const addUpd=()=>{
     if(!nu.notes.trim())return;
-    setUpdates(p=>({...p,[pid]:[{id:"u_"+Date.now(),update_date:new Date().toISOString().split("T")[0],notes:nu.notes,weather:nu.weather||"—",workers_count:parseInt(nu.workers)||null,photos:nph},...(p[pid]||[])]}));
+    const id="u_"+Date.now();
+    const record={id,update_date:new Date().toISOString().split("T")[0],notes:nu.notes,weather:nu.weather||"—",workers_count:parseInt(nu.workers)||null,photos:nph};
+    setUpdates(p=>({...p,[pid]:[record,...(p[pid]||[])]}));
     addActivity(pid,proj.name,"update","Added site update",nu.notes.slice(0,80)+(nu.notes.length>80?"…":""),user.name,user.role);
+    // Queue for backend sync (BACKEND_PLAN.md Phase B3 will drain this)
+    if(!isOnline()) queueOpAdd({entity:"site_update",op:"insert",project_id:pid,record});
     setNu({notes:"",weather:"",workers:""});setNph([]);setShowUpd(false);
   };
   const addEx=()=>{
@@ -1134,6 +1499,11 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
       })};
     });
   };
+  const saveDrawingMarkup=(drawingId, markedAttachment)=>{
+    setDrawings(p=>({...p,[pid]:(p[pid]||[]).map(d=>d.id===drawingId?{...d,files:[...(d.files||d.attachments||[]),markedAttachment]}:d)}));
+    const dr=drws.find(d=>d.id===drawingId);
+    if(dr) addActivity(pid,proj.name,"drawing","Added markup to drawing",`${dr.title} · ${markedAttachment.strokes_count} strokes`,user.name,user.role);
+  };
   const shareUrl=`${window.location.href.split("?")[0]}?share=${pid}`;
   const copyLink=()=>{navigator.clipboard.writeText(shareUrl).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});};
   const catTot=EXPENSE_CATS.map(c=>({c,t:ex.filter(e=>e.category===c).reduce((s,e)=>s+e.amount,0)})).filter(x=>x.t>0);
@@ -1153,11 +1523,49 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
         </div>
       )}
 
+      {dprModal&&(()=>{
+        const opts={date:dprDate,updates:us,issues:iss,materials:mats,worklogs:wls,attendance:att,team:tm};
+        const wa=buildDPRWhatsAppText(proj,opts);
+        return(
+          <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={e=>{if(e.target===e.currentTarget)setDprModal(false);}}>
+            <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-editorial-deep" style={{border:"1px solid var(--st-line)"}}>
+              <div className="flex justify-between items-start mb-5">
+                <div>
+                  <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Daily Report</div>
+                  <h3 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial">Send DPR</h3>
+                </div>
+                <button onClick={()=>setDprModal(false)}><Ic n="x" s={20} c="text-ink-500"/></button>
+              </div>
+              <div className="bg-cream-200/60 rounded-xl p-4 mb-5" style={{border:"1px solid var(--st-line)"}}>
+                <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1">Report date</div>
+                <input type="date" value={dprDate} onChange={e=>setDprDate(e.target.value)} max={new Date().toISOString().split("T")[0]} className="w-full p-2 bg-transparent text-ink-900 font-semibold text-base outline-none"/>
+              </div>
+              <p className="text-sm text-ink-600 mb-5 leading-relaxed">Auto-built from today's updates, issues, materials, worklogs, attendance, and photos in editorial PDF format. Print or save, then share.</p>
+              <div className="space-y-2.5">
+                <button onClick={()=>exportDPR(proj,opts)} className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="download" s={16}/>Generate &amp; Print DPR (PDF)</button>
+                <a href={`https://wa.me/?text=${encodeURIComponent(wa)}`} target="_blank" rel="noopener" className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm tracking-wide"><Ic n="whatsapp" s={16}/>Share Summary on WhatsApp</a>
+                <button onClick={()=>{navigator.clipboard.writeText(wa).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),1500);});}} className={`w-full flex items-center justify-center gap-2 px-5 py-3.5 font-bold rounded-xl text-sm tracking-wide transition-all ${copied?"bg-emerald-500 text-white":"bg-cream-200 text-ink-700 hover:bg-cream-100"}`} style={{border:"1px solid var(--st-line)"}}><Ic n="copy" s={15}/>{copied?"Copied to clipboard!":"Copy text summary"}</button>
+              </div>
+              <p className="text-[11px] text-ink-500 mt-5 leading-relaxed text-center">For automated 6&nbsp;PM WhatsApp delivery, provision the backend per <span className="font-semibold">docs/BACKEND_PLAN.md</span> Edge Functions.</p>
+            </div>
+          </div>
+        );
+      })()}
+
+      <MarkupModal
+        open={!!markupTarget}
+        imageUrl={markupTarget?.attachment?.url || markupTarget?.attachment?.dataUrl || ""}
+        sourceName={markupTarget?.attachment?.name || "drawing"}
+        onClose={()=>setMarkupTarget(null)}
+        onSave={att => saveDrawingMarkup(markupTarget.drawingId, att)}
+      />
+
       {/* Editorial breadcrumb */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <button onClick={()=>setView("projects")} className="flex items-center gap-2 text-ink-500 hover:text-amber-700 text-xs font-bold tracking-[0.18em] uppercase"><Ic n="arrow" s={14}/>Back to Portfolio</button>
         <div className="flex gap-2 flex-wrap">
           {can(user,"export")&&<><button onClick={()=>exportPDF(proj,ms,us,ex,iss)} className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-cream-200 text-ink-700 font-semibold rounded-xl text-xs shadow-editorial" style={{border:"1px solid var(--st-line)"}}><Ic n="download" s={13}/>PDF</button><button onClick={()=>exportCSV(proj,ex)} className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-cream-200 text-ink-700 font-semibold rounded-xl text-xs shadow-editorial" style={{border:"1px solid var(--st-line)"}}><Ic n="download" s={13}/>CSV</button></>}
+          {canUseQuickCapture(user)&&<button onClick={()=>setDprModal(true)} className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-cream-200 text-ink-700 font-semibold rounded-xl text-xs shadow-editorial" style={{border:"1px solid var(--st-line)"}}><Ic n="receipt" s={13}/>Daily Report</button>}
           {canUseQuickCapture(user)&&<button onClick={openQuickCapture} className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-xs tracking-wide"><Ic n="plus" s={14}/>Today's Entry</button>}
           {can(user,"share")&&<button onClick={()=>setShareModal(true)} className="flex items-center gap-2 px-4 py-2 bg-ink-900 hover:bg-ink-800 text-cream font-semibold rounded-xl text-xs tracking-wide"><Ic n="share" s={13}/>Share with Client</button>}
         </div>
@@ -1392,6 +1800,16 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
                             :<span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">You</span>
                           }
                         </div>
+                        {/* File list with optional Markup button per image */}
+                        {(d.files||d.attachments||[]).filter(a=>a.kind==="image"||a.type?.startsWith("image/")).length>0&&user.role!=="client"&&
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {(d.files||d.attachments||[]).filter(a=>a.kind==="image"||a.type?.startsWith("image/")).map(att=>(
+                              <button key={att.id} onClick={()=>setMarkupTarget({drawingId:d.id,attachment:att})} className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold tracking-wide rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100" style={{border:"1px solid rgba(217,119,6,.25)"}}>
+                                <Ic n="pencil" s={11}/>Markup {att.name?.split(".").shift().slice(0,18)}{att.markup_of?" ✎":""}
+                              </button>
+                            ))}
+                          </div>
+                        }
                         <AttachmentList files={d.files||d.attachments||[]}/>
                       </div>
                     </div>
@@ -1572,6 +1990,8 @@ function MapTab({project,teams,materials,equipment,issues}){
 }
 
 function AIInsightsTab({project,milestones,issues,tasks,rfis,submittals,permits,safety,expenses,worklogs}){
+  const payload={project,milestones,issues,tasks,rfis,submittals,permits,safety,expenses,worklogs};
+  const risk=useMemo(()=>computeRiskScore(payload),[project,milestones,issues,tasks,rfis,submittals,permits,safety,expenses,worklogs]);
   const today=new Date().toISOString().split("T")[0];
   const high=issues.filter(i=>i.status==="open"&&i.severity==="high").length;
   const overdueTasks=tasks.filter(t=>t.status!=="completed"&&t.due&&t.due<today).length;
@@ -1581,14 +2001,92 @@ function AIInsightsTab({project,milestones,issues,tasks,rfis,submittals,permits,
   const openSafety=safety.filter(s=>s.status!=="closed").length;
   const spend=expenses.reduce((s,e)=>s+(+e.amount||0),0);
   const budgetPct=Math.round((spend/project.budget)*100)||0;
-  const health=Math.max(0,100-high*14-overdueTasks*8-openRfi*6-pendingSubs*5-pendingPermits*6-openSafety*8-(budgetPct>90?10:0));
   const actions=[high&&`${high} high severity issue(s): assign owner and block unsafe work areas today.`,overdueTasks&&`${overdueTasks} overdue task(s): move them into today's coordination meeting.`,openRfi&&`${openRfi} open RFI(s): prioritize answers that impact cost or schedule.`,pendingSubs&&`${pendingSubs} submittal(s) pending: check long-lead material impact.`,pendingPermits&&`${pendingPermits} permit/NOC item(s) pending: avoid inspection and handover delay.`,budgetPct>85&&`Budget usage is ${budgetPct}%: review change orders, POs and RA bills before new commitments.`,!worklogs.length&&"No recent contractor worklog: ask contractor to submit field progress with photos."].filter(Boolean);
-  const roadmap=["AI RFI risk scoring and auto-prioritized daily action list","Drawing OCR/title-block extraction for automatic drawing registers","Scheduled daily report PDF delivery to client and architect","Permit/submittal due-date digest with responsible person","Offline-first mobile field capture with sync conflict review"];
+
+  // LLM-powered narrative — opt-in via Settings (provider + key)
+  const[llm,setLlm]=useState({state:"idle",text:"",error:""});
+  const[showSettings,setShowSettings]=useState(false);
+  const[provCfg,setProvCfg]=useState(()=>getProviderConfig());
+  const runLLM=async()=>{
+    setLlm({state:"loading",text:"",error:""});
+    const res=await fetchLLMInsight(payload);
+    if(res.ok)setLlm({state:"ready",text:res.text,error:""});
+    else setLlm({state:"error",text:"",error:res.error||"failed"});
+  };
+  const saveCfg=()=>{saveProviderConfig(provCfg);setShowSettings(false);};
+  const clearCfg=()=>{clearProviderConfig();setProvCfg({});setShowSettings(false);setLlm({state:"idle",text:"",error:""});};
+  const hasKey=!!(provCfg.provider&&provCfg.apiKey);
+
+  const levelColor={healthy:"emerald",watch:"amber",["at-risk"]:"orange",critical:"red"}[risk.level]||"slate";
   return(
-    <div className="space-y-5">
-      <div className="grid md:grid-cols-4 gap-4"><SC icon="activity" label="Project Health" value={`${health}%`} accent={health>75?"emerald":health>50?"orange":"red"}/><SC icon="alert" label="High Issues" value={high} accent={high?"red":"emerald"}/><SC icon="qa" label="Open RFIs" value={openRfi} accent={openRfi?"orange":"emerald"}/><SC icon="wallet" label="Budget Used" value={`${budgetPct}%`} accent={budgetPct>90?"red":"blue"}/></div>
-      <div className="bg-white rounded-2xl border border-slate-200 p-6"><h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Ic n="activity" s={18} c="text-orange-500"/>Site Copilot Actions</h2>{actions.length?<div className="space-y-2">{actions.map((a,i)=><div key={i} className="flex gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 text-sm text-orange-900"><span className="font-black">{i+1}</span><span>{a}</span></div>)}</div>:<div className="text-sm text-slate-500">No immediate critical action detected from current project data.</div>}<p className="text-xs text-slate-400 mt-4">Demo mode: rule-based project intelligence. Production version can connect a real AI model after backend/auth is ready.</p></div>
-      <div className="bg-white rounded-2xl border border-slate-200 p-6"><h2 className="font-bold text-slate-800 mb-4">Next Product Ideas</h2><div className="grid md:grid-cols-2 gap-3">{roadmap.map((r,i)=><div key={i} className="p-4 rounded-xl border border-slate-100 bg-slate-50"><div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Market-inspired</div><div className="text-sm font-semibold text-slate-700">{r}</div></div>)}</div></div>
+    <div className="space-y-6">
+      {/* Risk hero */}
+      <div className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial relative overflow-hidden" style={{border:"1px solid var(--st-line)"}}>
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full pointer-events-none" style={{background:`radial-gradient(circle, rgba(217,119,6,.08) 0%, transparent 65%)`}}/>
+        <div className="relative flex items-start justify-between mb-5 gap-4 flex-wrap">
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Project intelligence</div>
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial">Risk &amp; health</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={()=>setShowSettings(s=>!s)} className="px-3 py-2 bg-cream-200 text-ink-700 text-xs font-bold rounded-lg" style={{border:"1px solid var(--st-line)"}}>{hasKey?`AI: ${provCfg.provider}`:"Configure AI"}</button>
+            {hasKey&&<button onClick={runLLM} className="px-4 py-2 bg-gradient-gold text-white text-xs font-bold rounded-lg tracking-wide">{llm.state==="loading"?"Thinking…":"Ask AI"}</button>}
+          </div>
+        </div>
+        {showSettings&&<div className="mb-5 p-5 bg-cream-200/60 rounded-xl space-y-3" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">— LLM provider</div>
+          <div className="grid grid-cols-2 gap-2">
+            {["anthropic","openai"].map(p=>
+              <button key={p} onClick={()=>setProvCfg(c=>({...c,provider:p}))} className={`px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase border ${provCfg.provider===p?"bg-amber-50 text-amber-800 border-amber-300":"bg-white text-ink-600 border-stone-200"}`}>{p==="anthropic"?"Claude (Anthropic)":"GPT (OpenAI)"}</button>
+            )}
+          </div>
+          <input value={provCfg.apiKey||""} onChange={e=>setProvCfg(c=>({...c,apiKey:e.target.value}))} placeholder="Paste API key (stays in this browser)" type="password" className="w-full p-3 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600"/>
+          <input value={provCfg.model||""} onChange={e=>setProvCfg(c=>({...c,model:e.target.value}))} placeholder={provCfg.provider==="openai"?"Model (default: gpt-4o-mini)":"Model (default: claude-3-5-haiku-20241022)"} className="w-full p-3 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600"/>
+          <p className="text-[11px] text-ink-500 leading-relaxed">Key never leaves your browser except to the LLM provider's API. For multi-user production, route through the Supabase Edge Function described in <span className="font-semibold">docs/BACKEND_PLAN.md</span>.</p>
+          <div className="flex gap-2"><button onClick={saveCfg} className="px-4 py-2 bg-gradient-gold text-white text-xs font-bold rounded-lg">Save</button>{hasKey&&<button onClick={clearCfg} className="px-4 py-2 bg-red-50 text-red-700 text-xs font-bold rounded-lg" style={{border:"1px solid rgba(220,38,38,.2)"}}>Remove key</button>}</div>
+        </div>}
+
+        <div className="grid md:grid-cols-3 gap-6 items-center">
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-2">Health score</div>
+            <div className="font-display text-6xl font-light tracking-editorial leading-none">{risk.score}<span className="text-2xl text-ink-500">/100</span></div>
+            <div className={`text-xs font-bold tracking-[0.18em] uppercase mt-2 inline-block px-2.5 py-1 rounded-full bg-${levelColor}-50 text-${levelColor}-700`} style={{border:"1px solid var(--st-line)"}}>{risk.level}</div>
+          </div>
+          <div className="md:col-span-2">
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-2">Factors</div>
+            <div className="space-y-1.5">
+              {risk.factors.length===0?<div className="text-sm text-ink-500 italic">No risk factors detected from current data.</div>:risk.factors.map((f,i)=>
+                <div key={i} className="flex items-center gap-3 text-sm">
+                  <span className={`w-2 h-2 rounded-full ${f.sign==="neg"?"bg-red-500":"bg-emerald-500"}`}/>
+                  <span className="flex-1 text-ink-700">{f.label}</span>
+                  <span className="text-[10px] font-bold tracking-wider uppercase text-ink-500">±{f.weight}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* LLM narrative output */}
+        {llm.state==="ready"&&<div className="mt-6 pt-6" style={{borderTop:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-2">— AI narrative</div>
+          <p className="font-display text-base leading-relaxed text-ink-800 italic tracking-editorial whitespace-pre-line">"{llm.text}"</p>
+        </div>}
+        {llm.state==="error"&&<div className="mt-4 p-3 bg-red-50 rounded-xl text-xs text-red-700 font-semibold" style={{border:"1px solid rgba(220,38,38,.2)"}}>AI call failed: {llm.error}</div>}
+        {!hasKey&&<p className="text-[11px] text-ink-500 mt-5 leading-relaxed">Add an LLM API key (Claude or GPT) to get an editorial narrative summary on demand. Without a key, the deterministic risk score above is fully functional.</p>}
+      </div>
+
+      <div className="grid md:grid-cols-4 gap-4"><SC icon="alert" label="High Issues" value={high} accent={high?"red":"emerald"}/><SC icon="qa" label="Open RFIs" value={openRfi} accent={openRfi?"orange":"emerald"}/><SC icon="clipboard" label="Overdue Tasks" value={overdueTasks} accent={overdueTasks?"red":"emerald"}/><SC icon="wallet" label="Budget Used" value={`${budgetPct}%`} accent={budgetPct>90?"red":"blue"}/></div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Today's actions</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-4 tracking-editorial">Site Copilot</h2>
+        {actions.length?<div className="space-y-2">{actions.map((a,i)=>
+          <div key={i} className="flex gap-3 p-3 rounded-xl bg-amber-50 text-sm text-ink-800" style={{border:"1px solid rgba(217,119,6,.15)"}}>
+            <span className="font-display font-bold text-amber-800">{i+1}</span><span>{a}</span>
+          </div>
+        )}</div>:<div className="text-sm text-ink-500 italic">No immediate critical action detected from current project data.</div>}
+        <p className="text-[11px] text-ink-500 mt-4">Rules engine runs deterministically over your project. {hasKey?"Click 'Ask AI' above for an LLM-generated narrative on top of these signals.":"Add an API key to get an AI narrative summary."}</p>
+      </div>
     </div>
   );
 }
@@ -1680,23 +2178,87 @@ function RFITab({pid,rfis,setRfi,user,can,addActivity,proj}){
 function COTab({pid,cos,setCo,user,can,addActivity,proj}){
   const[show,setShow]=useState(false);
   const[nc,setNc]=useState({title:"",reason:"",cost_impact:"",time_impact:"",attachments:[]});
+  const[signFor,setSignFor]=useState(null);   // co.id being signed
+  const[signTyped,setSignTyped]=useState("");
+  const[signAccepted,setSignAccepted]=useState(false);
   const nextNo="CO-"+String(cos.length+1).padStart(3,"0");
   const add=()=>{if(!nc.title.trim())return;setCo(p=>({...p,[pid]:[{id:"co_"+Date.now(),no:nextNo,...nc,cost_impact:+nc.cost_impact||0,time_impact:+nc.time_impact||0,status:"pending_approval",created:new Date().toISOString().split("T")[0],created_by:user.name},...(p[pid]||[])]}));addActivity(pid,proj.name,"general","Created change order",nc.title,user.name,user.role);setNc({title:"",reason:"",cost_impact:"",time_impact:"",attachments:[]});setShow(false);};
-  const approve=(id,st)=>setCo(p=>({...p,[pid]:p[pid].map(c=>c.id===id?{...c,status:st,approved_date:new Date().toISOString().split("T")[0]}:c)}));
+  const openSign=(coId,decision)=>{setSignFor({id:coId,decision});setSignTyped("");setSignAccepted(false);};
+  const confirmSign=()=>{
+    if(!signTyped.trim()){alert("Please type your full name to sign.");return;}
+    if(!signAccepted){alert("Please tick the consent box.");return;}
+    const expectedName=user.name.toLowerCase().trim();
+    const givenName=signTyped.toLowerCase().trim();
+    if(givenName!==expectedName){
+      if(!window.confirm(`The name you typed ("${signTyped}") doesn't match your account name ("${user.name}").\n\nContinue anyway? This will be recorded in the signature log.`))return;
+    }
+    const signature={
+      name:signTyped.trim(),
+      role:user.role,
+      email:user.email,
+      signed_at:new Date().toISOString(),
+      decision:signFor.decision,
+      user_agent:navigator.userAgent.slice(0,140),
+      consent:"I, the named signatory, accept the cost and time impact of this change order on behalf of the client.",
+    };
+    setCo(p=>({...p,[pid]:p[pid].map(c=>c.id===signFor.id?{...c,status:signFor.decision,approved_date:new Date().toISOString().split("T")[0],signature}:c)}));
+    addActivity(pid,proj.name,"general",`Client ${signFor.decision} change order with e-signature`,`${signTyped.trim()} · ${cos.find(c=>c.id===signFor.id)?.title||""}`,user.name,user.role);
+    setSignFor(null);setSignTyped("");setSignAccepted(false);
+  };
   const totApproved=cos.filter(c=>c.status==="approved").reduce((s,c)=>s+c.cost_impact,0);
   return(
     <div>
-      <div className="flex items-center justify-between mb-5"><div><h2 className="font-bold text-slate-800">Change Orders</h2><p className="text-xs text-slate-400 mt-0.5">Approved impact: {fmtCur(totApproved)} · {cos.filter(c=>c.status==="pending_approval").length} pending</p></div>{user.role!=="client"&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>New CO</button>}</div>
-      {show&&<div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5"><div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New Change Order ({nextNo})</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div><div className="space-y-3"><input value={nc.title} onChange={e=>setNc(p=>({...p,title:e.target.value}))} placeholder="Change description" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><textarea value={nc.reason} onChange={e=>setNc(p=>({...p,reason:e.target.value}))} placeholder="Reason for change..." className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/><div className="grid grid-cols-2 gap-3"><input type="number" value={nc.cost_impact} onChange={e=>setNc(p=>({...p,cost_impact:e.target.value}))} placeholder="Cost impact (₹)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><input type="number" value={nc.time_impact} onChange={e=>setNc(p=>({...p,time_impact:e.target.value}))} placeholder="Schedule impact (days)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/></div><AttachmentInput files={nc.attachments||[]} onChange={attachments=>setNc(p=>({...p,attachments}))} label="Upload quote / approval document"/><button onClick={add} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Submit</button></div></div>}
-      <div className="space-y-3">{cos.map(c=>(
-        <div key={c.id} className="bg-white rounded-2xl border border-slate-200 p-5">
-          <div className="flex items-start justify-between mb-3 gap-3"><div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="text-xs font-mono font-bold text-orange-600">{c.no}</span><Badge status={c.status==="approved"?"completed":c.status==="rejected"?"on_hold":"in_progress"}/></div><div className="font-bold text-slate-800 text-sm">{c.title}</div></div><div className="text-right"><div className="text-base font-black text-slate-800">{fmtCur(c.cost_impact)}</div><div className="text-xs text-slate-400">+{c.time_impact}d</div></div></div>
-          <p className="text-slate-500 text-xs mb-2">{c.reason}</p>
-          <div className="text-xs text-slate-400">By {c.created_by} · {fmtDate(c.created)}{c.approved_date&&` · Approved ${fmtDate(c.approved_date)}`}</div>
-          <AttachmentList files={c.attachments||[]}/>
-          {c.status==="pending_approval"&&user.role==="client"&&<div className="flex gap-2 mt-3"><button onClick={()=>approve(c.id,"approved")} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded-lg">Approve</button><button onClick={()=>approve(c.id,"rejected")} className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white text-xs font-bold rounded-lg">Reject</button></div>}
+      <div className="flex items-end justify-between mb-6 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Scope &amp; cost impact</div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial leading-tight">Change Orders</h2>
+          <p className="text-xs text-ink-500 mt-1.5">Approved impact: {fmtCur(totApproved)} · {cos.filter(c=>c.status==="pending_approval").length} pending client e-signature</p>
         </div>
-      ))}{cos.length===0&&<div className="text-center py-16 text-slate-400"><Ic n="fileEdit" s={32} c="mx-auto mb-3 opacity-30"/><p>No change orders</p></div>}</div>
+        {user.role!=="client"&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>New CO</button>}
+      </div>
+
+      {/* E-signature modal */}
+      {signFor&&(()=>{const c=cos.find(x=>x.id===signFor.id);if(!c)return null;return(
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={e=>{if(e.target===e.currentTarget)setSignFor(null);}}>
+          <div className="bg-white rounded-2xl p-7 max-w-lg w-full shadow-editorial-deep" style={{border:"1px solid var(--st-line)"}}>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Electronic signature</div>
+            <h3 className="font-display text-2xl font-semibold text-ink-900 mb-4 tracking-editorial">{signFor.decision==="approved"?"Approve":"Reject"} change order</h3>
+            <div className="bg-cream-200/60 rounded-xl p-4 mb-4" style={{border:"1px solid var(--st-line)"}}>
+              <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1">{c.no}</div>
+              <div className="font-display text-lg font-semibold text-ink-900 mb-2 tracking-editorial">{c.title}</div>
+              <div className="flex items-center justify-between text-sm"><span className="text-ink-600">Cost impact</span><span className="font-display font-bold text-ink-900">{fmtCur(c.cost_impact)}</span></div>
+              <div className="flex items-center justify-between text-sm mt-1"><span className="text-ink-600">Schedule impact</span><span className="font-display font-bold text-ink-900">+{c.time_impact} days</span></div>
+            </div>
+            <label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1 block">Type your full name</label>
+            <input value={signTyped} onChange={e=>setSignTyped(e.target.value)} placeholder={user.name} className="w-full p-3 border border-stone-200 rounded-xl text-sm font-display italic tracking-editorial outline-none focus:border-amber-600 mb-3"/>
+            <label className="flex items-start gap-2 text-xs text-ink-700 mb-4 cursor-pointer">
+              <input type="checkbox" checked={signAccepted} onChange={e=>setSignAccepted(e.target.checked)} className="mt-0.5 accent-amber-600"/>
+              <span>I, <strong>{user.name}</strong> ({user.role}), accept that this electronic signature is legally equivalent to a handwritten one for the purpose of this change order. Timestamp, IP-derived metadata, and consent text will be recorded.</span>
+            </label>
+            <div className="flex gap-2">
+              <button onClick={confirmSign} className={`flex-1 px-5 py-3 font-bold rounded-xl text-sm tracking-wide ${signFor.decision==="approved"?"bg-emerald-600 hover:bg-emerald-500 text-white":"bg-red-600 hover:bg-red-500 text-white"}`}>{signFor.decision==="approved"?"Sign &amp; Approve":"Sign &amp; Reject"}</button>
+              <button onClick={()=>setSignFor(null)} className="px-5 py-3 bg-cream-200 hover:bg-cream-100 text-ink-700 font-semibold rounded-xl text-sm">Cancel</button>
+            </div>
+            <p className="text-[10px] text-ink-500 mt-3 leading-relaxed">For court-grade audit trail, provision the backend per <span className="font-semibold">docs/BACKEND_PLAN.md</span> activity_log SECURITY DEFINER function.</p>
+          </div>
+        </div>
+      );})()}
+
+      {show&&<div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}><div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">New Change Order ({nextNo})</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div><div className="space-y-3"><input value={nc.title} onChange={e=>setNc(p=>({...p,title:e.target.value}))} placeholder="Change description" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/><textarea value={nc.reason} onChange={e=>setNc(p=>({...p,reason:e.target.value}))} placeholder="Reason for change..." className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 resize-none h-20"/><div className="grid grid-cols-2 gap-3"><input type="number" value={nc.cost_impact} onChange={e=>setNc(p=>({...p,cost_impact:e.target.value}))} placeholder="Cost impact (₹)" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/><input type="number" value={nc.time_impact} onChange={e=>setNc(p=>({...p,time_impact:e.target.value}))} placeholder="Schedule impact (days)" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/></div><AttachmentInput files={nc.attachments||[]} onChange={attachments=>setNc(p=>({...p,attachments}))} label="Upload quote / approval document"/><button onClick={add} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Submit</button></div></div>}
+      <div className="space-y-3">{cos.map(c=>(
+        <div key={c.id} className="bg-white rounded-2xl p-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="flex items-start justify-between mb-3 gap-3"><div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="text-xs font-mono font-bold text-amber-700">{c.no}</span><Badge status={c.status==="approved"?"completed":c.status==="rejected"?"on_hold":"in_progress"}/></div><div className="font-display text-base font-semibold text-ink-900 tracking-editorial">{c.title}</div></div><div className="text-right"><div className="font-display text-lg font-semibold text-ink-900 tracking-editorial">{fmtCur(c.cost_impact)}</div><div className="text-xs text-ink-500">+{c.time_impact}d</div></div></div>
+          <p className="text-ink-600 text-xs mb-2 leading-relaxed">{c.reason}</p>
+          <div className="text-xs text-ink-500">By {c.created_by} · {fmtDate(c.created)}{c.approved_date&&` · ${c.status==="approved"?"Approved":"Rejected"} ${fmtDate(c.approved_date)}`}</div>
+          <AttachmentList files={c.attachments||[]}/>
+          {c.signature&&<div className="mt-3 p-3 bg-cream-200/60 rounded-xl" style={{border:"1px solid var(--st-line)"}}>
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-1">— E-signature</div>
+            <div className="font-display text-base italic text-ink-900 tracking-editorial">"{c.signature.name}"</div>
+            <div className="text-[10px] text-ink-500 mt-1">{c.signature.role} · {c.signature.email} · {fmtTime(c.signature.signed_at)}</div>
+          </div>}
+          {c.status==="pending_approval"&&user.role==="client"&&<div className="flex gap-2 mt-3"><button onClick={()=>openSign(c.id,"approved")} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg tracking-wide flex items-center gap-1.5"><Ic n="pencil" s={12}/>Sign &amp; Approve</button><button onClick={()=>openSign(c.id,"rejected")} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg tracking-wide flex items-center gap-1.5"><Ic n="x" s={12}/>Reject</button></div>}
+        </div>
+      ))}{cos.length===0&&<div className="text-center py-16 text-ink-500"><Ic n="fileEdit" s={32} c="mx-auto mb-3 opacity-30"/><p className="font-display text-lg">No change orders</p></div>}</div>
     </div>
   );
 }
@@ -1773,26 +2335,61 @@ function ProjectPOTab({pid,projPOs,setPos,vendors,user,can,proj}){
 
 function InvoicesTab({pid,invs,ms,setInvoices,user,can,proj}){
   const[show,setShow]=useState(false);
+  const[showPay,setShowPay]=useState(false);
+  const[rzCfg,setRzCfg]=useState(()=>getRazorpayConfig());
   const[ni,setNi]=useState({milestone:"",amount:"",gst:18,tds:2,attachments:[]});
   const nextNo="INV-"+String(invs.length+1).padStart(3,"0");
   const add=()=>{if(!ni.milestone||!ni.amount)return;setInvoices(p=>({...p,[pid]:[{id:"inv_"+Date.now(),no:nextNo,...ni,amount:+ni.amount,gst:+ni.gst,tds:+ni.tds,status:"sent",issued:new Date().toISOString().split("T")[0],paid:null},...(p[pid]||[])]}));setNi({milestone:"",amount:"",gst:18,tds:2,attachments:[]});setShow(false);};
   const markPaid=id=>setInvoices(p=>({...p,[pid]:p[pid].map(i=>i.id===id?{...i,status:"paid",paid:new Date().toISOString().split("T")[0]}:i)}));
+  const saveRz=()=>{saveRazorpayConfig(rzCfg);setShowPay(false);};
   const total=invs.reduce((s,i)=>s+i.amount,0);
   const paid=invs.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount,0);
   const calc=i=>i.amount*(1+i.gst/100)*(1-i.tds/100);
   return(
     <div>
       <div className="grid grid-cols-3 gap-3 mb-5"><SC icon="receipt" label="Billed" value={fmtCur(total)} accent="blue"/><SC icon="check" label="Received" value={fmtCur(paid)} accent="emerald"/><SC icon="trend" label="Pending" value={fmtCur(total-paid)} accent="orange"/></div>
-      <div className="flex items-center justify-between mb-5"><div><h2 className="font-bold text-slate-800">Invoices (Client Billing)</h2><p className="text-xs text-slate-400 mt-0.5">Milestone-based progress billing</p></div>{user.role==="architect"&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>New Invoice</button>}</div>
-      {show&&<div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5"><div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New Invoice ({nextNo})</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div><div className="space-y-3"><select value={ni.milestone} onChange={e=>setNi(p=>({...p,milestone:e.target.value}))} className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option value="">Select milestone...</option>{ms.map(m=><option key={m.id}>{m.title}</option>)}</select><div className="grid grid-cols-3 gap-3"><input type="number" value={ni.amount} onChange={e=>setNi(p=>({...p,amount:e.target.value}))} placeholder="Amount (₹)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><select value={ni.gst} onChange={e=>setNi(p=>({...p,gst:+e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option value="0">0% GST</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option></select><select value={ni.tds} onChange={e=>setNi(p=>({...p,tds:+e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option value="0">0% TDS</option><option value="1">1%</option><option value="2">2%</option><option value="10">10%</option></select></div><div className="bg-slate-50 rounded-xl p-3 text-xs grid grid-cols-3 gap-2"><div><div className="text-slate-400">Base</div><div className="font-bold">{fmtCur(+ni.amount||0)}</div></div><div><div className="text-slate-400">+ GST</div><div className="font-bold text-emerald-600">+{fmtCur((+ni.amount||0)*ni.gst/100)}</div></div><div><div className="text-slate-400">Net (after TDS)</div><div className="font-black">{fmtCur(calc({amount:+ni.amount||0,gst:+ni.gst,tds:+ni.tds}))}</div></div></div><AttachmentInput files={ni.attachments||[]} onChange={attachments=>setNi(p=>({...p,attachments}))} label="Upload invoice PDF / measurement sheet"/><button onClick={add} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Issue Invoice</button></div></div>}
-      <div className="space-y-3">{invs.map(i=>(
-        <div key={i.id} className="bg-white rounded-2xl border border-slate-200 p-5">
-          <div className="flex items-start justify-between mb-2"><div><div className="flex items-center gap-2 mb-1"><span className="text-xs font-mono font-bold text-orange-600">{i.no}</span><Badge status={i.status==="paid"?"completed":"in_progress"}/></div><div className="font-bold text-slate-800 text-sm">{i.milestone}</div></div><div className="text-right"><div className="text-base font-black text-slate-800">{fmtCur(calc(i))}</div><div className="text-xs text-slate-400">+{i.gst}% GST -{i.tds}% TDS</div></div></div>
-          <div className="text-xs text-slate-400">Issued {fmtDate(i.issued)}{i.paid&&` · Paid ${fmtDate(i.paid)}`}</div>
-          <AttachmentList files={i.attachments||[]}/>
-          {i.status!=="paid"&&user.role==="architect"&&<button onClick={()=>markPaid(i.id)} className="mt-2 px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg">Mark Paid</button>}
+      <div className="flex items-end justify-between mb-6 pb-3 flex-wrap gap-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Client billing</div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial leading-tight">Invoices</h2>
+          <p className="text-xs text-ink-500 mt-1.5">Milestone-based progress billing · GST/TDS · Razorpay/UPI ready</p>
         </div>
-      ))}{invs.length===0&&<div className="text-center py-16 text-slate-400"><Ic n="receipt" s={32} c="mx-auto mb-3 opacity-30"/><p>No invoices issued</p></div>}</div>
+        <div className="flex gap-2">
+          {user.role==="architect"&&<button onClick={()=>setShowPay(s=>!s)} className="px-3 py-2 bg-cream-200 text-ink-700 text-xs font-bold rounded-lg" style={{border:"1px solid var(--st-line)"}}>{rzCfg.upiId||rzCfg.paymentLinkBase?"Payment settings ✓":"Configure payments"}</button>}
+          {user.role==="architect"&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>New Invoice</button>}
+        </div>
+      </div>
+      {showPay&&<div className="bg-white rounded-2xl p-5 mb-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-3">— Payment options</div>
+        <div className="grid md:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500 mb-1 block">Your UPI ID (for direct pay)</label>
+            <input value={rzCfg.upiId||""} onChange={e=>setRzCfg(c=>({...c,upiId:e.target.value}))} placeholder="builder@upi" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500 mb-1 block">Your payee name</label>
+            <input value={rzCfg.payeeName||""} onChange={e=>setRzCfg(c=>({...c,payeeName:e.target.value}))} placeholder="Your business name" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          </div>
+        </div>
+        <p className="text-[11px] text-ink-500 mt-3 leading-relaxed">For card/netbanking/EMI, create a Razorpay Payment Link from your Razorpay dashboard per invoice and paste the URL in the invoice attachments. Full automation (auto-link creation + webhook → invoice paid) requires the backend Edge Function in <span className="font-semibold">docs/BACKEND_PLAN.md</span>.</p>
+        <button onClick={saveRz} className="mt-3 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Save</button>
+      </div>}
+      {show&&<div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}><div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">New Invoice ({nextNo})</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div><div className="space-y-3"><select value={ni.milestone} onChange={e=>setNi(p=>({...p,milestone:e.target.value}))} className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="">Select milestone...</option>{ms.map(m=><option key={m.id}>{m.title}</option>)}</select><div className="grid grid-cols-3 gap-3"><input type="number" value={ni.amount} onChange={e=>setNi(p=>({...p,amount:e.target.value}))} placeholder="Amount (₹)" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/><select value={ni.gst} onChange={e=>setNi(p=>({...p,gst:+e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="0">0% GST</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option></select><select value={ni.tds} onChange={e=>setNi(p=>({...p,tds:+e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="0">0% TDS</option><option value="1">1%</option><option value="2">2%</option><option value="10">10%</option></select></div><div className="bg-cream-200/60 rounded-xl p-3 text-xs grid grid-cols-3 gap-2" style={{border:"1px solid var(--st-line)"}}><div><div className="text-ink-500">Base</div><div className="font-bold">{fmtCur(+ni.amount||0)}</div></div><div><div className="text-ink-500">+ GST</div><div className="font-bold text-emerald-700">+{fmtCur((+ni.amount||0)*ni.gst/100)}</div></div><div><div className="text-ink-500">Net (after TDS)</div><div className="font-display font-bold">{fmtCur(calc({amount:+ni.amount||0,gst:+ni.gst,tds:+ni.tds}))}</div></div></div><AttachmentInput files={ni.attachments||[]} onChange={attachments=>setNi(p=>({...p,attachments}))} label="Upload invoice PDF / measurement sheet"/><button onClick={add} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Issue Invoice</button></div></div>}
+      <div className="space-y-3">{invs.map(i=>{
+        const upiLink=rzCfg.upiId?buildUpiDeepLink(i,proj,rzCfg.upiId,rzCfg.payeeName):"";
+        return(
+          <div key={i.id} className="bg-white rounded-2xl p-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+            <div className="flex items-start justify-between mb-2"><div><div className="flex items-center gap-2 mb-1"><span className="text-xs font-mono font-bold text-amber-700">{i.no}</span><Badge status={i.status==="paid"?"completed":"in_progress"}/></div><div className="font-display text-base font-semibold text-ink-900 tracking-editorial">{i.milestone}</div></div><div className="text-right"><div className="font-display text-xl font-semibold text-ink-900 tracking-editorial">{fmtCur(calc(i))}</div><div className="text-xs text-ink-500">+{i.gst}% GST -{i.tds}% TDS</div></div></div>
+            <div className="text-xs text-ink-500">Issued {fmtDate(i.issued)}{i.paid&&` · Paid ${fmtDate(i.paid)}`}</div>
+            <AttachmentList files={i.attachments||[]}/>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {i.status!=="paid"&&user.role==="architect"&&<button onClick={()=>markPaid(i.id)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg tracking-wide">Mark Paid</button>}
+              {i.status!=="paid"&&user.role==="client"&&upiLink&&<a href={upiLink} className="px-3 py-1.5 bg-gradient-gold text-white text-xs font-bold rounded-lg tracking-wide flex items-center gap-1.5"><Ic n="wallet" s={12}/>Pay via UPI</a>}
+              {i.status!=="paid"&&upiLink&&user.role!=="client"&&<button onClick={()=>{navigator.clipboard.writeText(upiLink);alert("UPI link copied — share with the client.");}} className="px-3 py-1.5 bg-cream-200 text-ink-700 text-xs font-bold rounded-lg tracking-wide flex items-center gap-1.5" style={{border:"1px solid var(--st-line)"}}><Ic n="copy" s={12}/>Copy UPI link</button>}
+            </div>
+          </div>
+        );
+      })}{invs.length===0&&<div className="text-center py-16 text-ink-500"><Ic n="receipt" s={32} c="mx-auto mb-3 opacity-30"/><p className="font-display text-lg">No invoices issued</p></div>}</div>
     </div>
   );
 }
@@ -1815,24 +2412,102 @@ function LabourTab({pid,lbs,setLabour,user,can,proj}){
 
 function RABillsTab({pid,ras,setRa,user,can,proj}){
   const[show,setShow]=useState(false);
-  const[nr,setNr]=useState({subcontractor:"",scope:"",bill_amount:"",retention_pct:5,attachments:[]});
+  const[expandedMB,setExpandedMB]=useState(null);   // ra.id of bill whose MB is expanded
+  const[mbDraft,setMbDraft]=useState({location:"",item:"",unit:"cum",qty:"",rate:""});
+  const[nr,setNr]=useState({subcontractor:"",scope:"",bill_amount:"",retention_pct:5,attachments:[],mb:[]});
   const cum=ras.reduce((s,r)=>s+r.bill_amount,0);
   const nextNo="RA-"+String(ras.length+1).padStart(2,"0");
-  const add=()=>{if(!nr.subcontractor.trim()||!nr.bill_amount)return;const bill=+nr.bill_amount;const newCum=cum+bill;const paid=bill*(1-(+nr.retention_pct||0)/100);setRa(p=>({...p,[pid]:[{id:"ra_"+Date.now(),no:nextNo,...nr,bill_amount:bill,cumulative:newCum,retention_pct:+nr.retention_pct,paid_amount:0,status:"submitted",bill_date:new Date().toISOString().split("T")[0]},...(p[pid]||[])]}));setNr({subcontractor:"",scope:"",bill_amount:"",retention_pct:5,attachments:[]});setShow(false);};
+  const canEdit=user.role==="architect"||user.role==="pm"||user.role==="contractor";
+  const add=()=>{
+    if(!nr.subcontractor.trim()||!nr.bill_amount)return;
+    const bill=+nr.bill_amount;const newCum=cum+bill;
+    setRa(p=>({...p,[pid]:[{id:"ra_"+Date.now(),no:nextNo,...nr,bill_amount:bill,cumulative:newCum,retention_pct:+nr.retention_pct,paid_amount:0,status:"submitted",bill_date:new Date().toISOString().split("T")[0],mb:nr.mb||[]},...(p[pid]||[])]}));
+    setNr({subcontractor:"",scope:"",bill_amount:"",retention_pct:5,attachments:[],mb:[]});setShow(false);
+  };
   const pay=id=>setRa(p=>({...p,[pid]:p[pid].map(r=>r.id===id?{...r,status:"paid",paid_amount:r.bill_amount*(1-r.retention_pct/100)}:r)}));
+  const addMB=raId=>{
+    if(!mbDraft.location.trim()||!mbDraft.item.trim()||!mbDraft.qty||!mbDraft.rate){alert("Location, item, qty, and rate are all required.");return;}
+    const q=+mbDraft.qty,r=+mbDraft.rate;
+    if(q<=0||r<0){alert("Quantity must be > 0 and rate must be >= 0.");return;}
+    const entry={id:"mb_"+Date.now(),location:mbDraft.location.trim(),item:mbDraft.item.trim(),unit:mbDraft.unit,qty:q,rate:r,amount:q*r};
+    setRa(p=>({...p,[pid]:p[pid].map(ra=>ra.id===raId?{...ra,mb:[...(ra.mb||[]),entry]}:ra)}));
+    setMbDraft({location:"",item:"",unit:"cum",qty:"",rate:""});
+  };
+  const delMB=(raId,mbId)=>{
+    setRa(p=>({...p,[pid]:p[pid].map(ra=>ra.id===raId?{...ra,mb:(ra.mb||[]).filter(m=>m.id!==mbId)}:ra)}));
+  };
+  const recomputeFromMB=raId=>{
+    const ra=ras.find(x=>x.id===raId);if(!ra)return;
+    const mbTotal=(ra.mb||[]).reduce((s,m)=>s+(m.amount||0),0);
+    if(!window.confirm(`Set bill amount = sum of measurement book entries (${fmtCur(mbTotal)})?\n\nCurrent bill amount: ${fmtCur(ra.bill_amount)}`))return;
+    setRa(p=>({...p,[pid]:p[pid].map(x=>x.id===raId?{...x,bill_amount:mbTotal}:x)}));
+  };
   return(
     <div>
-      <div className="flex items-center justify-between mb-5"><div><h2 className="font-bold text-slate-800">RA Bills - Subcontractor Running Account</h2><p className="text-xs text-slate-400 mt-0.5">Cumulative: {fmtCur(cum)} · {ras.filter(r=>r.status==="submitted").length} pending payment</p></div>{user.role!=="client"&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>New RA Bill</button>}</div>
-      {show&&<div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5"><div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New RA Bill ({nextNo})</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div><div className="space-y-3"><input value={nr.subcontractor} onChange={e=>setNr(p=>({...p,subcontractor:e.target.value}))} placeholder="Subcontractor name" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><input value={nr.scope} onChange={e=>setNr(p=>({...p,scope:e.target.value}))} placeholder="Scope of work this bill" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><div className="grid grid-cols-2 gap-3"><input type="number" value={nr.bill_amount} onChange={e=>setNr(p=>({...p,bill_amount:e.target.value}))} placeholder="Bill amount (₹)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><input type="number" value={nr.retention_pct} onChange={e=>setNr(p=>({...p,retention_pct:e.target.value}))} placeholder="Retention %" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/></div><AttachmentInput files={nr.attachments||[]} onChange={attachments=>setNr(p=>({...p,attachments}))} label="Upload RA bill / measurement sheet"/><button onClick={add} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Submit Bill</button></div></div>}
-      <div className="space-y-3">{ras.map(r=>(
-        <div key={r.id} className="bg-white rounded-2xl border border-slate-200 p-5">
-          <div className="flex items-start justify-between mb-2"><div><div className="flex items-center gap-2 mb-1"><span className="text-xs font-mono font-bold text-orange-600">{r.no}</span><Badge status={r.status==="paid"?"completed":"in_progress"}/></div><div className="font-bold text-slate-800 text-sm">{r.subcontractor}</div><div className="text-xs text-slate-500 mt-1">{r.scope}</div></div><div className="text-right"><div className="text-base font-black text-slate-800">{fmtCur(r.bill_amount)}</div><div className="text-xs text-slate-400">Net: {fmtCur(r.bill_amount*(1-r.retention_pct/100))}</div></div></div>
-          <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-slate-100 text-xs"><div><div className="text-slate-400">Cumulative</div><div className="font-bold text-slate-700">{fmtCur(r.cumulative)}</div></div><div><div className="text-slate-400">Retention {r.retention_pct}%</div><div className="font-bold text-amber-600">{fmtCur(r.bill_amount*r.retention_pct/100)}</div></div><div><div className="text-slate-400">Paid</div><div className="font-bold text-emerald-600">{fmtCur(r.paid_amount)}</div></div></div>
-          <div className="text-xs text-slate-400 mt-2">{fmtDate(r.bill_date)}</div>
-          <AttachmentList files={r.attachments||[]}/>
-          {r.status==="submitted"&&user.role==="architect"&&<button onClick={()=>pay(r.id)} className="mt-2 px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg">Mark Paid</button>}
+      <div className="flex items-end justify-between mb-6 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Subcontractor</div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial leading-tight">RA Bills — Running Account</h2>
+          <p className="text-xs text-ink-500 mt-1.5">Cumulative: {fmtCur(cum)} · {ras.filter(r=>r.status==="submitted").length} pending payment · MB-backed</p>
         </div>
-      ))}{ras.length===0&&<div className="text-center py-16 text-slate-400"><Ic n="receipt" s={32} c="mx-auto mb-3 opacity-30"/><p>No RA bills</p></div>}</div>
+        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>New RA Bill</button>}
+      </div>
+      {show&&<div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}><div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">New RA Bill ({nextNo})</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div><div className="space-y-3"><input value={nr.subcontractor} onChange={e=>setNr(p=>({...p,subcontractor:e.target.value}))} placeholder="Subcontractor name" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/><input value={nr.scope} onChange={e=>setNr(p=>({...p,scope:e.target.value}))} placeholder="Scope of work this bill" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/><div className="grid grid-cols-2 gap-3"><input type="number" value={nr.bill_amount} onChange={e=>setNr(p=>({...p,bill_amount:e.target.value}))} placeholder="Bill amount (₹)" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/><input type="number" value={nr.retention_pct} onChange={e=>setNr(p=>({...p,retention_pct:e.target.value}))} placeholder="Retention %" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/></div><AttachmentInput files={nr.attachments||[]} onChange={attachments=>setNr(p=>({...p,attachments}))} label="Upload RA bill / measurement sheet"/><button onClick={add} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Submit Bill</button><p className="text-[11px] text-ink-500">Measurement book entries can be added after the bill is created.</p></div></div>}
+      <div className="space-y-3">{ras.map(r=>{
+        const mb=r.mb||[];
+        const mbTotal=mb.reduce((s,m)=>s+(m.amount||0),0);
+        const isExpanded=expandedMB===r.id;
+        const drift=Math.abs((r.bill_amount||0)-mbTotal);
+        const driftPct=r.bill_amount>0?Math.round((drift/r.bill_amount)*100):0;
+        return(
+          <div key={r.id} className="bg-white rounded-2xl p-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+            <div className="flex items-start justify-between mb-3"><div><div className="flex items-center gap-2 mb-1"><span className="text-xs font-mono font-bold text-amber-700">{r.no}</span><Badge status={r.status==="paid"?"completed":"in_progress"}/>{mb.length>0&&<span className="text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">MB-backed</span>}</div><div className="font-display text-base font-semibold text-ink-900 tracking-editorial">{r.subcontractor}</div><div className="text-xs text-ink-600 mt-1">{r.scope}</div></div><div className="text-right"><div className="font-display text-xl font-semibold text-ink-900 tracking-editorial">{fmtCur(r.bill_amount)}</div><div className="text-xs text-ink-500">Net: {fmtCur(r.bill_amount*(1-r.retention_pct/100))}</div></div></div>
+            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 text-xs" style={{borderTop:"1px solid var(--st-line)"}}><div><div className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500">Cumulative</div><div className="font-bold text-ink-700 mt-0.5">{fmtCur(r.cumulative)}</div></div><div><div className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500">Retention {r.retention_pct}%</div><div className="font-bold text-amber-700 mt-0.5">{fmtCur(r.bill_amount*r.retention_pct/100)}</div></div><div><div className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500">Paid</div><div className="font-bold text-emerald-700 mt-0.5">{fmtCur(r.paid_amount)}</div></div></div>
+            <div className="text-xs text-ink-500 mt-2">{fmtDate(r.bill_date)}</div>
+            <AttachmentList files={r.attachments||[]}/>
+
+            {/* Measurement Book row */}
+            <div className="mt-4 pt-4" style={{borderTop:"1px solid var(--st-line)"}}>
+              <div className="flex items-center justify-between">
+                <button onClick={()=>{setExpandedMB(isExpanded?null:r.id);setMbDraft({location:"",item:"",unit:"cum",qty:"",rate:""});}} className="flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] uppercase text-amber-700 hover:text-amber-900">
+                  <Ic n="clipboard" s={12}/>
+                  Measurement Book ({mb.length} entries · {fmtCur(mbTotal)})
+                  <span className="text-ink-500">{isExpanded?"▾":"▸"}</span>
+                </button>
+                {mb.length>0&&driftPct>0&&<span className={`text-[10px] font-bold ${driftPct>5?"text-red-600":"text-amber-700"}`}>MB vs Bill drift: {driftPct}%</span>}
+              </div>
+
+              {isExpanded&&<div className="mt-3 bg-cream-200/40 rounded-xl p-3" style={{border:"1px solid var(--st-line)"}}>
+                {mb.length>0?<div className="space-y-1.5 mb-3">{mb.map(m=>
+                  <div key={m.id} className="grid grid-cols-12 gap-2 items-center text-xs px-2 py-1.5 hover:bg-white rounded-lg">
+                    <div className="col-span-4 font-semibold text-ink-800 truncate">{m.location}</div>
+                    <div className="col-span-3 text-ink-700 truncate">{m.item}</div>
+                    <div className="col-span-1 text-right text-ink-700">{m.qty}</div>
+                    <div className="col-span-1 text-ink-600 text-[10px]">{m.unit}</div>
+                    <div className="col-span-1 text-right text-ink-600">{fmtCur(m.rate)}</div>
+                    <div className="col-span-1 text-right font-bold text-ink-900">{fmtCur(m.amount)}</div>
+                    <div className="col-span-1 text-right">{canEdit&&r.status!=="paid"&&<button onClick={()=>delMB(r.id,m.id)} className="text-ink-400 hover:text-red-500"><Ic n="trash" s={12}/></button>}</div>
+                  </div>
+                )}</div>:<p className="text-[11px] text-ink-500 italic mb-3">No measurement entries yet. Add one below to back this bill amount.</p>}
+
+                {canEdit&&r.status!=="paid"&&<div>
+                  <div className="grid grid-cols-12 gap-2 mb-2">
+                    <input value={mbDraft.location} onChange={e=>setMbDraft(p=>({...p,location:e.target.value}))} placeholder="Location (e.g. Floor 14 columns)" className="col-span-4 p-2 border border-stone-200 rounded-lg text-xs outline-none focus:border-amber-600"/>
+                    <input value={mbDraft.item} onChange={e=>setMbDraft(p=>({...p,item:e.target.value}))} placeholder="Item / scope" className="col-span-3 p-2 border border-stone-200 rounded-lg text-xs outline-none focus:border-amber-600"/>
+                    <input type="number" value={mbDraft.qty} min="0" step="0.001" onChange={e=>setMbDraft(p=>({...p,qty:e.target.value}))} placeholder="Qty" className="col-span-1 p-2 border border-stone-200 rounded-lg text-xs outline-none focus:border-amber-600"/>
+                    <select value={mbDraft.unit} onChange={e=>setMbDraft(p=>({...p,unit:e.target.value}))} className="col-span-1 p-2 border border-stone-200 rounded-lg text-xs outline-none focus:border-amber-600">{BOQ_UNITS.map(u=><option key={u}>{u}</option>)}</select>
+                    <input type="number" value={mbDraft.rate} min="0" step="0.01" onChange={e=>setMbDraft(p=>({...p,rate:e.target.value}))} placeholder="Rate" className="col-span-2 p-2 border border-stone-200 rounded-lg text-xs outline-none focus:border-amber-600"/>
+                    <button onClick={()=>addMB(r.id)} className="col-span-1 p-2 bg-gradient-gold text-white text-xs font-bold rounded-lg">Add</button>
+                  </div>
+                  {mb.length>0&&mbTotal!==r.bill_amount&&<button onClick={()=>recomputeFromMB(r.id)} className="text-[11px] font-bold text-amber-700 hover:text-amber-900 mt-1">↻ Set bill amount = MB total ({fmtCur(mbTotal)})</button>}
+                </div>}
+              </div>}
+            </div>
+
+            {r.status==="submitted"&&user.role==="architect"&&<button onClick={()=>pay(r.id)} className="mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg tracking-wide">Mark Paid</button>}
+          </div>
+        );
+      })}{ras.length===0&&<div className="text-center py-16 text-ink-500"><Ic n="receipt" s={32} c="mx-auto mb-3 opacity-30"/><p className="font-display text-lg">No RA bills</p></div>}</div>
     </div>
   );
 }
@@ -2535,6 +3210,14 @@ export default function App(){
   const[ledger,setLedger]=useLS("ledger",INIT_LEDGER);
   const[estimate,setEstimate]=useLS("estimate",INIT_ESTIMATE);
   const[lang,setLang]=useLS("lang","en");
+  // Offline-first state — surfaced as a pill in the top bar
+  const[online,setOnline]=useState(isOnline());
+  const[pendingOps,setPendingOps]=useState(queueLength());
+  useEffect(()=>{
+    const off=onConnectivityChange(setOnline);
+    const tick=setInterval(()=>setPendingOps(queueLength()),3000);
+    return ()=>{off();clearInterval(tick);};
+  },[]);
   const[dark,setDark]=useLS("dark",false);
   const[mobileOpen,setMobileOpen]=useState(false);
 
@@ -2598,6 +3281,8 @@ export default function App(){
         {/* Desktop top bar — stays put while main scrolls below */}
         <div className="hidden md:flex flex-shrink-0 items-center justify-between gap-4 px-6 py-3 bg-white" style={{borderBottom:"1px solid var(--st-line)",boxShadow:"0 1px 2px rgba(28,25,23,.03)"}}>
           <div className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 ${ROLE_META[user.role].bg} ${ROLE_META[user.role].text}`}><Ic n="shield" s={11}/>{ROLE_META[user.role].label}</div>
+          {!online&&<div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 bg-red-50 text-red-700" style={{border:"1px solid rgba(220,38,38,.2)"}} title={`${pendingOps} ops queued`}>● Offline {pendingOps>0&&`(${pendingOps})`}</div>}
+          {online&&pendingOps>0&&<div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 bg-amber-50 text-amber-800" style={{border:"1px solid rgba(217,119,6,.2)"}} title="Backend not connected; ops stay queued locally">↻ {pendingOps} queued</div>}
           <GlobalSearch projects={projects} milestones={milestones} issues={issues} vendors={vendors} setView={setView} setSP={setSP} lang={lang} user={user}/>
           <div className="flex items-center gap-2 flex-shrink-0">
             <select value={lang} onChange={e=>setLang(e.target.value)} className="px-2.5 py-1.5 text-[11px] font-bold bg-cream-200 border border-stone-200 rounded-lg outline-none cursor-pointer tracking-wider"><option value="en">EN</option><option value="te">తె</option><option value="hi">हि</option></select>

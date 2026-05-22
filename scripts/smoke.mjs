@@ -39,6 +39,20 @@ const vite = read("vite.config.js");
   // New: photo metadata capture
   "captured_at",
   "navigator.geolocation",
+  // Weakness pack
+  "buildDPR",
+  "exportDPR",
+  "Daily Site Report",
+  "MarkupModal",
+  "saveDrawingMarkup",
+  "Measurement Book",
+  "recomputeFromMB",
+  "signature",
+  "Electronic signature",
+  "computeRiskScore",
+  "fetchLLMInsight",
+  "buildUpiDeepLink",
+  "queueOpAdd",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -92,6 +106,14 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "eslint.config.js",
   ".prettierrc.json",
   ".prettierignore",
+  // Weakness pack
+  "src/lib/offline.js",
+  "src/lib/ai.js",
+  "src/lib/razorpay.js",
+  "src/lib/supabase.js",
+  "capacitor.config.json",
+  "docs/MOBILE_BUILD.md",
+  ".env.example",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder
