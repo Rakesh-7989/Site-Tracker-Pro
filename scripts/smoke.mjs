@@ -26,6 +26,16 @@ const vite = read("vite.config.js");
   "isReleasedCurrentDrawing",
   "superseded_by",
   "Contractor Current",
+  // New: BOQ + Inventory ledger
+  "BOQTab",
+  "LedgerTab",
+  "INIT_BOQ",
+  "INIT_LEDGER",
+  "Bill of Quantities",
+  "Stock Ledger",
+  // New: photo metadata capture
+  "captured_at",
+  "navigator.geolocation",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -44,6 +54,7 @@ const vite = read("vite.config.js");
   "docs/BUSINESS_MODEL.md",
   "docs/PRICING.md",
   "docs/DEPLOYMENT.md",
+  "docs/BACKEND_PLAN.md",
   ".agents/sitetrack-pro/README.md",
   ".agents/sitetrack-pro/team-lead.md",
   ".agents/sitetrack-pro/product-manager.md",
@@ -60,7 +71,14 @@ const vite = read("vite.config.js");
   ".agents/sitetrack-pro/handoff-template.md",
   "vercel.json",
   "netlify.toml",
+  "docs/CI_WORKFLOW.yml",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
+
+// Dead-code cleanup: these paths must NOT exist
+[
+  "_incoming_sitetrack_pro",
+  "sitetrack (1).jsx",
+].forEach(path => add(`Cleaned up: ${path}`, !existsSync(join(root, path))));
 
 add("Build script exists", pkg.scripts?.build === "vite build");
 add("Smoke script exists", pkg.scripts?.smoke === "node scripts/smoke.mjs");
