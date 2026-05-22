@@ -82,7 +82,7 @@ This section maps the user-provided 50 competitor features against current SiteT
 | 4 | Site engineer mobile app | Partial | Responsive web app exists; native app/offline capture can come later. |
 | 5 | Offline mode | Partial | PWA shell exists; true offline data queue and conflict sync still needed. |
 | 6 | Daily progress report | Partial | Updates/diary exist; scheduled DPR PDF/WhatsApp is roadmap. |
-| 7 | Photo with date/time/location | Missing | Add photo metadata capture and GPS permission flow. |
+| 7 | Photo with date/time/location | Present | `captured_at` + `navigator.geolocation` captured on site-update photos; overlay shows date/time/lat,lng. Server-side anti-backdating queued in BACKEND_PLAN.md. |
 | 8 | Drawing/blueprint upload | Present | Drawing upload exists. Current pass adds revision governance. |
 | 9 | Drawing markup | Missing | Add markup viewer after document register is stable. |
 | 10 | Drawing version control | Partial | Auto-supersede/current-only rules added; backend audit still needed. |
@@ -92,14 +92,14 @@ This section maps the user-provided 50 competitor features against current SiteT
 | 14 | Issue tracking | Present | Issues exist with severity and resolution. |
 | 15 | RFI management | Present | RFI workflow exists. |
 | 16 | Submittals | Present | Approvals tab includes submittals. |
-| 17 | BOQ management | Missing | Add BOQ module before estimate/takeoff. |
-| 18 | Estimate creation | Missing | Add estimate builder after BOQ. |
+| 17 | BOQ management | Present | BOQ tab added: line items, category totals, grand total, client read-only. Estimate flow remains roadmap. |
+| 18 | Estimate creation | Missing | Add estimate builder on top of BOQ — queued for next sprint. |
 | 19 | Quotation comparison | Partial | Vendors/POs exist; quote comparison workflow missing. |
 | 20 | Material request | Partial | Materials exist; request-to-approval-to-PO flow missing. |
 | 21 | Purchase order | Present | Purchase orders exist. |
 | 22 | Vendor management | Present | Vendor database exists. |
-| 23 | Inventory tracking | Partial | Materials list exists; stock ledger/inward/outward missing. |
-| 24 | Material inward/outward | Missing | Add inventory transaction ledger. |
+| 23 | Inventory tracking | Present | Stock Ledger tab tracks inward/outward/return/wastage with material-wise balance summary. |
+| 24 | Material inward/outward | Present | Inventory ledger transaction model added (date, material, qty, direction, source, ref_no, by). |
 | 25 | Labour attendance | Present | Attendance exists. |
 | 26 | Labour wage calculation | Partial | Labour wage fields exist; payroll calculations need hardening. |
 | 27 | Contractor work measurement | Partial | Worklogs/RA bills exist; measurement book still needed. |

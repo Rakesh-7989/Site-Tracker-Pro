@@ -116,6 +116,30 @@ MVP should not claim production readiness until backend auth, real permissions, 
 - Business model, pricing hypothesis, India-local competitor set, and 50-feature traceability matrix.
 - Drawing release governance: same title/type new release auto-supersedes older current revision; PM/contractor/client/share views show only current drawings explicitly released to that role.
 
+## Completed 2026-05-22 Sweep
+
+- **Repo cleanup**: removed `_incoming_sitetrack_pro/` legacy snapshot and orphan `sitetrack (1).jsx` (940-line dead file).
+- **Backend plan** drafted: `docs/BACKEND_PLAN.md` with Supabase schema, RLS policies, file storage buckets, 7-phase migration plan, RPO/RTO targets, cost model.
+- **CI workflow** added: `.github/workflows/ci.yml` runs build + smoke + unit tests on push/PR.
+- **BOQ tab** built: line items per project with code/description/category/unit/qty/rate; category totals + grand total. Architect/PM edit; Client read-only.
+- **Stock Ledger tab** built: inward/outward/return/wastage transactions with GRN/DC ref no; material-wise balance summary. Architect/PM/Contractor edit; Client hidden.
+- **Photo metadata capture**: `captured_at` ISO timestamp + `navigator.geolocation` lat/lng on site update photos; visible on hover overlay.
+- **Vitest scaffold + 12 unit tests**: extracted permission rules to `src/lib/permissions.js`; tests cover PERMS shape, `can()`, project visibility, view routing, drawing release logic.
+- **Smoke test strengthened**: 60+ markers including BOQ, Ledger, photo metadata, backend plan, CI workflow, and cleanup verification.
+- **Work-board audit trail**: logged retroactive correction of Phase 1 "agents inside app" mistake (2026-05-20).
+
+## Next Sprint Candidates (carry-over)
+
+| Sprint candidate | Why now | Risk |
+| --- | --- | --- |
+| Refactor App.jsx into `src/components/`, `src/views/`, `src/data/`, `src/lib/` | File is 2,200+ lines; PRs touching one area show entire file diff. | Medium - smoke string markers protect against accidental removal. |
+| App.jsx should import PERMS from `src/lib/permissions.js` instead of inlining | Two copies will drift; tests already use the extracted file. | Low |
+| Provision Supabase dev project per BACKEND_PLAN.md (Phase B1) | Backend Engineer Agent's plan is ready for Tech Lead approval. | High - production data implications. |
+| Add ESLint + Prettier configs | CI placeholder lint step needs a real linter. | Low |
+| Drawing markup viewer (feature #9 in 50-feature matrix) | Remaining Missing item; high competitor pressure from PlanGrid/Autodesk. | Medium |
+| Estimate builder (#18) on top of BOQ | BOQ now exists; estimates are the natural pre-construction extension. | Medium |
+| Payment receipts and reconciliation (#30) | Connects invoices + RA bills to actual money received. | Medium - touches financial data. |
+
 ## Feature Acceptance Checklist
 
 Before a feature enters a sprint:

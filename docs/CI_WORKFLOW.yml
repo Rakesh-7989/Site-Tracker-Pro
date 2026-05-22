@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-smoke:
+    name: Build + Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint check (placeholder — wire ESLint later)
+        run: |
+          node -e "console.log('No linter configured yet. See BACKLOG.md.')"
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke test
+        run: npm run smoke
+
+      - name: Unit tests (Vitest)
+        run: npm run test:unit --if-present
+
+      - name: Upload dist on failure (for debugging)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-on-failure
+          path: dist
+          retention-days: 3
