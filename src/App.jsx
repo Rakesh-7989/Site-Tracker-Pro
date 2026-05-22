@@ -1,5 +1,16 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import {
+  PERMS,
+  can,
+  visibleProjectsForUser,
+  canAccessProject,
+  fallbackViewForUser,
+  canOpenView,
+  canUseQuickCapture,
+  drawingKey,
+  isReleasedCurrentDrawing,
+} from "./lib/permissions.js";
 
 // ── PERSISTENCE (localStorage) ───────────────────────────────────────────────
 const LS_KEY = "sitetrack_v2";
@@ -24,53 +35,8 @@ const I18N = {
 const t = (lang, k) => I18N[lang]?.[k] || I18N.en[k] || k;
 
 // ── PERMISSIONS ───────────────────────────────────────────────────────────────
-const PERMS = {
-  architect: {
-    createProject:true, editProgress:true, addUpdate:true, manageTeam:true,
-    markAttendance:true, addExpense:true, deleteExpense:true, export:true,
-    share:true, changeMilestone:true, addIssue:true, resolveIssue:true,
-    addMaterial:true, deleteMaterial:true, manageDrawings:true, viewActivity:true,
-    tabs:["overview","milestones","tasks","updates","issues","punchlist","materials","ledger","boq","drawings","rfi","changeorders","fieldops","approvals","inspections","safety","team","attendance","budget","po","invoices","labour","rabills","map","ai","gantt"],
-    nav:["dashboard","projects","calendar","vendors","po","analytics","activity","messages","notifications"],
-  },
-  pm: {
-    createProject:false, editProgress:false, addUpdate:true, manageTeam:false,
-    markAttendance:true, addExpense:false, deleteExpense:false, export:true,
-    share:false, changeMilestone:true, addIssue:true, resolveIssue:true,
-    addMaterial:true, deleteMaterial:false, manageDrawings:false, viewActivity:false,
-    tabs:["overview","milestones","tasks","updates","issues","punchlist","materials","ledger","boq","drawings","rfi","changeorders","fieldops","approvals","inspections","safety","team","attendance","budget","po","labour","rabills","map","ai","gantt"],
-    nav:["dashboard","projects","calendar","vendors","po","pm","messages","notifications"],
-  },
-  contractor: {
-    createProject:false, editProgress:false, addUpdate:true, manageTeam:false,
-    markAttendance:false, addExpense:false, deleteExpense:false, export:false,
-    share:false, changeMilestone:false, addIssue:true, resolveIssue:false,
-    addMaterial:true, deleteMaterial:false, manageDrawings:false, viewActivity:false,
-    tabs:["overview","updates","issues","materials","ledger","drawings","rfi","fieldops","approvals","rabills","map","ai","gantt"],
-    nav:["dashboard","projects","messages","notifications"],
-  },
-  client: {
-    createProject:false, editProgress:false, addUpdate:false, manageTeam:false,
-    markAttendance:false, addExpense:false, deleteExpense:false, export:false,
-    share:false, changeMilestone:false, addIssue:false, resolveIssue:false,
-    addMaterial:false, deleteMaterial:false, manageDrawings:false, viewActivity:false,
-    tabs:["overview","milestones","updates","drawings","boq","changeorders","approvals","invoices","map","ai","gantt"],
-    nav:["dashboard","calendar","client","notifications"],
-  },
-};
-const can = (user, p) => !!(user && PERMS[user.role]?.[p]);
-const visibleProjectsForUser = (projects, user) => user?.role==="client" ? projects.filter(p=>p.client_email===user.email) : projects;
-const canAccessProject = (user, project) => !!(user && project && (user.role!=="client" || project.client_email===user.email));
-const fallbackViewForUser = user => user?.role==="client" ? "client" : "dashboard";
-const canOpenView = (user, view) => {
-  if(!user) return false;
-  if(view==="logout" || view==="detail") return true;
-  if(view==="create") return can(user,"createProject");
-  return PERMS[user.role]?.nav.includes(view);
-};
-const canUseQuickCapture = user => ["architect","pm","contractor"].includes(user?.role);
-const drawingKey = d => `${(d?.title||"").trim().toLowerCase()}::${(d?.type||"").trim().toLowerCase()}`;
-const isReleasedCurrentDrawing = (d, role) => d?.status==="current" && (d.released_to||[]).includes(role);
+// Single source of truth: src/lib/permissions.js (imported at top).
+// Vitest covers role boundaries, so any drift breaks tests immediately.
 const ROLE_META = {
   architect:{label:"Architect",bg:"bg-orange-100",text:"text-orange-700",col:"orange"},
   pm:{label:"Project Manager",bg:"bg-blue-100",text:"text-blue-700",col:"blue"},
@@ -842,6 +808,7 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   const bq=boq[pid]||[], lg=ledger[pid]||[];
   const[tab,setTab]=useState("overview");
   const[showUpd,setShowUpd]=useState(false);const[nu,setNu]=useState({notes:"",weather:"",workers:""});const[nph,setNph]=useState([]);
+  const[geoOn,setGeoOn]=useState(false); // opt-in for photo geolocation
   const[showEx,setShowEx]=useState(false);const[ne,setNe]=useState({date:"",cat:"Materials",desc:"",amt:"",gst:18,tds:0,attachments:[]});
   const[showMember,setShowMember]=useState(false);const[nm,setNm]=useState({name:"",role:"Site Engineer",phone:""});
   const[lb,setLb]=useState(null);const[editProg,setEditProg]=useState(false);const[tp,setTp]=useState(0);
@@ -872,8 +839,10 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   };
   const phUp=e=>{
     const files=Array.from(e.target.files);
+    // Geolocation is opt-in: only requested if user toggled "Tag with location" before upload.
+    // This avoids surprising the user with a browser permission popup they did not initiate.
     const grabGeo=()=>new Promise(resolve=>{
-      if(!navigator.geolocation) return resolve(null);
+      if(!geoOn || !navigator.geolocation) return resolve(null);
       navigator.geolocation.getCurrentPosition(
         pos=>resolve({lat:+pos.coords.latitude.toFixed(6),lng:+pos.coords.longitude.toFixed(6),accuracy:Math.round(pos.coords.accuracy||0)}),
         ()=>resolve(null),
@@ -961,10 +930,13 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   };
   // Drawing release
   const addDrawing=()=>{
-    if(!ndraw.title.trim())return;
+    if(!ndraw.title.trim()||!ndraw.type?.trim()){alert("Drawing title and type are required for revision governance.");return;}
     const d={id:"d_"+Date.now(),...ndraw,date:new Date().toISOString().split("T")[0],status:"current"};
     const key=drawingKey(d);
-    setDrawings(p=>({...p,[pid]:[d,...(p[pid]||[]).map(x=>drawingKey(x)===key&&x.status==="current"?{...x,status:"superseded",superseded_by:d.id}:x)]}));
+    // Guard: if key is null (blank title/type made it through somehow), skip
+    // the supersede pass entirely — better to leave older drawings as-is than
+    // to wipe every blank drawing under one collision key.
+    setDrawings(p=>({...p,[pid]:[d,...(p[pid]||[]).map(x=>key&&drawingKey(x)===key&&x.status==="current"?{...x,status:"superseded",superseded_by:d.id}:x)]}));
     addActivity(pid,proj.name,"drawing",`Released drawing to ${ndraw.released_to.map(r=>r==="pm"?"PM":"Client").join(" & ")}`,`${ndraw.title} (${ndraw.revision}) · ${(ndraw.files||[]).length} file(s)`,user.name,user.role);
     setNdraw({title:"",type:"Architectural",revision:"Rev A",notes:"",released_to:["pm"],files:[]});setShowDrawing(false);
   };
@@ -979,7 +951,8 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
       const key=drawingKey(target);
       return {...p,[pid]:list.map(d=>{
         if(d.id===id) return {...d,status:nextStatus,superseded_by:nextStatus==="current"?null:d.superseded_by};
-        if(nextStatus==="current"&&drawingKey(d)===key&&d.status==="current") return {...d,status:"superseded",superseded_by:id};
+        // Same guard as addDrawing: skip if key is null (blank title/type).
+        if(nextStatus==="current"&&key&&drawingKey(d)===key&&d.status==="current") return {...d,status:"superseded",superseded_by:id};
         return d;
       })};
     });
@@ -1089,6 +1062,12 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
                 <div className="grid grid-cols-2 gap-3"><input value={nu.weather} onChange={e=>setNu(p=>({...p,weather:e.target.value}))} placeholder="Weather (e.g. Sunny 34°C)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><input type="number" value={nu.workers} onChange={e=>setNu(p=>({...p,workers:e.target.value}))} placeholder="Workers on site" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/></div>
                 <input ref={fRef} type="file" accept="image/*" multiple onChange={phUp} className="hidden"/>
                 <button onClick={()=>fRef.current.click()} className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 hover:border-orange-300 rounded-xl text-sm text-slate-500 hover:text-orange-500 w-full justify-center"><Ic n="camera" s={16}/>Add Photos {nph.length>0&&`(${nph.length})`}</button>
+                <label className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs cursor-pointer border ${geoOn?"bg-orange-50 border-orange-200 text-orange-700":"bg-slate-50 border-slate-200 text-slate-500"}`}>
+                  <input type="checkbox" checked={geoOn} onChange={e=>setGeoOn(e.target.checked)} className="accent-orange-500"/>
+                  <Ic n="map" s={13}/>
+                  <span className="font-semibold">Tag photos with site location</span>
+                  <span className="text-slate-400 ml-auto">{geoOn?"browser will ask for permission":"photos saved without GPS"}</span>
+                </label>
                 {nph.length>0&&<div className="flex gap-2 flex-wrap">{nph.map((ph,i)=><div key={i} className="relative"><img src={ph.url} className="w-16 h-16 rounded-xl object-cover" alt=""/><button onClick={()=>setNph(p=>p.filter((_,j)=>j!==i))} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white"><Ic n="x" s={10}/></button></div>)}</div>}
                 <button onClick={addUpd} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Post Update</button>
               </div>
@@ -1663,14 +1642,29 @@ function RABillsTab({pid,ras,setRa,user,can,proj}){
 function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
   const[show,setShow]=useState(false);
   const[nb,setNb]=useState({code:"",description:"",category:"Civil",unit:"cum",qty:"",rate:""});
+  const[err,setErr]=useState("");
   const canEdit=user.role==="architect"||user.role==="pm";
-  const add=()=>{
-    if(!nb.description.trim()||!nb.qty||!nb.rate) return;
-    setBoq(p=>({...p,[pid]:[...(p[pid]||[]),{id:"bq_"+Date.now(),code:nb.code||"",description:nb.description,category:nb.category,unit:nb.unit,qty:+nb.qty||0,rate:+nb.rate||0,sort:(p[pid]||[]).length+1}]}));
-    addActivity(pid,proj.name,"general","Added BOQ line",nb.description,user.name,user.role);
-    setNb({code:"",description:"",category:"Civil",unit:"cum",qty:"",rate:""});setShow(false);
+  const validate=()=>{
+    if(!nb.description.trim()) return "Description is required.";
+    const q=+nb.qty, r=+nb.rate;
+    if(!Number.isFinite(q) || q<=0) return "Quantity must be a positive number.";
+    if(!Number.isFinite(r) || r<0) return "Rate must be zero or positive (₹).";
+    if(q>1e9 || r>1e9) return "Quantity or rate is unrealistically large.";
+    return "";
   };
-  const del=id=>{const it=bq.find(x=>x.id===id);setBoq(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));if(it)addActivity(pid,proj.name,"general","Removed BOQ line",it.description,user.name,user.role);};
+  const add=()=>{
+    const v=validate();
+    if(v){setErr(v);return;}
+    setBoq(p=>({...p,[pid]:[...(p[pid]||[]),{id:"bq_"+Date.now(),code:nb.code.trim()||"",description:nb.description.trim(),category:nb.category,unit:nb.unit,qty:+nb.qty,rate:+nb.rate,sort:(p[pid]||[]).length+1}]}));
+    addActivity(pid,proj.name,"general","Added BOQ line",nb.description,user.name,user.role);
+    setNb({code:"",description:"",category:"Civil",unit:"cum",qty:"",rate:""});setErr("");setShow(false);
+  };
+  const del=id=>{
+    const it=bq.find(x=>x.id===id);if(!it)return;
+    if(!window.confirm(`Delete BOQ line "${it.description}"?\nLine amount: ${fmtCur(it.qty*it.rate)}\n\nThis cannot be undone.`))return;
+    setBoq(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));
+    addActivity(pid,proj.name,"general","Removed BOQ line",it.description,user.name,user.role);
+  };
   const sorted=[...bq].sort((a,b)=>(a.sort||0)-(b.sort||0));
   const total=sorted.reduce((s,x)=>s+(x.qty*x.rate||0),0);
   const byCategory=sorted.reduce((m,x)=>{(m[x.category]=m[x.category]||[]).push(x);return m;},{});
@@ -1686,17 +1680,18 @@ function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
         {catTotals.map(({c,t})=><div key={c} className="bg-white border border-slate-200 rounded-xl p-4"><div className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded-md ${catColor[c]||catColor.Other}`}>{c}</div><div className="text-lg font-black text-slate-800 mt-2">{fmtCur(t)}</div><div className="text-xs text-slate-400">{Math.round((t/total)*100)||0}% of total</div></div>)}
       </div>}
       {show&&canEdit&&<div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
-        <div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New BOQ Line</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div>
+        <div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New BOQ Line</h3><button onClick={()=>{setShow(false);setErr("");}}><Ic n="x" s={18}/></button></div>
         <div className="grid grid-cols-12 gap-3 mb-3">
-          <input value={nb.code} onChange={e=>setNb(p=>({...p,code:e.target.value}))} placeholder="Code (e.g. 1.2)" className="col-span-3 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
-          <input value={nb.description} onChange={e=>setNb(p=>({...p,description:e.target.value}))} placeholder="Description" className="col-span-9 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input value={nb.code} onChange={e=>{setNb(p=>({...p,code:e.target.value}));setErr("");}} placeholder="Code (e.g. 1.2)" className="col-span-3 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input value={nb.description} onChange={e=>{setNb(p=>({...p,description:e.target.value}));setErr("");}} placeholder="Description" className="col-span-9 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
         </div>
         <div className="grid grid-cols-4 gap-3 mb-3">
           <select value={nb.category} onChange={e=>setNb(p=>({...p,category:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option>Civil</option><option>MEP</option><option>Finishing</option><option>External</option><option>Other</option></select>
           <select value={nb.unit} onChange={e=>setNb(p=>({...p,unit:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400">{BOQ_UNITS.map(u=><option key={u}>{u}</option>)}</select>
-          <input type="number" value={nb.qty} onChange={e=>setNb(p=>({...p,qty:e.target.value}))} placeholder="Qty" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
-          <input type="number" value={nb.rate} onChange={e=>setNb(p=>({...p,rate:e.target.value}))} placeholder="Rate (₹)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input type="number" min="0" step="0.001" value={nb.qty} onChange={e=>{setNb(p=>({...p,qty:e.target.value}));setErr("");}} placeholder="Qty" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input type="number" min="0" step="0.01" value={nb.rate} onChange={e=>{setNb(p=>({...p,rate:e.target.value}));setErr("");}} placeholder="Rate (₹)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
         </div>
+        {err&&<div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold">{err}</div>}
         <div className="flex items-center justify-between">
           <div className="text-sm text-slate-500">Line amount: <strong className="text-slate-800">{fmtCur((+nb.qty||0)*(+nb.rate||0))}</strong></div>
           <button onClick={add} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Add Line</button>
@@ -1730,17 +1725,40 @@ function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
 function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
   const[show,setShow]=useState(false);
   const[filter,setFilter]=useState("all");
+  const[err,setErr]=useState("");
   const today=new Date().toISOString().split("T")[0];
   const matNames=Array.from(new Set([...(mats||[]).map(m=>m.material),...(lg||[]).map(x=>x.material)])).filter(Boolean);
   const[nt,setNt]=useState({date:today,material:matNames[0]||"",unit:"bag",qty:"",direction:"inward",source:"",ref_no:"",notes:""});
   const canEdit=user.role!=="client";
-  const add=()=>{
-    if(!nt.material.trim()||!nt.qty) return;
-    setLedger(p=>({...p,[pid]:[{id:"lg_"+Date.now(),...nt,qty:+nt.qty||0,by:user.name},...(p[pid]||[])]}));
-    addActivity(pid,proj.name,"material",`Recorded ${nt.direction}`,`${nt.material} — ${nt.qty} ${nt.unit}`,user.name,user.role);
-    setNt({date:today,material:matNames[0]||"",unit:"bag",qty:"",direction:"inward",source:"",ref_no:"",notes:""});setShow(false);
+  const validate=()=>{
+    if(!nt.material.trim()) return "Material name is required.";
+    const q=+nt.qty;
+    if(!Number.isFinite(q) || q<=0) return "Quantity must be a positive number.";
+    if(q>1e9) return "Quantity is unrealistically large.";
+    if(!nt.date) return "Transaction date is required.";
+    if(nt.date>today) return "Date cannot be in the future (anti-backdating in reverse).";
+    // Stock check for outward/wastage — prevent removing more than available
+    if(["outward","wastage"].includes(nt.direction)){
+      const inSum=lg.filter(x=>x.material===nt.material.trim()&&(x.direction==="inward"||x.direction==="return")).reduce((s,x)=>s+(+x.qty||0),0);
+      const outSum=lg.filter(x=>x.material===nt.material.trim()&&(x.direction==="outward"||x.direction==="wastage")).reduce((s,x)=>s+(+x.qty||0),0);
+      const balance=inSum-outSum;
+      if(q>balance) return `Cannot remove ${q} ${nt.unit} — current stock balance is only ${balance} ${nt.unit}.`;
+    }
+    return "";
   };
-  const del=id=>{const it=lg.find(x=>x.id===id);setLedger(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));if(it)addActivity(pid,proj.name,"material","Removed ledger entry",`${it.material} — ${it.qty}`,user.name,user.role);};
+  const add=()=>{
+    const v=validate();
+    if(v){setErr(v);return;}
+    setLedger(p=>({...p,[pid]:[{id:"lg_"+Date.now(),...nt,material:nt.material.trim(),source:nt.source.trim(),ref_no:nt.ref_no.trim(),notes:nt.notes.trim(),qty:+nt.qty,by:user.name},...(p[pid]||[])]}));
+    addActivity(pid,proj.name,"material",`Recorded ${nt.direction}`,`${nt.material} — ${nt.qty} ${nt.unit}`,user.name,user.role);
+    setNt({date:today,material:matNames[0]||"",unit:"bag",qty:"",direction:"inward",source:"",ref_no:"",notes:""});setErr("");setShow(false);
+  };
+  const del=id=>{
+    const it=lg.find(x=>x.id===id);if(!it)return;
+    if(!window.confirm(`Delete ${it.direction} transaction?\n${it.material} — ${it.qty} ${it.unit}\nDate: ${fmtDate(it.date)}\n\nThis cannot be undone.`))return;
+    setLedger(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));
+    addActivity(pid,proj.name,"material","Removed ledger entry",`${it.material} — ${it.qty}`,user.name,user.role);
+  };
   const rows=filter==="all"?lg:lg.filter(x=>x.direction===filter);
   // Material-wise stock summary
   const stockMap={};
@@ -1774,20 +1792,21 @@ function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
         {["all","inward","outward","return","wastage"].map(f=><button key={f} onClick={()=>setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${filter===f?"bg-orange-500 text-white":"bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{f}{f!=="all"&&` (${lg.filter(x=>x.direction===f).length})`}</button>)}
       </div>
       {show&&canEdit&&<div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
-        <div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New Stock Transaction</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div>
+        <div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New Stock Transaction</h3><button onClick={()=>{setShow(false);setErr("");}}><Ic n="x" s={18}/></button></div>
         <div className="grid grid-cols-4 gap-3 mb-3">
-          <input type="date" value={nt.date} onChange={e=>setNt(p=>({...p,date:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
-          <select value={nt.direction} onChange={e=>setNt(p=>({...p,direction:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option value="inward">Inward (GRN)</option><option value="outward">Outward (Issue)</option><option value="return">Return</option><option value="wastage">Wastage</option></select>
-          <input value={nt.qty} type="number" onChange={e=>setNt(p=>({...p,qty:e.target.value}))} placeholder="Qty" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input type="date" max={today} value={nt.date} onChange={e=>{setNt(p=>({...p,date:e.target.value}));setErr("");}} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <select value={nt.direction} onChange={e=>{setNt(p=>({...p,direction:e.target.value}));setErr("");}} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option value="inward">Inward (GRN)</option><option value="outward">Outward (Issue)</option><option value="return">Return</option><option value="wastage">Wastage</option></select>
+          <input value={nt.qty} type="number" min="0" step="0.001" onChange={e=>{setNt(p=>({...p,qty:e.target.value}));setErr("");}} placeholder="Qty" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
           <select value={nt.unit} onChange={e=>setNt(p=>({...p,unit:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400">{BOQ_UNITS.map(u=><option key={u}>{u}</option>)}</select>
         </div>
         <div className="grid grid-cols-3 gap-3 mb-3">
-          <input value={nt.material} onChange={e=>setNt(p=>({...p,material:e.target.value}))} placeholder="Material name" list="ledger-materials" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input value={nt.material} onChange={e=>{setNt(p=>({...p,material:e.target.value}));setErr("");}} placeholder="Material name" list="ledger-materials" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
           <datalist id="ledger-materials">{matNames.map(m=><option key={m} value={m}/>)}</datalist>
           <input value={nt.source} onChange={e=>setNt(p=>({...p,source:e.target.value}))} placeholder={nt.direction==="inward"?"Supplier":"Issued to / Location"} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
           <input value={nt.ref_no} onChange={e=>setNt(p=>({...p,ref_no:e.target.value}))} placeholder="GRN / DC / Ref no" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
         </div>
         <textarea value={nt.notes} onChange={e=>setNt(p=>({...p,notes:e.target.value}))} placeholder="Notes (optional)" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-16 mb-3"/>
+        {err&&<div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold">{err}</div>}
         <button onClick={add} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Record</button>
       </div>}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">

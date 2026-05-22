@@ -45,6 +45,10 @@ const vite = read("vite.config.js");
   "AI Agents",
 ].forEach(marker => add(`No in-app agent marker: ${marker}`, !app.includes(marker)));
 
+// PERMS source-of-truth check: App.jsx must NOT redefine PERMS (drift risk)
+add("App.jsx imports PERMS from lib", app.includes('from "./lib/permissions.js"'));
+add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
+
 [
   "docs/AGENTS.md",
   "docs/WORKFLOW.md",
@@ -72,6 +76,14 @@ const vite = read("vite.config.js");
   "vercel.json",
   "netlify.toml",
   "docs/CI_WORKFLOW.yml",
+  // Tech Lead review additions (2026-05-22 evening)
+  "src/lib/permissions.js",
+  "tests/permissions.test.js",
+  "vitest.config.js",
+  "scripts/supabase/01_schema.sql",
+  "scripts/supabase/02_rls.sql",
+  "scripts/supabase/README.md",
+  "CHANGELOG.md",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // Dead-code cleanup: these paths must NOT exist

@@ -120,8 +120,15 @@ export const canOpenView = (user, view) => {
 
 export const canUseQuickCapture = user => ["architect", "pm", "contractor"].includes(user?.role);
 
-export const drawingKey = d =>
-  `${(d?.title || "").trim().toLowerCase()}::${(d?.type || "").trim().toLowerCase()}`;
+export const drawingKey = d => {
+  const title = (d?.title || "").trim().toLowerCase();
+  const type = (d?.type || "").trim().toLowerCase();
+  // Return null for blank inputs so callers can refuse to treat empty drawings
+  // as collidable. Previously this returned "::" and every blank drawing would
+  // appear to supersede every other blank drawing.
+  if (!title || !type) return null;
+  return `${title}::${type}`;
+};
 
 export const isReleasedCurrentDrawing = (d, role) =>
   d?.status === "current" && (d.released_to || []).includes(role);
