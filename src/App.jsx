@@ -30,7 +30,7 @@ const PERMS = {
     markAttendance:true, addExpense:true, deleteExpense:true, export:true,
     share:true, changeMilestone:true, addIssue:true, resolveIssue:true,
     addMaterial:true, deleteMaterial:true, manageDrawings:true, viewActivity:true,
-    tabs:["overview","milestones","tasks","updates","issues","punchlist","materials","drawings","rfi","changeorders","fieldops","approvals","inspections","safety","team","attendance","budget","po","invoices","labour","rabills","map","ai","gantt"],
+    tabs:["overview","milestones","tasks","updates","issues","punchlist","materials","ledger","boq","drawings","rfi","changeorders","fieldops","approvals","inspections","safety","team","attendance","budget","po","invoices","labour","rabills","map","ai","gantt"],
     nav:["dashboard","projects","calendar","vendors","po","analytics","activity","messages","notifications"],
   },
   pm: {
@@ -38,7 +38,7 @@ const PERMS = {
     markAttendance:true, addExpense:false, deleteExpense:false, export:true,
     share:false, changeMilestone:true, addIssue:true, resolveIssue:true,
     addMaterial:true, deleteMaterial:false, manageDrawings:false, viewActivity:false,
-    tabs:["overview","milestones","tasks","updates","issues","punchlist","materials","drawings","rfi","changeorders","fieldops","approvals","inspections","safety","team","attendance","budget","po","labour","rabills","map","ai","gantt"],
+    tabs:["overview","milestones","tasks","updates","issues","punchlist","materials","ledger","boq","drawings","rfi","changeorders","fieldops","approvals","inspections","safety","team","attendance","budget","po","labour","rabills","map","ai","gantt"],
     nav:["dashboard","projects","calendar","vendors","po","pm","messages","notifications"],
   },
   contractor: {
@@ -46,7 +46,7 @@ const PERMS = {
     markAttendance:false, addExpense:false, deleteExpense:false, export:false,
     share:false, changeMilestone:false, addIssue:true, resolveIssue:false,
     addMaterial:true, deleteMaterial:false, manageDrawings:false, viewActivity:false,
-    tabs:["overview","updates","issues","materials","drawings","rfi","fieldops","approvals","rabills","map","ai","gantt"],
+    tabs:["overview","updates","issues","materials","ledger","drawings","rfi","fieldops","approvals","rabills","map","ai","gantt"],
     nav:["dashboard","projects","messages","notifications"],
   },
   client: {
@@ -54,7 +54,7 @@ const PERMS = {
     markAttendance:false, addExpense:false, deleteExpense:false, export:false,
     share:false, changeMilestone:false, addIssue:false, resolveIssue:false,
     addMaterial:false, deleteMaterial:false, manageDrawings:false, viewActivity:false,
-    tabs:["overview","milestones","updates","drawings","changeorders","approvals","invoices","map","ai","gantt"],
+    tabs:["overview","milestones","updates","drawings","boq","changeorders","approvals","invoices","map","ai","gantt"],
     nav:["dashboard","calendar","client","notifications"],
   },
 };
@@ -288,6 +288,36 @@ const INIT_COMMENTS = [
   {id:"cm1",entity:"i1",text:"Structural consultant visiting tomorrow",by:"Priya Sharma",role:"pm",time:"2025-04-19T11:00:00Z"},
   {id:"cm2",entity:"i3",text:"Need urgent action — work stopped on F14",by:"Kiran Reddy",role:"pm",time:"2025-04-20T09:30:00Z"},
 ];
+// ── NEW: BOQ (Bill of Quantities) per project ────────────────────────────────
+const INIT_BOQ = {
+  p1:[
+    {id:"bq1",code:"1.1",description:"Earthwork excavation in foundation",category:"Civil",unit:"cum",qty:1850,rate:240,sort:1},
+    {id:"bq2",code:"1.2",description:"PCC 1:4:8 below foundation",category:"Civil",unit:"cum",qty:120,rate:5400,sort:2},
+    {id:"bq3",code:"2.1",description:"RCC M30 footings",category:"Civil",unit:"cum",qty:480,rate:8200,sort:3},
+    {id:"bq4",code:"2.2",description:"TMT Fe500 reinforcement",category:"Civil",unit:"ton",qty:185,rate:71500,sort:4},
+    {id:"bq5",code:"3.1",description:"Brickwork in superstructure",category:"Civil",unit:"cum",qty:920,rate:6800,sort:5},
+    {id:"bq6",code:"4.1",description:"Internal plastering 12mm",category:"Finishing",unit:"sqm",qty:8400,rate:280,sort:6},
+    {id:"bq7",code:"5.1",description:"Electrical conduit + wiring",category:"MEP",unit:"sqft",qty:21500,rate:185,sort:7},
+    {id:"bq8",code:"5.2",description:"Plumbing GI pipes + fittings",category:"MEP",unit:"rmt",qty:1800,rate:420,sort:8},
+  ],
+  p2:[
+    {id:"bq9",code:"1.1",description:"Site clearance and grading",category:"Civil",unit:"sqm",qty:6200,rate:85,sort:1},
+    {id:"bq10",code:"2.1",description:"RCC M25 columns",category:"Civil",unit:"cum",qty:140,rate:7800,sort:2},
+  ],
+};
+// ── NEW: Inventory ledger (inward / outward / GRN) ───────────────────────────
+const INIT_LEDGER = {
+  p1:[
+    {id:"lg1",date:"2025-04-19",material:"TMT Steel Fe500",unit:"ton",qty:15,direction:"inward",source:"Vizag Steel",ref_no:"GRN-001",notes:"Inspected, no defects",by:"Ravi Kumar"},
+    {id:"lg2",date:"2025-04-19",material:"TMT Steel Fe500",unit:"ton",qty:6,direction:"outward",source:"Floor 22 reinforcement",ref_no:"ISS-001",notes:"Issued to bar bender team",by:"Suresh Babu"},
+    {id:"lg3",date:"2025-04-17",material:"Ready Mix Concrete M30",unit:"cum",qty:60,direction:"inward",source:"Ultratech RMC",ref_no:"GRN-002",notes:"Slump test passed",by:"Ravi Kumar"},
+    {id:"lg4",date:"2025-04-17",material:"Ready Mix Concrete M30",unit:"cum",qty:58,direction:"outward",source:"Floor 21 slab pour",ref_no:"ISS-002",notes:"Used; 2 cum surplus returned",by:"Suresh Babu"},
+    {id:"lg5",date:"2025-04-18",material:"Cement OPC 53",unit:"bag",qty:300,direction:"inward",source:"ACC Cement",ref_no:"GRN-003",notes:"",by:"Ravi Kumar"},
+  ],
+  p2:[
+    {id:"lg6",date:"2025-04-18",material:"Cement OPC 53",unit:"bag",qty:300,direction:"inward",source:"ACC Cement",ref_no:"GRN-101",notes:"",by:"Mahesh Rao"},
+  ],
+};
 
 const INIT_EQUIPMENT = {
   p1:[
@@ -347,7 +377,9 @@ const CAT_COLORS = {Materials:"bg-blue-50 text-blue-600",Labour:"bg-violet-50 te
 const ATT_STATUS = {present:{label:"Present",bg:"bg-emerald-100",text:"text-emerald-700"},absent:{label:"Absent",bg:"bg-red-100",text:"text-red-600"},half_day:{label:"Half Day",bg:"bg-amber-100",text:"text-amber-700"}};
 const ACTIVITY_ICONS = {update:"hardhat",issue:"alert",milestone:"flag",material:"truck",drawing:"doc",expense:"wallet",team:"users",general:"bell"};
 const CHART_COLORS = ["#f97316","#3b82f6","#10b981","#8b5cf6","#f59e0b","#ef4444"];
-const TAB_LABELS = {fieldops:"Field Ops",approvals:"Approvals",changeorders:"Change Orders",punchlist:"Punch List",rabills:"RA Bills",po:"PO",rfi:"RFI",ai:"AI",map:"Map"};
+const TAB_LABELS = {fieldops:"Field Ops",approvals:"Approvals",changeorders:"Change Orders",punchlist:"Punch List",rabills:"RA Bills",po:"PO",rfi:"RFI",ai:"AI",map:"Map",boq:"BOQ",ledger:"Stock Ledger"};
+const BOQ_UNITS = ["cum","sqm","sqft","kg","ton","nos","rmt","ltr","bag","trip"];
+const LEDGER_DIRS = {inward:{label:"Inward",bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200"},outward:{label:"Outward",bg:"bg-amber-50",text:"text-amber-700",border:"border-amber-200"},return:{label:"Return",bg:"bg-blue-50",text:"text-blue-700",border:"border-blue-200"},wastage:{label:"Wastage",bg:"bg-red-50",text:"text-red-700",border:"border-red-200"}};
 
 const fmtDate = d => { if(!d)return"—"; try{return new Date(d).toLocaleDateString("en-IN",{month:"short",day:"numeric",year:"numeric"});}catch{return"—";} };
 const fmtTime = t => { if(!t)return""; try{return new Date(t).toLocaleString("en-IN",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch{return"";} };
@@ -797,7 +829,7 @@ function QuickCaptureDrawer({quick,setQuick,onSave}){
   );
 }
 
-function DetailView({pid,user,setView,projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,lang}){
+function DetailView({pid,user,setView,projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,lang}){
   const proj=projects.find(p=>p.id===pid);
   const ms=milestones[pid]||[], us=updates[pid]||[], ex=expenses[pid]||[];
   const tm=teams[pid]||[], att=attendance[pid]||{};
@@ -807,6 +839,7 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   const projPOs=pos[pid]||[], invs=invoices[pid]||[], lbs=labour[pid]||[], ras=ra[pid]||[];
   const eqs=equipment[pid]||[], dys=diary[pid]||[], wls=worklogs[pid]||[], cls=checklists[pid]||[];
   const subs=submittals[pid]||[], prs=permits[pid]||[], msgs=messages[pid]||[];
+  const bq=boq[pid]||[], lg=ledger[pid]||[];
   const[tab,setTab]=useState("overview");
   const[showUpd,setShowUpd]=useState(false);const[nu,setNu]=useState({notes:"",weather:"",workers:""});const[nph,setNph]=useState([]);
   const[showEx,setShowEx]=useState(false);const[ne,setNe]=useState({date:"",cat:"Materials",desc:"",amt:"",gst:18,tds:0,attachments:[]});
@@ -837,7 +870,24 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
     setMilestones(p=>({...p,[pid]:p[pid].map(x=>x.id===mid?{...x,status:ns,completed_date:ns==="completed"?new Date().toISOString().split("T")[0]:null}:x)}));
     addActivity(pid,proj.name,"milestone",`Milestone status changed`,`${m.title} → ${ns.replace("_"," ")}`,user.name,user.role);
   };
-  const phUp=e=>Array.from(e.target.files).forEach(f=>{const r=new FileReader();r.onload=ev=>setNph(p=>[...p,{url:ev.target.result}]);r.readAsDataURL(f);});
+  const phUp=e=>{
+    const files=Array.from(e.target.files);
+    const grabGeo=()=>new Promise(resolve=>{
+      if(!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        pos=>resolve({lat:+pos.coords.latitude.toFixed(6),lng:+pos.coords.longitude.toFixed(6),accuracy:Math.round(pos.coords.accuracy||0)}),
+        ()=>resolve(null),
+        {enableHighAccuracy:true,timeout:4000,maximumAge:60000}
+      );
+    });
+    grabGeo().then(geo=>{
+      files.forEach(f=>{
+        const r=new FileReader();
+        r.onload=ev=>setNph(p=>[...p,{url:ev.target.result,captured_at:new Date().toISOString(),geo,name:f.name,size:f.size}]);
+        r.readAsDataURL(f);
+      });
+    });
+  };
   const addUpd=()=>{
     if(!nu.notes.trim())return;
     setUpdates(p=>({...p,[pid]:[{id:"u_"+Date.now(),update_date:new Date().toISOString().split("T")[0],notes:nu.notes,weather:nu.weather||"—",workers_count:parseInt(nu.workers)||null,photos:nph},...(p[pid]||[])]}));
@@ -1050,7 +1100,7 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
                 <div className="flex items-center justify-between mb-3"><div className="font-bold text-slate-700 text-sm">{new Date(u.update_date).toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>{u.weather&&<span className="text-xs bg-amber-50 text-amber-700 border border-amber-100 px-2.5 py-1 rounded-full">{u.weather}</span>}</div>
                 <p className="text-slate-600 text-sm mb-3">{u.notes}</p>
                 {u.workers_count&&<div className="flex items-center gap-2 text-xs text-slate-400 mb-3"><Ic n="users" s={13}/><strong className="text-slate-700">{u.workers_count}</strong> workers on site</div>}
-                {u.photos?.length>0&&<div><div className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Ic n="camera" s={12}/>{u.photos.length} Photos</div><div className="flex gap-2 flex-wrap">{u.photos.map((ph,i)=><img key={i} src={ph.url} onClick={()=>setLb(ph.url)} className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:opacity-80 hover:scale-105 transition-all" alt=""/>)}</div></div>}
+                {u.photos?.length>0&&<div><div className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Ic n="camera" s={12}/>{u.photos.length} Photos</div><div className="flex gap-2 flex-wrap">{u.photos.map((ph,i)=><div key={i} className="relative group"><img src={ph.url} onClick={()=>setLb(ph.url)} className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:opacity-80 hover:scale-105 transition-all" alt=""/>{(ph.captured_at||ph.geo)&&<div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity"><div>{ph.captured_at?new Date(ph.captured_at).toLocaleString("en-IN",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):""}</div>{ph.geo&&<div className="truncate">📍{ph.geo.lat},{ph.geo.lng}</div>}</div>}</div>)}</div></div>}
               </div>
             ))}
             {us.length===0&&<div className="text-center py-16 text-slate-400"><Ic n="hardhat" s={32} c="mx-auto mb-3 opacity-30"/><p>No updates yet</p></div>}
@@ -1260,6 +1310,12 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
       {tab==="rabills"&&<RABillsTab pid={pid} ras={ras} setRa={setRa} user={user} can={can} proj={proj}/>}
       {tab==="map"&&<MapTab project={proj} teams={tm} materials={mats} equipment={eqs} issues={iss}/>}
       {tab==="ai"&&<AIInsightsTab project={proj} milestones={ms} issues={iss} tasks={tks} rfis={rfis} submittals={subs} permits={prs} safety={sfs} expenses={ex} worklogs={wls}/>}
+
+      {/* ── BOQ (Bill of Quantities) ── */}
+      {tab==="boq"&&<BOQTab pid={pid} bq={bq} setBoq={setBoq} user={user} can={can} addActivity={addActivity} proj={proj}/>}
+
+      {/* ── INVENTORY LEDGER ── */}
+      {tab==="ledger"&&<LedgerTab pid={pid} lg={lg} setLedger={setLedger} mats={mats} user={user} can={can} addActivity={addActivity} proj={proj}/>}
 
       {/* ── GANTT ── */}
       {tab==="gantt"&&<GanttView project={proj} milestones={ms}/>}
@@ -1603,6 +1659,155 @@ function RABillsTab({pid,ras,setRa,user,can,proj}){
   );
 }
 
+// ── BOQ Tab (Bill of Quantities) ─────────────────────────────────────────────
+function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
+  const[show,setShow]=useState(false);
+  const[nb,setNb]=useState({code:"",description:"",category:"Civil",unit:"cum",qty:"",rate:""});
+  const canEdit=user.role==="architect"||user.role==="pm";
+  const add=()=>{
+    if(!nb.description.trim()||!nb.qty||!nb.rate) return;
+    setBoq(p=>({...p,[pid]:[...(p[pid]||[]),{id:"bq_"+Date.now(),code:nb.code||"",description:nb.description,category:nb.category,unit:nb.unit,qty:+nb.qty||0,rate:+nb.rate||0,sort:(p[pid]||[]).length+1}]}));
+    addActivity(pid,proj.name,"general","Added BOQ line",nb.description,user.name,user.role);
+    setNb({code:"",description:"",category:"Civil",unit:"cum",qty:"",rate:""});setShow(false);
+  };
+  const del=id=>{const it=bq.find(x=>x.id===id);setBoq(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));if(it)addActivity(pid,proj.name,"general","Removed BOQ line",it.description,user.name,user.role);};
+  const sorted=[...bq].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  const total=sorted.reduce((s,x)=>s+(x.qty*x.rate||0),0);
+  const byCategory=sorted.reduce((m,x)=>{(m[x.category]=m[x.category]||[]).push(x);return m;},{});
+  const catTotals=Object.entries(byCategory).map(([c,items])=>({c,t:items.reduce((s,x)=>s+(x.qty*x.rate),0)})).sort((a,b)=>b.t-a.t);
+  const catColor={Civil:"bg-blue-50 text-blue-700",MEP:"bg-violet-50 text-violet-700",Finishing:"bg-emerald-50 text-emerald-700",External:"bg-amber-50 text-amber-700",Other:"bg-slate-100 text-slate-500"};
+  return(
+    <div>
+      <div className="flex items-center justify-between mb-5">
+        <div><h2 className="font-bold text-slate-800">Bill of Quantities (BOQ)</h2><p className="text-xs text-slate-400 mt-0.5">{sorted.length} line items · Total {fmtCur(total)}</p></div>
+        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>Add BOQ Line</button>}
+      </div>
+      {catTotals.length>0&&<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        {catTotals.map(({c,t})=><div key={c} className="bg-white border border-slate-200 rounded-xl p-4"><div className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded-md ${catColor[c]||catColor.Other}`}>{c}</div><div className="text-lg font-black text-slate-800 mt-2">{fmtCur(t)}</div><div className="text-xs text-slate-400">{Math.round((t/total)*100)||0}% of total</div></div>)}
+      </div>}
+      {show&&canEdit&&<div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
+        <div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New BOQ Line</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div>
+        <div className="grid grid-cols-12 gap-3 mb-3">
+          <input value={nb.code} onChange={e=>setNb(p=>({...p,code:e.target.value}))} placeholder="Code (e.g. 1.2)" className="col-span-3 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input value={nb.description} onChange={e=>setNb(p=>({...p,description:e.target.value}))} placeholder="Description" className="col-span-9 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+        </div>
+        <div className="grid grid-cols-4 gap-3 mb-3">
+          <select value={nb.category} onChange={e=>setNb(p=>({...p,category:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option>Civil</option><option>MEP</option><option>Finishing</option><option>External</option><option>Other</option></select>
+          <select value={nb.unit} onChange={e=>setNb(p=>({...p,unit:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400">{BOQ_UNITS.map(u=><option key={u}>{u}</option>)}</select>
+          <input type="number" value={nb.qty} onChange={e=>setNb(p=>({...p,qty:e.target.value}))} placeholder="Qty" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input type="number" value={nb.rate} onChange={e=>setNb(p=>({...p,rate:e.target.value}))} placeholder="Rate (₹)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-500">Line amount: <strong className="text-slate-800">{fmtCur((+nb.qty||0)*(+nb.rate||0))}</strong></div>
+          <button onClick={add} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Add Line</button>
+        </div>
+      </div>}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-widest text-slate-400">
+          <div className="col-span-1">Code</div><div className="col-span-5">Description</div><div className="col-span-1">Unit</div><div className="col-span-1 text-right">Qty</div><div className="col-span-2 text-right">Rate</div><div className="col-span-2 text-right">Amount</div>
+        </div>
+        {sorted.length===0?<div className="text-center py-16 text-slate-400"><Ic n="receipt" s={32} c="mx-auto mb-3 opacity-30"/><p>No BOQ lines added</p></div>:<div className="divide-y divide-slate-50">
+          {sorted.map(x=><div key={x.id} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-slate-50 items-center text-sm">
+            <div className="col-span-1 font-mono text-xs text-slate-500">{x.code||"—"}</div>
+            <div className="col-span-5"><div className="font-semibold text-slate-800">{x.description}</div><div className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded-md mt-1 ${catColor[x.category]||catColor.Other}`}>{x.category}</div></div>
+            <div className="col-span-1 text-slate-600">{x.unit}</div>
+            <div className="col-span-1 text-right font-semibold text-slate-700">{x.qty}</div>
+            <div className="col-span-2 text-right text-slate-600">{fmtCur(x.rate)}</div>
+            <div className="col-span-1 text-right font-bold text-slate-800">{fmtCur(x.qty*x.rate)}</div>
+            <div className="col-span-1 text-right">{canEdit&&<button onClick={()=>del(x.id)} className="text-slate-300 hover:text-red-400"><Ic n="trash" s={14}/></button>}</div>
+          </div>)}
+          <div className="grid grid-cols-12 gap-3 px-5 py-4 bg-slate-50 items-center font-bold text-slate-800 text-sm border-t-2 border-slate-200">
+            <div className="col-span-10 text-right">Grand Total</div>
+            <div className="col-span-2 text-right">{fmtCur(total)}</div>
+          </div>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Inventory Ledger Tab (inward / outward / GRN) ────────────────────────────
+function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
+  const[show,setShow]=useState(false);
+  const[filter,setFilter]=useState("all");
+  const today=new Date().toISOString().split("T")[0];
+  const matNames=Array.from(new Set([...(mats||[]).map(m=>m.material),...(lg||[]).map(x=>x.material)])).filter(Boolean);
+  const[nt,setNt]=useState({date:today,material:matNames[0]||"",unit:"bag",qty:"",direction:"inward",source:"",ref_no:"",notes:""});
+  const canEdit=user.role!=="client";
+  const add=()=>{
+    if(!nt.material.trim()||!nt.qty) return;
+    setLedger(p=>({...p,[pid]:[{id:"lg_"+Date.now(),...nt,qty:+nt.qty||0,by:user.name},...(p[pid]||[])]}));
+    addActivity(pid,proj.name,"material",`Recorded ${nt.direction}`,`${nt.material} — ${nt.qty} ${nt.unit}`,user.name,user.role);
+    setNt({date:today,material:matNames[0]||"",unit:"bag",qty:"",direction:"inward",source:"",ref_no:"",notes:""});setShow(false);
+  };
+  const del=id=>{const it=lg.find(x=>x.id===id);setLedger(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));if(it)addActivity(pid,proj.name,"material","Removed ledger entry",`${it.material} — ${it.qty}`,user.name,user.role);};
+  const rows=filter==="all"?lg:lg.filter(x=>x.direction===filter);
+  // Material-wise stock summary
+  const stockMap={};
+  for(const x of lg){
+    const k=x.material;if(!stockMap[k])stockMap[k]={material:k,unit:x.unit,inward:0,outward:0,balance:0};
+    if(x.direction==="inward"||x.direction==="return")stockMap[k].inward+=+x.qty||0;
+    else stockMap[k].outward+=+x.qty||0;
+    stockMap[k].balance=stockMap[k].inward-stockMap[k].outward;
+  }
+  const stockRows=Object.values(stockMap).sort((a,b)=>b.balance-a.balance);
+  return(
+    <div>
+      <div className="flex items-center justify-between mb-5">
+        <div><h2 className="font-bold text-slate-800">Stock Ledger</h2><p className="text-xs text-slate-400 mt-0.5">{lg.length} transactions · {stockRows.length} materials tracked</p></div>
+        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>Record Transaction</button>}
+      </div>
+      {stockRows.length>0&&<div className="bg-white rounded-2xl border border-slate-200 mb-5 overflow-hidden">
+        <div className="px-5 py-3 border-b border-slate-100"><h3 className="font-bold text-slate-700 text-sm">Current Stock Balance</h3></div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+          {stockRows.map(s=><div key={s.material} className={`rounded-xl border p-3 ${s.balance<0?"bg-red-50 border-red-200":s.balance===0?"bg-slate-50 border-slate-200":"bg-emerald-50 border-emerald-200"}`}>
+            <div className="font-semibold text-slate-800 text-sm">{s.material}</div>
+            <div className="flex items-center justify-between mt-2 text-xs">
+              <span className="text-emerald-700">In: <strong>{s.inward}</strong></span>
+              <span className="text-amber-700">Out: <strong>{s.outward}</strong></span>
+              <span className={s.balance<0?"text-red-700":"text-slate-700"}>Bal: <strong>{s.balance} {s.unit}</strong></span>
+            </div>
+          </div>)}
+        </div>
+      </div>}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {["all","inward","outward","return","wastage"].map(f=><button key={f} onClick={()=>setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize ${filter===f?"bg-orange-500 text-white":"bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{f}{f!=="all"&&` (${lg.filter(x=>x.direction===f).length})`}</button>)}
+      </div>
+      {show&&canEdit&&<div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
+        <div className="flex justify-between mb-4"><h3 className="font-bold text-slate-800">New Stock Transaction</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div>
+        <div className="grid grid-cols-4 gap-3 mb-3">
+          <input type="date" value={nt.date} onChange={e=>setNt(p=>({...p,date:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <select value={nt.direction} onChange={e=>setNt(p=>({...p,direction:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option value="inward">Inward (GRN)</option><option value="outward">Outward (Issue)</option><option value="return">Return</option><option value="wastage">Wastage</option></select>
+          <input value={nt.qty} type="number" onChange={e=>setNt(p=>({...p,qty:e.target.value}))} placeholder="Qty" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <select value={nt.unit} onChange={e=>setNt(p=>({...p,unit:e.target.value}))} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400">{BOQ_UNITS.map(u=><option key={u}>{u}</option>)}</select>
+        </div>
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          <input value={nt.material} onChange={e=>setNt(p=>({...p,material:e.target.value}))} placeholder="Material name" list="ledger-materials" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <datalist id="ledger-materials">{matNames.map(m=><option key={m} value={m}/>)}</datalist>
+          <input value={nt.source} onChange={e=>setNt(p=>({...p,source:e.target.value}))} placeholder={nt.direction==="inward"?"Supplier":"Issued to / Location"} className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+          <input value={nt.ref_no} onChange={e=>setNt(p=>({...p,ref_no:e.target.value}))} placeholder="GRN / DC / Ref no" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/>
+        </div>
+        <textarea value={nt.notes} onChange={e=>setNt(p=>({...p,notes:e.target.value}))} placeholder="Notes (optional)" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-16 mb-3"/>
+        <button onClick={add} className="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm">Record</button>
+      </div>}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        {rows.length===0?<div className="text-center py-16 text-slate-400"><Ic n="truck" s={32} c="mx-auto mb-3 opacity-30"/><p>No transactions</p></div>:<div className="divide-y divide-slate-50">
+          {rows.map(x=>{const d=LEDGER_DIRS[x.direction]||LEDGER_DIRS.inward;return(
+            <div key={x.id} className="px-5 py-3 flex items-center gap-3">
+              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md border ${d.bg} ${d.text} ${d.border}`}>{d.label}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-800 text-sm truncate">{x.material} — <span className="text-orange-600">{x.qty} {x.unit}</span></div>
+                <div className="text-xs text-slate-400 mt-0.5">{fmtDate(x.date)}{x.ref_no?` · ${x.ref_no}`:""}{x.source?` · ${x.source}`:""}{x.by?` · by ${x.by}`:""}</div>
+              </div>
+              {canEdit&&<button onClick={()=>del(x.id)} className="text-slate-300 hover:text-red-400"><Ic n="trash" s={14}/></button>}
+            </div>
+          );})}
+        </div>}
+      </div>
+    </div>
+  );
+}
+
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
 function CreateView({user,setView,setProjects}){
   if(!can(user,"createProject")) return <div className="p-8"><AccessDenied msg="Only Architects can create new projects."/></div>;
@@ -1861,6 +2066,8 @@ export default function App(){
   const[submittals,setSubmittals]=useLS("submittals",INIT_SUBMITTALS);
   const[permits,setPermits]=useLS("permits",INIT_PERMITS);
   const[messages,setMessages]=useLS("messages",INIT_MESSAGES);
+  const[boq,setBoq]=useLS("boq",INIT_BOQ);
+  const[ledger,setLedger]=useLS("ledger",INIT_LEDGER);
   const[lang,setLang]=useLS("lang","en");
   const[dark,setDark]=useLS("dark",false);
   const[mobileOpen,setMobileOpen]=useState(false);
@@ -1888,7 +2095,7 @@ export default function App(){
   const selectedProject=projects.find(p=>p.id===sp);
   const effectiveView=(canOpenView(user,view) && (view!=="detail" || !selectedProject || canAccessProject(user,selectedProject))) ? view : fallbackViewForUser(user);
   const dp={projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,
-    tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,lang};
+    tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,lang};
 
   const renderView=()=>{
     switch(effectiveView){
