@@ -599,32 +599,101 @@ function ActivityView({user,activity,setActivity,projects}){
 function LoginScreen({onLogin,dark,toggleDark}){
   const[role,setRole]=useState("architect");const[anim,setAnim]=useState(false);
   const roles=[
-    {key:"architect",label:"Architect / Admin",sub:"Full control — drawings, team, export, activity feed",ini:"AR",col:"orange",perms:["Release Drawings","Manage Everything","View All Activity","Export & Share"]},
-    {key:"pm",label:"Project Manager",sub:"Field ops — updates, attendance, issues, materials",ini:"PS",col:"blue",perms:["Add Site Updates","Mark Attendance","Report Issues","Add Material Logs"]},
-    {key:"contractor",label:"Contractor",sub:"Submit worklogs, RFIs, RA bills, invoices, and field documents",ini:"KB",col:"violet",perms:["Worklogs","RFIs","RA Bills","Field Uploads"]},
-    {key:"client",label:"Client",sub:"Read-only — progress, milestones, released drawings",ini:"VN",col:"emerald",perms:["View Progress","View Milestones","View Released Drawings","View Updates"]},
+    {key:"architect",label:"Architect / Admin",sub:"Full control — drawings, team, exports, activity feed",ini:"AR",col:"orange",perms:["Release Drawings","Manage Everything","View All Activity","Export & Share"]},
+    {key:"pm",label:"Project Manager",sub:"Field operations — updates, attendance, issues, materials",ini:"PS",col:"blue",perms:["Add Site Updates","Mark Attendance","Report Issues","Material Logs"]},
+    {key:"contractor",label:"Contractor",sub:"Worklogs, RFIs, RA bills, and field documents",ini:"KB",col:"violet",perms:["Worklogs","RFIs","RA Bills","Field Uploads"]},
+    {key:"client",label:"Client",sub:"Read-only — progress, milestones, released drawings",ini:"VN",col:"emerald",perms:["View Progress","View Milestones","Released Drawings","Updates"]},
   ];
+  const selected=roles.find(r=>r.key===role);
   return(
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-5" style={{backgroundImage:"linear-gradient(#f97316 1px,transparent 1px),linear-gradient(90deg,#f97316 1px,transparent 1px)",backgroundSize:"40px 40px"}}/>
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900/80 to-orange-950/40"/>
-      <button onClick={toggleDark} className="absolute top-4 right-4 text-slate-400 hover:text-white z-10 p-2 rounded-xl bg-white/10"><Ic n={dark?"sun2":"moon"} s={18}/></button>
-      <div className={`relative z-10 w-full max-w-lg transition-all duration-400 ${anim?"opacity-0 scale-95":"opacity-100 scale-100"}`}>
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4"><div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/30"><Ic n="hardhat" s={24} c="text-white"/></div><div><div className="text-3xl font-black text-white tracking-tight leading-none">SiteTrack</div><div className="text-xs font-medium text-orange-400 tracking-widest uppercase">Pro</div></div></div>
-          <p className="text-slate-400 text-sm">Construction management with role-based access</p>
+    <div className="min-h-screen bg-cream flex relative overflow-hidden">
+      {/* Toggle dark */}
+      <button onClick={toggleDark} className="absolute top-5 right-5 z-20 text-ink-500 hover:text-ink-900 p-2 rounded-xl bg-white shadow-editorial"><Ic n={dark?"sun2":"moon"} s={16}/></button>
+
+      {/* LEFT — Editorial hero (hidden on mobile) */}
+      <div className="hidden md:flex w-1/2 relative bg-ink-900 text-cream overflow-hidden">
+        {/* Refined grid overlay */}
+        <div className="absolute inset-0 opacity-[0.06]" style={{backgroundImage:"linear-gradient(rgba(245,158,11,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,.5) 1px,transparent 1px)",backgroundSize:"56px 56px"}}/>
+        {/* Warm radial glows */}
+        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full" style={{background:"radial-gradient(circle, rgba(217,119,6,.22) 0%, transparent 65%)"}}/>
+        <div className="absolute -bottom-20 -right-20 w-[28rem] h-[28rem] rounded-full" style={{background:"radial-gradient(circle, rgba(245,158,11,.16) 0%, transparent 65%)"}}/>
+
+        <div className="relative z-10 flex flex-col justify-between p-12 lg:p-16 w-full">
+          {/* Brand mark */}
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-gold flex items-center justify-center shadow-lg"><Ic n="hardhat" s={22} c="text-white"/></div>
+            <div>
+              <div className="font-display text-2xl font-bold tracking-editorial leading-none">SiteTrack</div>
+              <div className="text-[10px] font-semibold tracking-[0.32em] uppercase text-gradient-gold mt-1">Construction Suite</div>
+            </div>
+          </div>
+
+          {/* Editorial headline */}
+          <div className="max-w-md">
+            <div className="text-[10px] font-bold tracking-[0.32em] uppercase text-amber-500 mb-5">— Issue 01 · 2026</div>
+            <h1 className="font-display text-5xl lg:text-6xl font-light leading-[1.05] tracking-editorial">
+              Every site,<br/>every drawing,<br/><em className="text-gradient-gold font-medium not-italic">one quiet record.</em>
+            </h1>
+            <p className="text-cream/70 mt-6 text-sm leading-relaxed max-w-sm">
+              An editorial-grade construction record for architects, project managers, contractors and their clients. Built for the field, trusted in the office.
+            </p>
+          </div>
+
+          {/* Footer pull-quote */}
+          <div className="border-t border-cream/10 pt-6 max-w-md">
+            <p className="font-display italic text-sm text-cream/70 leading-relaxed">
+              "Spashtam ga cheppali — every change should say what is changing, why it is needed, and how it will be checked."
+            </p>
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-500/80 mt-3">SiteTrack agent operating guide</div>
+          </div>
         </div>
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8">
-          <div className="flex items-center gap-2 mb-5"><Ic n="shield" s={15} c="text-orange-400"/><h2 className="text-white font-bold text-sm">Select your role — permissions apply automatically</h2></div>
-          <div className="space-y-2 mb-6">
+      </div>
+
+      {/* RIGHT — Login panel */}
+      <div className="flex-1 flex items-center justify-center p-6 md:p-10 lg:p-14">
+        <div className={`w-full max-w-md transition-all duration-500 ${anim?"opacity-0 translate-y-2":"opacity-100 translate-y-0"}`}>
+          {/* Mobile brand */}
+          <div className="md:hidden flex items-center gap-3 mb-10">
+            <div className="w-10 h-10 rounded-xl bg-gradient-gold flex items-center justify-center"><Ic n="hardhat" s={20} c="text-white"/></div>
+            <div className="font-display text-2xl font-bold text-ink-900 tracking-editorial leading-none">SiteTrack</div>
+          </div>
+
+          <div className="mb-8">
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">Sign in</div>
+            <h2 className="font-display text-4xl md:text-5xl font-light leading-tight tracking-editorial text-ink-900">
+              Welcome back.
+            </h2>
+            <p className="text-ink-600 text-sm mt-3 leading-relaxed">Select your role — permissions and visible modules are applied automatically.</p>
+          </div>
+
+          {/* Role tiles */}
+          <div className="space-y-2.5 mb-7">
             {roles.map(r=>(
-              <button key={r.key} onClick={()=>setRole(r.key)} className={`w-full text-left rounded-2xl border-2 transition-all ${role===r.key?"border-orange-500 bg-orange-500/10":"border-white/10 hover:border-white/20 bg-white/5"}`}>
-                <div className="flex items-center gap-3 p-4"><Av i={r.ini} col={r.col}/><div className="flex-1 min-w-0"><div className="font-semibold text-white text-sm">{r.label}</div><div className="text-xs text-slate-400 mt-0.5">{r.sub}</div></div>{role===r.key&&<div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0"><Ic n="check" s={12} c="text-white"/></div>}</div>
-                {role===r.key&&<div className="px-4 pb-4 border-t border-white/10 pt-3"><div className="flex flex-wrap gap-1.5">{r.perms.map(p=><span key={p} className="text-[10px] font-semibold bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full">{p}</span>)}</div></div>}
+              <button key={r.key} onClick={()=>setRole(r.key)} className={`w-full text-left rounded-2xl border transition-all overflow-hidden ${role===r.key?"border-amber-600 bg-white shadow-editorial-hover":"border-stone-200 bg-white/60 hover:bg-white hover:border-stone-300"}`}>
+                <div className="flex items-center gap-4 p-4">
+                  <Av i={r.ini} col={r.col}/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display text-base font-semibold text-ink-900 leading-tight">{r.label}</div>
+                    <div className="text-xs text-ink-500 mt-1 leading-relaxed">{r.sub}</div>
+                  </div>
+                  {role===r.key&&<div className="w-6 h-6 rounded-full bg-gradient-gold flex items-center justify-center flex-shrink-0"><Ic n="check" s={13} c="text-white"/></div>}
+                </div>
+                {role===r.key&&<div className="px-4 pb-4"><div className="flex flex-wrap gap-1.5 pt-3 border-t border-stone-100">
+                  {r.perms.map(p=><span key={p} className="text-[10px] font-semibold tracking-wider uppercase bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full">{p}</span>)}
+                </div></div>}
               </button>
             ))}
           </div>
-          <button onClick={()=>{setAnim(true);setTimeout(()=>onLogin(MOCK_USERS[role]),400);}} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-2xl transition-all hover:shadow-lg hover:shadow-orange-500/30 text-sm">Continue as {roles.find(r=>r.key===role)?.label} →</button>
+
+          {/* CTA */}
+          <button onClick={()=>{setAnim(true);setTimeout(()=>onLogin(MOCK_USERS[role]),420);}} className="w-full py-4 bg-gradient-gold text-white font-bold rounded-2xl text-sm tracking-wide transition-all hover:shadow-editorial-deep flex items-center justify-center gap-2">
+            Continue as {selected?.label}
+            <span aria-hidden>→</span>
+          </button>
+
+          <p className="text-[11px] text-ink-500 mt-6 text-center leading-relaxed">
+            Demo mode — data lives in your browser. Production launches with backend auth · See <span className="font-semibold text-ink-700">docs/BACKEND_PLAN.md</span>.
+          </p>
         </div>
       </div>
     </div>
@@ -650,26 +719,47 @@ function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
   const rm=ROLE_META[user.role];
   return(
     <>
-      {mobileOpen&&<div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={()=>setMobileOpen(false)}/>}
-      <div className={`fixed md:relative inset-y-0 left-0 z-40 w-64 bg-slate-900 min-h-screen flex flex-col border-r border-slate-800 transform transition-transform duration-300 ${mobileOpen?"translate-x-0":"-translate-x-full"} md:translate-x-0`}>
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3"><div className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center"><Ic n="hardhat" s={18} c="text-white"/></div><div><div className="text-white font-black text-lg leading-none">SiteTrack</div><div className="text-orange-400 text-[10px] font-semibold tracking-widest uppercase">Pro</div></div></div>
-          <button onClick={()=>setMobileOpen(false)} className="md:hidden text-slate-400 hover:text-white"><Ic n="x" s={20}/></button>
+      {mobileOpen&&<div className="fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm md:hidden" onClick={()=>setMobileOpen(false)}/>}
+      <div className={`fixed md:relative inset-y-0 left-0 z-40 w-64 min-h-screen flex flex-col transform transition-transform duration-300 ${mobileOpen?"translate-x-0":"-translate-x-full"} md:translate-x-0`} style={{backgroundColor:"#1c1917",borderRight:"1px solid rgba(217,119,6,.12)"}}>
+        {/* Refined warm glow */}
+        <div className="absolute top-0 left-0 w-full h-40 pointer-events-none" style={{background:"radial-gradient(ellipse at top left, rgba(217,119,6,.10) 0%, transparent 70%)"}}/>
+
+        <div className="relative p-6 flex items-center justify-between" style={{borderBottom:"1px solid rgba(255,251,235,.06)"}}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-gold flex items-center justify-center shadow-md"><Ic n="hardhat" s={18} c="text-white"/></div>
+            <div>
+              <div className="font-display text-lg font-bold text-cream leading-none tracking-editorial">SiteTrack</div>
+              <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-gradient-gold mt-1">Construction</div>
+            </div>
+          </div>
+          <button onClick={()=>setMobileOpen(false)} className="md:hidden text-cream/60 hover:text-cream"><Ic n="x" s={20}/></button>
         </div>
-        <div className="mx-4 mt-3"><div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${rm.bg} ${rm.text}`}><Ic n="shield" s={12}/>{rm.label}</div></div>
-        <nav className="flex-1 p-4 space-y-1">
-          {items.map(it=>(
-            <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${active===it.id?"bg-orange-500 text-white shadow-lg shadow-orange-500/20":"text-slate-400 hover:text-white hover:bg-white/5"}`}>
-              <Ic n={it.icon} s={17}/><span>{it.label}</span>
-              {it.badge>0&&<span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${active===it.id?"bg-white/20 text-white":"bg-orange-500 text-white"}`}>{it.badge}</span>}
-            </button>
-          ))}
+
+        <div className="px-5 mt-5">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-bold tracking-[0.18em] uppercase" style={{backgroundColor:"rgba(217,119,6,.10)",color:"#f59e0b",border:"1px solid rgba(217,119,6,.2)"}}><Ic n="shield" s={11}/>{rm.label}</div>
+        </div>
+
+        <nav className="relative flex-1 p-4 mt-2 space-y-0.5 overflow-y-auto">
+          {items.map(it=>{
+            const isActive=active===it.id;
+            return(
+              <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all ${isActive?"text-ink-900 font-semibold":"text-cream/65 hover:text-cream font-medium"}`} style={isActive?{background:"linear-gradient(180deg, #f59e0b, #d97706)",boxShadow:"0 4px 14px rgba(217,119,6,.35)"}:{}}>
+                <Ic n={it.icon} s={16}/>
+                <span className="tracking-[0.01em]">{it.label}</span>
+                {it.badge>0&&<span className={`ml-auto text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive?"bg-ink-900/20 text-ink-900":"bg-amber-500 text-white"}`}>{it.badge}</span>}
+              </button>
+            );
+          })}
         </nav>
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5">
+
+        <div className="relative p-4" style={{borderTop:"1px solid rgba(255,251,235,.06)"}}>
+          <div className="flex items-center gap-3 px-3 py-3 rounded-xl" style={{backgroundColor:"rgba(255,251,235,.04)"}}>
             <Av i={user.avatar} sz="sm" col={rm.col}/>
-            <div className="flex-1 min-w-0"><div className="text-white text-sm font-semibold truncate">{user.name}</div><div className="text-slate-400 text-xs truncate">{user.email}</div></div>
-            <button onClick={()=>setView("logout")} className="text-slate-500 hover:text-slate-300"><Ic n="logout" s={15}/></button>
+            <div className="flex-1 min-w-0">
+              <div className="text-cream text-sm font-semibold truncate font-display tracking-editorial">{user.name}</div>
+              <div className="text-cream/50 text-[11px] truncate">{user.email}</div>
+            </div>
+            <button onClick={()=>setView("logout")} className="text-cream/40 hover:text-cream"><Ic n="logout" s={15}/></button>
           </div>
         </div>
       </div>
@@ -685,45 +775,101 @@ function DashboardView({user,projects,updates,issues,activity,setView,setSP}){
   const highIssues=openIssues.filter(i=>i.severity==="high");
   const unreadAc=activity.filter(a=>!a.read).length;
   const ru=Object.entries(updates).flatMap(([pid,arr])=>visibleIds.has(pid)?(arr||[]).map(u=>({...u,pname:projects.find(p=>p.id===pid)?.name||"Project"})):[]).slice(0,2);
+  const greet=new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening";
   return(
-    <div className="p-4 md:p-8">
-      <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
-        <div><h1 className="text-2xl font-black text-slate-800 mb-1">Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"}, {user.name.split(" ")[0]} 👋</h1><p className="text-slate-500 text-sm">Your construction overview.</p></div>
-        <div className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 ${ROLE_META[user.role].bg} ${ROLE_META[user.role].text}`}><Ic n="shield" s={12}/>{ROLE_META[user.role].label}</div>
+    <div className="p-4 md:p-10 max-w-7xl">
+      {/* Editorial header */}
+      <div className="mb-10 flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">— {new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}</div>
+          <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 tracking-editorial leading-[1.05]">
+            Good {greet},<br/><em className="font-medium not-italic text-gradient-gold">{user.name.split(" ")[0]}.</em>
+          </h1>
+          <p className="text-ink-600 text-sm mt-4 max-w-md leading-relaxed">Your construction overview at a glance — projects, issues, and what needs your attention.</p>
+        </div>
       </div>
+
       {highIssues.length>0&&user.role!=="client"&&(
-        <div className="mb-5 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="alert" s={18} c="text-red-600"/></div>
-          <div className="flex-1"><div className="font-bold text-red-700 text-sm">{highIssues.length} High Severity Issues Need Attention</div><div className="text-red-500 text-xs">{highIssues.map(i=>i.title).slice(0,2).join(" · ")}</div></div>
-          <button onClick={()=>setView("projects")} className="text-red-600 font-semibold text-xs">View →</button>
+        <div className="mb-5 bg-red-50 border-l-4 border-red-500 rounded-r-2xl p-5 flex items-center gap-4 shadow-editorial">
+          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="alert" s={18} c="text-red-600"/></div>
+          <div className="flex-1"><div className="font-display font-semibold text-red-800 text-base tracking-editorial">{highIssues.length} High Severity Issues Need Attention</div><div className="text-red-600 text-xs mt-1">{highIssues.map(i=>i.title).slice(0,2).join(" · ")}</div></div>
+          <button onClick={()=>setView("projects")} className="text-red-700 font-bold text-xs tracking-wider uppercase hover:underline">View →</button>
         </div>
       )}
       {user.role==="architect"&&unreadAc>0&&(
-        <div className="mb-5 bg-orange-50 border border-orange-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="activity" s={18} c="text-orange-600"/></div>
-          <div className="flex-1"><div className="font-bold text-orange-700 text-sm">{unreadAc} new team activities</div><div className="text-orange-500 text-xs">PM actions need your review</div></div>
-          <button onClick={()=>setView("activity")} className="text-orange-600 font-semibold text-xs">View Feed →</button>
+        <div className="mb-5 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl p-5 flex items-center gap-4 shadow-editorial">
+          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="activity" s={18} c="text-amber-700"/></div>
+          <div className="flex-1"><div className="font-display font-semibold text-amber-900 text-base tracking-editorial">{unreadAc} new team activities</div><div className="text-amber-700 text-xs mt-1">PM and contractor actions need your review</div></div>
+          <button onClick={()=>setView("activity")} className="text-amber-800 font-bold text-xs tracking-wider uppercase hover:underline">Review →</button>
         </div>
       )}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <SC icon="folder" label="Total" value={mp.length} accent="blue"/>
+
+      {/* Stat cards — editorial layout */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <SC icon="folder" label="Total Projects" value={mp.length} accent="blue"/>
         <SC icon="building" label="Active" value={mp.filter(p=>p.status==="active").length} accent="orange"/>
-        <SC icon="check" label="Done" value={mp.filter(p=>p.status==="completed").length} accent="emerald"/>
+        <SC icon="check" label="Completed" value={mp.filter(p=>p.status==="completed").length} accent="emerald"/>
         {user.role!=="client"?<SC icon="alert" label="Open Issues" value={openIssues.length} sub={highIssues.length>0?`${highIssues.length} high priority`:""} accent={highIssues.length>0?"red":"violet"}/>:<SC icon="hardhat" label="On Hold" value={mp.filter(p=>p.status==="on_hold").length} accent="violet"/>}
       </div>
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4"><h2 className="font-bold text-slate-800 text-base">Active Projects</h2><button onClick={()=>setView("projects")} className="text-orange-500 text-sm font-semibold">View all →</button></div>
-        <div className="grid md:grid-cols-2 gap-4">
+
+      {/* Active projects — editorial cards */}
+      <div className="mb-10">
+        <div className="flex items-end justify-between mb-6 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Portfolio</div>
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial">Active Projects</h2>
+          </div>
+          <button onClick={()=>setView("projects")} className="text-amber-700 text-xs font-bold tracking-[0.18em] uppercase hover:text-amber-900">View all →</button>
+        </div>
+        <div className="grid md:grid-cols-2 gap-5">
           {mp.filter(p=>p.status==="active").map(p=>(
-            <button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="bg-white rounded-2xl border border-slate-200 p-5 text-left hover:shadow-lg hover:border-orange-200 transition-all group">
-              <div className="flex items-start justify-between mb-4"><div><h3 className="font-bold text-slate-800 text-sm group-hover:text-orange-600">{p.name}</h3><div className="flex items-center gap-1.5 text-slate-400 text-xs mt-1"><Ic n="map" s={12}/>{p.location}</div></div><Badge status={p.status}/></div>
-              <div className="mb-2 flex justify-between text-xs text-slate-500"><span>Progress</span><span className="font-bold text-slate-700">{p.progress}%</span></div><PBar v={p.progress}/>
-              <div className="mt-4 flex justify-between text-xs text-slate-400"><span>{p.client_name}</span><span>Due {fmtDate(p.expected_end_date)}</span></div>
+            <button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="group relative bg-white rounded-2xl p-6 text-left transition-all hover:shadow-editorial-hover" style={{border:"1px solid var(--st-line)"}}>
+              {/* Top gold rule on hover */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-gold opacity-0 group-hover:opacity-100 transition-opacity"/>
+              <div className="flex items-start justify-between mb-5">
+                <div className="flex-1 min-w-0 pr-3">
+                  <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-1.5">{p.status==="active"?"In progress":p.status}</div>
+                  <h3 className="font-display text-xl font-semibold text-ink-900 group-hover:text-amber-800 tracking-editorial leading-tight">{p.name}</h3>
+                  <div className="flex items-center gap-1.5 text-ink-500 text-xs mt-2"><Ic n="map" s={12}/>{p.location}</div>
+                </div>
+                <Badge status={p.status}/>
+              </div>
+              <div className="mb-2 flex justify-between items-baseline">
+                <span className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">Progress</span>
+                <span className="font-display font-semibold text-ink-900 text-lg">{p.progress}<span className="text-ink-500 text-sm">%</span></span>
+              </div>
+              <PBar v={p.progress}/>
+              <div className="mt-5 flex justify-between text-xs text-ink-500" style={{borderTop:"1px solid var(--st-line)",paddingTop:"1rem"}}>
+                <span className="font-medium">{p.client_name}</span>
+                <span>Due {fmtDate(p.expected_end_date)}</span>
+              </div>
             </button>
           ))}
         </div>
       </div>
-      {ru.length>0&&<div><h2 className="font-bold text-slate-800 text-base mb-4">Recent Updates</h2><div className="space-y-3">{ru.map(u=><div key={u.id} className="bg-white rounded-2xl border border-slate-200 p-4 flex gap-4"><div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="hardhat" s={18} c="text-orange-500"/></div><div className="flex-1 min-w-0"><div className="font-semibold text-slate-800 text-sm">{u.pname}</div><p className="text-slate-500 text-xs mt-0.5 line-clamp-2">{u.notes}</p><div className="flex gap-3 mt-2 text-xs text-slate-400"><span className="flex items-center gap-1"><Ic n="calendar" s={11}/>{fmtDate(u.update_date)}</span><span className="flex items-center gap-1"><Ic n="users" s={11}/>{u.workers_count}</span></div></div></div>)}</div></div>}
+
+      {/* Recent updates */}
+      {ru.length>0&&<div>
+        <div className="flex items-end justify-between mb-5 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Field</div>
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial">Recent Updates</h2>
+          </div>
+        </div>
+        <div className="space-y-3">{ru.map(u=>
+          <div key={u.id} className="bg-white rounded-2xl p-5 flex gap-4 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+            <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="hardhat" s={18} c="text-amber-700"/></div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-semibold text-ink-900 text-base tracking-editorial">{u.pname}</div>
+              <p className="text-ink-600 text-sm mt-1 line-clamp-2 leading-relaxed">{u.notes}</p>
+              <div className="flex gap-4 mt-3 text-xs text-ink-500">
+                <span className="flex items-center gap-1.5"><Ic n="calendar" s={11}/>{fmtDate(u.update_date)}</span>
+                {u.workers_count&&<span className="flex items-center gap-1.5"><Ic n="users" s={11}/>{u.workers_count} workers</span>}
+              </div>
+            </div>
+          </div>
+        )}</div>
+      </div>}
     </div>
   );
 }
@@ -734,12 +880,36 @@ function ProjectsView({user,projects,setView,setSP}){
   const[minP,setMinP]=useState(0);const[sortBy,setSortBy]=useState("name");
   const fl=useMemo(()=>visibleProjectsForUser(projects,user).filter(p=>sf==="all"||p.status===sf).filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.location.toLowerCase().includes(q.toLowerCase())||p.client_name.toLowerCase().includes(q.toLowerCase())).filter(p=>p.progress>=minP).sort((a,b)=>sortBy==="progress"?b.progress-a.progress:sortBy==="budget"?b.budget-a.budget:a.name.localeCompare(b.name)),[projects,user,q,sf,minP,sortBy]);
   return(
-    <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6"><div><h1 className="text-2xl font-black text-slate-800">Projects</h1><p className="text-slate-500 text-sm mt-1">{fl.length} found</p></div>{can(user,"createProject")&&<button onClick={()=>setView("create")} className="flex items-center gap-2 px-4 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm transition-all"><Ic n="plus" s={16}/>New</button>}</div>
-      <div className="flex gap-2 mb-3 flex-wrap"><div className="relative flex-1 min-w-48"><Ic n="search" s={16} c="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/></div><button onClick={()=>setShowFilt(p=>!p)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${showFilt?"bg-orange-500 text-white border-orange-500":"bg-white text-slate-600 border-slate-200"}`}><Ic n="sliders" s={15}/>Filters</button></div>
-      <div className="flex gap-2 mb-4 flex-wrap">{["all","active","completed","on_hold"].map(s=><button key={s} onClick={()=>setSF(s)} className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${sf===s?"bg-slate-800 text-white border-slate-800":"bg-white text-slate-600 border-slate-200 hover:border-slate-300"}`}>{s==="all"?"All":s.replace("_"," ")}</button>)}</div>
-      {showFilt&&<div className="bg-white border border-slate-200 rounded-2xl p-5 mb-5 grid sm:grid-cols-3 gap-4"><div><label className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 block">Min Progress %</label><div className="flex items-center gap-2"><input type="range" min="0" max="100" value={minP} onChange={e=>setMinP(+e.target.value)} className="flex-1 accent-orange-500"/><span className="text-xs font-bold text-slate-600 w-8">{minP}%</span></div></div><div className="sm:col-span-2"><label className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 block">Sort By</label><select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"><option value="name">Name (A-Z)</option><option value="progress">Progress (High-Low)</option><option value="budget">Budget (High-Low)</option></select></div></div>}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{fl.map(p=><button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="bg-white rounded-2xl border border-slate-200 p-6 text-left hover:shadow-lg hover:border-orange-200 transition-all group"><h3 className="font-bold text-slate-800 text-sm group-hover:text-orange-600 line-clamp-2 mb-2">{p.name}</h3><Badge status={p.status}/><div className="mt-3 space-y-1.5"><div className="flex items-center gap-2 text-xs text-slate-400"><Ic n="map" s={12}/><span className="truncate">{p.location}</span></div><div className="flex items-center gap-2 text-xs text-slate-400"><Ic n="users" s={12}/>{p.client_name}</div></div>{p.status!=="completed"&&<div className="mt-4"><div className="flex justify-between text-xs text-slate-500 mb-1.5"><span>Progress</span><span className="font-bold text-slate-700">{p.progress}%</span></div><PBar v={p.progress} col={p.status==="on_hold"?"violet":"orange"}/></div>}</button>)}{fl.length===0&&<div className="col-span-3 text-center py-20 text-slate-400"><Ic n="search" s={32} c="mx-auto mb-3 opacity-30"/><p>No projects match</p></div>}</div>
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="flex items-end justify-between mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Portfolio</div>
+          <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Projects</h1>
+          <p className="text-ink-500 text-sm mt-2">{fl.length} {fl.length===1?"project":"projects"} found</p>
+        </div>
+        {can(user,"createProject")&&<button onClick={()=>setView("create")} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm transition-all hover:shadow-editorial-deep tracking-wide"><Ic n="plus" s={16}/>New Project</button>}
+      </div>
+      <div className="flex gap-2 mb-4 flex-wrap"><div className="relative flex-1 min-w-48"><Ic n="search" s={16} c="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search projects, locations, clients..." className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/></div><button onClick={()=>setShowFilt(p=>!p)} className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${showFilt?"bg-gradient-gold text-white border-transparent":"bg-white text-ink-600 border-stone-200"}`}><Ic n="sliders" s={15}/>Filters</button></div>
+      <div className="flex gap-2 mb-6 flex-wrap">{["all","active","completed","on_hold"].map(s=><button key={s} onClick={()=>setSF(s)} className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider uppercase border transition-all ${sf===s?"bg-ink-900 text-cream border-ink-900":"bg-white text-ink-600 border-stone-200 hover:border-stone-300"}`}>{s==="all"?"All":s.replace("_"," ")}</button>)}</div>
+      {showFilt&&<div className="bg-white rounded-2xl p-5 mb-5 grid sm:grid-cols-3 gap-4 shadow-editorial" style={{border:"1px solid var(--st-line)"}}><div><label className="text-[10px] font-bold text-ink-500 uppercase tracking-[0.24em] mb-2 block">Min Progress %</label><div className="flex items-center gap-2"><input type="range" min="0" max="100" value={minP} onChange={e=>setMinP(+e.target.value)} className="flex-1 accent-amber-600"/><span className="text-xs font-bold text-ink-700 w-8">{minP}%</span></div></div><div className="sm:col-span-2"><label className="text-[10px] font-bold text-ink-500 uppercase tracking-[0.24em] mb-2 block">Sort By</label><select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="name">Name (A-Z)</option><option value="progress">Progress (High-Low)</option><option value="budget">Budget (High-Low)</option></select></div></div>}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">{fl.map(p=>
+        <button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="group relative bg-white rounded-2xl p-6 text-left transition-all hover:shadow-editorial-hover" style={{border:"1px solid var(--st-line)"}}>
+          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-gold opacity-0 group-hover:opacity-100 transition-opacity"/>
+          <div className="flex items-start justify-between mb-3">
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700">{p.status==="active"?"In progress":p.status.replace("_"," ")}</div>
+            <Badge status={p.status}/>
+          </div>
+          <h3 className="font-display text-xl font-semibold text-ink-900 group-hover:text-amber-800 line-clamp-2 mb-3 tracking-editorial leading-tight">{p.name}</h3>
+          <div className="space-y-1.5 mb-4">
+            <div className="flex items-center gap-2 text-xs text-ink-500"><Ic n="map" s={12}/><span className="truncate">{p.location}</span></div>
+            <div className="flex items-center gap-2 text-xs text-ink-500"><Ic n="users" s={12}/>{p.client_name}</div>
+          </div>
+          {p.status!=="completed"&&<div className="mt-4 pt-4" style={{borderTop:"1px solid var(--st-line)"}}>
+            <div className="flex justify-between items-baseline mb-2"><span className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">Progress</span><span className="font-display font-semibold text-ink-900 text-lg">{p.progress}<span className="text-ink-500 text-sm">%</span></span></div>
+            <PBar v={p.progress} col={p.status==="on_hold"?"violet":"orange"}/>
+          </div>}
+        </button>
+      )}{fl.length===0&&<div className="col-span-3 text-center py-20 text-ink-500"><Ic n="search" s={32} c="mx-auto mb-3 opacity-30"/><p className="font-display text-lg">No projects match</p></div>}</div>
     </div>
   );
 }
@@ -826,6 +996,7 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
   const[showDrawing,setShowDrawing]=useState(false);const[ndraw,setNdraw]=useState({title:"",type:"Architectural",revision:"Rev A",notes:"",released_to:["pm"],files:[]});
   const[quick,setQuick]=useState({open:false,type:"update",error:"",saved:"",files:[],form:quickCaptureDefaults("update")});
   const fRef=useRef();
+  const camRef=useRef();
   if(!proj) return <div className="p-8 text-slate-500">Project not found.</div>;
   if(!canAccessProject(user,proj)) return <div className="p-8"><AccessDenied msg="This project is not assigned to your account."/></div>;
   const totEx=ex.reduce((s,e)=>s+e.amount,0);const bpct=Math.round((totEx/proj.budget)*100)||0;
@@ -982,30 +1153,45 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm font-medium"><Ic n="arrow" s={16}/>Back</button>
+      {/* Editorial breadcrumb */}
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <button onClick={()=>setView("projects")} className="flex items-center gap-2 text-ink-500 hover:text-amber-700 text-xs font-bold tracking-[0.18em] uppercase"><Ic n="arrow" s={14}/>Back to Portfolio</button>
         <div className="flex gap-2 flex-wrap">
-          {can(user,"export")&&<><button onClick={()=>exportPDF(proj,ms,us,ex,iss)} className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs"><Ic n="download" s={14}/>PDF</button><button onClick={()=>exportCSV(proj,ex)} className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs"><Ic n="download" s={14}/>CSV</button></>}
-          {canUseQuickCapture(user)&&<button onClick={openQuickCapture} className="hidden md:flex items-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-400 text-white font-semibold rounded-xl text-xs"><Ic n="plus" s={14}/>Today's Entry</button>}
-          {can(user,"share")&&<button onClick={()=>setShareModal(true)} className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-xs"><Ic n="share" s={14}/>Share</button>}
+          {can(user,"export")&&<><button onClick={()=>exportPDF(proj,ms,us,ex,iss)} className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-cream-200 text-ink-700 font-semibold rounded-xl text-xs shadow-editorial" style={{border:"1px solid var(--st-line)"}}><Ic n="download" s={13}/>PDF</button><button onClick={()=>exportCSV(proj,ex)} className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-cream-200 text-ink-700 font-semibold rounded-xl text-xs shadow-editorial" style={{border:"1px solid var(--st-line)"}}><Ic n="download" s={13}/>CSV</button></>}
+          {canUseQuickCapture(user)&&<button onClick={openQuickCapture} className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-xs tracking-wide"><Ic n="plus" s={14}/>Today's Entry</button>}
+          {can(user,"share")&&<button onClick={()=>setShareModal(true)} className="flex items-center gap-2 px-4 py-2 bg-ink-900 hover:bg-ink-800 text-cream font-semibold rounded-xl text-xs tracking-wide"><Ic n="share" s={13}/>Share with Client</button>}
         </div>
       </div>
-      {canUseQuickCapture(user)&&<button onClick={openQuickCapture} className="md:hidden fixed bottom-4 left-4 right-4 z-30 flex items-center justify-center gap-2 px-4 py-3.5 bg-orange-500 text-white font-black rounded-2xl shadow-xl shadow-orange-500/25"><Ic n="plus" s={18}/>Today's Entry</button>}
+      {canUseQuickCapture(user)&&<button onClick={openQuickCapture} className="md:hidden fixed bottom-4 left-4 right-4 z-30 flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-gold text-white font-bold rounded-2xl shadow-editorial-deep tracking-wide"><Ic n="plus" s={18}/>Today's Entry</button>}
 
-      {/* Project card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 md:p-7 mb-5">
-        <div className="flex items-start justify-between mb-5 gap-4">
-          <div><h1 className="text-xl font-black text-slate-800 mb-2">{proj.name}</h1><p className="text-slate-500 text-sm mb-3">{proj.description}</p><div className="flex flex-wrap gap-3 text-sm text-slate-400"><span className="flex items-center gap-2"><Ic n="map" s={14}/>{proj.location}</span><span className="flex items-center gap-2"><Ic n="calendar" s={14}/>{fmtDate(proj.start_date)}</span></div></div>
-          <Badge status={proj.status}/>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-5 border-t border-slate-100 text-xs">
-          <div><div className="font-semibold uppercase tracking-widest text-slate-400 mb-1">Client</div><div className="font-semibold text-slate-700">{proj.client_name}</div></div>
-          {user.role!=="client"&&<div><div className="font-semibold uppercase tracking-widest text-slate-400 mb-1">Budget</div><div className="font-semibold text-slate-700">{fmtCur(proj.budget)}</div></div>}
-          <div><div className="font-semibold uppercase tracking-widest text-slate-400 mb-1">Deadline</div><div className="font-semibold text-slate-700">{fmtDate(proj.expected_end_date)}</div></div>
+      {/* Editorial project hero */}
+      <div className="relative bg-white rounded-3xl p-6 md:p-10 mb-6 overflow-hidden" style={{border:"1px solid var(--st-line)",boxShadow:"var(--st-shadow)"}}>
+        {/* Gold top rule */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-gold opacity-50"/>
+        {/* Soft glow corner */}
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full pointer-events-none" style={{background:"radial-gradient(circle, rgba(245,158,11,.08) 0%, transparent 70%)"}}/>
+
+        <div className="relative">
+          <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+            <div className="flex-1 min-w-0 pr-4">
+              <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">— {ROLE_META[user.role].label} view</div>
+              <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 mb-3 tracking-editorial leading-[1.05]">{proj.name}</h1>
+              <p className="text-ink-600 text-base leading-relaxed max-w-2xl">{proj.description}</p>
+              <div className="flex flex-wrap gap-5 text-sm text-ink-500 mt-5">
+                <span className="flex items-center gap-2"><Ic n="map" s={14}/>{proj.location}</span>
+                <span className="flex items-center gap-2"><Ic n="calendar" s={14}/>Started {fmtDate(proj.start_date)}</span>
+              </div>
+            </div>
+            <Badge status={proj.status}/>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-6" style={{borderTop:"1px solid var(--st-line)"}}>
+            <div><div className="text-[10px] font-bold uppercase tracking-[0.24em] text-ink-500 mb-1.5">Client</div><div className="font-display text-base font-semibold text-ink-900 tracking-editorial">{proj.client_name}</div></div>
+            {user.role!=="client"&&<div><div className="text-[10px] font-bold uppercase tracking-[0.24em] text-ink-500 mb-1.5">Budget</div><div className="font-display text-base font-semibold text-ink-900 tracking-editorial">{fmtCur(proj.budget)}</div></div>}
+            <div><div className="text-[10px] font-bold uppercase tracking-[0.24em] text-ink-500 mb-1.5">Expected Handover</div><div className="font-display text-base font-semibold text-ink-900 tracking-editorial">{fmtDate(proj.expected_end_date)}</div></div>
+          </div>
         </div>
         {/* Progress */}
-        <div className="mt-5 pt-5 border-t border-slate-100">
+        <div className="relative mt-6 pt-6" style={{borderTop:"1px solid var(--st-line)"}}>
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="font-semibold text-slate-600">Progress</span>
             {editProg
@@ -1067,7 +1253,11 @@ function DetailView({pid,user,setView,projects,setProjects,milestones,setMilesto
                 <textarea value={nu.notes} onChange={e=>setNu(p=>({...p,notes:e.target.value}))} placeholder="Today's site activities..." className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-24"/>
                 <div className="grid grid-cols-2 gap-3"><input value={nu.weather} onChange={e=>setNu(p=>({...p,weather:e.target.value}))} placeholder="Weather (e.g. Sunny 34°C)" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><input type="number" value={nu.workers} onChange={e=>setNu(p=>({...p,workers:e.target.value}))} placeholder="Workers on site" className="p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/></div>
                 <input ref={fRef} type="file" accept="image/*" multiple onChange={phUp} className="hidden"/>
-                <button onClick={()=>fRef.current.click()} className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 hover:border-orange-300 rounded-xl text-sm text-slate-500 hover:text-orange-500 w-full justify-center"><Ic n="camera" s={16}/>Add Photos {nph.length>0&&`(${nph.length})`}</button>
+                <input ref={camRef} type="file" accept="image/*" capture="environment" onChange={phUp} className="hidden"/>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={()=>camRef.current.click()} className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 hover:border-orange-300 rounded-xl text-sm text-slate-500 hover:text-orange-500 justify-center font-semibold"><Ic n="camera" s={16}/>Take Photo</button>
+                  <button onClick={()=>fRef.current.click()} className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 hover:border-orange-300 rounded-xl text-sm text-slate-500 hover:text-orange-500 justify-center font-semibold"><Ic n="image" s={16}/>Choose Files {nph.length>0&&`(${nph.length})`}</button>
+                </div>
                 <label className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs cursor-pointer border ${geoOn?"bg-orange-50 border-orange-200 text-orange-700":"bg-slate-50 border-slate-200 text-slate-500"}`}>
                   <input type="checkbox" checked={geoOn} onChange={e=>setGeoOn(e.target.checked)} className="accent-orange-500"/>
                   <Ic n="map" s={13}/>
@@ -1681,9 +1871,13 @@ function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
   const catColor={Civil:"bg-blue-50 text-blue-700",MEP:"bg-violet-50 text-violet-700",Finishing:"bg-emerald-50 text-emerald-700",External:"bg-amber-50 text-amber-700",Other:"bg-slate-100 text-slate-500"};
   return(
     <div>
-      <div className="flex items-center justify-between mb-5">
-        <div><h2 className="font-bold text-slate-800">Bill of Quantities (BOQ)</h2><p className="text-xs text-slate-400 mt-0.5">{sorted.length} line items · Total {fmtCur(total)}</p></div>
-        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>Add BOQ Line</button>}
+      <div className="flex items-end justify-between mb-6 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Pre-construction</div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial leading-tight">Bill of Quantities (BOQ)</h2>
+          <p className="text-xs text-ink-500 mt-1.5">{sorted.length} line items · Total {fmtCur(total)}</p>
+        </div>
+        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>Add BOQ Line</button>}
       </div>
       {catTotals.length>0&&<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {catTotals.map(({c,t})=><div key={c} className="bg-white border border-slate-200 rounded-xl p-4"><div className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded-md ${catColor[c]||catColor.Other}`}>{c}</div><div className="text-lg font-black text-slate-800 mt-2">{fmtCur(t)}</div><div className="text-xs text-slate-400">{Math.round((t/total)*100)||0}% of total</div></div>)}
@@ -1784,13 +1978,14 @@ function EstimateTab({pid,bq,est,setEstimate,user,addActivity,proj}){
 
   return(
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-end justify-between mb-6 pb-3 flex-wrap gap-3" style={{borderBottom:"1px solid var(--st-line)"}}>
         <div>
-          <h2 className="font-bold text-slate-800">Project Estimate</h2>
-          <p className="text-xs text-slate-400 mt-0.5">v{e.version||1}{e.updated?` · updated ${fmtDate(e.updated)}`:""} · derived from {bq.length} BOQ lines</p>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Client quote</div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial leading-tight">Project Estimate</h2>
+          <p className="text-xs text-ink-500 mt-1.5">v{e.version||1}{e.updated?` · updated ${fmtDate(e.updated)}`:""} · derived from {bq.length} BOQ lines</p>
         </div>
-        {canEdit&&!draft&&<button onClick={startEdit} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="pencil" s={14}/>Edit Estimate</button>}
-        {canEdit&&draft&&<div className="flex gap-2"><button onClick={save} className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl text-sm">Save Version</button><button onClick={cancelEdit} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-sm">Cancel</button></div>}
+        {canEdit&&!draft&&<button onClick={startEdit} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="pencil" s={14}/>Edit Estimate</button>}
+        {canEdit&&draft&&<div className="flex gap-2"><button onClick={save} className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm tracking-wide">Save Version</button><button onClick={cancelEdit} className="px-4 py-2.5 bg-cream-200 hover:bg-cream-100 text-ink-700 font-semibold rounded-xl text-sm">Cancel</button></div>}
       </div>
 
       {/* Cost waterfall */}
@@ -1906,9 +2101,13 @@ function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
   const stockRows=Object.values(stockMap).sort((a,b)=>b.balance-a.balance);
   return(
     <div>
-      <div className="flex items-center justify-between mb-5">
-        <div><h2 className="font-bold text-slate-800">Stock Ledger</h2><p className="text-xs text-slate-400 mt-0.5">{lg.length} transactions · {stockRows.length} materials tracked</p></div>
-        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>Record Transaction</button>}
+      <div className="flex items-end justify-between mb-6 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Inventory</div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial leading-tight">Stock Ledger</h2>
+          <p className="text-xs text-ink-500 mt-1.5">{lg.length} transactions · {stockRows.length} materials tracked</p>
+        </div>
+        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>Record Transaction</button>}
       </div>
       {stockRows.length>0&&<div className="bg-white rounded-2xl border border-slate-200 mb-5 overflow-hidden">
         <div className="px-5 py-3 border-b border-slate-100"><h3 className="font-bold text-slate-700 text-sm">Current Stock Balance</h3></div>
@@ -1990,17 +2189,127 @@ function ClientPortal({user,projects,notifs,setView,setSP}){const mp=projects.fi
 
 // ── CLIENT SHARE VIEW ─────────────────────────────────────────────────────────
 function ClientShareView({project,milestones,updates,drawings}){
-  if(!project) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="text-center text-slate-400"><Ic n="building" s={40} c="mx-auto mb-4 opacity-30"/><p>Project not found</p></div></div>;
+  if(!project) return <div className="min-h-screen bg-cream flex items-center justify-center"><div className="text-center text-ink-500"><Ic n="building" s={40} c="mx-auto mb-4 opacity-30"/><p className="font-display text-lg">Project not found</p></div></div>;
   const ms=milestones||[];const us=updates||[];const done=ms.filter(m=>m.status==="completed").length;
   const clientDrawings=(drawings||[]).filter(d=>isReleasedCurrentDrawing(d,"client"));
-  return(<div className="min-h-screen bg-slate-50"><div className="bg-slate-900 px-6 py-4 flex items-center gap-3"><div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center"><Ic n="hardhat" s={16} c="text-white"/></div><div><div className="font-black text-white text-sm">SiteTrack</div><div className="text-orange-400 text-xs">Client View — Read Only</div></div></div>
-  <div className="max-w-2xl mx-auto p-6 space-y-5">
-    <div className="bg-white rounded-2xl border border-slate-200 p-6"><div className="flex items-start justify-between mb-4"><div><h1 className="text-lg font-black text-slate-800">{project.name}</h1><div className="flex items-center gap-1.5 text-slate-400 text-xs mt-1"><Ic n="map" s={12}/>{project.location}</div></div><Badge status={project.status}/></div><div className="mb-2 flex justify-between text-sm"><span className="text-slate-500">Progress</span><span className="font-black text-slate-800">{project.progress}%</span></div><PBar v={project.progress}/><div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 text-xs"><div><div className="font-semibold text-slate-600 mb-0.5">Expected End</div>{fmtDate(project.expected_end_date)}</div><div><div className="font-semibold text-slate-600 mb-0.5">Milestones</div>{done} of {ms.length}</div></div></div>
-    {ms.length>0&&<div className="bg-white rounded-2xl border border-slate-200 p-6"><h2 className="font-bold text-slate-800 mb-4 text-sm flex items-center gap-2"><Ic n="flag" s={15} c="text-orange-500"/>Milestones</h2><div className="space-y-3">{ms.map((m,i)=><div key={m.id} className="flex items-center gap-3"><div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 border-2 text-xs ${m.status==="completed"?"bg-emerald-500 border-emerald-500":m.status==="in_progress"?"bg-orange-500 border-orange-500":"bg-white border-slate-200"}`}>{m.status==="completed"?<Ic n="check" s={12} c="text-white"/>:<span className="font-bold text-slate-400">{i+1}</span>}</div><div className="flex-1"><div className="text-sm font-medium text-slate-700">{m.title}</div><div className="text-xs text-slate-400">Due {fmtDate(m.due_date)}</div></div><Badge status={m.status}/></div>)}</div></div>}
-    {clientDrawings.length>0&&<div className="bg-white rounded-2xl border border-slate-200 p-6"><h2 className="font-bold text-slate-800 mb-4 text-sm flex items-center gap-2"><Ic n="doc" s={15} c="text-orange-500"/>Released Drawings</h2><div className="space-y-3">{clientDrawings.map(d=><div key={d.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100"><div className="flex items-center gap-4"><div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="doc" s={16} c="text-orange-500"/></div><div className="flex-1 min-w-0"><div className="font-semibold text-slate-800 text-sm">{d.title}</div><div className="flex gap-2 text-xs text-slate-400 mt-0.5"><span className="text-orange-600 font-semibold">{d.type}</span><span>{d.revision}</span><span>{fmtDate(d.date)}</span>{(d.files||[]).length>0&&<span>{(d.files||[]).length} file(s)</span>}</div>{d.notes&&<p className="text-xs text-slate-500 mt-1">{d.notes}</p>}</div><Badge status={d.status}/></div><AttachmentList files={d.files||d.attachments||[]}/></div>)}</div></div>}
-    {us.length>0&&<div className="bg-white rounded-2xl border border-slate-200 p-6"><h2 className="font-bold text-slate-800 mb-4 text-sm flex items-center gap-2"><Ic n="hardhat" s={15} c="text-orange-500"/>Recent Updates</h2><div className="space-y-4">{us.slice(0,3).map(u=><div key={u.id} className="pb-4 border-b border-slate-100 last:border-0"><div className="flex justify-between mb-2"><span className="font-semibold text-slate-700 text-sm">{fmtDate(u.update_date)}</span>{u.weather&&<span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{u.weather}</span>}</div><p className="text-slate-600 text-sm">{u.notes}</p></div>)}</div></div>}
-    <p className="text-center text-xs text-slate-400 pb-4">Powered by SiteTrack Pro · buildco.in</p>
-  </div></div>);
+  return(
+    <div className="min-h-screen bg-cream font-sans">
+      {/* Editorial masthead */}
+      <header className="relative bg-ink-900 text-cream overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full pointer-events-none" style={{background:"radial-gradient(circle, rgba(217,119,6,.18) 0%, transparent 65%)"}}/>
+        <div className="absolute -bottom-20 -right-20 w-[28rem] h-[28rem] rounded-full pointer-events-none" style={{background:"radial-gradient(circle, rgba(245,158,11,.12) 0%, transparent 65%)"}}/>
+        <div className="relative max-w-3xl mx-auto px-6 md:px-10 py-10 md:py-16">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-gold flex items-center justify-center shadow-lg"><Ic n="hardhat" s={20} c="text-white"/></div>
+              <div>
+                <div className="font-display text-xl font-bold tracking-editorial leading-none">SiteTrack</div>
+                <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-gradient-gold mt-1">Client Report</div>
+              </div>
+            </div>
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-500/80">Read-only</div>
+          </div>
+
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-4">— Project Progress · {new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}</div>
+          <h1 className="font-display text-4xl md:text-5xl font-light leading-[1.05] tracking-editorial mb-4">{project.name}</h1>
+          <div className="flex items-center gap-2 text-cream/60 text-sm"><Ic n="map" s={14}/>{project.location}</div>
+
+          <div className="mt-8 grid grid-cols-3 gap-6 pt-6" style={{borderTop:"1px solid rgba(255,251,235,.1)"}}>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cream/50 mb-1.5">Progress</div>
+              <div className="font-display text-3xl font-light tracking-editorial">{project.progress}<span className="text-amber-500 text-xl">%</span></div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cream/50 mb-1.5">Milestones</div>
+              <div className="font-display text-3xl font-light tracking-editorial">{done}<span className="text-cream/50 text-xl"> / {ms.length}</span></div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cream/50 mb-1.5">Handover</div>
+              <div className="font-display text-base font-medium tracking-editorial leading-snug pt-2">{fmtDate(project.expected_end_date)}</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-6 md:px-10 py-10 space-y-8">
+        {/* Progress card */}
+        <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Overall completion</div>
+          <div className="flex items-end justify-between mb-3">
+            <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">Project Progress</h2>
+            <Badge status={project.status}/>
+          </div>
+          <PBar v={project.progress}/>
+          <p className="text-ink-600 text-sm mt-4 leading-relaxed">{project.description}</p>
+        </section>
+
+        {ms.length>0&&<section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Phases</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-6 tracking-editorial">Milestones</h2>
+          <div className="space-y-4">{ms.map((m,i)=>
+            <div key={m.id} className="flex items-center gap-4">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 text-xs ${m.status==="completed"?"bg-gradient-gold border-transparent":m.status==="in_progress"?"bg-amber-500 border-amber-500":"bg-white border-stone-200"}`}>
+                {m.status==="completed"?<Ic n="check" s={13} c="text-white"/>:<span className="font-bold text-ink-500">{i+1}</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-base font-medium text-ink-900 tracking-editorial leading-tight">{m.title}</div>
+                <div className="text-[11px] text-ink-500 mt-0.5">Due {fmtDate(m.due_date)}{m.completed_date?` · Completed ${fmtDate(m.completed_date)}`:""}</div>
+              </div>
+              <Badge status={m.status}/>
+            </div>
+          )}</div>
+        </section>}
+
+        {clientDrawings.length>0&&<section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Documents</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-6 tracking-editorial">Released Drawings</h2>
+          <div className="space-y-3">{clientDrawings.map(d=>
+            <div key={d.id} className="p-4 bg-cream-200/50 rounded-xl" style={{border:"1px solid var(--st-line)"}}>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="doc" s={18} c="text-amber-700"/></div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-base font-semibold text-ink-900 tracking-editorial leading-tight">{d.title}</div>
+                  <div className="flex flex-wrap gap-2 text-[11px] text-ink-500 mt-1">
+                    <span className="text-amber-700 font-bold tracking-wider uppercase">{d.type}</span>
+                    <span>·</span><span>{d.revision}</span>
+                    <span>·</span><span>{fmtDate(d.date)}</span>
+                    {(d.files||[]).length>0&&<><span>·</span><span>{(d.files||[]).length} file(s)</span></>}
+                  </div>
+                  {d.notes&&<p className="text-xs text-ink-600 mt-2">{d.notes}</p>}
+                </div>
+                <Badge status={d.status}/>
+              </div>
+              <AttachmentList files={d.files||d.attachments||[]}/>
+            </div>
+          )}</div>
+        </section>}
+
+        {us.length>0&&<section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Field</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-6 tracking-editorial">Recent Updates</h2>
+          <div className="space-y-5">{us.slice(0,3).map(u=>
+            <article key={u.id} className="pb-5 last:pb-0" style={{borderBottom:"1px solid var(--st-line)"}}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-[11px] font-bold tracking-[0.18em] uppercase text-amber-700">{fmtDate(u.update_date)}</div>
+                {u.weather&&<span className="text-[10px] bg-amber-50 text-amber-800 font-semibold px-2 py-1 rounded-full tracking-wider">{u.weather}</span>}
+              </div>
+              <p className="text-ink-700 text-base leading-relaxed font-display tracking-editorial">"{u.notes}"</p>
+              {u.workers_count&&<div className="text-[11px] text-ink-500 mt-3 flex items-center gap-1.5"><Ic n="users" s={11}/>{u.workers_count} workers on site</div>}
+            </article>
+          )}</div>
+        </section>}
+
+        <footer className="text-center pt-4 pb-2">
+          <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.32em] uppercase text-ink-500">
+            <span>—</span>
+            <span>SiteTrack Pro · Construction Suite</span>
+            <span>—</span>
+          </div>
+          <p className="text-[11px] text-ink-500 mt-2">A confidential project record prepared for {project.client_name}.</p>
+        </footer>
+      </main>
+    </div>
+  );
 }
 
 // ── CALENDAR VIEW (cross-project deadlines) ──────────────────────────────────
@@ -2276,8 +2585,8 @@ export default function App(){
   const DCSS=`.dark .bg-white{background-color:#1e293b!important}.dark .bg-slate-50{background-color:#0f172a!important}.dark .bg-slate-100{background-color:#1e293b!important}.dark .border-slate-200{border-color:#334155!important}.dark .border-slate-100{border-color:#293548!important}.dark .text-slate-800{color:#f1f5f9!important}.dark .text-slate-700{color:#e2e8f0!important}.dark .text-slate-600{color:#cbd5e1!important}.dark .text-slate-500{color:#94a3b8!important}.dark .text-slate-400{color:#64748b!important}.dark .divide-slate-50>*+*{border-color:#1e293b!important}.dark input,.dark textarea,.dark select{background-color:#1e293b!important;color:#f1f5f9!important;border-color:#334155!important}.dark .hover\\:bg-slate-50:hover{background-color:#1e293b!important}`;
 
   return(
-    <div className={`flex min-h-screen ${dark?"dark bg-slate-950":"bg-slate-50"}`} style={{fontFamily:"'DM Sans',system-ui,sans-serif"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&display=swap');*{box-sizing:border-box;}::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:#f1f5f9;}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px;}.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}.line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}${DCSS}`}</style>
+    <div className={`flex min-h-screen ${dark?"dark bg-ink-900":"bg-cream"} font-sans`}>
+      <style>{`*{box-sizing:border-box;}.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}.line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}${DCSS}`}</style>
       <Sidebar user={user} active={effectiveView} setView={setView} uc={uc} ac={user.role==="architect"?ac:0} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}/>
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
