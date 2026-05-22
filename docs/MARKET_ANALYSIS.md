@@ -92,8 +92,8 @@ This section maps the user-provided 50 competitor features against current SiteT
 | 14 | Issue tracking | Present | Issues exist with severity and resolution. |
 | 15 | RFI management | Present | RFI workflow exists. |
 | 16 | Submittals | Present | Approvals tab includes submittals. |
-| 17 | BOQ management | Present | BOQ tab added: line items, category totals, grand total, client read-only. Estimate flow remains roadmap. |
-| 18 | Estimate creation | Missing | Add estimate builder on top of BOQ — queued for next sprint. |
+| 17 | BOQ management | Present | BOQ tab added: line items, category totals, grand total, client read-only. |
+| 18 | Estimate creation | Present | Estimate tab generates client-facing quote from BOQ totals + markup/overhead/contingency/GST; versioned per save; client read-only. |
 | 19 | Quotation comparison | Partial | Vendors/POs exist; quote comparison workflow missing. |
 | 20 | Material request | Partial | Materials exist; request-to-approval-to-PO flow missing. |
 | 21 | Purchase order | Present | Purchase orders exist. |

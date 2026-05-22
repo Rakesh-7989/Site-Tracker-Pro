@@ -125,3 +125,34 @@ Production SaaS claim still gated on:
 - ESLint config + real lint step in CI (BACKLOG).
 
 Reviewer: Tech Lead Agent on behalf of `docs/AGENTS.md` ownership boundary. Human Tech Lead (user) gets the final sign-off when reviewing this branch.
+
+## Sprint Progress - 2026-05-22 (Tech Lead Gate Closures)
+
+User instruction: "okay do it" — continue with next sprint candidates that can be closed without external dependencies (Supabase account, payment integration).
+
+| Agent | Work Done | Gate Closed |
+| --- | --- | --- |
+| DevOps + Frontend Engineer | Added ESLint 9 flat config (`eslint.config.js`), Prettier 3 config + ignore. New scripts: `lint`, `lint:fix`, `format`, `format:check`. `npm test` now runs lint first. CI workflow yaml updated to use real lint. | Tech Lead Gate #4 ✅ |
+| Frontend Engineer | Fixed 2 pre-existing React Hook violations surfaced by new lint rule: `CreateView` and `VendorsView` were calling `useState` after an early `return` — moved hooks to top of component bodies. | Code quality ✅ |
+| Backend Engineer + Security | `scripts/supabase/04_rls_tests.sql`: 18 assertions across 4 roles. Tests that Architect sees both org projects, PM sees only assigned, Contractor cannot see invoices/labour/POs, Client only sees client_email-matched + only client-released drawings + cannot write. Updated supabase README with run order. | Tech Lead Gate #2 ✅ |
+| Frontend + Domain Analyst | `EstimateTab` (feature #18 of 50-feature matrix): derives client-facing quote from BOQ totals + markup/overhead/contingency/GST percentages. Versioned per save. Architect/PM edit; Client read-only; Contractor hidden. `MARKET_ANALYSIS.md` matrix updated. | Feature #18 ✅ |
+| QA | Smoke bumped to 74 markers; vitest now 26 cases (added estimate visibility matrix). | Coverage ✅ |
+| Documentation | CHANGELOG + BACKLOG + work-board updated to reflect closures and remaining sprint candidates. | Docs ✅ |
+
+### Verification Evidence
+
+- `npm run lint` → 0 errors, 24 warnings (all `no-unused-vars`).
+- `npm run build` → 831 modules transformed.
+- `npm run smoke` → 74/74 checks pass.
+- `npm run test:unit` → 26/26 vitest cases pass.
+
+### Production Gates Remaining
+
+Of the 4 gates Tech Lead flagged at last approval:
+
+| # | Gate | Status |
+| --- | --- | --- |
+| 1 | Supabase dev project provisioned and `01_schema.sql` + `02_rls.sql` actually run | ⏳ Awaiting user Supabase account |
+| 2 | 4-role RLS verification matrix scripted | ✅ **Closed** (`04_rls_tests.sql`) |
+| 3 | Backup restore drill on staging | ⏳ Awaiting user Supabase account |
+| 4 | ESLint config + real lint step in CI | ✅ **Closed** |

@@ -140,18 +140,23 @@ MVP should not claim production readiness until backend auth, real permissions, 
 - **LOW: CHANGELOG.md** created in Keep-a-Changelog format.
 - **LOW: Tech Lead approval entry** added to `.agents/sitetrack-pro/work-board.md`.
 
+## Completed 2026-05-22 Tech Lead Gate Closures
+
+- **Gate #4 (ESLint + Prettier)**: `eslint.config.js` (flat config, ESLint 9), `.prettierrc.json`, `.prettierignore` added. `npm run lint` integrated into `npm test`. CI workflow upgraded from placeholder to real lint step. 2 pre-existing React Hook violations (CreateView, VendorsView) fixed.
+- **Gate #2 (RLS verification matrix)**: `scripts/supabase/04_rls_tests.sql` ships 18 assertions across 4 roles. Tech Lead can paste into Supabase SQL Editor on a dev project and read PASS/FAIL inline.
+- **Feature #18 (Estimate)**: `EstimateTab` derives client-facing quote from BOQ totals + markup/overhead/contingency/GST. Versioned per save. Architect/PM edit; Client read-only; Contractor hidden.
+
 ## Next Sprint Candidates (carry-over)
 
 | Sprint candidate | Why now | Risk |
 | --- | --- | --- |
-| Refactor App.jsx into `src/components/`, `src/views/`, `src/data/`, `src/lib/` | File is 2,200+ lines; PRs touching one area show entire file diff. | Medium - smoke string markers protect against accidental removal. |
-| Provision Supabase dev project per BACKEND_PLAN.md (Phase B1) | `01_schema.sql` + `02_rls.sql` ready to run; Tech Lead Agent approved the plan. | High - production data implications. |
-| Add ESLint + Prettier configs | CI placeholder lint step needs a real linter. | Low |
-| Add `04_rls_tests.sql` — scripted 4-role RLS verification matrix | Manual matrix in `scripts/supabase/README.md` is error-prone for repeat runs. | Medium |
+| Refactor App.jsx into `src/components/`, `src/views/`, `src/data/`, `src/lib/` | File is 2,300+ lines; PRs touching one area show entire file diff. | Medium - smoke string markers protect against accidental removal. |
+| Provision Supabase dev project per BACKEND_PLAN.md (Phase B1) | `01_schema.sql` + `02_rls.sql` + `04_rls_tests.sql` ready to run; Tech Lead Agent approved the plan. | High - production data implications. |
+| Bulk-format codebase with Prettier and add `format:check` to CI | Prettier is configured but not yet applied; codebase has mixed formatting. | Low |
 | Drawing markup viewer (feature #9 in 50-feature matrix) | Remaining Missing item; high competitor pressure from PlanGrid/Autodesk. | Medium |
-| Estimate builder (#18) on top of BOQ | BOQ now exists; estimates are the natural pre-construction extension. | Medium |
 | Payment receipts and reconciliation (#30) | Connects invoices + RA bills to actual money received. | Medium - touches financial data. |
 | Playwright e2e for one role-access scenario per role | Vitest covers pure logic; nothing covers actual rendering + role-gated routes. | Low |
+| Clean up 24 ESLint `no-unused-vars` warnings | Mostly harmless but signal-to-noise low; helps catch real bugs later. | Low |
 
 ## Feature Acceptance Checklist
 

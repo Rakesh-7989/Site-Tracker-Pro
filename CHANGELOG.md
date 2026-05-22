@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ## [Unreleased]
 
 ### Added
+- **ESLint flat config (ESLint 9)** + **Prettier** with `npm run lint`, `lint:fix`, `format`, `format:check` scripts. `npm test` now runs lint first. CI workflow upgraded from placeholder to real lint step.
+- **`scripts/supabase/04_rls_tests.sql`** — 18-assertion RLS verification matrix across 4 roles (Architect/PM/Contractor/Client) covering project visibility, drawing released_to rules, financial table isolation, PII access, and write blocking for clients. Tech Lead gate #2 closed.
+- **Estimate tab** (feature #18 in 50-feature matrix): generates client-facing quote from BOQ totals with editable markup/overhead/contingency/GST percentages. Versioned per save. Architect/PM edit; Client read-only; Contractor hidden.
 - `src/lib/permissions.js` — single source of truth for PERMS + role helpers. App.jsx imports from here so the two cannot drift.
 - `scripts/supabase/01_schema.sql` + `02_rls.sql` + `README.md` — runnable Supabase schema and RLS policy templates per Backend Engineer Agent's plan.
 - BOQ tab (Bill of Quantities) with code, description, category, unit, qty, rate; category totals + grand total. Architect/PM edit, Client read-only, Contractor hidden.
@@ -31,6 +34,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 - BOQ/Ledger inputs cannot create unrealistic numbers (>1B) or zero/negative quantities.
 - Ledger guards against issuing more material than currently in stock for that material.
 - Drawing release no longer risks superseding multiple blank drawings under one collision key.
+- Two React Hook violations fixed in `CreateView` and `VendorsView` (early-return before `useState`) — caught by new ESLint rule `react-hooks/rules-of-hooks`.
 
 ### Known Issues
 - App.jsx remains ~2,200 lines. Refactor into `src/components/`, `src/views/`, `src/data/` queued in BACKLOG.
