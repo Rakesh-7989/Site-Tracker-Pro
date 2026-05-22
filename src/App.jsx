@@ -41,6 +41,7 @@ const t = (lang, k) => I18N[lang]?.[k] || I18N.en[k] || k;
 // Single source of truth: src/lib/permissions.js (imported at top).
 // Vitest covers role boundaries, so any drift breaks tests immediately.
 const ROLE_META = {
+  superadmin:{label:"Super Admin",bg:"bg-slate-900",text:"text-amber-400",col:"slate"},
   architect:{label:"Architect",bg:"bg-orange-100",text:"text-orange-700",col:"orange"},
   pm:{label:"Project Manager",bg:"bg-blue-100",text:"text-blue-700",col:"blue"},
   contractor:{label:"Contractor",bg:"bg-violet-100",text:"text-violet-700",col:"violet"},
@@ -49,10 +50,43 @@ const ROLE_META = {
 
 // ── MOCK DATA ─────────────────────────────────────────────────────────────────
 const MOCK_USERS = {
-  architect:{id:"u1",name:"Arjun Reddy",email:"arjun@buildco.in",role:"architect",avatar:"AR"},
-  pm:{id:"u2",name:"Priya Sharma",email:"priya@buildco.in",role:"pm",avatar:"PS"},
-  contractor:{id:"u4",name:"Karthik Builders",email:"site@karthikbuilders.in",role:"contractor",avatar:"KB"},
-  client:{id:"u3",name:"Vikram Nair",email:"vikram@client.in",role:"client",avatar:"VN"},
+  architect:{id:"u1",name:"Arjun Reddy",email:"arjun@buildco.in",role:"architect",avatar:"AR",org_id:"org1"},
+  pm:{id:"u2",name:"Priya Sharma",email:"priya@buildco.in",role:"pm",avatar:"PS",org_id:"org1"},
+  contractor:{id:"u4",name:"Karthik Builders",email:"site@karthikbuilders.in",role:"contractor",avatar:"KB",org_id:"org1"},
+  client:{id:"u3",name:"Vikram Nair",email:"vikram@client.in",role:"client",avatar:"VN",org_id:"org1"},
+  superadmin:{id:"u100",name:"Rakesh Boyapati",email:"admin@sitetrack.in",role:"superadmin",avatar:"RB",org_id:null},
+};
+// Multi-tenant customer organizations — what the super admin coordinates.
+const INIT_ORGS = [
+  {id:"org1",name:"BuildCo India",slug:"buildco",plan:"business",mrr:7999,users_count:4,projects_count:4,created:"2024-10-01",contact_email:"arjun@buildco.in",status:"active",trial_ends:null,city:"Hyderabad"},
+  {id:"org2",name:"Skyline Architects",slug:"skyline-arch",plan:"pro",mrr:2999,users_count:3,projects_count:2,created:"2025-02-15",contact_email:"anika@skyline.in",status:"active",trial_ends:null,city:"Bangalore"},
+  {id:"org3",name:"Premier Builders & Co.",slug:"premier",plan:"basic",mrr:999,users_count:2,projects_count:1,created:"2025-04-20",contact_email:"suresh@premier.in",status:"active",trial_ends:null,city:"Chennai"},
+  {id:"org4",name:"Nair Holdings Construction",slug:"nair-holdings",plan:"pro",mrr:2999,users_count:5,projects_count:3,created:"2024-12-10",contact_email:"head@nair.in",status:"active",trial_ends:null,city:"Kochi"},
+  {id:"org5",name:"Greenfield Developers",slug:"greenfield",plan:"basic",mrr:999,users_count:2,projects_count:1,created:"2025-05-05",contact_email:"gf@green.in",status:"trial",trial_ends:"2025-06-04",city:"Pune"},
+];
+// Cross-tenant user list — admin uses this for CRUD; demo users still log in via MOCK_USERS picker.
+const INIT_ADMIN_USERS = [
+  {id:"u1",name:"Arjun Reddy",email:"arjun@buildco.in",role:"architect",org_id:"org1",status:"active",joined:"2024-10-01",last_seen:"2025-04-21T09:30:00Z"},
+  {id:"u2",name:"Priya Sharma",email:"priya@buildco.in",role:"pm",org_id:"org1",status:"active",joined:"2024-10-15",last_seen:"2025-04-20T18:12:00Z"},
+  {id:"u3",name:"Vikram Nair",email:"vikram@client.in",role:"client",org_id:"org1",status:"active",joined:"2024-11-10",last_seen:"2025-04-19T11:00:00Z"},
+  {id:"u4",name:"Karthik Builders",email:"site@karthikbuilders.in",role:"contractor",org_id:"org1",status:"active",joined:"2024-11-01",last_seen:"2025-04-21T07:45:00Z"},
+  {id:"u5",name:"Anika Iyer",email:"anika@skyline.in",role:"architect",org_id:"org2",status:"active",joined:"2025-02-15",last_seen:"2025-04-18T16:22:00Z"},
+  {id:"u6",name:"Raj Mehta",email:"raj@skyline.in",role:"pm",org_id:"org2",status:"active",joined:"2025-02-20",last_seen:"2025-04-20T10:08:00Z"},
+  {id:"u7",name:"Maya Pillai",email:"maya@skylineclients.in",role:"client",org_id:"org2",status:"active",joined:"2025-03-01",last_seen:"2025-04-15T13:30:00Z"},
+  {id:"u8",name:"Suresh Reddy",email:"suresh@premier.in",role:"architect",org_id:"org3",status:"active",joined:"2025-04-20",last_seen:"2025-04-20T20:15:00Z"},
+  {id:"u9",name:"Manoj Kumar",email:"manoj@premier.in",role:"pm",org_id:"org3",status:"inactive",joined:"2025-04-25",last_seen:"2025-04-26T09:00:00Z"},
+  {id:"u10",name:"Lakshmi Krishnan",email:"lakshmi@nair.in",role:"architect",org_id:"org4",status:"active",joined:"2024-12-10",last_seen:"2025-04-21T08:00:00Z"},
+  {id:"u11",name:"Deepak Singh",email:"deepak@nair.in",role:"pm",org_id:"org4",status:"active",joined:"2024-12-20",last_seen:"2025-04-20T17:30:00Z"},
+  {id:"u12",name:"Sandeep Rao",email:"sandeep@nair.in",role:"contractor",org_id:"org4",status:"active",joined:"2025-01-05",last_seen:"2025-04-20T15:00:00Z"},
+  {id:"u13",name:"Ravi Menon",email:"head@nair.in",role:"client",org_id:"org4",status:"active",joined:"2024-12-10",last_seen:"2025-04-19T10:00:00Z"},
+  {id:"u14",name:"Greenfield Owner",email:"gf@green.in",role:"architect",org_id:"org5",status:"active",joined:"2025-05-05",last_seen:"2025-05-05T11:00:00Z"},
+  {id:"u100",name:"Rakesh Boyapati",email:"admin@sitetrack.in",role:"superadmin",org_id:null,status:"active",joined:"2024-09-01",last_seen:"2025-04-21T10:00:00Z"},
+];
+const PLAN_META = {
+  basic:{label:"Basic",price:999,color:"slate"},
+  pro:{label:"Pro",price:2999,color:"blue"},
+  business:{label:"Business",price:7999,color:"orange"},
+  custom:{label:"Custom",price:0,color:"violet"},
 };
 const INIT_PROJECTS = [
   {id:"p1",name:"Skyline Tower Phase II",client_name:"Nair Holdings",client_email:"vikram@client.in",location:"Jubilee Hills, Hyderabad",lat:17.4326,lng:78.4071,status:"active",start_date:"2024-11-01",expected_end_date:"2026-06-30",budget:45000000,description:"28-floor commercial tower with underground parking.",progress:62},
@@ -796,7 +830,8 @@ function ActivityView({user,activity,setActivity,projects}){
 function LoginScreen({onLogin,dark,toggleDark}){
   const[role,setRole]=useState("architect");const[anim,setAnim]=useState(false);
   const roles=[
-    {key:"architect",label:"Architect / Admin",sub:"Full control — drawings, team, exports, activity feed",ini:"AR",col:"orange",perms:["Release Drawings","Manage Everything","View All Activity","Export & Share"]},
+    {key:"superadmin",label:"Super Admin (Operations)",sub:"Multi-tenant — all orgs, users, billing, system settings",ini:"RB",col:"slate",perms:["All Orgs","User Management","Billing","System Settings","Impersonate"]},
+    {key:"architect",label:"Architect / Org Admin",sub:"Within one org — drawings, team, exports, activity feed",ini:"AR",col:"orange",perms:["Release Drawings","Manage Everything","View All Activity","Export & Share"]},
     {key:"pm",label:"Project Manager",sub:"Field operations — updates, attendance, issues, materials",ini:"PS",col:"blue",perms:["Add Site Updates","Mark Attendance","Report Issues","Material Logs"]},
     {key:"contractor",label:"Contractor",sub:"Worklogs, RFIs, RA bills, and field documents",ini:"KB",col:"violet",perms:["Worklogs","RFIs","RA Bills","Field Uploads"]},
     {key:"client",label:"Client",sub:"Read-only — progress, milestones, released drawings",ini:"VN",col:"emerald",perms:["View Progress","View Milestones","Released Drawings","Updates"]},
@@ -1062,6 +1097,13 @@ function MarkupModal({open, imageUrl, sourceName, onClose, onSave}){
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
 function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
   const allItems=[
+    // Admin-only nav (only visible when role is superadmin)
+    {id:"admin-dashboard",icon:"shield",label:"Admin Console",group:"admin"},
+    {id:"admin-orgs",icon:"building",label:"Organizations",group:"admin"},
+    {id:"admin-users",icon:"users",label:"Users",group:"admin"},
+    {id:"admin-billing",icon:"wallet",label:"Billing & MRR",group:"admin"},
+    {id:"admin-settings",icon:"sliders",label:"System Settings",group:"admin"},
+    // Tenant nav (visible to all roles per their PERMS.nav)
     {id:"dashboard",icon:"dashboard",label:"Dashboard"},
     {id:"projects",icon:"folder",label:"Projects"},
     {id:"calendar",icon:"calendar",label:"Calendar"},
@@ -1075,6 +1117,8 @@ function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"notifications",icon:"bell",label:"Updates",badge:uc},
   ];
   const items=allItems.filter(i=>PERMS[user.role].nav.includes(i.id));
+  const adminItems=items.filter(i=>i.group==="admin");
+  const tenantItems=items.filter(i=>i.group!=="admin");
   const rm=ROLE_META[user.role];
   return(
     <>
@@ -1099,7 +1143,20 @@ function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
         </div>
 
         <nav className="relative flex-1 p-4 mt-2 space-y-0.5 overflow-y-auto">
-          {items.map(it=>{
+          {adminItems.length>0&&<>
+            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-amber-500/70 px-3.5 mb-1.5 mt-1">— Operations</div>
+            {adminItems.map(it=>{
+              const isActive=active===it.id;
+              return(
+                <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all ${isActive?"text-ink-900 font-semibold":"text-cream/65 hover:text-cream font-medium"}`} style={isActive?{background:"linear-gradient(180deg, #f59e0b, #d97706)",boxShadow:"0 4px 14px rgba(217,119,6,.35)"}:{}}>
+                  <Ic n={it.icon} s={16}/>
+                  <span className="tracking-[0.01em]">{it.label}</span>
+                </button>
+              );
+            })}
+            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-cream/40 px-3.5 mt-4 mb-1.5">— Tenant view</div>
+          </>}
+          {tenantItems.map(it=>{
             const isActive=active===it.id;
             return(
               <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all ${isActive?"text-ink-900 font-semibold":"text-cream/65 hover:text-cream font-medium"}`} style={isActive?{background:"linear-gradient(180deg, #f59e0b, #d97706)",boxShadow:"0 4px 14px rgba(217,119,6,.35)"}:{}}>
@@ -1269,6 +1326,438 @@ function ProjectsView({user,projects,setView,setSP}){
           </div>}
         </button>
       )}{fl.length===0&&<div className="col-span-3 text-center py-20 text-ink-500"><Ic n="search" s={32} c="mx-auto mb-3 opacity-30"/><p className="font-display text-lg">No projects match</p></div>}</div>
+    </div>
+  );
+}
+
+// ── SUPER ADMIN VIEWS ────────────────────────────────────────────────────────
+// These views are gated by PERMS.superadmin.nav. The slate/amber theme makes
+// it visually distinct from the editorial tenant views.
+
+function SuperAdminDashboard({user,orgs,adminUsers,projects,issues,activity,setView}){
+  const totalMRR=orgs.filter(o=>o.status==="active").reduce((s,o)=>s+(o.mrr||0),0);
+  const activeOrgs=orgs.filter(o=>o.status==="active").length;
+  const trialOrgs=orgs.filter(o=>o.status==="trial").length;
+  const activeUsers=adminUsers.filter(u=>u.status==="active"&&u.role!=="superadmin").length;
+  const totalProjects=projects.length;
+  const activeProjects=projects.filter(p=>p.status==="active").length;
+  const allIssues=Object.values(issues).flat();
+  const highOpen=allIssues.filter(i=>i.status==="open"&&i.severity==="high").length;
+  const recentSignups=[...orgs].sort((a,b)=>new Date(b.created)-new Date(a.created)).slice(0,3);
+  const planDist=["basic","pro","business","custom"].map(plan=>({plan,count:orgs.filter(o=>o.plan===plan).length,mrr:orgs.filter(o=>o.plan===plan).reduce((s,o)=>s+(o.mrr||0),0)}));
+  const churnRisk=orgs.filter(o=>{
+    const orgUsers=adminUsers.filter(u=>u.org_id===o.id&&u.status==="active");
+    if(!orgUsers.length) return false;
+    const lastSeen=Math.max(...orgUsers.map(u=>new Date(u.last_seen||0).getTime()));
+    return (Date.now()-lastSeen)>7*86400*1000;
+  });
+  return(
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="mb-8 pb-4" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Multi-tenant operations · {new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}</div>
+        <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 tracking-editorial leading-[1.05]">Admin Console</h1>
+        <p className="text-ink-600 text-sm mt-3">Welcome back, <span className="font-semibold">{user.name.split(" ")[0]}</span>. Coordinating <strong>{activeOrgs}</strong> active orgs · <strong>{activeUsers}</strong> users · <strong>₹{totalMRR.toLocaleString("en-IN")}/mo</strong> MRR.</p>
+      </div>
+
+      {/* Hero metrics — operations grade, not editorial */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-ink-900 text-cream rounded-2xl p-5 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full" style={{background:"radial-gradient(circle, rgba(245,158,11,.25) 0%, transparent 65%)"}}/>
+          <div className="relative">
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-400 mb-2">Monthly recurring</div>
+            <div className="font-display text-3xl font-light tracking-editorial">₹{totalMRR.toLocaleString("en-IN")}</div>
+            <div className="text-[11px] text-cream/60 mt-1">{activeOrgs} active · {trialOrgs} trial</div>
+          </div>
+        </div>
+        <SC icon="building" label="Customer Orgs" value={orgs.length} sub={`${activeOrgs} active`} accent="blue"/>
+        <SC icon="users" label="Users" value={activeUsers} sub="across all orgs" accent="violet"/>
+        <SC icon="folder" label="Projects" value={totalProjects} sub={`${activeProjects} active · ${highOpen} HIGH issues`} accent={highOpen>0?"red":"emerald"}/>
+      </div>
+
+      {/* Plan distribution */}
+      <div className="grid md:grid-cols-3 gap-5 mb-8">
+        <div className="md:col-span-2 bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Plan mix</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">Subscription distribution</h2>
+          <div className="space-y-3">
+            {planDist.map(p=>{
+              const meta=PLAN_META[p.plan];const pct=orgs.length?Math.round((p.count/orgs.length)*100):0;
+              return(
+                <div key={p.plan}>
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-display font-semibold text-ink-900 capitalize tracking-editorial">{meta.label}</span>
+                      <span className="text-xs text-ink-500">₹{meta.price.toLocaleString("en-IN")}/mo</span>
+                    </div>
+                    <span className="text-sm font-bold text-ink-700">{p.count} orgs · ₹{p.mrr.toLocaleString("en-IN")}/mo</span>
+                  </div>
+                  <div className="w-full bg-cream-200 rounded-full h-2 overflow-hidden">
+                    <div className="h-full bg-gradient-gold transition-all duration-500" style={{width:`${pct}%`}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Pipeline</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-4 tracking-editorial">Recent signups</h2>
+          <div className="space-y-3">{recentSignups.map(o=>
+            <div key={o.id} className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0"><span className="font-display font-bold text-amber-800 text-sm">{o.name.split(" ").map(x=>x[0]).join("").slice(0,2)}</span></div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-ink-900 text-sm truncate">{o.name}</div>
+                <div className="text-[11px] text-ink-500">{fmtDate(o.created)} · {PLAN_META[o.plan].label}</div>
+              </div>
+            </div>
+          )}</div>
+        </div>
+      </div>
+
+      {/* Churn risk callout */}
+      {churnRisk.length>0&&<div className="bg-red-50 border-l-4 border-red-500 rounded-r-2xl p-5 mb-8 shadow-editorial">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="alert" s={18} c="text-red-600"/></div>
+          <div className="flex-1">
+            <div className="font-display font-semibold text-red-800 text-base tracking-editorial">{churnRisk.length} org(s) with no user activity in past 7 days</div>
+            <div className="text-red-600 text-xs mt-1">{churnRisk.map(o=>o.name).slice(0,3).join(" · ")}</div>
+          </div>
+          <button onClick={()=>setView("admin-orgs")} className="text-red-700 font-bold text-xs tracking-wider uppercase hover:underline">Review →</button>
+        </div>
+      </div>}
+
+      {/* Cross-org activity */}
+      <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="flex items-end justify-between mb-5">
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Cross-tenant feed</div>
+            <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">Recent activity (all orgs)</h2>
+          </div>
+          <button onClick={()=>setView("activity")} className="text-amber-700 text-xs font-bold tracking-[0.18em] uppercase hover:text-amber-900">Full feed →</button>
+        </div>
+        <div className="space-y-2">
+          {activity.slice(0,5).map(a=>
+            <div key={a.id} className="flex items-center gap-3 py-2" style={{borderBottom:"1px solid var(--st-line)"}}>
+              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-cream-200 text-ink-700">{a.role}</span>
+              <span className="text-sm text-ink-800 flex-1 truncate"><strong>{a.by}</strong> · {a.action}</span>
+              <span className="text-[11px] text-ink-500">{fmtTime(a.time)}</span>
+            </div>
+          )}
+          {activity.length===0&&<div className="text-sm text-ink-500 italic py-3">No recent activity.</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrgsAdminView({user,orgs,setOrgs,adminUsers,projects}){
+  const[show,setShow]=useState(false);
+  const[no,setNo]=useState({name:"",slug:"",plan:"basic",contact_email:"",city:"",status:"trial"});
+  const[filter,setFilter]=useState("all");
+  const add=()=>{
+    if(!no.name.trim()||!no.contact_email.trim()){alert("Org name + contact email are required.");return;}
+    const trial_ends=no.status==="trial"?new Date(Date.now()+15*86400*1000).toISOString().split("T")[0]:null;
+    setOrgs(p=>[...p,{id:"org_"+Date.now(),...no,name:no.name.trim(),slug:no.slug.trim()||no.name.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-"),mrr:PLAN_META[no.plan].price,users_count:0,projects_count:0,created:new Date().toISOString().split("T")[0],trial_ends}]);
+    setNo({name:"",slug:"",plan:"basic",contact_email:"",city:"",status:"trial"});setShow(false);
+  };
+  const changePlan=(orgId,plan)=>setOrgs(p=>p.map(o=>o.id===orgId?{...o,plan,mrr:PLAN_META[plan].price}:o));
+  const toggleStatus=(orgId)=>{
+    const o=orgs.find(x=>x.id===orgId);if(!o)return;
+    const next=o.status==="active"?"suspended":"active";
+    if(!window.confirm(`Set ${o.name} status to ${next}? ${next==="suspended"?"Their users will lose access on next login.":"They regain access immediately."}`))return;
+    setOrgs(p=>p.map(x=>x.id===orgId?{...x,status:next}:x));
+  };
+  const filtered=orgs.filter(o=>filter==="all"||o.status===filter);
+  return(
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Multi-tenant</div>
+          <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">Customer Organizations</h1>
+          <p className="text-ink-500 text-sm mt-2">{orgs.length} total · {orgs.filter(o=>o.status==="active").length} active · ₹{orgs.filter(o=>o.status==="active").reduce((s,o)=>s+o.mrr,0).toLocaleString("en-IN")}/mo MRR</p>
+        </div>
+        <button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>Add Organization</button>
+      </div>
+      <div className="flex gap-2 mb-5 flex-wrap">{["all","active","trial","suspended"].map(f=>
+        <button key={f} onClick={()=>setFilter(f)} className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider uppercase border ${filter===f?"bg-ink-900 text-cream border-ink-900":"bg-white text-ink-600 border-stone-200"}`}>{f==="all"?`All (${orgs.length})`:f}</button>
+      )}</div>
+      {show&&<div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">New customer org</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <input value={no.name} onChange={e=>setNo(p=>({...p,name:e.target.value}))} placeholder="Org name (e.g. BuildCo India)" className="col-span-2 p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          <input value={no.contact_email} onChange={e=>setNo(p=>({...p,contact_email:e.target.value}))} type="email" placeholder="Contact email" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          <input value={no.city} onChange={e=>setNo(p=>({...p,city:e.target.value}))} placeholder="City" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          <select value={no.plan} onChange={e=>setNo(p=>({...p,plan:e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{Object.entries(PLAN_META).map(([k,m])=><option key={k} value={k}>{m.label} — ₹{m.price}/mo</option>)}</select>
+          <select value={no.status} onChange={e=>setNo(p=>({...p,status:e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="trial">15-day Trial</option><option value="active">Active (paid)</option></select>
+        </div>
+        <button onClick={add} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Create Org</button>
+      </div>}
+      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 bg-cream-200/60 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div className="col-span-4">Organization</div>
+          <div className="col-span-2">Plan</div>
+          <div className="col-span-1 text-right">MRR</div>
+          <div className="col-span-1 text-right">Users</div>
+          <div className="col-span-1 text-right">Projects</div>
+          <div className="col-span-2">Status</div>
+          <div className="col-span-1 text-right">Actions</div>
+        </div>
+        <div className="divide-y divide-stone-100">{filtered.map(o=>{
+          const orgUsers=adminUsers.filter(u=>u.org_id===o.id).length;
+          const orgProjects=projects.filter(p=>p.org_id===o.id).length;
+          return(
+            <div key={o.id} className="grid grid-cols-12 gap-3 px-5 py-4 items-center text-sm hover:bg-cream-200/30">
+              <div className="col-span-4">
+                <div className="font-display font-semibold text-ink-900 tracking-editorial">{o.name}</div>
+                <div className="text-[11px] text-ink-500">{o.contact_email} · {o.city}</div>
+                {o.status==="trial"&&o.trial_ends&&<div className="text-[10px] text-amber-700 mt-1 font-bold">Trial ends {fmtDate(o.trial_ends)}</div>}
+              </div>
+              <div className="col-span-2">
+                <select value={o.plan} onChange={e=>changePlan(o.id,e.target.value)} className="px-2 py-1 text-xs font-bold border border-stone-200 rounded-lg outline-none focus:border-amber-600">
+                  {Object.entries(PLAN_META).map(([k,m])=><option key={k} value={k}>{m.label}</option>)}
+                </select>
+              </div>
+              <div className="col-span-1 text-right font-display font-semibold text-ink-900">₹{o.mrr.toLocaleString("en-IN")}</div>
+              <div className="col-span-1 text-right text-ink-700">{orgUsers||o.users_count}</div>
+              <div className="col-span-1 text-right text-ink-700">{orgProjects||o.projects_count}</div>
+              <div className="col-span-2">
+                <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${o.status==="active"?"bg-emerald-50 text-emerald-700":o.status==="trial"?"bg-amber-50 text-amber-700":"bg-red-50 text-red-700"}`} style={{border:"1px solid var(--st-line)"}}>{o.status}</span>
+              </div>
+              <div className="col-span-1 text-right">
+                <button onClick={()=>toggleStatus(o.id)} className="text-[11px] font-bold text-ink-500 hover:text-amber-700">{o.status==="active"?"Suspend":"Activate"}</button>
+              </div>
+            </div>
+          );
+        })}{filtered.length===0&&<div className="text-center py-12 text-ink-500 italic">No orgs match this filter.</div>}</div>
+      </div>
+    </div>
+  );
+}
+
+function UsersAdminView({user,adminUsers,setAdminUsers,orgs}){
+  const[show,setShow]=useState(false);
+  const[nu,setNu]=useState({name:"",email:"",role:"pm",org_id:orgs[0]?.id||""});
+  const[q,setQ]=useState("");
+  const[roleFilter,setRoleFilter]=useState("all");
+  const orgsById=Object.fromEntries(orgs.map(o=>[o.id,o]));
+  const filtered=adminUsers.filter(u=>roleFilter==="all"||u.role===roleFilter).filter(u=>{
+    if(!q.trim())return true;
+    const s=q.toLowerCase();
+    return u.name.toLowerCase().includes(s)||u.email.toLowerCase().includes(s)||(orgsById[u.org_id]?.name||"").toLowerCase().includes(s);
+  });
+  const invite=()=>{
+    if(!nu.name.trim()||!nu.email.trim()){alert("Name + email required.");return;}
+    if(adminUsers.find(u=>u.email.toLowerCase()===nu.email.toLowerCase())){alert("A user with this email already exists.");return;}
+    setAdminUsers(p=>[...p,{id:"u_"+Date.now(),...nu,name:nu.name.trim(),email:nu.email.trim(),status:"active",joined:new Date().toISOString().split("T")[0],last_seen:new Date().toISOString()}]);
+    setNu({name:"",email:"",role:"pm",org_id:orgs[0]?.id||""});setShow(false);
+  };
+  const changeRole=(uid,role)=>setAdminUsers(p=>p.map(u=>u.id===uid?{...u,role}:u));
+  const toggleStatus=(uid)=>{
+    const u=adminUsers.find(x=>x.id===uid);if(!u)return;
+    if(u.role==="superadmin"){alert("Super admin status cannot be toggled from here.");return;}
+    const next=u.status==="active"?"inactive":"active";
+    if(!window.confirm(`${next==="inactive"?"Deactivate":"Reactivate"} ${u.name}?`))return;
+    setAdminUsers(p=>p.map(x=>x.id===uid?{...x,status:next}:x));
+  };
+  return(
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— People</div>
+          <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">Users</h1>
+          <p className="text-ink-500 text-sm mt-2">{adminUsers.length} total · {adminUsers.filter(u=>u.status==="active").length} active across {orgs.length} orgs</p>
+        </div>
+        <button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>Invite User</button>
+      </div>
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
+        <div className="relative flex-1 min-w-48"><Ic n="search" s={16} c="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name, email, or org..." className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/></div>
+        <select value={roleFilter} onChange={e=>setRoleFilter(e.target.value)} className="px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm font-semibold outline-none focus:border-amber-600">
+          <option value="all">All roles</option>
+          <option value="superadmin">Super Admin</option>
+          <option value="architect">Architect</option>
+          <option value="pm">PM</option>
+          <option value="contractor">Contractor</option>
+          <option value="client">Client</option>
+        </select>
+      </div>
+      {show&&<div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">Invite a user</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <input value={nu.name} onChange={e=>setNu(p=>({...p,name:e.target.value}))} placeholder="Full name" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          <input value={nu.email} onChange={e=>setNu(p=>({...p,email:e.target.value}))} type="email" placeholder="Email" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          <select value={nu.role} onChange={e=>setNu(p=>({...p,role:e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">
+            <option value="architect">Architect</option>
+            <option value="pm">PM</option>
+            <option value="contractor">Contractor</option>
+            <option value="client">Client</option>
+          </select>
+          <select value={nu.org_id} onChange={e=>setNu(p=>({...p,org_id:e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
+        </div>
+        <p className="text-[11px] text-ink-500 mb-3">In production a magic-link invite is sent via Supabase Auth. Demo mode just adds the row.</p>
+        <button onClick={invite} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Send Invite</button>
+      </div>}
+      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 bg-cream-200/60 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div className="col-span-4">User</div>
+          <div className="col-span-2">Role</div>
+          <div className="col-span-3">Org</div>
+          <div className="col-span-2">Last seen</div>
+          <div className="col-span-1 text-right">Actions</div>
+        </div>
+        <div className="divide-y divide-stone-100">{filtered.map(u=>{
+          const org=orgsById[u.org_id];
+          return(
+            <div key={u.id} className="grid grid-cols-12 gap-3 px-5 py-4 items-center text-sm hover:bg-cream-200/30">
+              <div className="col-span-4 flex items-center gap-3">
+                <Av i={u.name.split(" ").map(x=>x[0]).join("").slice(0,2)} sz="sm" col={ROLE_META[u.role]?.col||"slate"}/>
+                <div className="min-w-0">
+                  <div className="font-semibold text-ink-900 truncate">{u.name}{u.role==="superadmin"&&<span className="ml-1.5 text-[9px] font-bold tracking-wider uppercase text-amber-700">★ super</span>}</div>
+                  <div className="text-[11px] text-ink-500 truncate">{u.email}</div>
+                </div>
+              </div>
+              <div className="col-span-2">
+                {u.role==="superadmin"?<span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-ink-900 text-amber-400" style={{border:"1px solid var(--st-line)"}}>{ROLE_META[u.role].label}</span>:
+                  <select value={u.role} onChange={e=>changeRole(u.id,e.target.value)} className="px-2 py-1 text-xs font-bold border border-stone-200 rounded-lg outline-none focus:border-amber-600">
+                    <option value="architect">Architect</option><option value="pm">PM</option><option value="contractor">Contractor</option><option value="client">Client</option>
+                  </select>
+                }
+              </div>
+              <div className="col-span-3 text-ink-700 truncate">{org?org.name:<em className="text-ink-500">— system —</em>}</div>
+              <div className="col-span-2 text-[11px] text-ink-500">{u.last_seen?fmtTime(u.last_seen):"never"}</div>
+              <div className="col-span-1 text-right">
+                <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full mr-2 ${u.status==="active"?"bg-emerald-50 text-emerald-700":"bg-red-50 text-red-700"}`} style={{border:"1px solid var(--st-line)"}}>{u.status}</span>
+                {u.role!=="superadmin"&&<button onClick={()=>toggleStatus(u.id)} className="text-[11px] font-bold text-ink-500 hover:text-amber-700">{u.status==="active"?"Disable":"Enable"}</button>}
+              </div>
+            </div>
+          );
+        })}{filtered.length===0&&<div className="text-center py-12 text-ink-500 italic">No users match.</div>}</div>
+      </div>
+    </div>
+  );
+}
+
+function BillingAdminView({user,orgs}){
+  const activeOrgs=orgs.filter(o=>o.status==="active");
+  const trialOrgs=orgs.filter(o=>o.status==="trial");
+  const suspended=orgs.filter(o=>o.status==="suspended");
+  const totalMRR=activeOrgs.reduce((s,o)=>s+o.mrr,0);
+  const arr=totalMRR*12;
+  const byPlan=["basic","pro","business","custom"].map(plan=>({
+    plan,
+    orgs:activeOrgs.filter(o=>o.plan===plan),
+    mrr:activeOrgs.filter(o=>o.plan===plan).reduce((s,o)=>s+o.mrr,0),
+  }));
+  return(
+    <div className="p-4 md:p-10 max-w-7xl">
+      <div className="mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Revenue</div>
+        <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">Billing &amp; MRR</h1>
+        <p className="text-ink-500 text-sm mt-2">Subscription revenue across all customer organizations.</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-ink-900 text-cream rounded-2xl p-5 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full" style={{background:"radial-gradient(circle, rgba(245,158,11,.25) 0%, transparent 65%)"}}/>
+          <div className="relative">
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-400 mb-2">MRR</div>
+            <div className="font-display text-3xl font-light tracking-editorial">₹{totalMRR.toLocaleString("en-IN")}</div>
+            <div className="text-[11px] text-cream/60 mt-1">{activeOrgs.length} active subs</div>
+          </div>
+        </div>
+        <SC icon="trend" label="ARR (projected)" value={`₹${arr.toLocaleString("en-IN")}`} accent="emerald"/>
+        <SC icon="building" label="Active customers" value={activeOrgs.length} accent="blue"/>
+        <SC icon="alert" label="Trial / Suspended" value={`${trialOrgs.length} / ${suspended.length}`} accent={suspended.length?"red":"violet"}/>
+      </div>
+      <div className="bg-white rounded-2xl p-6 shadow-editorial mb-8" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Revenue mix</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">By plan tier</h2>
+        <div className="space-y-4">
+          {byPlan.map(p=>{
+            const meta=PLAN_META[p.plan];const share=totalMRR?Math.round((p.mrr/totalMRR)*100):0;
+            return(
+              <div key={p.plan}>
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display font-semibold text-ink-900 capitalize tracking-editorial">{meta.label}</span>
+                    <span className="text-xs text-ink-500">₹{meta.price}/mo · {p.orgs.length} customer{p.orgs.length===1?"":"s"}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-display font-bold text-ink-900">₹{p.mrr.toLocaleString("en-IN")}</span>
+                    <span className="text-xs text-ink-500 ml-2">{share}%</span>
+                  </div>
+                </div>
+                <div className="w-full bg-cream-200 rounded-full h-2 overflow-hidden">
+                  <div className="h-full bg-gradient-gold transition-all duration-500" style={{width:`${share}%`}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="bg-amber-50 rounded-2xl p-6 border-l-4 border-amber-500">
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-800 mb-1">— Roadmap</div>
+        <h2 className="font-display text-xl font-semibold text-amber-900 mb-2 tracking-editorial">Connect Razorpay Subscriptions</h2>
+        <p className="text-sm text-amber-900 leading-relaxed">When the Supabase backend lands, this view connects to Razorpay's Subscription API to auto-charge each org monthly. Invoices, GST receipts, dunning, retries all handled by Razorpay. See <span className="font-semibold">docs/BACKEND_PLAN.md</span> Phase B7.</p>
+      </div>
+    </div>
+  );
+}
+
+function SettingsAdminView({user,flags,setFlags}){
+  const aiCfg=getProviderConfig();
+  const rzCfg=getRazorpayConfig();
+  const toggle=(k)=>setFlags(p=>({...p,[k]:!p[k]}));
+  const FLAG_LIST=[
+    {k:"drawing_markup",label:"Drawing Markup Viewer",desc:"Canvas overlay on image attachments. Required for PlanGrid/Procore parity."},
+    {k:"ai_insights",label:"AI Insights (LLM)",desc:"Claude/OpenAI-powered risk narratives. Requires API key per super admin."},
+    {k:"dpr_auto",label:"Auto Daily Report (DPR)",desc:"Scheduled 6 PM WhatsApp delivery. Requires Supabase Edge Function."},
+    {k:"whatsapp_share",label:"WhatsApp Share buttons",desc:"Project + DPR share via wa.me deep links."},
+    {k:"e_signature",label:"E-signature on approvals",desc:"Typed-name consent capture on change orders."},
+    {k:"offline_queue",label:"Offline sync queue",desc:"Queue writes when offline; drain on reconnect (needs backend to ship)."},
+  ];
+  return(
+    <div className="p-4 md:p-10 max-w-5xl">
+      <div className="mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Configuration</div>
+        <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">System Settings</h1>
+        <p className="text-ink-500 text-sm mt-2">Feature flags + integration status — applied to every customer org.</p>
+      </div>
+      <div className="bg-white rounded-2xl p-6 shadow-editorial mb-6" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Feature flags</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">What's on?</h2>
+        <div className="space-y-2">{FLAG_LIST.map(f=>
+          <label key={f.k} className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer transition-all ${flags[f.k]?"bg-amber-50":"bg-cream-200/40"}`} style={{border:"1px solid var(--st-line)"}}>
+            <input type="checkbox" checked={!!flags[f.k]} onChange={()=>toggle(f.k)} className="mt-1 w-5 h-5 accent-amber-600"/>
+            <div className="flex-1">
+              <div className="font-semibold text-ink-900">{f.label}</div>
+              <div className="text-[11px] text-ink-600 mt-0.5 leading-relaxed">{f.desc}</div>
+            </div>
+            <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-full ${flags[f.k]?"bg-emerald-100 text-emerald-700":"bg-stone-100 text-ink-500"}`}>{flags[f.k]?"on":"off"}</span>
+          </label>
+        )}</div>
+        <p className="text-[11px] text-ink-500 mt-4">Flags are stored in localStorage for the demo. In production they live on the org row (per-tenant) or on a global config table.</p>
+      </div>
+      <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Integrations</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">External services</h2>
+        <div className="space-y-3 text-sm">
+          {[
+            {name:"Anthropic / OpenAI (AI Insights)",ok:!!(aiCfg.provider&&aiCfg.apiKey),detail:aiCfg.provider?`${aiCfg.provider} · ${aiCfg.model||"default model"}`:"Not configured"},
+            {name:"Razorpay UPI / Payment Link",ok:!!(rzCfg.upiId||rzCfg.paymentLinkBase),detail:rzCfg.upiId?`UPI: ${rzCfg.upiId}`:"UPI not configured"},
+            {name:"Supabase Backend",ok:false,detail:"Not connected — VITE_BACKEND=local. See docs/BACKEND_PLAN.md."},
+            {name:"WhatsApp Business API",ok:false,detail:"Not connected — only wa.me deep links work in demo."},
+            {name:"GitHub Actions CI",ok:false,detail:"Workflow file at docs/CI_WORKFLOW.yml — needs manual move per docs/CI_SETUP.md."},
+          ].map(it=>(
+            <div key={it.name} className="flex items-center gap-4 p-4 rounded-xl bg-cream-200/40" style={{border:"1px solid var(--st-line)"}}>
+              <span className={`w-2.5 h-2.5 rounded-full ${it.ok?"bg-emerald-500":"bg-stone-400"}`}/>
+              <div className="flex-1">
+                <div className="font-semibold text-ink-900 text-sm">{it.name}</div>
+                <div className="text-[11px] text-ink-500 mt-0.5">{it.detail}</div>
+              </div>
+              <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-full ${it.ok?"bg-emerald-50 text-emerald-700":"bg-stone-100 text-ink-500"}`}>{it.ok?"connected":"off"}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -3209,6 +3698,9 @@ export default function App(){
   const[boq,setBoq]=useLS("boq",INIT_BOQ);
   const[ledger,setLedger]=useLS("ledger",INIT_LEDGER);
   const[estimate,setEstimate]=useLS("estimate",INIT_ESTIMATE);
+  const[orgs,setOrgs]=useLS("orgs",INIT_ORGS);
+  const[adminUsers,setAdminUsers]=useLS("admin_users",INIT_ADMIN_USERS);
+  const[adminFlags,setAdminFlags]=useLS("admin_flags",{drawing_markup:true,ai_insights:true,dpr_auto:false,whatsapp_share:true,e_signature:true,offline_queue:true});
   const[lang,setLang]=useLS("lang","en");
   // Offline-first state — surfaced as a pill in the top bar
   const[online,setOnline]=useState(isOnline());
@@ -3261,6 +3753,11 @@ export default function App(){
       case"calendar": return <CalendarView user={user} projects={projects} milestones={milestones} tasks={tasks} invoices={invoices}/>;
       case"vendors": return <VendorsView user={user} vendors={vendors} setVendors={setVendors}/>;
       case"po": return <POsView user={user} projects={projects} pos={pos} vendors={vendors} setView={setView} setSP={setSP}/>;
+      case"admin-dashboard": return <SuperAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView}/>;
+      case"admin-orgs": return <OrgsAdminView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects}/>;
+      case"admin-users": return <UsersAdminView user={user} adminUsers={adminUsers} setAdminUsers={setAdminUsers} orgs={orgs}/>;
+      case"admin-billing": return <BillingAdminView user={user} orgs={orgs} setOrgs={setOrgs}/>;
+      case"admin-settings": return <SettingsAdminView user={user} flags={adminFlags} setFlags={setAdminFlags}/>;
       default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
     }
   };

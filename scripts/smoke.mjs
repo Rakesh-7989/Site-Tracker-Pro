@@ -53,6 +53,20 @@ const vite = read("vite.config.js");
   "fetchLLMInsight",
   "buildUpiDeepLink",
   "queueOpAdd",
+  // Super Admin role
+  "superadmin",
+  "SuperAdminDashboard",
+  "OrgsAdminView",
+  "UsersAdminView",
+  "BillingAdminView",
+  "SettingsAdminView",
+  "INIT_ORGS",
+  "INIT_ADMIN_USERS",
+  "PLAN_META",
+  "Admin Console",
+  "Customer Organizations",
+  "Billing & MRR",
+  "System Settings",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
