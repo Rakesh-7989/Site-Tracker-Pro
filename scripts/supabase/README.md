@@ -9,11 +9,13 @@ These SQL files implement the schema described in `docs/BACKEND_PLAN.md`. Tech L
 # 2. Open SQL Editor → New query → paste each file in order:
 01_schema.sql      -- tables, indexes, FK constraints
 02_rls.sql         -- RLS policies + activity_log SECURITY DEFINER
+04_rls_tests.sql   -- 18-assertion verification matrix across all 4 roles
 # Coming in follow-up commits:
 # 03_storage.sql   -- bucket creation + signed-URL policies
-# 04_rls_tests.sql -- RLS verification matrix
 # 05_seed_demo.sql -- minimal demo data for the dev project
 ```
+
+After `04_rls_tests.sql` runs you should see ~18 `PASS` notices in the Supabase SQL Editor output. Any `WARNING ... FAIL` means an RLS regression — do not promote that build past Phase B2.
 
 ## Pre-flight checks
 
