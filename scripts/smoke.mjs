@@ -82,6 +82,11 @@ const vite = read("vite.config.js");
   "startImpersonate",
   "Audit Log",
   "Usage Analytics",
+  // Tech Lead Review fixes
+  "notifsForUser",
+  "resolveAttachmentUrl",
+  "safePhotoSrc",
+  "csvRow",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -149,6 +154,13 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "scripts/provision.sh",
   // System design doc
   "docs/SYSTEM_DESIGN.md",
+  // Tech Lead Review fixes (HIGH-1, HIGH-2, MED-3, MED-4, LOW-5)
+  "src/lib/escape.js",
+  "src/lib/notifications.js",
+  "src/lib/format.js",
+  "tests/escape.test.js",
+  "tests/notifications.test.js",
+  "tests/format.test.js",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder
