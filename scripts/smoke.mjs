@@ -161,6 +161,11 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "tests/escape.test.js",
   "tests/notifications.test.js",
   "tests/format.test.js",
+  // Deep review pack
+  "src/data/seed.js",
+  "src/data/lookups.js",
+  "playwright.config.js",
+  "tests/e2e/roles.spec.js",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder
