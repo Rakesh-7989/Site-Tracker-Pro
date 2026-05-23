@@ -11,11 +11,14 @@ import {
   drawingKey,
   isReleasedCurrentDrawing,
 } from "./lib/permissions.js";
-import { isOnline, onConnectivityChange, queueLength, queueOpAdd } from "./lib/offline.js";
+import { isOnline, onConnectivityChange, queueLength, queueOpAdd, putBlob, getBlob, delBlob } from "./lib/offline.js";
 import { computeRiskScore, fetchLLMInsight, getProviderConfig, saveProviderConfig, clearProviderConfig } from "./lib/ai.js";
 import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "./lib/razorpay.js";
 import { usePersistent as useLS } from "./lib/usePersistent.js";
 import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurrentUser, migrateLocalToBackend, subscribeTable } from "./lib/supabase.js";
+import { h, csvRow } from "./lib/escape.js";
+import { notifsForUser } from "./lib/notifications.js";
+import { fmtDate as _fmtDate, fmtTime as _fmtTime, fmtCur as _fmtCur, fileKind as _fileKind, fmtSize as _fmtSize } from "./lib/format.js";
 
 // ── PERSISTENCE adapter ─────────────────────────────────────────────────────
 // useLS is the import above — it auto-routes to Supabase when env is set,
@@ -189,10 +192,12 @@ const INIT_ACTIVITY = [
   {id:"ac5",pid:"p2",pname:"Green Valley Residences",type:"update",by:"Priya Sharma",role:"pm",action:"Added site update",detail:"Ground floor columns — 8 of 24 done",time:"2025-04-19T11:00:00Z",read:true},
 ];
 const INIT_NOTIFS = [
-  {id:"n1",title:"Update on Skyline Tower Phase II",message:"MEP conduit routing completed floors 14-16.",created_at:"2025-04-20T10:30:00Z",read:false},
-  {id:"n2",title:"Milestone: Frame 11-20 complete",message:"Marked complete 6 days ahead of schedule.",created_at:"2025-06-25T09:00:00Z",read:false},
-  {id:"n3",title:"Update on Green Valley Residences",message:"Ground floor column casting in progress.",created_at:"2025-04-19T11:00:00Z",read:true},
+  {id:"n1",pid:"p1",title:"Update on Skyline Tower Phase II",message:"MEP conduit routing completed floors 14-16.",created_at:"2025-04-20T10:30:00Z",read:false},
+  {id:"n2",pid:"p1",title:"Milestone: Frame 11-20 complete",message:"Marked complete 6 days ahead of schedule.",created_at:"2025-06-25T09:00:00Z",read:false},
+  {id:"n3",pid:"p2",title:"Update on Green Valley Residences",message:"Ground floor column casting in progress.",created_at:"2025-04-19T11:00:00Z",read:true},
 ];
+
+// notifsForUser is imported from src/lib/notifications.js (Tech Lead HIGH-2 fix).
 
 // ── NEW: Tasks under milestones ───────────────────────────────────────────────
 const INIT_TASKS = {
@@ -398,28 +403,40 @@ const TAB_LABELS = {fieldops:"Field Ops",approvals:"Approvals",changeorders:"Cha
 const BOQ_UNITS = ["cum","sqm","sqft","kg","ton","nos","rmt","ltr","bag","trip"];
 const LEDGER_DIRS = {inward:{label:"Inward",bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200"},outward:{label:"Outward",bg:"bg-amber-50",text:"text-amber-700",border:"border-amber-200"},return:{label:"Return",bg:"bg-blue-50",text:"text-blue-700",border:"border-blue-200"},wastage:{label:"Wastage",bg:"bg-red-50",text:"text-red-700",border:"border-red-200"}};
 
-const fmtDate = d => { if(!d)return"—"; try{return new Date(d).toLocaleDateString("en-IN",{month:"short",day:"numeric",year:"numeric"});}catch{return"—";} };
-const fmtTime = t => { if(!t)return""; try{return new Date(t).toLocaleString("en-IN",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch{return"";} };
-const fmtCur = n => { if(n===undefined||n===null)return"—"; return"₹"+Number(n).toLocaleString("en-IN"); };
+// fmt helpers moved to src/lib/format.js (LOW-5 split).
+const fmtDate = _fmtDate;
+const fmtTime = _fmtTime;
+const fmtCur = _fmtCur;
 const sCol = s => ({active:{bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200",dot:"bg-emerald-500"},completed:{bg:"bg-blue-50",text:"text-blue-700",border:"border-blue-200",dot:"bg-blue-500"},on_hold:{bg:"bg-amber-50",text:"text-amber-700",border:"border-amber-200",dot:"bg-amber-500"},in_progress:{bg:"bg-violet-50",text:"text-violet-700",border:"border-violet-200",dot:"bg-violet-500"},pending:{bg:"bg-slate-50",text:"text-slate-500",border:"border-slate-200",dot:"bg-slate-300"},current:{bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200",dot:"bg-emerald-500"},superseded:{bg:"bg-slate-50",text:"text-slate-400",border:"border-slate-200",dot:"bg-slate-300"}}[s]||{bg:"bg-slate-50",text:"text-slate-600",border:"border-slate-200",dot:"bg-slate-400"});
 
 const exportPDF = (proj,ms,us,ex,iss) => {
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${proj.name} — Site Report</title>
+  // User-supplied text is escaped via h() (see src/lib/escape.js).
+  // Numbers + dates come from trusted formatters and need no escaping.
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${h(proj.name)} — Site Report</title>
   <style>body{font-family:Arial,sans-serif;padding:40px;color:#1e293b}h1{color:#f97316;margin-bottom:4px}h2{color:#334155;font-size:16px;margin-top:28px;border-bottom:2px solid #f97316;padding-bottom:6px}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}th{background:#f97316;color:white;padding:8px 12px;text-align:left}td{padding:8px 12px;border-bottom:1px solid #e2e8f0}.bar{background:#e2e8f0;border-radius:4px;height:8px;margin:6px 0}.fill{background:#f97316;height:8px;border-radius:4px}.update{padding:12px;background:#f8fafc;border-radius:8px;margin:8px 0;font-size:13px}footer{margin-top:40px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px}@media print{body{padding:20px}}</style></head>
-  <body><div style="display:flex;justify-content:space-between;align-items:start"><div><h1>${proj.name}</h1><p style="color:#64748b;font-size:13px;margin:4px 0">${proj.location} · ${proj.client_name}</p></div><div style="font-size:11px;color:#64748b;text-align:right">Generated ${new Date().toLocaleDateString("en-IN")}<br>SiteTrack Pro</div></div>
-  <p style="font-size:13px;color:#475569">${proj.description}</p>
-  <p><strong>Progress: ${proj.progress}%</strong></p><div class="bar"><div class="fill" style="width:${proj.progress}%"></div></div>
+  <body><div style="display:flex;justify-content:space-between;align-items:start"><div><h1>${h(proj.name)}</h1><p style="color:#64748b;font-size:13px;margin:4px 0">${h(proj.location)} · ${h(proj.client_name)}</p></div><div style="font-size:11px;color:#64748b;text-align:right">Generated ${fmtDate(new Date().toISOString())}<br>SiteTrack Pro</div></div>
+  <p style="font-size:13px;color:#475569">${h(proj.description)}</p>
+  <p><strong>Progress: ${Number(proj.progress)||0}%</strong></p><div class="bar"><div class="fill" style="width:${Number(proj.progress)||0}%"></div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:16px 0;font-size:13px"><div><strong>Budget:</strong> ${fmtCur(proj.budget)}</div><div><strong>Started:</strong> ${fmtDate(proj.start_date)}</div><div><strong>Expected End:</strong> ${fmtDate(proj.expected_end_date)}</div></div>
-  <h2>Milestones</h2><table><tr><th>#</th><th>Milestone</th><th>Due Date</th><th>Status</th></tr>${ms.map((m,i)=>`<tr><td>${i+1}</td><td>${m.title}</td><td>${fmtDate(m.due_date)}</td><td>${m.completed_date?`✓ ${fmtDate(m.completed_date)}`:m.status.replace("_"," ")}</td></tr>`).join("")}</table>
-  <h2>Open Issues</h2><table><tr><th>Issue</th><th>Severity</th><th>Reported</th><th>Status</th></tr>${(iss||[]).map(i=>`<tr><td>${i.title}</td><td>${i.severity}</td><td>${fmtDate(i.reported_date)}</td><td>${i.status}</td></tr>`).join("")}</table>
-  <h2>Recent Updates</h2>${us.slice(0,5).map(u=>`<div class="update"><strong>${fmtDate(u.update_date)}</strong>${u.weather?` · ${u.weather}`:""}<p style="margin:6px 0 0">${u.notes}</p>${u.workers_count?`<p style="font-size:12px;color:#64748b;margin:4px 0">👷 ${u.workers_count} workers</p>`:""}</div>`).join("")}
-  <h2>Expenses</h2><table><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr>${ex.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${e.category}</td><td>${e.description}</td><td>${fmtCur(e.amount)}</td></tr>`).join("")}<tr style="font-weight:bold;background:#f8fafc"><td colspan="3">Total</td><td>${fmtCur(ex.reduce((s,e)=>s+e.amount,0))}</td></tr></table>
+  <h2>Milestones</h2><table><tr><th>#</th><th>Milestone</th><th>Due Date</th><th>Status</th></tr>${ms.map((m,i)=>`<tr><td>${i+1}</td><td>${h(m.title)}</td><td>${fmtDate(m.due_date)}</td><td>${m.completed_date?`✓ ${fmtDate(m.completed_date)}`:h((m.status||"").replace("_"," "))}</td></tr>`).join("")}</table>
+  <h2>Open Issues</h2><table><tr><th>Issue</th><th>Severity</th><th>Reported</th><th>Status</th></tr>${(iss||[]).map(i=>`<tr><td>${h(i.title)}</td><td>${h(i.severity)}</td><td>${fmtDate(i.reported_date)}</td><td>${h(i.status)}</td></tr>`).join("")}</table>
+  <h2>Recent Updates</h2>${us.slice(0,5).map(u=>`<div class="update"><strong>${fmtDate(u.update_date)}</strong>${u.weather?` · ${h(u.weather)}`:""}<p style="margin:6px 0 0">${h(u.notes)}</p>${u.workers_count?`<p style="font-size:12px;color:#64748b;margin:4px 0">👷 ${Number(u.workers_count)||0} workers</p>`:""}</div>`).join("")}
+  <h2>Expenses</h2><table><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr>${ex.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${h(e.category)}</td><td>${h(e.description)}</td><td>${fmtCur(e.amount)}</td></tr>`).join("")}<tr style="font-weight:bold;background:#f8fafc"><td colspan="3">Total</td><td>${fmtCur(ex.reduce((s,e)=>s+e.amount,0))}</td></tr></table>
   <footer>SiteTrack Pro · buildco.in · Auto-generated</footer></body></html>`;
   const w = window.open("","_blank"); if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);}
 };
 const exportCSV = (proj,ex) => {
-  const rows = [["Date","Category","Description","Amount(INR)"],...ex.map(e=>[e.date,e.category,`"${e.description}"`,e.amount]),["","","TOTAL",ex.reduce((s,e)=>s+e.amount,0)]];
-  const a = document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n")); a.download=`${proj.name.replace(/\s+/g,"-")}-expenses.csv`; a.click();
+  // Use csvRow() from src/lib/escape.js — RFC 4180 quoting + formula-injection
+  // defusing (cells starting with =, +, -, @, tab, CR get a leading apostrophe).
+  const lines = [
+    csvRow(["Date","Category","Description","Amount(INR)"]),
+    ...ex.map(e=>csvRow([e.date, e.category, e.description, e.amount])),
+    csvRow(["","","TOTAL", ex.reduce((s,e)=>s+e.amount,0)]),
+  ];
+  const a = document.createElement("a");
+  a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(lines.join("\n"));
+  a.download = `${(proj.name||"project").replace(/[^\w-]+/g,"-")}-expenses.csv`;
+  a.click();
 };
 
 // ── Daily Report (DPR) generator — Powerplay/Raken parity for India market ───
@@ -441,7 +458,19 @@ const buildDPR = (proj, opts) => {
   const totalWorkers = todayUpdates.reduce((s,u)=>s+(u.workers_count||0),0) || present + Math.round(half/2);
   const photos = todayUpdates.flatMap(u=>u.photos||[]).slice(0,6);
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${proj.name} — DPR ${today}</title>
+  // Defensive image src: only allow data: and https: protocols. Strip
+  // anything else (would catch a hypothetical javascript: URI from a corrupt
+  // backend row).
+  const safePhotoSrc = url => {
+    if (typeof url !== "string") return "";
+    if (/^(data:|https:)/i.test(url)) return url;
+    return "";
+  };
+
+  // All user-supplied strings now flow through h(). Numbers (lengths, counts)
+  // are coerced to Number() and rendered as plain text — no escaping needed
+  // because they cannot contain HTML.
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${h(proj.name)} — DPR ${today}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;600;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -486,18 +515,18 @@ const buildDPR = (proj, opts) => {
         <div class="brand-sub">Daily Site Report</div>
       </div>
     </div>
-    <div class="meta">Generated ${new Date().toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}<br/>Confidential — for ${proj.client_name||"project stakeholders"}</div>
+    <div class="meta">Generated ${h(new Date().toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}))}<br/>Confidential — for ${h(proj.client_name||"project stakeholders")}</div>
   </div>
 
-  <div class="pre-rule">— ${dispDate}</div>
-  <h1>${proj.name}</h1>
-  <div style="font-size:13px;color:#78716c;margin-top:6px;">${proj.location||""}</div>
+  <div class="pre-rule">— ${h(dispDate)}</div>
+  <h1>${h(proj.name)}</h1>
+  <div style="font-size:13px;color:#78716c;margin-top:6px;">${h(proj.location||"")}</div>
 
   <div class="metrics">
     <div class="metric"><div class="label">Workers</div><div class="value"><strong>${totalWorkers||"—"}</strong></div></div>
     <div class="metric"><div class="label">Updates</div><div class="value"><strong>${todayUpdates.length}</strong></div></div>
     <div class="metric"><div class="label">New Issues</div><div class="value"><strong>${newIssues.length}</strong><span style="font-size:14px;color:#78716c;"> / ${openIssues.length} open</span></div></div>
-    <div class="metric"><div class="label">Progress</div><div class="value"><strong>${proj.progress||0}</strong>%</div></div>
+    <div class="metric"><div class="label">Progress</div><div class="value"><strong>${Number(proj.progress)||0}</strong>%</div></div>
   </div>
 
   <section>
@@ -505,9 +534,9 @@ const buildDPR = (proj, opts) => {
     <h2>Today's site activity</h2>
     ${todayUpdates.length===0?'<div class="empty">No updates recorded for today.</div>':todayUpdates.map(u=>`
       <div class="row">
-        <div class="label">${u.weather||"site notes"}</div>
-        <p class="text">"${u.notes}"</p>
-        ${u.workers_count?`<div class="meta">${u.workers_count} workers on site</div>`:""}
+        <div class="label">${h(u.weather||"site notes")}</div>
+        <p class="text">"${h(u.notes)}"</p>
+        ${u.workers_count?`<div class="meta">${Number(u.workers_count)||0} workers on site</div>`:""}
       </div>
     `).join("")}
   </section>
@@ -515,7 +544,7 @@ const buildDPR = (proj, opts) => {
   ${photos.length>0?`<section>
     <div class="pre-rule">— Photo log</div>
     <h2>${photos.length} photos from today</h2>
-    <div class="photo-grid">${photos.map(p=>`<img src="${p.url}" alt=""/>`).join("")}</div>
+    <div class="photo-grid">${photos.map(p=>`<img src="${h(safePhotoSrc(p.url))}" alt=""/>`).join("")}</div>
   </section>`:""}
 
   <section>
@@ -523,9 +552,9 @@ const buildDPR = (proj, opts) => {
     <h2>Issues reported today (${newIssues.length})</h2>
     ${newIssues.length===0?'<div class="empty">No new issues today. All open: '+openIssues.length+'.</div>':newIssues.map(i=>`
       <div class="row">
-        <span class="pill pill-${i.severity==="high"?"high":i.severity==="medium"?"med":"low"}">${i.severity}</span>
-        <span class="text" style="font-weight:600;">${i.title}</span>
-        <div class="meta">Reported by ${i.reported_by||"—"}</div>
+        <span class="pill pill-${i.severity==="high"?"high":i.severity==="medium"?"med":"low"}">${h(i.severity)}</span>
+        <span class="text" style="font-weight:600;">${h(i.title)}</span>
+        <div class="meta">Reported by ${h(i.reported_by||"—")}</div>
       </div>
     `).join("")}
   </section>
@@ -535,10 +564,10 @@ const buildDPR = (proj, opts) => {
     <h2>Material deliveries today</h2>
     ${todayMats.map(m=>`
       <div class="row">
-        <span class="pill pill-amber">${m.status}</span>
-        <span class="text" style="font-weight:600;">${m.material}</span>
-        <span style="color:#b45309;font-weight:600;"> — ${m.quantity||""}</span>
-        <div class="meta">${m.supplier||""}</div>
+        <span class="pill pill-amber">${h(m.status)}</span>
+        <span class="text" style="font-weight:600;">${h(m.material)}</span>
+        <span style="color:#b45309;font-weight:600;"> — ${h(m.quantity||"")}</span>
+        <div class="meta">${h(m.supplier||"")}</div>
       </div>
     `).join("")}
   </section>`:""}
@@ -548,9 +577,9 @@ const buildDPR = (proj, opts) => {
     <h2>Contractor worklogs (${todayWorklogs.length})</h2>
     ${todayWorklogs.map(w=>`
       <div class="row">
-        <div class="label">${w.contractor||"contractor"} · ${w.location||""}</div>
-        <p class="text">${w.work}</p>
-        <div class="meta">${w.workers} workers · ${w.hours} hrs · ${w.status}</div>
+        <div class="label">${h(w.contractor||"contractor")} · ${h(w.location||"")}</div>
+        <p class="text">${h(w.work)}</p>
+        <div class="meta">${Number(w.workers)||0} workers · ${Number(w.hours)||0} hrs · ${h(w.status)}</div>
       </div>
     `).join("")}
   </section>`:""}
@@ -568,7 +597,7 @@ const buildDPR = (proj, opts) => {
     </div>
   </section>
 
-  <div class="footer">— SiteTrack Pro · Construction Suite · ${proj.name} —</div>
+  <div class="footer">— SiteTrack Pro · Construction Suite · ${h(proj.name)} —</div>
 
   </body></html>`;
 };
@@ -674,28 +703,56 @@ const AccessDenied = ({msg="You don't have permission."}) => <div className="fle
 
 const ATTACH_ACCEPT = ".pdf,.dwg,.dxf,.rvt,.ifc,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp,.svg,.gif,.zip,.rar";
 const DRAWING_ACCEPT = ".pdf,.dwg,.dxf,.rvt,.ifc,.png,.jpg,.jpeg,.svg,.zip,.rar";
-const fileKind = name => {
-  const ext = (name || "").split(".").pop()?.toLowerCase();
-  if(["png","jpg","jpeg","webp","gif","svg"].includes(ext)) return "image";
-  if(ext === "pdf") return "pdf";
-  if(["dwg","dxf","rvt","ifc"].includes(ext)) return "cad";
-  if(["doc","docx"].includes(ext)) return "doc";
-  if(["xls","xlsx","csv"].includes(ext)) return "sheet";
-  if(["zip","rar"].includes(ext)) return "archive";
-  return "file";
-};
-const fmtSize = n => {
-  if(!n) return "0 KB";
-  if(n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
-};
+// fileKind + fmtSize moved to src/lib/format.js (LOW-5 split).
+const fileKind = _fileKind;
+const fmtSize = _fmtSize;
 const attachmentIcon = kind => ({image:"image",pdf:"doc",cad:"gantt",doc:"doc",sheet:"receipt",archive:"folder",file:"doc"}[kind] || "doc");
-const readAttachment = file => new Promise((resolve,reject)=>{
+// MED-3 fix: write the binary to IndexedDB instead of inlining the full
+// dataUrl into the attachment row. The row carries only metadata + idbKey;
+// AttachmentList lazy-loads the URL via getBlob() when it actually renders.
+//
+// This keeps localStorage well under the ~5-10MB quota even when a project
+// accumulates dozens of site photos. Falls back to inline dataUrl if IDB is
+// unavailable (very old browsers, private mode in Safari).
+const readAttachment = file => new Promise((resolve, reject) => {
   const r = new FileReader();
-  r.onload = ev => resolve({id:`att_${Date.now()}_${Math.random().toString(16).slice(2)}`,name:file.name,size:file.size,type:file.type,kind:fileKind(file.name),dataUrl:ev.target.result,uploaded_at:new Date().toISOString()});
+  r.onload = async ev => {
+    const dataUrl = ev.target.result;
+    const id = `att_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const attachment = {
+      id,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      kind: fileKind(file.name),
+      uploaded_at: new Date().toISOString(),
+    };
+    try {
+      // Persist binary to IDB
+      await putBlob(id, dataUrl);
+      attachment.idbKey = id;
+    } catch {
+      // IDB unavailable — fall back to inline (legacy behaviour)
+      attachment.dataUrl = dataUrl;
+    }
+    resolve(attachment);
+  };
   r.onerror = reject;
   r.readAsDataURL(file);
 });
+
+// Helper: resolve attachment to a usable URL. Reads from IDB when idbKey is
+// present; returns the inline dataUrl as fallback.
+async function resolveAttachmentUrl(att) {
+  if (!att) return "";
+  if (att.idbKey) {
+    try {
+      const stored = await getBlob(att.idbKey);
+      if (stored) return stored;
+    } catch { /* fall through to dataUrl */ }
+  }
+  return att.dataUrl || att.url || "";
+}
 function AttachmentInput({files=[],onChange,label="Upload files",accept=ATTACH_ACCEPT,maxMb=20}){
   const inputRef=useRef(null);const[drag,setDrag]=useState(false);
   const addFiles=async list=>{
@@ -708,7 +765,13 @@ function AttachmentInput({files=[],onChange,label="Upload files",accept=ATTACH_A
     const next=await Promise.all(ok.map(readAttachment));
     onChange([...(files||[]),...next]);
   };
-  const remove=id=>onChange((files||[]).filter(f=>(f.id||f.name)!==id));
+  const remove=id=>{
+    // Free the IDB blob too — the row in localStorage is gone, so the blob
+    // would otherwise be orphaned.
+    const target=(files||[]).find(f=>(f.id||f.name)===id);
+    if(target?.idbKey) delBlob(target.idbKey).catch(()=>{});
+    onChange((files||[]).filter(f=>(f.id||f.name)!==id));
+  };
   return(
     <div className="space-y-2">
       <input ref={inputRef} type="file" multiple accept={accept} onChange={e=>{addFiles(e.target.files);e.target.value="";}} className="hidden"/>
@@ -726,13 +789,36 @@ function AttachmentInput({files=[],onChange,label="Upload files",accept=ATTACH_A
     </div>
   );
 }
+// AttachmentRow: lazy-loads the binary URL from IDB on mount. Keeps a small
+// in-component map so we don't refetch on every render.
+function AttachmentRow({f, idx}){
+  const[url,setUrl]=useState(f.dataUrl||f.url||"");
+  useEffect(()=>{
+    if(url||!f.idbKey)return;
+    let cancelled=false;
+    resolveAttachmentUrl(f).then(u=>{if(!cancelled)setUrl(u||"");});
+    return ()=>{cancelled=true;};
+  },[f.idbKey, f.id, url, f]);
+  return(
+    <div key={f.id||`${f.name}_${idx}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 overflow-hidden">
+        {f.kind==="image"&&url?<img src={url} alt="" className="w-full h-full object-cover"/>:<Ic n={attachmentIcon(f.kind)} s={14}/>}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-bold text-slate-700 truncate">{f.name}</div>
+        <div className="text-[10px] text-slate-400">{fmtSize(f.size)}</div>
+      </div>
+      {url&&<a href={url} download={f.name} className="text-xs font-bold text-orange-600 hover:text-orange-700">Download</a>}
+    </div>
+  );
+}
 function AttachmentList({files=[]}){
   const list=files||[];
   if(!list.length)return null;
   return(
     <div className="mt-3 pt-3 border-t border-slate-100">
       <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5"><Ic n="doc" s={12}/>Attachments ({list.length})</div>
-      <div className="grid sm:grid-cols-2 gap-2">{list.map((f,i)=><div key={f.id||`${f.name}_${i}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100"><div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 overflow-hidden">{f.kind==="image"&&f.dataUrl?<img src={f.dataUrl} alt="" className="w-full h-full object-cover"/>:<Ic n={attachmentIcon(f.kind)} s={14}/>}</div><div className="flex-1 min-w-0"><div className="text-xs font-bold text-slate-700 truncate">{f.name}</div><div className="text-[10px] text-slate-400">{fmtSize(f.size)}</div></div>{f.dataUrl&&<a href={f.dataUrl} download={f.name} className="text-xs font-bold text-orange-600 hover:text-orange-700">Download</a>}</div>)}</div>
+      <div className="grid sm:grid-cols-2 gap-2">{list.map((f,i)=><AttachmentRow key={f.id||`${f.name}_${i}`} f={f} idx={i}/>)}</div>
     </div>
   );
 }
@@ -3630,7 +3716,12 @@ function CreateView({user,setView,setProjects}){
   const inp=(key,lbl,type="text",ph="",fk)=>{const k=fk||key;return<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">{lbl}</label><input type={type} value={f[k]} onChange={e=>{setF(p=>({...p,[k]:e.target.value}));setErr(p=>({...p,[key]:""}));}} placeholder={ph} className={`w-full p-3.5 border rounded-xl text-sm outline-none transition-all ${err[key]?"border-red-300 bg-red-50":"border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-50"}`}/>{err[key]&&<p className="text-red-500 text-xs mt-1">{err[key]}</p>}</div>;};
   return(<div className="p-4 md:p-8 max-w-2xl"><button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button><h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1><div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">{inp("name","Project Name","text","Skyline Tower Phase III")}<div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","Nair Holdings","cn")}{inp("ce","Client Email","email","client@co.in","ce")}</div>{inp("loc","Location","text","Jubilee Hills, Hyderabad","loc")}<div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>{inp("budget","Budget (₹)","number","45000000")}<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label><textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/></div><button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button></div></div>);
 }
-function NotifsView({notifs,setNotifs}){const u=notifs.filter(n=>!n.read).length;return(<div className="p-4 md:p-8 max-w-2xl"><div className="flex items-start justify-between mb-8"><div><h1 className="text-2xl font-black text-slate-800">Site Updates</h1><p className="text-slate-500 text-sm mt-1">{u} unread</p></div>{u>0&&<button onClick={()=>setNotifs(p=>p.map(n=>({...n,read:true})))} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-sm"><Ic n="mailCheck" s={15}/>Mark all</button>}</div><div className="space-y-3">{notifs.map(n=><div key={n.id} className={`bg-white rounded-2xl border p-5 flex gap-4 ${n.read?"border-slate-100 opacity-70":"border-orange-100 shadow-sm"}`}><div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${n.read?"bg-slate-100":"bg-orange-50"}`}><Ic n="bell" s={18} c={n.read?"text-slate-400":"text-orange-500"}/></div><div className="flex-1"><div className="flex items-start justify-between gap-2"><div className="font-semibold text-slate-800 text-sm">{n.title}</div>{!n.read&&<button onClick={()=>setNotifs(p=>p.map(x=>x.id===n.id?{...x,read:true}:x))} className="text-xs text-orange-500 font-semibold flex-shrink-0">Mark read</button>}</div><p className="text-slate-500 text-xs mt-1">{n.message}</p><p className="text-slate-400 text-xs mt-2">{fmtDate(n.created_at)}</p></div></div>)}</div></div>);}
+function NotifsView({notifs,setNotifs,user,projects}){
+  // HIGH-2 fix: notifications scoped to the user's visible projects.
+  const visible=notifsForUser(notifs,user,projects);
+  const u=visible.filter(n=>!n.read).length;
+  return(<div className="p-4 md:p-8 max-w-2xl"><div className="flex items-start justify-between mb-8"><div><h1 className="text-2xl font-black text-slate-800">Site Updates</h1><p className="text-slate-500 text-sm mt-1">{u} unread</p></div>{u>0&&<button onClick={()=>setNotifs(p=>p.map(n=>visible.find(v=>v.id===n.id)?{...n,read:true}:n))} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-sm"><Ic n="mailCheck" s={15}/>Mark all</button>}</div><div className="space-y-3">{visible.map(n=><div key={n.id} className={`bg-white rounded-2xl border p-5 flex gap-4 ${n.read?"border-slate-100 opacity-70":"border-orange-100 shadow-sm"}`}><div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${n.read?"bg-slate-100":"bg-orange-50"}`}><Ic n="bell" s={18} c={n.read?"text-slate-400":"text-orange-500"}/></div><div className="flex-1"><div className="flex items-start justify-between gap-2"><div className="font-semibold text-slate-800 text-sm">{n.title}</div>{!n.read&&<button onClick={()=>setNotifs(p=>p.map(x=>x.id===n.id?{...x,read:true}:x))} className="text-xs text-orange-500 font-semibold flex-shrink-0">Mark read</button>}</div><p className="text-slate-500 text-xs mt-1">{n.message}</p><p className="text-slate-400 text-xs mt-2">{fmtDate(n.created_at)}</p></div></div>)}{visible.length===0&&<div className="text-center py-12 text-slate-400 italic text-sm">No notifications for your projects.</div>}</div></div>);
+}
 function MessagesView({user,projects,messages,setMessages}){
   const visible=projects.filter(p=>user.role==="client"?p.client_email===user.email:true);
   const[pid,setPid]=useState(visible[0]?.id||projects[0]?.id||"");
@@ -3642,8 +3733,8 @@ function MessagesView({user,projects,messages,setMessages}){
   if(!cur)return <div className="p-8"><AccessDenied msg="No message-enabled project found."/></div>;
   return(<div className="p-4 md:p-8 max-w-5xl"><div className="flex items-start justify-between gap-3 mb-6"><div><h1 className="text-2xl font-black text-slate-800 flex items-center gap-2"><Ic n="msgcircle" s={22} c="text-orange-500"/>Messages</h1><p className="text-slate-500 text-sm mt-1">Project chat with file/photo context</p></div><select value={cur.id} onChange={e=>setPid(e.target.value)} className="p-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400">{visible.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div><div className="bg-white rounded-2xl border border-slate-200 overflow-hidden"><div className="p-5 border-b border-slate-100"><div className="font-bold text-slate-800">{cur.name}</div><div className="text-xs text-slate-400">{list.length} messages</div></div><div className="p-5 space-y-3 min-h-[360px] max-h-[520px] overflow-y-auto bg-slate-50">{list.map(m=><div key={m.id} className={`max-w-[82%] ${m.by===user.name?"ml-auto":""}`}><div className={`rounded-2xl border p-4 ${m.by===user.name?"bg-orange-500 text-white border-orange-500":"bg-white text-slate-700 border-slate-200"}`}><div className={`text-xs font-bold mb-1 ${m.by===user.name?"text-orange-100":"text-slate-400"}`}>{m.by} · {ROLE_META[m.role]?.label||m.role} · {fmtTime(m.time)}</div><p className="text-sm whitespace-pre-wrap">{m.text}</p>{m.attachments?.length>0&&<AttachmentList files={m.attachments}/>}</div></div>)}{list.length===0&&<div className="text-center py-20 text-slate-400">No messages yet</div>}</div>{user.role!=="client"&&<div className="p-4 border-t border-slate-100 space-y-3"><AttachmentInput files={files} onChange={setFiles} label="Attach chat files / site photos"/><div className="flex gap-2"><input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")send();}} placeholder="Type project message..." className="flex-1 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><button onClick={send} className="px-5 py-3 bg-orange-500 text-white font-bold rounded-xl text-sm flex items-center gap-2"><Ic n="send" s={14}/>Send</button></div></div>}</div></div>);
 }
-function PMView({user,projects,setView,setSP,notifs}){const unread=notifs.filter(n=>!n.read);return(<div className="p-4 md:p-8"><div className="mb-6 flex items-start justify-between"><h1 className="text-2xl font-black text-slate-800">PM Dashboard</h1><div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-blue-100 text-blue-700"><Ic n="shield" s={12}/>Project Manager</div></div><div className="grid grid-cols-3 gap-4 mb-8"><SC icon="building" label="Projects" value={projects.length} accent="blue"/><SC icon="trend" label="Active" value={projects.filter(p=>p.status==="active").length} accent="orange"/><SC icon="bell" label="Unread" value={unread.length} accent="violet"/></div>{unread.length>0&&<div className="mb-8"><h2 className="font-bold text-slate-800 text-base mb-4">Notifications</h2><div className="space-y-3">{unread.map(n=><div key={n.id} className="bg-white rounded-2xl border border-orange-100 p-4 flex gap-3 shadow-sm"><div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="bell" s={16} c="text-orange-500"/></div><div><div className="font-semibold text-slate-800 text-sm">{n.title}</div><p className="text-slate-500 text-xs mt-0.5">{n.message}</p></div></div>)}</div></div>}<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{projects.map(p=><button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="bg-white rounded-2xl border border-slate-200 p-5 text-left hover:shadow-md hover:border-orange-200 transition-all group"><div className="flex items-start justify-between mb-3"><h3 className="font-bold text-slate-800 text-sm group-hover:text-orange-600">{p.name}</h3><Badge status={p.status}/></div><div className="text-xs text-slate-400 mb-3 flex items-center gap-1.5"><Ic n="map" s={11}/>{p.location}</div><PBar v={p.progress}/><div className="text-xs text-slate-400 mt-1">{p.progress}%</div></button>)}</div></div>);}
-function ClientPortal({user,projects,notifs,setView,setSP}){const mp=projects.filter(p=>p.client_email===user.email);const unread=notifs.filter(n=>!n.read);return(<div className="p-4 md:p-8"><div className="mb-6 flex items-start justify-between"><h1 className="text-2xl font-black text-slate-800">Client Portal</h1><div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-100 text-emerald-700"><Ic n="shield" s={12}/>Client View</div></div><div className="grid grid-cols-3 gap-4 mb-8"><SC icon="building" label="Projects" value={mp.length} accent="blue"/><SC icon="check" label="Milestones" value={3} accent="emerald"/><SC icon="bell" label="Updates" value={unread.length} accent="orange"/></div>{unread.length>0&&<div className="mb-8 bg-orange-50 border border-orange-100 rounded-2xl p-5"><h3 className="font-bold text-orange-800 text-sm mb-3 flex items-center gap-2"><Ic n="bell" s={16} c="text-orange-600"/>{unread.length} New Updates</h3>{unread.map(n=><div key={n.id} className="py-2 border-t border-orange-100 first:border-0"><div className="font-semibold text-orange-900 text-xs">{n.title}</div><div className="text-orange-700 text-xs mt-0.5">{n.message}</div></div>)}</div>}<div className="space-y-4">{mp.map(p=><button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="w-full bg-white rounded-2xl border border-slate-200 p-6 text-left hover:shadow-md hover:border-orange-200 transition-all group"><div className="flex items-start justify-between mb-4"><div><h3 className="font-bold text-slate-800 group-hover:text-orange-600">{p.name}</h3><div className="flex items-center gap-1.5 text-slate-400 text-xs mt-1"><Ic n="map" s={12}/>{p.location}</div></div><Badge status={p.status}/></div><div className="mb-2 flex justify-between text-sm"><span className="text-slate-500">Progress</span><span className="font-black">{p.progress}%</span></div><PBar v={p.progress}/></button>)}{mp.length===0&&<div className="text-center py-20 text-slate-400"><Ic n="building" s={32} c="mx-auto mb-3 opacity-30"/><p>No projects assigned to your account</p></div>}</div></div>);}
+function PMView({user,projects,setView,setSP,notifs}){const unread=notifsForUser(notifs,user,projects).filter(n=>!n.read);return(<div className="p-4 md:p-8"><div className="mb-6 flex items-start justify-between"><h1 className="text-2xl font-black text-slate-800">PM Dashboard</h1><div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-blue-100 text-blue-700"><Ic n="shield" s={12}/>Project Manager</div></div><div className="grid grid-cols-3 gap-4 mb-8"><SC icon="building" label="Projects" value={projects.length} accent="blue"/><SC icon="trend" label="Active" value={projects.filter(p=>p.status==="active").length} accent="orange"/><SC icon="bell" label="Unread" value={unread.length} accent="violet"/></div>{unread.length>0&&<div className="mb-8"><h2 className="font-bold text-slate-800 text-base mb-4">Notifications</h2><div className="space-y-3">{unread.map(n=><div key={n.id} className="bg-white rounded-2xl border border-orange-100 p-4 flex gap-3 shadow-sm"><div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="bell" s={16} c="text-orange-500"/></div><div><div className="font-semibold text-slate-800 text-sm">{n.title}</div><p className="text-slate-500 text-xs mt-0.5">{n.message}</p></div></div>)}</div></div>}<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{projects.map(p=><button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="bg-white rounded-2xl border border-slate-200 p-5 text-left hover:shadow-md hover:border-orange-200 transition-all group"><div className="flex items-start justify-between mb-3"><h3 className="font-bold text-slate-800 text-sm group-hover:text-orange-600">{p.name}</h3><Badge status={p.status}/></div><div className="text-xs text-slate-400 mb-3 flex items-center gap-1.5"><Ic n="map" s={11}/>{p.location}</div><PBar v={p.progress}/><div className="text-xs text-slate-400 mt-1">{p.progress}%</div></button>)}</div></div>);}
+function ClientPortal({user,projects,notifs,setView,setSP}){const mp=projects.filter(p=>p.client_email===user.email);const unread=notifsForUser(notifs,user,projects).filter(n=>!n.read);return(<div className="p-4 md:p-8"><div className="mb-6 flex items-start justify-between"><h1 className="text-2xl font-black text-slate-800">Client Portal</h1><div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-100 text-emerald-700"><Ic n="shield" s={12}/>Client View</div></div><div className="grid grid-cols-3 gap-4 mb-8"><SC icon="building" label="Projects" value={mp.length} accent="blue"/><SC icon="check" label="Milestones" value={3} accent="emerald"/><SC icon="bell" label="Updates" value={unread.length} accent="orange"/></div>{unread.length>0&&<div className="mb-8 bg-orange-50 border border-orange-100 rounded-2xl p-5"><h3 className="font-bold text-orange-800 text-sm mb-3 flex items-center gap-2"><Ic n="bell" s={16} c="text-orange-600"/>{unread.length} New Updates</h3>{unread.map(n=><div key={n.id} className="py-2 border-t border-orange-100 first:border-0"><div className="font-semibold text-orange-900 text-xs">{n.title}</div><div className="text-orange-700 text-xs mt-0.5">{n.message}</div></div>)}</div>}<div className="space-y-4">{mp.map(p=><button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="w-full bg-white rounded-2xl border border-slate-200 p-6 text-left hover:shadow-md hover:border-orange-200 transition-all group"><div className="flex items-start justify-between mb-4"><div><h3 className="font-bold text-slate-800 group-hover:text-orange-600">{p.name}</h3><div className="flex items-center gap-1.5 text-slate-400 text-xs mt-1"><Ic n="map" s={12}/>{p.location}</div></div><Badge status={p.status}/></div><div className="mb-2 flex justify-between text-sm"><span className="text-slate-500">Progress</span><span className="font-black">{p.progress}%</span></div><PBar v={p.progress}/></button>)}{mp.length===0&&<div className="text-center py-20 text-slate-400"><Ic n="building" s={32} c="mx-auto mb-3 opacity-30"/><p>No projects assigned to your account</p></div>}</div></div>);}
 
 // ── CLIENT SHARE VIEW ─────────────────────────────────────────────────────────
 function ClientShareView({project,milestones,updates,drawings}){
@@ -4073,7 +4164,10 @@ export default function App(){
     return <ClientShareView project={shp} milestones={milestones[shareId]||[]} updates={updates[shareId]||[]} drawings={(drawings[shareId]||[]).filter(d=>user.role==="architect"||isReleasedCurrentDrawing(d,user.role))}/>;
   }
 
-  const uc=notifs.filter(n=>!n.read).length;
+  // HIGH-2 fix: the top-bar bell badge must reflect notifications visible to
+  // THIS user, not the global unread count. Cross-tenant data must not leak
+  // even into a counter.
+  const uc=notifsForUser(notifs,user,projects).filter(n=>!n.read).length;
   const ac=activity.filter(a=>!a.read).length;
   const selectedProject=projects.find(p=>p.id===sp);
   const effectiveView=(canOpenView(user,view) && (view!=="detail" || !selectedProject || canAccessProject(user,selectedProject))) ? view : fallbackViewForUser(user);
@@ -4088,7 +4182,7 @@ export default function App(){
       case"activity": return <ActivityView user={user} activity={activity} setActivity={setActivity} projects={projects}/>;
       case"detail": return <DetailView pid={sp} user={user} setView={setView} {...dp}/>;
       case"create": return <CreateView user={user} setView={setView} setProjects={setProjects}/>;
-      case"notifications": return <NotifsView notifs={notifs} setNotifs={setNotifs}/>;
+      case"notifications": return <NotifsView notifs={notifs} setNotifs={setNotifs} user={user} projects={projects}/>;
       case"messages": return <MessagesView user={user} projects={projects} messages={messages} setMessages={setMessages}/>;
       case"pm": return <PMView user={user} projects={projects} setView={setView} setSP={setSP} notifs={notifs}/>;
       case"client": return <ClientPortal user={user} projects={projects} notifs={notifs} setView={setView} setSP={setSP}/>;
