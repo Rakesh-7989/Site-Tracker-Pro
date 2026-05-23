@@ -19,6 +19,7 @@ import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurr
 import { h, csvRow } from "./lib/escape.js";
 import { notifsForUser } from "./lib/notifications.js";
 import { fmtDate as _fmtDate, fmtTime as _fmtTime, fmtCur as _fmtCur, fileKind as _fileKind, fmtSize as _fmtSize } from "./lib/format.js";
+import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "./lib/demoMode.js";
 // LOW-5 / Split-2: mock data + UI lookups extracted from App.jsx.
 import {
   MOCK_USERS, PLAN_META, INIT_ORGS, INIT_ADMIN_USERS, INIT_SUPPORT,
@@ -81,7 +82,7 @@ const exportPDF = (proj,ms,us,ex,iss) => {
   <h2>Open Issues</h2><table><tr><th>Issue</th><th>Severity</th><th>Reported</th><th>Status</th></tr>${(iss||[]).map(i=>`<tr><td>${h(i.title)}</td><td>${h(i.severity)}</td><td>${fmtDate(i.reported_date)}</td><td>${h(i.status)}</td></tr>`).join("")}</table>
   <h2>Recent Updates</h2>${us.slice(0,5).map(u=>`<div class="update"><strong>${fmtDate(u.update_date)}</strong>${u.weather?` · ${h(u.weather)}`:""}<p style="margin:6px 0 0">${h(u.notes)}</p>${u.workers_count?`<p style="font-size:12px;color:#64748b;margin:4px 0">👷 ${Number(u.workers_count)||0} workers</p>`:""}</div>`).join("")}
   <h2>Expenses</h2><table><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr>${ex.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${h(e.category)}</td><td>${h(e.description)}</td><td>${fmtCur(e.amount)}</td></tr>`).join("")}<tr style="font-weight:bold;background:#f8fafc"><td colspan="3">Total</td><td>${fmtCur(ex.reduce((s,e)=>s+e.amount,0))}</td></tr></table>
-  <footer>SiteTrack Pro · buildco.in · Auto-generated</footer></body></html>`;
+  <footer>SiteTrack Pro · Auto-generated project report</footer></body></html>`;
   const w = window.open("","_blank"); if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);}
 };
 const exportCSV = (proj,ex) => {
@@ -586,6 +587,22 @@ function LoginScreen({onLogin,dark,toggleDark}){
     if(res.ok)setMlState({state:"sent",msg:`Check ${email} — open the link to finish signing in.`});
     else setMlState({state:"err",msg:res.error||"Failed to send. Try again."});
   };
+  // Data-mode controls: status pill + "Load demo data" / "Clear all data".
+  // Production defaults to empty (see src/data/seed.js). Demo seed loads
+  // on-demand from src/data/seed.demo.js via src/lib/demoMode.js.
+  const[dataInfo]=useState(()=>({summary:dataSummary(),isDemo:isDemoLoaded()}));
+  const handleLoadDemo=()=>{
+    if(loadDemoData()){
+      // Force a full reload so all useLS hooks pick up the new dataset.
+      window.location.reload();
+    }
+  };
+  const handleClearAll=async()=>{
+    if(!window.confirm("This will erase all projects, drawings, BOQs, RA bills and attachments stored in this browser. Continue?"))return;
+    if(await clearAllData()){
+      window.location.reload();
+    }
+  };
   const[role,setRole]=useState("architect");const[anim,setAnim]=useState(false);
   const roles=[
     {key:"superadmin",label:"Super Admin (Operations)",sub:"Multi-tenant — all orgs, users, billing, system settings",ini:"RB",col:"slate",perms:["All Orgs","User Management","Billing","System Settings","Impersonate"]},
@@ -692,8 +709,36 @@ function LoginScreen({onLogin,dark,toggleDark}){
             <span aria-hidden>→</span>
           </button>
 
-          <p className="text-[11px] text-ink-500 mt-6 text-center leading-relaxed">
-            Demo mode — data lives in your browser. Production launches with backend auth · See <span className="font-semibold text-ink-700">docs/BACKEND_PLAN.md</span>.
+          {/* Data-mode pill + Load demo / Clear all controls */}
+          <div className="mt-6 rounded-2xl border border-stone-200 bg-white/70 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">— Workspace data</div>
+              <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full ${dataInfo.isDemo?"bg-amber-50 text-amber-800":dataInfo.summary.isEmpty?"bg-stone-100 text-ink-600":"bg-emerald-50 text-emerald-800"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${dataInfo.isDemo?"bg-amber-600":dataInfo.summary.isEmpty?"bg-stone-400":"bg-emerald-600"}`}/>
+                {dataInfo.isDemo?"Demo loaded":dataInfo.summary.isEmpty?"Empty":`${dataInfo.summary.projects} project${dataInfo.summary.projects===1?"":"s"}`}
+              </span>
+            </div>
+            <p className="text-[11px] text-ink-500 leading-relaxed mb-3">
+              {dataInfo.summary.isEmpty
+                ? "Start with a clean workspace, or load the showcase dataset (5 orgs, 4 projects, BOQ, RA bills) to explore the product."
+                : dataInfo.isDemo
+                  ? "Showcase dataset is loaded. Clear it to return to an empty workspace for real work."
+                  : "Your workspace already has data. Loading the demo will overwrite it — back up first if needed."}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={handleLoadDemo} className="flex-1 py-2 text-[11px] font-bold tracking-wide uppercase rounded-xl bg-ink-900 text-cream hover:bg-ink-700 transition-colors">
+                {dataInfo.isDemo?"Reload demo":"Load demo data"}
+              </button>
+              <button onClick={handleClearAll} disabled={dataInfo.summary.isEmpty&&!dataInfo.isDemo} className="flex-1 py-2 text-[11px] font-bold tracking-wide uppercase rounded-xl border border-stone-300 text-ink-700 hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                Clear all data
+              </button>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-ink-500 mt-5 text-center leading-relaxed">
+            {backendEnabled
+              ? <>Production mode — data syncs to your secure cloud workspace.</>
+              : <>Local mode — data stays in this browser. Enable backend sync in <span className="font-semibold text-ink-700">docs/GOLIVE.md</span>.</>}
           </p>
         </div>
       </div>
@@ -1033,6 +1078,19 @@ function DashboardView({user,projects,updates,issues,activity,setView,setSP}){
               </div>
             </button>
           ))}
+          {mp.filter(p=>p.status==="active").length===0&&(
+            <div className="md:col-span-2 bg-white rounded-2xl p-10 text-center shadow-editorial" style={{border:"1px dashed var(--st-line)"}}>
+              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n="folder" s={24} c="text-amber-700"/></div>
+              <div className="font-display text-xl font-semibold text-ink-900 tracking-editorial mb-2">{mp.length===0?"Your workspace is ready":"No active projects right now"}</div>
+              <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-5">
+                {mp.length===0
+                  ? "Create your first project to start tracking site progress, drawings, BOQ, RA bills, and team activity in one place."
+                  : "All your projects are completed or on hold. Start a new one whenever you're ready."}
+              </p>
+              {can(user,"createProject")&&<button onClick={()=>setView("create")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Ic n="plus" s={14}/>Create your first project</button>}
+              {!can(user,"createProject")&&<button onClick={()=>setView("projects")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink-900 text-cream font-bold rounded-xl text-sm tracking-wide transition-all"><Ic n="folder" s={14}/>Browse all projects</button>}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1097,7 +1155,25 @@ function ProjectsView({user,projects,setView,setSP}){
             <PBar v={p.progress} col={p.status==="on_hold"?"violet":"orange"}/>
           </div>}
         </button>
-      )}{fl.length===0&&<div className="col-span-3 text-center py-20 text-ink-500"><Ic n="search" s={32} c="mx-auto mb-3 opacity-30"/><p className="font-display text-lg">No projects match</p></div>}</div>
+      )}{fl.length===0&&(()=>{
+        const allMine=visibleProjectsForUser(projects,user);
+        const filtered=allMine.length>0;
+        return (
+          <div className="sm:col-span-2 lg:col-span-3 bg-white rounded-2xl p-12 text-center shadow-editorial" style={{border:"1px dashed var(--st-line)"}}>
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n={filtered?"search":"folder"} s={24} c="text-amber-700"/></div>
+            <div className="font-display text-xl font-semibold text-ink-900 tracking-editorial mb-2">{filtered?"No projects match your filters":"No projects yet"}</div>
+            <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-5">
+              {filtered
+                ? "Try clearing the search or switching to All status to see everything in your workspace."
+                : can(user,"createProject")
+                  ? "Create your first project to start tracking the site. You can add drawings, BOQ, RA bills, daily updates and team activity once it's set up."
+                  : "Once your team adds a project you have access to, it will appear here."}
+            </p>
+            {filtered&&<button onClick={()=>{setQ("");setSF("all");setMinP(0);}} className="inline-flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-ink-700 font-bold rounded-xl text-sm tracking-wide hover:bg-stone-50 transition-all"><Ic n="x" s={14}/>Reset filters</button>}
+            {!filtered&&can(user,"createProject")&&<button onClick={()=>setView("create")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Ic n="plus" s={14}/>Create your first project</button>}
+          </div>
+        );
+      })()}</div>
     </div>
   );
 }
@@ -1123,6 +1199,28 @@ function SuperAdminDashboard({user,orgs,adminUsers,projects,issues,activity,setV
     const lastSeen=Math.max(...orgUsers.map(u=>new Date(u.last_seen||0).getTime()));
     return (Date.now()-lastSeen)>7*86400*1000;
   });
+  if(orgs.length===0){
+    return(
+      <div className="p-4 md:p-10 max-w-7xl">
+        <div className="mb-8 pb-4" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Multi-tenant operations</div>
+          <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 tracking-editorial leading-[1.05]">Admin Console</h1>
+          <p className="text-ink-600 text-sm mt-3">Welcome back, <span className="font-semibold">{user.name.split(" ")[0]}</span>. Your operations workspace is ready.</p>
+        </div>
+        <div className="bg-white rounded-2xl p-12 text-center shadow-editorial" style={{border:"1px dashed var(--st-line)"}}>
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n="building" s={28} c="text-amber-700"/></div>
+          <div className="font-display text-2xl font-semibold text-ink-900 tracking-editorial mb-3">No customer organizations yet</div>
+          <p className="text-ink-500 text-sm max-w-lg mx-auto leading-relaxed mb-6">
+            Start onboarding your first paying customer or trial team. Each organization is fully isolated — its own users, projects, drawings, BOQs and RA bills — with billing rolled up here.
+          </p>
+          <div className="flex justify-center gap-3 flex-wrap">
+            <button onClick={()=>setView("admin-orgs")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Ic n="plus" s={14}/>Add first organization</button>
+            <button onClick={()=>setView("admin-settings")} className="inline-flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-ink-700 font-bold rounded-xl text-sm tracking-wide hover:bg-stone-50 transition-all"><Ic n="settings" s={14}/>Configure plans</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return(
     <div className="p-4 md:p-10 max-w-7xl">
       <div className="mb-8 pb-4" style={{borderBottom:"1px solid var(--st-line)"}}>
@@ -1256,7 +1354,7 @@ function OrgsAdminView({user,orgs,setOrgs,adminUsers,projects}){
       {show&&<div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
         <div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">New customer org</h3><button onClick={()=>setShow(false)}><Ic n="x" s={18}/></button></div>
         <div className="grid grid-cols-2 gap-3 mb-3">
-          <input value={no.name} onChange={e=>setNo(p=>({...p,name:e.target.value}))} placeholder="Org name (e.g. BuildCo India)" className="col-span-2 p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
+          <input value={no.name} onChange={e=>setNo(p=>({...p,name:e.target.value}))} placeholder="Organization name" className="col-span-2 p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
           <input value={no.contact_email} onChange={e=>setNo(p=>({...p,contact_email:e.target.value}))} type="email" placeholder="Contact email" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
           <input value={no.city} onChange={e=>setNo(p=>({...p,city:e.target.value}))} placeholder="City" className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/>
           <select value={no.plan} onChange={e=>setNo(p=>({...p,plan:e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{Object.entries(PLAN_META).map(([k,m])=><option key={k} value={k}>{m.label} — ₹{m.price}/mo</option>)}</select>
@@ -1300,7 +1398,20 @@ function OrgsAdminView({user,orgs,setOrgs,adminUsers,projects}){
               </div>
             </div>
           );
-        })}{filtered.length===0&&<div className="text-center py-12 text-ink-500 italic">No orgs match this filter.</div>}</div>
+        })}{filtered.length===0&&(
+          <div className="text-center py-14 px-6">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n={orgs.length===0?"building":"search"} s={24} c="text-amber-700"/></div>
+            <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-2">{orgs.length===0?"No customer organizations yet":"No orgs match this filter"}</div>
+            <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-4">
+              {orgs.length===0
+                ? "Add your first paying or trial organization to begin multi-tenant operations."
+                : "Try switching to All to see every org in the system."}
+            </p>
+            {orgs.length===0
+              ? <button onClick={()=>setShow(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Ic n="plus" s={14}/>Add first organization</button>
+              : <button onClick={()=>setFilter("all")} className="inline-flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-ink-700 font-bold rounded-xl text-sm tracking-wide hover:bg-stone-50 transition-all"><Ic n="x" s={14}/>Show all</button>}
+          </div>
+        )}</div>
       </div>
     </div>
   );
@@ -1365,7 +1476,7 @@ function UsersAdminView({user,adminUsers,setAdminUsers,orgs,onImpersonate}){
           </select>
           <select value={nu.org_id} onChange={e=>setNu(p=>({...p,org_id:e.target.value}))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select>
         </div>
-        <p className="text-[11px] text-ink-500 mb-3">In production a magic-link invite is sent via Supabase Auth. Demo mode just adds the row.</p>
+        <p className="text-[11px] text-ink-500 mb-3">When backend sync is enabled, a magic-link invitation is emailed via Supabase Auth. Otherwise the user is created locally for this browser.</p>
         <button onClick={invite} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Send Invite</button>
       </div>}
       <div className="bg-white rounded-2xl overflow-hidden shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
@@ -1403,7 +1514,21 @@ function UsersAdminView({user,adminUsers,setAdminUsers,orgs,onImpersonate}){
               </div>
             </div>
           );
-        })}{filtered.length===0&&<div className="text-center py-12 text-ink-500 italic">No users match.</div>}</div>
+        })}{filtered.length===0&&(
+          <div className="text-center py-14 px-6">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n={adminUsers.length===0?"users":"search"} s={24} c="text-amber-700"/></div>
+            <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-2">{adminUsers.length===0?"No users invited yet":"No users match"}</div>
+            <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-4">
+              {adminUsers.length===0
+                ? orgs.length===0
+                  ? "Add a customer organization first, then invite architects, project managers, contractors and clients into it."
+                  : "Invite your first user — they receive a magic-link email and are assigned to an org with a chosen role."
+                : "Try clearing the search or switching the role filter to All."}
+            </p>
+            {adminUsers.length===0&&orgs.length>0&&<button onClick={()=>setShow(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Ic n="plus" s={14}/>Invite first user</button>}
+            {adminUsers.length>0&&<button onClick={()=>{setQ("");setRoleFilter("all");}} className="inline-flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-ink-700 font-bold rounded-xl text-sm tracking-wide hover:bg-stone-50 transition-all"><Ic n="x" s={14}/>Reset filters</button>}
+          </div>
+        )}</div>
       </div>
     </div>
   );
@@ -1540,7 +1665,7 @@ function SettingsAdminView({user,flags,setFlags}){
             {name:"Anthropic / OpenAI (AI Insights)",ok:!!(aiCfg.provider&&aiCfg.apiKey),detail:aiCfg.provider?`${aiCfg.provider} · ${aiCfg.model||"default model"}`:"Not configured"},
             {name:"Razorpay UPI / Payment Link",ok:!!(rzCfg.upiId||rzCfg.paymentLinkBase),detail:rzCfg.upiId?`UPI: ${rzCfg.upiId}`:"UPI not configured"},
             {name:"Supabase Backend",ok:false,detail:"Not connected — VITE_BACKEND=local. See docs/BACKEND_PLAN.md."},
-            {name:"WhatsApp Business API",ok:false,detail:"Not connected — only wa.me deep links work in demo."},
+            {name:"WhatsApp Business API",ok:false,detail:"Not connected — using wa.me deep links (works without API)."},
             {name:"GitHub Actions CI",ok:false,detail:"Workflow file at docs/CI_WORKFLOW.yml — needs manual move per docs/CI_SETUP.md."},
           ].map(it=>(
             <div key={it.name} className="flex items-center gap-4 p-4 rounded-xl bg-cream-200/40" style={{border:"1px solid var(--st-line)"}}>
@@ -3373,7 +3498,7 @@ function CreateView({user,setView,setProjects}){
   const sub=()=>{const e=val();if(Object.keys(e).length){setErr(e);return;}setProjects(p=>[...p,{id:"p_"+Date.now(),name:f.name,client_name:f.cn,client_email:f.ce,location:f.loc,start_date:f.sd,expected_end_date:f.ed,budget:parseFloat(f.budget)||0,description:f.desc,status:"active",progress:0}]);setDone(true);setTimeout(()=>setView("projects"),1800);};
   if(done) return <div className="p-8 flex items-center justify-center min-h-96"><div className="text-center"><div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4"><Ic n="check" s={28} c="text-emerald-600"/></div><h2 className="text-xl font-black text-slate-800 mb-2">Project Created!</h2></div></div>;
   const inp=(key,lbl,type="text",ph="",fk)=>{const k=fk||key;return<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">{lbl}</label><input type={type} value={f[k]} onChange={e=>{setF(p=>({...p,[k]:e.target.value}));setErr(p=>({...p,[key]:""}));}} placeholder={ph} className={`w-full p-3.5 border rounded-xl text-sm outline-none transition-all ${err[key]?"border-red-300 bg-red-50":"border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-50"}`}/>{err[key]&&<p className="text-red-500 text-xs mt-1">{err[key]}</p>}</div>;};
-  return(<div className="p-4 md:p-8 max-w-2xl"><button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button><h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1><div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">{inp("name","Project Name","text","Skyline Tower Phase III")}<div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","Nair Holdings","cn")}{inp("ce","Client Email","email","client@co.in","ce")}</div>{inp("loc","Location","text","Jubilee Hills, Hyderabad","loc")}<div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>{inp("budget","Budget (₹)","number","45000000")}<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label><textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/></div><button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button></div></div>);
+  return(<div className="p-4 md:p-8 max-w-2xl"><button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button><h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1><p className="text-slate-500 text-sm mb-5 -mt-3">A few details to get started — you can edit everything later and add drawings, BOQ, RA bills and updates from the project page.</p><div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">{inp("name","Project Name","text","e.g. Riverside Towers — Phase II")}<div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","e.g. Asha Estates","cn")}{inp("ce","Client Email","email","client@example.com","ce")}</div>{inp("loc","Location","text","City or neighbourhood","loc")}<div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>{inp("budget","Budget (₹)","number","e.g. 45000000")}<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label><textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} placeholder="Short scope summary — what's being built, key milestones, anything special." className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/></div><button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button></div></div>);
 }
 function NotifsView({notifs,setNotifs,user,projects}){
   // HIGH-2 fix: notifications scoped to the user's visible projects.
@@ -3620,7 +3745,19 @@ function VendorsView({user,vendors,setVendors}){
           </div>
           {can(user,"manageTeam")&&<div className="mt-3 pt-3 border-t border-slate-100 flex justify-end"><button onClick={()=>del(v.id)} className="text-slate-300 hover:text-red-400"><Ic n="trash" s={15}/></button></div>}
         </div>
-      ))}{fl.length===0&&<div className="col-span-2 text-center py-16 text-slate-400"><Ic n="truck" s={32} c="mx-auto mb-3 opacity-30"/><p>No vendors yet</p></div>}</div>
+      ))}{fl.length===0&&(
+        <div className="col-span-2 bg-white rounded-2xl p-12 text-center" style={{border:"1px dashed var(--st-line)"}}>
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n={vendors.length===0?"truck":"search"} s={24} c="text-amber-700"/></div>
+          <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-2">{vendors.length===0?"No vendors registered yet":"No vendors match your search"}</div>
+          <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-4">
+            {vendors.length===0
+              ? "Add steel, cement, ready-mix concrete, electrical and other suppliers so your purchase orders, GST records and ratings stay in one place."
+              : "Try a different keyword or clear the search to see all vendors."}
+          </p>
+          {vendors.length===0&&can(user,"manageTeam")&&<button onClick={()=>setShow(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={14}/>Add first vendor</button>}
+          {vendors.length>0&&<button onClick={()=>setQ("")} className="inline-flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-ink-700 font-bold rounded-xl text-sm hover:bg-stone-50"><Ic n="x" s={14}/>Clear search</button>}
+        </div>
+      )}</div>
     </div>
   );
 }
