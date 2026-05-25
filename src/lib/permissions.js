@@ -39,8 +39,10 @@ export const PERMS = {
     nav: [
       "admin-dashboard", "admin-users", "admin-orgs", "admin-billing",
       "admin-audit", "admin-usage", "admin-support", "admin-settings",
+      "admin-audit-log", "admin-branding",
       "activity", "dashboard", "projects", "calendar",
       "vendors", "po", "analytics", "messages", "notifications",
+      "hierarchy", "material-prices", "compliance", "forecast", "delegations",
     ],
   },
   architect: {
@@ -66,7 +68,11 @@ export const PERMS = {
       "fieldops", "approvals", "inspections", "safety", "team", "attendance",
       "budget", "po", "invoices", "labour", "rabills", "map", "ai", "gantt",
     ],
-    nav: ["dashboard", "projects", "calendar", "vendors", "po", "analytics", "activity", "messages", "notifications"],
+    nav: [
+      "dashboard", "projects", "calendar", "vendors", "po", "analytics",
+      "activity", "messages", "notifications",
+      "hierarchy", "material-prices", "compliance", "forecast", "delegations",
+    ],
   },
   pm: {
     createProject: false,
@@ -91,7 +97,11 @@ export const PERMS = {
       "fieldops", "approvals", "inspections", "safety", "team", "attendance",
       "budget", "po", "labour", "rabills", "map", "ai", "gantt",
     ],
-    nav: ["dashboard", "projects", "calendar", "vendors", "po", "pm", "messages", "notifications"],
+    nav: [
+      "dashboard", "projects", "calendar", "vendors", "po", "pm",
+      "messages", "notifications",
+      "hierarchy", "material-prices", "compliance",
+    ],
   },
   contractor: {
     createProject: false,
@@ -114,7 +124,7 @@ export const PERMS = {
       "overview", "updates", "issues", "materials", "ledger", "drawings",
       "rfi", "fieldops", "approvals", "rabills", "map", "ai", "gantt",
     ],
-    nav: ["dashboard", "projects", "messages", "notifications"],
+    nav: ["dashboard", "projects", "messages", "notifications", "material-prices"],
   },
   client: {
     createProject: false,
