@@ -179,6 +179,12 @@ const vite = read("vite.config.js");
   "kioskSiteEnabled",
   "kioskArEnabled",
   "tenantOnboardingMode",
+  // Session 15 — Cashfree integration markers
+  "isCashfreeConfigured",
+  "buildSubscriptionRequest",
+  "cashfreeReady",
+  "pending_cashfree",
+  "Cashfree connected",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -300,6 +306,13 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "tests/approvalChains.test.js",
   "tests/orgIntegrations.test.js",
   "tests/templates.test.js",
+  // Session 15 — Production gate (RLS + Cashfree)
+  "src/lib/cashfree.js",
+  "tests/cashfree.test.js",
+  "scripts/supabase/03_rls_phase1.sql",
+  "scripts/supabase/05_rls_phase1_tests.sql",
+  "docs/PRODUCTION_RLS.md",
+  "docs/CASHFREE_ONBOARDING.md",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",

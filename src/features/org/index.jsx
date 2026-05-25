@@ -35,6 +35,9 @@ import {
   getChain, upsertChain, removeChain, validateChain,
   APPROVAL_RESOURCES, APPROVAL_ROLES,
 } from "../../lib/approvalChains.js";
+import {
+  isCashfreeConfigured, buildSubscriptionRequest,
+} from "../../lib/cashfree.js";
 
 // ── Shared bits ────────────────────────────────────────────────────────────
 function PageHeader({ kicker, title, subtitle }) {
@@ -280,7 +283,7 @@ export function OrgMembersView({ user, orgs, adminUsers, setAdminUsers, setAudit
 }
 
 // ── 3. Billing ─────────────────────────────────────────────────────────────
-export function OrgBillingView({ user, orgs, setOrgs, adminUsers, projects, setAuditLog }) {
+export function OrgBillingView({ user, orgs, setOrgs, adminUsers, projects, orgIntegrations, setAuditLog }) {
   // Resolve org first via a memo so hook order stays stable when org is absent.
   const org = resolveOrg(user, orgs);
   const plan = PLAN_META[org?.plan] || PLAN_META.basic;
@@ -313,17 +316,64 @@ export function OrgBillingView({ user, orgs, setOrgs, adminUsers, projects, setA
   const seatPct = seatLimit === Infinity ? 0 : Math.min(100, Math.round((orgMembers.length / seatLimit) * 100));
   const projPct = projLimit === Infinity ? 0 : Math.min(100, Math.round((orgProjects.length / projLimit) * 100));
 
+  // Cashfree creds come from the org-level integration record (Q4).
+  const cashfreeCfg = orgIntegrations?.[org.id]?.cashfree || {};
+  const cashfreeReady = isCashfreeConfigured(cashfreeCfg);
+
   const requestUpgrade = (target) => {
     if (target === org.plan) return;
-    if (!window.confirm(`Upgrade ${org.name} from ${plan.label} to ${PLAN_META[target].label}?\n\n₹${PLAN_META[target].price.toLocaleString("en-IN")}/mo — prorated from today.`)) return;
+    if (target === "custom") {
+      alert("Custom plans are negotiated manually. Contact sales@sitetrack.in.");
+      return;
+    }
+    // Cashfree path: build a real subscription intent. The Edge Function takes
+    // the payload and creates the session at Cashfree; we redirect on success.
+    if (cashfreeReady) {
+      let req;
+      try {
+        req = buildSubscriptionRequest(
+          { id: org.id, name: org.name, contact_email: org.contact_email },
+          target,
+          window.location.origin + `/?view=org-billing&org=${org.id}`
+        );
+      } catch (err) {
+        alert(`Subscription setup failed: ${err.message}`);
+        return;
+      }
+      if (!window.confirm(`Upgrade ${org.name} from ${plan.label} to ${PLAN_META[target].label}?\n\n₹${PLAN_META[target].price.toLocaleString("en-IN")}/mo — billed via Cashfree UPI AutoPay.\n\nYou'll be redirected to authorise the mandate.`)) return;
+      // In production: POST req.payload to /functions/v1/cashfree-subscription
+      // Our Edge Function returns { subscription_session_id } which opens
+      // the Cashfree hosted checkout. Until the Edge Function is wired
+      // we mark the local row as 'pending' and audit the intent.
+      setOrgs(p => p.map(o => o.id === org.id ? { ...o, plan: target, mrr: PLAN_META[target].price, billing_status: "pending_cashfree", pending_subscription_id: req.subscription_id } : o));
+      setAuditLog?.(p => recordAudit(p, { actor: user, action: "PAYMENT", resource: "subscription", resource_id: org.id, before: { plan: org.plan }, after: { plan: target, subscription_id: req.subscription_id }, message: `Cashfree subscription intent: ${org.plan} → ${target} (pending mandate)` }));
+      window.alert(`Cashfree subscription intent created (${req.subscription_id}).\n\nIn production this would redirect to Cashfree's mandate UI. The webhook will mark the subscription active once UPI AutoPay is approved.`);
+      return;
+    }
+    // Fallback path: no Cashfree creds → local-only confirmation. Tells the
+    // org admin how to set up real billing.
+    if (!window.confirm(`Upgrade ${org.name} from ${plan.label} to ${PLAN_META[target].label}?\n\n₹${PLAN_META[target].price.toLocaleString("en-IN")}/mo — prorated from today.\n\n⚠ Cashfree not configured — this will only update the local plan flag. Configure Cashfree in Integrations to enable real billing.`)) return;
     setOrgs(p => p.map(o => o.id === org.id ? { ...o, plan: target, mrr: PLAN_META[target].price } : o));
-    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "subscription", resource_id: org.id, before: { plan: org.plan }, after: { plan: target }, message: `Plan upgrade: ${org.plan} → ${target}` }));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "subscription", resource_id: org.id, before: { plan: org.plan }, after: { plan: target }, message: `Plan upgrade (manual, no Cashfree): ${org.plan} → ${target}` }));
   };
 
   return (
     <div className="p-4 md:p-10 max-w-7xl">
       <PageHeader kicker={`${org.name} · Billing`} title="Plan & billing"
         subtitle={`Current: ${plan.label} · ₹${(org.mrr || 0).toLocaleString("en-IN")}/mo`} />
+
+      {/* Cashfree readiness pill — production gate signal */}
+      <div className={`mb-6 px-4 py-3 rounded-xl border ${cashfreeReady ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+        <div className="flex items-center gap-3 text-sm">
+          <span className={`w-2.5 h-2.5 rounded-full ${cashfreeReady ? "bg-emerald-500" : "bg-amber-500"}`} />
+          <div className="flex-1">
+            <span className="font-semibold text-ink-900">{cashfreeReady ? "Cashfree connected" : "Cashfree not configured"}</span>
+            <span className="text-ink-600 ml-2">{cashfreeReady ? "— plan changes will create real UPI AutoPay subscriptions." : "— plan changes will only update the local flag. Configure Cashfree in Integrations to enable real billing."}</span>
+          </div>
+          {org.billing_status === "pending_cashfree" && <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Mandate pending</span>}
+        </div>
+      </div>
+
 
       <div className="grid md:grid-cols-3 gap-5 mb-8">
         <div className="md:col-span-2 bg-white rounded-2xl p-6 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>

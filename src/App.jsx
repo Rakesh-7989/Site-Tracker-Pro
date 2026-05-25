@@ -314,7 +314,7 @@ export default function App(){
       // ── Production Phase 1: Org Admin tier ────────────────────────────────
       case"org-dashboard": return <OrgAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView} orgIntegrations={orgIntegrations} templates={templates} approvalChains={approvalChains}/>;
       case"org-members": return <OrgMembersView user={user} orgs={orgs} adminUsers={adminUsers} setAdminUsers={setAdminUsers} setAuditLog={setAuditLog}/>;
-      case"org-billing": return <OrgBillingView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects} setAuditLog={setAuditLog}/>;
+      case"org-billing": return <OrgBillingView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects} orgIntegrations={orgIntegrations} setAuditLog={setAuditLog}/>;
       case"org-integrations": return <OrgIntegrationsView user={user} orgs={orgs} orgIntegrations={orgIntegrations} setOrgIntegrations={setOrgIntegrations} setAuditLog={setAuditLog}/>;
       case"org-activity": return <OrgActivityView user={user} orgs={orgs} auditLog={auditLog} projects={projects} adminUsers={adminUsers}/>;
       case"org-templates": return <OrgTemplatesView user={user} orgs={orgs} templates={templates} setTemplates={setTemplates} projects={projects} milestones={milestones} checklists={checklists} setAuditLog={setAuditLog}/>;
