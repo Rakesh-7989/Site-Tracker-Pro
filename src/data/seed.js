@@ -56,3 +56,37 @@ export const INIT_MESSAGES    = {};
 export const INIT_ORGS        = [];
 export const INIT_ADMIN_USERS = [];
 export const INIT_SUPPORT     = [];
+
+// ── Roadmap additions (hierarchical model + business platform) ───────────────
+// Project → Block → Floor → Unit hierarchy for residential/commercial projects.
+// All keyed by project id (except UNITS which is keyed by floor id for fast
+// lookup on a single floor screen).
+export const INIT_BLOCKS      = {};   // { [project_id]: Block[] }
+export const INIT_FLOORS      = {};   // { [block_id]: Floor[] }
+export const INIT_UNITS       = {};   // { [floor_id]: Unit[] }
+
+// White-label branding cascade (Org → Project → default). Stored as a single
+// object whose values are { logoUrl, tagline, accent, theme } shapes.
+export const INIT_BRANDING    = { org: {}, project: {} };
+
+// Immutable audit log (append-only). Each entry:
+//   { id, ts, actor_id, actor_name, action, resource, resource_id, before, after, ip?, ua? }
+export const INIT_AUDIT_LOG   = [];
+
+// Approval delegations: { id, from_user_id, to_user_id, scope, start, end, reason, active }.
+export const INIT_DELEGATIONS = [];
+
+// Frozen daily KPI snapshots, keyed by project id then ISO date.
+// snapshot row: { date, progress, workers, materials_consumed, billed, open_issues, weather }.
+export const INIT_DAILY_SNAPSHOTS = {}; // { [project_id]: { [yyyy-mm-dd]: snapshot } }
+
+// Material price aggregator cache, keyed by commodity → vendor quotes array.
+export const INIT_MATERIAL_PRICES = {}; // { steel: [...], cement: [...], ... }
+
+// Compliance check results per project: RERA/GST/EPFO/PAN verification cache.
+// shape: { [project_id]: { rera: {...}, gst: {...}, epfo: {...}, pan: {...} } }
+export const INIT_COMPLIANCE  = {};
+
+// AI cost-forecaster cache (so the predictions persist across reloads).
+// shape: { [project_id]: { generated_at, summary, overrun_amount, confidence } }
+export const INIT_FORECAST    = {};
