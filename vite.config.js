@@ -15,6 +15,10 @@ export default defineConfig({
           if (normalized.includes('/src/features/roadmap/')) return 'roadmap'
           // Split super-admin views — most tenant users never open these.
           if (normalized.includes('/src/features/admin/')) return 'admin'
+          // Mid-size tenant views (Calendar / Vendors / POs / Analytics etc.)
+          // — Recharts is heavy and only AnalyticsView needs it, so isolating
+          // these into their own chunk shrinks the dashboard cold path further.
+          if (normalized.includes('/src/features/views/')) return 'views'
           if (!normalized.includes('/node_modules/')) return undefined
           if (normalized.includes('/node_modules/react/') || normalized.includes('/node_modules/react-dom/') || normalized.includes('/node_modules/scheduler/')) return 'react'
           if (normalized.includes('/node_modules/recharts/') || normalized.includes('/node_modules/react-smooth/') || normalized.includes('/node_modules/react-transition-group/')) return 'recharts'

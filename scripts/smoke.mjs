@@ -15,6 +15,7 @@ const app = [
   read("src/App.jsx"),
   read("src/features/roadmap/index.jsx"),
   read("src/features/admin/index.jsx"),
+  read("src/features/views/index.jsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -234,6 +235,10 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "src/features/roadmap/index.jsx",
   // Roadmap Batch 5 — admin cluster extracted
   "src/features/admin/index.jsx",
+  // Roadmap Batch 6 — mid-size views extracted + i18n helper module
+  "src/features/views/index.jsx",
+  "src/lib/i18n.js",
+  "tests/whatsapp.test.js",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
