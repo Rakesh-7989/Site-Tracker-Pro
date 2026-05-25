@@ -7,7 +7,15 @@ const checks = [];
 
 const add = (name, pass, detail = "") => checks.push({ name, pass, detail });
 
-const app = read("src/App.jsx");
+// App markers now search BOTH App.jsx and the extracted feature modules
+// (Batch 4 + Batch 5 moved a lot of code out of App.jsx). The smoke contract
+// is "this string lives somewhere in the user-facing app code", not "this
+// string lives in App.jsx specifically".
+const app = [
+  read("src/App.jsx"),
+  read("src/features/roadmap/index.jsx"),
+  read("src/features/admin/index.jsx"),
+].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
 
@@ -224,6 +232,8 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   // Roadmap Batch 4 — App.jsx split (ui atoms + features/)
   "src/components/ui.jsx",
   "src/features/roadmap/index.jsx",
+  // Roadmap Batch 5 — admin cluster extracted
+  "src/features/admin/index.jsx",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
