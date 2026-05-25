@@ -44,6 +44,7 @@ export const PERMS = {
       // Org Admin tier (the new one)
       "org-dashboard", "org-members", "org-billing", "org-integrations",
       "org-activity", "org-templates", "org-approvals", "org-notifications",
+      "org-features",
       // Plus most of the tenant nav so they can still operate inside projects
       "dashboard", "projects", "calendar", "vendors", "po", "analytics",
       "activity", "messages", "notifications",

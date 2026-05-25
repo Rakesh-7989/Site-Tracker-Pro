@@ -119,3 +119,10 @@ export const INIT_OPS_TOGGLES = {
   kioskArEnabled: true,           // Q7 — AR Drawing Overlay in nav
   tenantOnboardingMode: "guided", // Q8 — guided | minimal | enterprise (configurable)
 };
+
+// ── Feature-flag toggle catalog (Session 16) ────────────────────────────────
+// Catalog lives in src/lib/orgFeatureFlags.js; these are the override stores.
+//   PLATFORM_FEATURE_FLAGS: super-admin kill-switch per feature id
+//   ORG_FEATURE_FLAGS:      per-org { [featureId]: bool } overrides
+export const INIT_PLATFORM_FEATURE_FLAGS = {};
+export const INIT_ORG_FEATURE_FLAGS = {};

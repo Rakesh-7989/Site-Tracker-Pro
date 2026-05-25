@@ -38,6 +38,10 @@ import {
 import {
   isCashfreeConfigured, buildSubscriptionRequest,
 } from "../../lib/cashfree.js";
+import {
+  FEATURE_CATALOG, FEATURE_GROUPS, isFeatureEnabled,
+  setOrgFeature, resetOrgFeatures, featureStats, catalogByGroup,
+} from "../../lib/orgFeatureFlags.js";
 
 // ── Shared bits ────────────────────────────────────────────────────────────
 function PageHeader({ kicker, title, subtitle }) {
@@ -143,6 +147,7 @@ export function OrgAdminDashboard({ user, orgs, adminUsers, projects, issues, ac
               ["org-members", "users", "Members & roles", `${activeMembers} active`],
               ["org-billing", "credit-card", "Plan & billing", `₹${(org.mrr || 0).toLocaleString("en-IN")}/mo`],
               ["org-integrations", "cpu", "Integrations", `${intSummary.count}/${intSummary.total} connected`],
+              ["org-features", "sliders", "Feature toggles", "What your team can see"],
               ["org-templates", "copy", "Templates", `${tplCount} saved`],
               ["org-approvals", "shield", "Approval chains", `${chainCount} configured`],
               ["org-notifications", "bell", "Notification rules", "Set up alerts"],
@@ -805,6 +810,112 @@ function ChainEditor({ resource, initial, onSave, onCancel }) {
         <button onClick={() => onSave({ id: initial.id, name, resource: resource.id, rungs })} className="ml-auto px-4 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Save chain</button>
         <button onClick={onCancel} className="px-4 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
       </div>
+    </div>
+  );
+}
+
+// ── 9. Feature settings (Session 16) ───────────────────────────────────────
+// Lets the Org Admin enable / disable every catalogued feature for their org.
+// Cascade: platform kill-switch (superadmin) → org override (here) → default.
+// Plan-locked features show greyed-out with an upsell hint.
+export function OrgFeatureSettingsView({ user, orgs, orgFlags, setOrgFlags, platformFlags, setAuditLog }) {
+  const org = resolveOrg(user, orgs);
+  if (!org) return <NoOrgScreen />;
+  const plan = org.plan || "basic";
+  const stats = featureStats(platformFlags, orgFlags, org.id, plan);
+  const groups = catalogByGroup();
+
+  const GROUP_META = {
+    nav: { label: "Sidebar nav", desc: "Top-level views in your team's left-hand navigation." },
+    tabs: { label: "Project tabs", desc: "Sub-tabs inside each project workspace." },
+    workflow: { label: "Workflow features", desc: "Cross-cutting capabilities used across many views." },
+    orgadmin: { label: "Org Admin panels", desc: "Which of your own admin panels stay visible to you." },
+  };
+
+  const PLAN_ORDER = { basic: 0, pro: 1, business: 2, custom: 3 };
+
+  const toggle = (featureId, currentValue) => {
+    const next = !currentValue;
+    setOrgFlags(p => setOrgFeature(p, org.id, featureId, next));
+    setAuditLog?.(p => recordAudit(p, {
+      actor: user,
+      action: "UPDATE",
+      resource: "org_feature_flag",
+      resource_id: `${org.id}_${featureId}`,
+      org_id: org.id,
+      before: { [featureId]: currentValue },
+      after: { [featureId]: next },
+      message: `Feature "${FEATURE_CATALOG[featureId].label}" → ${next ? "enabled" : "disabled"}`,
+    }));
+  };
+
+  const resetAll = () => {
+    if (!window.confirm("Reset every feature to its catalogue default? This wipes all of your overrides.")) return;
+    setOrgFlags(p => resetOrgFeatures(p, org.id));
+    setAuditLog?.(p => recordAudit(p, {
+      actor: user, action: "DELETE", resource: "org_feature_flag", resource_id: org.id, org_id: org.id,
+      message: "Reset all feature overrides to defaults",
+    }));
+  };
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Features`} title="Feature toggles"
+        subtitle={`${stats.enabled} of ${stats.planEligible} features enabled · ${stats.planLocked} plan-locked on ${plan.toUpperCase()} plan`} />
+
+      <div className="flex items-center justify-between gap-3 mb-6 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
+        <div className="text-xs text-ink-700 leading-relaxed">
+          <span className="font-bold">Toggle-driven scope.</span> Your architect / PM / contractor / client users only see features you turn on here.
+          Features your <span className="font-semibold">{plan}</span> plan does not unlock are shown but disabled — upgrade to enable them.
+        </div>
+        <button onClick={resetAll} className="text-xs font-bold text-amber-800 hover:underline whitespace-nowrap">Reset to defaults</button>
+      </div>
+
+      {FEATURE_GROUPS.map(g => {
+        const meta = GROUP_META[g];
+        const features = groups[g];
+        if (!features.length) return null;
+        return (
+          <div key={g} className="bg-white rounded-2xl p-6 shadow-editorial mb-5" style={{ border: "1px solid var(--st-line)" }}>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— {meta.label}</div>
+            <h2 className="font-display text-xl font-semibold text-ink-900 mb-1 tracking-editorial">{meta.label}</h2>
+            <p className="text-xs text-ink-500 mb-4">{meta.desc}</p>
+
+            <div className="space-y-1.5">
+              {features.map(f => {
+                const planOk = PLAN_ORDER[plan] >= PLAN_ORDER[f.plan];
+                const platformDisabled = platformFlags?.[f.id] === false;
+                const enabled = isFeatureEnabled(platformFlags, orgFlags, org.id, f.id, plan);
+                const currentOrgValue = orgFlags?.[org.id]?.[f.id];
+                const overridden = typeof currentOrgValue === "boolean";
+
+                return (
+                  <label key={f.id} className={`flex items-start gap-4 p-3 rounded-xl transition-all ${enabled ? "bg-emerald-50" : platformDisabled ? "bg-red-50" : !planOk ? "bg-stone-100" : "bg-cream-200/40"} ${planOk && !platformDisabled ? "cursor-pointer" : "cursor-not-allowed"}`} style={{ border: "1px solid var(--st-line)" }}>
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      disabled={!planOk || platformDisabled}
+                      onChange={() => planOk && !platformDisabled && toggle(f.id, enabled)}
+                      className="mt-1 w-5 h-5 accent-amber-600"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="font-semibold text-ink-900">{f.label}</span>
+                        <span className={`text-[9px] font-bold tracking-[0.18em] uppercase px-1.5 py-0.5 rounded-full ${f.plan === "basic" ? "bg-stone-200 text-stone-700" : f.plan === "pro" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-800"}`}>{f.plan}</span>
+                        {overridden && <span className="text-[9px] font-bold tracking-[0.18em] uppercase px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">Override</span>}
+                        {platformDisabled && <span className="text-[9px] font-bold tracking-[0.18em] uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">Platform off</span>}
+                        {!planOk && <span className="text-[9px] font-bold tracking-[0.18em] uppercase px-1.5 py-0.5 rounded-full bg-stone-200 text-stone-600">Plan locked</span>}
+                      </div>
+                      <div className="text-[11px] text-ink-600 mt-0.5 leading-relaxed">{f.desc}</div>
+                    </div>
+                    <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-full ${enabled ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-ink-500"}`}>{enabled ? "on" : "off"}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

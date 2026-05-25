@@ -26,6 +26,10 @@ import { getRazorpayConfig } from "../../lib/razorpay.js";
 import { isSupabaseEnabled, migrateLocalToBackend } from "../../lib/supabase.js";
 // Production Phase 1: audit log thread-through.
 import { recordAudit } from "../../lib/audit.js";
+// Session 16: platform-wide feature kill-switches.
+import {
+  FEATURE_CATALOG, FEATURE_GROUPS, catalogByGroup, setPlatformFeature,
+} from "../../lib/orgFeatureFlags.js";
 
 export function SuperAdminDashboard({user,orgs,adminUsers,projects,issues,activity,setView}){
   const totalMRR=orgs.filter(o=>o.status==="active").reduce((s,o)=>s+(o.mrr||0),0);
@@ -445,7 +449,7 @@ export function BillingAdminView({orgs}){
   );
 }
 
-export function SettingsAdminView({user,flags,setFlags,opsToggles,setOpsToggles,setAuditLog}){
+export function SettingsAdminView({user,flags,setFlags,opsToggles,setOpsToggles,platformFlags,setPlatformFlags,setAuditLog}){
   const aiCfg=getProviderConfig();
   const rzCfg=getRazorpayConfig();
   const toggle=(k)=>setFlags(p=>({...p,[k]:!p[k]}));
@@ -527,8 +531,60 @@ export function SettingsAdminView({user,flags,setFlags,opsToggles,setOpsToggles,
         </div>
       </div>
 
+      {/* Session 16: Platform-wide feature catalog kill-switches.
+          Super admin can disable a feature globally; org admins cannot
+          re-enable platform-killed features (they show "Platform off"). */}
       <div className="bg-white rounded-2xl p-6 shadow-editorial mb-6" style={{border:"1px solid var(--st-line)"}}>
-        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Feature flags</div>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Platform feature catalog</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-2 tracking-editorial">Platform-wide kill switches</h2>
+        <p className="text-xs text-ink-500 mb-4 leading-relaxed">
+          Turn OFF a feature here to prevent ANY org from using it (incident response, staged rollouts).
+          Org admins can opt in/out below the platform level — but cannot override a platform-off.
+        </p>
+        {FEATURE_GROUPS.map(g => {
+          const items = catalogByGroup()[g];
+          if (!items.length) return null;
+          const labelMap = { nav: "Sidebar nav", tabs: "Project tabs", workflow: "Workflow", orgadmin: "Org Admin panels" };
+          return (
+            <div key={g} className="mb-4">
+              <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500 mb-1.5">{labelMap[g] || g}</div>
+              <div className="grid md:grid-cols-2 gap-1.5">
+                {items.map(f => {
+                  const platformOff = platformFlags?.[f.id] === false;
+                  return (
+                    <label key={f.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer ${platformOff ? "bg-red-50" : "bg-cream-200/40"}`} style={{border:"1px solid var(--st-line)"}}>
+                      <input
+                        type="checkbox"
+                        checked={!platformOff}
+                        onChange={() => {
+                          const next = !platformOff ? false : true;
+                          setPlatformFlags?.(p => setPlatformFeature(p, f.id, next));
+                          setAuditLog?.(p => recordAudit(p, {
+                            actor: user, action: "UPDATE", resource: "platform_feature_flag",
+                            resource_id: f.id,
+                            before: { [f.id]: !platformOff },
+                            after: { [f.id]: next },
+                            message: `Platform ${next ? "enabled" : "killed"}: ${f.label}`,
+                          }));
+                        }}
+                        className="w-4 h-4 accent-amber-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-ink-800 truncate">{f.label}</div>
+                        <div className="text-[10px] text-ink-500">{f.plan} · {f.id}</div>
+                      </div>
+                      {platformOff && <span className="text-[9px] font-bold tracking-wider uppercase bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">Off</span>}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-editorial mb-6" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Feature flags (legacy)</div>
         <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">What's on?</h2>
         <div className="space-y-2">{FLAG_LIST.map(f=>
           <label key={f.k} className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer transition-all ${flags[f.k]?"bg-amber-50":"bg-cream-200/40"}`} style={{border:"1px solid var(--st-line)"}}>

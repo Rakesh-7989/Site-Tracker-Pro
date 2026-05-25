@@ -33,6 +33,8 @@ import { exportPDF, exportCSV, exportDPR, buildDPRWhatsAppText } from "../../lib
 import { GanttView } from "../views/index.jsx";
 // Production Phase 1: audit-log helper for compliance trail.
 import { recordAudit } from "../../lib/audit.js";
+// Session 16: feature-flag cascade for hiding disabled project tabs.
+import { isFeatureEnabled as isFeatureOn } from "../../lib/orgFeatureFlags.js";
 
 // ── MARKUP MODAL (canvas overlay on image attachments) ─────────────────────
 export function MarkupModal({open, imageUrl, sourceName, onClose, onSave}){
@@ -1381,7 +1383,27 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
   const openIss=iss.filter(i=>i.status==="open").length;const highIss=iss.filter(i=>i.severity==="high"&&i.status==="open").length;
   const myDrawings=user.role==="architect"?drws:drws.filter(d=>isReleasedCurrentDrawing(d,user.role));
   const pendingMats=mats.filter(m=>m.status==="expected").length;
-  const tabs=PERMS[user.role].tabs;
+  // Session 16: tab → feature catalog id mapping. Tabs not in the map (overview,
+  // milestones, updates, issues, team, attendance, budget, map, drawings) are
+  // always shown — they're essential project surfaces.
+  const TAB_FEATURE_ID={
+    tasks:"tasks",punchlist:"punchlist",materials:"materials",ledger:"ledger",
+    boq:"boq",estimate:"estimate",rfi:"rfi",changeorders:"changeorders",
+    fieldops:"fieldops",approvals:"approvals",inspections:"inspections",
+    safety:"safety",rabills:"rabills",labour:"labour",ai:"ai",gantt:"gantt",
+  };
+  // Read flag stores from localStorage (consistent with Sidebar pattern).
+  const flagStore=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}");}catch{return{};}})();
+  const _orgFlags=flagStore.org_feature_flags||{};
+  const _platformFlags=flagStore.platform_feature_flags||{};
+  const _orgs=flagStore.orgs||[];
+  const _plan=(_orgs.find(o=>o.id===user?.org_id)?.plan)||"basic";
+  const tabAllowed=(tabId)=>{
+    const featureId=TAB_FEATURE_ID[tabId];
+    if(!featureId)return true; // essential tab
+    return isFeatureOn(_platformFlags,_orgFlags,user?.org_id,featureId,_plan);
+  };
+  const tabs=PERMS[user.role].tabs.filter(tabAllowed);
   const saveProg=()=>{setProjects(p=>p.map(x=>x.id===pid?{...x,progress:Math.min(100,Math.max(0,parseInt(tp)||0))}:x));addActivity(pid,proj.name,"milestone","Updated project progress",`Progress set to ${tp}%`,user.name,user.role);setEditProg(false);};
   const cyclMs=mid=>{
     const cy={pending:"in_progress",in_progress:"completed",completed:"pending"};

@@ -12,6 +12,8 @@
 import { useState } from "react";
 import { Ic, Av, Badge, PBar, SC, ROLE_META, fmtDate } from "../../components/ui.jsx";
 import { PERMS, can, visibleProjectsForUser } from "../../lib/permissions.js";
+// Session 16: feature-flag cascade (platform → org → default).
+import { isFeatureEnabled, featureStats, featuresForRole } from "../../lib/orgFeatureFlags.js";
 import { recordAudit } from "../../lib/audit.js";
 import { isSupabaseEnabled, signInWithMagicLink } from "../../lib/supabase.js";
 import { MOCK_USERS } from "../../data/seed.js";
@@ -42,6 +44,30 @@ export function LoginScreen({onLogin,dark,toggleDark}){
   const demoLoaderEnabled=opsToggles.demoLoaderEnabled!==false;
   const demoPersists=opsToggles.demoModePermanent!==false; // default true (current behaviour)
   const[dataInfo]=useState(()=>({summary:dataSummary(),isDemo:isDemoLoaded()}));
+
+  // Session 16: read platform + org flags so each role tile can show
+  // "X of Y features enabled" — gives the user a heads-up about what they'll
+  // see after login. Read once on mount; no listener needed for the picker.
+  const featureSnapshot=(()=>{
+    try{
+      const store=JSON.parse(localStorage.getItem("sitetrack_v2")||"{}");
+      return{
+        platform:store.platform_feature_flags||{},
+        org:store.org_feature_flags||{},
+        orgs:store.orgs||[],
+      };
+    }catch{return{platform:{},org:{},orgs:[]};}
+  })();
+  const featureHintForRole=(roleKey,orgId)=>{
+    const ids=featuresForRole(roleKey);
+    if(!ids.length)return null;
+    const plan=(featureSnapshot.orgs.find(o=>o.id===orgId)?.plan)||"basic";
+    let enabled=0;
+    for(const id of ids){
+      if(isFeatureEnabled(featureSnapshot.platform,featureSnapshot.org,orgId,id,plan)) enabled++;
+    }
+    return{enabled,total:ids.length};
+  };
   const handleLoadDemo=()=>{
     if(loadDemoData()){
       // Q6: When demoModePermanent is OFF, mark a sessionStorage flag so the
@@ -149,13 +175,17 @@ export function LoginScreen({onLogin,dark,toggleDark}){
 
           {/* Role tiles */}
           <div className="space-y-2.5 mb-7">
-            {roles.map(r=>(
+            {roles.map(r=>{
+              const userOrgId=MOCK_USERS[r.key]?.org_id;
+              const hint=featureHintForRole(r.key,userOrgId);
+              return(
               <button key={r.key} onClick={()=>setRole(r.key)} className={`w-full text-left rounded-2xl border transition-all overflow-hidden ${role===r.key?"border-amber-600 bg-white shadow-editorial-hover":"border-stone-200 bg-white/60 hover:bg-white hover:border-stone-300"}`}>
                 <div className="flex items-center gap-4 p-4">
                   <Av i={r.ini} col={r.col}/>
                   <div className="flex-1 min-w-0">
                     <div className="font-display text-base font-semibold text-ink-900 leading-tight">{r.label}</div>
                     <div className="text-xs text-ink-500 mt-1 leading-relaxed">{r.sub}</div>
+                    {hint&&<div className="text-[10px] font-bold tracking-wider uppercase text-amber-700 mt-1.5">● {hint.enabled} of {hint.total} features enabled for this role</div>}
                   </div>
                   {role===r.key&&<div className="w-6 h-6 rounded-full bg-gradient-gold flex items-center justify-center flex-shrink-0"><Ic n="check" s={13} c="text-white"/></div>}
                 </div>
@@ -163,7 +193,7 @@ export function LoginScreen({onLogin,dark,toggleDark}){
                   {r.perms.map(p=><span key={p} className="text-[10px] font-semibold tracking-wider uppercase bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full">{p}</span>)}
                 </div></div>}
               </button>
-            ))}
+            );})}
           </div>
 
           {/* CTA */}
@@ -235,6 +265,7 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"org-templates",icon:"copy",label:"Templates",group:"org"},
     {id:"org-approvals",icon:"shield",label:"Approval chains",group:"org"},
     {id:"org-notifications",icon:"bell",label:"Notification rules",group:"org"},
+    {id:"org-features",icon:"sliders",label:"Feature toggles",group:"org"},
     {id:"org-activity",icon:"activity",label:"Audit log",group:"org"},
     // Tenant nav (visible to all roles per their PERMS.nav)
     {id:"dashboard",icon:"dashboard",label:"Dashboard"},
@@ -266,7 +297,30 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     if(id==="ar-overlay"&&ops.kioskArEnabled===false)return true;
     return false;
   };
-  const items=allItems.filter(i=>PERMS[user.role].nav.includes(i.id)&&!kioskBlocked(i.id));
+  // Session 16: feature-flag cascade — Sidebar hides nav items that the Org Admin
+  // has turned off (or the platform has killed). Org-flag map is keyed by org_id.
+  const store=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}");}catch{return{};}})();
+  const orgFlags=store.org_feature_flags||{};
+  const platformFlags=store.platform_feature_flags||{};
+  const orgs=store.orgs||[];
+  const plan=(orgs.find(o=>o.id===user?.org_id)?.plan)||"basic";
+  // Map sidebar nav-item ids → orgFeatureFlags catalog ids. The catalog is
+  // the source of truth; sidebar ids are legacy short names.
+  const NAV_FEATURE_ID={
+    "hierarchy":"hierarchy","calendar":"calendar","vendors":"vendors","po":"po",
+    "material-prices":"materialPrices","compliance":"compliance","forecast":"forecast",
+    "delegations":"delegations","snapshot":"snapshot",
+    "kiosk-labour":"kioskLabour","kiosk-site":"kioskSite","ar-overlay":"arOverlay",
+    "analytics":"analytics","activity":"activity","messages":"messages",
+    "org-templates":"orgAdminTemplates","org-approvals":"orgAdminApprovalChains",
+    "org-notifications":"orgAdminNotificationRules",
+  };
+  const featureBlocked=(id)=>{
+    const featureId=NAV_FEATURE_ID[id];
+    if(!featureId)return false; // not in catalog (essential nav like dashboard / projects)
+    return !isFeatureEnabled(platformFlags,orgFlags,user?.org_id,featureId,plan);
+  };
+  const items=allItems.filter(i=>PERMS[user.role].nav.includes(i.id)&&!kioskBlocked(i.id)&&!featureBlocked(i.id));
   const adminItems=items.filter(i=>i.group==="admin");
   const orgItems=items.filter(i=>i.group==="org");
   const tenantItems=items.filter(i=>!i.group);

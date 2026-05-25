@@ -47,6 +47,8 @@ import {
   // Production Phase 1 — Org Admin tier
   INIT_APPROVAL_CHAINS, INIT_ORG_INTEGRATIONS, INIT_TEMPLATES,
   INIT_NOTIFICATION_RULES, INIT_OPS_TOGGLES,
+  // Session 16 — feature-flag catalog overrides
+  INIT_PLATFORM_FEATURE_FLAGS, INIT_ORG_FEATURE_FLAGS,
 } from "./data/seed.js";
 import {
   EXPENSE_CATS, VENDOR_CATS, TRADES, PUNCH_TRADES, DRAW_TYPES, ROLES_LIST,
@@ -117,6 +119,7 @@ const OrgActivityView = lazy(() => import("./features/org/index.jsx").then(m => 
 const OrgTemplatesView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgTemplatesView })));
 const OrgApprovalChainsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgApprovalChainsView })));
 const OrgNotificationRulesView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgNotificationRulesView })));
+const OrgFeatureSettingsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgFeatureSettingsView })));
 
 
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
@@ -207,6 +210,9 @@ export default function App(){
   const[templates,setTemplates]=useLS("templates",INIT_TEMPLATES);
   const[notifRules,setNotifRules]=useLS("notif_rules",INIT_NOTIFICATION_RULES);
   const[opsToggles,setOpsToggles]=useLS("ops_toggles",INIT_OPS_TOGGLES);
+  // Session 16 — feature flags. Two stores: platform (superadmin) + per-org.
+  const[platformFlags,setPlatformFlags]=useLS("platform_feature_flags",INIT_PLATFORM_FEATURE_FLAGS);
+  const[orgFlags,setOrgFlags]=useLS("org_feature_flags",INIT_ORG_FEATURE_FLAGS);
   // Plan for the current user's org — falls back to "basic" if not set.
   const currentOrg=orgs.find(o=>o.id===user?.org_id);
   const activePlan=currentOrg?.plan||"basic";
@@ -297,7 +303,7 @@ export default function App(){
       case"admin-audit": return <AuditAdminView user={user} activity={activity} orgs={orgs} adminUsers={adminUsers} projects={projects}/>;
       case"admin-usage": return <UsageAdminView user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} updates={updates} issues={issues} boq={boq} ra={ra} invoices={invoices} activity={activity} drawings={drawings}/>;
       case"admin-support": return <SupportAdminView user={user} supportTickets={supportTickets} setSupportTickets={setSupportTickets} orgs={orgs} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
-      case"admin-settings": return <SettingsAdminView user={user} flags={adminFlags} setFlags={setAdminFlags} opsToggles={opsToggles} setOpsToggles={setOpsToggles} setAuditLog={setAuditLog}/>;
+      case"admin-settings": return <SettingsAdminView user={user} flags={adminFlags} setFlags={setAdminFlags} opsToggles={opsToggles} setOpsToggles={setOpsToggles} platformFlags={platformFlags} setPlatformFlags={setPlatformFlags} setAuditLog={setAuditLog}/>;
       // ── Roadmap Batch 2 views ──────────────────────────────────────────────
       case"hierarchy": return <HierarchyView user={user} projects={projects} blocks={blocks} setBlocks={setBlocks} floors={floors} setFloors={setFloors} units={units} setUnits={setUnits} setView={setView} setSP={setSP}/>;
       case"material-prices": return <MaterialPricesView user={user} plan={activePlan}/>;
@@ -320,6 +326,7 @@ export default function App(){
       case"org-templates": return <OrgTemplatesView user={user} orgs={orgs} templates={templates} setTemplates={setTemplates} projects={projects} milestones={milestones} checklists={checklists} setAuditLog={setAuditLog}/>;
       case"org-approvals": return <OrgApprovalChainsView user={user} orgs={orgs} approvalChains={approvalChains} setApprovalChains={setApprovalChains} setAuditLog={setAuditLog}/>;
       case"org-notifications": return <OrgNotificationRulesView user={user} orgs={orgs} notifRules={notifRules} setNotifRules={setNotifRules} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
+      case"org-features": return <OrgFeatureSettingsView user={user} orgs={orgs} orgFlags={orgFlags} setOrgFlags={setOrgFlags} platformFlags={platformFlags} setAuditLog={setAuditLog}/>;
       default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
     }
   };

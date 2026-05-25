@@ -185,6 +185,17 @@ const vite = read("vite.config.js");
   "cashfreeReady",
   "pending_cashfree",
   "Cashfree connected",
+  // Session 16 — feature-flag catalog system
+  "OrgFeatureSettingsView",
+  "FEATURE_CATALOG",
+  "isFeatureEnabled",
+  "case\"org-features\"",
+  "Feature toggles",
+  "Platform-wide kill switches",
+  "Feature \"",                    // recordAudit message prefix for toggle changes
+  "features enabled for this role", // LoginScreen hint
+  "INIT_PLATFORM_FEATURE_FLAGS",
+  "INIT_ORG_FEATURE_FLAGS",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -313,6 +324,9 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "scripts/supabase/05_rls_phase1_tests.sql",
   "docs/PRODUCTION_RLS.md",
   "docs/CASHFREE_ONBOARDING.md",
+  // Session 16 — Feature-flag catalog system
+  "src/lib/orgFeatureFlags.js",
+  "tests/orgFeatureFlags.test.js",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
