@@ -31,6 +31,8 @@ import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "../../l
 import { isOnline, queueOpAdd } from "../../lib/offline.js";
 import { exportPDF, exportCSV, exportDPR, buildDPRWhatsAppText } from "../../lib/exports.js";
 import { GanttView } from "../views/index.jsx";
+// Production Phase 1: audit-log helper for compliance trail.
+import { recordAudit } from "../../lib/audit.js";
 
 // ── MARKUP MODAL (canvas overlay on image attachments) ─────────────────────
 export function MarkupModal({open, imageUrl, sourceName, onClose, onSave}){
@@ -616,13 +618,25 @@ export function PunchTab({pid,pns,setPunch,user,can,addActivity,proj,tm}){
   );
 }
 
-export function RFITab({pid,rfis,setRfi,user,can,addActivity,proj}){
+export function RFITab({pid,rfis,setRfi,user,can,addActivity,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[nr,setNr]=useState({subject:"",question:"",attachments:[]});
   const[respId,setRespId]=useState(null);const[respText,setRespText]=useState("");
   const nextNo="RFI-"+String(rfis.length+1).padStart(3,"0");
-  const add=()=>{if(!nr.subject.trim())return;setRfi(p=>({...p,[pid]:[{id:"rfi_"+Date.now(),no:nextNo,...nr,from:user.name,to:"Architect",status:"open",created:new Date().toISOString().split("T")[0],response:""},...(p[pid]||[])]}));addActivity(pid,proj.name,"general","Raised RFI",nr.subject,user.name,user.role);setNr({subject:"",question:"",attachments:[]});setShow(false);};
-  const respond=id=>{setRfi(p=>({...p,[pid]:p[pid].map(r=>r.id===id?{...r,response:respText,status:"answered",responded:new Date().toISOString().split("T")[0]}:r)}));setRespId(null);setRespText("");};
+  const add=()=>{
+    if(!nr.subject.trim())return;
+    const id="rfi_"+Date.now();
+    setRfi(p=>({...p,[pid]:[{id,no:nextNo,...nr,from:user.name,to:"Architect",status:"open",created:new Date().toISOString().split("T")[0],response:""},...(p[pid]||[])]}));
+    addActivity(pid,proj.name,"general","Raised RFI",nr.subject,user.name,user.role);
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"rfi",resource_id:id,project_id:pid,message:`Raised ${nextNo}: ${nr.subject}`}));
+    setNr({subject:"",question:"",attachments:[]});setShow(false);
+  };
+  const respond=id=>{
+    const r=rfis.find(x=>x.id===id);
+    setRfi(p=>({...p,[pid]:p[pid].map(r=>r.id===id?{...r,response:respText,status:"answered",responded:new Date().toISOString().split("T")[0]}:r)}));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"APPROVE",resource:"rfi",resource_id:id,project_id:pid,before:{status:r?.status},after:{status:"answered"},message:`Answered RFI ${r?.no||id}: ${respText.slice(0,80)}`}));
+    setRespId(null);setRespText("");
+  };
   return(
     <div>
       <div className="flex items-center justify-between mb-5"><div><h2 className="font-bold text-slate-800">RFI - Request for Information</h2><p className="text-xs text-slate-400 mt-0.5">{rfis.filter(r=>r.status==="open").length} open · {rfis.filter(r=>r.status==="answered").length} answered</p></div>{user.role==="pm"&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>Raise RFI</button>}</div>
@@ -643,14 +657,21 @@ export function RFITab({pid,rfis,setRfi,user,can,addActivity,proj}){
   );
 }
 
-export function COTab({pid,cos,setCo,user,can,addActivity,proj}){
+export function COTab({pid,cos,setCo,user,can,addActivity,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[nc,setNc]=useState({title:"",reason:"",cost_impact:"",time_impact:"",attachments:[]});
   const[signFor,setSignFor]=useState(null);   // co.id being signed
   const[signTyped,setSignTyped]=useState("");
   const[signAccepted,setSignAccepted]=useState(false);
   const nextNo="CO-"+String(cos.length+1).padStart(3,"0");
-  const add=()=>{if(!nc.title.trim())return;setCo(p=>({...p,[pid]:[{id:"co_"+Date.now(),no:nextNo,...nc,cost_impact:+nc.cost_impact||0,time_impact:+nc.time_impact||0,status:"pending_approval",created:new Date().toISOString().split("T")[0],created_by:user.name},...(p[pid]||[])]}));addActivity(pid,proj.name,"general","Created change order",nc.title,user.name,user.role);setNc({title:"",reason:"",cost_impact:"",time_impact:"",attachments:[]});setShow(false);};
+  const add=()=>{
+    if(!nc.title.trim())return;
+    const id="co_"+Date.now();
+    setCo(p=>({...p,[pid]:[{id,no:nextNo,...nc,cost_impact:+nc.cost_impact||0,time_impact:+nc.time_impact||0,status:"pending_approval",created:new Date().toISOString().split("T")[0],created_by:user.name},...(p[pid]||[])]}));
+    addActivity(pid,proj.name,"general","Created change order",nc.title,user.name,user.role);
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"change_order",resource_id:id,project_id:pid,after:{cost_impact:+nc.cost_impact||0,time_impact:+nc.time_impact||0},message:`Created ${nextNo}: ${nc.title} (₹${(+nc.cost_impact||0).toLocaleString("en-IN")})`}));
+    setNc({title:"",reason:"",cost_impact:"",time_impact:"",attachments:[]});setShow(false);
+  };
   const openSign=(coId,decision)=>{setSignFor({id:coId,decision});setSignTyped("");setSignAccepted(false);};
   const confirmSign=()=>{
     if(!signTyped.trim()){alert("Please type your full name to sign.");return;}
@@ -669,8 +690,11 @@ export function COTab({pid,cos,setCo,user,can,addActivity,proj}){
       user_agent:navigator.userAgent.slice(0,140),
       consent:"I, the named signatory, accept the cost and time impact of this change order on behalf of the client.",
     };
+    const co=cos.find(c=>c.id===signFor.id);
     setCo(p=>({...p,[pid]:p[pid].map(c=>c.id===signFor.id?{...c,status:signFor.decision,approved_date:new Date().toISOString().split("T")[0],signature}:c)}));
     addActivity(pid,proj.name,"general",`Client ${signFor.decision} change order with e-signature`,`${signTyped.trim()} · ${cos.find(c=>c.id===signFor.id)?.title||""}`,user.name,user.role);
+    // Compliance-critical: signed approval/rejection of a financial change.
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:signFor.decision==="approved"?"APPROVE":"REJECT",resource:"change_order",resource_id:signFor.id,project_id:pid,before:{status:co?.status},after:{status:signFor.decision,signature:{name:signature.name,signed_at:signature.signed_at}},message:`${signFor.decision==="approved"?"E-signed approve":"E-signed reject"} ${co?.no||signFor.id}: ${co?.title||""} (₹${(co?.cost_impact||0).toLocaleString("en-IN")})`}));
     setSignFor(null);setSignTyped("");setSignAccepted(false);
   };
   const totApproved=cos.filter(c=>c.status==="approved").reduce((s,c)=>s+c.cost_impact,0);
@@ -779,12 +803,16 @@ export function SafetyTab({pid,sfs,setSafety,user,can,addActivity,proj}){
   );
 }
 
-export function ProjectPOTab({pid,projPOs,setPos,vendors,user,can,proj}){
+export function ProjectPOTab({pid,projPOs,setPos,vendors,user,can,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[np,setNp]=useState({vendor_id:vendors[0]?.id||"",items:"",amount:"",gst:18,delivery:"",attachments:[]});
   const nextNo="PO-"+String(projPOs.length+1).padStart(3,"0");
   const add=()=>{if(!np.items.trim()||!np.amount)return;setPos(p=>({...p,[pid]:[{id:"po_"+Date.now(),no:nextNo,...np,amount:+np.amount,gst:+np.gst,status:"pending",created:new Date().toISOString().split("T")[0]},...(p[pid]||[])]}));setNp({vendor_id:vendors[0]?.id||"",items:"",amount:"",gst:18,delivery:"",attachments:[]});setShow(false);};
-  const approve=id=>setPos(p=>({...p,[pid]:p[pid].map(po=>po.id===id?{...po,status:"approved"}:po)}));
+  const approve=id=>{
+    const po=(pos||[]).find(x=>x.id===id);
+    setPos(p=>({...p,[pid]:p[pid].map(po=>po.id===id?{...po,status:"approved"}:po)}));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"APPROVE",resource:"po",resource_id:id,project_id:pid,before:{status:"pending"},after:{status:"approved"},message:`Approved ${po?.no||id} (₹${(po?.amount||0).toLocaleString("en-IN")})`}));
+  };
   const total=projPOs.reduce((s,po)=>s+po.amount*(1+po.gst/100),0);
   return(
     <div>
@@ -878,7 +906,7 @@ export function LabourTab({pid,lbs,setLabour,user,can,proj}){
   );
 }
 
-export function RABillsTab({pid,ras,setRa,user,can,proj}){
+export function RABillsTab({pid,ras,setRa,user,can,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[expandedMB,setExpandedMB]=useState(null);   // ra.id of bill whose MB is expanded
   const[mbDraft,setMbDraft]=useState({location:"",item:"",unit:"cum",qty:"",rate:""});
@@ -892,7 +920,11 @@ export function RABillsTab({pid,ras,setRa,user,can,proj}){
     setRa(p=>({...p,[pid]:[{id:"ra_"+Date.now(),no:nextNo,...nr,bill_amount:bill,cumulative:newCum,retention_pct:+nr.retention_pct,paid_amount:0,status:"submitted",bill_date:new Date().toISOString().split("T")[0],mb:nr.mb||[]},...(p[pid]||[])]}));
     setNr({subcontractor:"",scope:"",bill_amount:"",retention_pct:5,attachments:[],mb:[]});setShow(false);
   };
-  const pay=id=>setRa(p=>({...p,[pid]:p[pid].map(r=>r.id===id?{...r,status:"paid",paid_amount:r.bill_amount*(1-r.retention_pct/100)}:r)}));
+  const pay=id=>{
+    const r=ras.find(x=>x.id===id);
+    setRa(p=>({...p,[pid]:p[pid].map(r=>r.id===id?{...r,status:"paid",paid_amount:r.bill_amount*(1-r.retention_pct/100)}:r)}));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"PAYMENT",resource:"ra_bill",resource_id:id,project_id:pid,before:{status:r?.status},after:{status:"paid",paid_amount:(r?.bill_amount||0)*(1-(r?.retention_pct||0)/100)},message:`Paid ${r?.no||id}: ${r?.subcontractor||""} (₹${((r?.bill_amount||0)*(1-(r?.retention_pct||0)/100)).toLocaleString("en-IN")})`}));
+  };
   const addMB=raId=>{
     if(!mbDraft.location.trim()||!mbDraft.item.trim()||!mbDraft.qty||!mbDraft.rate){alert("Location, item, qty, and rate are all required.");return;}
     const q=+mbDraft.qty,r=+mbDraft.rate;
@@ -1312,7 +1344,7 @@ export function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
 // Issues, Materials, Team, Attendance, Budget) and imported sub-tab
 // components from this same module (FieldOpsTab, ApprovalsTab, MapTab, etc.).
 // ─────────────────────────────────────────────────────────────────────────────
-export function DetailView({pid,user,setView,projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang}){
+export function DetailView({pid,user,setView,projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang,setAuditLog,approvalChains}){
   const proj=projects.find(p=>p.id===pid);
   const ms=milestones[pid]||[], us=updates[pid]||[], ex=expenses[pid]||[];
   const tm=teams[pid]||[], att=attendance[pid]||{};
@@ -1357,6 +1389,7 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
     const ns=cy[m.status];
     setMilestones(p=>({...p,[pid]:p[pid].map(x=>x.id===mid?{...x,status:ns,completed_date:ns==="completed"?new Date().toISOString().split("T")[0]:null}:x)}));
     addActivity(pid,proj.name,"milestone",`Milestone status changed`,`${m.title} → ${ns.replace("_"," ")}`,user.name,user.role);
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"milestone",resource_id:mid,project_id:pid,before:{status:m.status},after:{status:ns},message:`Milestone "${m.title}" → ${ns.replace("_"," ")}`}));
   };
   const phUp=e=>{
     const files=Array.from(e.target.files);
@@ -1393,7 +1426,11 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
     setExpenses(p=>({...p,[pid]:[{id:"ex_"+Date.now(),date:ne.date||new Date().toISOString().split("T")[0],category:ne.cat,description:ne.desc,amount:parseFloat(ne.amt),gst:+ne.gst||0,tds:+ne.tds||0,attachments:ne.attachments||[]},...(p[pid]||[])]}));
     setNe({date:"",cat:"Materials",desc:"",amt:"",gst:18,tds:0,attachments:[]});setShowEx(false);
   };
-  const delEx=id=>setExpenses(p=>({...p,[pid]:p[pid].filter(e=>e.id!==id)}));
+  const delEx=id=>{
+    const e=(expenses[pid]||[]).find(x=>x.id===id);
+    setExpenses(p=>({...p,[pid]:p[pid].filter(e=>e.id!==id)}));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"DELETE",resource:"expense",resource_id:id,project_id:pid,before:{amount:e?.amount,category:e?.category},message:`Deleted expense: ${e?.description||id} (₹${(e?.amount||0).toLocaleString("en-IN")})`}));
+  };
   const addMember=()=>{
     if(!nm.name.trim())return;
     setTeams(p=>({...p,[pid]:[...(p[pid]||[]),{id:"t_"+Date.now(),...nm,status:"active"}]}));
@@ -1463,10 +1500,17 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
     // to wipe every blank drawing under one collision key.
     setDrawings(p=>({...p,[pid]:[d,...(p[pid]||[]).map(x=>key&&drawingKey(x)===key&&x.status==="current"?{...x,status:"superseded",superseded_by:d.id}:x)]}));
     addActivity(pid,proj.name,"drawing",`Released drawing to ${ndraw.released_to.map(r=>r==="pm"?"PM":"Client").join(" & ")}`,`${ndraw.title} (${ndraw.revision}) · ${(ndraw.files||[]).length} file(s)`,user.name,user.role);
+    // Compliance-critical: drawings released to client/PM bind contractor work.
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"RELEASE",resource:"drawing",resource_id:d.id,project_id:pid,after:{title:d.title,type:d.type,revision:d.revision,released_to:d.released_to},message:`Released "${d.title}" (${d.revision}) to ${d.released_to.join(", ")}`}));
     setNdraw({title:"",type:"Architectural",revision:"Rev A",notes:"",released_to:["pm"],files:[]});setShowDrawing(false);
   };
   const toggleRelease=(id,role)=>{
+    const d=(drawings[pid]||[]).find(x=>x.id===id);
     setDrawings(p=>({...p,[pid]:p[pid].map(d=>d.id===id?{...d,released_to:d.released_to.includes(role)?d.released_to.filter(r=>r!==role):[...d.released_to,role]}:d)}));
+    if(d){
+      const adding=!d.released_to.includes(role);
+      setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"drawing",resource_id:id,project_id:pid,message:`${adding?"Granted":"Revoked"} ${role} access to "${d.title}" (${d.revision})`}));
+    }
   };
   const setDrawingStatus=(id,nextStatus)=>{
     setDrawings(p=>{
@@ -1860,10 +1904,10 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
       {tab==="punchlist"&&<PunchTab pid={pid} pns={pns} setPunch={setPunch} user={user} can={can} addActivity={addActivity} proj={proj} tm={tm}/>}
 
       {/* ── RFI ── */}
-      {tab==="rfi"&&<RFITab pid={pid} rfis={rfis} setRfi={setRfi} user={user} can={can} addActivity={addActivity} proj={proj}/>}
+      {tab==="rfi"&&<RFITab pid={pid} rfis={rfis} setRfi={setRfi} user={user} can={can} addActivity={addActivity} proj={proj} setAuditLog={setAuditLog}/>}
 
       {/* ── CHANGE ORDERS ── */}
-      {tab==="changeorders"&&<COTab pid={pid} cos={cos} setCo={setCo} user={user} can={can} addActivity={addActivity} proj={proj}/>}
+      {tab==="changeorders"&&<COTab pid={pid} cos={cos} setCo={setCo} user={user} can={can} addActivity={addActivity} proj={proj} setAuditLog={setAuditLog}/>}
       {tab==="fieldops"&&<FieldOpsTab pid={pid} user={user} can={can} proj={proj} equipment={eqs} setEquipment={setEquipment} diary={dys} setDiary={setDiary} worklogs={wls} setWorklogs={setWorklogs} checklists={cls} setChecklists={setChecklists} addActivity={addActivity}/>}
       {tab==="approvals"&&<ApprovalsTab pid={pid} user={user} proj={proj} submittals={subs} setSubmittals={setSubmittals} permits={prs} setPermits={setPermits} addActivity={addActivity}/>}
 
@@ -1874,7 +1918,7 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
       {tab==="safety"&&<SafetyTab pid={pid} sfs={sfs} setSafety={setSafety} user={user} can={can} addActivity={addActivity} proj={proj}/>}
 
       {/* ── PO (per-project) ── */}
-      {tab==="po"&&<ProjectPOTab pid={pid} projPOs={projPOs} setPos={setPos} vendors={vendors} user={user} can={can} proj={proj}/>}
+      {tab==="po"&&<ProjectPOTab pid={pid} projPOs={projPOs} setPos={setPos} vendors={vendors} user={user} can={can} proj={proj} setAuditLog={setAuditLog}/>}
 
       {/* ── INVOICES ── */}
       {tab==="invoices"&&<InvoicesTab pid={pid} invs={invs} ms={ms} setInvoices={setInvoices} user={user} can={can} proj={proj}/>}
@@ -1883,7 +1927,7 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
       {tab==="labour"&&<LabourTab pid={pid} lbs={lbs} setLabour={setLabour} user={user} can={can} proj={proj}/>}
 
       {/* ── RA BILLS ── */}
-      {tab==="rabills"&&<RABillsTab pid={pid} ras={ras} setRa={setRa} user={user} can={can} proj={proj}/>}
+      {tab==="rabills"&&<RABillsTab pid={pid} ras={ras} setRa={setRa} user={user} can={can} proj={proj} setAuditLog={setAuditLog}/>}
       {tab==="map"&&<MapTab project={proj} teams={tm} materials={mats} equipment={eqs} issues={iss}/>}
       {tab==="ai"&&<AIInsightsTab project={proj} milestones={ms} issues={iss} tasks={tks} rfis={rfis} submittals={subs} permits={prs} safety={sfs} expenses={ex} worklogs={wls}/>}
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, lazy, Suspense } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import {
   PERMS,
@@ -44,6 +44,9 @@ import {
   INIT_BLOCKS, INIT_FLOORS, INIT_UNITS, INIT_BRANDING, INIT_AUDIT_LOG,
   INIT_DELEGATIONS, INIT_DAILY_SNAPSHOTS, INIT_MATERIAL_PRICES, INIT_COMPLIANCE,
   INIT_FORECAST,
+  // Production Phase 1 — Org Admin tier
+  INIT_APPROVAL_CHAINS, INIT_ORG_INTEGRATIONS, INIT_TEMPLATES,
+  INIT_NOTIFICATION_RULES, INIT_OPS_TOGGLES,
 } from "./data/seed.js";
 import {
   EXPENSE_CATS, VENDOR_CATS, TRADES, PUNCH_TRADES, DRAW_TYPES, ROLES_LIST,
@@ -98,16 +101,22 @@ import {
 } from "./features/roadmap/index.jsx";
 
 // DetailView extracted to features/detail/ in Batch 11 (the final refactor).
-import { DetailView } from "./features/detail/index.jsx";
+// Production Phase 1 (Q5d): the detail chunk pulls in Recharts (~600 kB) via
+// GanttView. Lazy-load it so the dashboard cold path doesn't pay that cost —
+// it only loads when a user opens a project. Smoke + sub-tab markers still
+// resolve because Vite chunks the whole file together.
+const DetailView = lazy(() => import("./features/detail/index.jsx").then(m => ({ default: m.DetailView })));
 
-// 17 sub-tabs extracted to src/features/detail/index.jsx in Batch 9.
-// DetailView (still inline above) imports these by name.
-import {
-  FieldOpsTab, ApprovalsTab, MapTab, AIInsightsTab,
-  TasksTab, PunchTab, RFITab, COTab,
-  InspectionsTab, SafetyTab, ProjectPOTab, InvoicesTab,
-  LabourTab, RABillsTab, BOQTab, EstimateTab, LedgerTab,
-} from "./features/detail/index.jsx";
+// Org Admin tier (Production Phase 1) — 8 panels for the orgadmin role.
+// Lazy because most users (architect/pm/contractor/client/superadmin) never open these.
+const OrgAdminDashboard = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgAdminDashboard })));
+const OrgMembersView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgMembersView })));
+const OrgBillingView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgBillingView })));
+const OrgIntegrationsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgIntegrationsView })));
+const OrgActivityView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgActivityView })));
+const OrgTemplatesView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgTemplatesView })));
+const OrgApprovalChainsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgApprovalChainsView })));
+const OrgNotificationRulesView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgNotificationRulesView })));
 
 
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
@@ -192,6 +201,12 @@ export default function App(){
   const[materialPrices,setMaterialPrices]=useLS("material_prices",INIT_MATERIAL_PRICES);
   const[compliance,setCompliance]=useLS("compliance",INIT_COMPLIANCE);
   const[forecast,setForecast]=useLS("forecast",INIT_FORECAST);
+  // ── Production Phase 1 — Org Admin tier state ────────────────────────────
+  const[approvalChains,setApprovalChains]=useLS("approval_chains",INIT_APPROVAL_CHAINS);
+  const[orgIntegrations,setOrgIntegrations]=useLS("org_integrations",INIT_ORG_INTEGRATIONS);
+  const[templates,setTemplates]=useLS("templates",INIT_TEMPLATES);
+  const[notifRules,setNotifRules]=useLS("notif_rules",INIT_NOTIFICATION_RULES);
+  const[opsToggles,setOpsToggles]=useLS("ops_toggles",INIT_OPS_TOGGLES);
   // Plan for the current user's org — falls back to "basic" if not set.
   const currentOrg=orgs.find(o=>o.id===user?.org_id);
   const activePlan=currentOrg?.plan||"basic";
@@ -256,7 +271,9 @@ export default function App(){
   const selectedProject=projects.find(p=>p.id===sp);
   const effectiveView=(canOpenView(user,view) && (view!=="detail" || !selectedProject || canAccessProject(user,selectedProject))) ? view : fallbackViewForUser(user);
   const dp={projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,
-    tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang};
+    tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang,
+    // Production Phase 1: audit log + approval chains threaded into detail tabs
+    setAuditLog,approvalChains};
 
   const renderView=()=>{
     switch(effectiveView){
@@ -274,13 +291,13 @@ export default function App(){
       case"vendors": return <VendorsView user={user} vendors={vendors} setVendors={setVendors}/>;
       case"po": return <POsView user={user} projects={projects} pos={pos} vendors={vendors} setView={setView} setSP={setSP}/>;
       case"admin-dashboard": return <SuperAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView}/>;
-      case"admin-orgs": return <OrgsAdminView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects}/>;
-      case"admin-users": return <UsersAdminView user={user} adminUsers={adminUsers} setAdminUsers={setAdminUsers} orgs={orgs} onImpersonate={startImpersonate}/>;
+      case"admin-orgs": return <OrgsAdminView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects} setAuditLog={setAuditLog}/>;
+      case"admin-users": return <UsersAdminView user={user} adminUsers={adminUsers} setAdminUsers={setAdminUsers} orgs={orgs} onImpersonate={startImpersonate} setAuditLog={setAuditLog}/>;
       case"admin-billing": return <BillingAdminView user={user} orgs={orgs} setOrgs={setOrgs}/>;
       case"admin-audit": return <AuditAdminView user={user} activity={activity} orgs={orgs} adminUsers={adminUsers} projects={projects}/>;
       case"admin-usage": return <UsageAdminView user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} updates={updates} issues={issues} boq={boq} ra={ra} invoices={invoices} activity={activity} drawings={drawings}/>;
-      case"admin-support": return <SupportAdminView user={user} supportTickets={supportTickets} setSupportTickets={setSupportTickets} orgs={orgs} adminUsers={adminUsers}/>;
-      case"admin-settings": return <SettingsAdminView user={user} flags={adminFlags} setFlags={setAdminFlags}/>;
+      case"admin-support": return <SupportAdminView user={user} supportTickets={supportTickets} setSupportTickets={setSupportTickets} orgs={orgs} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
+      case"admin-settings": return <SettingsAdminView user={user} flags={adminFlags} setFlags={setAdminFlags} opsToggles={opsToggles} setOpsToggles={setOpsToggles} setAuditLog={setAuditLog}/>;
       // ── Roadmap Batch 2 views ──────────────────────────────────────────────
       case"hierarchy": return <HierarchyView user={user} projects={projects} blocks={blocks} setBlocks={setBlocks} floors={floors} setFloors={setFloors} units={units} setUnits={setUnits} setView={setView} setSP={setSP}/>;
       case"material-prices": return <MaterialPricesView user={user} plan={activePlan}/>;
@@ -294,6 +311,15 @@ export default function App(){
       case"kiosk-site": return <SiteWallKioskView user={user} projects={projects} updates={updates} issues={issues} labour={labour} milestones={milestones} setView={setView}/>;
       case"ar-overlay": return <ARDrawingOverlayView user={user} projects={projects} drawings={drawings} plan={activePlan}/>;
       case"snapshot": return <DailySnapshotPanelView user={user} projects={projects} boq={boq} ra={ra} ledger={ledger} updates={updates} labour={labour} issues={issues} dailySnapshots={dailySnapshots} setDailySnapshots={setDailySnapshots} setAuditLog={setAuditLog}/>;
+      // ── Production Phase 1: Org Admin tier ────────────────────────────────
+      case"org-dashboard": return <OrgAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView} orgIntegrations={orgIntegrations} templates={templates} approvalChains={approvalChains}/>;
+      case"org-members": return <OrgMembersView user={user} orgs={orgs} adminUsers={adminUsers} setAdminUsers={setAdminUsers} setAuditLog={setAuditLog}/>;
+      case"org-billing": return <OrgBillingView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects} setAuditLog={setAuditLog}/>;
+      case"org-integrations": return <OrgIntegrationsView user={user} orgs={orgs} orgIntegrations={orgIntegrations} setOrgIntegrations={setOrgIntegrations} setAuditLog={setAuditLog}/>;
+      case"org-activity": return <OrgActivityView user={user} orgs={orgs} auditLog={auditLog} projects={projects} adminUsers={adminUsers}/>;
+      case"org-templates": return <OrgTemplatesView user={user} orgs={orgs} templates={templates} setTemplates={setTemplates} projects={projects} milestones={milestones} checklists={checklists} setAuditLog={setAuditLog}/>;
+      case"org-approvals": return <OrgApprovalChainsView user={user} orgs={orgs} approvalChains={approvalChains} setApprovalChains={setApprovalChains} setAuditLog={setAuditLog}/>;
+      case"org-notifications": return <OrgNotificationRulesView user={user} orgs={orgs} notifRules={notifRules} setNotifRules={setNotifRules} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
       default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
     }
   };
@@ -326,7 +352,9 @@ export default function App(){
             <button onClick={()=>setDark(p=>!p)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider transition-all ${dark?"bg-ink-900 text-amber-500":"bg-cream-200 text-ink-700 hover:bg-cream-100"}`}><Ic n={dark?"sun2":"moon"} s={13}/>{dark?t(lang,"lightMode"):t(lang,"darkMode")}</button>
           </div>
         </div>
-        <main className="flex-1 overflow-y-auto">{renderView()}</main>
+        <main className="flex-1 overflow-y-auto">
+          <Suspense fallback={<div className="p-10 text-center text-ink-500"><div className="inline-block w-8 h-8 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin" /><div className="text-xs font-bold tracking-wider uppercase mt-3 text-ink-500">Loading…</div></div>}>{renderView()}</Suspense>
+        </main>
       </div>
     </div>
   );

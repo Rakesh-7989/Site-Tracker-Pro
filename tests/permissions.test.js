@@ -10,13 +10,15 @@ import {
   drawingKey,
   isReleasedCurrentDrawing,
   isSuperAdmin,
+  isOrgAdmin,
 } from "../src/lib/permissions.js";
 
-const arch = { id: "u1", name: "Arjun", email: "a@buildco.in", role: "architect" };
-const pm = { id: "u2", name: "Priya", email: "p@buildco.in", role: "pm" };
-const con = { id: "u3", name: "Karthik", email: "k@karthikbuilders.in", role: "contractor" };
-const cli = { id: "u4", name: "Vikram", email: "vikram@client.in", role: "client" };
+const arch = { id: "u1", name: "Arjun", email: "a@buildco.in", role: "architect", org_id: "org1" };
+const pm = { id: "u2", name: "Priya", email: "p@buildco.in", role: "pm", org_id: "org1" };
+const con = { id: "u3", name: "Karthik", email: "k@karthikbuilders.in", role: "contractor", org_id: "org1" };
+const cli = { id: "u4", name: "Vikram", email: "vikram@client.in", role: "client", org_id: "org1" };
 const sup = { id: "u100", name: "Rakesh", email: "admin@sitetrack.in", role: "superadmin" };
+const orgA = { id: "u200", name: "Owner", email: "owner@buildco.in", role: "orgadmin", org_id: "org1" };
 
 const project = (overrides = {}) => ({
   id: "p1",
@@ -26,8 +28,8 @@ const project = (overrides = {}) => ({
 });
 
 describe("PERMS shape", () => {
-  it("defines all five roles including superadmin", () => {
-    expect(Object.keys(PERMS).sort()).toEqual(["architect", "client", "contractor", "pm", "superadmin"]);
+  it("defines all six roles including superadmin and orgadmin", () => {
+    expect(Object.keys(PERMS).sort()).toEqual(["architect", "client", "contractor", "orgadmin", "pm", "superadmin"]);
   });
 
   it("superadmin has admin-only capabilities", () => {
@@ -36,12 +38,31 @@ describe("PERMS shape", () => {
     );
   });
 
-  it("non-superadmin roles do not have admin capabilities", () => {
+  it("orgadmin has org-scoped admin capabilities but NOT cross-tenant ones", () => {
+    ["manageOrgMembers", "manageOrgBilling", "manageOrgIntegrations",
+     "manageOrgTemplates", "manageApprovalChains", "manageNotificationRules"].forEach(p =>
+      expect(PERMS.orgadmin[p]).toBe(true)
+    );
+    // orgadmin must NOT have cross-tenant capabilities — that's superadmin only
+    ["manageOrgs", "impersonate"].forEach(p =>
+      expect(PERMS.orgadmin[p]).toBeFalsy()
+    );
+  });
+
+  it("non-admin roles do not have admin capabilities", () => {
     ["architect", "pm", "contractor", "client"].forEach(role => {
-      ["manageUsers", "manageOrgs", "manageBilling", "manageSettings", "impersonate"].forEach(p =>
+      ["manageUsers", "manageOrgs", "manageBilling", "manageSettings", "impersonate",
+       "manageOrgMembers", "manageApprovalChains"].forEach(p =>
         expect(PERMS[role][p]).toBeFalsy()
       );
     });
+  });
+
+  it("orgadmin nav includes the 8 org-* views", () => {
+    ["org-dashboard", "org-members", "org-billing", "org-integrations",
+     "org-activity", "org-templates", "org-approvals", "org-notifications"].forEach(view =>
+      expect(PERMS.orgadmin.nav.includes(view)).toBe(true)
+    );
   });
 
   it("superadmin nav has the 5 admin-only items", () => {
@@ -115,8 +136,55 @@ describe("isSuperAdmin", () => {
     expect(isSuperAdmin(pm)).toBe(false);
     expect(isSuperAdmin(con)).toBe(false);
     expect(isSuperAdmin(cli)).toBe(false);
+    expect(isSuperAdmin(orgA)).toBe(false);
     expect(isSuperAdmin(null)).toBe(false);
     expect(isSuperAdmin(undefined)).toBe(false);
+  });
+});
+
+describe("isOrgAdmin", () => {
+  it("returns true only for role=orgadmin", () => {
+    expect(isOrgAdmin(orgA)).toBe(true);
+    expect(isOrgAdmin(sup)).toBe(false);
+    expect(isOrgAdmin(arch)).toBe(false);
+    expect(isOrgAdmin(pm)).toBe(false);
+    expect(isOrgAdmin(null)).toBe(false);
+  });
+});
+
+describe("orgadmin tenancy scoping", () => {
+  it("visibleProjectsForUser filters out other-org projects for orgadmin", () => {
+    const ps = [
+      { id: "p1", org_id: "org1" },
+      { id: "p2", org_id: "org2" },
+      { id: "p3" }, // no org_id — defaults to belong to the org
+    ];
+    const visible = visibleProjectsForUser(ps, orgA);
+    expect(visible.map(p => p.id).sort()).toEqual(["p1", "p3"]);
+  });
+  it("canAccessProject blocks orgadmin from another org's project", () => {
+    expect(canAccessProject(orgA, { id: "p1", org_id: "org1" })).toBe(true);
+    expect(canAccessProject(orgA, { id: "p2", org_id: "org2" })).toBe(false);
+    expect(canAccessProject(orgA, { id: "p3" })).toBe(true); // missing org_id is treated as own
+  });
+  it("fallbackViewForUser sends orgadmin to org-dashboard", () => {
+    expect(fallbackViewForUser(orgA)).toBe("org-dashboard");
+  });
+  it("canOpenView lets orgadmin into org-* views", () => {
+    ["org-dashboard", "org-members", "org-billing", "org-integrations",
+     "org-templates", "org-approvals", "org-notifications", "org-activity"].forEach(view =>
+      expect(canOpenView(orgA, view)).toBe(true)
+    );
+  });
+  it("canOpenView blocks non-orgadmin from org-* views", () => {
+    [arch, pm, con, cli].forEach(u => {
+      ["org-dashboard", "org-members", "org-billing"].forEach(view =>
+        expect(canOpenView(u, view)).toBe(false)
+      );
+    });
+  });
+  it("canUseQuickCapture includes orgadmin", () => {
+    expect(canUseQuickCapture(orgA)).toBe(true);
   });
 });
 

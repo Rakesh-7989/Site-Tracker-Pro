@@ -90,3 +90,32 @@ export const INIT_COMPLIANCE  = {};
 // AI cost-forecaster cache (so the predictions persist across reloads).
 // shape: { [project_id]: { generated_at, summary, overrun_amount, confidence } }
 export const INIT_FORECAST    = {};
+
+// ── Production Phase 1 — Org Admin tier ──────────────────────────────────────
+// Configurable approval chains per org per resource type.
+// shape: { [org_id]: { expense: chain, po: chain, ra_bill: chain, ... } }
+export const INIT_APPROVAL_CHAINS = {};
+
+// Org-level integration credentials (replaces per-user localStorage).
+// shape: { [org_id]: { ai, razorpay, whatsapp, cashfree } }
+export const INIT_ORG_INTEGRATIONS = {};
+
+// Reusable templates per org per kind.
+// shape: { [org_id]: { project: Template[], boq: Template[], checklist: Template[] } }
+export const INIT_TEMPLATES = {};
+
+// Notification rules per org.
+// shape: { [org_id]: NotifRule[] }
+// rule: { id, trigger, channel, recipients: user_id[], created, enabled }
+export const INIT_NOTIFICATION_RULES = {};
+
+// Admin feature toggles (Q6 demo / Q7 kiosk modes — set by superadmin / orgadmin).
+// shape: object of bool flags; lives next to adminFlags in App.jsx.
+export const INIT_OPS_TOGGLES = {
+  demoLoaderEnabled: true,        // Q6 — show "Load demo data" button on login
+  demoModePermanent: false,       // Q6 — true = data persists in localStorage; false = session-only
+  kioskLabourEnabled: true,       // Q7 — Labour Attendance Kiosk in nav
+  kioskSiteEnabled: true,         // Q7 — Site Wall Kiosk in nav
+  kioskArEnabled: true,           // Q7 — AR Drawing Overlay in nav
+  tenantOnboardingMode: "guided", // Q8 — guided | minimal | enterprise (configurable)
+};

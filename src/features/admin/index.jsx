@@ -24,6 +24,8 @@ import { PLAN_META } from "../../data/seed.js";
 import { getProviderConfig } from "../../lib/ai.js";
 import { getRazorpayConfig } from "../../lib/razorpay.js";
 import { isSupabaseEnabled, migrateLocalToBackend } from "../../lib/supabase.js";
+// Production Phase 1: audit log thread-through.
+import { recordAudit } from "../../lib/audit.js";
 
 export function SuperAdminDashboard({user,orgs,adminUsers,projects,issues,activity,setView}){
   const totalMRR=orgs.filter(o=>o.status==="active").reduce((s,o)=>s+(o.mrr||0),0);
@@ -155,7 +157,7 @@ export function SuperAdminDashboard({user,orgs,adminUsers,projects,issues,activi
   );
 }
 
-export function OrgsAdminView({orgs,setOrgs,adminUsers,projects}){
+export function OrgsAdminView({user,orgs,setOrgs,adminUsers,projects,setAuditLog}){
   const[show,setShow]=useState(false);
   const[no,setNo]=useState({name:"",slug:"",plan:"basic",contact_email:"",city:"",status:"trial"});
   const[filter,setFilter]=useState("all");
@@ -165,7 +167,11 @@ export function OrgsAdminView({orgs,setOrgs,adminUsers,projects}){
     setOrgs(p=>[...p,{id:"org_"+Date.now(),...no,name:no.name.trim(),slug:no.slug.trim()||no.name.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-"),mrr:PLAN_META[no.plan].price,users_count:0,projects_count:0,created:new Date().toISOString().split("T")[0],trial_ends}]);
     setNo({name:"",slug:"",plan:"basic",contact_email:"",city:"",status:"trial"});setShow(false);
   };
-  const changePlan=(orgId,plan)=>setOrgs(p=>p.map(o=>o.id===orgId?{...o,plan,mrr:PLAN_META[plan].price}:o));
+  const changePlan=(orgId,plan)=>{
+    const o=orgs.find(x=>x.id===orgId);
+    setOrgs(p=>p.map(o=>o.id===orgId?{...o,plan,mrr:PLAN_META[plan].price}:o));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"subscription",resource_id:orgId,org_id:orgId,before:{plan:o?.plan},after:{plan,mrr:PLAN_META[plan].price},message:`Plan changed for ${o?.name||orgId}: ${o?.plan} → ${plan}`}));
+  };
   const toggleStatus=(orgId)=>{
     const o=orgs.find(x=>x.id===orgId);if(!o)return;
     const next=o.status==="active"?"suspended":"active";
@@ -252,7 +258,7 @@ export function OrgsAdminView({orgs,setOrgs,adminUsers,projects}){
   );
 }
 
-export function UsersAdminView({adminUsers,setAdminUsers,orgs,onImpersonate}){
+export function UsersAdminView({user,adminUsers,setAdminUsers,orgs,onImpersonate,setAuditLog}){
   const[show,setShow]=useState(false);
   const[nu,setNu]=useState({name:"",email:"",role:"pm",org_id:orgs[0]?.id||""});
   const[q,setQ]=useState("");
@@ -269,7 +275,11 @@ export function UsersAdminView({adminUsers,setAdminUsers,orgs,onImpersonate}){
     setAdminUsers(p=>[...p,{id:"u_"+Date.now(),...nu,name:nu.name.trim(),email:nu.email.trim(),status:"active",joined:new Date().toISOString().split("T")[0],last_seen:new Date().toISOString()}]);
     setNu({name:"",email:"",role:"pm",org_id:orgs[0]?.id||""});setShow(false);
   };
-  const changeRole=(uid,role)=>setAdminUsers(p=>p.map(u=>u.id===uid?{...u,role}:u));
+  const changeRole=(uid,role)=>{
+    const u=adminUsers.find(x=>x.id===uid);
+    setAdminUsers(p=>p.map(u=>u.id===uid?{...u,role}:u));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"user",resource_id:uid,org_id:u?.org_id,before:{role:u?.role},after:{role},message:`Role changed: ${u?.name||uid} → ${role}`}));
+  };
   const toggleStatus=(uid)=>{
     const u=adminUsers.find(x=>x.id===uid);if(!u)return;
     if(u.role==="superadmin"){alert("Super admin status cannot be toggled from here.");return;}
@@ -435,10 +445,21 @@ export function BillingAdminView({orgs}){
   );
 }
 
-export function SettingsAdminView({flags,setFlags}){
+export function SettingsAdminView({user,flags,setFlags,opsToggles,setOpsToggles,setAuditLog}){
   const aiCfg=getProviderConfig();
   const rzCfg=getRazorpayConfig();
   const toggle=(k)=>setFlags(p=>({...p,[k]:!p[k]}));
+  // Ops toggles (Q6 demo + Q7 kiosk) — persistence is App-level.
+  const ops=opsToggles||{};
+  const toggleOps=(k)=>{
+    const next={...ops,[k]:!ops[k]};
+    setOpsToggles?.(next);
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"system_setting",resource_id:k,before:{[k]:ops[k]},after:{[k]:next[k]},message:`Ops toggle ${k}: ${ops[k]?"on":"off"} → ${next[k]?"on":"off"}`}));
+  };
+  const setOnboardingMode=(mode)=>{
+    setOpsToggles?.({...ops,tenantOnboardingMode:mode});
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"system_setting",resource_id:"tenantOnboardingMode",before:{tenantOnboardingMode:ops.tenantOnboardingMode},after:{tenantOnboardingMode:mode},message:`Tenant onboarding mode → ${mode}`}));
+  };
   const[migrating,setMigrating]=useState({state:"idle",summary:null,err:""});
   const runMigration=async()=>{
     if(!isSupabaseEnabled()){alert("Set VITE_BACKEND=supabase + URL + anon key first (see docs/GOLIVE.md).");return;}
@@ -466,6 +487,46 @@ export function SettingsAdminView({flags,setFlags}){
         <h1 className="font-display text-3xl font-light text-ink-900 tracking-editorial leading-none">System Settings</h1>
         <p className="text-ink-500 text-sm mt-2">Feature flags + integration status — applied to every customer org.</p>
       </div>
+      {/* Q6 + Q7 + Q8: Operational toggles (demo loader / kiosks / onboarding) */}
+      <div className="bg-white rounded-2xl p-6 shadow-editorial mb-6" style={{border:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Operational toggles</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-2 tracking-editorial">Production / demo mode</h2>
+        <p className="text-xs text-ink-500 mb-5 leading-relaxed">Control which surfaces are available across the app. Demo data and kiosk modes can be toggled here independently — the login screen reads these flags.</p>
+        <div className="space-y-2 mb-5">
+          {[
+            {k:"demoLoaderEnabled",label:"Demo data loader on login",desc:"Show the \"Load demo data\" button on the login screen. Hide it for production deployments where customers should never see it."},
+            {k:"demoModePermanent",label:"Demo persists in localStorage",desc:"OFF = demo is session-only (cleared when browser closes). ON = demo writes to localStorage and survives reloads (current default)."},
+            {k:"kioskLabourEnabled",label:"Labour Attendance Kiosk",desc:"10-foot tablet-at-entrance attendance flow. Hide if your customer doesn't use kiosks."},
+            {k:"kioskSiteEnabled",label:"Site Wall Kiosk",desc:"Wall-mounted situational awareness display for the site office."},
+            {k:"kioskArEnabled",label:"AR Drawing Overlay",desc:"Phone camera + drawing overlay for as-built verification. Beta."},
+          ].map(t=>(
+            <label key={t.k} className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer transition-all ${ops[t.k]?"bg-emerald-50":"bg-cream-200/40"}`} style={{border:"1px solid var(--st-line)"}}>
+              <input type="checkbox" checked={!!ops[t.k]} onChange={()=>toggleOps(t.k)} className="mt-1 w-5 h-5 accent-amber-600"/>
+              <div className="flex-1">
+                <div className="font-semibold text-ink-900">{t.label}</div>
+                <div className="text-[11px] text-ink-600 mt-0.5 leading-relaxed">{t.desc}</div>
+              </div>
+              <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-full ${ops[t.k]?"bg-emerald-100 text-emerald-700":"bg-stone-100 text-ink-500"}`}>{ops[t.k]?"on":"off"}</span>
+            </label>
+          ))}
+        </div>
+        <div className="border-t border-stone-100 pt-4">
+          <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500 mb-2">Tenant onboarding mode (Q8)</div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              {id:"minimal",label:"Minimal",desc:"Empty workspace · self-serve"},
+              {id:"guided",label:"Guided",desc:"Walkthrough · sample project"},
+              {id:"enterprise",label:"Enterprise",desc:"Whitelist · manual onboarding · NDA"},
+            ].map(m=>(
+              <button key={m.id} onClick={()=>setOnboardingMode(m.id)} className={`text-left p-3 rounded-xl border transition-all ${ops.tenantOnboardingMode===m.id?"border-amber-600 bg-amber-50":"border-stone-200 bg-cream-200/40 hover:bg-cream-100"}`}>
+                <div className="text-xs font-bold uppercase tracking-wider text-ink-800">{m.label}</div>
+                <div className="text-[10px] text-ink-500 mt-1">{m.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl p-6 shadow-editorial mb-6" style={{border:"1px solid var(--st-line)"}}>
         <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Feature flags</div>
         <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">What's on?</h2>
@@ -685,7 +746,7 @@ export function UsageAdminView({orgs,adminUsers,projects,updates,issues,boq,ra,i
   );
 }
 
-export function SupportAdminView({user,supportTickets,setSupportTickets,orgs}){
+export function SupportAdminView({user,supportTickets,setSupportTickets,orgs,setAuditLog}){
   const[active,setActive]=useState(supportTickets[0]?.id||null);
   const[reply,setReply]=useState("");
   const ticket=supportTickets.find(t=>t.id===active);
@@ -695,11 +756,13 @@ export function SupportAdminView({user,supportTickets,setSupportTickets,orgs}){
     if(!reply.trim()||!ticket)return;
     const msg={id:"sr_"+Date.now(),by:user.name,role:user.role,text:reply.trim(),time:new Date().toISOString()};
     setSupportTickets(p=>p.map(t=>t.id===ticket.id?{...t,messages:[...(t.messages||[]),msg],status:"replied",replied_at:new Date().toISOString()}:t));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"support_ticket",resource_id:ticket.id,org_id:ticket.org_id,message:`Replied to ticket: ${ticket.subject.slice(0,60)}`}));
     setReply("");
   };
   const close=()=>{
     if(!ticket||!window.confirm("Close this ticket?"))return;
     setSupportTickets(p=>p.map(t=>t.id===ticket.id?{...t,status:"closed",closed_at:new Date().toISOString()}:t));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"support_ticket",resource_id:ticket.id,org_id:ticket.org_id,before:{status:ticket.status},after:{status:"closed"},message:`Closed ticket: ${ticket.subject.slice(0,60)}`}));
   };
   return(
     <div className="p-4 md:p-10 max-w-7xl">

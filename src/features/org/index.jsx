@@ -1,0 +1,873 @@
+// SiteTrack Pro — Org Admin tier (Production Phase 1).
+//
+// These 8 panels are exclusive to the orgadmin role — the builder-firm owner.
+// They sit BETWEEN superadmin (cross-tenant) and architect/pm/contractor/client
+// (per-project). An orgadmin manages ONE org and everything inside it:
+//
+//   OrgAdminDashboard      — Single-org home; projects + members + MRR + activity
+//   OrgMembersView         — Per-org member CRUD + role + invite + status toggle
+//   OrgBillingView         — Plan + usage vs. seat limit + invoice history
+//   OrgIntegrationsView    — Org-level WhatsApp / AI / Razorpay / Cashfree creds
+//   OrgActivityView        — Audit log scoped to this org only
+//   OrgTemplatesView       — Project / BOQ / checklist templates (org-shared)
+//   OrgApprovalChainsView  — Configurable per-resource per-₹ approval chains
+//   OrgNotificationRulesView — Org-level rules: "alert PM when HIGH issue opens"
+//
+// All views read the same `orgs` / `adminUsers` / `auditLog` state from App.jsx
+// but filter by the active user's `org_id` so cross-tenant leakage is impossible.
+//
+// Style: shares the editorial cream + amber tone with the rest of the tenant
+// views (NOT the slate/charcoal admin theme — orgadmin IS a tenant role).
+
+import { useState, useMemo } from "react";
+import { Ic, Av, SC, ROLE_META, fmtDate, fmtTime } from "../../components/ui.jsx";
+import { PLAN_META } from "../../data/seed.js";
+import { recordAudit, filterAudit, exportAuditCsv } from "../../lib/audit.js";
+import {
+  getOrgIntegrations, setProviderForOrg, clearProviderForOrg,
+  isProviderConfigured, maskSecret, integrationsSummary, PROVIDERS,
+} from "../../lib/orgIntegrations.js";
+import {
+  listTemplates, upsertTemplate, removeTemplate, templateFromProject,
+  TEMPLATE_KINDS,
+} from "../../lib/templates.js";
+import {
+  getChain, upsertChain, removeChain, validateChain,
+  APPROVAL_RESOURCES, APPROVAL_ROLES,
+} from "../../lib/approvalChains.js";
+
+// ── Shared bits ────────────────────────────────────────────────────────────
+function PageHeader({ kicker, title, subtitle }) {
+  return (
+    <div className="mb-8 pb-4" style={{ borderBottom: "1px solid var(--st-line)" }}>
+      <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-600 mb-2">— {kicker}</div>
+      <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 tracking-editorial leading-[1.05]">{title}</h1>
+      {subtitle && <p className="text-ink-600 text-sm mt-3">{subtitle}</p>}
+    </div>
+  );
+}
+
+function EmptyState({ icon = "building", title, body, action }) {
+  return (
+    <div className="bg-white rounded-2xl p-12 text-center shadow-editorial" style={{ border: "1px dashed var(--st-line)" }}>
+      <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-amber-50 flex items-center justify-center">
+        <Ic n={icon} s={28} c="text-amber-700" />
+      </div>
+      <div className="font-display text-2xl font-semibold text-ink-900 tracking-editorial mb-3">{title}</div>
+      {body && <p className="text-ink-500 text-sm max-w-lg mx-auto leading-relaxed mb-6">{body}</p>}
+      {action}
+    </div>
+  );
+}
+
+// Returns the org if the user is properly attached to one, else null.
+// Each panel calls this AFTER its hooks so the Rules of Hooks aren't violated.
+function resolveOrg(user, orgs) {
+  if (!user?.org_id) return null;
+  return orgs?.find(o => o.id === user.org_id) || null;
+}
+function NoOrgScreen({ msg }) {
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker="Org Admin" title="No organization available"
+        subtitle={msg || "Ask your account owner to add you to an org, or contact support."} />
+    </div>
+  );
+}
+
+// ── 1. Dashboard ───────────────────────────────────────────────────────────
+export function OrgAdminDashboard({ user, orgs, adminUsers, projects, issues, activity, setView, orgIntegrations, templates, approvalChains }) {
+  const org = resolveOrg(user, orgs);
+  if (!org) return <NoOrgScreen />;
+  const orgMembers = adminUsers.filter(u => u.org_id === org.id);
+  const activeMembers = orgMembers.filter(u => u.status === "active").length;
+  const orgProjects = projects.filter(p => !p.org_id || p.org_id === org.id);
+  const activeProjects = orgProjects.filter(p => p.status === "active").length;
+  const allIssues = orgProjects.flatMap(p => issues[p.id] || []);
+  const highOpen = allIssues.filter(i => i.status === "open" && i.severity === "high").length;
+  const orgActivity = activity.filter(a => orgProjects.some(p => p.id === a.pid)).slice(0, 8);
+  const plan = PLAN_META[org.plan] || PLAN_META.basic;
+  const intSummary = integrationsSummary(orgIntegrations, org.id);
+  const tplCount = TEMPLATE_KINDS.reduce((s, k) => s + listTemplates(templates, org.id, k).length, 0);
+  const chainCount = Object.keys(approvalChains?.[org.id] || {}).length;
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · ${plan.label} plan`}
+        title={`${user.name.split(" ")[0]}'s organization`}
+        subtitle={`Coordinating ${activeMembers} active members · ${activeProjects} active projects · ₹${(org.mrr || 0).toLocaleString("en-IN")}/mo${highOpen > 0 ? ` · ${highOpen} HIGH issues open` : ""}`} />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-ink-900 text-cream rounded-2xl p-5 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(245,158,11,.25) 0%, transparent 65%)" }} />
+          <div className="relative">
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-400 mb-2">Plan</div>
+            <div className="font-display text-3xl font-light tracking-editorial">{plan.label}</div>
+            <div className="text-[11px] text-cream/60 mt-1">₹{plan.price.toLocaleString("en-IN")}/mo</div>
+          </div>
+        </div>
+        <SC icon="users" label="Members" value={activeMembers} sub={`${orgMembers.length - activeMembers} inactive`} accent="violet" />
+        <SC icon="folder" label="Projects" value={orgProjects.length} sub={`${activeProjects} active`} accent={highOpen > 0 ? "red" : "emerald"} />
+        <SC icon="cpu" label="Integrations" value={`${intSummary.count}/${intSummary.total}`} sub="WhatsApp · AI · Pay" accent="blue" />
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-5 mb-8">
+        <div className="md:col-span-2 bg-white rounded-2xl p-6 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Recent activity</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">Across your projects</h2>
+          {orgActivity.length === 0 ? (
+            <p className="text-sm text-ink-500">No activity yet. Your team's site updates will land here.</p>
+          ) : (
+            <div className="divide-y divide-stone-100">
+              {orgActivity.map(a => (
+                <div key={a.id} className="py-2.5 flex items-start gap-3">
+                  <Av name={a.by} size={26} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-ink-800"><span className="font-semibold">{a.by}</span> {a.action.toLowerCase()}</div>
+                    <div className="text-xs text-ink-500 mt-0.5 truncate">{a.detail}</div>
+                    <div className="text-[10px] text-ink-400 mt-0.5">{a.pname} · {fmtTime(a.time)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Quick actions</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">Manage your org</h2>
+          <div className="space-y-2">
+            {[
+              ["org-members", "users", "Members & roles", `${activeMembers} active`],
+              ["org-billing", "credit-card", "Plan & billing", `₹${(org.mrr || 0).toLocaleString("en-IN")}/mo`],
+              ["org-integrations", "cpu", "Integrations", `${intSummary.count}/${intSummary.total} connected`],
+              ["org-templates", "copy", "Templates", `${tplCount} saved`],
+              ["org-approvals", "shield", "Approval chains", `${chainCount} configured`],
+              ["org-notifications", "bell", "Notification rules", "Set up alerts"],
+              ["org-activity", "activity", "Audit log", "View all changes"],
+            ].map(([v, icon, label, sub]) => (
+              <button key={v} onClick={() => setView(v)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-stone-200 bg-cream-50 hover:bg-cream-100 transition-all text-left">
+                <div className="flex items-center gap-2.5">
+                  <Ic n={icon} s={14} c="text-amber-700" />
+                  <div>
+                    <div className="text-xs font-bold text-ink-800">{label}</div>
+                    <div className="text-[10px] text-ink-500">{sub}</div>
+                  </div>
+                </div>
+                <Ic n="chev-r" s={12} c="text-ink-400" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 2. Members ─────────────────────────────────────────────────────────────
+export function OrgMembersView({ user, orgs, adminUsers, setAdminUsers, setAuditLog }) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState({ name: "", email: "", role: "pm" });
+  const org = resolveOrg(user, orgs);
+  if (!org) return <NoOrgScreen />;
+  const members = adminUsers.filter(u => u.org_id === org.id);
+
+  const submit = () => {
+    if (!draft.name.trim() || !draft.email.trim()) return alert("Name + email required");
+    if (members.some(m => m.email === draft.email)) return alert("That email already exists in this org");
+    const id = `u_${Date.now()}`;
+    const row = { id, name: draft.name.trim(), email: draft.email.trim(), role: draft.role, org_id: org.id, status: "active", joined: new Date().toISOString().slice(0, 10), last_seen: null };
+    setAdminUsers(p => [...p, row]);
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "CREATE", resource: "user", resource_id: id, message: `Invited ${row.name} (${row.role}) to ${org.name}` }));
+    setAdding(false);
+    setDraft({ name: "", email: "", role: "pm" });
+  };
+
+  const setRole = (id, role) => {
+    const m = members.find(x => x.id === id);
+    if (!m || m.role === role) return;
+    setAdminUsers(p => p.map(x => x.id === id ? { ...x, role } : x));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "user", resource_id: id, before: { role: m.role }, after: { role }, message: `Role changed: ${m.name} → ${role}` }));
+  };
+
+  const toggleStatus = (id) => {
+    const m = members.find(x => x.id === id);
+    if (!m) return;
+    const next = m.status === "active" ? "inactive" : "active";
+    setAdminUsers(p => p.map(x => x.id === id ? { ...x, status: next } : x));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "user", resource_id: id, before: { status: m.status }, after: { status: next }, message: `${m.name} → ${next}` }));
+  };
+
+  const ROLE_OPTIONS = ["architect", "pm", "contractor", "client", "orgadmin"];
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Members`} title="Members & roles"
+        subtitle={`${members.length} total · ${members.filter(m => m.status === "active").length} active`} />
+      <div className="flex justify-end mb-4">
+        <button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all">
+          <Ic n="plus" s={14} />Invite member
+        </button>
+      </div>
+      {adding && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+          <div className="grid md:grid-cols-4 gap-3 mb-3">
+            <input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="Full name" className="px-3 py-2 border border-stone-300 rounded-lg text-sm" />
+            <input value={draft.email} onChange={e => setDraft({ ...draft, email: e.target.value })} placeholder="email@firm.in" className="px-3 py-2 border border-stone-300 rounded-lg text-sm" />
+            <select value={draft.role} onChange={e => setDraft({ ...draft, role: e.target.value })} className="px-3 py-2 border border-stone-300 rounded-lg text-sm">
+              {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_META[r]?.label || r}</option>)}
+            </select>
+            <div className="flex gap-2">
+              <button onClick={submit} className="flex-1 px-3 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Send invite</button>
+              <button onClick={() => setAdding(false)} className="px-3 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="bg-white rounded-2xl shadow-editorial overflow-hidden" style={{ border: "1px solid var(--st-line)" }}>
+        {members.length === 0 ? (
+          <div className="p-10 text-center text-ink-500">
+            <Ic n="users" s={32} c="text-amber-700 mx-auto mb-3" />
+            <div className="font-display text-lg font-semibold text-ink-800">No members yet</div>
+            <p className="text-sm mt-2">Invite your team to start collaborating.</p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-cream-50 text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500">
+              <tr>
+                <th className="text-left px-5 py-3">Member</th>
+                <th className="text-left px-5 py-3">Role</th>
+                <th className="text-left px-5 py-3">Status</th>
+                <th className="text-left px-5 py-3">Joined</th>
+                <th className="text-left px-5 py-3">Last seen</th>
+                <th className="px-5 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100 text-sm">
+              {members.map(m => (
+                <tr key={m.id}>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <Av name={m.name} size={32} />
+                      <div>
+                        <div className="font-semibold text-ink-800">{m.name}</div>
+                        <div className="text-xs text-ink-500">{m.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3">
+                    <select value={m.role} onChange={e => setRole(m.id, e.target.value)} disabled={m.id === user.id} className="px-2 py-1 border border-stone-200 rounded text-xs font-bold">
+                      {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_META[r]?.label || r}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${m.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-stone-200 text-stone-700"}`}>{m.status}</span>
+                  </td>
+                  <td className="px-5 py-3 text-xs text-ink-600">{fmtDate(m.joined)}</td>
+                  <td className="px-5 py-3 text-xs text-ink-600">{m.last_seen ? fmtTime(m.last_seen) : "—"}</td>
+                  <td className="px-5 py-3 text-right">
+                    <button disabled={m.id === user.id} onClick={() => toggleStatus(m.id)} className="text-xs font-bold text-amber-700 hover:underline disabled:opacity-40 disabled:cursor-not-allowed">
+                      {m.status === "active" ? "Deactivate" : "Reactivate"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── 3. Billing ─────────────────────────────────────────────────────────────
+export function OrgBillingView({ user, orgs, setOrgs, adminUsers, projects, setAuditLog }) {
+  // Resolve org first via a memo so hook order stays stable when org is absent.
+  const org = resolveOrg(user, orgs);
+  const plan = PLAN_META[org?.plan] || PLAN_META.basic;
+  // Mock invoice history (real billing comes via Razorpay subscriptions).
+  const invoices = useMemo(() => {
+    if (!org) return [];
+    const out = [];
+    const now = new Date();
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      out.push({
+        id: `${org.id}_${d.toISOString().slice(0, 7)}`,
+        period: d.toLocaleString("en-IN", { month: "long", year: "numeric" }),
+        amount: plan.price,
+        status: i === 0 ? "due" : "paid",
+        date: d.toISOString().slice(0, 10),
+      });
+    }
+    return out;
+  }, [org, plan.price]);
+  if (!org) return <NoOrgScreen />;
+  const orgMembers = adminUsers.filter(u => u.org_id === org.id && u.status === "active");
+  const orgProjects = projects.filter(p => !p.org_id || p.org_id === org.id);
+
+  // Seat / project limits per plan (UX-only — server enforces)
+  const SEAT_LIMITS = { basic: 5, pro: 20, business: 100, custom: Infinity };
+  const PROJECT_LIMITS = { basic: 2, pro: 10, business: 50, custom: Infinity };
+  const seatLimit = SEAT_LIMITS[org.plan];
+  const projLimit = PROJECT_LIMITS[org.plan];
+  const seatPct = seatLimit === Infinity ? 0 : Math.min(100, Math.round((orgMembers.length / seatLimit) * 100));
+  const projPct = projLimit === Infinity ? 0 : Math.min(100, Math.round((orgProjects.length / projLimit) * 100));
+
+  const requestUpgrade = (target) => {
+    if (target === org.plan) return;
+    if (!window.confirm(`Upgrade ${org.name} from ${plan.label} to ${PLAN_META[target].label}?\n\n₹${PLAN_META[target].price.toLocaleString("en-IN")}/mo — prorated from today.`)) return;
+    setOrgs(p => p.map(o => o.id === org.id ? { ...o, plan: target, mrr: PLAN_META[target].price } : o));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "subscription", resource_id: org.id, before: { plan: org.plan }, after: { plan: target }, message: `Plan upgrade: ${org.plan} → ${target}` }));
+  };
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Billing`} title="Plan & billing"
+        subtitle={`Current: ${plan.label} · ₹${(org.mrr || 0).toLocaleString("en-IN")}/mo`} />
+
+      <div className="grid md:grid-cols-3 gap-5 mb-8">
+        <div className="md:col-span-2 bg-white rounded-2xl p-6 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Usage</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">This billing cycle</h2>
+          <div className="space-y-5">
+            {[["Members", orgMembers.length, seatLimit, seatPct],
+              ["Projects", orgProjects.length, projLimit, projPct]].map(([label, cur, lim, pct]) => (
+              <div key={label}>
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <span className="font-display font-semibold text-ink-900 tracking-editorial">{label}</span>
+                  <span className="text-sm text-ink-600">{cur} / {lim === Infinity ? "∞" : lim}</span>
+                </div>
+                <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div className={`h-full transition-all ${pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+                </div>
+                {pct >= 80 && lim !== Infinity && (
+                  <div className="text-xs text-amber-700 mt-1.5 font-semibold">{pct >= 90 ? "Critical:" : "Heads up:"} approaching {label.toLowerCase()} limit on {plan.label}.</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-ink-900 text-cream rounded-2xl p-6 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(245,158,11,.25) 0%, transparent 65%)" }} />
+          <div className="relative">
+            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-400 mb-2">Monthly</div>
+            <div className="font-display text-4xl font-light tracking-editorial">₹{plan.price.toLocaleString("en-IN")}</div>
+            <div className="text-[11px] text-cream/60 mt-1">{plan.label} plan · billed monthly</div>
+            <div className="mt-4 text-[11px] text-cream/70">Next invoice: {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString("en-IN")}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-editorial mb-8" style={{ border: "1px solid var(--st-line)" }}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Change plan</div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-5 tracking-editorial">Available plans</h2>
+        <div className="grid md:grid-cols-4 gap-3">
+          {Object.entries(PLAN_META).map(([id, meta]) => (
+            <div key={id} className={`rounded-xl p-4 transition-all ${id === org.plan ? "bg-amber-50 border-amber-300" : "bg-cream-50 border-stone-200 hover:bg-cream-100"}`} style={{ border: "1px solid" }}>
+              <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500 mb-1">{meta.label}</div>
+              <div className="font-display text-2xl font-light text-ink-900">₹{meta.price.toLocaleString("en-IN")}</div>
+              <div className="text-[10px] text-ink-500">/mo</div>
+              <div className="text-xs text-ink-600 mt-3">{SEAT_LIMITS[id] === Infinity ? "∞" : SEAT_LIMITS[id]} seats · {PROJECT_LIMITS[id] === Infinity ? "∞" : PROJECT_LIMITS[id]} projects</div>
+              <button disabled={id === org.plan} onClick={() => requestUpgrade(id)} className="mt-3 w-full px-3 py-1.5 bg-ink-900 text-white text-xs font-bold rounded-lg disabled:bg-stone-200 disabled:text-stone-500">
+                {id === org.plan ? "Current plan" : "Switch"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-editorial overflow-hidden" style={{ border: "1px solid var(--st-line)" }}>
+        <div className="px-6 py-4 border-b border-stone-100">
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Invoice history</div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">Past invoices</h2>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="bg-cream-50 text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500">
+            <tr><th className="text-left px-5 py-3">Period</th><th className="text-left px-5 py-3">Amount</th><th className="text-left px-5 py-3">Status</th><th className="text-left px-5 py-3">Issued</th></tr>
+          </thead>
+          <tbody className="divide-y divide-stone-100">
+            {invoices.map(inv => (
+              <tr key={inv.id}>
+                <td className="px-5 py-3 font-semibold text-ink-800">{inv.period}</td>
+                <td className="px-5 py-3">₹{inv.amount.toLocaleString("en-IN")}</td>
+                <td className="px-5 py-3">
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${inv.status === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{inv.status}</span>
+                </td>
+                <td className="px-5 py-3 text-xs text-ink-600">{fmtDate(inv.date)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── 4. Integrations ────────────────────────────────────────────────────────
+export function OrgIntegrationsView({ user, orgs, orgIntegrations, setOrgIntegrations, setAuditLog }) {
+  const [editing, setEditing] = useState(null); // provider name or null
+  const org = resolveOrg(user, orgs);
+  if (!org) return <NoOrgScreen />;
+  const rec = getOrgIntegrations(orgIntegrations, org.id);
+
+  const PROVIDER_META = {
+    ai: { label: "AI Insights", icon: "cpu", fields: [["provider", "Provider (openai / anthropic)"], ["key", "API key"], ["model", "Model name"]], help: "Used by AI Insights tab + cost forecaster. Customer is billed for tokens." },
+    razorpay: { label: "Razorpay", icon: "credit-card", fields: [["key_id", "Key ID"], ["key_secret", "Key secret"], ["vpa", "UPI VPA (optional)"]], help: "Used for invoice payment links + UPI deep-links. Razorpay account must be a builder firm account." },
+    whatsapp: { label: "WhatsApp Business", icon: "send", fields: [["phone_id", "Phone number ID"], ["token", "System user access token"], ["template_id", "Template ID"]], help: "Used to send DPR + invoice links via WhatsApp Business API. Falls back to wa.me URL when not configured." },
+    cashfree: { label: "Cashfree Subscriptions", icon: "credit-card", fields: [["app_id", "App ID"], ["secret", "Secret key"], ["webhook", "Webhook URL"]], help: "Used for subscription billing + auto-debit. Required for Business plans." },
+  };
+
+  const save = (provider, config) => {
+    setOrgIntegrations(p => setProviderForOrg(p, org.id, provider, config));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "org_integration", resource_id: `${org.id}_${provider}`, message: `Updated ${provider} integration` }));
+    setEditing(null);
+  };
+  const clear = (provider) => {
+    if (!window.confirm(`Clear ${PROVIDER_META[provider].label} credentials?`)) return;
+    setOrgIntegrations(p => clearProviderForOrg(p, org.id, provider));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "DELETE", resource: "org_integration", resource_id: `${org.id}_${provider}`, message: `Cleared ${provider} integration` }));
+  };
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Integrations`} title="Integration settings"
+        subtitle="Org-level credentials. All members inherit these — keep them safe." />
+
+      <div className="grid md:grid-cols-2 gap-5">
+        {PROVIDERS.map(provider => {
+          const meta = PROVIDER_META[provider];
+          const cfg = rec[provider];
+          const configured = isProviderConfigured(orgIntegrations, org.id, provider);
+          const isEditing = editing === provider;
+          return (
+            <div key={provider} className="bg-white rounded-2xl p-6 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center"><Ic n={meta.icon} s={18} c="text-amber-700" /></div>
+                  <div>
+                    <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial">{meta.label}</div>
+                    <div className={`text-[10px] font-bold tracking-[0.18em] uppercase ${configured ? "text-emerald-700" : "text-stone-500"}`}>
+                      {configured ? "● Connected" : "○ Not configured"}
+                    </div>
+                  </div>
+                </div>
+                {!isEditing && <button onClick={() => setEditing(provider)} className="text-xs font-bold text-amber-700 hover:underline">{configured ? "Edit" : "Connect"}</button>}
+              </div>
+              <p className="text-xs text-ink-500 mb-4">{meta.help}</p>
+              {isEditing ? (
+                <ProviderEditor provider={provider} meta={meta} initial={cfg} onSave={cfg => save(provider, cfg)} onCancel={() => setEditing(null)} />
+              ) : configured ? (
+                <div className="space-y-1.5">
+                  {meta.fields.map(([k, label]) => (
+                    <div key={k} className="flex items-baseline justify-between text-xs">
+                      <span className="text-ink-500">{label}</span>
+                      <span className="font-mono text-ink-800">{maskSecret(cfg[k]) || "—"}</span>
+                    </div>
+                  ))}
+                  <button onClick={() => clear(provider)} className="mt-3 text-xs text-red-600 hover:underline">Clear credentials</button>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProviderEditor({ provider: _provider, meta, initial, onSave, onCancel }) {
+  const [draft, setDraft] = useState({ ...initial });
+  return (
+    <div className="space-y-2">
+      {meta.fields.map(([k, label]) => (
+        <input key={k} value={draft[k] || ""} onChange={e => setDraft({ ...draft, [k]: e.target.value })}
+          placeholder={label} className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm font-mono" />
+      ))}
+      <div className="flex gap-2 pt-2">
+        <button onClick={() => onSave(draft)} className="flex-1 px-3 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Save</button>
+        <button onClick={onCancel} className="px-3 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ── 5. Org Activity (audit log scoped to this org) ─────────────────────────
+export function OrgActivityView({ user, orgs, auditLog, projects: _projects, adminUsers }) {
+  const [filter, setFilter] = useState({ action: "", actor_id: "", from: "", to: "", q: "" });
+  const org = resolveOrg(user, orgs);
+  // Memoize org-member id set so it doesn't churn dependencies on every render.
+  const orgMemberIds = useMemo(
+    () => new Set((adminUsers || []).filter(u => u.org_id === org?.id).map(u => u.id)),
+    [adminUsers, org]
+  );
+  const scoped = useMemo(
+    () => (auditLog || []).filter(r => (org && r.org_id === org.id) || orgMemberIds.has(r.actor_id)),
+    [auditLog, org, orgMemberIds]
+  );
+  const filtered = useMemo(() => filterAudit(scoped, filter), [scoped, filter]);
+  if (!org) return <NoOrgScreen />;
+
+  const downloadCsv = () => {
+    const csv = exportAuditCsv(filtered);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `org_${org.id}_audit_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Audit`} title="Activity & audit log"
+        subtitle={`${scoped.length} entries · ${filtered.length} matching filters`} />
+
+      <div className="bg-white rounded-2xl p-5 mb-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+        <div className="grid md:grid-cols-6 gap-3">
+          <input value={filter.q} onChange={e => setFilter({ ...filter, q: e.target.value })} placeholder="Search..." className="md:col-span-2 px-3 py-2 border border-stone-300 rounded-lg text-sm" />
+          <select value={filter.action} onChange={e => setFilter({ ...filter, action: e.target.value })} className="px-3 py-2 border border-stone-300 rounded-lg text-sm">
+            <option value="">All actions</option>
+            {["CREATE", "UPDATE", "DELETE", "APPROVE", "REJECT", "RELEASE", "UPLOAD", "LOGIN", "IMPERSONATE", "EXPORT", "PAYMENT", "DELEGATE"].map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <select value={filter.actor_id} onChange={e => setFilter({ ...filter, actor_id: e.target.value })} className="px-3 py-2 border border-stone-300 rounded-lg text-sm">
+            <option value="">All members</option>
+            {adminUsers.filter(u => u.org_id === org.id).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+          <input type="date" value={filter.from} onChange={e => setFilter({ ...filter, from: e.target.value })} className="px-3 py-2 border border-stone-300 rounded-lg text-sm" />
+          <input type="date" value={filter.to} onChange={e => setFilter({ ...filter, to: e.target.value })} className="px-3 py-2 border border-stone-300 rounded-lg text-sm" />
+        </div>
+        <div className="flex justify-end mt-3">
+          <button onClick={downloadCsv} disabled={!filtered.length} className="text-xs font-bold text-amber-700 hover:underline disabled:opacity-40">Export CSV ({filtered.length})</button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-editorial overflow-hidden" style={{ border: "1px solid var(--st-line)" }}>
+        {filtered.length === 0 ? (
+          <div className="p-10 text-center text-ink-500">
+            <Ic n="activity" s={32} c="text-amber-700 mx-auto mb-3" />
+            <div className="font-display text-lg font-semibold text-ink-800">No matching entries</div>
+            <p className="text-sm mt-2">Adjust filters above to see audit history.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-cream-50 text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500">
+              <tr><th className="text-left px-5 py-3">When</th><th className="text-left px-5 py-3">Who</th><th className="text-left px-5 py-3">Action</th><th className="text-left px-5 py-3">Resource</th><th className="text-left px-5 py-3">Details</th></tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {filtered.slice(0, 200).map(r => (
+                <tr key={r.id}>
+                  <td className="px-5 py-3 text-xs text-ink-600 whitespace-nowrap">{fmtTime(r.ts)}</td>
+                  <td className="px-5 py-3"><div className="font-semibold text-ink-800">{r.actor_name}</div><div className="text-[10px] text-ink-500 uppercase tracking-wider">{r.actor_role}</div></td>
+                  <td className="px-5 py-3"><span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-amber-50 text-amber-700">{r.action}</span></td>
+                  <td className="px-5 py-3 text-xs text-ink-700">{r.resource}{r.resource_id ? ` #${r.resource_id}` : ""}</td>
+                  <td className="px-5 py-3 text-xs text-ink-600 max-w-md truncate" title={r.message}>{r.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── 6. Templates ───────────────────────────────────────────────────────────
+export function OrgTemplatesView({ user, orgs, templates, setTemplates, projects, milestones, checklists, setAuditLog }) {
+  const [kind, setKind] = useState("project");
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState({ name: "", description: "", srcProjectId: "" });
+  const org = resolveOrg(user, orgs);
+  if (!org) return <NoOrgScreen />;
+  const items = listTemplates(templates, org.id, kind);
+
+  const submit = () => {
+    if (!draft.name.trim()) return alert("Template name required");
+    let payload = null;
+    if (kind === "project" && draft.srcProjectId) {
+      const proj = projects.find(p => p.id === draft.srcProjectId);
+      if (proj) {
+        const tpl = templateFromProject(proj, milestones?.[proj.id] || [], checklists?.[proj.id] || []);
+        payload = tpl?.payload || null;
+      }
+    }
+    setTemplates(p => upsertTemplate(p, org.id, kind, { name: draft.name.trim(), description: draft.description.trim(), payload }));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "CREATE", resource: "template", resource_id: `${org.id}_${kind}_${draft.name}`, message: `Saved ${kind} template "${draft.name}"` }));
+    setAdding(false);
+    setDraft({ name: "", description: "", srcProjectId: "" });
+  };
+
+  const del = (id, name) => {
+    if (!window.confirm(`Delete template "${name}"?`)) return;
+    setTemplates(p => removeTemplate(p, org.id, kind, id));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "DELETE", resource: "template", resource_id: id, message: `Deleted ${kind} template "${name}"` }));
+  };
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Templates`} title="Org templates"
+        subtitle="Re-usable project / BOQ / checklist patterns shared across your team." />
+
+      <div className="flex items-center gap-2 mb-5 flex-wrap">
+        {TEMPLATE_KINDS.map(k => (
+          <button key={k} onClick={() => { setKind(k); setAdding(false); }} className={`px-4 py-2 rounded-lg text-xs font-bold tracking-wider uppercase ${kind === k ? "bg-ink-900 text-amber-400" : "bg-cream-100 text-ink-700 hover:bg-cream-200"}`}>
+            {k} ({listTemplates(templates, org.id, k).length})
+          </button>
+        ))}
+        <button onClick={() => setAdding(true)} className="ml-auto inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all">
+          <Ic n="plus" s={14} />New {kind} template
+        </button>
+      </div>
+
+      {adding && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+          <div className="grid md:grid-cols-2 gap-3 mb-3">
+            <input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder={`${kind} template name`} className="px-3 py-2 border border-stone-300 rounded-lg text-sm" />
+            {kind === "project" && (
+              <select value={draft.srcProjectId} onChange={e => setDraft({ ...draft, srcProjectId: e.target.value })} className="px-3 py-2 border border-stone-300 rounded-lg text-sm">
+                <option value="">— (empty template)</option>
+                {projects.filter(p => !p.org_id || p.org_id === org.id).map(p => <option key={p.id} value={p.id}>Generate from: {p.name}</option>)}
+              </select>
+            )}
+          </div>
+          <textarea value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="What is this template for?" rows={2} className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm mb-3" />
+          <div className="flex gap-2">
+            <button onClick={submit} className="px-4 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Save template</button>
+            <button onClick={() => setAdding(false)} className="px-4 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {items.length === 0 ? (
+        <EmptyState icon="copy" title={`No ${kind} templates yet`}
+          body={`Capture your firm's standard ${kind} structure once, then re-use it on every new project.`} />
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4">
+          {items.map(t => (
+            <div key={t.id} className="bg-white rounded-2xl p-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial">{t.name}</div>
+                  <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-amber-700">{t.kind}</div>
+                </div>
+                <button onClick={() => del(t.id, t.name)} className="text-xs text-red-600 hover:underline">Delete</button>
+              </div>
+              {t.description && <p className="text-xs text-ink-500 mb-3">{t.description}</p>}
+              <div className="text-[10px] text-ink-400">Updated {fmtDate(t.updated)}</div>
+              {t.kind === "project" && t.payload?.milestones && (
+                <div className="text-[11px] text-ink-600 mt-2">{t.payload.milestones.length} milestones · {t.payload.checklists?.length || 0} checklists</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 7. Approval Chains ─────────────────────────────────────────────────────
+export function OrgApprovalChainsView({ user, orgs, approvalChains, setApprovalChains, setAuditLog }) {
+  const [editing, setEditing] = useState(null); // resource id or null
+  const org = resolveOrg(user, orgs);
+  if (!org) return <NoOrgScreen />;
+
+  const save = (chain) => {
+    const v = validateChain(chain);
+    if (!v.ok) { alert(v.errors.join("\n")); return; }
+    setApprovalChains(p => upsertChain(p, org.id, chain));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "approval_chain", resource_id: `${org.id}_${chain.resource}`, message: `Configured ${chain.resource} approval chain` }));
+    setEditing(null);
+  };
+
+  const reset = (resource) => {
+    if (!window.confirm(`Reset ${resource} chain to default?`)) return;
+    setApprovalChains(p => removeChain(p, org.id, resource));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "DELETE", resource: "approval_chain", resource_id: `${org.id}_${resource}`, message: `Reset ${resource} chain to default` }));
+  };
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Approvals`} title="Approval chains"
+        subtitle="Configure who approves what, by ₹ threshold. Built-in defaults apply until you change them." />
+
+      <div className="space-y-4">
+        {APPROVAL_RESOURCES.map(r => {
+          const chain = getChain(approvalChains, org.id, r.id);
+          const isCustom = !!approvalChains?.[org.id]?.[r.id];
+          if (editing === r.id) {
+            return <ChainEditor key={r.id} resource={r} initial={chain} onSave={save} onCancel={() => setEditing(null)} />;
+          }
+          return (
+            <div key={r.id} className="bg-white rounded-2xl p-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial">{r.label}</div>
+                  <div className={`text-[10px] font-bold tracking-[0.18em] uppercase ${isCustom ? "text-emerald-700" : "text-stone-500"}`}>
+                    {isCustom ? "● Customized" : "○ Using defaults"}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {isCustom && <button onClick={() => reset(r.id)} className="text-xs text-red-600 hover:underline">Reset</button>}
+                  <button onClick={() => setEditing(r.id)} className="text-xs font-bold text-amber-700 hover:underline">{isCustom ? "Edit" : "Customize"}</button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {chain.rungs.map((rung, i) => (
+                  <div key={i} className="flex items-center gap-3 text-xs">
+                    <span className="font-mono text-ink-500 w-32">≤ ₹{rung.threshold === Infinity ? "∞" : rung.threshold.toLocaleString("en-IN")}</span>
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-amber-50 text-amber-700 uppercase">{rung.role}</span>
+                    {rung.requireSig && <span className="text-[10px] text-ink-500">✎ Signature</span>}
+                    {rung.requireComment && <span className="text-[10px] text-ink-500">⚆ Comment</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChainEditor({ resource, initial, onSave, onCancel }) {
+  const [name, setName] = useState(initial.name);
+  const [rungs, setRungs] = useState(initial.rungs.map(r => ({ ...r, threshold: r.threshold === Infinity ? 1e12 : r.threshold })));
+
+  const updateRung = (i, patch) => setRungs(rs => rs.map((r, j) => j === i ? { ...r, ...patch } : r));
+  const addRung = () => setRungs(rs => [...rs, { threshold: 0, role: "pm", requireSig: false, requireComment: false }]);
+  const removeRung = (i) => setRungs(rs => rs.filter((_, j) => j !== i));
+
+  return (
+    <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5">
+      <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-3">Editing: {resource.label}</div>
+      <input value={name} onChange={e => setName(e.target.value)} placeholder="Chain name" className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm mb-4" />
+      <div className="space-y-2 mb-4">
+        {rungs.map((r, i) => (
+          <div key={i} className="grid grid-cols-12 gap-2 items-center bg-white rounded-lg p-2 border border-stone-200">
+            <div className="col-span-3"><label className="text-[10px] text-ink-500 uppercase tracking-wider">Up to ₹</label><input type="number" min="0" value={r.threshold === Infinity ? "" : r.threshold} onChange={e => updateRung(i, { threshold: e.target.value === "" ? Infinity : Number(e.target.value) })} className="w-full px-2 py-1 border border-stone-300 rounded text-sm" /></div>
+            <div className="col-span-3"><label className="text-[10px] text-ink-500 uppercase tracking-wider">Approver</label><select value={r.role} onChange={e => updateRung(i, { role: e.target.value })} className="w-full px-2 py-1 border border-stone-300 rounded text-sm">{APPROVAL_ROLES.map(role => <option key={role} value={role}>{role}</option>)}</select></div>
+            <label className="col-span-2 text-xs flex items-center gap-1"><input type="checkbox" checked={!!r.requireSig} onChange={e => updateRung(i, { requireSig: e.target.checked })} /> Sig</label>
+            <label className="col-span-2 text-xs flex items-center gap-1"><input type="checkbox" checked={!!r.requireComment} onChange={e => updateRung(i, { requireComment: e.target.checked })} /> Comment</label>
+            <div className="col-span-2 text-right"><button onClick={() => removeRung(i)} className="text-xs text-red-600 hover:underline">Remove</button></div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <button onClick={addRung} className="px-3 py-1.5 border border-stone-300 text-xs font-bold rounded-lg">+ Add rung</button>
+        <button onClick={() => onSave({ id: initial.id, name, resource: resource.id, rungs })} className="ml-auto px-4 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Save chain</button>
+        <button onClick={onCancel} className="px-4 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ── 8. Notification Rules ──────────────────────────────────────────────────
+export function OrgNotificationRulesView({ user, orgs, notifRules, setNotifRules, adminUsers, setAuditLog }) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState({ trigger: "high_issue", channel: "in_app", recipients: [] });
+  const org = resolveOrg(user, orgs);
+  if (!org) return <NoOrgScreen />;
+  const rules = notifRules?.[org.id] || [];
+
+  const TRIGGERS = [
+    { id: "high_issue", label: "HIGH severity issue opens" },
+    { id: "ra_bill_submitted", label: "RA bill submitted" },
+    { id: "change_order_pending", label: "Change order awaiting approval" },
+    { id: "milestone_overdue", label: "Milestone overdue" },
+    { id: "drawing_release", label: "Drawing released" },
+    { id: "rfi_overdue", label: "RFI unanswered > 3 days" },
+    { id: "invoice_overdue", label: "Invoice payment overdue" },
+  ];
+  const CHANNELS = [
+    { id: "in_app", label: "In-app notification" },
+    { id: "email", label: "Email" },
+    { id: "whatsapp", label: "WhatsApp" },
+  ];
+
+  const submit = () => {
+    if (!draft.recipients.length) return alert("Select at least one recipient");
+    const id = `nr_${Date.now()}`;
+    const row = { id, trigger: draft.trigger, channel: draft.channel, recipients: [...draft.recipients], created: new Date().toISOString(), enabled: true };
+    setNotifRules(p => ({ ...(p || {}), [org.id]: [...(p?.[org.id] || []), row] }));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "CREATE", resource: "notification_rule", resource_id: id, message: `Added rule: ${draft.trigger} via ${draft.channel}` }));
+    setAdding(false);
+    setDraft({ trigger: "high_issue", channel: "in_app", recipients: [] });
+  };
+
+  const toggle = (id) => {
+    setNotifRules(p => ({ ...(p || {}), [org.id]: (p?.[org.id] || []).map(r => r.id === id ? { ...r, enabled: !r.enabled } : r) }));
+  };
+  const del = (id) => {
+    if (!window.confirm("Delete this rule?")) return;
+    setNotifRules(p => ({ ...(p || {}), [org.id]: (p?.[org.id] || []).filter(r => r.id !== id) }));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "DELETE", resource: "notification_rule", resource_id: id, message: "Removed notification rule" }));
+  };
+
+  const orgMembers = adminUsers.filter(u => u.org_id === org.id && u.status === "active");
+
+  return (
+    <div className="p-4 md:p-10 max-w-7xl">
+      <PageHeader kicker={`${org.name} · Notifications`} title="Notification rules"
+        subtitle="Auto-alert the right people when something important happens on site." />
+      <div className="flex justify-end mb-4">
+        <button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all">
+          <Ic n="plus" s={14} />New rule
+        </button>
+      </div>
+      {adding && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+          <div className="grid md:grid-cols-3 gap-3 mb-3">
+            <label className="text-xs"><div className="font-bold mb-1 text-ink-700">When this happens</div>
+              <select value={draft.trigger} onChange={e => setDraft({ ...draft, trigger: e.target.value })} className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm">
+                {TRIGGERS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+              </select>
+            </label>
+            <label className="text-xs"><div className="font-bold mb-1 text-ink-700">Send via</div>
+              <select value={draft.channel} onChange={e => setDraft({ ...draft, channel: e.target.value })} className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm">
+                {CHANNELS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            </label>
+            <label className="text-xs"><div className="font-bold mb-1 text-ink-700">To these members</div>
+              <select multiple value={draft.recipients} onChange={e => setDraft({ ...draft, recipients: Array.from(e.target.selectedOptions, o => o.value) })} className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm" size={Math.min(orgMembers.length, 4) || 1}>
+                {orgMembers.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={submit} className="px-4 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Add rule</button>
+            <button onClick={() => setAdding(false)} className="px-4 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
+          </div>
+        </div>
+      )}
+      {rules.length === 0 ? (
+        <EmptyState icon="bell" title="No notification rules yet"
+          body="Set up automatic alerts so the right person hears about critical events without having to check the app." />
+      ) : (
+        <div className="bg-white rounded-2xl shadow-editorial overflow-hidden" style={{ border: "1px solid var(--st-line)" }}>
+          <table className="w-full text-sm">
+            <thead className="bg-cream-50 text-[10px] font-bold tracking-[0.18em] uppercase text-ink-500">
+              <tr><th className="text-left px-5 py-3">Trigger</th><th className="text-left px-5 py-3">Channel</th><th className="text-left px-5 py-3">Recipients</th><th className="text-left px-5 py-3">Status</th><th className="px-5 py-3"></th></tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {rules.map(r => {
+                const trigger = TRIGGERS.find(t => t.id === r.trigger);
+                const channel = CHANNELS.find(c => c.id === r.channel);
+                const recs = r.recipients.map(id => orgMembers.find(m => m.id === id)?.name || "—").join(", ");
+                return (
+                  <tr key={r.id} className={r.enabled ? "" : "opacity-50"}>
+                    <td className="px-5 py-3 font-semibold text-ink-800">{trigger?.label || r.trigger}</td>
+                    <td className="px-5 py-3 text-xs"><span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-amber-50 text-amber-700 uppercase">{channel?.label || r.channel}</span></td>
+                    <td className="px-5 py-3 text-xs text-ink-600">{recs}</td>
+                    <td className="px-5 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${r.enabled ? "bg-emerald-100 text-emerald-700" : "bg-stone-200 text-stone-700"}`}>{r.enabled ? "Active" : "Paused"}</span></td>
+                    <td className="px-5 py-3 text-right whitespace-nowrap">
+                      <button onClick={() => toggle(r.id)} className="text-xs font-bold text-amber-700 hover:underline mr-3">{r.enabled ? "Pause" : "Resume"}</button>
+                      <button onClick={() => del(r.id)} className="text-xs text-red-600 hover:underline">Delete</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

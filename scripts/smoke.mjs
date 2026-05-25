@@ -18,6 +18,7 @@ const app = [
   read("src/features/views/index.jsx"),
   read("src/features/detail/index.jsx"),
   read("src/features/shell/index.jsx"),
+  read("src/features/org/index.jsx"),
   read("src/lib/exports.js"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
@@ -136,6 +137,48 @@ const vite = read("vite.config.js");
   "case\"snapshot\"",
   "recordAudit(p,{actor:user,action:\"IMPERSONATE\"",
   "recordAudit(p,{actor:user,action:\"CREATE\",resource:\"project\"",
+  // ── Production Phase 1 — Org Admin tier markers ──────────────────────────
+  "OrgAdminDashboard",
+  "OrgMembersView",
+  "OrgBillingView",
+  "OrgIntegrationsView",
+  "OrgActivityView",
+  "OrgTemplatesView",
+  "OrgApprovalChainsView",
+  "OrgNotificationRulesView",
+  "orgadmin",
+  "case\"org-dashboard\"",
+  "case\"org-members\"",
+  "case\"org-billing\"",
+  "case\"org-integrations\"",
+  "case\"org-activity\"",
+  "case\"org-templates\"",
+  "case\"org-approvals\"",
+  "case\"org-notifications\"",
+  "INIT_APPROVAL_CHAINS",
+  "INIT_ORG_INTEGRATIONS",
+  "INIT_TEMPLATES",
+  "INIT_NOTIFICATION_RULES",
+  "INIT_OPS_TOGGLES",
+  // Q5a: additional audit wirings
+  "action:\"RELEASE\",resource:\"drawing\"",
+  "action:\"APPROVE\",resource:\"rfi\"",
+  "action:\"APPROVE\",resource:\"po\"",
+  "action:\"PAYMENT\",resource:\"ra_bill\"",
+  "resource:\"change_order\"",
+  "resource:\"milestone\"",
+  "resource:\"expense\"",
+  "resource:\"support_ticket\"",
+  "resource:\"subscription\"",
+  // Q5d: lazy chunk for detail + org
+  "lazy(() => import(\"./features/detail/index.jsx\")",
+  "lazy(() => import(\"./features/org/index.jsx\")",
+  // Q6 / Q7 / Q8 toggles
+  "demoLoaderEnabled",
+  "kioskLabourEnabled",
+  "kioskSiteEnabled",
+  "kioskArEnabled",
+  "tenantOnboardingMode",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -249,6 +292,14 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "src/lib/exports.js",
   // Roadmap Batch 10 — shell cluster extracted
   "src/features/shell/index.jsx",
+  // Production Phase 1 — Org Admin tier
+  "src/features/org/index.jsx",
+  "src/lib/approvalChains.js",
+  "src/lib/orgIntegrations.js",
+  "src/lib/templates.js",
+  "tests/approvalChains.test.js",
+  "tests/orgIntegrations.test.js",
+  "tests/templates.test.js",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",

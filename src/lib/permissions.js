@@ -6,6 +6,52 @@
 // App.jsx import from this module so the two cannot drift.
 
 export const PERMS = {
+  // ORG ADMIN — the builder-firm owner. Scoped to a SINGLE org_id (not cross-tenant
+  // like superadmin). Manages members, billing, integrations, templates, approval
+  // chains, notification rules. Can also operate as a senior architect inside
+  // the org's projects.
+  orgadmin: {
+    createProject: true,
+    editProgress: true,
+    addUpdate: true,
+    manageTeam: true,
+    markAttendance: true,
+    addExpense: true,
+    deleteExpense: true,
+    export: true,
+    share: true,
+    changeMilestone: true,
+    addIssue: true,
+    resolveIssue: true,
+    addMaterial: true,
+    deleteMaterial: true,
+    manageDrawings: true,
+    viewActivity: true,
+    // Org-scoped admin caps (NOT cross-tenant like superadmin)
+    manageOrgMembers: true,
+    manageOrgBilling: true,
+    manageOrgIntegrations: true,
+    manageOrgTemplates: true,
+    manageApprovalChains: true,
+    manageNotificationRules: true,
+    tabs: [
+      "overview", "milestones", "tasks", "updates", "issues", "punchlist",
+      "materials", "ledger", "boq", "estimate", "drawings", "rfi", "changeorders",
+      "fieldops", "approvals", "inspections", "safety", "team", "attendance",
+      "budget", "po", "invoices", "labour", "rabills", "map", "ai", "gantt",
+    ],
+    nav: [
+      // Org Admin tier (the new one)
+      "org-dashboard", "org-members", "org-billing", "org-integrations",
+      "org-activity", "org-templates", "org-approvals", "org-notifications",
+      // Plus most of the tenant nav so they can still operate inside projects
+      "dashboard", "projects", "calendar", "vendors", "po", "analytics",
+      "activity", "messages", "notifications",
+      "hierarchy", "material-prices", "compliance", "forecast", "delegations",
+      "snapshot", "kiosk-labour", "kiosk-site", "ar-overlay",
+      "admin-branding",
+    ],
+  },
   superadmin: {
     createProject: true,
     editProgress: true,
@@ -152,11 +198,13 @@ export const PERMS = {
 };
 
 export const isSuperAdmin = user => user?.role === "superadmin";
+export const isOrgAdmin = user => user?.role === "orgadmin";
 
 export const can = (user, p) => !!(user && PERMS[user.role]?.[p]);
 
 export const visibleProjectsForUser = (projects, user) => {
   if (isSuperAdmin(user)) return projects;
+  if (isOrgAdmin(user)) return projects.filter(p => !p.org_id || p.org_id === user.org_id);
   if (user?.role === "client") return projects.filter(p => p.client_email === user.email);
   return projects;
 };
@@ -164,12 +212,14 @@ export const visibleProjectsForUser = (projects, user) => {
 export const canAccessProject = (user, project) => {
   if (!user || !project) return false;
   if (isSuperAdmin(user)) return true;
+  if (isOrgAdmin(user)) return !project.org_id || project.org_id === user.org_id;
   if (user.role === "client") return project.client_email === user.email;
   return true;
 };
 
 export const fallbackViewForUser = user => {
   if (isSuperAdmin(user)) return "admin-dashboard";
+  if (isOrgAdmin(user)) return "org-dashboard";
   if (user?.role === "client") return "client";
   return "dashboard";
 };
@@ -181,7 +231,7 @@ export const canOpenView = (user, view) => {
   return PERMS[user.role]?.nav.includes(view);
 };
 
-export const canUseQuickCapture = user => ["architect", "pm", "contractor", "superadmin"].includes(user?.role);
+export const canUseQuickCapture = user => ["architect", "pm", "contractor", "superadmin", "orgadmin"].includes(user?.role);
 
 export const drawingKey = d => {
   const title = (d?.title || "").trim().toLowerCase();

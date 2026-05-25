@@ -28,6 +28,7 @@ export const fmtSize  = _fmtSize;
 // Role labels + colors — referenced in sidebar, banners, role pills.
 export const ROLE_META = {
   superadmin:{label:"Super Admin",bg:"bg-slate-900",text:"text-amber-400",col:"slate"},
+  orgadmin:{label:"Org Admin",bg:"bg-amber-100",text:"text-amber-800",col:"amber"},
   architect:{label:"Architect",bg:"bg-orange-100",text:"text-orange-700",col:"orange"},
   pm:{label:"Project Manager",bg:"bg-blue-100",text:"text-blue-700",col:"blue"},
   contractor:{label:"Contractor",bg:"bg-violet-100",text:"text-violet-700",col:"violet"},

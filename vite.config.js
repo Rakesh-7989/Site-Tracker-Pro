@@ -22,6 +22,8 @@ export default defineConfig({
           // DetailView satellites (MarkupModal, ClientShareView, etc.) —
           // only loaded when a user enters project detail or clicks a share link.
           if (normalized.includes('/src/features/detail/')) return 'detail'
+          // Org Admin tier (Production Phase 1) — 8 panels only the org owner sees.
+          if (normalized.includes('/src/features/org/')) return 'org'
           if (!normalized.includes('/node_modules/')) return undefined
           if (normalized.includes('/node_modules/react/') || normalized.includes('/node_modules/react-dom/') || normalized.includes('/node_modules/scheduler/')) return 'react'
           if (normalized.includes('/node_modules/recharts/') || normalized.includes('/node_modules/react-smooth/') || normalized.includes('/node_modules/react-transition-group/')) return 'recharts'

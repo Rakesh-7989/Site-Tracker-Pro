@@ -34,10 +34,28 @@ export function LoginScreen({onLogin,dark,toggleDark}){
   // Data-mode controls: status pill + "Load demo data" / "Clear all data".
   // Production defaults to empty (see src/data/seed.js). Demo seed loads
   // on-demand from src/data/seed.demo.js via src/lib/demoMode.js.
+  //
+  // Q6: SuperAdmin can hide the demo loader entirely via ops_toggles
+  // (Settings → Admin Console). Read the stored flag directly here since
+  // the LoginScreen is rendered BEFORE the App-level useLS state exists.
+  const opsToggles=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}").ops_toggles||{};}catch{return{};}})();
+  const demoLoaderEnabled=opsToggles.demoLoaderEnabled!==false;
+  const demoPersists=opsToggles.demoModePermanent!==false; // default true (current behaviour)
   const[dataInfo]=useState(()=>({summary:dataSummary(),isDemo:isDemoLoaded()}));
   const handleLoadDemo=()=>{
     if(loadDemoData()){
-      // Force a full reload so all useLS hooks pick up the new dataset.
+      // Q6: When demoModePermanent is OFF, mark a sessionStorage flag so the
+      // demo is wiped on next browser open. The data still lands in localStorage
+      // (needed for useLS hooks to read it), but a beforeunload handler will
+      // clear it on page close.
+      if(!demoPersists){
+        try{
+          sessionStorage.setItem("sitetrack_demo_session_only","1");
+          window.addEventListener("beforeunload",()=>{
+            try{localStorage.removeItem("sitetrack_v2");}catch{}
+          });
+        }catch{}
+      }
       window.location.reload();
     }
   };
@@ -50,7 +68,8 @@ export function LoginScreen({onLogin,dark,toggleDark}){
   const[role,setRole]=useState("architect");const[anim,setAnim]=useState(false);
   const roles=[
     {key:"superadmin",label:"Super Admin (Operations)",sub:"Multi-tenant — all orgs, users, billing, system settings",ini:"RB",col:"slate",perms:["All Orgs","User Management","Billing","System Settings","Impersonate"]},
-    {key:"architect",label:"Architect / Org Admin",sub:"Within one org — drawings, team, exports, activity feed",ini:"AR",col:"orange",perms:["Release Drawings","Manage Everything","View All Activity","Export & Share"]},
+    {key:"orgadmin",label:"Org Admin (Builder Firm Owner)",sub:"One org — members, billing, integrations, templates, approvals",ini:"MB",col:"amber",perms:["Members & Roles","Plan & Billing","Integrations","Templates","Approval Chains","Notification Rules"]},
+    {key:"architect",label:"Architect",sub:"Within one org — drawings, team, exports, activity feed",ini:"AR",col:"orange",perms:["Release Drawings","Manage Projects","View All Activity","Export & Share"]},
     {key:"pm",label:"Project Manager",sub:"Field operations — updates, attendance, issues, materials",ini:"PS",col:"blue",perms:["Add Site Updates","Mark Attendance","Report Issues","Material Logs"]},
     {key:"contractor",label:"Contractor",sub:"Worklogs, RFIs, RA bills, and field documents",ini:"KB",col:"violet",perms:["Worklogs","RFIs","RA Bills","Field Uploads"]},
     {key:"client",label:"Client",sub:"Read-only — progress, milestones, released drawings",ini:"VN",col:"emerald",perms:["View Progress","View Milestones","Released Drawings","Updates"]},
@@ -153,8 +172,8 @@ export function LoginScreen({onLogin,dark,toggleDark}){
             <span aria-hidden>→</span>
           </button>
 
-          {/* Data-mode pill + Load demo / Clear all controls */}
-          <div className="mt-6 rounded-2xl border border-stone-200 bg-white/70 p-4">
+          {/* Data-mode pill + Load demo / Clear all controls (Q6 toggle-aware) */}
+          {demoLoaderEnabled&&<div className="mt-6 rounded-2xl border border-stone-200 bg-white/70 p-4">
             <div className="flex items-center justify-between gap-3 mb-3">
               <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">— Workspace data</div>
               <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full ${dataInfo.isDemo?"bg-amber-50 text-amber-800":dataInfo.summary.isEmpty?"bg-stone-100 text-ink-600":"bg-emerald-50 text-emerald-800"}`}>
@@ -177,7 +196,8 @@ export function LoginScreen({onLogin,dark,toggleDark}){
                 Clear all data
               </button>
             </div>
-          </div>
+            {!demoPersists&&<div className="mt-3 text-[10px] text-amber-700 font-semibold">⓵ Session-only mode — demo data will be wiped when you close this browser.</div>}
+          </div>}
 
           <p className="text-[11px] text-ink-500 mt-5 text-center leading-relaxed">
             {backendEnabled
@@ -207,6 +227,15 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"admin-branding",icon:"sliders",label:"Branding",group:"admin"},
     {id:"admin-support",icon:"msgcircle",label:"Support Inbox",group:"admin"},
     {id:"admin-settings",icon:"sliders",label:"System Settings",group:"admin"},
+    // Org Admin tier (Production Phase 1) — visible only to role=orgadmin per PERMS
+    {id:"org-dashboard",icon:"shield",label:"Org Dashboard",group:"org"},
+    {id:"org-members",icon:"users",label:"Members & roles",group:"org"},
+    {id:"org-billing",icon:"wallet",label:"Plan & billing",group:"org"},
+    {id:"org-integrations",icon:"cpu",label:"Integrations",group:"org"},
+    {id:"org-templates",icon:"copy",label:"Templates",group:"org"},
+    {id:"org-approvals",icon:"shield",label:"Approval chains",group:"org"},
+    {id:"org-notifications",icon:"bell",label:"Notification rules",group:"org"},
+    {id:"org-activity",icon:"activity",label:"Audit log",group:"org"},
     // Tenant nav (visible to all roles per their PERMS.nav)
     {id:"dashboard",icon:"dashboard",label:"Dashboard"},
     {id:"projects",icon:"folder",label:"Projects"},
@@ -229,9 +258,18 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"messages",icon:"msgcircle",label:"Messages"},
     {id:"notifications",icon:"bell",label:"Updates",badge:uc},
   ];
-  const items=allItems.filter(i=>PERMS[user.role].nav.includes(i.id));
+  // Q7: superadmin can hide kiosk modes via ops_toggles. Read once here.
+  const ops=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}").ops_toggles||{};}catch{return{};}})();
+  const kioskBlocked=(id)=>{
+    if(id==="kiosk-labour"&&ops.kioskLabourEnabled===false)return true;
+    if(id==="kiosk-site"&&ops.kioskSiteEnabled===false)return true;
+    if(id==="ar-overlay"&&ops.kioskArEnabled===false)return true;
+    return false;
+  };
+  const items=allItems.filter(i=>PERMS[user.role].nav.includes(i.id)&&!kioskBlocked(i.id));
   const adminItems=items.filter(i=>i.group==="admin");
-  const tenantItems=items.filter(i=>i.group!=="admin");
+  const orgItems=items.filter(i=>i.group==="org");
+  const tenantItems=items.filter(i=>!i.group);
   const rm=ROLE_META[user.role];
   return(
     <>
@@ -268,6 +306,19 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
               );
             })}
             <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-cream/40 px-3.5 mt-4 mb-1.5">— Tenant view</div>
+          </>}
+          {orgItems.length>0&&<>
+            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-amber-500/70 px-3.5 mb-1.5 mt-1">— My organization</div>
+            {orgItems.map(it=>{
+              const isActive=active===it.id;
+              return(
+                <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all ${isActive?"text-ink-900 font-semibold":"text-cream/65 hover:text-cream font-medium"}`} style={isActive?{background:"linear-gradient(180deg, #f59e0b, #d97706)",boxShadow:"0 4px 14px rgba(217,119,6,.35)"}:{}}>
+                  <Ic n={it.icon} s={16}/>
+                  <span className="tracking-[0.01em]">{it.label}</span>
+                </button>
+              );
+            })}
+            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-cream/40 px-3.5 mt-4 mb-1.5">— Project workspace</div>
           </>}
           {tenantItems.map(it=>{
             const isActive=active===it.id;
