@@ -113,6 +113,17 @@ const vite = read("vite.config.js");
   "case\"delegations\"",
   "case\"admin-branding\"",
   "case\"admin-audit-log\"",
+  // Roadmap Batch 3 — kiosks + AR + snapshot panel + audit wiring
+  "LabourAttendanceKioskView",
+  "SiteWallKioskView",
+  "ARDrawingOverlayView",
+  "DailySnapshotPanelView",
+  "case\"kiosk-labour\"",
+  "case\"kiosk-site\"",
+  "case\"ar-overlay\"",
+  "case\"snapshot\"",
+  "recordAudit(p,{actor:user,action:\"IMPERSONATE\"",
+  "recordAudit(p,{actor:user,action:\"CREATE\",resource:\"project\"",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -208,6 +219,14 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "tests/branding.test.js",
   "tests/planGating.test.js",
   "tests/compliance.test.js",
+  // Roadmap Batch 3 — new lib + docs
+  "src/lib/whatsapp.js",
+  ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
+  ".brain/decisions/0002-foundation-libs-pure-functions.md",
+  ".brain/decisions/0003-hierarchical-project-model.md",
+  ".brain/decisions/0004-immutable-audit-log.md",
+  ".brain/decisions/0005-kiosks-as-killer-wedge.md",
+  "PRODUCTION_CHECKLIST.md",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder
