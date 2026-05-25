@@ -166,6 +166,22 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "src/data/lookups.js",
   "playwright.config.js",
   "tests/e2e/roles.spec.js",
+  // Roadmap Batch 1 — foundation libs + tests
+  "src/lib/hierarchy.js",
+  "src/lib/audit.js",
+  "src/lib/delegations.js",
+  "src/lib/branding.js",
+  "src/lib/materialPrices.js",
+  "src/lib/compliance.js",
+  "src/lib/planGating.js",
+  "src/lib/dailySnapshot.js",
+  "src/lib/aiForecast.js",
+  "tests/hierarchy.test.js",
+  "tests/audit.test.js",
+  "tests/delegations.test.js",
+  "tests/branding.test.js",
+  "tests/planGating.test.js",
+  "tests/compliance.test.js",
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder
