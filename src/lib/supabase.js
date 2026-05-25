@@ -200,3 +200,36 @@ export async function migrateLocalToBackend() {
 
 // Helper for the auth UI — replaces the demo role picker once enabled.
 export function isAuthAvailable() { return isSupabaseEnabled(); }
+
+// ── Live connection probe (Session 17) ──────────────────────────────────────
+//
+// Quick "is the backend actually reachable" check. Used by the topbar pill
+// so an operator can verify the connection without devtools.
+//
+// Returns one of:
+//   "off"       — VITE_BACKEND != "supabase" (localStorage mode)
+//   "live"      — Reachable + auth.getSession succeeded
+//   "degraded"  — Reachable but queries fail (likely missing schema or RLS)
+//   "offline"   — Network error (no internet, project paused, wrong URL)
+//
+// Does NOT throw; safe to call from a useEffect.
+export async function probeConnection() {
+  if (!isSupabaseEnabled()) return { state: "off", detail: "VITE_BACKEND=local" };
+  try {
+    const sb = await getSupabaseClient();
+    if (!sb) return { state: "offline", detail: "client init failed" };
+    // 1. Cheap: ask the SDK if it has a session cached.
+    const { error: authErr } = await sb.auth.getSession();
+    if (authErr) return { state: "degraded", detail: `auth: ${authErr.message}` };
+    // 2. Round-trip: probe a small table that RLS will return empty for anon.
+    const { error: tableErr } = await sb.from("projects").select("id").limit(1);
+    if (tableErr) {
+      // 42P01 = undefined_table; means schema not applied.
+      const msg = (tableErr.code || "") + " " + tableErr.message;
+      return { state: "degraded", detail: msg };
+    }
+    return { state: "live", detail: "" };
+  } catch (err) {
+    return { state: "offline", detail: err.message || String(err) };
+  }
+}

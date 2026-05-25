@@ -15,7 +15,7 @@ import { isOnline, onConnectivityChange, queueLength, queueOpAdd, putBlob, getBl
 import { computeRiskScore, fetchLLMInsight, getProviderConfig, saveProviderConfig, clearProviderConfig } from "./lib/ai.js";
 import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "./lib/razorpay.js";
 import { usePersistent as useLS } from "./lib/usePersistent.js";
-import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurrentUser, migrateLocalToBackend, subscribeTable } from "./lib/supabase.js";
+import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurrentUser, migrateLocalToBackend, subscribeTable, probeConnection } from "./lib/supabase.js";
 import { h, csvRow } from "./lib/escape.js";
 import { notifsForUser } from "./lib/notifications.js";
 import { fmtDate as _fmtDate, fmtTime as _fmtTime, fmtCur as _fmtCur, fileKind as _fileKind, fmtSize as _fmtSize } from "./lib/format.js";
@@ -222,10 +222,19 @@ export default function App(){
   // Offline-first state — surfaced as a pill in the top bar
   const[online,setOnline]=useState(isOnline());
   const[pendingOps,setPendingOps]=useState(queueLength());
+  // Session 17: live backend connection state — populated on mount + re-probed
+  // every 30s. Lets the operator confirm the database is connected without
+  // opening devtools.
+  const[conn,setConn]=useState({state:"unknown",detail:""});
   useEffect(()=>{
     const off=onConnectivityChange(setOnline);
     const tick=setInterval(()=>setPendingOps(queueLength()),3000);
-    return ()=>{off();clearInterval(tick);};
+    // Run an initial probe + repeat every 30s. probeConnection() never throws.
+    let stop=false;
+    const runProbe=async()=>{const r=await probeConnection();if(!stop)setConn(r);};
+    runProbe();
+    const probeTimer=setInterval(runProbe,30000);
+    return ()=>{off();clearInterval(tick);clearInterval(probeTimer);stop=true;};
   },[]);
   // Realtime: when backend is on, push live activity/message inserts.
   useEffect(()=>{
@@ -353,6 +362,11 @@ export default function App(){
           <div className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 ${ROLE_META[user.role].bg} ${ROLE_META[user.role].text}`}><Ic n="shield" s={11}/>{ROLE_META[user.role].label}</div>
           {!online&&<div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 bg-red-50 text-red-700" style={{border:"1px solid rgba(220,38,38,.2)"}} title={`${pendingOps} ops queued`}>● Offline {pendingOps>0&&`(${pendingOps})`}</div>}
           {online&&pendingOps>0&&<div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 bg-amber-50 text-amber-800" style={{border:"1px solid rgba(217,119,6,.2)"}} title="Backend not connected; ops stay queued locally">↻ {pendingOps} queued</div>}
+          {/* Session 17: live backend connection pill. Click for diagnostics. */}
+          {conn.state!=="unknown"&&<button onClick={()=>alert(`Connection state: ${conn.state}\n\n${conn.detail||"No additional details."}\n\nRun \`npm run check:supabase\` for a full diagnostic.\nSee docs/CONNECT_SUPABASE.md.`)} className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 cursor-pointer ${conn.state==="live"?"bg-emerald-50 text-emerald-700":conn.state==="off"?"bg-stone-100 text-stone-600":conn.state==="degraded"?"bg-amber-50 text-amber-800":"bg-red-50 text-red-700"}`} style={{border:"1px solid currentColor",borderOpacity:.2}} title={`Backend: ${conn.state} — ${conn.detail||"OK"}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${conn.state==="live"?"bg-emerald-500":conn.state==="off"?"bg-stone-400":conn.state==="degraded"?"bg-amber-500":"bg-red-500"}`}/>
+            {conn.state==="live"?"DB Live":conn.state==="off"?"Local mode":conn.state==="degraded"?"DB degraded":"DB offline"}
+          </button>}
           <GlobalSearch projects={projects} milestones={milestones} issues={issues} vendors={vendors} setView={setView} setSP={setSP} lang={lang} user={user}/>
           <div className="flex items-center gap-2 flex-shrink-0">
             <select value={lang} onChange={e=>setLang(e.target.value)} className="px-2.5 py-1.5 text-[11px] font-bold bg-cream-200 border border-stone-200 rounded-lg outline-none cursor-pointer tracking-wider"><option value="en">EN</option><option value="te">తె</option><option value="hi">हि</option></select>
