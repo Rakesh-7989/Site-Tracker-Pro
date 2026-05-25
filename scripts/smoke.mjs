@@ -17,6 +17,7 @@ const app = [
   read("src/features/admin/index.jsx"),
   read("src/features/views/index.jsx"),
   read("src/features/detail/index.jsx"),
+  read("src/lib/exports.js"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -243,6 +244,8 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   // Roadmap Batch 7 — attachment atoms + detail satellites extracted
   "src/components/attachments.jsx",
   "src/features/detail/index.jsx",
+  // Roadmap Batch 8 — export helpers extracted
+  "src/lib/exports.js",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
