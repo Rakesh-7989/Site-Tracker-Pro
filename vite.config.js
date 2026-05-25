@@ -9,6 +9,10 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           const normalized = id.replace(/\\/g, '/')
+          // Split first-party roadmap views off the main bundle — only loaded
+          // when a user navigates to a Batch 2/3 view (hierarchy / kiosks /
+          // material-prices / etc.). Saves ~50 kB on the dashboard cold path.
+          if (normalized.includes('/src/features/roadmap/')) return 'roadmap'
           if (!normalized.includes('/node_modules/')) return undefined
           if (normalized.includes('/node_modules/react/') || normalized.includes('/node_modules/react-dom/') || normalized.includes('/node_modules/scheduler/')) return 'react'
           if (normalized.includes('/node_modules/recharts/') || normalized.includes('/node_modules/react-smooth/') || normalized.includes('/node_modules/react-transition-group/')) return 'recharts'
