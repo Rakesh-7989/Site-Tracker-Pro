@@ -43,6 +43,7 @@ export const PERMS = {
       "activity", "dashboard", "projects", "calendar",
       "vendors", "po", "analytics", "messages", "notifications",
       "hierarchy", "material-prices", "compliance", "forecast", "delegations",
+      "snapshot", "kiosk-labour", "kiosk-site", "ar-overlay",
     ],
   },
   architect: {
@@ -72,6 +73,7 @@ export const PERMS = {
       "dashboard", "projects", "calendar", "vendors", "po", "analytics",
       "activity", "messages", "notifications",
       "hierarchy", "material-prices", "compliance", "forecast", "delegations",
+      "snapshot", "kiosk-labour", "kiosk-site", "ar-overlay",
     ],
   },
   pm: {
@@ -101,6 +103,7 @@ export const PERMS = {
       "dashboard", "projects", "calendar", "vendors", "po", "pm",
       "messages", "notifications",
       "hierarchy", "material-prices", "compliance",
+      "snapshot", "kiosk-labour", "kiosk-site",
     ],
   },
   contractor: {

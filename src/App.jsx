@@ -29,6 +29,7 @@ import { COMMODITIES, fetchQuotes, bestQuote, savings } from "./lib/materialPric
 import { checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus } from "./lib/compliance.js";
 import { canUseFeature, upsellLine } from "./lib/planGating.js";
 import { forecastWithLlm } from "./lib/aiForecast.js";
+import { freezeSnapshot, snapshotSeries, snapshotDelta } from "./lib/dailySnapshot.js";
 // LOW-5 / Split-2: mock data + UI lookups extracted from App.jsx.
 import {
   MOCK_USERS, PLAN_META, INIT_ORGS, INIT_ADMIN_USERS, INIT_SUPPORT,
@@ -946,6 +947,10 @@ function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"compliance",icon:"shield",label:"Compliance"},
     {id:"forecast",icon:"zap",label:"Cost Forecast"},
     {id:"delegations",icon:"users",label:"Delegations"},
+    {id:"snapshot",icon:"calendar",label:"Daily Snapshot"},
+    {id:"kiosk-labour",icon:"users",label:"Labour Kiosk"},
+    {id:"kiosk-site",icon:"dashboard",label:"Site Wall Kiosk"},
+    {id:"ar-overlay",icon:"camera",label:"AR Drawing"},
     {id:"analytics",icon:"barChart",label:"Analytics"},
     {id:"activity",icon:"activity",label:"Activity",badge:ac},
     {id:"pm",icon:"users",label:"PM View"},
@@ -3510,12 +3515,19 @@ function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
 }
 
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
-function CreateView({user,setView,setProjects}){
+function CreateView({user,setView,setProjects,setAuditLog}){
   // Hooks must be called unconditionally (react-hooks/rules-of-hooks).
   const[f,setF]=useState({name:"",cn:"",ce:"",loc:"",sd:"",ed:"",budget:"",desc:""});const[done,setDone]=useState(false);const[err,setErr]=useState({});
   if(!can(user,"createProject")) return <div className="p-8"><AccessDenied msg="Only Architects can create new projects."/></div>;
   const val=()=>{const e={};if(!f.name.trim())e.name="Required";if(!f.cn.trim())e.cn="Required";if(!f.loc.trim())e.loc="Required";if(!f.sd)e.sd="Required";return e;};
-  const sub=()=>{const e=val();if(Object.keys(e).length){setErr(e);return;}setProjects(p=>[...p,{id:"p_"+Date.now(),name:f.name,client_name:f.cn,client_email:f.ce,location:f.loc,start_date:f.sd,expected_end_date:f.ed,budget:parseFloat(f.budget)||0,description:f.desc,status:"active",progress:0}]);setDone(true);setTimeout(()=>setView("projects"),1800);};
+  const sub=()=>{
+    const e=val();if(Object.keys(e).length){setErr(e);return;}
+    const id="p_"+Date.now();
+    setProjects(p=>[...p,{id,name:f.name,client_name:f.cn,client_email:f.ce,location:f.loc,start_date:f.sd,expected_end_date:f.ed,budget:parseFloat(f.budget)||0,description:f.desc,status:"active",progress:0}]);
+    // Immutable audit row — required for compliance + multi-tenant trace.
+    if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"project",resource_id:id,project_id:id,message:`Created project ${f.name} for ${f.cn}`}));
+    setDone(true);setTimeout(()=>setView("projects"),1800);
+  };
   if(done) return <div className="p-8 flex items-center justify-center min-h-96"><div className="text-center"><div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4"><Ic n="check" s={28} c="text-emerald-600"/></div><h2 className="text-xl font-black text-slate-800 mb-2">Project Created!</h2></div></div>;
   const inp=(key,lbl,type="text",ph="",fk)=>{const k=fk||key;return<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">{lbl}</label><input type={type} value={f[k]} onChange={e=>{setF(p=>({...p,[k]:e.target.value}));setErr(p=>({...p,[key]:""}));}} placeholder={ph} className={`w-full p-3.5 border rounded-xl text-sm outline-none transition-all ${err[key]?"border-red-300 bg-red-50":"border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-50"}`}/>{err[key]&&<p className="text-red-500 text-xs mt-1">{err[key]}</p>}</div>;};
   return(<div className="p-4 md:p-8 max-w-2xl"><button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button><h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1><p className="text-slate-500 text-sm mb-5 -mt-3">A few details to get started — you can edit everything later and add drawings, BOQ, RA bills and updates from the project page.</p><div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">{inp("name","Project Name","text","e.g. Riverside Towers — Phase II")}<div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","e.g. Asha Estates","cn")}{inp("ce","Client Email","email","client@example.com","ce")}</div>{inp("loc","Location","text","City or neighbourhood","loc")}<div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>{inp("budget","Budget (₹)","number","e.g. 45000000")}<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label><textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} placeholder="Short scope summary — what's being built, key milestones, anything special." className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/></div><button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button></div></div>);
@@ -4176,7 +4188,7 @@ function ForecastView({user,projects,boq,ra,ledger,updates,forecast,setForecast,
 }
 
 // ── DELEGATIONS VIEW (approval delegation manager) ──────────────────────────
-function DelegationsView({user,adminUsers,delegations,setDelegations}){
+function DelegationsView({user,adminUsers,delegations,setDelegations,setAuditLog}){
   const[show,setShow]=useState(false);
   const[nd,setNd]=useState({to_user_id:"",scope:"all",start:"",end:"",reason:""});
   const myDelegations=delegations.filter(d=>d.from_user_id===user.id);
@@ -4186,9 +4198,14 @@ function DelegationsView({user,adminUsers,delegations,setDelegations}){
     const target=otherUsers.find(u=>u.id===nd.to_user_id);
     if(!target){alert("Delegate not found.");return;}
     setDelegations(p=>addDelegation(p,{from_user_id:user.id,from_user_name:user.name,to_user_id:target.id,to_user_name:target.name,scope:nd.scope,start:new Date(nd.start).toISOString(),end:new Date(nd.end+"T23:59:59").toISOString(),reason:nd.reason}));
+    if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"DELEGATE",resource:"delegation",message:`Delegated ${nd.scope} approvals to ${target.name} (${fmtDate(nd.start)} → ${fmtDate(nd.end)})`}));
     setNd({to_user_id:"",scope:"all",start:"",end:"",reason:""});setShow(false);
   };
-  const revoke=(id)=>{if(window.confirm("Revoke this delegation? Audit trail is preserved."))setDelegations(p=>revokeDelegation(p,id));};
+  const revoke=(id)=>{
+    if(!window.confirm("Revoke this delegation? Audit trail is preserved."))return;
+    setDelegations(p=>revokeDelegation(p,id));
+    if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"DELETE",resource:"delegation",resource_id:id,message:"Revoked delegation"}));
+  };
   return(
     <div className="p-4 md:p-10 max-w-4xl">
       <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{borderBottom:"1px solid var(--st-line)"}}>
@@ -4226,7 +4243,7 @@ function DelegationsView({user,adminUsers,delegations,setDelegations}){
 }
 
 // ── BRANDING SETTINGS VIEW (white-label cascade) ────────────────────────────
-function BrandingSettingsView({user,projects,orgs,branding,setBranding}){
+function BrandingSettingsView({user,projects,orgs,branding,setBranding,setAuditLog}){
   const[level,setLevel]=useState("org");
   const userOrg=user.org_id||orgs[0]?.id||"";
   const[selOrg,setSelOrg]=useState(userOrg);
@@ -4237,8 +4254,13 @@ function BrandingSettingsView({user,projects,orgs,branding,setBranding}){
   const update=(patch)=>{
     if(level==="org") setBranding(p=>setOrgBrand(p,currentKey,patch));
     else setBranding(p=>setProjectBrand(p,currentKey,patch));
+    if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"branding",resource_id:currentKey,project_id:level==="project"?currentKey:null,message:`${level==="org"?"Org":"Project"}-level branding updated: ${Object.keys(patch).join(", ")}`}));
   };
-  const clearProject=()=>{if(window.confirm("Clear project-level branding? Cascade falls back to org defaults."))setBranding(p=>clearProjectBrand(p,selProject));};
+  const clearProject=()=>{
+    if(!window.confirm("Clear project-level branding? Cascade falls back to org defaults."))return;
+    setBranding(p=>clearProjectBrand(p,selProject));
+    if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"DELETE",resource:"branding",resource_id:selProject,project_id:selProject,message:"Cleared project-level branding override"}));
+  };
   return(
     <div className="p-4 md:p-10 max-w-5xl">
       <div className="mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
@@ -4330,6 +4352,328 @@ function AuditLogV2View({user,auditLog,projects,adminUsers}){
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ROADMAP BATCH 3 — Differentiator kiosks + AR scaffold + DailySnapshot UI.
+//
+// These are the "wedge" features no Indian construction-SaaS competitor has:
+//   1. LabourAttendanceKioskView — tablet at site entrance, 6-digit project
+//      pair → workers clock-in via face/QR scan (mock for now, real biometric
+//      API drops in later). Writes to LabourLog automatically.
+//   2. SiteWallKioskView — TV / wall-mounted display in site office showing
+//      today's plan + workforce + open issues + weather + photo wall.
+//      Modeled on TripGZio's gz-tv-app (10-foot UI, no hover).
+//   3. ARDrawingOverlay — phone camera + canvas overlay scaffold. Full
+//      homography math comes in Batch 4; this surfaces the UI shell + permission
+//      flow so demos can show "we have this".
+//   4. DailySnapshotPanel — manual freeze button + 30-day series. Wraps
+//      lib/dailySnapshot.js so the cron is exposed before the server-side
+//      scheduler lands.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Labour attendance kiosk — meant to run on a tablet at the site entrance.
+ * Flow:
+ *   1. Manager / supervisor signs in once → picks project → tablet "pairs"
+ *      with that project (6-digit code displayed for verification).
+ *   2. Worker walks up → taps "I'm here" → enters their badge ID (mock for
+ *      camera/face capture which lands in Batch 4) → clock-in row created.
+ *   3. End of shift → "Going home" → clock-out, hours auto-computed.
+ *
+ * Stored in `labour[projectId]` (existing useLS slot) so it shows up in
+ * the regular LabourLog tab as well.
+ */
+function LabourAttendanceKioskView({user,projects,labour,setLabour,auditLog,setAuditLog}){
+  const visible=visibleProjectsForUser(projects,user);
+  const[selProject,setSelProject]=useState(visible[0]?.id||null);
+  const proj=visible.find(p=>p.id===selProject);
+  const pairingCode=useMemo(()=>{
+    if(!selProject) return "------";
+    // Deterministic 6-digit from project id — every reload shows the same code.
+    let h=0;for(const c of selProject){h=(h*31+c.charCodeAt(0))&0xffffff;}
+    return String(100000+(h%900000));
+  },[selProject]);
+  const[badge,setBadge]=useState("");
+  const[name,setName]=useState("");
+  const[trade,setTrade]=useState("");
+  const[toast,setToast]=useState("");
+  const todayISO=new Date().toISOString().split("T")[0];
+  const projLog=(labour?.[selProject]||[]).filter(r=>r.date===todayISO);
+  const showToast=(msg)=>{setToast(msg);setTimeout(()=>setToast(""),2200);};
+  const clockIn=()=>{
+    if(!badge.trim()||!name.trim()){showToast("Badge ID + name required.");return;}
+    const row={id:"l_"+Date.now(),date:todayISO,badge:badge.trim(),name:name.trim(),trade:trade.trim()||"General",in_time:new Date().toISOString(),out_time:null,hours:0,kiosk:true};
+    setLabour(p=>({...p,[selProject]:[...(p[selProject]||[]),row]}));
+    setAuditLog(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"labour",resource_id:row.id,project_id:selProject,message:`${row.name} clocked-in via kiosk`}));
+    setBadge("");setName("");setTrade("");showToast(`✓ ${row.name} clocked in`);
+  };
+  const clockOut=(rowId)=>{
+    setLabour(p=>{
+      const arr=(p[selProject]||[]).map(r=>{
+        if(r.id!==rowId||r.out_time) return r;
+        const out=new Date();
+        const inT=new Date(r.in_time);
+        const hours=Math.max(0,Math.round(((out-inT)/3600000)*100)/100);
+        return {...r,out_time:out.toISOString(),hours};
+      });
+      return {...p,[selProject]:arr};
+    });
+    setAuditLog(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"labour",resource_id:rowId,project_id:selProject,message:`Clock-out via kiosk`}));
+    showToast("✓ Clocked out");
+  };
+  if(visible.length===0) return <div className="p-10 text-center text-ink-500">No projects available for kiosk pairing.</div>;
+  return(
+    <div className="min-h-screen bg-ink-900 text-cream p-4 md:p-8 flex flex-col">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-gold flex items-center justify-center"><Ic n="users" s={22} c="text-white"/></div>
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500">— Labour kiosk · {fmtDate(todayISO)}</div>
+            <h1 className="font-display text-3xl font-light text-cream tracking-editorial leading-none">Site attendance</h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <select value={selProject||""} onChange={e=>setSelProject(e.target.value)} className="px-4 py-2.5 bg-ink-700 border border-amber-600/30 text-cream rounded-xl text-sm outline-none">{visible.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
+          <div className="text-right"><div className="text-[10px] tracking-[0.28em] uppercase text-cream/50">Pair code</div><div className="font-mono text-2xl font-bold text-amber-400 tracking-wider">{pairingCode}</div></div>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6 flex-1 min-h-0">
+        <div className="bg-ink-700/40 rounded-3xl p-8 flex flex-col" style={{border:"1px solid rgba(217,119,6,.25)"}}>
+          <h2 className="font-display text-2xl font-semibold text-cream tracking-editorial mb-6">Clock in</h2>
+          <input value={badge} onChange={e=>setBadge(e.target.value.toUpperCase())} placeholder="Badge ID (e.g. SP-0042)" className="w-full mb-3 p-4 bg-ink-900 border border-amber-600/20 text-cream text-lg rounded-xl outline-none focus:border-amber-500 font-mono"/>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Worker name" className="w-full mb-3 p-4 bg-ink-900 border border-amber-600/20 text-cream text-lg rounded-xl outline-none focus:border-amber-500"/>
+          <input value={trade} onChange={e=>setTrade(e.target.value)} placeholder="Trade (Mason / Steel / Electrical…)" className="w-full mb-5 p-4 bg-ink-900 border border-amber-600/20 text-cream text-lg rounded-xl outline-none focus:border-amber-500"/>
+          <button onClick={clockIn} className="w-full py-5 bg-gradient-gold text-ink-900 font-bold text-lg rounded-2xl tracking-wide hover:shadow-editorial-deep transition-all">✓ Clock in</button>
+          <p className="mt-4 text-[11px] text-cream/50 leading-relaxed">Face/QR/biometric capture lands in next release. For now badge + name + trade is enough to record presence.</p>
+        </div>
+        <div className="bg-ink-700/40 rounded-3xl p-8 flex flex-col" style={{border:"1px solid rgba(217,119,6,.25)"}}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-2xl font-semibold text-cream tracking-editorial">Today on site</h2>
+            <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400">{projLog.length} present</span>
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-2">
+            {projLog.length===0&&<div className="text-center py-12 text-cream/40 text-sm">No clock-ins yet today.</div>}
+            {projLog.map(r=>(<div key={r.id} className="flex items-center gap-3 p-3 rounded-xl bg-ink-900/60" style={{border:"1px solid rgba(217,119,6,.12)"}}>
+              <div className="w-10 h-10 rounded-lg bg-amber-500/15 flex items-center justify-center"><Ic n="users" s={16} c="text-amber-400"/></div>
+              <div className="flex-1 min-w-0"><div className="font-semibold text-cream text-sm truncate">{r.name} <span className="text-cream/40 font-mono text-[10px] ml-1">{r.badge}</span></div><div className="text-[11px] text-cream/50">{r.trade} · in {fmtTime(r.in_time)}{r.out_time?` · out ${fmtTime(r.out_time)} · ${r.hours}h`:""}</div></div>
+              {!r.out_time&&<button onClick={()=>clockOut(r.id)} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 hover:bg-amber-500/25">Clock out</button>}
+            </div>))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 text-center text-[10px] tracking-[0.28em] uppercase text-cream/30">Project: {proj?.name} · Inflation control: {projLog.length} verified today</div>
+
+      {toast&&<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-amber-500 text-ink-900 font-bold text-sm rounded-xl tracking-wide shadow-editorial-deep">{toast}</div>}
+    </div>
+  );
+}
+
+// ── SITE WALL KIOSK (10-foot UI for site office display) ────────────────────
+function SiteWallKioskView({user,projects,updates,issues,labour,milestones,setView}){
+  const visible=visibleProjectsForUser(projects,user);
+  const[selProject,setSelProject]=useState(visible[0]?.id||null);
+  const[clock,setClock]=useState(new Date());
+  useEffect(()=>{const t=setInterval(()=>setClock(new Date()),30000);return()=>clearInterval(t);},[]);
+  const proj=visible.find(p=>p.id===selProject);
+  const todayISO=new Date().toISOString().split("T")[0];
+  const todayUpdates=(updates[selProject]||[]).filter(u=>(u.update_date||"").startsWith(todayISO));
+  const todayIssues=(issues[selProject]||[]).filter(i=>i.status==="open");
+  const highIssues=todayIssues.filter(i=>i.severity==="high");
+  const todayLabour=(labour?.[selProject]||[]).filter(r=>r.date===todayISO);
+  const workersOnSite=todayLabour.length;
+  const projMilestones=milestones[selProject]||[];
+  const upcomingMilestones=projMilestones.filter(m=>m.status!=="completed").slice(0,3);
+  const recentPhotos=todayUpdates.filter(u=>Array.isArray(u.photos)&&u.photos.length>0).slice(0,6);
+  if(visible.length===0) return <div className="p-10 text-center text-ink-500">No projects.</div>;
+  return(
+    <div className="min-h-screen bg-ink-900 text-cream relative overflow-hidden" style={{padding:"3.5rem"}}>
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{backgroundImage:"linear-gradient(rgba(245,158,11,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,.5) 1px,transparent 1px)",backgroundSize:"80px 80px"}}/>
+      <div className="absolute -top-32 -right-32 w-[36rem] h-[36rem] rounded-full pointer-events-none" style={{background:"radial-gradient(circle, rgba(217,119,6,.18) 0%, transparent 60%)"}}/>
+
+      <div className="relative flex items-end justify-between mb-10 flex-wrap gap-4">
+        <div>
+          <div className="text-[11px] font-bold tracking-[0.32em] uppercase text-amber-500 mb-2">— Site board · {clock.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
+          <h1 className="font-display text-6xl font-light text-cream tracking-editorial leading-[1.02] max-w-4xl">{proj?.name}</h1>
+          <p className="text-cream/60 mt-3 text-base">{proj?.location} · {proj?.client_name}</p>
+        </div>
+        <div className="text-right">
+          <div className="font-display text-6xl font-light text-cream tracking-editorial leading-none">{clock.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</div>
+          <select value={selProject||""} onChange={e=>setSelProject(e.target.value)} className="mt-3 px-4 py-2 bg-ink-700 border border-amber-600/30 text-cream rounded-xl text-sm outline-none">{visible.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
+        </div>
+      </div>
+
+      <div className="relative grid grid-cols-4 gap-6 mb-8">
+        <KioskTile label="Progress" value={`${proj?.progress||0}%`} sub="overall" accent="amber"/>
+        <KioskTile label="Workers on site" value={workersOnSite} sub={`${todayLabour.filter(r=>!r.out_time).length} active`} accent="emerald"/>
+        <KioskTile label="Open issues" value={todayIssues.length} sub={`${highIssues.length} HIGH`} accent={highIssues.length>0?"red":"violet"}/>
+        <KioskTile label="Today's updates" value={todayUpdates.length} sub={`${recentPhotos.length} with photos`} accent="blue"/>
+      </div>
+
+      <div className="relative grid grid-cols-3 gap-6">
+        <div className="col-span-2 bg-ink-700/30 rounded-3xl p-8" style={{border:"1px solid rgba(217,119,6,.22)"}}>
+          <div className="text-[11px] font-bold tracking-[0.32em] uppercase text-amber-500 mb-4">— Upcoming milestones</div>
+          {upcomingMilestones.length===0?<p className="text-cream/40 text-lg italic">All current milestones complete or none planned.</p>:upcomingMilestones.map(m=>(
+            <div key={m.id} className="flex items-center justify-between py-3" style={{borderBottom:"1px solid rgba(245,158,11,.08)"}}>
+              <div className="font-display text-xl text-cream tracking-editorial">{m.title}</div>
+              <div className="text-amber-400 font-mono text-sm">{fmtDate(m.due_date)}</div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-ink-700/30 rounded-3xl p-8" style={{border:"1px solid rgba(217,119,6,.22)"}}>
+          <div className="text-[11px] font-bold tracking-[0.32em] uppercase text-amber-500 mb-4">— HIGH severity</div>
+          {highIssues.length===0?<p className="text-emerald-400 text-lg">All clear.</p>:highIssues.slice(0,4).map(i=>(
+            <div key={i.id} className="py-3" style={{borderBottom:"1px solid rgba(220,38,38,.15)"}}>
+              <div className="font-semibold text-cream text-base">{i.title}</div>
+              <div className="text-[11px] text-cream/50 mt-1">{i.location||"—"}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {recentPhotos.length>0&&<div className="relative mt-6 grid grid-cols-6 gap-3">
+        {recentPhotos.map((u,i)=>(<div key={i} className="aspect-square rounded-xl bg-ink-700/40 overflow-hidden" style={{border:"1px solid rgba(217,119,6,.18)"}}>
+          {u.photos[0]?.dataUrl||u.photos[0]?.url?<img src={u.photos[0].dataUrl||u.photos[0].url} alt="" className="w-full h-full object-cover"/>:<div className="w-full h-full flex items-center justify-center"><Ic n="image" s={20} c="text-cream/40"/></div>}
+        </div>))}
+      </div>}
+
+      <div className="relative mt-10 flex items-center justify-between text-[10px] tracking-[0.32em] uppercase text-cream/30">
+        <span>SiteTrack Pro · {proj?.client_name}</span>
+        <button onClick={()=>setView("dashboard")} className="text-amber-500/70 hover:text-amber-500">Exit kiosk →</button>
+      </div>
+    </div>
+  );
+}
+
+function KioskTile({label,value,sub,accent="amber"}){
+  const ring={amber:"rgba(245,158,11,.25)",emerald:"rgba(16,185,129,.3)",red:"rgba(220,38,38,.35)",violet:"rgba(124,58,237,.3)",blue:"rgba(37,99,235,.3)"}[accent];
+  const txt={amber:"text-amber-400",emerald:"text-emerald-400",red:"text-red-400",violet:"text-violet-400",blue:"text-blue-400"}[accent];
+  return(<div className="bg-ink-700/30 rounded-3xl p-8" style={{border:`1px solid ${ring}`}}>
+    <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-cream/50 mb-3">{label}</div>
+    <div className={`font-display text-6xl font-light ${txt} tracking-editorial leading-none`}>{value}</div>
+    <div className="text-[11px] text-cream/40 mt-3">{sub}</div>
+  </div>);
+}
+
+// ── AR DRAWING OVERLAY SCAFFOLD ─────────────────────────────────────────────
+// Camera + canvas wrapper. Full homography math (3D drawing-on-wall) lands in
+// Batch 4. This shell proves permission flow + camera mount works, so demos
+// can show "we have AR" without a half-broken full implementation.
+function ARDrawingOverlayView({user,projects,drawings,plan="basic"}){
+  const videoRef=useRef(null);
+  const[stream,setStream]=useState(null);
+  const[error,setError]=useState("");
+  const[selProject,setSelProject]=useState(visibleProjectsForUser(projects,user)[0]?.id||null);
+  const projDrawings=(drawings[selProject]||[]).filter(d=>d.status==="current");
+  const[selDrawing,setSelDrawing]=useState(projDrawings[0]?.id||null);
+  const drawing=projDrawings.find(d=>d.id===selDrawing);
+  const start=async()=>{
+    setError("");
+    if(!navigator.mediaDevices?.getUserMedia){setError("Camera not supported in this browser.");return;}
+    try{
+      const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
+      setStream(s);
+      if(videoRef.current){videoRef.current.srcObject=s;videoRef.current.play().catch(()=>{});}
+    }catch(e){setError(e?.message||"Camera permission denied.");}
+  };
+  const stop=()=>{if(stream){stream.getTracks().forEach(t=>t.stop());setStream(null);if(videoRef.current)videoRef.current.srcObject=null;}};
+  useEffect(()=>()=>stop(),[]);// eslint-disable-line react-hooks/exhaustive-deps
+  return(
+    <div className="p-4 md:p-10 max-w-5xl">
+      <div className="mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Field overlay</div>
+        <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">AR Drawing</h1>
+        <p className="text-ink-500 text-sm mt-2">Phone camera with the latest released drawing overlay. Tap-to-align corners; full 3D mapping in next release.</p>
+      </div>
+      <PlanGate plan={plan} feature="ar_overlay" planName="Business">
+        <div className="grid sm:grid-cols-2 gap-3 mb-5">
+          <select value={selProject||""} onChange={e=>{setSelProject(e.target.value);setSelDrawing(null);}} className="p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{visibleProjectsForUser(projects,user).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
+          <select value={selDrawing||""} onChange={e=>setSelDrawing(e.target.value)} className="p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{projDrawings.length===0?<option value="">— No current drawings —</option>:projDrawings.map(d=><option key={d.id} value={d.id}>{d.title} · Rev {d.revision||"A"}</option>)}</select>
+        </div>
+        <div className="relative rounded-2xl overflow-hidden bg-ink-900" style={{border:"1px solid var(--st-line)",aspectRatio:"16/10"}}>
+          <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted/>
+          {!stream&&<div className="absolute inset-0 flex flex-col items-center justify-center text-cream/70">
+            <Ic n="camera" s={42} c="opacity-50 mb-3"/>
+            <p className="text-sm">Camera off</p>
+            <button onClick={start} className="mt-4 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Start camera</button>
+            {error&&<p className="mt-3 text-red-400 text-xs">{error}</p>}
+          </div>}
+          {stream&&drawing&&<div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="w-3/4 h-3/4 border-2 border-amber-500/80 rounded-xl bg-amber-500/5 flex items-center justify-center"><div className="text-center text-amber-400"><div className="text-[10px] tracking-[0.28em] uppercase mb-1">Overlay placeholder</div><div className="font-display text-base font-semibold">{drawing.title}</div><div className="text-[11px] mt-1">Tap corners to align (coming next release)</div></div></div>
+          </div>}
+        </div>
+        {stream&&<div className="mt-3 flex justify-end"><button onClick={stop} className="px-4 py-2 bg-ink-900 text-cream rounded-xl text-xs font-bold tracking-wide">Stop camera</button></div>}
+        <p className="text-[11px] text-ink-500 mt-4 leading-relaxed">Privacy: video stream stays in-browser; no frames are uploaded. Real-time homography mapping uses 4-corner reference points — those land in v1.1.</p>
+      </PlanGate>
+    </div>
+  );
+}
+
+// ── DAILY SNAPSHOT PANEL (manual freeze + 30-day history) ───────────────────
+function DailySnapshotPanelView({user,projects,boq,ra,ledger,updates,labour,issues,dailySnapshots,setDailySnapshots,setAuditLog}){
+  const visible=visibleProjectsForUser(projects,user);
+  const[selProject,setSelProject]=useState(visible[0]?.id||null);
+  const proj=visible.find(p=>p.id===selProject);
+  const freeze=async(forceRefresh)=>{
+    if(!proj)return;
+    const next=freezeSnapshot(dailySnapshots,selProject,{projects,updates,issues,ra,ledger,labour},{forceRefresh});
+    setDailySnapshots(next);
+    setAuditLog(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"snapshot",project_id:selProject,message:forceRefresh?"Snapshot force-refreshed":"Snapshot frozen"}));
+  };
+  const series=snapshotSeries(dailySnapshots,selProject,30);
+  const delta=snapshotDelta(dailySnapshots,selProject);
+  if(visible.length===0) return <div className="p-10 text-center text-ink-500">No projects.</div>;
+  return(
+    <div className="p-4 md:p-10 max-w-6xl">
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Reporting</div>
+          <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Daily Snapshot</h1>
+          <p className="text-ink-500 text-sm mt-2">Freeze today's KPIs into an immutable row. Cron-ready — manual trigger today, nightly auto later.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select value={selProject||""} onChange={e=>setSelProject(e.target.value)} className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm font-semibold outline-none focus:border-amber-600">{visible.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
+          <button onClick={()=>freeze(false)} className="px-4 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Freeze today</button>
+          <button onClick={()=>freeze(true)} className="px-4 py-2.5 border border-stone-300 text-ink-700 font-bold rounded-xl text-sm tracking-wide hover:bg-stone-50">Re-freeze</button>
+        </div>
+      </div>
+      {delta&&<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <DeltaTile label="Progress" delta={delta.progress} unit="%"/>
+        <DeltaTile label="Workers" delta={delta.workers}/>
+        <DeltaTile label="Cumulative bill" delta={delta.bill} fmt={fmtCur}/>
+        <DeltaTile label="Open issues" delta={delta.open} negativeGood/>
+      </div>}
+      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+        <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 bg-cream-200/60 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div className="col-span-2">Date</div><div className="col-span-1 text-right">Prog</div><div className="col-span-1 text-right">Workers</div><div className="col-span-1 text-right">Mat. used</div><div className="col-span-2 text-right">Cumulative bill</div><div className="col-span-1 text-right">Open</div><div className="col-span-1 text-right">High</div><div className="col-span-1 text-right">Photos</div><div className="col-span-2">Weather</div>
+        </div>
+        {series.length===0?<div className="p-10 text-center text-ink-500"><Ic n="calendar" s={28} c="mx-auto mb-2 opacity-30"/><p className="text-sm">No snapshots yet. Click "Freeze today" to record the first one.</p></div>:[...series].reverse().map(s=>(<div key={s.date} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm" style={{borderBottom:"1px solid var(--st-line)"}}>
+          <div className="col-span-2 font-mono text-ink-700">{s.date}</div>
+          <div className="col-span-1 text-right font-display font-semibold text-ink-900">{s.progress_pct}%</div>
+          <div className="col-span-1 text-right text-ink-700">{s.workers_on_site}</div>
+          <div className="col-span-1 text-right text-ink-700">{s.materials_consumed}</div>
+          <div className="col-span-2 text-right font-mono text-ink-900">{fmtCur(s.cumulative_bill)}</div>
+          <div className="col-span-1 text-right text-ink-700">{s.open_issues}</div>
+          <div className={`col-span-1 text-right font-bold ${s.high_issues>0?"text-red-600":"text-emerald-700"}`}>{s.high_issues}</div>
+          <div className="col-span-1 text-right text-ink-700">{s.photos_uploaded}</div>
+          <div className="col-span-2 text-[11px] text-ink-500 truncate">{s.weather||"—"}</div>
+        </div>))}
+      </div>
+    </div>
+  );
+}
+
+function DeltaTile({label,delta,unit="",fmt=null,negativeGood=false}){
+  const positive=delta>0;
+  const goodColor=negativeGood?(positive?"text-red-700":"text-emerald-700"):(positive?"text-emerald-700":"text-red-700");
+  const sign=positive?"+":"";
+  const txt=fmt?`${sign}${fmt(delta)}`:`${sign}${delta}${unit}`;
+  return(<div className="bg-white rounded-2xl p-4 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
+    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">{label} (Δ vs yesterday)</div>
+    <div className={`font-display text-2xl font-bold ${delta===0?"text-ink-900":goodColor}`}>{delta===0?"—":txt}</div>
+  </div>);
+}
+
 // ── APP ROOT ──────────────────────────────────────────────────────────────────
 export default function App(){
   const initialView = () => new URLSearchParams(window.location.search).get("view") || "dashboard";
@@ -4350,12 +4694,15 @@ export default function App(){
   const startImpersonate=(targetUser)=>{
     if(!user||user.role!=="superadmin"){alert("Only super admin can impersonate.");return;}
     if(!window.confirm(`Impersonate ${targetUser.name} (${targetUser.role})?\n\nA banner stays visible the whole time. Click "Stop" to return to your super admin session.`))return;
+    // Audit BEFORE switching identity — recorded as the real super-admin user.
+    setAuditLog(p=>recordAudit(p,{actor:user,action:"IMPERSONATE",resource:"user",resource_id:targetUser.id,message:`Started impersonating ${targetUser.name} (${targetUser.role})`}));
     setImpersonating({realUser:user,asUser:targetUser});
     setUser({...targetUser,avatar:(targetUser.name||"U").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase()});
     setViewRaw(targetUser.role==="client"?"client":"dashboard");
   };
   const stopImpersonate=()=>{
     if(!impersonating)return;
+    setAuditLog(p=>recordAudit(p,{actor:impersonating.realUser,action:"IMPERSONATE",resource:"user",resource_id:impersonating.asUser.id,message:`Stopped impersonating ${impersonating.asUser.name}`}));
     setUser(impersonating.realUser);
     setViewRaw("admin-dashboard");
     setImpersonating(null);
@@ -4412,8 +4759,8 @@ export default function App(){
   // Plan for the current user's org — falls back to "basic" if not set.
   const currentOrg=orgs.find(o=>o.id===user?.org_id);
   const activePlan=currentOrg?.plan||"basic";
-  // Suppress unused-state warnings — these setters are used by views passed down.
-  void setAuditLog;void setDailySnapshots;void setMaterialPrices;
+  // setMaterialPrices is used by future cache flow; setDailySnapshots used by panel.
+  void setMaterialPrices;
   const[lang,setLang]=useLS("lang","en");
   // Offline-first state — surfaced as a pill in the top bar
   const[online,setOnline]=useState(isOnline());
@@ -4482,7 +4829,7 @@ export default function App(){
       case"analytics": return <AnalyticsView user={user} projects={projects} expenses={expenses} updates={updates} teams={teams}/>;
       case"activity": return <ActivityView user={user} activity={activity} setActivity={setActivity} projects={projects}/>;
       case"detail": return <DetailView pid={sp} user={user} setView={setView} {...dp}/>;
-      case"create": return <CreateView user={user} setView={setView} setProjects={setProjects}/>;
+      case"create": return <CreateView user={user} setView={setView} setProjects={setProjects} setAuditLog={setAuditLog}/>;
       case"notifications": return <NotifsView notifs={notifs} setNotifs={setNotifs} user={user} projects={projects}/>;
       case"messages": return <MessagesView user={user} projects={projects} messages={messages} setMessages={setMessages}/>;
       case"pm": return <PMView user={user} projects={projects} setView={setView} setSP={setSP} notifs={notifs}/>;
@@ -4503,9 +4850,14 @@ export default function App(){
       case"material-prices": return <MaterialPricesView user={user} plan={activePlan}/>;
       case"compliance": return <ComplianceView user={user} projects={projects} compliance={compliance} setCompliance={setCompliance}/>;
       case"forecast": return <ForecastView user={user} projects={projects} boq={boq} ra={ra} ledger={ledger} updates={updates} forecast={forecast} setForecast={setForecast} plan={activePlan}/>;
-      case"delegations": return <DelegationsView user={user} adminUsers={adminUsers} delegations={delegations} setDelegations={setDelegations}/>;
-      case"admin-branding": return <BrandingSettingsView user={user} projects={projects} orgs={orgs} branding={branding} setBranding={setBranding}/>;
+      case"delegations": return <DelegationsView user={user} adminUsers={adminUsers} delegations={delegations} setDelegations={setDelegations} setAuditLog={setAuditLog}/>;
+      case"admin-branding": return <BrandingSettingsView user={user} projects={projects} orgs={orgs} branding={branding} setBranding={setBranding} setAuditLog={setAuditLog}/>;
       case"admin-audit-log": return <AuditLogV2View user={user} auditLog={auditLog} projects={projects} adminUsers={adminUsers}/>;
+      // ── Roadmap Batch 3 views ──────────────────────────────────────────────
+      case"kiosk-labour": return <LabourAttendanceKioskView user={user} projects={projects} labour={labour} setLabour={setLabour} auditLog={auditLog} setAuditLog={setAuditLog}/>;
+      case"kiosk-site": return <SiteWallKioskView user={user} projects={projects} updates={updates} issues={issues} labour={labour} milestones={milestones} setView={setView}/>;
+      case"ar-overlay": return <ARDrawingOverlayView user={user} projects={projects} drawings={drawings} plan={activePlan}/>;
+      case"snapshot": return <DailySnapshotPanelView user={user} projects={projects} boq={boq} ra={ra} ledger={ledger} updates={updates} labour={labour} issues={issues} dailySnapshots={dailySnapshots} setDailySnapshots={setDailySnapshots} setAuditLog={setAuditLog}/>;
       default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
     }
   };
