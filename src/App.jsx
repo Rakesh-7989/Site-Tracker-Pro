@@ -375,133 +375,18 @@ const PBar = ({v,col="orange"}) => { const c={orange:"from-orange-400 to-amber-5
 const SC = ({icon,label,value,sub,accent="orange"}) => { const a={orange:"text-orange-500 bg-orange-50",blue:"text-blue-600 bg-blue-50",emerald:"text-emerald-600 bg-emerald-50",violet:"text-violet-600 bg-violet-50",red:"text-red-600 bg-red-50"}[accent]||"text-orange-500 bg-orange-50"; return <div className="bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-md transition-shadow"><div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${a}`}><Ic n={icon} s={20}/></div><div className="text-2xl font-black text-slate-800">{value}</div><div className="text-xs font-semibold uppercase tracking-widest text-slate-400 mt-1">{label}</div>{sub&&<div className="text-xs text-slate-500 mt-1">{sub}</div>}</div>; };
 const AccessDenied = ({msg="You don't have permission."}) => <div className="flex flex-col items-center justify-center py-20 text-center"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4"><Ic n="lock" s={28} c="text-slate-400"/></div><h3 className="font-bold text-slate-600 mb-1">Access Restricted</h3><p className="text-slate-400 text-sm max-w-xs">{msg}</p></div>;
 
-const ATTACH_ACCEPT = ".pdf,.dwg,.dxf,.rvt,.ifc,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp,.svg,.gif,.zip,.rar";
-const DRAWING_ACCEPT = ".pdf,.dwg,.dxf,.rvt,.ifc,.png,.jpg,.jpeg,.svg,.zip,.rar";
-// fileKind + fmtSize moved to src/lib/format.js (LOW-5 split).
-const fileKind = _fileKind;
-const fmtSize = _fmtSize;
-const attachmentIcon = kind => ({image:"image",pdf:"doc",cad:"gantt",doc:"doc",sheet:"receipt",archive:"folder",file:"doc"}[kind] || "doc");
-// MED-3 fix: write the binary to IndexedDB instead of inlining the full
-// dataUrl into the attachment row. The row carries only metadata + idbKey;
-// AttachmentList lazy-loads the URL via getBlob() when it actually renders.
-//
-// This keeps localStorage well under the ~5-10MB quota even when a project
-// accumulates dozens of site photos. Falls back to inline dataUrl if IDB is
-// unavailable (very old browsers, private mode in Safari).
-const readAttachment = file => new Promise((resolve, reject) => {
-  const r = new FileReader();
-  r.onload = async ev => {
-    const dataUrl = ev.target.result;
-    const id = `att_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const attachment = {
-      id,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      kind: fileKind(file.name),
-      uploaded_at: new Date().toISOString(),
-    };
-    try {
-      // Persist binary to IDB
-      await putBlob(id, dataUrl);
-      attachment.idbKey = id;
-    } catch {
-      // IDB unavailable — fall back to inline (legacy behaviour)
-      attachment.dataUrl = dataUrl;
-    }
-    resolve(attachment);
-  };
-  r.onerror = reject;
-  r.readAsDataURL(file);
-});
-
-// Helper: resolve attachment to a usable URL. Reads from IDB when idbKey is
-// present; returns the inline dataUrl as fallback.
-async function resolveAttachmentUrl(att) {
-  if (!att) return "";
-  if (att.idbKey) {
-    try {
-      const stored = await getBlob(att.idbKey);
-      if (stored) return stored;
-    } catch { /* fall through to dataUrl */ }
-  }
-  return att.dataUrl || att.url || "";
-}
-function AttachmentInput({files=[],onChange,label="Upload files",accept=ATTACH_ACCEPT,maxMb=20}){
-  const inputRef=useRef(null);const[drag,setDrag]=useState(false);
-  const addFiles=async list=>{
-    const picked=Array.from(list||[]);
-    const ok=picked.filter(f=>{
-      if(f.size>maxMb*1024*1024){alert(`${f.name} is larger than ${maxMb}MB`);return false;}
-      return true;
-    });
-    if(!ok.length)return;
-    const next=await Promise.all(ok.map(readAttachment));
-    onChange([...(files||[]),...next]);
-  };
-  const remove=id=>{
-    // Free the IDB blob too — the row in localStorage is gone, so the blob
-    // would otherwise be orphaned.
-    const target=(files||[]).find(f=>(f.id||f.name)===id);
-    if(target?.idbKey) delBlob(target.idbKey).catch(()=>{});
-    onChange((files||[]).filter(f=>(f.id||f.name)!==id));
-  };
-  return(
-    <div className="space-y-2">
-      <input ref={inputRef} type="file" multiple accept={accept} onChange={e=>{addFiles(e.target.files);e.target.value="";}} className="hidden"/>
-      <button
-        type="button"
-        onClick={()=>inputRef.current?.click()}
-        onDragOver={e=>{e.preventDefault();setDrag(true);}}
-        onDragLeave={()=>setDrag(false)}
-        onDrop={e=>{e.preventDefault();setDrag(false);addFiles(e.dataTransfer.files);}}
-        className={`w-full border-2 border-dashed rounded-xl px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${drag?"border-orange-400 bg-orange-50 text-orange-600":"border-slate-200 text-slate-500 hover:border-orange-300 hover:text-orange-600"}`}
-      >
-        <Ic n="download" s={15}/>{label}{files?.length?` (${files.length})`:""}
-      </button>
-      {files?.length>0&&<div className="space-y-2">{files.map(f=><div key={f.id||f.name} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100"><div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500"><Ic n={attachmentIcon(f.kind)} s={14}/></div><div className="flex-1 min-w-0"><div className="text-xs font-bold text-slate-700 truncate">{f.name}</div><div className="text-[10px] text-slate-400">{fmtSize(f.size)}</div></div><button type="button" onClick={()=>remove(f.id||f.name)} className="text-slate-300 hover:text-red-400"><Ic n="x" s={14}/></button></div>)}</div>}
-    </div>
-  );
-}
-// AttachmentRow: lazy-loads the binary URL from IDB on mount. Keeps a small
-// in-component map so we don't refetch on every render.
-function AttachmentRow({f, idx}){
-  const[url,setUrl]=useState(f.dataUrl||f.url||"");
-  useEffect(()=>{
-    if(url||!f.idbKey)return;
-    let cancelled=false;
-    resolveAttachmentUrl(f).then(u=>{if(!cancelled)setUrl(u||"");});
-    return ()=>{cancelled=true;};
-  },[f.idbKey, f.id, url, f]);
-  return(
-    <div key={f.id||`${f.name}_${idx}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 overflow-hidden">
-        {f.kind==="image"&&url?<img src={url} alt="" className="w-full h-full object-cover"/>:<Ic n={attachmentIcon(f.kind)} s={14}/>}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs font-bold text-slate-700 truncate">{f.name}</div>
-        <div className="text-[10px] text-slate-400">{fmtSize(f.size)}</div>
-      </div>
-      {url&&<a href={url} download={f.name} className="text-xs font-bold text-orange-600 hover:text-orange-700">Download</a>}
-    </div>
-  );
-}
-function AttachmentList({files=[]}){
-  const list=files||[];
-  if(!list.length)return null;
-  return(
-    <div className="mt-3 pt-3 border-t border-slate-100">
-      <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5"><Ic n="doc" s={12}/>Attachments ({list.length})</div>
-      <div className="grid sm:grid-cols-2 gap-2">{list.map((f,i)=><AttachmentRow key={f.id||`${f.name}_${i}`} f={f} idx={i}/>)}</div>
-    </div>
-  );
-}
+// Attachment atoms + upload helpers extracted to components/attachments.jsx in Batch 7.
+import {
+  ATTACH_ACCEPT, DRAWING_ACCEPT,
+  AttachmentInput, AttachmentRow, AttachmentList,
+  readAttachment, resolveAttachmentUrl, attachmentIcon,
+} from "./components/attachments.jsx";
 
 // Mid-size views extracted to src/features/views/ in Batch 6.
 // (MessagesView deferred — depends on AttachmentInput atoms still in App.jsx.)
 import {
   GanttView, AnalyticsView, ActivityView, NotifsView, PMView, ClientPortal,
-  CalendarView, VendorsView, POsView, GlobalSearch,
+  CalendarView, VendorsView, POsView, GlobalSearch, MessagesView,
 } from "./features/views/index.jsx";
 // ── GANTT ─────────────────────────────────────────────────────────────────────
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
@@ -2708,17 +2593,6 @@ function CreateView({user,setView,setProjects,setAuditLog}){
   if(done) return <div className="p-8 flex items-center justify-center min-h-96"><div className="text-center"><div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4"><Ic n="check" s={28} c="text-emerald-600"/></div><h2 className="text-xl font-black text-slate-800 mb-2">Project Created!</h2></div></div>;
   const inp=(key,lbl,type="text",ph="",fk)=>{const k=fk||key;return<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">{lbl}</label><input type={type} value={f[k]} onChange={e=>{setF(p=>({...p,[k]:e.target.value}));setErr(p=>({...p,[key]:""}));}} placeholder={ph} className={`w-full p-3.5 border rounded-xl text-sm outline-none transition-all ${err[key]?"border-red-300 bg-red-50":"border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-50"}`}/>{err[key]&&<p className="text-red-500 text-xs mt-1">{err[key]}</p>}</div>;};
   return(<div className="p-4 md:p-8 max-w-2xl"><button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button><h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1><p className="text-slate-500 text-sm mb-5 -mt-3">A few details to get started — you can edit everything later and add drawings, BOQ, RA bills and updates from the project page.</p><div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">{inp("name","Project Name","text","e.g. Riverside Towers — Phase II")}<div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","e.g. Asha Estates","cn")}{inp("ce","Client Email","email","client@example.com","ce")}</div>{inp("loc","Location","text","City or neighbourhood","loc")}<div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>{inp("budget","Budget (₹)","number","e.g. 45000000")}<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label><textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} placeholder="Short scope summary — what's being built, key milestones, anything special." className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/></div><button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button></div></div>);
-}
-function MessagesView({user,projects,messages,setMessages}){
-  const visible=projects.filter(p=>user.role==="client"?p.client_email===user.email:true);
-  const[pid,setPid]=useState(visible[0]?.id||projects[0]?.id||"");
-  const[text,setText]=useState("");
-  const[files,setFiles]=useState([]);
-  const cur=visible.find(p=>p.id===pid)||visible[0]||projects[0];
-  const list=messages[cur?.id]||[];
-  const send=()=>{if(!text.trim()&&!files.length)return;setMessages(p=>({...p,[cur.id]:[...(p[cur.id]||[]),{id:"msg_"+Date.now(),by:user.name,role:user.role,text,attachments:files,time:new Date().toISOString()}]}));setText("");setFiles([]);};
-  if(!cur)return <div className="p-8"><AccessDenied msg="No message-enabled project found."/></div>;
-  return(<div className="p-4 md:p-8 max-w-5xl"><div className="flex items-start justify-between gap-3 mb-6"><div><h1 className="text-2xl font-black text-slate-800 flex items-center gap-2"><Ic n="msgcircle" s={22} c="text-orange-500"/>Messages</h1><p className="text-slate-500 text-sm mt-1">Project chat with file/photo context</p></div><select value={cur.id} onChange={e=>setPid(e.target.value)} className="p-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400">{visible.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div><div className="bg-white rounded-2xl border border-slate-200 overflow-hidden"><div className="p-5 border-b border-slate-100"><div className="font-bold text-slate-800">{cur.name}</div><div className="text-xs text-slate-400">{list.length} messages</div></div><div className="p-5 space-y-3 min-h-[360px] max-h-[520px] overflow-y-auto bg-slate-50">{list.map(m=><div key={m.id} className={`max-w-[82%] ${m.by===user.name?"ml-auto":""}`}><div className={`rounded-2xl border p-4 ${m.by===user.name?"bg-orange-500 text-white border-orange-500":"bg-white text-slate-700 border-slate-200"}`}><div className={`text-xs font-bold mb-1 ${m.by===user.name?"text-orange-100":"text-slate-400"}`}>{m.by} · {ROLE_META[m.role]?.label||m.role} · {fmtTime(m.time)}</div><p className="text-sm whitespace-pre-wrap">{m.text}</p>{m.attachments?.length>0&&<AttachmentList files={m.attachments}/>}</div></div>)}{list.length===0&&<div className="text-center py-20 text-slate-400">No messages yet</div>}</div>{user.role!=="client"&&<div className="p-4 border-t border-slate-100 space-y-3"><AttachmentInput files={files} onChange={setFiles} label="Attach chat files / site photos"/><div className="flex gap-2"><input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")send();}} placeholder="Type project message..." className="flex-1 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><button onClick={send} className="px-5 py-3 bg-orange-500 text-white font-bold rounded-xl text-sm flex items-center gap-2"><Ic n="send" s={14}/>Send</button></div></div>}</div></div>);
 }
 
 // ── CLIENT SHARE VIEW ─────────────────────────────────────────────────────────

@@ -11,11 +11,7 @@
 //   VendorsView      — Vendor CRUD + GSTIN
 //   POsView          — Cross-project purchase orders
 //   GlobalSearch     — Top-bar search across projects + milestones + issues + vendors
-//
-// Skipped this batch:
-//   MessagesView — depends on AttachmentInput / AttachmentList atoms that
-//     still live in App.jsx. Moves in Batch 7 along with the attachment
-//     refactor + DetailView extraction.
+//   MessagesView     — Project chat with file/photo attachments (Batch 7)
 
 import { useState, useMemo } from "react";
 import {
@@ -25,6 +21,7 @@ import {
 import {
   Ic, SC, Badge, PBar, AccessDenied, ROLE_META, fmtDate, fmtTime, fmtCur,
 } from "../../components/ui.jsx";
+import { AttachmentInput, AttachmentList } from "../../components/attachments.jsx";
 import { can, visibleProjectsForUser } from "../../lib/permissions.js";
 import { notifsForUser } from "../../lib/notifications.js";
 import { CHART_COLORS, VENDOR_CATS, ACTIVITY_ICONS } from "../../data/lookups.js";
@@ -283,6 +280,19 @@ export function POsView({user,projects,pos,vendors,setView,setSP}){
       );})}{all.length===0&&<div className="text-center py-16 text-slate-400"><Ic n="clipboard" s={32} c="mx-auto mb-3 opacity-30"/><p>No purchase orders</p></div>}</div>
     </div>
   );
+}
+
+// ── MESSAGES (project chat with attachments) ───────────────────────────────
+export function MessagesView({user,projects,messages,setMessages}){
+  const visible=projects.filter(p=>user.role==="client"?p.client_email===user.email:true);
+  const[pid,setPid]=useState(visible[0]?.id||projects[0]?.id||"");
+  const[text,setText]=useState("");
+  const[files,setFiles]=useState([]);
+  const cur=visible.find(p=>p.id===pid)||visible[0]||projects[0];
+  const list=messages[cur?.id]||[];
+  const send=()=>{if(!text.trim()&&!files.length)return;setMessages(p=>({...p,[cur.id]:[...(p[cur.id]||[]),{id:"msg_"+Date.now(),by:user.name,role:user.role,text,attachments:files,time:new Date().toISOString()}]}));setText("");setFiles([]);};
+  if(!cur)return <div className="p-8"><AccessDenied msg="No message-enabled project found."/></div>;
+  return(<div className="p-4 md:p-8 max-w-5xl"><div className="flex items-start justify-between gap-3 mb-6"><div><h1 className="text-2xl font-black text-slate-800 flex items-center gap-2"><Ic n="msgcircle" s={22} c="text-orange-500"/>Messages</h1><p className="text-slate-500 text-sm mt-1">Project chat with file/photo context</p></div><select value={cur.id} onChange={e=>setPid(e.target.value)} className="p-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400">{visible.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div><div className="bg-white rounded-2xl border border-slate-200 overflow-hidden"><div className="p-5 border-b border-slate-100"><div className="font-bold text-slate-800">{cur.name}</div><div className="text-xs text-slate-400">{list.length} messages</div></div><div className="p-5 space-y-3 min-h-[360px] max-h-[520px] overflow-y-auto bg-slate-50">{list.map(m=><div key={m.id} className={`max-w-[82%] ${m.by===user.name?"ml-auto":""}`}><div className={`rounded-2xl border p-4 ${m.by===user.name?"bg-orange-500 text-white border-orange-500":"bg-white text-slate-700 border-slate-200"}`}><div className={`text-xs font-bold mb-1 ${m.by===user.name?"text-orange-100":"text-slate-400"}`}>{m.by} · {ROLE_META[m.role]?.label||m.role} · {fmtTime(m.time)}</div><p className="text-sm whitespace-pre-wrap">{m.text}</p>{m.attachments?.length>0&&<AttachmentList files={m.attachments}/>}</div></div>)}{list.length===0&&<div className="text-center py-20 text-slate-400">No messages yet</div>}</div>{user.role!=="client"&&<div className="p-4 border-t border-slate-100 space-y-3"><AttachmentInput files={files} onChange={setFiles} label="Attach chat files / site photos"/><div className="flex gap-2"><input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")send();}} placeholder="Type project message..." className="flex-1 p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400"/><button onClick={send} className="px-5 py-3 bg-orange-500 text-white font-bold rounded-xl text-sm flex items-center gap-2"><Ic n="send" s={14}/>Send</button></div></div>}</div></div>);
 }
 
 // ── GLOBAL SEARCH ───────────────────────────────────────────────────────────
