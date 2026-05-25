@@ -221,6 +221,9 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "tests/compliance.test.js",
   // Roadmap Batch 3 — new lib + docs
   "src/lib/whatsapp.js",
+  // Roadmap Batch 4 — App.jsx split (ui atoms + features/)
+  "src/components/ui.jsx",
+  "src/features/roadmap/index.jsx",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
