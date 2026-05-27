@@ -36,9 +36,9 @@ export function activeDelegationsFor(delegations, userId, now = new Date()) {
  * effective approver — if they've delegated to someone for this scope, return
  * the delegate. Otherwise return the original target.
  */
-export function resolveApprover(delegations, targetUser, scope) {
+export function resolveApprover(delegations, targetUser, scope, now = new Date()) {
   if (!targetUser) return null;
-  const active = activeDelegationsFor(delegations, targetUser.id);
+  const active = activeDelegationsFor(delegations, targetUser.id, now);
   const match = active.find(d => d.scope === "all" || d.scope === scope);
   if (!match) return { ...targetUser, delegated: false };
   return {

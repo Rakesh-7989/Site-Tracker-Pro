@@ -43,6 +43,331 @@ import {
   setOrgFeature, resetOrgFeatures, featureStats, catalogByGroup,
 } from "../../lib/orgFeatureFlags.js";
 
+// ── 10. Onboarding Wizard (Session 18) ─────────────────────────────────────
+// First-time orgadmin lands on this BEFORE the dashboard. 5 guided steps:
+//
+//   1. Org details        → name, contact email, plan
+//   2. Invite team        → at least 1 architect + 1 PM
+//   3. Create first project → name + client + start date
+//   4. Choose features    → catalog with sensible default selections
+//   5. Integrations       → optional Cashfree + WhatsApp + AI keys
+//
+// Each step is skippable except step 1 + 3 (the only ones with no defaults).
+// State lives in localStorage via `onboarding_done` flag — once true, the
+// wizard never shows again unless an orgadmin explicitly re-runs it.
+//
+// Why this matters strategically: builders' #1 churn driver is "we signed
+// up but didn't know what to do next." This wizard takes them from
+// "blank workspace" → "first project visible to their team" in <15 min.
+export function OnboardingWizardView({ user, orgs, setOrgs, adminUsers, setAdminUsers, projects, setProjects, orgFlags, setOrgFlags, orgIntegrations, setOrgIntegrations, opsToggles, setOpsToggles, setView, setSP, setAuditLog }) {
+  const [step, setStep] = useState(1);
+  const [orgDraft, setOrgDraft] = useState({});
+  const [memberDraft, setMemberDraft] = useState({ name: "", email: "", role: "pm" });
+  const [pendingMembers, setPendingMembers] = useState([]);
+  const [projectDraft, setProjectDraft] = useState({ name: "", client_name: "", client_email: "", location: "", start_date: new Date().toISOString().slice(0, 10), budget: "" });
+  const [featurePreset, setFeaturePreset] = useState("balanced"); // minimal | balanced | full
+  const [integrationDraft, setIntegrationDraft] = useState({ ai: "", razorpay: "", whatsapp: "", cashfree: "" });
+  const org = resolveOrg(user, orgs);
+
+  // Initialise org draft once we have the org row
+  useMemo(() => {
+    if (org && !orgDraft.id) setOrgDraft({
+      id: org.id, name: org.name || "", contact_email: org.contact_email || "",
+      plan: org.plan || "basic", city: org.city || "",
+    });
+  }, [org, orgDraft.id]);
+
+  if (!org) return <NoOrgScreen msg="Onboarding requires an org. Ask your account owner to provision one." />;
+
+  const totalSteps = 5;
+  const stepLabels = ["Org details", "Invite team", "First project", "Choose features", "Integrations"];
+
+  const finishOnboarding = () => {
+    setOpsToggles?.(p => ({ ...(p || {}), [`onboarding_done_${org.id}`]: true }));
+    setAuditLog?.(p => recordAudit(p, {
+      actor: user, action: "UPDATE", resource: "org",
+      resource_id: org.id, org_id: org.id,
+      message: "Completed onboarding wizard",
+    }));
+    setView("org-dashboard");
+  };
+
+  const saveOrg = () => {
+    if (!orgDraft.name?.trim()) return alert("Org name required.");
+    setOrgs(p => p.map(o => o.id === org.id ? { ...o, name: orgDraft.name.trim(), contact_email: orgDraft.contact_email, plan: orgDraft.plan, city: orgDraft.city } : o));
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "org", resource_id: org.id, org_id: org.id, message: "Updated org details via onboarding" }));
+    setStep(2);
+  };
+
+  const addPendingMember = () => {
+    if (!memberDraft.name.trim() || !memberDraft.email.trim()) return alert("Name + email required");
+    setPendingMembers([...pendingMembers, { ...memberDraft, id: `pending_${Date.now()}` }]);
+    setMemberDraft({ name: "", email: "", role: "pm" });
+  };
+  const commitMembers = () => {
+    const rows = pendingMembers.map(m => ({
+      id: `u_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: m.name.trim(), email: m.email.trim(), role: m.role,
+      org_id: org.id, status: "active", joined: new Date().toISOString().slice(0, 10), last_seen: null,
+    }));
+    if (rows.length) {
+      setAdminUsers(p => [...p, ...rows]);
+      rows.forEach(r => setAuditLog?.(p => recordAudit(p, { actor: user, action: "CREATE", resource: "user", resource_id: r.id, org_id: org.id, message: `Invited ${r.name} (${r.role}) via onboarding` })));
+    }
+    setPendingMembers([]);
+    setStep(3);
+  };
+
+  const saveProject = () => {
+    if (!projectDraft.name.trim()) return alert("Project name required.");
+    if (!projectDraft.client_name.trim()) return alert("Client name required.");
+    const id = `p_${Date.now()}`;
+    const row = {
+      id, org_id: org.id,
+      name: projectDraft.name.trim(),
+      client_name: projectDraft.client_name.trim(),
+      client_email: projectDraft.client_email.trim(),
+      location: projectDraft.location.trim(),
+      status: "active",
+      start_date: projectDraft.start_date,
+      expected_end_date: "",
+      budget: Number(projectDraft.budget) || 0,
+      description: "Created via onboarding wizard",
+      progress: 0,
+    };
+    setProjects(p => [...p, row]);
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "CREATE", resource: "project", resource_id: id, project_id: id, org_id: org.id, message: `Created "${row.name}" via onboarding` }));
+    setStep(4);
+  };
+
+  const applyFeaturePreset = () => {
+    // 3 presets — each writes a sensible org_feature_flags subset.
+    let next = { ...(orgFlags || {}) };
+    const orgRec = { ...(next[org.id] || {}) };
+    if (featurePreset === "minimal") {
+      // Essential trio: updates + issues + drawings. Turn off everything heavy.
+      ["tasks", "punchlist", "ledger", "boq", "estimate", "rfi", "changeorders", "approvals", "inspections", "safety", "rabills", "labour", "ai", "gantt", "forecast", "compliance", "delegations", "snapshot", "materialPrices", "hierarchy", "vendors", "po"].forEach(id => { orgRec[id] = false; });
+    } else if (featurePreset === "full") {
+      // Everything the plan allows — leave defaults.
+    } else {
+      // Balanced: trim AR + auto-DPR + photo geo (beta features). Keep rest on.
+      ["arOverlay", "dprAuto", "photoGeo"].forEach(id => { orgRec[id] = false; });
+    }
+    next[org.id] = orgRec;
+    setOrgFlags(next);
+    setAuditLog?.(p => recordAudit(p, { actor: user, action: "UPDATE", resource: "org_feature_flag", resource_id: org.id, org_id: org.id, message: `Onboarding preset: ${featurePreset}` }));
+    setStep(5);
+  };
+
+  const saveIntegrations = () => {
+    // Each draft field is the API key for that provider. Empty = skip.
+    let next = { ...(orgIntegrations || {}) };
+    const orgRec = { ...(next[org.id] || {}) };
+    if (integrationDraft.ai.trim()) orgRec.ai = { ...(orgRec.ai || {}), key: integrationDraft.ai.trim(), provider: "openai" };
+    if (integrationDraft.razorpay.trim()) orgRec.razorpay = { ...(orgRec.razorpay || {}), key_id: integrationDraft.razorpay.trim() };
+    if (integrationDraft.whatsapp.trim()) orgRec.whatsapp = { ...(orgRec.whatsapp || {}), token: integrationDraft.whatsapp.trim() };
+    if (integrationDraft.cashfree.trim()) orgRec.cashfree = { ...(orgRec.cashfree || {}), app_id: integrationDraft.cashfree.trim() };
+    next[org.id] = orgRec;
+    setOrgIntegrations(next);
+    finishOnboarding();
+  };
+
+  // ── Rendering ─────────────────────────────────────────────────────────
+  return (
+    <div className="p-4 md:p-10 max-w-4xl">
+      <div className="mb-8">
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-600 mb-2">— Welcome to SiteTrack</div>
+        <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 tracking-editorial leading-[1.05]">Let's get you set up</h1>
+        <p className="text-ink-600 text-sm mt-3">5 quick steps · {Math.max(0, totalSteps - step + 1)} remaining</p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="flex items-center gap-2 mb-8">
+        {stepLabels.map((label, i) => {
+          const n = i + 1;
+          const done = step > n;
+          const active = step === n;
+          return (
+            <div key={n} className="flex-1 flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${done ? "bg-emerald-500 text-white" : active ? "bg-gradient-gold text-white" : "bg-stone-200 text-ink-500"}`}>
+                {done ? "✓" : n}
+              </div>
+              <div className={`text-[10px] font-bold tracking-wider uppercase ${active ? "text-amber-700" : done ? "text-emerald-700" : "text-ink-400"}`}>{label}</div>
+              {i < stepLabels.length - 1 && <div className={`flex-1 h-0.5 ${done ? "bg-emerald-300" : "bg-stone-200"}`} />}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="bg-white rounded-2xl p-8 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+        {/* Step 1 — Org details */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial mb-1">Tell us about your firm</h2>
+            <p className="text-sm text-ink-500 mb-5">This is what your team + clients will see.</p>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Firm name</div>
+              <input value={orgDraft.name || ""} onChange={e => setOrgDraft({ ...orgDraft, name: e.target.value })} placeholder="e.g. BuildCo India" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Contact email</div>
+              <input value={orgDraft.contact_email || ""} onChange={e => setOrgDraft({ ...orgDraft, contact_email: e.target.value })} placeholder="owner@buildco.in" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">City</div>
+              <input value={orgDraft.city || ""} onChange={e => setOrgDraft({ ...orgDraft, city: e.target.value })} placeholder="Hyderabad" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Plan tier</div>
+              <select value={orgDraft.plan || "basic"} onChange={e => setOrgDraft({ ...orgDraft, plan: e.target.value })} className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm">
+                <option value="basic">Basic — ₹999/mo</option>
+                <option value="pro">Pro — ₹2,999/mo</option>
+                <option value="business">Business — ₹7,999/mo</option>
+              </select>
+            </label>
+            <div className="flex justify-end pt-4">
+              <button onClick={saveOrg} className="px-6 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep">Continue →</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2 — Invite team */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial mb-1">Invite your team</h2>
+            <p className="text-sm text-ink-500 mb-5">Add at least one architect + one project manager. You can invite more later.</p>
+            <div className="grid grid-cols-12 gap-2">
+              <input value={memberDraft.name} onChange={e => setMemberDraft({ ...memberDraft, name: e.target.value })} placeholder="Name" className="col-span-4 px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              <input value={memberDraft.email} onChange={e => setMemberDraft({ ...memberDraft, email: e.target.value })} placeholder="email@firm.in" className="col-span-4 px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              <select value={memberDraft.role} onChange={e => setMemberDraft({ ...memberDraft, role: e.target.value })} className="col-span-2 px-3 py-2 border border-stone-200 rounded-lg text-sm">
+                <option value="architect">Architect</option>
+                <option value="pm">PM</option>
+                <option value="contractor">Contractor</option>
+              </select>
+              <button onClick={addPendingMember} className="col-span-2 px-3 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">+ Add</button>
+            </div>
+            {pendingMembers.length > 0 && (
+              <div className="bg-cream-100 rounded-xl p-4 space-y-1.5">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-2">{pendingMembers.length} pending invites</div>
+                {pendingMembers.map(m => (
+                  <div key={m.id} className="flex items-center justify-between text-sm">
+                    <span><strong>{m.name}</strong> <span className="text-ink-500">· {m.email} · {m.role}</span></span>
+                    <button onClick={() => setPendingMembers(pendingMembers.filter(x => x.id !== m.id))} className="text-xs text-red-600 hover:underline">Remove</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-between pt-4">
+              <button onClick={() => setStep(3)} className="text-sm font-bold text-ink-500 hover:underline">Skip for now →</button>
+              <button onClick={commitMembers} disabled={pendingMembers.length === 0} className="px-6 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep disabled:opacity-40">
+                Send {pendingMembers.length} invite{pendingMembers.length !== 1 ? "s" : ""} →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3 — First project */}
+        {step === 3 && (
+          <div className="space-y-4">
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial mb-1">Create your first project</h2>
+            <p className="text-sm text-ink-500 mb-5">Don't worry about getting it perfect — you can edit everything later.</p>
+            <div className="grid md:grid-cols-2 gap-3">
+              <label className="block">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Project name</div>
+                <input value={projectDraft.name} onChange={e => setProjectDraft({ ...projectDraft, name: e.target.value })} placeholder="Skyline Tower" className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              </label>
+              <label className="block">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Client name</div>
+                <input value={projectDraft.client_name} onChange={e => setProjectDraft({ ...projectDraft, client_name: e.target.value })} placeholder="Nair Holdings" className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              </label>
+              <label className="block">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Client email</div>
+                <input value={projectDraft.client_email} onChange={e => setProjectDraft({ ...projectDraft, client_email: e.target.value })} placeholder="client@example.in" className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              </label>
+              <label className="block">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Site location</div>
+                <input value={projectDraft.location} onChange={e => setProjectDraft({ ...projectDraft, location: e.target.value })} placeholder="Jubilee Hills, Hyderabad" className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              </label>
+              <label className="block">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Start date</div>
+                <input type="date" value={projectDraft.start_date} onChange={e => setProjectDraft({ ...projectDraft, start_date: e.target.value })} className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              </label>
+              <label className="block">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Budget (₹)</div>
+                <input type="number" value={projectDraft.budget} onChange={e => setProjectDraft({ ...projectDraft, budget: e.target.value })} placeholder="50000000" className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" />
+              </label>
+            </div>
+            <div className="flex justify-end pt-4">
+              <button onClick={saveProject} className="px-6 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep">Create project →</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4 — Feature preset */}
+        {step === 4 && (
+          <div className="space-y-4">
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial mb-1">Pick a starting scope</h2>
+            <p className="text-sm text-ink-500 mb-5">Choose the feature set that fits your team. You can fine-tune later in Feature Toggles.</p>
+            <div className="grid md:grid-cols-3 gap-3">
+              {[
+                { id: "minimal", label: "Minimal", desc: "Updates + Issues + Drawings only. For small contractors.", icon: "📋" },
+                { id: "balanced", label: "Balanced (Recommended)", desc: "Most features except beta ones (AR, auto-DPR, photo geo).", icon: "⚖️" },
+                { id: "full", label: "Full power", desc: "Everything your plan unlocks. For mature firms.", icon: "🚀" },
+              ].map(p => (
+                <button key={p.id} onClick={() => setFeaturePreset(p.id)} className={`text-left p-5 rounded-2xl border-2 transition-all ${featurePreset === p.id ? "border-amber-600 bg-amber-50" : "border-stone-200 bg-cream-50 hover:border-stone-300"}`}>
+                  <div className="text-2xl mb-2">{p.icon}</div>
+                  <div className="font-display font-semibold text-ink-900 tracking-editorial mb-1">{p.label}</div>
+                  <div className="text-xs text-ink-500 leading-relaxed">{p.desc}</div>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end pt-4">
+              <button onClick={applyFeaturePreset} className="px-6 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep">Apply preset →</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5 — Integrations (optional) */}
+        {step === 5 && (
+          <div className="space-y-4">
+            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial mb-1">Connect your services</h2>
+            <p className="text-sm text-ink-500 mb-5">All optional — you can do this later in Integrations panel.</p>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">AI API key (OpenAI / Anthropic)</div>
+              <input type="password" value={integrationDraft.ai} onChange={e => setIntegrationDraft({ ...integrationDraft, ai: e.target.value })} placeholder="sk-..." className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm font-mono" />
+              <div className="text-[10px] text-ink-400 mt-1">Powers AI Insights tab + cost forecasts. Per-token billing on your account.</div>
+            </label>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Cashfree app_id (for subscription billing)</div>
+              <input value={integrationDraft.cashfree} onChange={e => setIntegrationDraft({ ...integrationDraft, cashfree: e.target.value })} placeholder="CF_APP_ID" className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm font-mono" />
+              <div className="text-[10px] text-ink-400 mt-1">Enables real UPI AutoPay billing. Get from cashfree.com dashboard.</div>
+            </label>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">Razorpay key (for invoice payments)</div>
+              <input value={integrationDraft.razorpay} onChange={e => setIntegrationDraft({ ...integrationDraft, razorpay: e.target.value })} placeholder="rzp_live_..." className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm font-mono" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1">WhatsApp Business token</div>
+              <input value={integrationDraft.whatsapp} onChange={e => setIntegrationDraft({ ...integrationDraft, whatsapp: e.target.value })} placeholder="EAAxxxxxxx" className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm font-mono" />
+              <div className="text-[10px] text-ink-400 mt-1">Falls back to wa.me deep-links if you skip.</div>
+            </label>
+            <div className="flex justify-between pt-4">
+              <button onClick={finishOnboarding} className="text-sm font-bold text-ink-500 hover:underline">Skip — finish later →</button>
+              <button onClick={saveIntegrations} className="px-6 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep">
+                Save + finish 🎉
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <p className="text-center text-[11px] text-ink-400 mt-5">
+        Need help? Check <a href="https://github.com/giggleZen/site-tracker-pro" className="text-amber-700 hover:underline">our docs</a> or email <a href="mailto:hello@sitetrack.in" className="text-amber-700 hover:underline">hello@sitetrack.in</a>
+      </p>
+    </div>
+  );
+}
+
 // ── Shared bits ────────────────────────────────────────────────────────────
 function PageHeader({ kicker, title, subtitle }) {
   return (

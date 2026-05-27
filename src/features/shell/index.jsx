@@ -266,6 +266,7 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"org-approvals",icon:"shield",label:"Approval chains",group:"org"},
     {id:"org-notifications",icon:"bell",label:"Notification rules",group:"org"},
     {id:"org-features",icon:"sliders",label:"Feature toggles",group:"org"},
+    {id:"org-onboarding",icon:"play",label:"Re-run setup wizard",group:"org"},
     {id:"org-activity",icon:"activity",label:"Audit log",group:"org"},
     // Tenant nav (visible to all roles per their PERMS.nav)
     {id:"dashboard",icon:"dashboard",label:"Dashboard"},

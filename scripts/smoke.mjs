@@ -330,6 +330,13 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   // Session 17 — Live database connection runbook + check script
   "scripts/check-supabase-connection.mjs",
   "docs/CONNECT_SUPABASE.md",
+  // Session 18 — Activation pack (onboarding + sales assets)
+  "public/landing.html",
+  "docs/DEMO_VIDEO_SCRIPT.md",
+  "docs/CASE_STUDY_TEMPLATE.md",
+  "docs/WHATSAPP_BUSINESS_API.md",
+  "docs/pitch/build-deck.mjs",
+  "docs/pitch/SiteTrack-Pitch-Deck.pptx",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",

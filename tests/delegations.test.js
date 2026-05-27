@@ -4,7 +4,10 @@ import { activeDelegationsFor, resolveApprover, addDelegation, revokeDelegation,
 const archUser = { id: "u_arch", name: "Ramesh", role: "architect" };
 const pmUser   = { id: "u_pm",   name: "Suresh", role: "pm" };
 
+// Pin "now" to a time inside the test delegation window so tests don't drift
+// as real-world dates pass May 26. resolveApprover takes `now` as a 4th arg.
 const fixedNow = new Date("2026-05-25T10:00:00Z");
+const insideWindow = fixedNow;
 
 function makeDelegation(extra = {}) {
   return {
@@ -52,7 +55,7 @@ describe("delegations.resolveApprover", () => {
 
   it("redirects to delegate for matching scope", () => {
     const dels = [makeDelegation({ scope: "ra_bills" })];
-    const r = resolveApprover(dels, archUser, "ra_bills");
+    const r = resolveApprover(dels, archUser, "ra_bills", insideWindow);
     expect(r.id).toBe("u_pm");
     expect(r.delegated).toBe(true);
     expect(r.original_user_id).toBe("u_arch");
@@ -60,13 +63,13 @@ describe("delegations.resolveApprover", () => {
 
   it('"all" scope matches any approval', () => {
     const dels = [makeDelegation({ scope: "all" })];
-    expect(resolveApprover(dels, archUser, "drawings").delegated).toBe(true);
-    expect(resolveApprover(dels, archUser, "change_orders").delegated).toBe(true);
+    expect(resolveApprover(dels, archUser, "drawings", insideWindow).delegated).toBe(true);
+    expect(resolveApprover(dels, archUser, "change_orders", insideWindow).delegated).toBe(true);
   });
 
   it("does not redirect when scope doesn't match", () => {
     const dels = [makeDelegation({ scope: "ra_bills" })];
-    const r = resolveApprover(dels, archUser, "drawings");
+    const r = resolveApprover(dels, archUser, "drawings", insideWindow);
     expect(r.delegated).toBe(false);
   });
 });

@@ -120,6 +120,7 @@ const OrgTemplatesView = lazy(() => import("./features/org/index.jsx").then(m =>
 const OrgApprovalChainsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgApprovalChainsView })));
 const OrgNotificationRulesView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgNotificationRulesView })));
 const OrgFeatureSettingsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgFeatureSettingsView })));
+const OnboardingWizardView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OnboardingWizardView })));
 
 
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
@@ -278,6 +279,17 @@ export default function App(){
     return <ClientShareView project={shp} milestones={milestones[shareId]||[]} updates={updates[shareId]||[]} drawings={(drawings[shareId]||[]).filter(d=>user.role==="architect"||isReleasedCurrentDrawing(d,user.role))}/>;
   }
 
+  // Session 18: auto-route first-time orgadmins to the onboarding wizard.
+  // We use the ops_toggles store to remember "onboarding_done_{org_id}".
+  useEffect(()=>{
+    if(user?.role!=="orgadmin"||!user.org_id)return;
+    if(opsToggles?.[`onboarding_done_${user.org_id}`])return;
+    if(view==="org-onboarding")return;
+    // One-shot redirect on cold load. orgadmin can still navigate away.
+    setViewRaw("org-onboarding");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user?.id]);
+
   // HIGH-2 fix: the top-bar bell badge must reflect notifications visible to
   // THIS user, not the global unread count. Cross-tenant data must not leak
   // even into a counter.
@@ -336,6 +348,7 @@ export default function App(){
       case"org-approvals": return <OrgApprovalChainsView user={user} orgs={orgs} approvalChains={approvalChains} setApprovalChains={setApprovalChains} setAuditLog={setAuditLog}/>;
       case"org-notifications": return <OrgNotificationRulesView user={user} orgs={orgs} notifRules={notifRules} setNotifRules={setNotifRules} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
       case"org-features": return <OrgFeatureSettingsView user={user} orgs={orgs} orgFlags={orgFlags} setOrgFlags={setOrgFlags} platformFlags={platformFlags} setAuditLog={setAuditLog}/>;
+      case"org-onboarding": return <OnboardingWizardView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} setAdminUsers={setAdminUsers} projects={projects} setProjects={setProjects} orgFlags={orgFlags} setOrgFlags={setOrgFlags} orgIntegrations={orgIntegrations} setOrgIntegrations={setOrgIntegrations} opsToggles={opsToggles} setOpsToggles={setOpsToggles} setView={setView} setSP={setSP} setAuditLog={setAuditLog}/>;
       default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
     }
   };
