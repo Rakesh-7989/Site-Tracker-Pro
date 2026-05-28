@@ -344,6 +344,11 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "marketing/vercel.json",
   "marketing/README.md",
   "scripts/setup.mjs",
+  // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
+  ".mcp.json",
+  ".env.mcp.example",
+  "scripts/check-mcp.mjs",
+  "docs/MCP_TOOLKIT.md",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
@@ -366,6 +371,12 @@ add("Build script exists", pkg.scripts?.build === "vite build");
 add("Smoke script exists", pkg.scripts?.smoke === "node scripts/smoke.mjs");
 add("check:supabase script exists", pkg.scripts?.["check:supabase"] === "node scripts/check-supabase-connection.mjs");
 add("setup script exists", pkg.scripts?.setup === "node scripts/setup.mjs");
+add("check:mcp script exists", pkg.scripts?.["check:mcp"] === "node scripts/check-mcp.mjs");
+// .mcp.json must stay secret-free — only ${VAR} references, never literal tokens.
+const mcpRaw = read(".mcp.json");
+add(".mcp.json contains no literal Supabase PAT", !/sbp_[A-Za-z0-9]/.test(mcpRaw));
+add(".mcp.json contains no literal GitHub PAT", !/github_pat_[A-Za-z0-9]/.test(mcpRaw));
+add(".mcp.json uses env-var references", mcpRaw.includes("${SUPABASE_ACCESS_TOKEN}") && mcpRaw.includes("${GITHUB_PERSONAL_ACCESS_TOKEN}"));
 add("Vite manual chunks configured", vite.includes("manualChunks") && vite.includes("charts"));
 
 const failures = checks.filter(c => !c.pass);

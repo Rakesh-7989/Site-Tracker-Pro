@@ -5,6 +5,7 @@ dist
 *.log
 .env
 .env.local
+.env.mcp
 .vscode
 .idea
 # Playwright

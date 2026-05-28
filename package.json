@@ -10,6 +10,7 @@
     "smoke": "node scripts/smoke.mjs",
     "setup": "node scripts/setup.mjs",
     "check:supabase": "node scripts/check-supabase-connection.mjs",
+    "check:mcp": "node scripts/check-mcp.mjs",
     "lint": "eslint . --max-warnings=200",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
