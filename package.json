@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
+    "setup": "node scripts/setup.mjs",
     "check:supabase": "node scripts/check-supabase-connection.mjs",
     "lint": "eslint . --max-warnings=200",
     "lint:fix": "eslint . --fix",

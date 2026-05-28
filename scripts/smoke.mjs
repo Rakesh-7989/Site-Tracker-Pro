@@ -337,6 +337,13 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "docs/WHATSAPP_BUSINESS_API.md",
   "docs/pitch/build-deck.mjs",
   "docs/pitch/SiteTrack-Pitch-Deck.pptx",
+  // Session 19 — HRMS deployment study + marketing/app deploy split
+  "docs/HRMS_DEPLOYMENT_STUDY.md",
+  "docs/DEPLOY_NOW.md",
+  "marketing/index.html",
+  "marketing/vercel.json",
+  "marketing/README.md",
+  "scripts/setup.mjs",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
@@ -358,6 +365,7 @@ add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint")
 add("Build script exists", pkg.scripts?.build === "vite build");
 add("Smoke script exists", pkg.scripts?.smoke === "node scripts/smoke.mjs");
 add("check:supabase script exists", pkg.scripts?.["check:supabase"] === "node scripts/check-supabase-connection.mjs");
+add("setup script exists", pkg.scripts?.setup === "node scripts/setup.mjs");
 add("Vite manual chunks configured", vite.includes("manualChunks") && vite.includes("charts"));
 
 const failures = checks.filter(c => !c.pass);
