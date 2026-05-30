@@ -347,6 +347,16 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   // Session 21 — bug hunt: top-level ErrorBoundary so a single bad chunk
   // can no longer render the whole app as a white screen.
   "src/components/errorBoundary.jsx",
+  // Session 22 — major changes pack
+  "supabase/functions/_shared/cashfree.ts",
+  "supabase/functions/cashfree-subscription/index.ts",
+  "supabase/functions/cashfree-webhook/index.ts",
+  "supabase/functions/README.md",
+  "src/lib/blockchainAnchor.js",
+  "tests/blockchainAnchor.test.js",
+  "src/lib/reraTelangana.js",
+  "tests/reraTelangana.test.js",
+  "docs/PLAY_STORE_PREP.md",
   // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
   ".mcp.json",
   ".env.mcp.example",

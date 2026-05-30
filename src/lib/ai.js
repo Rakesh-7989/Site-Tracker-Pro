@@ -82,11 +82,39 @@ export function computeRiskScore(payload) {
   return { score, level, factors };
 }
 
-// Build a compact LLM prompt from project payload
-function buildPrompt(payload) {
+// Session 22: language-specific tone instructions for AI Insights v2.
+// Site-Tracker is the only Indian construction SaaS that returns the LLM
+// narrative in Telugu / Hindi natively — unique competitive differentiator.
+//
+// Why this matters: a Hyderabad PM who reads Telugu fluently shouldn't have
+// to interpret English-only AI commentary. Translating in the prompt is
+// cheaper, faster, and more idiomatic than running a separate translation
+// pass over English output.
+const LANG_INSTRUCTIONS = {
+  en: {
+    persona: "You are a senior construction project advisor.",
+    style: "Write a concise editorial-grade narrative summary in 4-6 short sentences. Tone: clear, factual, lightly editorial (no bullets, no headings, no emoji).",
+    closer: "End with one specific next action the architect should take this week.",
+  },
+  te: {
+    persona: "Meeru oka senior construction project advisor. Telugu lo mathladandi (transliterated English ledha Telugu script — natural ga unde okati pick cheyandi).",
+    style: "4-6 chinna sentences lo editorial-tone summary rayandi. Bullets vaadakandi, headings vaadakandi, emoji vaadakandi. Spashtam ga, factual ga.",
+    closer: "Last sentence lo — ee week lo architect cheyali ane oka specific action cheppandi.",
+  },
+  hi: {
+    persona: "Aap ek senior construction project advisor hain. Hindi mein likhein (transliterated English ya Devanagari — jo natural lage).",
+    style: "4-6 short sentences mein editorial-tone summary likhein. Bullets nahi, headings nahi, emoji nahi. Spashta aur factual.",
+    closer: "Aakhri sentence mein — is week mein architect ko ek specific action karna chahiye, wo bataiye.",
+  },
+};
+
+// Build a compact LLM prompt from project payload.
+// `lang` ∈ "en" | "te" | "hi" — defaults to en for back-compat.
+function buildPrompt(payload, lang = "en") {
   const r = computeRiskScore(payload);
+  const inst = LANG_INSTRUCTIONS[lang] || LANG_INSTRUCTIONS.en;
   return [
-    `You are a senior construction project advisor. Read the project snapshot and write a concise editorial-grade narrative summary in 4-6 short sentences. Tone: clear, factual, lightly editorial (no bullets, no headings, no emoji).`,
+    `${inst.persona} ${inst.style}`,
     ``,
     `Project: ${payload.project?.name} — ${payload.project?.location || "—"}`,
     `Status: ${payload.project?.status} · Progress: ${payload.project?.progress || 0}%`,
@@ -99,16 +127,26 @@ function buildPrompt(payload) {
     `Recent open issues (top 3):`,
     ...((payload.issues || []).filter(i => i.status === "open").slice(0, 3).map(i => `- ${i.severity?.toUpperCase()}: ${i.title}`)),
     ``,
-    `Now write the summary. End with one specific next action the architect should take this week.`,
+    inst.closer,
   ].join("\n");
 }
 
-export async function fetchLLMInsight(payload) {
+export { LANG_INSTRUCTIONS };
+
+export async function fetchLLMInsight(payload, opts = {}) {
   const cfg = getProviderConfig();
   if (!cfg.provider || !cfg.apiKey) {
     return { ok: false, error: "no-key", fallback: computeRiskScore(payload) };
   }
-  const prompt = buildPrompt(payload);
+  // Session 22: pick output language. Caller passes opts.lang ("en"|"te"|"hi");
+  // falls back to the user's session language stored in localStorage, else "en".
+  let lang = opts.lang;
+  if (!lang) {
+    try { lang = JSON.parse(localStorage.getItem("sitetrack_v2") || "{}").lang || "en"; }
+    catch { lang = "en"; }
+  }
+  if (!LANG_INSTRUCTIONS[lang]) lang = "en";
+  const prompt = buildPrompt(payload, lang);
   try {
     if (cfg.provider === "anthropic") {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -128,7 +166,7 @@ export async function fetchLLMInsight(payload) {
       if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
       const data = await res.json();
       const text = (data.content || []).map(c => c.text).join("\n").trim();
-      return { ok: true, text, model: data.model, risk: computeRiskScore(payload) };
+      return { ok: true, text, model: data.model, lang, risk: computeRiskScore(payload) };
     }
     if (cfg.provider === "openai") {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -146,7 +184,7 @@ export async function fetchLLMInsight(payload) {
       if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content?.trim() || "";
-      return { ok: true, text, model: data.model, risk: computeRiskScore(payload) };
+      return { ok: true, text, model: data.model, lang, risk: computeRiskScore(payload) };
     }
     return { ok: false, error: "unknown-provider", fallback: computeRiskScore(payload) };
   } catch (err) {

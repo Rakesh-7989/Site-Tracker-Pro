@@ -894,11 +894,19 @@ export function InvoicesTab({pid,invs,ms,setInvoices,user,can,proj}){
   );
 }
 
-export function LabourTab({pid,lbs,setLabour,user,can,proj}){
+export function LabourTab({pid,lbs,setLabour,user,can,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[nl,setNl]=useState({name:"",aadhaar:"",epf:"",esi:"",trade:"Mason",wage:"",joined:""});
   const add=()=>{if(!nl.name.trim())return;setLabour(p=>({...p,[pid]:[{id:"lb_"+Date.now(),...nl,wage:+nl.wage||0,joined:nl.joined||new Date().toISOString().split("T")[0]},...(p[pid]||[])]}));setNl({name:"",aadhaar:"",epf:"",esi:"",trade:"Mason",wage:"",joined:""});setShow(false);};
-  const del=id=>setLabour(p=>({...p,[pid]:p[pid].filter(l=>l.id!==id)}));
+  const del=id=>{
+    // Session 22 audit: removing a labour-register row erases a statutory PII
+    // record. EPFO / ESI audit demands a trail of who removed it and why.
+    const lb=(lbs||[]).find(x=>x.id===id);
+    if(!lb)return;
+    if(!window.confirm(`Remove ${lb.name} from labour register?\nTrade: ${lb.trade}\nEPF: ${lb.epf}\n\nThis is a statutory record — proceed only if duplicate.`))return;
+    setLabour(p=>({...p,[pid]:p[pid].filter(l=>l.id!==id)}));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"DELETE",resource:"labour",resource_id:id,project_id:pid,before:{name:lb.name,epf:lb.epf,esi:lb.esi,trade:lb.trade},message:`Removed labour: ${lb.name} (${lb.trade}, EPF ${lb.epf||"n/a"})`}));
+  };
   return(
     <div>
       <div className="flex items-center justify-between mb-5"><div><h2 className="font-bold text-slate-800">Labour Register</h2><p className="text-xs text-slate-400 mt-0.5">{lbs.length} workers · Statutory register (EPF/ESI compliance)</p></div>{user.role!=="client"&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm"><Ic n="plus" s={16}/>Add Worker</button>}</div>
@@ -938,7 +946,13 @@ export function RABillsTab({pid,ras,setRa,user,can,proj,setAuditLog}){
     setMbDraft({location:"",item:"",unit:"cum",qty:"",rate:""});
   };
   const delMB=(raId,mbId)=>{
+    // Session 22 audit: MB rows determine the RA bill amount paid to the
+    // subcontractor. Deleting one without a trail = financial fraud risk.
+    const ra=(ras||[]).find(x=>x.id===raId);
+    const mb=(ra?.mb||[]).find(m=>m.id===mbId);
+    if(!ra||!mb)return;
     setRa(p=>({...p,[pid]:p[pid].map(ra=>ra.id===raId?{...ra,mb:(ra.mb||[]).filter(m=>m.id!==mbId)}:ra)}));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"DELETE",resource:"mb",resource_id:mbId,project_id:pid,before:{ra_no:ra.no,location:mb.location,qty:mb.qty,amount:mb.amount},message:`Deleted MB row from ${ra.no}: ${mb.location} (₹${(mb.amount||0).toLocaleString("en-IN")})`}));
   };
   const recomputeFromMB=raId=>{
     const ra=ras.find(x=>x.id===raId);if(!ra)return;
@@ -1017,7 +1031,7 @@ export function RABillsTab({pid,ras,setRa,user,can,proj,setAuditLog}){
 }
 
 // ── BOQ Tab (Bill of Quantities) ─────────────────────────────────────────────
-export function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
+export function BOQTab({pid,bq,setBoq,user,can,addActivity,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[nb,setNb]=useState({code:"",description:"",category:"Civil",unit:"cum",qty:"",rate:""});
   const[err,setErr]=useState("");
@@ -1042,6 +1056,8 @@ export function BOQTab({pid,bq,setBoq,user,can,addActivity,proj}){
     if(!window.confirm(`Delete BOQ line "${it.description}"?\nLine amount: ${fmtCur(it.qty*it.rate)}\n\nThis cannot be undone.`))return;
     setBoq(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));
     addActivity(pid,proj.name,"general","Removed BOQ line",it.description,user.name,user.role);
+    // Session 22 audit: BOQ deletes change the project baseline. CFO / auditor needs the trail.
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"DELETE",resource:"boq",resource_id:id,project_id:pid,before:{code:it.code,description:it.description,qty:it.qty,rate:it.rate,amount:it.qty*it.rate},message:`Deleted BOQ line ${it.code||""}: ${it.description} (₹${(it.qty*it.rate).toLocaleString("en-IN")})`}));
   };
   const sorted=[...bq].sort((a,b)=>(a.sort||0)-(b.sort||0));
   const total=sorted.reduce((s,x)=>s+(x.qty*x.rate||0),0);
@@ -1231,7 +1247,7 @@ export function EstimateTab({pid,bq,est,setEstimate,user,addActivity,proj}){
 }
 
 // ── Inventory Ledger Tab (inward / outward / GRN) ────────────────────────────
-export function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
+export function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[filter,setFilter]=useState("all");
   const[err,setErr]=useState("");
@@ -1267,6 +1283,8 @@ export function LedgerTab({pid,lg,setLedger,mats,user,can,addActivity,proj}){
     if(!window.confirm(`Delete ${it.direction} transaction?\n${it.material} — ${it.qty} ${it.unit}\nDate: ${fmtDate(it.date)}\n\nThis cannot be undone.`))return;
     setLedger(p=>({...p,[pid]:(p[pid]||[]).filter(x=>x.id!==id)}));
     addActivity(pid,proj.name,"material","Removed ledger entry",`${it.material} — ${it.qty}`,user.name,user.role);
+    // Session 22 audit: inventory deletes affect stock counts. Auditor needs the trail.
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"DELETE",resource:"ledger",resource_id:id,project_id:pid,before:{material:it.material,qty:it.qty,unit:it.unit,direction:it.direction,date:it.date},message:`Deleted ${it.direction} transaction: ${it.material} ${it.qty} ${it.unit} (${fmtDate(it.date)})`}));
   };
   const rows=filter==="all"?lg:lg.filter(x=>x.direction===filter);
   // Material-wise stock summary
@@ -1948,7 +1966,7 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
       {tab==="invoices"&&<InvoicesTab pid={pid} invs={invs} ms={ms} setInvoices={setInvoices} user={user} can={can} proj={proj}/>}
 
       {/* ── LABOUR REGISTER ── */}
-      {tab==="labour"&&<LabourTab pid={pid} lbs={lbs} setLabour={setLabour} user={user} can={can} proj={proj}/>}
+      {tab==="labour"&&<LabourTab pid={pid} lbs={lbs} setLabour={setLabour} user={user} can={can} proj={proj} setAuditLog={setAuditLog}/>}
 
       {/* ── RA BILLS ── */}
       {tab==="rabills"&&<RABillsTab pid={pid} ras={ras} setRa={setRa} user={user} can={can} proj={proj} setAuditLog={setAuditLog}/>}
@@ -1956,13 +1974,13 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
       {tab==="ai"&&<AIInsightsTab project={proj} milestones={ms} issues={iss} tasks={tks} rfis={rfis} submittals={subs} permits={prs} safety={sfs} expenses={ex} worklogs={wls}/>}
 
       {/* ── BOQ (Bill of Quantities) ── */}
-      {tab==="boq"&&<BOQTab pid={pid} bq={bq} setBoq={setBoq} user={user} can={can} addActivity={addActivity} proj={proj}/>}
+      {tab==="boq"&&<BOQTab pid={pid} bq={bq} setBoq={setBoq} user={user} can={can} addActivity={addActivity} proj={proj} setAuditLog={setAuditLog}/>}
 
       {/* ── ESTIMATE (client-facing quote on top of BOQ) ── */}
       {tab==="estimate"&&<EstimateTab pid={pid} bq={bq} est={est} setEstimate={setEstimate} user={user} addActivity={addActivity} proj={proj}/>}
 
       {/* ── INVENTORY LEDGER ── */}
-      {tab==="ledger"&&<LedgerTab pid={pid} lg={lg} setLedger={setLedger} mats={mats} user={user} can={can} addActivity={addActivity} proj={proj}/>}
+      {tab==="ledger"&&<LedgerTab pid={pid} lg={lg} setLedger={setLedger} mats={mats} user={user} can={can} addActivity={addActivity} proj={proj} setAuditLog={setAuditLog}/>}
 
       {/* ── GANTT ── */}
       {tab==="gantt"&&<GanttView project={proj} milestones={ms}/>}
