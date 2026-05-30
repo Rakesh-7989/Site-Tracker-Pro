@@ -182,7 +182,13 @@ export async function subscribeTable(table, onInsert) {
 export async function migrateLocalToBackend() {
   const sb = await getSupabaseClient();
   if (!sb) throw new Error("Supabase is not enabled.");
-  const all = JSON.parse(localStorage.getItem("sitetrack_v2") || "{}");
+  // Session 21 fix: guard against corrupted localStorage. Previously a single
+  // malformed character would throw + abort the entire migration before any
+  // upsert. With this fallback the worst case is "nothing to migrate" instead
+  // of a hard failure.
+  let all = {};
+  try { all = JSON.parse(localStorage.getItem("sitetrack_v2") || "{}"); }
+  catch (err) { console.warn("localStorage corrupt — nothing to migrate:", err.message); return { keys: 0, rows: 0 }; }
   let totalKeys = 0, totalRows = 0;
   for (const [key, value] of Object.entries(all)) {
     if (!TABLE_BY_KEY[key]) continue;

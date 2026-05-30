@@ -60,22 +60,21 @@ import {
 // up but didn't know what to do next." This wizard takes them from
 // "blank workspace" → "first project visible to their team" in <15 min.
 export function OnboardingWizardView({ user, orgs, setOrgs, adminUsers, setAdminUsers, projects, setProjects, orgFlags, setOrgFlags, orgIntegrations, setOrgIntegrations, opsToggles, setOpsToggles, setView, setSP, setAuditLog }) {
+  // Session 21 fix: resolve org at the TOP so we can lazy-init orgDraft from
+  // the real row in one shot. Previously this lived after the useState block
+  // and was hoisted into a useMemo side-effect (anti-pattern — useMemo is for
+  // computed values, not setState calls; under React strict mode that fires
+  // an extra render + console warning, and on some renders sets stale data).
+  const org = resolveOrg(user, orgs);
   const [step, setStep] = useState(1);
-  const [orgDraft, setOrgDraft] = useState({});
+  const [orgDraft, setOrgDraft] = useState(() => org
+    ? { id: org.id, name: org.name || "", contact_email: org.contact_email || "", plan: org.plan || "basic", city: org.city || "" }
+    : {});
   const [memberDraft, setMemberDraft] = useState({ name: "", email: "", role: "pm" });
   const [pendingMembers, setPendingMembers] = useState([]);
   const [projectDraft, setProjectDraft] = useState({ name: "", client_name: "", client_email: "", location: "", start_date: new Date().toISOString().slice(0, 10), budget: "" });
   const [featurePreset, setFeaturePreset] = useState("balanced"); // minimal | balanced | full
   const [integrationDraft, setIntegrationDraft] = useState({ ai: "", razorpay: "", whatsapp: "", cashfree: "" });
-  const org = resolveOrg(user, orgs);
-
-  // Initialise org draft once we have the org row
-  useMemo(() => {
-    if (org && !orgDraft.id) setOrgDraft({
-      id: org.id, name: org.name || "", contact_email: org.contact_email || "",
-      plan: org.plan || "basic", city: org.city || "",
-    });
-  }, [org, orgDraft.id]);
 
   if (!org) return <NoOrgScreen msg="Onboarding requires an org. Ask your account owner to provision one." />;
 

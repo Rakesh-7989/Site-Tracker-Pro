@@ -811,7 +811,9 @@ export function ProjectPOTab({pid,projPOs,setPos,vendors,user,can,proj,setAuditL
   const nextNo="PO-"+String(projPOs.length+1).padStart(3,"0");
   const add=()=>{if(!np.items.trim()||!np.amount)return;setPos(p=>({...p,[pid]:[{id:"po_"+Date.now(),no:nextNo,...np,amount:+np.amount,gst:+np.gst,status:"pending",created:new Date().toISOString().split("T")[0]},...(p[pid]||[])]}));setNp({vendor_id:vendors[0]?.id||"",items:"",amount:"",gst:18,delivery:"",attachments:[]});setShow(false);};
   const approve=id=>{
-    const po=(pos||[]).find(x=>x.id===id);
+    // Session 21 fix: was `pos` (undefined) — the destructured arg is `projPOs`.
+    // Would throw at runtime when an architect clicks "Approve" on a PO.
+    const po=(projPOs||[]).find(x=>x.id===id);
     setPos(p=>({...p,[pid]:p[pid].map(po=>po.id===id?{...po,status:"approved"}:po)}));
     setAuditLog?.(p=>recordAudit(p,{actor:user,action:"APPROVE",resource:"po",resource_id:id,project_id:pid,before:{status:"pending"},after:{status:"approved"},message:`Approved ${po?.no||id} (₹${(po?.amount||0).toLocaleString("en-IN")})`}));
   };

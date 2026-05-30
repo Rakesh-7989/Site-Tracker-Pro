@@ -344,6 +344,9 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "marketing/vercel.json",
   "marketing/README.md",
   "scripts/setup.mjs",
+  // Session 21 — bug hunt: top-level ErrorBoundary so a single bad chunk
+  // can no longer render the whole app as a white screen.
+  "src/components/errorBoundary.jsx",
   // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
   ".mcp.json",
   ".env.mcp.example",

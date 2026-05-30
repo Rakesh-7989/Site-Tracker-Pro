@@ -9,7 +9,7 @@
 // DetailView is intentionally NOT here — it's massive (600 lines) and
 // already has a home in src/features/detail/. Batch 11 finishes that move.
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Ic, Av, Badge, PBar, SC, ROLE_META, fmtDate } from "../../components/ui.jsx";
 import { PERMS, can, visibleProjectsForUser } from "../../lib/permissions.js";
 // Session 16: feature-flag cascade (platform → org → default).

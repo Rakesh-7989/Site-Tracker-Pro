@@ -258,6 +258,19 @@ export default function App(){
     return ()=>{unsubs.forEach(u=>u&&u());};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[user?.id]);
+  // Session 18 (Session 21 fix v2): auto-route first-time orgadmins to the
+  // onboarding wizard. MUST sit with the other useEffects ABOVE every early
+  // return in this component (there are two: `if(shareId&&!user) return …`
+  // at the share-link path, and `if(!user) return <LoginScreen…>` further
+  // down). Violating that ordering throws "Rendered more hooks than during
+  // the previous render."
+  useEffect(()=>{
+    if(user?.role!=="orgadmin"||!user.org_id)return;
+    if(opsToggles?.[`onboarding_done_${user.org_id}`])return;
+    if(view==="org-onboarding")return;
+    setViewRaw("org-onboarding");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user?.id]);
   const[dark,setDark]=useLS("dark",false);
   const[mobileOpen,setMobileOpen]=useState(false);
 
@@ -278,17 +291,6 @@ export default function App(){
     if(!canAccessProject(user,shp)) return <div className="p-8"><AccessDenied msg="This project share is not available for your account."/></div>;
     return <ClientShareView project={shp} milestones={milestones[shareId]||[]} updates={updates[shareId]||[]} drawings={(drawings[shareId]||[]).filter(d=>user.role==="architect"||isReleasedCurrentDrawing(d,user.role))}/>;
   }
-
-  // Session 18: auto-route first-time orgadmins to the onboarding wizard.
-  // We use the ops_toggles store to remember "onboarding_done_{org_id}".
-  useEffect(()=>{
-    if(user?.role!=="orgadmin"||!user.org_id)return;
-    if(opsToggles?.[`onboarding_done_${user.org_id}`])return;
-    if(view==="org-onboarding")return;
-    // One-shot redirect on cold load. orgadmin can still navigate away.
-    setViewRaw("org-onboarding");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[user?.id]);
 
   // HIGH-2 fix: the top-bar bell badge must reflect notifications visible to
   // THIS user, not the global unread count. Cross-tenant data must not leak
