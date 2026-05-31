@@ -1,0 +1,45 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    actor U as Worker
+    participant Kiosk
+    participant Lib
+    participant IDB
+    participant NetCheck
+    participant PG as Supabase
+
+    U->>Kiosk: tap Mark attendance
+    Kiosk->>Lib: queueOpAdd record
+    Lib->>IDB: put op in pending store
+    Kiosk-->>U: optimistic ack
+
+    Lib->>NetCheck: isOnline
+    alt offline-state
+        NetCheck-->>Lib: returns offline
+        Note over Lib: tx queued with idempotency key
+    else online-state
+        NetCheck-->>Lib: returns online
+        Lib->>PG: POST with JWT
+        PG-->>Lib: 201 created
+        Lib->>IDB: delete op
+    end
+
+    Note over NetCheck: connectivity returns
+    NetCheck->>Lib: online event fires
+    Lib->>IDB: read all pending ops
+    loop per op
+        Lib->>PG: POST or PATCH with idempotency-key
+        alt success
+            PG-->>Lib: 2xx
+            Lib->>IDB: delete op
+        else conflict
+            PG-->>Lib: 409 already exists
+            Lib->>IDB: delete op as success
+        else server error
+            PG-->>Lib: 5xx
+            Lib->>Lib: backoff 1s 2s 4s, keep in queue
+        end
+    end
+
+    Lib-->>Kiosk: Sync complete - 12 ops
+    Kiosk-->>U: green badge

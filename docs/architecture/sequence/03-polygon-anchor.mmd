@@ -1,0 +1,45 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    participant Cron as pg_cron (00:30 IST)
+    participant EF as anchor-digest EF
+    participant PG as Postgres
+    participant Signer as Signerer service
+    participant Rpc as Polygon Rpc
+    participant Chain as AuditAnchor contract
+    participant Ind as Off-chain indexer
+
+    Cron->>EF: POST / (Bearer CRON_SECRET)
+    EF->>EF: parse ?day=yesterday
+    EF->>PG: SELECT audit_log_v2 WHERE ts::date = $day
+    PG-->>EF: rows (ordered by id)
+    EF->>EF: hashAuditRow per row → leaves
+    EF->>EF: merkleRoot(leaves) → 32-byte root
+
+    alt rows.length == 0
+        EF->>PG: UPSERT audit_anchors (status='manual', failure='no-rows')
+        EF-->>Cron: 200 {status:'dry-run'}
+    else
+        EF->>EF: buildAnchorCalldata(root) returns 0xeecdf927 + root bytes
+        EF->>Signer: POST {to, data}  (Authorization: Bearer)
+        Signer->>Signer: sign EIP-1559 tx with POLYGON_SIGNER_PRIVATE_KEY
+        Signer-->>EF: {signedTx}
+        EF->>Rpc: eth_sendRawTransaction(signedTx)
+        Rpc->>Chain: anchor(bytes32)
+        Chain->>Chain: require owner, bump anchorCount, store lastRoot
+        Chain-->>Rpc: emit Anchored(root, ts, by)
+        Rpc-->>EF: txHash
+
+        loop poll ~12 × 2.5s
+            EF->>Rpc: eth_getTransactionReceipt(txHash)
+            Rpc-->>EF: receipt or null
+        end
+
+        EF->>PG: UPSERT audit_anchors {day,root,tx,block,status='confirmed'}
+        EF-->>Cron: 200 {tx, block, root}
+
+        Note over Ind: anytime later
+        Ind->>Rpc: getLogs(Anchored)
+        Rpc-->>Ind: events with root, ts, by
+        Ind->>PG: cross-check against audit_anchors
+    end

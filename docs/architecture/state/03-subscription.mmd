@@ -1,0 +1,27 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','lineColor':'#5A5248'}}}%%
+stateDiagram-v2
+    direction LR
+    [*] --> trial: org signed up\n(14-day clock starts)
+
+    trial --> pending: Org Owner clicks "Subscribe"\n(EF creates Cashfree mandate)
+
+    pending --> active: webhook AUTHORIZATION_OK\n+ first charge succeeds
+    pending --> cancelled: user abandoned UPI page\n(after 30 min timeout)
+    pending --> failed: UPI mandate declined\n(insufficient permission / bank down)
+
+    failed --> pending: retry "Subscribe"
+
+    active --> past_due: charge failed at renewal\n(insufficient balance)
+    active --> cancelled: Org Owner cancels in-app\n(EF revokes Cashfree mandate)
+
+    past_due --> active: next retry succeeds\n(Cashfree auto-retries 3 times)
+    past_due --> cancelled: 7 days of retries fail\n(grace period exhausted)
+
+    cancelled --> [*]: org retained for 30 days\nthen marked archived_at
+
+    trial --> cancelled: trial expires without subscribe
+
+    note right of active
+        Grace: full feature access throughout
+        past_due → most read-only after Day 3.
+    end note

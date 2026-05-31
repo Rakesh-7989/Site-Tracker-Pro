@@ -1,0 +1,26 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','lineColor':'#5A5248'}}}%%
+stateDiagram-v2
+    direction TB
+    [*] --> draft: Architect uploads file\n(status='current', released_to=[])
+
+    draft --> released: Architect clicks "Release to…"\n(released_to ⊆ {pm, contractor, client})
+
+    released --> superseded: New revision uploaded\nEXCLUDE constraint fires:\nold row.status='superseded',\nold row.superseded_by = new.id
+
+    released --> withdrawn: Architect withdraws release\n(released_to set back to [])
+
+    withdrawn --> released: re-release with corrections
+
+    superseded --> [*]: history retained forever\nsigned URLs continue to work
+
+    note right of released
+        Storage path is immutable.
+        Signed URL TTL = 5 min,
+        regenerated on each download.
+    end note
+
+    note right of superseded
+        EXCLUDE constraint guarantees
+        at most ONE 'current' per
+        (project, title, type).
+    end note

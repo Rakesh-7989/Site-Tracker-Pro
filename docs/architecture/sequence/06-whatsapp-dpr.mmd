@@ -1,0 +1,38 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    participant Cron as pg_cron (19:00 IST)
+    participant EF as ef-dpr-builder
+    participant PG as Postgres
+    participant AI as AI provider
+    participant Snd as whatsapp-send EF
+    participant Meta as Meta Cloud API
+    participant C as Client phone (WhatsApp)
+    participant Log as whatsapp_log
+
+    Cron->>EF: dispatch per project
+    EF->>PG: SELECT today's site_updates, photos, materials, labour
+    PG-->>EF: rows
+    EF->>AI: buildDPR(rows, lang)
+    Note over AI: LANG_INSTRUCTIONS injects "respond in te/hi/en"
+    AI-->>EF: 4-paragraph summary
+
+    EF->>Snd: POST /whatsapp-send {kind:'template', template:'daily_progress_te', components:[{params:[summary, photo_url]}]}
+    Snd->>Snd: rate-limit check (per org, 10/min)
+    alt under limit
+        Snd->>Meta: POST /v18.0/{phone_id}/messages
+        Meta-->>Snd: {messages:[{id}]} | error
+        Snd->>Log: INSERT whatsapp_log (status, meta_id, raw_response)
+        alt sent ok
+            Meta->>C: deliver template message
+            C-->>Meta: read receipt
+            Meta->>Snd: status webhook (delivered → read)
+            Snd->>Log: UPDATE status='delivered' / 'read'
+        else error
+            Snd-->>EF: 4xx/5xx
+            EF->>EF: backoff + retry next hour
+        end
+    else rate-limited
+        Snd-->>EF: 429
+        EF->>EF: queue for later
+    end

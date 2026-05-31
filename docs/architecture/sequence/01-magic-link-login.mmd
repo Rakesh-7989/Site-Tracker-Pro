@@ -1,0 +1,32 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    actor U as User (browser)
+    participant SPA as SiteTrack SPA
+    participant SA as Supabase Auth
+    participant Mail as Email inbox
+    participant PG as Postgres + RLS
+    participant Sen as Sentry (opt-in)
+
+    U->>SPA: enter email + click "Sign in"
+    SPA->>SA: signInWithOtp({email})
+    SA->>Mail: send magic-link email
+    SA-->>SPA: {ok:true}
+    SPA-->>U: "Check your email" panel
+
+    Mail->>U: shows link with code
+    U->>SPA: click link  (loads app.sitetrack.in?code=…)
+    SPA->>SA: exchange code → session JWT
+    SA-->>SPA: JWT {sub, email, app_metadata.tenant_id, role}
+
+    SPA->>SPA: localStorage["sb-…-auth-token"] = JWT
+    SPA->>SPA: Sentry.setUser({id, role, org_id})
+    SPA->>SPA: hydrate state via usePersistent (subscribes to Supabase tables)
+    SPA->>PG: GET /projects?select=* (with JWT)
+    PG->>PG: RLS sets app.tenant_id from JWT
+    PG-->>SPA: only this tenant's rows
+    SPA-->>U: dashboard renders
+
+    opt Any error
+        SPA->>Sen: captureException (scrubbed)
+    end

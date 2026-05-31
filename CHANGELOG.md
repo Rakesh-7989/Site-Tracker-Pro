@@ -4,6 +4,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Session 27.4 — Polygon contract + WhatsApp EF + Sentry + diagrams
+- **`contracts/AuditAnchor.sol`** — 60-line Solidity contract matching the JS lib's hard-coded `0xeecdf927` selector. Anchors daily Merkle root via `anchor(bytes32)`; emits `Anchored(root, ts, by)`. Owner-gated, no admin escape hatch, zero deps. Three deploy paths documented (Remix / Foundry / Hardhat). Cost: ~₹25-40/year on Polygon mainnet.
+- **`supabase/functions/anchor-digest/index.ts`** — daily cron EF. SELECTs yesterday's `audit_log_v2`, computes Merkle root, sends signed tx via configurable signer service, polls receipt, upserts `audit_anchors`. Idempotent. Dry-run mode for testing.
+- **`supabase/functions/whatsapp-send/index.ts`** — Meta Cloud API client EF. Template + free-form text sends, per-org rate limiting (10/min default), full HMAC-verified status webhook. Backed by new `whatsapp_log` table (`30_whatsapp_log.sql`).
+- **`src/lib/sentry.js` + wiring** — gated, lazy-loaded Sentry init. No-op without `VITE_SENTRY_DSN` (demo + tests unaffected). PII scrubber redacts Aadhaar/PAN/GSTIN patterns + sensitive keys. `ErrorBoundary.componentDidCatch` forwards. +15 unit tests.
+- **8 sequence diagrams** (`docs/architecture/sequence/`): magic-link login, Cashfree subscribe + webhook, Polygon anchor, offline sync, RERA submit, WhatsApp DPR, drawing supersede, audit record.
+- **4 state-machine diagrams** (`docs/architecture/state/`): RA Bill lifecycle, Drawing revision chain, Subscription transitions, Project archive→restore→purge.
+
+### Session 27.3 — Deploy driver + expanded env scaffold
+- **`scripts/deploy-all.mjs`** — interactive 11-step driver covering every step from `.env.local` seed through final live probe. Idempotent. Auto-skips finished steps via probes.
+- **`.env.example` expanded** 16→74 lines covering Cashfree, RERA TG, WhatsApp Cloud API, Polygon, AI providers, and `SUPABASE_DB_URL` for psql migration runner.
+- **`npm run deploy:all`** wired in package.json.
+- **gh CLI installed** via winget — enables `gh auth login --scopes workflow,repo` for future CI enablement.
+
+### Session 27.2 — GitHub Actions CI (attempted)
+- Identified that pushing `.github/workflows/*` requires a PAT with the `workflow` OAuth scope, which the current token lacks. The CI YAML continues to live at `docs/CI_WORKFLOW.yml` until the token is upgraded OR the workflow is pasted via the GitHub web UI.
+
+### Session 27.1 — 4 SQL bugs in phase 2 migrations
+- **`24_feature_flags.sql:21`** — referenced non-existent `admin_users` table. Retargeted FK to `profiles(id)`.
+- **`20_workforce.sql:51-53`** — `coalesce()` in UNIQUE constraint is invalid syntax. Replaced with 2 partial UNIQUE INDEXes.
+- **`15_forecast.sql:30`** — `numeric(4,2)` overflows at 100. Widened to `numeric(5,2)`.
+- **`23_branding.sql:23`** — `UNIQUE (org_id, project_id)` with nullable column allows duplicate org-defaults. Split into 2 partial UNIQUE INDEXes.
+
+### Session 27 — Architecture + ER + 20 phase-2 migrations
+- **`docs/ARCHITECTURE.md` (1,100 lines)** — master technical reference (System / App / Product / Mobile / End-to-End layers).
+- **`docs/DATA_MODEL_ER.md` (1,143 lines)** — two-plane data model with `organizations.id` bridge + cross-plane audit spine.
+- **`docs/architecture/er-{overview,saas,tenant}.{mmd,png}`** — 3 Mermaid ER diagrams rendered to PNG.
+- **20 phase-2 migrations** (`09-28`) covering hierarchy / measurement_book / material_prices / delegations / daily_snapshots / compliance / forecast / process tables / handover tables / checklists / comms / workforce / field_ops / estimate / branding / feature_flags / billing_telemetry / share_tokens + RPC / audit_anchors + view / plans + 4 seeded plans. Each idempotent, RLS-enabled, indexed, with sanity `raise notice`.
+- **`29_phase2_tests.sql`** — assertion harness for every expected table + RLS-enabled flag + immutability check on 5 append-only tables.
+- **`eslint.config.js`** extended to Node-glob `docs/**/*.mjs`.
+
+### Session 26 — 90-day day-by-day execution plan
+- **`docs/EXECUTION_PLAN_90_DAYS.md` (850 lines)** — Pre-flight + 5-phase plan covering Day-3 to Day 90. Risk register, ₹85k budget, KPI checkpoints, Path A vs B decision tree.
+
 ### Session 24 — Adversarial review + 7 real bugs caught + audit gaps
 - **CRITICAL bug — wrong Polygon function selector.** `blockchainAnchor.polygonAdapter` hard-coded selector `0xf73e54d4` for `anchor(bytes32)` — verified via real `keccak256` and it was wrong. Correct value is `0xeecdf927`. Any anchoring against a deployed contract would have called a function that doesn't exist (gas wasted, no event emitted). Fixed + added `opts.selector` override for callers whose contract uses a different function name. Tests updated.
 - **Audit-trail gaps on destructive actions.** LabourTab.del removed PII silently; RABills MB row delete had no audit; BOQ + Ledger deletes only logged activity, not audit. All four wired with `recordAudit DELETE` capturing full before-state (amount, scope, EPF, etc.) plus confirm dialog before each delete.

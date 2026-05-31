@@ -1,0 +1,33 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    actor U as User (PM)
+    participant T as RA Bills tab
+    participant L as approvalChains.js
+    participant PG as Postgres
+    participant RPC as record_audit_v2()
+    participant A2 as audit_log_v2
+
+    U->>T: click "Approve RA bill #7"
+    T->>L: resolveApprover(org, 'ra_bill', amount, now)
+    L-->>T: {approver: pm, rung: 1, requireSig: true}
+    T-->>U: signature pad
+    U->>T: signs
+
+    T->>T: optimistic UI: status='approved'
+    T->>PG: UPDATE ra_bills SET status='approved', approved_by=user.id
+
+    par Audit + State (single txn)
+        PG-->>T: 1 row updated
+        T->>RPC: record_audit_v2('APPROVE','ra_bill', $id, before, after, msg)
+        RPC->>RPC: lookup actor profile (SECURITY DEFINER)
+        RPC->>RPC: derive org_id from org_members
+        RPC->>A2: INSERT audit_log_v2 (no UPDATE/DELETE policy exists)
+        Note over A2: row sealed — cannot be edited
+    end
+
+    A2-->>T: realtime (org_id channel)
+    T-->>U: green check + activity feed row
+
+    Note over A2: next morning at 00:30 IST
+    A2-->>A2: anchor-digest cron picks up yesterday's rows<br/>and pins their merkle root to Polygon

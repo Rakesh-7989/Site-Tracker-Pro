@@ -1,0 +1,33 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','lineColor':'#5A5248'}}}%%
+stateDiagram-v2
+    direction LR
+    [*] --> active: CreateView submitted\n(archived_at = NULL, status='active')
+
+    active --> on_hold: PM sets project on hold\n(no auto behaviour change,\njust a status label)
+    active --> completed: handover signed off\n(status='completed', progress=100)
+    active --> archived: Org Admin archives\n(archived_at = now())
+
+    on_hold --> active: PM resumes
+    on_hold --> archived: Org Admin archives stale project
+
+    completed --> archived: post-handover cleanup
+    archived --> active: "Restore" within 90 days\n(archived_at → NULL)
+
+    archived --> purged: 90 days elapsed\n(daily cron / Edge Function)\nactual DELETE cascades\nto every project-scoped row
+
+    purged --> [*]: project gone\naudit_log_v2 rows retained\n(project_id → NULL via ON DELETE SET NULL)
+
+    note right of archived
+        While archived:
+        · hidden from default lists
+        · read-only — no new writes
+        · "Show archived" toggle reveals
+        · daysUntilPurge counter visible
+    end note
+
+    note right of purged
+        Audit anchors keep the
+        merkle proof — even after
+        the data is gone we can
+        prove what existed.
+    end note

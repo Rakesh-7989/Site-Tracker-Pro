@@ -1,0 +1,40 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    actor U as RERA Officer
+    participant SPA as Compliance view
+    participant Lib as reraTelangana.js
+    participant EF as tg-rera-submit EF
+    participant Scr as TG RERA portal
+    participant PG as Postgres (compliance)
+    participant Aud as audit_log_v2
+
+    U->>SPA: open Compliance → Telangana RERA tile
+    SPA->>Lib: buildFilingPayload(project, stage)
+    Lib->>Lib: validate(rera_no, fields)
+    Lib-->>SPA: {ok:true, payload}
+    SPA-->>U: review screen "Stage: 7th floor · cum=12.4"
+    U->>SPA: click "Submit filing"
+
+    SPA->>EF: POST /tg-rera-submit (project_id, payload)
+    EF->>EF: check TG_RERA_SCRAPER_ENABLED env
+    alt scraper disabled
+        EF-->>SPA: 503 {error:'scraper-disabled', hint:'enable via env'}
+        SPA-->>U: red banner "Submission disabled — enable scraper"
+    else enabled
+        EF->>Scr: login(user, pass) → CSRF token
+        Scr-->>EF: session
+        EF->>Scr: POST stage filing form (with attachments)
+        Scr-->>EF: 200 {ack_no} | 4xx {field_errors}
+        alt success
+            EF->>PG: UPDATE compliance SET status='filed', ref_no=ack, filed_at=now()
+            EF->>Aud: INSERT (action='APPROVE', resource='compliance')
+            EF-->>SPA: 200 {ack_no}
+            SPA-->>U: green "Filed · ACK 2026/05/0431"
+        else portal rejected
+            EF->>PG: UPDATE compliance SET status='rejected', payload=errors
+            EF->>Aud: INSERT (action='REJECT', resource='compliance')
+            EF-->>SPA: 400 {field_errors}
+            SPA-->>U: per-field error chips
+        end
+    end

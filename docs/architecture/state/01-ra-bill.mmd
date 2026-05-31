@@ -1,0 +1,23 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','lineColor':'#5A5248'}}}%%
+stateDiagram-v2
+    direction LR
+    [*] --> submitted: Contractor submits RA Bill\n(linked to MB measurements + BOQ items)
+
+    submitted --> approved: PM / project_admin approves\n(amount, retention checked,\nsignature captured)
+    submitted --> rejected: PM rejects with reason\n(measurement mismatch / over-budget)
+
+    rejected --> submitted: Contractor revises\n(updates MB rows, resubmits)
+    rejected --> [*]: abandoned
+
+    approved --> paid: Finance issues payment\n(via Cashfree / NEFT)\nbilling_history row written
+    approved --> disputed: Client disputes claimed quantity\n(opens RFI / Change Order)
+
+    disputed --> approved: Resolved in contractor's favour
+    disputed --> rejected: Resolved against contractor\n(amount adjusted)
+
+    paid --> [*]: cumulative + paid_amount stored\nretention released on project closeout
+
+    note right of approved
+        Audit log entry on every transition:
+        APPROVE / REJECT / PAYMENT
+    end note

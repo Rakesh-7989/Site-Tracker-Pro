@@ -10,6 +10,7 @@
 // can't keep crashing the app on every reload.
 
 import React from "react";
+import { captureException } from "../lib/sentry.js";
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -23,8 +24,8 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, info) {
     this.setState({ info });
-    // Production hook: wire Sentry here when the post-launch monitoring
-    // MCP is connected (see docs/MCP_TOOLKIT.md Part C).
+    // Session 27.4: forward to Sentry (no-op without VITE_SENTRY_DSN).
+    captureException(error, { extra: { componentStack: info?.componentStack } });
     // eslint-disable-next-line no-console
     console.error("SiteTrack uncaught error:", error, info?.componentStack);
   }

@@ -1,0 +1,35 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    actor U as Org Owner
+    participant SPA as SiteTrack SPA
+    participant EF1 as cashfree-subscription EF
+    participant CF as Cashfree API
+    participant UPI as UPI app (PhonePe/GPay)
+    participant EF2 as cashfree-webhook EF
+    participant PG as Postgres (subscriptions)
+
+    U->>SPA: click "Upgrade to Business ₹2,999/mo"
+    SPA->>EF1: POST /cashfree-subscription {plan, org_id}
+    EF1->>EF1: read CASHFREE_APP_ID + secret from env
+    EF1->>CF: POST /pg/subscriptions (signed)
+    CF-->>EF1: {subscription_id, authorization_url}
+    EF1-->>SPA: {pay_url}
+    SPA-->>U: redirect to pay_url
+
+    U->>CF: open Cashfree-hosted UPI page
+    CF->>UPI: deep-link "Approve mandate"
+    UPI-->>U: confirm in UPI app
+    U->>UPI: PIN + approve
+    UPI-->>CF: mandate-success
+    CF-->>U: redirect back to app.sitetrack.in/billing/return
+
+    par Webhook (async, server-to-server)
+        CF->>EF2: POST /cashfree-webhook (event + x-webhook-signature)
+        EF2->>EF2: verifyHmacSignature(secret, body)
+        EF2->>EF2: applyWebhookEvent(event) → status mapping
+        EF2->>PG: UPSERT subscriptions (org_id, status='active', period_end)
+        EF2->>PG: INSERT billing_history (org_id, amount, paid_at)
+        PG-->>SPA: realtime broadcast: subscriptions row changed
+        SPA-->>U: pill flips to "Pro · ACTIVE"
+    end

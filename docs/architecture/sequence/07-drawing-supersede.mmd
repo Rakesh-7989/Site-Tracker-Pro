@@ -1,0 +1,37 @@
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FAF0E6','primaryBorderColor':'#8E887C','primaryTextColor':'#2A2520','actorBkg':'#EEDFC0','actorBorder':'#8E887C','signalColor':'#5A5248'}}}%%
+sequenceDiagram
+    autonumber
+    actor A as Architect
+    participant SPA as Drawings tab
+    participant ST as Supabase Storage
+    participant PG as drawings table
+    participant N as notifications
+    participant PM as Project Manager
+    participant CT as Contractor
+    participant Aud as audit_log_v2
+
+    A->>SPA: upload Rev B (file + title='Slab Plan' + type='structural')
+    SPA->>ST: upload object → storage_path
+    SPA->>PG: INSERT drawing (status='current', revision='Rev B', released_to=[])
+
+    Note over PG: EXCLUDE constraint detects existing<br/>(project, lower(title), lower(type), status='current')
+    PG->>PG: trigger: SET old_drawing.status='superseded',<br/>old_drawing.superseded_by=new.id
+    PG-->>SPA: 201 {drawing_id}
+    SPA->>Aud: recordAudit(action='CREATE', resource='drawing')
+
+    A->>SPA: click "Release to [PM, Contractor, Client]"
+    SPA->>PG: UPDATE drawings SET released_to=['pm','contractor','client']
+    SPA->>Aud: recordAudit(action='RELEASE', resource='drawing', after={released_to})
+
+    par notify recipients (Supabase Realtime)
+        PG-->>PM: realtime "drawings" → new row visible
+        PG-->>CT: realtime "drawings" → new row visible
+        PM->>N: INSERT (kind='drawing_released', user=pm.id)
+        CT->>N: INSERT (kind='drawing_released', user=contractor.id)
+    end
+
+    PM->>SPA: open Drawings — sees "Rev B · CURRENT" with "Rev A · SUPERSEDED" below
+    CT->>SPA: requests download → signed URL valid 5 min
+    SPA->>ST: createSignedUrl(storage_path)
+    ST-->>SPA: signed URL
+    SPA-->>CT: redirect to URL
