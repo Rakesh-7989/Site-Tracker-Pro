@@ -1,0 +1,159 @@
+%%{init: {'theme':'base', 'themeVariables': {
+  'primaryColor':'#FAF0E6',
+  'primaryBorderColor':'#8E887C',
+  'primaryTextColor':'#2A2520',
+  'lineColor':'#A39A8B',
+  'fontFamily':'Georgia, serif'
+}}}%%
+erDiagram
+    PLANS ||--o{ ORGANIZATIONS : "tier"
+    ORGANIZATIONS ||--o| SUBSCRIPTIONS : "billed-via"
+    ORGANIZATIONS ||--o| ORG_INTEGRATIONS : "configures"
+    ORGANIZATIONS ||--o{ TEMPLATES : "owns"
+    ORGANIZATIONS ||--o{ APPROVAL_CHAINS : "per-resource"
+    ORGANIZATIONS ||--o{ NOTIFICATION_RULES : "configures"
+    ORGANIZATIONS ||--o{ ORG_FEATURE_FLAGS : "toggles"
+    ORGANIZATIONS ||--o{ BRANDING : "white-labels"
+    ORGANIZATIONS ||--o{ OPS_TOGGLES : "stores-state"
+    ORGANIZATIONS ||--o{ DELEGATIONS : "delegates"
+    ORGANIZATIONS ||--o{ USAGE_METRICS : "metered"
+    ORGANIZATIONS ||--o{ BILLING_HISTORY : "charges"
+    ADMIN_USERS ||--o{ AUDIT_LOG_V2 : "audits"
+    SUPPORT ||--o{ AUDIT_LOG_V2 : "audits"
+
+    PLANS {
+        text id PK
+        text name
+        bigint monthly_inr
+        jsonb feature_caps
+        text status
+    }
+    ORGANIZATIONS {
+        uuid id PK "THE BRIDGE"
+        text slug UK
+        text name
+        text plan FK
+        text gstin
+        text pan
+        text status
+        timestamptz archived_at
+        timestamptz created_at
+    }
+    SUBSCRIPTIONS {
+        uuid org_id PK
+        text provider
+        text external_id
+        text plan
+        text status
+        timestamptz period_start
+        timestamptz period_end
+        timestamptz trial_ends_at
+    }
+    BILLING_HISTORY {
+        uuid id PK
+        uuid org_id FK
+        bigint amount
+        text status
+        timestamptz paid_at
+    }
+    ORG_INTEGRATIONS {
+        uuid org_id PK
+        jsonb ai
+        jsonb razorpay
+        jsonb whatsapp
+        jsonb cashfree
+        timestamptz updated_at
+    }
+    TEMPLATES {
+        uuid id PK
+        uuid org_id FK
+        text kind
+        text name
+        jsonb payload
+        uuid created_by FK
+    }
+    APPROVAL_CHAINS {
+        uuid org_id PK
+        text resource PK
+        text name
+        jsonb rungs
+        timestamptz updated_at
+    }
+    NOTIFICATION_RULES {
+        uuid id PK
+        uuid org_id FK
+        text trigger
+        text channel
+        text recipients
+        boolean enabled
+    }
+    ORG_FEATURE_FLAGS {
+        uuid org_id PK
+        text key PK
+        boolean enabled
+        timestamptz updated_at
+    }
+    PLATFORM_FEATURE_FLAGS {
+        text key PK
+        boolean enabled
+        numeric rollout
+        text note
+        timestamptz updated_at
+    }
+    BRANDING {
+        uuid id PK
+        uuid org_id FK
+        uuid project_id FK
+        text logo_url
+        text accent
+        text letterhead
+    }
+    OPS_TOGGLES {
+        uuid org_id PK
+        text key PK
+        jsonb value
+        timestamptz updated_at
+    }
+    DELEGATIONS {
+        uuid id PK
+        uuid org_id FK
+        uuid from_user FK
+        uuid to_user FK
+        text resource
+        timestamptz start_at
+        timestamptz end_at
+        text reason
+        timestamptz revoked_at
+    }
+    USAGE_METRICS {
+        uuid org_id PK
+        date day PK
+        text metric PK
+        bigint value
+    }
+    ADMIN_USERS {
+        uuid id PK
+        text email UK
+        text name
+        text role
+        timestamptz last_login
+    }
+    SUPPORT {
+        uuid id PK
+        text email UK
+        text name
+        text role
+        int tickets_owned
+    }
+    AUDIT_LOG_V2 {
+        uuid id PK
+        uuid org_id FK
+        uuid project_id FK
+        uuid actor_id FK
+        text action
+        text resource
+        text resource_id
+        jsonb before
+        jsonb after
+        timestamptz ts
+    }

@@ -60,8 +60,13 @@ export default [
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    // Build/script files
-    files: ["scripts/**/*.{js,mjs}", "*.config.js", "*.config.mjs"],
+    // Build/script files (Node runtime — incl. doc-build scripts)
+    files: [
+      "scripts/**/*.{js,mjs}",
+      "docs/**/*.{js,mjs}",
+      "*.config.js",
+      "*.config.mjs",
+    ],
     languageOptions: { globals: { ...globals.node } },
   },
 ];

@@ -1,0 +1,124 @@
+%%{init: {'theme':'base', 'themeVariables': {
+  'primaryColor':'#FAF0E6',
+  'primaryBorderColor':'#8E887C',
+  'primaryTextColor':'#2A2520',
+  'lineColor':'#A39A8B',
+  'secondaryColor':'#F5EAD3',
+  'tertiaryColor':'#EEDFC0',
+  'fontFamily':'Georgia, serif'
+}}}%%
+flowchart TB
+    subgraph SAAS["⬢ SaaS Control Plane (Operator-owned)"]
+        direction TB
+        PLANS[(plans)]
+        ORG[(organizations)]
+        SUB[(subscriptions)]
+        BILL[(billing_history)]
+        OINT[(org_integrations)]
+        TMPL[(templates)]
+        APPC[(approval_chains)]
+        NRULE[(notification_rules)]
+        OFF[(org_feature_flags)]
+        PFF[(platform_feature_flags)]
+        BRAND[(branding)]
+        OPST[(ops_toggles)]
+        DEL[(delegations)]
+        UM[(usage_metrics)]
+        AU[(admin_users)]
+        SUP[(support)]
+    end
+
+    subgraph APP["⬡ App Tenant Plane (Builder-firm-owned)"]
+        direction TB
+        PROF[(profiles)]
+        OMEM[(org_members)]
+        PMEM[(project_members)]
+        PROJ[(projects)]
+        MS[(milestones)]
+        TASK[(tasks)]
+        UPD[(site_updates)]
+        ISS[(issues)]
+        DRAW[(drawings)]
+        ATT[(attachments)]
+        MAT[(materials)]
+        INV[(inventory_transactions)]
+        BOQ[(boq_items)]
+        VEND[(vendors)]
+        PO[(purchase_orders)]
+        INVC[(invoices)]
+        RA[(ra_bills)]
+        LAB[(labour_register)]
+        BLK[(blocks)]
+        FLR[(floors)]
+        UNT[(units)]
+        DS[(daily_snapshots)]
+        COMP[(compliance)]
+        FC[(forecast)]
+        ACT[(activity_log)]
+        MP[(material_prices)]
+    end
+
+    subgraph SPINE["⬣ Cross-Plane Audit Spine"]
+        direction LR
+        AL[(audit_log_v2)]
+        ANC[(audit_anchors)]
+    end
+
+    PLANS  --> ORG
+    ORG    --> SUB
+    ORG    --> BILL
+    ORG    --> OINT
+    ORG    --> TMPL
+    ORG    --> APPC
+    ORG    --> NRULE
+    ORG    --> OFF
+    ORG    --> BRAND
+    ORG    --> OPST
+    ORG    --> DEL
+    ORG    --> UM
+
+    ORG  ===>|"THE BRIDGE: organizations.id"| PROJ
+    ORG  --> OMEM
+    OMEM --> PROF
+    PROJ --> PMEM
+    PMEM --> PROF
+    PROJ --> MS
+    MS   --> TASK
+    PROJ --> TASK
+    PROJ --> UPD
+    PROJ --> ISS
+    PROJ --> DRAW
+    DRAW --> ATT
+    PROJ --> ATT
+    PROJ --> MAT
+    PROJ --> INV
+    PO   --> INV
+    PROJ --> BOQ
+    ORG  --> VEND
+    VEND --> PO
+    PROJ --> PO
+    PROJ --> INVC
+    PROJ --> RA
+    PROJ --> LAB
+    PROJ --> BLK
+    BLK  --> FLR
+    FLR  --> UNT
+    PROJ --> DS
+    ORG  --> COMP
+    PROJ --> COMP
+    PROJ --> FC
+    PROJ --> ACT
+    ORG  --> MP
+
+    ORG  -.->|"events"| AL
+    PROJ -.->|"events"| AL
+    PROF -.->|"actor"| AL
+    AU   -.->|"actor"| AL
+    AL   ==>|"daily merkle"| ANC
+
+    classDef saas fill:#F5EAD3,stroke:#8E887C,color:#2A2520;
+    classDef app  fill:#EEDFC0,stroke:#8E887C,color:#2A2520;
+    classDef spine fill:#D5CFC2,stroke:#5A5248,color:#2A2520;
+    class PLANS,ORG,SUB,BILL,OINT,TMPL,APPC,NRULE,OFF,PFF,BRAND,OPST,DEL,UM,AU,SUP saas;
+    class PROF,OMEM,PMEM,PROJ,MS,TASK,UPD,ISS,DRAW,ATT,MAT,INV,BOQ,VEND,PO,INVC,RA,LAB,BLK,FLR,UNT,DS,COMP,FC,ACT,MP app;
+    class AL,ANC spine;

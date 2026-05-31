@@ -1,0 +1,288 @@
+%%{init: {'theme':'base', 'themeVariables': {
+  'primaryColor':'#EEDFC0',
+  'primaryBorderColor':'#8E887C',
+  'primaryTextColor':'#2A2520',
+  'lineColor':'#A39A8B',
+  'fontFamily':'Georgia, serif'
+}}}%%
+erDiagram
+    ORGANIZATIONS ||--o{ PROJECTS : "owns"
+    ORGANIZATIONS ||--o{ ORG_MEMBERS : "employs"
+    ORGANIZATIONS ||--o{ VENDORS : "registers"
+    ORGANIZATIONS ||--o{ MATERIAL_PRICES : "price-master"
+    PROFILES ||--o{ ORG_MEMBERS : "member-of"
+    PROFILES ||--o{ PROJECT_MEMBERS : "works-on"
+    PROFILES ||--o{ SITE_UPDATES : "authors"
+
+    PROJECTS ||--o{ PROJECT_MEMBERS : "staffed-by"
+    PROJECTS ||--o{ MILESTONES : "tracks"
+    PROJECTS ||--o{ TASKS : "schedules"
+    PROJECTS ||--o{ SITE_UPDATES : "logs"
+    PROJECTS ||--o{ ISSUES : "raises"
+    PROJECTS ||--o{ DRAWINGS : "stores"
+    PROJECTS ||--o{ ATTACHMENTS : "files"
+    PROJECTS ||--o{ MATERIALS : "plans"
+    PROJECTS ||--o{ INVENTORY_TRANSACTIONS : "ledger"
+    PROJECTS ||--o{ BOQ_ITEMS : "BOQ"
+    PROJECTS ||--o{ PURCHASE_ORDERS : "POs"
+    PROJECTS ||--o{ INVOICES : "bills"
+    PROJECTS ||--o{ RA_BILLS : "RA-cycle"
+    PROJECTS ||--o{ LABOUR_REGISTER : "muster"
+    PROJECTS ||--o{ BLOCKS : "hierarchy-root"
+    PROJECTS ||--o{ DAILY_SNAPSHOTS : "EOD-freeze"
+    PROJECTS ||--o{ FORECAST : "AI-projects"
+    PROJECTS ||--o{ ACTIVITY_LOG : "feed"
+    PROJECTS ||--o{ COMPLIANCE : "RERA-filings"
+
+    BLOCKS ||--o{ FLOORS : "contains"
+    FLOORS ||--o{ UNITS : "contains"
+
+    MILESTONES ||--o{ TASKS : "groups"
+    MILESTONES ||--o{ INVOICES : "milestone-billing"
+
+    VENDORS ||--o{ PURCHASE_ORDERS : "supplies"
+    PURCHASE_ORDERS ||--o{ INVENTORY_TRANSACTIONS : "inwards"
+
+    DRAWINGS ||--o| DRAWINGS : "superseded-by"
+
+    PROFILES {
+        uuid id PK
+        text name
+        text avatar
+        text role "19 enum values"
+        timestamptz created_at
+    }
+    ORG_MEMBERS {
+        uuid org_id PK_FK
+        uuid profile_id PK_FK
+        text role
+        timestamptz joined_at
+    }
+    PROJECT_MEMBERS {
+        uuid project_id PK_FK
+        uuid profile_id PK_FK
+        text project_role
+        timestamptz added_at
+    }
+    PROJECTS {
+        uuid id PK
+        uuid org_id FK "BRIDGE"
+        text type "4 values"
+        uuid architect_id FK
+        text name
+        text status
+        smallint progress
+        bigint budget
+        date start_date
+        date expected_end_date
+        text client_email
+        timestamptz archived_at
+    }
+    BLOCKS {
+        uuid id PK
+        uuid project_id FK
+        text name
+        int sort_order
+    }
+    FLOORS {
+        uuid id PK
+        uuid block_id FK
+        int level
+        text name
+    }
+    UNITS {
+        uuid id PK
+        uuid floor_id FK
+        text unit_code
+        text unit_type
+        numeric carpet_sqft
+        text status
+    }
+    MILESTONES {
+        uuid id PK
+        uuid project_id FK
+        text title
+        text status
+        date due_date
+        int sort_order
+    }
+    TASKS {
+        uuid id PK
+        uuid project_id FK
+        uuid milestone_id FK
+        text title
+        text assignee_name
+        date due_date
+        text priority
+        text status
+    }
+    SITE_UPDATES {
+        uuid id PK
+        uuid project_id FK
+        uuid author_id FK
+        text notes
+        text weather
+        smallint workers_count
+        date update_date
+    }
+    ISSUES {
+        uuid id PK
+        uuid project_id FK
+        text title
+        text severity
+        text status
+        uuid reported_by FK
+        date reported_date
+    }
+    DRAWINGS {
+        uuid id PK
+        uuid project_id FK
+        text title
+        text type
+        text revision
+        text status "current/superseded"
+        uuid superseded_by FK
+        text_array released_to
+        text storage_path
+    }
+    ATTACHMENTS {
+        uuid id PK
+        uuid project_id FK
+        text entity_type "19 enum"
+        uuid entity_id "polymorphic"
+        text storage_path
+        text kind
+        jsonb geo
+        uuid uploaded_by FK
+    }
+    MATERIALS {
+        uuid id PK
+        uuid project_id FK
+        text material
+        text quantity
+        text supplier
+        date delivery_date
+        text status
+    }
+    INVENTORY_TRANSACTIONS {
+        uuid id PK
+        uuid project_id FK
+        uuid po_id FK
+        date txn_date
+        text material
+        numeric qty
+        text direction "in/out/return/waste"
+        text ref_no
+    }
+    MATERIAL_PRICES {
+        uuid id PK
+        uuid org_id FK
+        text material
+        text unit
+        numeric rate
+        timestamptz effective_at
+    }
+    BOQ_ITEMS {
+        uuid id PK
+        uuid project_id FK
+        text code
+        text description
+        text unit
+        numeric qty
+        numeric rate
+        numeric amount "GENERATED"
+        text category
+    }
+    VENDORS {
+        uuid id PK
+        uuid org_id FK
+        text name
+        text category
+        text gst "GSTIN"
+        numeric rating
+    }
+    PURCHASE_ORDERS {
+        uuid id PK
+        uuid project_id FK
+        uuid vendor_id FK
+        text po_no
+        bigint amount
+        numeric gst
+        text status
+        date delivery_date
+    }
+    INVOICES {
+        uuid id PK
+        uuid project_id FK
+        uuid milestone_id FK
+        text no
+        bigint amount
+        numeric gst
+        numeric tds
+        text status
+        date issued_date
+    }
+    RA_BILLS {
+        uuid id PK
+        uuid project_id FK
+        text no
+        text subcontractor
+        bigint bill_amount
+        bigint cumulative
+        numeric retention_pct
+        bigint paid_amount
+        text status
+        date bill_date
+    }
+    LABOUR_REGISTER {
+        uuid id PK
+        uuid project_id FK
+        text name
+        text aadhaar "MASKED"
+        text epf
+        text esi
+        text trade
+        numeric wage
+        date joined
+    }
+    DAILY_SNAPSHOTS {
+        uuid id PK
+        uuid project_id FK
+        date snapshot_date UK
+        smallint progress
+        bigint spend
+        smallint labour_count
+        timestamptz frozen_at
+    }
+    FORECAST {
+        uuid id PK
+        uuid project_id FK
+        timestamptz generated_at
+        int horizon_days
+        date predicted_end
+        bigint predicted_cost
+        numeric risk_score
+        text model
+    }
+    COMPLIANCE {
+        uuid id PK
+        uuid org_id FK
+        uuid project_id FK
+        text kind "rera/gst/epfo"
+        text ref_no
+        text stage
+        text status
+        timestamptz filed_at
+    }
+    ACTIVITY_LOG {
+        uuid id PK
+        uuid project_id FK
+        text type
+        text action
+        text detail
+        uuid by_profile_id FK
+        timestamptz created_at
+    }
+    ORGANIZATIONS {
+        uuid id PK "from control plane"
+    }
