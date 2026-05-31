@@ -191,7 +191,7 @@ The same Vite build runs everywhere; the only difference is the `VITE_BACKEND` /
 
 | Concern | Service | Status |
 |---|---|---|
-| Browser errors | Sentry | Planned (Phase 2, Day 22) |
+| Browser errors | Sentry | ✅ Shipped Session 27.4 — lib + ErrorBoundary wiring + 15 tests. No-op when `VITE_SENTRY_DSN` unset. |
 | Edge Function errors | Supabase log drains | Live (Supabase default) |
 | Postgres slow queries | `pg_stat_statements` + Supabase dashboard | Live |
 | Customer-facing status | Statuspage.io free tier | Planned (Phase 4) |

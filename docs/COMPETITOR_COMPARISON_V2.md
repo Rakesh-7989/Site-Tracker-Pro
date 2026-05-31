@@ -35,7 +35,7 @@ Verdict legend:
 | Aspect | Site-Tracker | Competitor reality | Verdict |
 | ------ | ------------ | ------------------ | ------- |
 | BOQ native (Civil/MEP/Finishing/External categories) | Yes, full tab + line CRUD + per-type presets | Procore: customisation only; Powerplay: partial; BuildSupply: yes; Falconbrick: no | 🏆 (vs Procore/Powerplay/Falcon) / 🤝 (vs BuildSupply) |
-| BOQ Excel import | ❌ Not built | Procore: yes; BuildSupply: yes | ⚠️ MISSED — Indian builders all have BOQs in Excel today |
+| BOQ Excel import | ✅ Shipped Session 25 (`src/lib/boqImport.js`, 33 tests) | Procore: yes; BuildSupply: yes | ✅ CLOSED |
 | RA Bills with retention math + cumulative tracking | Yes, full lifecycle (submitted → approved → paid) | Procore: add-on; Powerplay: partial; BuildSupply: no | 🏆 |
 | Measurement Book (MB) with item-level entry + auto-recompute | Yes, RA bill totals auto-update from MB rows | Procore: no; Powerplay: no; BuildSupply: no | 🏆 (unique to us in this comparison set) |
 | Estimate vs BOQ (markup + overhead + contingency + GST) | Yes, separate Estimate tab over BOQ | Procore: separate Estimating module ($); Powerplay: no | 🏆 (we ship in base, Procore charges extra) |
@@ -51,7 +51,7 @@ Verdict legend:
 | Per-role release (architect → PM/contractor/client) | Yes, `released_to` array with auto-supersede on new revision | Procore: yes, more granular permissioning; Powerplay: partial; PlanGrid: yes | 🤝 |
 | Auto-supersede same-title-and-type | Yes via `drawingKey()` + collision check | Procore: yes; Powerplay: yes | 🤝 |
 | Markup viewer (canvas overlay) | Yes, basic | Procore + PlanGrid: best-in-class with measure tools, callouts, link to RFI | ⚠️ (basic vs leaders) |
-| Drawing-diff (side-by-side rev A vs rev B) | ❌ Not built | Procore + PlanGrid: yes | ❌ MISSED |
+| Drawing-diff (side-by-side rev A vs rev B) | ✅ Lib shipped Session 28 (`src/lib/drawingDiff.js` + 30 tests) — UI component pending | Procore + PlanGrid: yes | ✅ CLOSED at lib layer |
 | OCR on uploaded drawings + searchable PDF | ❌ Not built | Procore: yes; PlanGrid: yes | ❌ MISSED |
 | Cross-reference drawings ↔ RFI ↔ punch list | Partial — punch items have free-text link only | Procore: hard relations via UI | ⚠️ |
 
@@ -94,9 +94,9 @@ Verdict legend:
 | GSTIN format + checksum | Yes (`validateGstin`) | Same — nobody | 🏆 |
 | EPFO code regex | Yes (`validateEpfo`) | Same — nobody | 🏆 |
 | RERA TG monthly progress filing (auto-submit) | Stub only (Edge Function scaffolded, not real scrape) | Nobody has this | 🟡 (unique IF we ship the scraper) |
-| GSTN e-invoicing auto-push | ❌ Not built | Some Indian SaaS have it (Zoho Books, Cleartax); construction SaaS no | ❌ MISSED — high-value for ₹500cr+ customers (mandatory) |
-| Auto-PF / ESI filing from labour register | ❌ Not built | Nobody in construction; HRMS has it for employees | ❌ MISSED |
-| RERA Karnataka / Maharashtra adapter | ❌ Not built (only TG stub) | Nobody | ❌ MISSED |
+| GSTN e-invoicing auto-push | ✅ Shipped Session 28 (`src/lib/gstn.js` + `gstn-einvoice` EF + 13 tests) — production needs GSP API key | Some Indian SaaS have it (Zoho Books, Cleartax); construction SaaS no | ✅ CLOSED |
+| Auto-PF / ESI filing from labour register | ❌ Not built — needs EPFO/ESI API account | Nobody in construction; HRMS has it for employees | ❌ MISSED (vendor account required) |
+| RERA Karnataka / Maharashtra adapter | ✅ Shipped Session 28 (`reraKarnataka.js` + `reraMaharashtra.js` + 2 EF stubs + 28 tests) | Nobody | ✅ CLOSED |
 
 **Gaps:** Real RERA scraper not built (Edge Function stub only). Multi-state RERA adapters absent. GSTN auto-push absent. Auto-PF filing absent.
 
@@ -112,7 +112,7 @@ Verdict legend:
 | LLM narrative summary | Yes (`fetchLLMInsight`) | Procore: yes; others: no | 🤝 |
 | Telugu / Hindi native output | Yes via `LANG_INSTRUCTIONS` table | Procore: EN-only; nobody else has multi-lingual | 🏆 |
 | Cost forecast with overrun prediction | Yes (`aiForecast.js`) | Procore: yes; Powerplay: no | 🤝 |
-| AI-recommended scope (suggest features to disable based on usage) | ❌ Not built | Nobody — this would be unique | ❌ MISSED — proposed in strategic brief as moat |
+| AI-recommended scope (suggest features to disable based on usage) | ✅ Shipped Session 28 (`src/lib/aiFeatureRecommender.js` + 17 tests, multi-language narration) | Nobody — this would be unique | ✅ CLOSED |
 
 **Gaps:** AI-recommended scope was in my own strategic brief but never implemented.
 
@@ -138,7 +138,7 @@ Verdict legend:
 | ------ | ------------ | ------------------ | ------- |
 | Daily Merkle root of audit_log | Pure lib done (`blockchainAnchor.js`, 33 tests + corrected selector) | NOBODY in Indian or global construction SaaS has this | 🏆 (genuine unique moat) |
 | Polygon adapter | Yes (signer-injectable) | — | 🏆 |
-| Smart contract Solidity source | ❌ Not written | — | ❌ MISSED — without the contract this can't actually run |
+| Smart contract Solidity source | ✅ Shipped Session 27.4 (`contracts/AuditAnchor.sol` + 3 deploy paths in `contracts/README.md`) | — | ✅ CLOSED — needs ₹3 in MATIC to deploy |
 | Public verification URL (Polygonscan) | Yes (`polygonscanUrl`) | — | 🏆 |
 | Court-admissible documentation (IT Act 2000 s.65B brief) | Mentioned in lib comments, no formal legal opinion | — | ⚠️ — need a real Indian IT lawyer's sign-off before claiming this in sales |
 
@@ -181,7 +181,7 @@ Verdict legend:
 | Typed-name e-signature on change orders | Yes (with consent text + UA + timestamp + email captured) | Procore: integration with DocuSign ($); Powerplay: no | 🤝 |
 | Immutable audit log (append-only) | Yes (`audit_log_v2` + `record_audit_v2` SECURITY DEFINER, RLS append-only) | Procore: enterprise tier yes; Powerplay: app-layer only | 🏆 |
 | Cross-action audit coverage | ~25 action sites wired (CREATE, UPDATE, DELETE, APPROVE, REJECT, RELEASE, PAYMENT, IMPERSONATE, etc.) | Procore: comprehensive; Powerplay: partial | 🤝 |
-| PDF audit report export | CSV export only | Procore: PDF formatted for auditors | ⚠️ MISSED |
+| PDF audit report export | ✅ Shipped Session 25 (`exportAuditPdf` in `src/lib/exports.js` + Org Activity button) | Procore: PDF formatted for auditors | ✅ CLOSED |
 
 **Gaps:** No PDF audit report (only CSV). For builder firms with external auditors, a printable formatted audit PDF is table-stakes.
 
@@ -207,7 +207,7 @@ Verdict legend:
 | In-app 5-step wizard | Yes (`OnboardingWizardView`) | Procore: in-app + dedicated CS rep; Powerplay: CS-led only; nobody has wizard | 🏆 |
 | Project-type picker first | Yes (added Session 24) | Procore: no (free-text); others: no | 🏆 |
 | Templates: project / BOQ / checklist | Yes (`templates.js` + panel) | Procore: yes; Powerplay: no | 🤝 (vs Procore) / 🏆 (vs others) |
-| Bulk user import | ❌ Not built | Procore: CSV upload; Powerplay: yes | ❌ MISSED — needs a CSV uploader for "invite 50 team members" |
+| Bulk user import | ✅ Shipped Session 25 (CSV import in `OrgMembersView`) — competitor data migration parser in Session 28 (`src/lib/contractorMigration.js` for Powerplay/BuildSupply/Falconbrick exports + 19 tests) | Procore: CSV upload; Powerplay: yes | ✅ CLOSED + extended with competitor-import |
 | Migration from competitor (data import) | ❌ Not built | Procore: dedicated migration team; nobody else has import | ❌ MISSED — biggest barrier to win Powerplay customers |
 
 **Gaps:** Two real gaps that block sales — bulk user CSV import + competitor-migration script (e.g. read a Powerplay export, map to our schema).

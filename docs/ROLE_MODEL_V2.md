@@ -1,8 +1,12 @@
 # Role Model v2 — Project Types + Expanded Role Tree
 
 Source: hand-drawn architecture sheet dated **31/05/2026 12:07**.
-Status: **specification — implementation deferred** (per user decision on
-Session 22). When the time comes to build it, this doc is the spec.
+
+Status: **✅ IMPLEMENTED** in Session 23 (migrations 06-07) and extended in
+Session 28 with the vendor portal view (`src/features/vendor/index.jsx`).
+All 19 roles live in `src/lib/permissions.js`; the 4 project-type tab
+gates live in `src/lib/projectTypes.js`. This doc remains the canonical
+spec for future sub-role expansions.
 
 The v1 model (today) has 6 roles: `superadmin / orgadmin / architect / pm
 / contractor / client`. Projects are generic — no `project.type` field, one

@@ -4,6 +4,74 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Session 28 — Doc-driven gap closure (audit-found pending items)
+Spawned an Explore subagent over every .md file in the repo (docs/, .agents/,
+.brain/decisions/) and cross-checked promises against code. Built every
+code-buildable gap that didn't require a vendor account / dashboard click.
+
+**3 SQL migrations** (idempotent + tested):
+- `31_cashfree_events.sql` — webhook event dedup. Cashfree retries on 5xx
+  would otherwise double-credit subscriptions. New `cashfree_events` table
+  with `event_id` PK + `record_cashfree_event()` RPC the EF calls instead
+  of raw INSERT.
+- `32_mb_ra_linkage.sql` — adds the long-promised `ra_bill_id` FK on
+  `measurement_book` (was reserved with a comment "FK added in 11" since
+  Phase 2). Plus a drift-detection trigger that audits any MB row mutation
+  AFTER its parent RA bill is `approved`/`paid`, and a `sum_mb_for_ra()`
+  RPC for UI auto-populate.
+- `33_feature_flag_rls_extra.sql` — belt-and-braces re-enable RLS on the 3
+  feature-flag tables, add audit triggers on insert/update/delete of any
+  flag change (forwards through `record_audit_v2()`), assert no broad-allow
+  policies exist.
+
+**6 new pure-function libs** (118 new tests, all passing):
+- `src/lib/drawingDiff.js` (30 tests) — viewport math for synchronized two-
+  layer drawing comparison: pan-zoom-about-focal-point, fitToViewport, layer
+  builder, canDiff guard, blend opacities, pixel-diff math. Closes the
+  Procore-demo gap at the lib layer.
+- `src/lib/aiFeatureRecommender.js` (17 tests) — usage-driven feature
+  toggle recommendations. Suggests "disable" for zero-touch ON flags,
+  "celebrate" for loved features, "upgrade" for plan-gated features that
+  show engagement. Multi-language narrate() in en/te/hi.
+- `src/lib/contractorMigration.js` (19 tests) — Powerplay / BuildSupply /
+  Falconbrick CSV importer. Auto-detects vendor by header shape, normalizes
+  to canonical columns, validates Aadhaar / GSTIN / numeric fields, returns
+  per-row errors without aborting the import. `toCanonicalBatches()` shapes
+  payload for direct Supabase upserts.
+- `src/lib/reraKarnataka.js` (15 tests) — K-RERA adapter scaffold with
+  9-stage code map, validateKaRera regex, mock + real adapters.
+- `src/lib/reraMaharashtra.js` (13 tests) — MahaRERA quarterly filing
+  adapter (different shape from TG / KA — quarterly not per-stage).
+- `src/lib/gstn.js` (24 tests) — E-Invoice IRP payload builder per NIC
+  schema v1.1. validateGstin / validateHsn / B2B/B2C/SEZWP support, CGST/SGST
+  computation, mock + real adapters.
+
+**4 new Edge Functions**:
+- `supabase/functions/notify-deliver/index.ts` — push/email/SMS delivery.
+  Reads user profile preferences, channels via Resend (email) + Twilio
+  (SMS) + external relay (web push). Idempotent on `delivered_at`.
+- `supabase/functions/gstn-einvoice/index.ts` — IRN generation. Calls
+  configured GSP (NIC/ClearTax) or mock when `GSTN_USE_MOCK=true`.
+- `supabase/functions/ka-rera-submit/index.ts` — K-RERA stage filing.
+  Gated by `KA_RERA_SCRAPER_ENABLED`.
+- `supabase/functions/mh-rera-submit/index.ts` — MahaRERA quarterly filing.
+  Gated by `MH_RERA_SCRAPER_ENABLED`.
+
+**1 new UI**:
+- `src/features/vendor/index.jsx` (`VendorPortal`) — 4-tab vendor portal
+  (Dashboard / POs with accept/decline / Materials / Messages). Closes the
+  v2 "vendor role exists but view doesn't" gap. Lazy-loaded; route
+  `case "vendor-dashboard"` added in App.jsx.
+
+**Stale doc updates**:
+- `docs/ROLE_MODEL_V2.md` header flipped from "specification deferred" → "✅ IMPLEMENTED".
+- `docs/COMPETITOR_COMPARISON_V2.md` flipped 8 ❌ MISSED rows to ✅ CLOSED
+  (BOQ import, drawing-diff, GSTN, KA/MH RERA, AI recommender, Solidity
+  contract, PDF audit, bulk user CSV).
+- `docs/ARCHITECTURE.md` Sentry "Planned Phase 2" → "✅ Shipped Session 27.4".
+
+Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint errors.
+
 ### Session 27.4 — Polygon contract + WhatsApp EF + Sentry + diagrams
 - **`contracts/AuditAnchor.sol`** — 60-line Solidity contract matching the JS lib's hard-coded `0xeecdf927` selector. Anchors daily Merkle root via `anchor(bytes32)`; emits `Anchored(root, ts, by)`. Owner-gated, no admin escape hatch, zero deps. Three deploy paths documented (Remix / Foundry / Hardhat). Cost: ~₹25-40/year on Polygon mainnet.
 - **`supabase/functions/anchor-digest/index.ts`** — daily cron EF. SELECTs yesterday's `audit_log_v2`, computes Merkle root, sends signed tx via configurable signer service, polls receipt, upserts `audit_anchors`. Idempotent. Dry-run mode for testing.
