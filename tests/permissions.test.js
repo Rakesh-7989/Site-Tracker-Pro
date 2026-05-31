@@ -28,7 +28,7 @@ const project = (overrides = {}) => ({
 });
 
 describe("PERMS shape", () => {
-  it("defines all v2 roles (v1 six + 12 new from Phase B)", () => {
+  it("defines all v2 roles (v1 six + 12 new from Phase B + vendor from Session 24)", () => {
     const expected = [
       // v1 (6)
       "architect", "client", "contractor", "orgadmin", "pm", "superadmin",
@@ -40,8 +40,19 @@ describe("PERMS shape", () => {
       "interior_designer", "design_architect_interior", "designer", "consultant",
       // v2 contractor sub-tier (1)
       "sub_contractor",
+      // Session 24 — vendor portal role (was missing in initial Phase B)
+      "vendor",
     ].sort();
     expect(Object.keys(PERMS).sort()).toEqual(expected);
+  });
+
+  it("Session 24: vendor role has minimal scope (PO + materials read-only)", () => {
+    expect(PERMS.vendor).toBeDefined();
+    expect(PERMS.vendor.createProject).toBe(false);
+    expect(PERMS.vendor.addUpdate).toBe(false);
+    expect(PERMS.vendor.nav).toContain("po");
+    expect(PERMS.vendor.nav).toContain("material-prices");
+    expect(PERMS.vendor.tabs).toEqual(["overview"]); // vendor portal renders own UI
   });
 
   it("Phase B: every new role has the required PERMS shape (tabs + nav arrays)", () => {

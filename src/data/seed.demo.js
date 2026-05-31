@@ -12,13 +12,36 @@
 // All named exports are also bundled into the DEMO_SEED object at the bottom
 // of this file, whose keys match the useLS storage keys in App.jsx.
 
+// v1 + v2 demo identities. Every role declared in PERMS gets a demo user
+// here so the login picker can sign in as each one and exercise the gates.
+// Session 24 fix: previously the picker only had 6 entries — the 12 v2
+// roles were unreachable via demo login. Now all 18 + vendor are covered.
 export const MOCK_USERS = {
+  // v1
   architect: {id:"u1",name:"Arjun Reddy",email:"arjun@buildco.in",role:"architect",avatar:"AR",org_id:"org1"},
   pm:        {id:"u2",name:"Priya Sharma",email:"priya@buildco.in",role:"pm",avatar:"PS",org_id:"org1"},
   contractor:{id:"u4",name:"Karthik Builders",email:"site@karthikbuilders.in",role:"contractor",avatar:"KB",org_id:"org1"},
   client:    {id:"u3",name:"Vikram Nair",email:"vikram@client.in",role:"client",avatar:"VN",org_id:"org1"},
   orgadmin:  {id:"u200",name:"Mohan Boyapati",email:"owner@buildco.in",role:"orgadmin",avatar:"MB",org_id:"org1"},
   superadmin:{id:"u100",name:"Rakesh Boyapati",email:"admin@sitetrack.in",role:"superadmin",avatar:"RB",org_id:null},
+  // v2 org tier
+  project_admin: {id:"u201",name:"Naveen Yadav",email:"naveen@buildco.in",role:"project_admin",avatar:"NY",org_id:"org1"},
+  prospector:    {id:"u202",name:"Geetha Rao",email:"geetha@buildco.in",role:"prospector",avatar:"GR",org_id:"org1"},
+  // v2 construction-discipline
+  project_head:   {id:"u203",name:"Ravi Teja",     email:"ravi@buildco.in",   role:"project_head",   avatar:"RT",org_id:"org1"},
+  mep_consultant: {id:"u204",name:"Suresh Kumar",  email:"mep@consultants.in",role:"mep_consultant", avatar:"SK",org_id:"org1"},
+  site_engineer:  {id:"u205",name:"Bhargav Reddy", email:"bhargav@buildco.in",role:"site_engineer",  avatar:"BR",org_id:"org1"},
+  civil_engineer: {id:"u206",name:"Lakshmi Patnaik",email:"lakshmi.p@buildco.in",role:"civil_engineer",avatar:"LP",org_id:"org1"},
+  site_inspector: {id:"u207",name:"Surya Prakash", email:"inspector@gov.in",  role:"site_inspector", avatar:"SP",org_id:"org1"},
+  // v2 design + consultant
+  interior_designer:         {id:"u208",name:"Anjali Menon",     email:"anjali@designs.in",   role:"interior_designer",         avatar:"AM",org_id:"org1"},
+  design_architect_interior: {id:"u209",name:"Sneha Iyer",       email:"sneha@interiors.in",  role:"design_architect_interior", avatar:"SI",org_id:"org1"},
+  designer:                  {id:"u210",name:"Vikas Joshi",      email:"vikas@studio.in",     role:"designer",                  avatar:"VJ",org_id:"org1"},
+  consultant:                {id:"u211",name:"Dr. Rajesh Bhat",  email:"rajesh@vastu.in",     role:"consultant",                avatar:"RB",org_id:"org1"},
+  // v2 contractor sub-tier
+  sub_contractor: {id:"u212",name:"Prabhu Reddy",email:"prabhu@subcontract.in",role:"sub_contractor",avatar:"PR",org_id:"org1"},
+  // Session 24: vendor portal user
+  vendor: {id:"u213",name:"Vizag Steel Rep",email:"rep@vizagsteel.in",role:"vendor",avatar:"VS",org_id:null},
 };
 
 export const PLAN_META = {

@@ -14,6 +14,9 @@ import { Ic, Av, Badge, PBar, SC, ROLE_META, fmtDate } from "../../components/ui
 import { PERMS, can, visibleProjectsForUser } from "../../lib/permissions.js";
 // Session 16: feature-flag cascade (platform → org → default).
 import { isFeatureEnabled, featureStats, featuresForRole } from "../../lib/orgFeatureFlags.js";
+// Session 24: v2 project-type chip on ProjectsView cards + CreateView picker.
+import { PROJECT_TYPES, DEFAULT_PROJECT_TYPE } from "../../data/lookups.js";
+import { typeChip } from "../../lib/projectTypes.js";
 import { recordAudit } from "../../lib/audit.js";
 import { isSupabaseEnabled, signInWithMagicLink } from "../../lib/supabase.js";
 import { MOCK_USERS } from "../../data/seed.js";
@@ -556,6 +559,14 @@ export function ProjectsView({user,projects,setView,setSP}){
             <div className="flex justify-between items-baseline mb-2"><span className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">Progress</span><span className="font-display font-semibold text-ink-900 text-lg">{p.progress}<span className="text-ink-500 text-sm">%</span></span></div>
             <PBar v={p.progress} col={p.status==="on_hold"?"violet":"orange"}/>
           </div>}
+          {/* Session 24: surface the v2 project type at-a-glance.
+              Without this chip, an architect opening "Heritage Mall Renovation"
+              has no idea why BOQ + RA Bills + Labour tabs disappeared — they'd
+              think it's a bug. The chip makes type-gating self-explanatory. */}
+          <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cream-200/60 text-[10px] font-bold tracking-wider text-ink-700">
+            <span>{typeChip(p.type).icon}</span>
+            <span className="uppercase">{typeChip(p.type).label}</span>
+          </div>
         </button>
       )}{fl.length===0&&(()=>{
         const allMine=visibleProjectsForUser(projects,user);
@@ -582,20 +593,52 @@ export function ProjectsView({user,projects,setView,setSP}){
 
 export function CreateView({user,setView,setProjects,setAuditLog}){
   // Hooks must be called unconditionally (react-hooks/rules-of-hooks).
-  const[f,setF]=useState({name:"",cn:"",ce:"",loc:"",sd:"",ed:"",budget:"",desc:""});const[done,setDone]=useState(false);const[err,setErr]=useState({});
+  // Session 24: + `type` field on the form so v2 project-type-gated tabs work end-to-end.
+  const[f,setF]=useState({name:"",cn:"",ce:"",loc:"",sd:"",ed:"",budget:"",desc:"",type:DEFAULT_PROJECT_TYPE});const[done,setDone]=useState(false);const[err,setErr]=useState({});
   if(!can(user,"createProject")) return <div className="p-8"><AccessDenied msg="Only Architects can create new projects."/></div>;
   const val=()=>{const e={};if(!f.name.trim())e.name="Required";if(!f.cn.trim())e.cn="Required";if(!f.loc.trim())e.loc="Required";if(!f.sd)e.sd="Required";return e;};
   const sub=()=>{
     const e=val();if(Object.keys(e).length){setErr(e);return;}
     const id="p_"+Date.now();
-    setProjects(p=>[...p,{id,name:f.name,client_name:f.cn,client_email:f.ce,location:f.loc,start_date:f.sd,expected_end_date:f.ed,budget:parseFloat(f.budget)||0,description:f.desc,status:"active",progress:0}]);
+    setProjects(p=>[...p,{id,type:f.type||DEFAULT_PROJECT_TYPE,name:f.name,client_name:f.cn,client_email:f.ce,location:f.loc,start_date:f.sd,expected_end_date:f.ed,budget:parseFloat(f.budget)||0,description:f.desc,status:"active",progress:0}]);
     // Immutable audit row — required for compliance + multi-tenant trace.
-    if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"project",resource_id:id,project_id:id,message:`Created project ${f.name} for ${f.cn}`}));
+    if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"project",resource_id:id,project_id:id,message:`Created ${f.type} project ${f.name} for ${f.cn}`}));
     setDone(true);setTimeout(()=>setView("projects"),1800);
   };
   if(done) return <div className="p-8 flex items-center justify-center min-h-96"><div className="text-center"><div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4"><Ic n="check" s={28} c="text-emerald-600"/></div><h2 className="text-xl font-black text-slate-800 mb-2">Project Created!</h2></div></div>;
   const inp=(key,lbl,type="text",ph="",fk)=>{const k=fk||key;return<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">{lbl}</label><input type={type} value={f[k]} onChange={e=>{setF(p=>({...p,[k]:e.target.value}));setErr(p=>({...p,[key]:""}));}} placeholder={ph} className={`w-full p-3.5 border rounded-xl text-sm outline-none transition-all ${err[key]?"border-red-300 bg-red-50":"border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-50"}`}/>{err[key]&&<p className="text-red-500 text-xs mt-1">{err[key]}</p>}</div>;};
-  return(<div className="p-4 md:p-8 max-w-2xl"><button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button><h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1><p className="text-slate-500 text-sm mb-5 -mt-3">A few details to get started — you can edit everything later and add drawings, BOQ, RA bills and updates from the project page.</p><div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">{inp("name","Project Name","text","e.g. Riverside Towers — Phase II")}<div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","e.g. Asha Estates","cn")}{inp("ce","Client Email","email","client@example.com","ce")}</div>{inp("loc","Location","text","City or neighbourhood","loc")}<div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>{inp("budget","Budget (₹)","number","e.g. 45000000")}<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label><textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} placeholder="Short scope summary — what's being built, key milestones, anything special." className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/></div><button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button></div></div>);
+  return(
+    <div className="p-4 md:p-8 max-w-2xl">
+      <button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button>
+      <h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1>
+      <p className="text-slate-500 text-sm mb-5 -mt-3">A few details to get started — you can edit everything later and add drawings, BOQ, RA bills and updates from the project page.</p>
+      <div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">
+        {/* Session 24: project-type picker. Drives which tabs show inside the project. */}
+        <div>
+          <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Project Type</label>
+          <div className="grid grid-cols-2 gap-2">
+            {PROJECT_TYPES.map(t=>(
+              <button key={t.id} type="button" onClick={()=>setF(p=>({...p,type:t.id}))} className={`text-left p-3 rounded-xl border-2 transition-all ${f.type===t.id?"border-amber-600 bg-amber-50":"border-slate-200 hover:border-slate-300"}`}>
+                <div className="font-bold text-sm text-ink-800 mb-0.5">{t.label}</div>
+                <div className="text-[11px] text-ink-500 leading-snug">{t.desc}</div>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-ink-400 mt-1.5">You can change this later from the project's settings.</p>
+        </div>
+        {inp("name","Project Name","text","e.g. Riverside Towers — Phase II")}
+        <div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","e.g. Asha Estates","cn")}{inp("ce","Client Email","email","client@example.com","ce")}</div>
+        {inp("loc","Location","text","City or neighbourhood","loc")}
+        <div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>
+        {inp("budget","Budget (₹)","number","e.g. 45000000")}
+        <div>
+          <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label>
+          <textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} placeholder="Short scope summary — what's being built, key milestones, anything special." className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/>
+        </div>
+        <button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button>
+      </div>
+    </div>
+  );
 }
 
 // ── CLIENT SHARE VIEW ─────────────────────────────────────────────────────────

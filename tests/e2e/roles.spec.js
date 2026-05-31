@@ -75,3 +75,27 @@ test("Client lands on Client Portal and sees only their own project", async ({ p
   await expect(page.getByText("Skyline Tower Phase II").first()).toBeVisible();
   await expect(page.getByText("Heritage Mall Renovation")).not.toBeVisible();
 });
+
+// Session 24: v2 project-type gate end-to-end.
+// Heritage Mall Renovation is type=interior. Architect opens it and should
+// NOT see BOQ / RA Bills / Labour tabs — they're hidden by the type gate
+// regardless of role permissions.
+test("v2 type-gate: architect opens Interior project, BOQ + RA tabs are hidden", async ({ page }) => {
+  await loginAs(page, "Architect");
+  // Load demo data to get the 4 seeded projects (Heritage Mall is type=interior)
+  const loadDemo = page.getByRole("button", { name: /Load demo data/i });
+  if (await loadDemo.count() > 0) {
+    await loadDemo.click();
+    await page.waitForLoadState("networkidle");
+  }
+  // Navigate to Projects view
+  await page.getByRole("button", { name: /Projects/i }).first().click();
+  // Open Heritage Mall (type=interior)
+  await page.getByText("Heritage Mall Renovation").first().click();
+  await expect(page.getByRole("heading", { name: "Heritage Mall Renovation" })).toBeVisible({ timeout: 10000 });
+  // The type-gate should hide construction-only tabs
+  const tabsContainer = page.locator("div.flex.gap-1").first();
+  await expect(tabsContainer).not.toContainText("BOQ");
+  await expect(tabsContainer).not.toContainText("RA Bills");
+  await expect(tabsContainer).not.toContainText("Labour");
+});

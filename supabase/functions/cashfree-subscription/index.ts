@@ -24,57 +24,72 @@ import {
   isCashfreeConfigured,
 } from "../_shared/cashfree.ts";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// Session 24 hardening: CORS is allow-list based. The Edge Function reads
+// CORS_ALLOWED_ORIGINS (comma-separated) from env. Default = our two domains.
+// In production, you should explicitly set this to ONLY your real app
+// origins. "*" is REJECTED to prevent token leak via CSRF-like flows.
+const ALLOWED_ORIGINS = (Deno.env.get("CORS_ALLOWED_ORIGINS") ||
+  "https://app.sitetrack.in,https://sitetrack.in,http://localhost:5173"
+).split(",").map(s => s.trim()).filter(Boolean);
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") || "";
+  const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Vary": "Origin",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400",
+  };
+}
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
-  if (req.method !== "POST") return json({ error: "POST only" }, 405);
+  const CORS = corsHeadersFor(req);
+  const respond = (body: unknown, status = 200) => json(body, status, CORS);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return respond({ error: "POST only" }, 405);
 
   let body: { org_id?: string; plan?: string; return_url?: string };
   try { body = await req.json(); }
-  catch { return json({ error: "invalid JSON body" }, 400); }
+  catch { return respond({ error: "invalid JSON body" }, 400); }
 
   const { org_id, plan, return_url } = body || {};
-  if (!org_id) return json({ error: "org_id required" }, 400);
-  if (!plan) return json({ error: "plan required" }, 400);
+  if (!org_id) return respond({ error: "org_id required" }, 400);
+  if (!plan) return respond({ error: "plan required" }, 400);
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!SUPABASE_URL || !SERVICE_ROLE) return json({ error: "Edge env not set" }, 500);
+  if (!SUPABASE_URL || !SERVICE_ROLE) return respond({ error: "Edge env not set" }, 500);
   const supa = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   // 1. Authenticate the caller (must be the orgadmin of this org)
   const authHeader = req.headers.get("Authorization") || "";
   const userJwt = authHeader.replace(/^Bearer\s+/i, "");
-  if (!userJwt) return json({ error: "missing Authorization header" }, 401);
+  if (!userJwt) return respond({ error: "missing Authorization header" }, 401);
   const { data: { user }, error: authErr } = await supa.auth.getUser(userJwt);
-  if (authErr || !user) return json({ error: "invalid token" }, 401);
+  if (authErr || !user) return respond({ error: "invalid token" }, 401);
 
   // Look up the caller's org + role from profiles + org_members
   const { data: profile } = await supa.from("profiles").select("role").eq("id", user.id).single();
   const { data: membership } = await supa.from("org_members").select("org_id").eq("profile_id", user.id).eq("org_id", org_id).maybeSingle();
   const isAuthorised = profile?.role === "superadmin" || (profile?.role === "orgadmin" && membership);
-  if (!isAuthorised) return json({ error: "only orgadmin or superadmin can manage subscriptions" }, 403);
+  if (!isAuthorised) return respond({ error: "only orgadmin or superadmin can manage subscriptions" }, 403);
 
   // 2. Load Cashfree creds for the org
   const { data: integ } = await supa.from("org_integrations").select("cashfree").eq("org_id", org_id).single();
   const cfg = integ?.cashfree as { app_id?: string; secret?: string; env?: string } | undefined;
   if (!isCashfreeConfigured(cfg || null)) {
-    return json({ error: "Cashfree not configured for this org. Set app_id + secret in Integrations." }, 400);
+    return respond({ error: "Cashfree not configured for this org. Set app_id + secret in Integrations." }, 400);
   }
 
   // 3. Load org details for the customer_details payload
   const { data: org } = await supa.from("organizations").select("id, name, contact_email").eq("id", org_id).single();
-  if (!org) return json({ error: "org not found" }, 404);
+  if (!org) return respond({ error: "org not found" }, 404);
 
   // 4. Build the request
   let req2;
   try { req2 = buildSubscriptionRequest(org, plan as never, return_url || ""); }
-  catch (e) { return json({ error: String((e as Error).message) }, 400); }
+  catch (e) { return respond({ error: String((e as Error).message) }, 400); }
 
   // 5. Forward to Cashfree
   const cfRes = await fetch(`${cashfreeBaseUrl(cfg!)}/subscriptions`, {
@@ -90,7 +105,7 @@ Deno.serve(async (req) => {
   const cfJson = await cfRes.json().catch(() => ({}));
   if (!cfRes.ok) {
     console.warn("Cashfree rejected subscription:", cfRes.status, cfJson);
-    return json({ error: "cashfree_error", details: cfJson }, cfRes.status);
+    return respond({ error: "cashfree_error", details: cfJson }, cfRes.status);
   }
 
   // 6. Record the pending subscription locally
@@ -114,16 +129,16 @@ Deno.serve(async (req) => {
     p_message: `Cashfree subscription intent: ${org_id} → ${plan} (pending mandate)`,
   }).catch((e) => console.warn("audit failed:", e));
 
-  return json({
+  return respond({
     subscription_id: req2.subscription_id,
     subscription_session_id: cfJson.subscription_session_id,
     cashfree: cfJson,
   });
 });
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, cors: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }

@@ -180,7 +180,18 @@ describe("blockchainAnchor — polygonAdapter.anchor encoding", () => {
     await a.anchor(root);
     expect(calls.length).toBe(1);
     expect(calls[0].to).toBe("0xCONTRACT");
-    expect(calls[0].data).toBe("0xf73e54d4" + root); // selector + 32-byte root
+    // Session 24: VERIFIED real selector is 0xeecdf927 (was 0xf73e54d4 — wrong)
+    expect(calls[0].data).toBe("0xeecdf927" + root);
+  });
+
+  it("accepts custom selector when caller provides one (different contract)", async () => {
+    const calls = [];
+    const a = polygonAdapter({
+      network: "polygon-mumbai", rpcUrl: "x", contractAddress: "0xC",
+      signer: { sendTransaction(tx) { calls.push(tx); return { hash: "0x1" }; } },
+    });
+    await a.anchor("a".repeat(64), { selector: "0xdeadbeef" });
+    expect(calls[0].data).toMatch(/^0xdeadbeef/);
   });
 
   it("strips 0x prefix and pads to 64 hex chars", async () => {
@@ -192,7 +203,8 @@ describe("blockchainAnchor — polygonAdapter.anchor encoding", () => {
     });
     await a.anchor("0xabc"); // short with prefix
     expect(calls[0].data.length).toBe(2 + 8 + 64); // 0x + selector + 64 hex
-    expect(calls[0].data).toMatch(/^0xf73e54d4/);
+    // Session 24: corrected selector to verified keccak256("anchor(bytes32))").slice(0,8)
+    expect(calls[0].data).toMatch(/^0xeecdf927/);
     expect(calls[0].data.endsWith("abc")).toBe(true);
   });
 

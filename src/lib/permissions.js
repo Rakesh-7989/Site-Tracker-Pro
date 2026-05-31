@@ -336,6 +336,18 @@ export const PERMS = {
     tabs: ["overview","updates","issues","materials","drawings","rfi","fieldops","rabills","map"],
     nav: ["dashboard","projects","messages","notifications"],
   },
+
+  // Session 24: VENDOR portal role (from the hand-drawn sheet — vendors get
+  // a login, not just records). Sees ONLY the POs + materials assigned to
+  // them across orgs they supply. No project-detail access, no team data.
+  vendor: {
+    createProject: false, editProgress: false, addUpdate: false, manageTeam: false,
+    markAttendance: false, addExpense: false, deleteExpense: false, export: false,
+    share: false, changeMilestone: false, addIssue: false, resolveIssue: false,
+    addMaterial: false, deleteMaterial: false, manageDrawings: false, viewActivity: false,
+    tabs: ["overview"],   // bare minimum — vendor portal renders its own view, tabs not used
+    nav: ["dashboard","po","messages","notifications","material-prices"],
+  },
 };
 
 export const isSuperAdmin = user => user?.role === "superadmin";
@@ -350,10 +362,25 @@ export const CONSTRUCTION_ROLES = [
   "contractor", "sub_contractor",
 ];
 export const DESIGN_ROLES = ["interior_designer", "design_architect_interior", "designer", "consultant"];
-export const EXTERNAL_ROLES = ["client"];
+export const EXTERNAL_ROLES = ["client", "vendor"];
 export const ALL_ROLES = [
   ...PLATFORM_ROLES, ...ORG_ROLES, ...CONSTRUCTION_ROLES, ...DESIGN_ROLES, ...EXTERNAL_ROLES,
 ];
+
+// Session 24: architect seniority — cleanest way to handle the sheet's
+// "Senior Architect / Junior Architect" split without bloating PERMS with two
+// roles whose tabs + nav are identical. Use this on the profile + UI displays
+// the chip. Used by team templates + UI labels only — does NOT gate access.
+export const ARCHITECT_SENIORITIES = [
+  { id: "senior", label: "Senior Architect" },
+  { id: "junior", label: "Junior Architect" },
+  { id: "associate", label: "Associate" },
+  { id: "principal", label: "Principal" },
+];
+export function architectSeniority(user) {
+  if (user?.role !== "architect") return null;
+  return user.seniority || "senior";
+}
 
 export const can = (user, p) => !!(user && PERMS[user.role]?.[p]);
 
@@ -386,7 +413,18 @@ export const canOpenView = (user, view) => {
   return PERMS[user.role]?.nav.includes(view);
 };
 
-export const canUseQuickCapture = user => ["architect", "pm", "contractor", "superadmin", "orgadmin"].includes(user?.role);
+// Session 24 fix: previously only the 5 v1 site-team roles. Now every role
+// that has field-execution duties can use quick-capture (Updates / Issues /
+// Materials / Worklog). Excludes pure-design roles (designer / consultant)
+// and read-only roles (client / prospector / site_inspector).
+export const canUseQuickCapture = user => [
+  // v1
+  "architect", "pm", "contractor", "superadmin", "orgadmin",
+  // v2 — anyone who's on a site can log a quick update
+  "project_admin", "project_head", "site_engineer", "civil_engineer",
+  "mep_consultant", "interior_designer", "design_architect_interior",
+  "sub_contractor",
+].includes(user?.role);
 
 export const drawingKey = d => {
   const title = (d?.title || "").trim().toLowerCase();

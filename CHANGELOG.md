@@ -4,6 +4,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Session 24 — Adversarial review + 7 real bugs caught + audit gaps
+- **CRITICAL bug — wrong Polygon function selector.** `blockchainAnchor.polygonAdapter` hard-coded selector `0xf73e54d4` for `anchor(bytes32)` — verified via real `keccak256` and it was wrong. Correct value is `0xeecdf927`. Any anchoring against a deployed contract would have called a function that doesn't exist (gas wasted, no event emitted). Fixed + added `opts.selector` override for callers whose contract uses a different function name. Tests updated.
+- **Audit-trail gaps on destructive actions.** LabourTab.del removed PII silently; RABills MB row delete had no audit; BOQ + Ledger deletes only logged activity, not audit. All four wired with `recordAudit DELETE` capturing full before-state (amount, scope, EPF, etc.) plus confirm dialog before each delete.
+- **Wiring gaps from v2 Phase B-E.** 12 new roles existed in PERMS but were unreachable via demo login (`MOCK_USERS` only had v1 6 roles). Wired all 12 + new `vendor` role into MOCK_USERS. Expanded `canUseQuickCapture` from 5 v1 roles to include v2 construction roles. Added `architectSeniority()` + `ARCHITECT_SENIORITIES` so the sheet's "Senior/Junior Architect" split is solved by a profile field, not duplicate roles.
+- **Vendor login role.** Sheet showed vendors as logged-in users, not just records. Added `vendor` role with nav `[dashboard, po, messages, notifications, material-prices]` and minimal tabs (vendor portal renders own UI). +1 PERMS test.
+- **Project type chip missing from ProjectsView cards.** Users opened an Interior project, saw fewer tabs, had no way to know WHY. Added a colour-chipped type label on every project card. Made `CreateView` ask for project type FIRST (2x2 grid of clickable cards).
+- **Cashfree EF CORS too open** (`Access-Control-Allow-Origin: *`). Now an explicit allow-list from `CORS_ALLOWED_ORIGINS` env var. Echoes only the matched origin + `Vary: Origin`. Refactored `json()` calls to `respond()` factory that bakes in per-request CORS headers.
+- **RERA Telangana adapter referenced a non-existent Edge Function.** Built `supabase/functions/tg-rera-submit/` stub with `GET /status` + `POST /submit` endpoints, behind `TG_RERA_SCRAPER_ENABLED=true` env gate.
+- **E2E test for v2 type-gate.** Playwright spec opens Heritage Mall (now `type: "interior"`) and asserts BOQ + RA Bills + Labour tabs are HIDDEN.
+
+### Session 23 — v2 role model (Phases A-E from ROLE_MODEL_V2.md)
+- **`projects.type` column** — every project declares Construction / Interior / Design / Consultant. SQL migration `06_project_types.sql` additive + idempotent.
+- **12 new roles** in PERMS (`project_admin`, `prospector`, `project_head`, `mep_consultant`, `site_engineer`, `civil_engineer`, `site_inspector`, `interior_designer`, `design_architect_interior`, `designer`, `consultant`, `sub_contractor`) + SQL migration `07_role_expansion.sql`. Role groupings exported. +9 PERMS tests (54 total).
+- **`src/lib/projectTypes.js`** — TYPE_TABS / TYPE_TEAM_TEMPLATES / TYPE_BOQ_PRESETS + 3-layer gate composer. DetailView now applies role + flag + type gates together. 29 tests.
+- **`src/lib/contractors.js`** — sub-contractor CRUD, vendor links (idempotent), past-contract archive, reputation score. 22 tests.
+- **`docs/ROLE_MODEL_V2.md`** — full spec captured from the hand-drawn architecture sheet.
+
+### Session 22 — Major changes pack
+- Cashfree Edge Functions (subscription + webhook) — real UPI AutoPay billing ready to deploy.
+- `src/lib/blockchainAnchor.js` (33 tests) — Polygon-ready audit anchoring; unique vs every Indian competitor.
+- AI Insights v2 — Telugu / Hindi narrative via LANG_INSTRUCTIONS table.
+- `docs/PLAY_STORE_PREP.md` — 8-phase Android submission runbook.
+- `src/lib/reraTelangana.js` (26 tests) — TG RERA filing scaffold with mock + real adapters.
+
+### Session 21 — Bug hunt before major changes
+- White-screen fix: Session 18 onboarding useEffect violated Rules of Hooks (placed after early return).
+- `pos` typo in ProjectPOTab.approve → silent crash on click.
+- `useMemo` used without import in `shell/index.jsx`.
+- `useMemo` abused as setState side-effect in OnboardingWizardView.
+- Defensive try/catch around `migrateLocalToBackend` localStorage parse.
+- Added top-level `ErrorBoundary` so a single broken chunk can never blank the page again.
+
+### Sessions 17-20 — Production gate + onboarding + MCP toolkit
+- `docs/CONNECT_SUPABASE.md` + `npm run check:supabase` 9-step readiness check.
+- Live "DB Live / Local mode" pill in topbar with 30s re-probe.
+- Org Admin onboarding wizard (5 steps, auto-redirects first-time orgadmins).
+- Public landing page (`public/landing.html` + `marketing/index.html` self-contained deploy).
+- 3-minute demo video script (Telugu narration).
+- 12-slide investor pitch deck (pptxgenjs builder).
+- Case study template + WhatsApp Business 8-week verification runbook.
+- HRMS deployment study (actual repo analysis) + DEPLOY_NOW.md unified runbook.
+- `scripts/setup.mjs` (`npm run setup`) — HRMS-style bootstrap.
+- MCP toolkit: `.mcp.json`, `.env.mcp.example`, `npm run check:mcp`, `docs/MCP_TOOLKIT.md`.
+
+### Sessions 13-16 — Org Admin tier + Cashfree + 37-feature toggle catalog
+- `orgadmin` role with 9 Org Admin panels.
+- Pure-function libs: approvalChains.js, orgIntegrations.js, templates.js, orgFeatureFlags.js (106 combined tests).
+- Cashfree pure lib (24 tests).
+- Supabase RLS Phase 1 (additive migration + immutable audit_log_v2 + record_audit_v2 SECURITY DEFINER RPC).
+- 3-layer feature flag cascade (platform → org → default + plan gate) — 37 toggleable features.
+
 ### Fixed — Tech Lead code review pass (5 findings)
 - **HIGH-1 (XSS / injection in exports)**: User-supplied strings (project name, location, description, issue title, update notes, expense description, weather, supplier, etc.) were interpolated directly into the HTML built by `exportPDF` + `buildDPR`, and into the CSV produced by `exportCSV`. Added `src/lib/escape.js` (`escapeHtml`/`h`, `escapeCsv`, `csvRow`) with formula-injection defusing for cells starting with `=`, `+`, `-`, `@`, tab, CR. Every user-string interpolation in `exportPDF` and `buildDPR` is now wrapped in `h()`. Photo `src` attributes are gated to `data:` / `https:` only via a `safePhotoSrc` helper. `exportCSV` now uses `csvRow()` which RFC-4180-quotes commas/quotes/newlines.
 - **HIGH-2 (cross-project notification leak)**: `ClientPortal`, `NotifsView`, and `PMView` all called `notifs.filter(n => !n.read)` against the global notifications array — so any unread notification was visible regardless of which project/org it belonged to. Added `src/lib/notifications.js` with `notifsForUser(notifs, user, projects)`: clients see only notifications with `pid` matching a project where `client_email === user.email`; non-client roles see notifications with no `pid` (global system messages) plus those for projects they can see. The top-bar bell-badge count also routes through this filter.

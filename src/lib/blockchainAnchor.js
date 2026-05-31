@@ -150,9 +150,12 @@ export function polygonAdapter({ network, rpcUrl, contractAddress, signer }) {
     network,
     rpcUrl,
     contractAddress,
-    async anchor(rootHex) {
+    async anchor(rootHex, opts = {}) {
       // ABI encode: function anchor(bytes32) — selector + 32-byte arg
-      const selector = "0xf73e54d4"; // keccak256("anchor(bytes32)").slice(0,10)
+      // Session 24 fix: VERIFIED via `keccak('keccak256').update('anchor(bytes32)').digest('hex')`
+      // Previous hard-coded value 0xf73e54d4 was incorrect (made up); real value is 0xeecdf927.
+      // Caller can override via opts.selector when their contract uses a different function name.
+      const selector = (opts && opts.selector) || "0xeecdf927";
       const padded = rootHex.replace(/^0x/, "").padStart(64, "0");
       const data = selector + padded;
       const tx = await signer.sendTransaction({ to: contractAddress, data });

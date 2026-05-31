@@ -52,6 +52,8 @@ export const ROLE_META = {
   sub_contractor:{label:"Sub-contractor",bg:"bg-violet-50",text:"text-violet-800",col:"violet"},
   // v1 external
   client:{label:"Client",bg:"bg-emerald-100",text:"text-emerald-700",col:"emerald"},
+  // Session 24: vendor portal role
+  vendor:{label:"Vendor",bg:"bg-yellow-100",text:"text-yellow-800",col:"yellow"},
 };
 
 // Status colour helper (used by Badge).
