@@ -28,10 +28,29 @@ export const fmtSize  = _fmtSize;
 // Role labels + colors — referenced in sidebar, banners, role pills.
 export const ROLE_META = {
   superadmin:{label:"Super Admin",bg:"bg-slate-900",text:"text-amber-400",col:"slate"},
+  // v1 org tier
   orgadmin:{label:"Org Admin",bg:"bg-amber-100",text:"text-amber-800",col:"amber"},
+  // v2 Phase B: org-tier additions
+  project_admin:{label:"Project Admin",bg:"bg-amber-50",text:"text-amber-700",col:"amber"},
+  prospector:{label:"Prospector",bg:"bg-teal-100",text:"text-teal-700",col:"teal"},
+  // v1 construction roles
   architect:{label:"Architect",bg:"bg-orange-100",text:"text-orange-700",col:"orange"},
   pm:{label:"Project Manager",bg:"bg-blue-100",text:"text-blue-700",col:"blue"},
   contractor:{label:"Contractor",bg:"bg-violet-100",text:"text-violet-700",col:"violet"},
+  // v2 Phase B: construction-discipline additions
+  project_head:{label:"Project Head",bg:"bg-orange-50",text:"text-orange-800",col:"orange"},
+  mep_consultant:{label:"MEP Consultant",bg:"bg-cyan-100",text:"text-cyan-700",col:"cyan"},
+  site_engineer:{label:"Site Engineer",bg:"bg-blue-50",text:"text-blue-800",col:"blue"},
+  civil_engineer:{label:"Civil / Structural",bg:"bg-stone-200",text:"text-stone-700",col:"stone"},
+  site_inspector:{label:"Site Inspector",bg:"bg-rose-100",text:"text-rose-700",col:"rose"},
+  // v2 Phase B: design + consultant roles
+  interior_designer:{label:"Interior Designer",bg:"bg-pink-100",text:"text-pink-700",col:"pink"},
+  design_architect_interior:{label:"DA — Interior",bg:"bg-fuchsia-100",text:"text-fuchsia-700",col:"fuchsia"},
+  designer:{label:"Designer",bg:"bg-purple-100",text:"text-purple-700",col:"purple"},
+  consultant:{label:"Consultant",bg:"bg-indigo-100",text:"text-indigo-700",col:"indigo"},
+  // v2 Phase B: contractor sub-tier
+  sub_contractor:{label:"Sub-contractor",bg:"bg-violet-50",text:"text-violet-800",col:"violet"},
+  // v1 external
   client:{label:"Client",bg:"bg-emerald-100",text:"text-emerald-700",col:"emerald"},
 };
 

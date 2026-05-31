@@ -357,6 +357,14 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "src/lib/reraTelangana.js",
   "tests/reraTelangana.test.js",
   "docs/PLAY_STORE_PREP.md",
+  // Session 23 — v2 role model implementation (Phases A-E)
+  "docs/ROLE_MODEL_V2.md",
+  "scripts/supabase/06_project_types.sql",
+  "scripts/supabase/07_role_expansion.sql",
+  "src/lib/projectTypes.js",
+  "tests/projectTypes.test.js",
+  "src/lib/contractors.js",
+  "tests/contractors.test.js",
   // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
   ".mcp.json",
   ".env.mcp.example",

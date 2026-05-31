@@ -35,6 +35,8 @@ import { GanttView } from "../views/index.jsx";
 import { recordAudit } from "../../lib/audit.js";
 // Session 16: feature-flag cascade for hiding disabled project tabs.
 import { isFeatureEnabled as isFeatureOn } from "../../lib/orgFeatureFlags.js";
+// v2 Phase C: project-type tab gating.
+import { isTabApplicableToProjectType, typeChip } from "../../lib/projectTypes.js";
 
 // ── MARKUP MODAL (canvas overlay on image attachments) ─────────────────────
 export function MarkupModal({open, imageUrl, sourceName, onClose, onSave}){
@@ -1419,8 +1421,12 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
   const _orgs=flagStore.orgs||[];
   const _plan=(_orgs.find(o=>o.id===user?.org_id)?.plan)||"basic";
   const tabAllowed=(tabId)=>{
+    // v2 Phase C: type-gate FIRST — if this project type doesn't support the
+    // tab, hide regardless of feature flag / plan. Design + consultant projects
+    // never see BOQ/RA/labour; interior never sees BOQ.
+    if(!isTabApplicableToProjectType(proj, tabId)) return false;
     const featureId=TAB_FEATURE_ID[tabId];
-    if(!featureId)return true; // essential tab
+    if(!featureId)return true; // essential tab (overview, milestones, etc.)
     return isFeatureOn(_platformFlags,_orgFlags,user?.org_id,featureId,_plan);
   };
   const tabs=PERMS[user.role].tabs.filter(tabAllowed);

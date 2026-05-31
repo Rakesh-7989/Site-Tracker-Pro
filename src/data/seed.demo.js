@@ -62,11 +62,14 @@ export const INIT_SUPPORT = [
   {id:"st4",org_id:"org3",subject:"Trial extension request",from:"Suresh Reddy <suresh@premier.in>",body:"Our 15-day trial is about to end but we are still evaluating with our team. Could we get a 7-day extension?",status:"open",created:"2025-05-21T10:00:00Z",messages:[]},
 ];
 
+// v2 Phase A: each project carries a `type` (Construction / Interior / Design / Consultant).
+// Existing rows default to "construction" — back-compat for everything built pre-v2.
+// p4 is "interior" to validate the type-gated tab behaviour end-to-end in demos.
 export const INIT_PROJECTS = [
-  {id:"p1",name:"Skyline Tower Phase II",client_name:"Nair Holdings",client_email:"vikram@client.in",location:"Jubilee Hills, Hyderabad",lat:17.4326,lng:78.4071,status:"active",start_date:"2024-11-01",expected_end_date:"2026-06-30",budget:45000000,description:"28-floor commercial tower with underground parking.",progress:62},
-  {id:"p2",name:"Green Valley Residences",client_name:"Greenfield Developers",client_email:"gf@green.in",location:"Gachibowli, Hyderabad",lat:17.4401,lng:78.3489,status:"active",start_date:"2025-01-15",expected_end_date:"2026-12-31",budget:18000000,description:"Eco-friendly residential complex with 120 units.",progress:34},
-  {id:"p3",name:"Metro Link Office Park",client_name:"TechSpace Corp",client_email:"ts@techspace.in",location:"HITEC City, Hyderabad",lat:17.4504,lng:78.3800,status:"completed",start_date:"2023-06-01",expected_end_date:"2024-12-31",budget:32000000,description:"4-building IT campus.",progress:100},
-  {id:"p4",name:"Heritage Mall Renovation",client_name:"RetailPlus Ltd",client_email:"rp@retailplus.in",location:"Banjara Hills, Hyderabad",lat:17.4126,lng:78.4483,status:"on_hold",start_date:"2025-03-01",expected_end_date:"2025-11-30",budget:8500000,description:"Modernization of 1990s commercial mall.",progress:15},
+  {id:"p1",type:"construction",name:"Skyline Tower Phase II",client_name:"Nair Holdings",client_email:"vikram@client.in",location:"Jubilee Hills, Hyderabad",lat:17.4326,lng:78.4071,status:"active",start_date:"2024-11-01",expected_end_date:"2026-06-30",budget:45000000,description:"28-floor commercial tower with underground parking.",progress:62},
+  {id:"p2",type:"construction",name:"Green Valley Residences",client_name:"Greenfield Developers",client_email:"gf@green.in",location:"Gachibowli, Hyderabad",lat:17.4401,lng:78.3489,status:"active",start_date:"2025-01-15",expected_end_date:"2026-12-31",budget:18000000,description:"Eco-friendly residential complex with 120 units.",progress:34},
+  {id:"p3",type:"construction",name:"Metro Link Office Park",client_name:"TechSpace Corp",client_email:"ts@techspace.in",location:"HITEC City, Hyderabad",lat:17.4504,lng:78.3800,status:"completed",start_date:"2023-06-01",expected_end_date:"2024-12-31",budget:32000000,description:"4-building IT campus.",progress:100},
+  {id:"p4",type:"interior",name:"Heritage Mall Renovation",client_name:"RetailPlus Ltd",client_email:"rp@retailplus.in",location:"Banjara Hills, Hyderabad",lat:17.4126,lng:78.4483,status:"on_hold",start_date:"2025-03-01",expected_end_date:"2025-11-30",budget:8500000,description:"Interior fit-out of 1990s commercial mall — fascia + floors + electrical.",progress:15},
 ];
 
 export const INIT_MILESTONES = {

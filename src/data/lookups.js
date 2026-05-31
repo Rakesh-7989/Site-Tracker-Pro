@@ -3,6 +3,18 @@
 // Category arrays + status color maps + tab labels — everything that's pure
 // data driving dropdowns and pills. Extracted from App.jsx (LOW-5 / Split-2).
 
+// v2 Phase A: project type taxonomy — see docs/ROLE_MODEL_V2.md.
+// Every project belongs to exactly one type. Drives tab visibility,
+// default team template, and BOQ category presets per type.
+export const PROJECT_TYPES = [
+  { id: "construction", label: "Construction",  desc: "Full execution — civil, MEP, finishing. Heaviest team." },
+  { id: "interior",     label: "Interior",      desc: "Fit-out / decoration. Architect + Interior Designer + Site Eng." },
+  { id: "design",       label: "Design",        desc: "Pure design consultancy — drawings + specs, no execution." },
+  { id: "consultant",   label: "Consultant",    desc: "Specialist engagement (structural, MEP, vastu, sustainability)." },
+];
+export const PROJECT_TYPE_IDS = PROJECT_TYPES.map(t => t.id);
+export const DEFAULT_PROJECT_TYPE = "construction"; // back-compat: every existing project
+
 export const EXPENSE_CATS = ["Materials","Labour","Equipment","Misc","Consultancy","Permits"];
 export const VENDOR_CATS  = ["Steel","Cement","Concrete","Electrical","Plumbing","Tiles","Paint","Glass","Wood","Sand","Aggregate","Tools","Other"];
 export const TRADES       = ["Mason","Helper","Carpenter","Electrician","Plumber","Painter","Welder","Steel Fixer","Tile Worker","Operator"];

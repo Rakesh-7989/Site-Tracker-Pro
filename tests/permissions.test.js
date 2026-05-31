@@ -28,8 +28,88 @@ const project = (overrides = {}) => ({
 });
 
 describe("PERMS shape", () => {
-  it("defines all six roles including superadmin and orgadmin", () => {
-    expect(Object.keys(PERMS).sort()).toEqual(["architect", "client", "contractor", "orgadmin", "pm", "superadmin"]);
+  it("defines all v2 roles (v1 six + 12 new from Phase B)", () => {
+    const expected = [
+      // v1 (6)
+      "architect", "client", "contractor", "orgadmin", "pm", "superadmin",
+      // v2 org additions (2 — orgadmin already in v1)
+      "project_admin", "prospector",
+      // v2 construction additions (5)
+      "project_head", "mep_consultant", "site_engineer", "civil_engineer", "site_inspector",
+      // v2 design / consultant additions (4)
+      "interior_designer", "design_architect_interior", "designer", "consultant",
+      // v2 contractor sub-tier (1)
+      "sub_contractor",
+    ].sort();
+    expect(Object.keys(PERMS).sort()).toEqual(expected);
+  });
+
+  it("Phase B: every new role has the required PERMS shape (tabs + nav arrays)", () => {
+    const newRoles = [
+      "project_admin", "prospector", "project_head", "mep_consultant",
+      "site_engineer", "civil_engineer", "site_inspector",
+      "interior_designer", "design_architect_interior", "designer",
+      "consultant", "sub_contractor",
+    ];
+    for (const r of newRoles) {
+      expect(PERMS[r], r).toBeDefined();
+      expect(Array.isArray(PERMS[r].tabs), `${r}.tabs`).toBe(true);
+      expect(Array.isArray(PERMS[r].nav), `${r}.nav`).toBe(true);
+      expect(typeof PERMS[r].createProject, `${r}.createProject`).toBe("boolean");
+    }
+  });
+
+  it("Phase B: prospector has org-pipeline scope only (no project tabs except overview)", () => {
+    expect(PERMS.prospector.tabs).toEqual(["overview"]);
+    expect(PERMS.prospector.createProject).toBe(false);
+    expect(PERMS.prospector.nav).not.toContain("activity"); // can't see full activity feed
+  });
+
+  it("Phase B: site_engineer has execution-heavy tabs + kiosk nav", () => {
+    expect(PERMS.site_engineer.tabs).toContain("fieldops");
+    expect(PERMS.site_engineer.tabs).toContain("inspections");
+    expect(PERMS.site_engineer.tabs).toContain("labour");
+    expect(PERMS.site_engineer.nav).toContain("kiosk-labour");
+  });
+
+  it("Phase B: site_inspector cannot create or edit (read + inspect only)", () => {
+    expect(PERMS.site_inspector.createProject).toBe(false);
+    expect(PERMS.site_inspector.editProgress).toBe(false);
+    expect(PERMS.site_inspector.addUpdate).toBe(false);
+    expect(PERMS.site_inspector.tabs).toContain("inspections");
+    expect(PERMS.site_inspector.tabs).toContain("safety");
+  });
+
+  it("Phase B: designer has design-only tabs (no execution surfaces)", () => {
+    expect(PERMS.designer.tabs).toContain("drawings");
+    expect(PERMS.designer.tabs).not.toContain("rabills");
+    expect(PERMS.designer.tabs).not.toContain("labour");
+    expect(PERMS.designer.tabs).not.toContain("boq");
+  });
+
+  it("Phase B: consultant has minimum tabs (advice-only)", () => {
+    expect(PERMS.consultant.tabs.length).toBeLessThanOrEqual(8);
+    expect(PERMS.consultant.tabs).toContain("rfi");
+    expect(PERMS.consultant.tabs).not.toContain("labour");
+  });
+
+  it("Phase B: sub_contractor is a sibling of contractor (similar but restricted)", () => {
+    expect(PERMS.sub_contractor.tabs).toContain("rabills");
+    expect(PERMS.sub_contractor.tabs).toContain("fieldops");
+    // No project creation, no team management
+    expect(PERMS.sub_contractor.createProject).toBe(false);
+    expect(PERMS.sub_contractor.manageTeam).toBe(false);
+  });
+
+  it("Phase B: project_admin sees everything an org PM should + analytics", () => {
+    expect(PERMS.project_admin.nav).toContain("analytics");
+    expect(PERMS.project_admin.nav).toContain("forecast");
+    expect(PERMS.project_admin.createProject).toBe(true);
+  });
+
+  it("Phase B: design_architect_interior has lead-designer rights (manageTeam + manageDrawings)", () => {
+    expect(PERMS.design_architect_interior.manageTeam).toBe(true);
+    expect(PERMS.design_architect_interior.manageDrawings).toBe(true);
   });
 
   it("superadmin has admin-only capabilities", () => {
