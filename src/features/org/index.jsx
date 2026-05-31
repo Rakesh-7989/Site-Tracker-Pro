@@ -23,6 +23,8 @@ import { useState, useMemo } from "react";
 import { Ic, Av, SC, ROLE_META, fmtDate, fmtTime } from "../../components/ui.jsx";
 import { PLAN_META } from "../../data/seed.js";
 import { recordAudit, filterAudit, exportAuditCsv } from "../../lib/audit.js";
+// Session 25: printable PDF audit report (competitor-comparison gap fix).
+import { exportAuditPdf } from "../../lib/exports.js";
 import {
   getOrgIntegrations, setProviderForOrg, clearProviderForOrg,
   isProviderConfigured, maskSecret, integrationsSummary, PROVIDERS,
@@ -499,9 +501,90 @@ export function OrgAdminDashboard({ user, orgs, adminUsers, projects, issues, ac
 export function OrgMembersView({ user, orgs, adminUsers, setAdminUsers, setAuditLog }) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: "", email: "", role: "pm" });
+  // Session 25: bulk CSV import for "invite 50 members in 5 minutes" — the sales
+  // unlock that Procore + Powerplay have today; we were missing.
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkPreview, setBulkPreview] = useState(null);
   const org = resolveOrg(user, orgs);
   if (!org) return <NoOrgScreen />;
   const members = adminUsers.filter(u => u.org_id === org.id);
+
+  // Parse a CSV/TSV blob of "name,email,role" rows into preview-ready records.
+  // Re-uses the same separator detection + splitLine logic as boqImport so
+  // copy-paste from Excel works identically.
+  const parseBulk = () => {
+    if (!bulkText.trim()) { setBulkPreview(null); return; }
+    const lines = bulkText.split(/\r?\n/).filter(l => l.trim());
+    const sep = (lines[0].match(/\t/g) || []).length > (lines[0].match(/,/g) || []).length ? "\t" : ",";
+    const split = (line) => {
+      const out = []; let cur = ""; let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQ) {
+          if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; continue; }
+          if (ch === '"') { inQ = false; continue; }
+          cur += ch;
+        } else {
+          if (ch === '"') { inQ = true; continue; }
+          if (ch === sep) { out.push(cur); cur = ""; continue; }
+          cur += ch;
+        }
+      }
+      out.push(cur);
+      return out.map(s => s.trim());
+    };
+    const firstCells = split(lines[0]).map(c => c.toLowerCase());
+    const hasHeader = firstCells.some(c => c.includes("name") || c.includes("email") || c.includes("role"));
+    const colMap = { name: 0, email: 1, role: 2 };
+    if (hasHeader) {
+      firstCells.forEach((c, i) => {
+        if (c.includes("email")) colMap.email = i;
+        else if (c.includes("role")) colMap.role = i;
+        else if (c.includes("name")) colMap.name = i;
+      });
+    }
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const rows = [];
+    const errors = [];
+    const ALLOWED = ["architect", "pm", "contractor", "client", "orgadmin", "project_admin", "project_head", "site_engineer", "site_inspector", "mep_consultant", "civil_engineer", "interior_designer", "design_architect_interior", "designer", "consultant", "sub_contractor", "prospector", "vendor"];
+    const existingEmails = new Set(members.map(m => m.email.toLowerCase()));
+    dataLines.forEach((line, i) => {
+      const cells = split(line);
+      const rowNo = hasHeader ? i + 2 : i + 1;
+      const name = cells[colMap.name] || "";
+      const email = (cells[colMap.email] || "").toLowerCase();
+      const role = (cells[colMap.role] || "pm").toLowerCase();
+      if (!name.trim()) { errors.push({ rowNo, message: "Name required" }); return; }
+      if (!email.includes("@")) { errors.push({ rowNo, message: `Invalid email "${email}"` }); return; }
+      if (existingEmails.has(email)) { errors.push({ rowNo, message: `${email} already exists in this org` }); return; }
+      if (!ALLOWED.includes(role)) { errors.push({ rowNo, message: `Unknown role "${role}" — defaults to pm` }); }
+      rows.push({ rowNo, name: name.trim(), email, role: ALLOWED.includes(role) ? role : "pm" });
+    });
+    setBulkPreview({ rows, errors, total: rows.length });
+  };
+
+  const commitBulk = () => {
+    if (!bulkPreview?.rows.length) return;
+    const created = bulkPreview.rows.map((r, i) => ({
+      id: `u_${Date.now()}_${i}`,
+      name: r.name, email: r.email, role: r.role,
+      org_id: org.id, status: "active",
+      joined: new Date().toISOString().slice(0, 10), last_seen: null,
+    }));
+    setAdminUsers(p => [...p, ...created]);
+    created.forEach(r => setAuditLog?.(p => recordAudit(p, {
+      actor: user, action: "CREATE", resource: "user", resource_id: r.id,
+      org_id: org.id, message: `Bulk-invited ${r.name} (${r.role})`,
+    })));
+    setShowBulk(false); setBulkText(""); setBulkPreview(null);
+  };
+
+  const onBulkFile = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const text = await f.text();
+    setBulkText(text);
+  };
 
   const submit = () => {
     if (!draft.name.trim() || !draft.email.trim()) return alert("Name + email required");
@@ -535,11 +618,66 @@ export function OrgMembersView({ user, orgs, adminUsers, setAdminUsers, setAudit
     <div className="p-4 md:p-10 max-w-7xl">
       <PageHeader kicker={`${org.name} · Members`} title="Members & roles"
         subtitle={`${members.length} total · ${members.filter(m => m.status === "active").length} active`} />
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <button onClick={() => setShowBulk(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-300 hover:bg-cream-100 text-ink-700 font-bold rounded-xl text-sm tracking-wide" title="Paste from Excel or upload CSV">
+          <Ic n="upload" s={14} />Import from CSV
+        </button>
         <button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all">
           <Ic n="plus" s={14} />Invite member
         </button>
       </div>
+
+      {/* Session 25: bulk CSV import — preview before commit. */}
+      {showBulk && (
+        <div className="bg-white rounded-2xl border-2 border-amber-300 p-6 mb-5">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Bulk invite</div>
+              <h3 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">Import members from CSV</h3>
+              <p className="text-xs text-ink-500 mt-1.5">Paste rows from Excel or upload a CSV with columns: <code className="bg-cream-200 px-1 rounded text-[10px]">name, email, role</code>. Header optional.</p>
+            </div>
+            <button onClick={() => { setShowBulk(false); setBulkText(""); setBulkPreview(null); }}><Ic n="x" s={18} /></button>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1 block">Paste here</label>
+              <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} placeholder="Arjun Reddy,arjun@buildco.in,architect&#10;Priya Sharma,priya@buildco.in,pm" rows={6} className="w-full p-3 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1 block">Or upload .csv</label>
+              <input type="file" accept=".csv,.tsv,.txt" onChange={onBulkFile} className="w-full p-3 border border-stone-200 rounded-xl text-xs" />
+              <button onClick={parseBulk} className="mt-3 w-full px-4 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Preview parse</button>
+            </div>
+          </div>
+          {bulkPreview && (
+            <div className="bg-cream-100 rounded-xl p-4 mb-3">
+              <div className="flex flex-wrap gap-2 mb-3 text-[10px]">
+                <span className="inline-flex px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold tracking-wider uppercase">{bulkPreview.rows.length} valid</span>
+                {bulkPreview.errors.length > 0 && <span className="inline-flex px-2 py-1 rounded-full bg-red-50 text-red-700 font-bold tracking-wider uppercase">{bulkPreview.errors.length} errors</span>}
+              </div>
+              {bulkPreview.errors.length > 0 && (
+                <div className="mb-3 max-h-32 overflow-y-auto text-[11px]">
+                  {bulkPreview.errors.slice(0, 10).map((e, i) => (<div key={i} className="text-red-700">Row {e.rowNo}: {e.message}</div>))}
+                </div>
+              )}
+              {bulkPreview.rows.length > 0 && (
+                <table className="w-full text-[11px]">
+                  <thead className="bg-cream-200 text-[9px] font-bold uppercase tracking-wider text-ink-500">
+                    <tr><th className="text-left p-1.5">Name</th><th className="text-left p-1.5">Email</th><th className="text-left p-1.5">Role</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {bulkPreview.rows.slice(0, 15).map((r, i) => (<tr key={i}><td className="p-1.5">{r.name}</td><td className="p-1.5">{r.email}</td><td className="p-1.5">{r.role}</td></tr>))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => { setShowBulk(false); setBulkText(""); setBulkPreview(null); }} className="px-4 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
+            <button onClick={commitBulk} disabled={!bulkPreview || bulkPreview.rows.length === 0} className="px-5 py-2 bg-gradient-gold text-white text-sm font-bold rounded-lg disabled:opacity-40">Invite {bulkPreview?.rows.length || 0} members</button>
+          </div>
+        </div>
+      )}
       {adding && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
           <div className="grid md:grid-cols-4 gap-3 mb-3">
@@ -915,7 +1053,8 @@ export function OrgActivityView({ user, orgs, auditLog, projects: _projects, adm
           <input type="date" value={filter.to} onChange={e => setFilter({ ...filter, to: e.target.value })} className="px-3 py-2 border border-stone-300 rounded-lg text-sm" />
         </div>
         <div className="flex justify-end mt-3">
-          <button onClick={downloadCsv} disabled={!filtered.length} className="text-xs font-bold text-amber-700 hover:underline disabled:opacity-40">Export CSV ({filtered.length})</button>
+          <button onClick={downloadCsv} disabled={!filtered.length} className="text-xs font-bold text-amber-700 hover:underline disabled:opacity-40 mr-4">Export CSV ({filtered.length})</button>
+          <button onClick={() => exportAuditPdf(filtered, org, filter)} disabled={!filtered.length} className="text-xs font-bold text-amber-700 hover:underline disabled:opacity-40">Print PDF audit report ({filtered.length})</button>
         </div>
       </div>
 

@@ -365,6 +365,14 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "tests/projectTypes.test.js",
   "src/lib/contractors.js",
   "tests/contractors.test.js",
+  // Session 24 — comparison + adversarial fixes
+  "docs/COMPETITOR_COMPARISON_V2.md",
+  // Session 25 — sales-blocking miss fixes (BOQ import + bulk member + PDF audit + archive)
+  "src/lib/boqImport.js",
+  "tests/boqImport.test.js",
+  "src/lib/projectArchive.js",
+  "tests/projectArchive.test.js",
+  "scripts/supabase/08_project_archive.sql",
   // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
   ".mcp.json",
   ".env.mcp.example",

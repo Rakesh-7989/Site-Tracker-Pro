@@ -307,7 +307,7 @@ export default function App(){
   const renderView=()=>{
     switch(effectiveView){
       case"dashboard": return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
-      case"projects": return <ProjectsView user={user} projects={projects} setView={setView} setSP={setSP}/>;
+      case"projects": return <ProjectsView user={user} projects={projects} setProjects={setProjects} setView={setView} setSP={setSP} setAuditLog={setAuditLog}/>;
       case"analytics": return <AnalyticsView user={user} projects={projects} expenses={expenses} updates={updates} teams={teams}/>;
       case"activity": return <ActivityView user={user} activity={activity} setActivity={setActivity} projects={projects}/>;
       case"detail": return <DetailView pid={sp} user={user} setView={setView} {...dp}/>;

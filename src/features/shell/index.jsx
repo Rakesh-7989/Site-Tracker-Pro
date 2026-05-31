@@ -17,6 +17,8 @@ import { isFeatureEnabled, featureStats, featuresForRole } from "../../lib/orgFe
 // Session 24: v2 project-type chip on ProjectsView cards + CreateView picker.
 import { PROJECT_TYPES, DEFAULT_PROJECT_TYPE } from "../../data/lookups.js";
 import { typeChip } from "../../lib/projectTypes.js";
+// Session 25: project archive / restore — competitor-gap miss.
+import { archiveProject, restoreProject, isArchived, daysUntilPurge, partitionByArchive } from "../../lib/projectArchive.js";
 import { recordAudit } from "../../lib/audit.js";
 import { isSupabaseEnabled, signInWithMagicLink } from "../../lib/supabase.js";
 import { MOCK_USERS } from "../../data/seed.js";
@@ -526,19 +528,41 @@ export function DashboardView({user,projects,updates,issues,activity,setView,set
 }
 
 // ── PROJECTS ──────────────────────────────────────────────────────────────────
-export function ProjectsView({user,projects,setView,setSP}){
+export function ProjectsView({user,projects,setProjects,setView,setSP,setAuditLog}){
   const[q,setQ]=useState("");const[sf,setSF]=useState("all");const[showFilt,setShowFilt]=useState(false);
   const[minP,setMinP]=useState(0);const[sortBy,setSortBy]=useState("name");
-  const fl=useMemo(()=>visibleProjectsForUser(projects,user).filter(p=>sf==="all"||p.status===sf).filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.location.toLowerCase().includes(q.toLowerCase())||p.client_name.toLowerCase().includes(q.toLowerCase())).filter(p=>p.progress>=minP).sort((a,b)=>sortBy==="progress"?b.progress-a.progress:sortBy==="budget"?b.budget-a.budget:a.name.localeCompare(b.name)),[projects,user,q,sf,minP,sortBy]);
+  // Session 25: archive toggle — default "active only" so 50+ project firms aren't drowning in completed/cancelled rows.
+  const[showArchived,setShowArchived]=useState(false);
+  const visibility=useMemo(()=>partitionByArchive(visibleProjectsForUser(projects,user)),[projects,user]);
+  const sourceList=showArchived?visibility.archived:visibility.active;
+  const fl=useMemo(()=>sourceList.filter(p=>sf==="all"||p.status===sf).filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.location.toLowerCase().includes(q.toLowerCase())||p.client_name.toLowerCase().includes(q.toLowerCase())).filter(p=>p.progress>=minP).sort((a,b)=>sortBy==="progress"?b.progress-a.progress:sortBy==="budget"?b.budget-a.budget:a.name.localeCompare(b.name)),[sourceList,q,sf,minP,sortBy]);
+  // Session 25: archive / restore handlers with audit
+  const archiveOne=(id,e)=>{
+    e?.stopPropagation();
+    const proj=projects.find(p=>p.id===id);if(!proj)return;
+    if(!window.confirm(`Archive "${proj.name}"?\n\nIt will be hidden from the main list but kept for 90 days in the Archived view, then permanently deleted.\n\nUse "Show archived" to see + restore.`))return;
+    setProjects?.(p=>archiveProject(p,id));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"project",resource_id:id,project_id:id,before:{archived_at:null},after:{archived_at:"set"},message:`Archived project: ${proj.name}`}));
+  };
+  const restoreOne=(id,e)=>{
+    e?.stopPropagation();
+    const proj=projects.find(p=>p.id===id);if(!proj)return;
+    setProjects?.(p=>restoreProject(p,id));
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"project",resource_id:id,project_id:id,before:{archived_at:"set"},after:{archived_at:null},message:`Restored project: ${proj.name}`}));
+  };
   return(
     <div className="p-4 md:p-10 max-w-7xl">
       <div className="flex items-end justify-between mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
         <div>
           <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Portfolio</div>
-          <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Projects</h1>
-          <p className="text-ink-500 text-sm mt-2">{fl.length} {fl.length===1?"project":"projects"} found</p>
+          <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">{showArchived?"Archived projects":"Projects"}</h1>
+          <p className="text-ink-500 text-sm mt-2">{fl.length} {fl.length===1?"project":"projects"} {showArchived?"archived":"found"}{!showArchived&&visibility.archived.length>0?` · ${visibility.archived.length} archived`:""}</p>
         </div>
-        {can(user,"createProject")&&<button onClick={()=>setView("create")} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm transition-all hover:shadow-editorial-deep tracking-wide"><Ic n="plus" s={16}/>New Project</button>}
+        <div className="flex gap-2">
+          {/* Session 25: toggle archived view */}
+          <button onClick={()=>setShowArchived(p=>!p)} className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border transition-all ${showArchived?"bg-stone-200 text-ink-800 border-stone-300":"bg-white text-ink-600 border-stone-200 hover:bg-cream-100"}`} title="Toggle archived projects view"><Ic n="folder" s={15}/>{showArchived?"Show active":"Show archived"} {!showArchived&&visibility.archived.length>0?`(${visibility.archived.length})`:""}</button>
+          {can(user,"createProject")&&!showArchived&&<button onClick={()=>setView("create")} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm transition-all hover:shadow-editorial-deep tracking-wide"><Ic n="plus" s={16}/>New Project</button>}
+        </div>
       </div>
       <div className="flex gap-2 mb-4 flex-wrap"><div className="relative flex-1 min-w-48"><Ic n="search" s={16} c="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search projects, locations, clients..." className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/></div><button onClick={()=>setShowFilt(p=>!p)} className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${showFilt?"bg-gradient-gold text-white border-transparent":"bg-white text-ink-600 border-stone-200"}`}><Ic n="sliders" s={15}/>Filters</button></div>
       <div className="flex gap-2 mb-6 flex-wrap">{["all","active","completed","on_hold"].map(s=><button key={s} onClick={()=>setSF(s)} className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider uppercase border transition-all ${sf===s?"bg-ink-900 text-cream border-ink-900":"bg-white text-ink-600 border-stone-200 hover:border-stone-300"}`}>{s==="all"?"All":s.replace("_"," ")}</button>)}</div>
@@ -563,9 +587,18 @@ export function ProjectsView({user,projects,setView,setSP}){
               Without this chip, an architect opening "Heritage Mall Renovation"
               has no idea why BOQ + RA Bills + Labour tabs disappeared — they'd
               think it's a bug. The chip makes type-gating self-explanatory. */}
-          <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cream-200/60 text-[10px] font-bold tracking-wider text-ink-700">
-            <span>{typeChip(p.type).icon}</span>
-            <span className="uppercase">{typeChip(p.type).label}</span>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cream-200/60 text-[10px] font-bold tracking-wider text-ink-700">
+              <span>{typeChip(p.type).icon}</span>
+              <span className="uppercase">{typeChip(p.type).label}</span>
+            </div>
+            {/* Session 25: archive / restore action (orgadmin / architect only) */}
+            {can(user,"createProject")&&(isArchived(p)
+              ? <div className="flex items-center gap-1.5">
+                  {daysUntilPurge(p)!==null&&<span className="text-[9px] text-stone-500 font-semibold uppercase tracking-wider">{daysUntilPurge(p)>0?`${daysUntilPurge(p)}d to purge`:"purge due"}</span>}
+                  <button onClick={(e)=>restoreOne(p.id,e)} className="text-[10px] font-bold text-emerald-700 hover:underline">Restore</button>
+                </div>
+              : <button onClick={(e)=>archiveOne(p.id,e)} className="text-[10px] font-bold text-stone-500 hover:text-stone-800 hover:underline opacity-0 group-hover:opacity-100 transition-opacity" title="Archive (90-day restore window)">Archive</button>)}
           </div>
         </button>
       )}{fl.length===0&&(()=>{

@@ -33,6 +33,8 @@ import { exportPDF, exportCSV, exportDPR, buildDPRWhatsAppText } from "../../lib
 import { GanttView } from "../views/index.jsx";
 // Production Phase 1: audit-log helper for compliance trail.
 import { recordAudit } from "../../lib/audit.js";
+// Session 25: BOQ Excel/CSV import — #1 sales-blocking miss from competitor comparison.
+import { parseBoq, applyBoqImport } from "../../lib/boqImport.js";
 // Session 16: feature-flag cascade for hiding disabled project tabs.
 import { isFeatureEnabled as isFeatureOn } from "../../lib/orgFeatureFlags.js";
 // v2 Phase C: project-type tab gating.
@@ -1037,7 +1039,29 @@ export function BOQTab({pid,bq,setBoq,user,can,addActivity,proj,setAuditLog}){
   const[show,setShow]=useState(false);
   const[nb,setNb]=useState({code:"",description:"",category:"Civil",unit:"cum",qty:"",rate:""});
   const[err,setErr]=useState("");
-  const canEdit=user.role==="architect"||user.role==="pm";
+  // Session 25: Excel/CSV import state — open modal, paste or upload, preview, commit.
+  const[showImport,setShowImport]=useState(false);
+  const[importText,setImportText]=useState("");
+  const[importPreview,setImportPreview]=useState(null);
+  const[importMode,setImportMode]=useState("append");
+  const canEdit=user.role==="architect"||user.role==="pm"||user.role==="project_admin"||user.role==="project_head"||user.role==="design_architect_interior";
+  const parsePreview=()=>{
+    if(!importText.trim()){setImportPreview(null);return;}
+    setImportPreview(parseBoq(importText));
+  };
+  const onImportFile=async(e)=>{
+    const f=e.target.files?.[0];if(!f)return;
+    const text=await f.text();
+    setImportText(text);
+    setImportPreview(parseBoq(text));
+  };
+  const commitImport=()=>{
+    if(!importPreview||!importPreview.rows.length)return;
+    setBoq(p=>applyBoqImport(p,pid,importPreview.rows,{mode:importMode}));
+    addActivity(pid,proj.name,"general",`Imported ${importPreview.rows.length} BOQ lines`,`${importMode} · total ₹${importPreview.summary.total.toLocaleString("en-IN")}`,user.name,user.role);
+    setAuditLog?.(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"boq",resource_id:pid,project_id:pid,after:{count:importPreview.rows.length,total:importPreview.summary.total,mode:importMode},message:`Imported ${importPreview.rows.length} BOQ lines (${importMode}) totalling ₹${importPreview.summary.total.toLocaleString("en-IN")}`}));
+    setShowImport(false);setImportText("");setImportPreview(null);setImportMode("append");
+  };
   const validate=()=>{
     if(!nb.description.trim()) return "Description is required.";
     const q=+nb.qty, r=+nb.rate;
@@ -1074,8 +1098,70 @@ export function BOQTab({pid,bq,setBoq,user,can,addActivity,proj,setAuditLog}){
           <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial leading-tight">Bill of Quantities (BOQ)</h2>
           <p className="text-xs text-ink-500 mt-1.5">{sorted.length} line items · Total {fmtCur(total)}</p>
         </div>
-        {canEdit&&<button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>Add BOQ Line</button>}
+        {canEdit&&<div className="flex gap-2">
+          <button onClick={()=>setShowImport(true)} className="flex items-center gap-2 px-4 py-3 bg-white border border-stone-300 hover:bg-cream-100 text-ink-700 font-bold rounded-xl text-sm tracking-wide" title="Paste from Excel or upload CSV"><Ic n="upload" s={16}/>Import from Excel / CSV</button>
+          <button onClick={()=>setShow(true)} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-hover"><Ic n="plus" s={16}/>Add BOQ Line</button>
+        </div>}
       </div>
+
+      {/* Session 25: Import modal — preview before commit so users see what they'll get. */}
+      {showImport&&canEdit&&<div className="bg-white rounded-2xl border-2 border-amber-300 p-6 mb-5">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Bulk import</div>
+            <h3 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">Import BOQ from Excel / CSV</h3>
+            <p className="text-xs text-ink-500 mt-1.5">Paste tab-separated rows from Excel (Ctrl+C → Ctrl+V) OR upload a CSV. Columns are auto-mapped — header row optional.</p>
+          </div>
+          <button onClick={()=>{setShowImport(false);setImportText("");setImportPreview(null);}}><Ic n="x" s={18}/></button>
+        </div>
+        <div className="grid md:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1 block">Paste here</label>
+            <textarea value={importText} onChange={e=>setImportText(e.target.value)} placeholder="Code	Description	Category	Unit	Qty	Rate&#10;1.1	Excavation	Civil	cum	100	240" rows={6} className="w-full p-3 border border-stone-200 rounded-xl text-xs font-mono outline-none focus:border-amber-600"/>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1 block">Or upload .csv / .tsv</label>
+            <input type="file" accept=".csv,.tsv,.txt" onChange={onImportFile} className="w-full p-3 border border-stone-200 rounded-xl text-xs"/>
+            <div className="mt-3">
+              <label className="text-[10px] font-bold tracking-wider uppercase text-ink-500 mb-1 block">Mode</label>
+              <select value={importMode} onChange={e=>setImportMode(e.target.value)} className="w-full p-2 border border-stone-200 rounded-lg text-sm">
+                <option value="append">Append to existing rows</option>
+                <option value="replace">Replace all existing rows</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 mb-3">
+          <button onClick={parsePreview} className="px-4 py-2 bg-ink-900 text-white text-sm font-bold rounded-lg">Preview parse</button>
+        </div>
+        {importPreview&&<div className="bg-cream-100 rounded-xl p-4 mb-3">
+          <div className="flex flex-wrap gap-2 mb-3 text-[10px]">
+            <span className="inline-flex px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold tracking-wider uppercase">{importPreview.summary.validRows} valid</span>
+            {importPreview.summary.invalidRows>0&&<span className="inline-flex px-2 py-1 rounded-full bg-red-50 text-red-700 font-bold tracking-wider uppercase">{importPreview.summary.invalidRows} errors</span>}
+            <span className="inline-flex px-2 py-1 rounded-full bg-stone-100 text-stone-700 font-bold tracking-wider uppercase">{importPreview.summary.detected?.separator || "?"}</span>
+            <span className="inline-flex px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-bold tracking-wider uppercase">Total ₹{importPreview.summary.total.toLocaleString("en-IN")}</span>
+          </div>
+          {importPreview.errors.length>0&&<div className="mb-3 max-h-32 overflow-y-auto text-[11px]">
+            {importPreview.errors.slice(0,10).map((e,i)=>(<div key={i} className="text-red-700">Row {e.rowNo}: {e.message}</div>))}
+            {importPreview.errors.length>10&&<div className="text-ink-500">…and {importPreview.errors.length-10} more</div>}
+          </div>}
+          {importPreview.rows.length>0&&<div className="max-h-64 overflow-y-auto">
+            <table className="w-full text-[11px]">
+              <thead className="bg-cream-200 text-[9px] font-bold tracking-wider uppercase text-ink-500">
+                <tr><th className="text-left p-1.5">Code</th><th className="text-left p-1.5">Description</th><th className="text-left p-1.5">Cat</th><th className="text-left p-1.5">Unit</th><th className="text-right p-1.5">Qty</th><th className="text-right p-1.5">Rate</th><th className="text-right p-1.5">Amount</th></tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {importPreview.rows.slice(0,15).map((r,i)=>(<tr key={i}><td className="p-1.5 font-mono">{r.code||"—"}</td><td className="p-1.5">{r.description}</td><td className="p-1.5">{r.category}</td><td className="p-1.5">{r.unit||"—"}</td><td className="p-1.5 text-right">{r.qty}</td><td className="p-1.5 text-right">₹{r.rate}</td><td className="p-1.5 text-right font-bold">₹{(r.qty*r.rate).toLocaleString("en-IN")}</td></tr>))}
+              </tbody>
+            </table>
+            {importPreview.rows.length>15&&<div className="text-center text-[10px] text-ink-500 p-2">…and {importPreview.rows.length-15} more rows</div>}
+          </div>}
+        </div>}
+        <div className="flex justify-end gap-2">
+          <button onClick={()=>{setShowImport(false);setImportText("");setImportPreview(null);}} className="px-4 py-2 border border-stone-300 text-sm font-bold rounded-lg">Cancel</button>
+          <button onClick={commitImport} disabled={!importPreview||importPreview.rows.length===0} className="px-5 py-2 bg-gradient-gold text-white text-sm font-bold rounded-lg disabled:opacity-40">Commit {importPreview?.rows.length||0} rows</button>
+        </div>
+      </div>}
       {catTotals.length>0&&<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {catTotals.map(({c,t})=><div key={c} className="bg-white border border-slate-200 rounded-xl p-4"><div className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded-md ${catColor[c]||catColor.Other}`}>{c}</div><div className="text-lg font-black text-slate-800 mt-2">{fmtCur(t)}</div><div className="text-xs text-slate-400">{Math.round((t/total)*100)||0}% of total</div></div>)}
       </div>}

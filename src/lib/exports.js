@@ -241,3 +241,127 @@ export const buildDPRWhatsAppText = (proj, opts) => {
   ];
   return lines.filter(l=>l!=="").join("\n");
 };
+
+/**
+ * Session 25 — printable audit report PDF for compliance / external auditors.
+ *
+ * Competitor gap fix: Procore gives auditors a printable PDF report; we only
+ * had CSV export. CFOs + external auditors want a formatted document with
+ * org letterhead, date range, action distribution chart, top actors, and
+ * the full table.
+ *
+ * Args:
+ *   rows    — audit_log_v2 records (already filtered by org + date range)
+ *   org     — org row for the letterhead
+ *   filters — { from?: string, to?: string, actor?: string, action?: string }
+ *
+ * Opens a print-ready window. User chooses "Save as PDF" in the browser
+ * print dialog — works the same way as exportPDF (no PDF library needed).
+ */
+export const exportAuditPdf = (rows, org, filters = {}) => {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  // Compute distribution + top actors for the summary box
+  const byAction = {};
+  const byActor = {};
+  for (const r of safeRows) {
+    byAction[r.action] = (byAction[r.action] || 0) + 1;
+    byActor[r.actor_name || "Unknown"] = (byActor[r.actor_name || "Unknown"] || 0) + 1;
+  }
+  const topActions = Object.entries(byAction).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const topActors = Object.entries(byActor).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const rangeLabel =
+    (filters.from || filters.to)
+      ? `${filters.from ? fmtDate(filters.from) : "—"} → ${filters.to ? fmtDate(filters.to) : "today"}`
+      : "All time";
+  const generated = new Date();
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${h(org?.name || "Org")} — Audit Report</title>
+  <style>
+    @page { size: A4; margin: 18mm 14mm; }
+    body { font-family: Georgia, 'Times New Roman', serif; color: #1c1917; }
+    .head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #d97706; padding-bottom:12px; margin-bottom:18px; }
+    h1 { font-weight: 300; font-size: 28px; letter-spacing: -0.02em; margin: 0 0 4px; }
+    .kicker { font-size:10px; font-weight:bold; letter-spacing:0.24em; text-transform:uppercase; color:#d97706; margin-bottom:6px; }
+    .meta { font-size:11px; color:#78716c; text-align:right; line-height:1.5; }
+    .summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:18px 0 24px; font-size:12px; }
+    .card { background:#fffaf0; border:1px solid #e7e5e4; border-radius:8px; padding:12px; }
+    .card .label { font-size:9px; font-weight:bold; letter-spacing:0.2em; text-transform:uppercase; color:#78716c; margin-bottom:6px; }
+    .card .v { font-family:Arial,sans-serif; font-size:22px; font-weight:600; color:#1c1917; }
+    h2 { font-weight:400; font-size:15px; margin-top:24px; margin-bottom:8px; border-bottom:1px solid #e7e5e4; padding-bottom:4px; }
+    table { width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:10px; }
+    th { background:#1c1917; color:#fbbf24; padding:6px 8px; text-align:left; font-size:9px; letter-spacing:0.1em; }
+    td { padding:5px 8px; border-bottom:1px solid #f5f5f4; vertical-align:top; }
+    tr:nth-child(even) td { background:#fafaf9; }
+    .action-pill { display:inline-block; padding:1px 6px; background:#fef3c7; color:#92400e; font-size:9px; font-weight:bold; border-radius:999px; }
+    .signoff { margin-top:36px; display:flex; justify-content:space-between; font-size:10px; color:#78716c; border-top:1px solid #e7e5e4; padding-top:14px; }
+    footer { margin-top:14px; font-size:9px; color:#a8a29e; text-align:center; }
+  </style></head>
+  <body>
+    <div class="head">
+      <div>
+        <div class="kicker">— Audit Report</div>
+        <h1>${h(org?.name || "Organisation")}</h1>
+        <p style="font-size:11px;color:#78716c;margin:4px 0 0;">${h(org?.city || "")} ${org?.contact_email ? ` · ${h(org.contact_email)}` : ""}</p>
+      </div>
+      <div class="meta">
+        Range: <strong>${h(rangeLabel)}</strong><br>
+        ${filters.actor ? `Actor: <strong>${h(filters.actor)}</strong><br>` : ""}
+        ${filters.action ? `Action: <strong>${h(filters.action)}</strong><br>` : ""}
+        Generated ${fmtDate(generated.toISOString())} by SiteTrack Pro
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="card"><div class="label">Records</div><div class="v">${safeRows.length}</div></div>
+      <div class="card"><div class="label">Unique actors</div><div class="v">${Object.keys(byActor).length}</div></div>
+      <div class="card"><div class="label">Distinct actions</div><div class="v">${Object.keys(byAction).length}</div></div>
+    </div>
+
+    <h2>Action distribution</h2>
+    <table>
+      <thead><tr><th>Action</th><th style="text-align:right;width:80px;">Count</th><th style="width:50%;">Share</th></tr></thead>
+      <tbody>
+        ${topActions.map(([a, n]) => `<tr><td><span class="action-pill">${h(a)}</span></td><td style="text-align:right;">${n}</td><td><div style="background:#f5f5f4;border-radius:3px;height:8px;width:100%;"><div style="background:#d97706;height:8px;width:${Math.round((n / safeRows.length) * 100) || 0}%;border-radius:3px;"></div></div></td></tr>`).join("")}
+      </tbody>
+    </table>
+
+    <h2>Top actors</h2>
+    <table>
+      <thead><tr><th>Actor</th><th style="text-align:right;width:80px;">Actions</th></tr></thead>
+      <tbody>
+        ${topActors.map(([a, n]) => `<tr><td>${h(a)}</td><td style="text-align:right;">${n}</td></tr>`).join("")}
+      </tbody>
+    </table>
+
+    <h2>Full audit trail (${safeRows.length} ${safeRows.length === 1 ? "row" : "rows"})</h2>
+    <table>
+      <thead><tr><th style="width:110px;">When</th><th style="width:120px;">Actor</th><th style="width:60px;">Role</th><th style="width:60px;">Action</th><th>Resource</th><th>Message</th></tr></thead>
+      <tbody>
+        ${safeRows.map(r => `<tr><td>${fmtDate(r.ts)}</td><td>${h(r.actor_name || "")}</td><td>${h(r.actor_role || "")}</td><td><span class="action-pill">${h(r.action)}</span></td><td>${h(r.resource)}${r.resource_id ? ` #${h(String(r.resource_id))}` : ""}</td><td style="font-family:Arial;font-size:10px;color:#44403c;">${h(r.message || "")}</td></tr>`).join("")}
+      </tbody>
+    </table>
+
+    <div class="signoff">
+      <div>
+        <strong>Reviewed by</strong><br>
+        ______________________________<br>
+        Name, designation
+      </div>
+      <div style="text-align:right;">
+        <strong>Date</strong><br>
+        ______________________________
+      </div>
+    </div>
+
+    <footer>SiteTrack Pro — editorial-grade construction record · sitetrack.in</footer>
+  </body></html>`;
+
+  if (typeof window !== "undefined") {
+    const w = window.open("", "_blank", "width=900,height=1000");
+    if (!w) return html; // pop-up blocked — return string so caller can show in iframe
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => { try { w.print(); } catch { /* ignore */ } }, 600);
+  }
+  return html;
+};
