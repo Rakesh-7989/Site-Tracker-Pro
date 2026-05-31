@@ -19,9 +19,19 @@ create table if not exists branding (
   pdf_header    jsonb default '{}'::jsonb,                         -- {logo_pos, text, ...}
   pdf_footer    jsonb default '{}'::jsonb,
   updated_by    uuid references profiles(id),
-  updated_at    timestamptz default now(),
-  unique (org_id, project_id)
+  updated_at    timestamptz default now()
 );
+
+-- Bug-fix Session 27.1: was a single `unique (org_id, project_id)`. Postgres
+-- treats NULLs as distinct in UNIQUE constraints, so multiple org-default rows
+-- (project_id IS NULL) for the same org would all "pass". Split into 2 partial
+-- unique indexes: one for org-default (per org), one for project override.
+create unique index if not exists uniq_branding_org_default
+  on branding(org_id)
+  where project_id is null;
+create unique index if not exists uniq_branding_project_override
+  on branding(org_id, project_id)
+  where project_id is not null;
 
 create index if not exists idx_branding_org on branding(org_id);
 create index if not exists idx_branding_project on branding(project_id) where project_id is not null;

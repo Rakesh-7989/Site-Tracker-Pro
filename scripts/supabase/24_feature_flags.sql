@@ -18,7 +18,10 @@ create table if not exists platform_feature_flags (
   enabled     boolean default true,
   rollout     numeric(5,2) default 100 check (rollout between 0 and 100),
   note        text,
-  updated_by  uuid references admin_users(id),
+  -- Bug-fix Session 27.1: was `references admin_users(id)` but admin_users is
+  -- a localStorage-only seed (INIT_ADMIN_USERS) — no Postgres table. The
+  -- platform-admin profile lives in profiles with role='superadmin'.
+  updated_by  uuid references profiles(id),
   updated_at  timestamptz default now()
 );
 

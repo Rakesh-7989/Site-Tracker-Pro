@@ -13,7 +13,9 @@ create table if not exists forecast (
   predicted_end   date,
   predicted_cost  bigint,
   overrun_amount  bigint,
-  risk_score      numeric(4,2) check (risk_score between 0 and 100),
+  -- Bug-fix Session 27.1: numeric(4,2) caps at 99.99 but check allowed 100 —
+  -- a 100.00 insert would overflow. Widened to numeric(5,2) for headroom.
+  risk_score      numeric(5,2) check (risk_score between 0 and 100),
   confidence      numeric(4,2) check (confidence between 0 and 1),
   rationale       text,                                    -- LLM-generated, lang-aware
   lang            text default 'en' check (lang in ('en','te','hi')),

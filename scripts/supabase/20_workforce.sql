@@ -48,9 +48,6 @@ create table if not exists attendance (
   geo           jsonb,                                      -- {lat,lng,captured_at}
   recorded_by   uuid references profiles(id),
   created_at    timestamptz default now(),
-  -- One row per (project, attendee, date)
-  unique (project_id, coalesce(labour_id, '00000000-0000-0000-0000-000000000000'::uuid),
-          coalesce(profile_id, '00000000-0000-0000-0000-000000000000'::uuid), date),
   check (
     (attendee_kind = 'labour'   and labour_id  is not null)
     or (attendee_kind = 'staff' and profile_id is not null)
@@ -59,6 +56,16 @@ create table if not exists attendance (
 );
 create index if not exists idx_attendance_project_date on attendance(project_id, date desc);
 create index if not exists idx_attendance_labour on attendance(labour_id, date desc) where labour_id is not null;
+-- Bug-fix Session 27.1: Postgres UNIQUE constraints don't accept expressions —
+-- moved the (project, attendee, date) uniqueness into 2 partial UNIQUE indexes,
+-- one per attendee_kind. Visitors are intentionally NOT deduplicated (a guest
+-- might check in twice the same day).
+create unique index if not exists uniq_attendance_labour_day
+  on attendance(project_id, labour_id, date)
+  where attendee_kind = 'labour' and labour_id is not null;
+create unique index if not exists uniq_attendance_staff_day
+  on attendance(project_id, profile_id, date)
+  where attendee_kind = 'staff' and profile_id is not null;
 alter table attendance enable row level security;
 create policy attendance_read on attendance for select
   using (project_id in (select user_project_ids()));
