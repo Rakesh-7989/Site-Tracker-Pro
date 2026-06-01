@@ -634,7 +634,7 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-export function DashboardView({user,projects,updates,issues,activity,setView,setSP}){
+export function DashboardView({user,projects,updates,issues,activity,setView,setSP,orgQuota}){
   const mp=visibleProjectsForUser(projects,user);
   const visibleIds=new Set(mp.map(p=>p.id));
   const openIssues=Object.entries(issues).flatMap(([pid,arr])=>visibleIds.has(pid)?arr:[]).filter(i=>i.status==="open");
@@ -663,6 +663,24 @@ export function DashboardView({user,projects,updates,issues,activity,setView,set
         </h1>
         <p className="text-ink-500 text-sm mt-2 max-w-md">Your construction overview at a glance — projects, issues, and what needs your attention.</p>
       </div>
+
+      {/* Session 29 (Option C): Plan quota badge — only when backend wired + at >=80% */}
+      {Array.isArray(orgQuota)&&orgQuota.filter(q=>q.max_allowed&&q.current_count/q.max_allowed>=0.8).map(q=>{
+        const pct=Math.round((q.current_count/q.max_allowed)*100);
+        const atCap=q.at_quota;
+        return(
+          <div key={q.resource} className={`mb-4 flex items-center justify-between gap-3 px-4 py-3 rounded-lg border ${atCap?"bg-red-50 border-red-200":"bg-orange-50 border-orange-200"}`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-1.5 h-8 rounded-full ${atCap?"bg-red-500":"bg-safety-500"}`}/>
+              <div>
+                <div className={`text-xs font-semibold uppercase tracking-wide ${atCap?"text-red-800":"text-orange-800"}`}>Plan limit · {q.resource}</div>
+                <div className={`text-sm font-mono ${atCap?"text-red-900":"text-ink-900"}`}>{q.current_count} of {q.max_allowed} {q.resource} used ({pct}%)</div>
+              </div>
+            </div>
+            <button onClick={()=>setView("org-billing")} className={`text-xs font-semibold px-3 py-1.5 rounded-md ${atCap?"bg-red-600 text-white hover:bg-red-700":"bg-safety-500 text-white hover:bg-safety-600"}`}>Upgrade plan →</button>
+          </div>
+        );
+      })}
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">

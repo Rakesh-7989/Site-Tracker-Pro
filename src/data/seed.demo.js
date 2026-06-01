@@ -16,6 +16,12 @@
 // here so the login picker can sign in as each one and exercise the gates.
 // Session 24 fix: previously the picker only had 6 entries — the 12 v2
 // roles were unreachable via demo login. Now all 18 + vendor are covered.
+//
+// Session 29 (Option D): demo password for the magic-link UX docs. All demo
+// users share the same password to keep onboarding scripts simple. NEVER
+// reuse this on a production tenant — it's seed-only.
+export const DEMO_PASSWORD = "demo1234";
+
 export const MOCK_USERS = {
   // v1
   architect: {id:"u1",name:"Arjun Reddy",email:"arjun@buildco.in",role:"architect",avatar:"AR",org_id:"org1"},

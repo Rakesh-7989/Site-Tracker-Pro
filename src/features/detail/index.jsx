@@ -1743,12 +1743,17 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
         <div className="relative">
           <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
             <div className="flex-1 min-w-0 pr-4">
-              <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">— {(ROLE_META[user.role]||ROLE_META.client||{label:"Member"}).label} view</div>
-              <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 mb-3 tracking-editorial leading-[1.05]">{proj.name}</h1>
-              <p className="text-ink-600 text-base leading-relaxed max-w-2xl">{proj.description}</p>
-              <div className="flex flex-wrap gap-5 text-sm text-ink-500 mt-5">
-                <span className="flex items-center gap-2"><Ic n="map" s={14}/>{proj.location}</span>
-                <span className="flex items-center gap-2"><Ic n="calendar" s={14}/>Started {fmtDate(proj.start_date)}</span>
+              {/* Session 29 (Option E): refreshed hero — bolder eyebrow + tighter heading scale */}
+              <div className="inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] uppercase mb-3">
+                <span className="w-1 h-3 bg-safety-500 rounded-full"/>
+                <span className="text-safety-600">{(ROLE_META[user.role]||ROLE_META.client||{label:"Member"}).label} view</span>
+                {proj.type&&<span className="text-ink-500">· {proj.type}</span>}
+              </div>
+              <h1 className="font-display text-3xl md:text-4xl font-semibold text-ink-900 mb-3 leading-[1.1] tracking-[-0.01em]">{proj.name}</h1>
+              <p className="text-ink-500 text-sm leading-relaxed max-w-2xl">{proj.description}</p>
+              <div className="flex flex-wrap gap-5 text-xs text-ink-500 mt-4 font-mono">
+                <span className="flex items-center gap-2"><Ic n="map" s={13}/>{proj.location}</span>
+                <span className="flex items-center gap-2"><Ic n="calendar" s={13}/>Started {fmtDate(proj.start_date)}</span>
               </div>
             </div>
             <Badge status={proj.status}/>

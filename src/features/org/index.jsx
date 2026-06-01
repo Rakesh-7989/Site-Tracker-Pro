@@ -19,10 +19,12 @@
 // Style: shares the editorial cream + amber tone with the rest of the tenant
 // views (NOT the slate/charcoal admin theme — orgadmin IS a tenant role).
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Ic, Av, SC, ROLE_META, fmtDate, fmtTime } from "../../components/ui.jsx";
 import { PLAN_META } from "../../data/seed.js";
 import { recordAudit, filterAudit, exportAuditCsv } from "../../lib/audit.js";
+// Session 29 (Option A): live invitation flow via Supabase RPCs.
+import { isSupabaseEnabled, createOrgInvitation, getSupabaseClient } from "../../lib/supabase.js";
 // Session 25: printable PDF audit report (competitor-comparison gap fix).
 import { exportAuditPdf } from "../../lib/exports.js";
 import {
@@ -586,13 +588,36 @@ export function OrgMembersView({ user, orgs, adminUsers, setAdminUsers, setAudit
     setBulkText(text);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!draft.name.trim() || !draft.email.trim()) return alert("Name + email required");
     if (members.some(m => m.email === draft.email)) return alert("That email already exists in this org");
     const id = `u_${Date.now()}`;
-    const row = { id, name: draft.name.trim(), email: draft.email.trim(), role: draft.role, org_id: org.id, status: "active", joined: new Date().toISOString().slice(0, 10), last_seen: null };
+    const row = { id, name: draft.name.trim(), email: draft.email.trim(), role: draft.role, org_id: org.id, status: "pending", joined: new Date().toISOString().slice(0, 10), last_seen: null };
     setAdminUsers(p => [...p, row]);
     setAuditLog?.(p => recordAudit(p, { actor: user, action: "CREATE", resource: "user", resource_id: id, message: `Invited ${row.name} (${row.role}) to ${org.name}` }));
+    // Session 29 (Option A): when backend is connected, also call the RPC so a
+    // real org_invitations row + magic-link email goes to the invitee.
+    if (isSupabaseEnabled()) {
+      const res = await createOrgInvitation(draft.email.trim(), draft.role);
+      if (res.ok) {
+        // Trigger a magic-link send so the user can sign up.
+        try {
+          const sb = await getSupabaseClient();
+          await sb.auth.signInWithOtp({
+            email: draft.email.trim(),
+            options: {
+              emailRedirectTo: `${window.location.origin}/?invite=${encodeURIComponent(res.token)}`,
+              data: { invited_to_org: org.id, invited_role: draft.role },
+            },
+          });
+          alert(`Invitation sent to ${draft.email}. They'll receive a magic-link email.`);
+        } catch (e) {
+          alert(`Invitation created but email send failed: ${e?.message || "unknown"}. Share the join link manually: ${window.location.origin}/?invite=${res.token}`);
+        }
+      } else {
+        alert(`Invitation RPC failed: ${res.error}. Member added locally only.`);
+      }
+    }
     setAdding(false);
     setDraft({ name: "", email: "", role: "pm" });
   };

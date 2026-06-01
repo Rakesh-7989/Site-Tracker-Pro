@@ -15,7 +15,7 @@ import { isOnline, onConnectivityChange, queueLength, queueOpAdd, putBlob, getBl
 import { computeRiskScore, fetchLLMInsight, getProviderConfig, saveProviderConfig, clearProviderConfig } from "./lib/ai.js";
 import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "./lib/razorpay.js";
 import { usePersistent as useLS } from "./lib/usePersistent.js";
-import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurrentUser, migrateLocalToBackend, subscribeTable, probeConnection } from "./lib/supabase.js";
+import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurrentUser, migrateLocalToBackend, subscribeTable, probeConnection, acceptOrgInvitation, fetchOrgQuotaSnapshot } from "./lib/supabase.js";
 import { h, csvRow } from "./lib/escape.js";
 import { notifsForUser } from "./lib/notifications.js";
 import { fmtDate as _fmtDate, fmtTime as _fmtTime, fmtCur as _fmtCur, fileKind as _fileKind, fmtSize as _fmtSize } from "./lib/format.js";
@@ -241,6 +241,46 @@ export default function App(){
     const probeTimer=setInterval(runProbe,30000);
     return ()=>{off();clearInterval(tick);clearInterval(probeTimer);stop=true;};
   },[]);
+  // Session 29 (Option B): URL `?invite=<token>` handler — accept org invitation
+  // when the new user lands from the invite email. If unauthenticated, stash the
+  // token in sessionStorage so it survives the login round-trip + magic-link.
+  useEffect(()=>{
+    if(!isSupabaseEnabled())return;
+    const params=new URLSearchParams(window.location.search);
+    const tokenFromUrl=params.get("invite");
+    const stashed=(()=>{try{return sessionStorage.getItem("sitetrack_pending_invite");}catch{return null;}})();
+    const token=tokenFromUrl||stashed;
+    if(!token)return;
+    if(!user){
+      if(tokenFromUrl){try{sessionStorage.setItem("sitetrack_pending_invite",tokenFromUrl);}catch{}}
+      return;
+    }
+    (async()=>{
+      const res=await acceptOrgInvitation(token);
+      try{sessionStorage.removeItem("sitetrack_pending_invite");}catch{}
+      // Clean the URL even on failure so the user doesn't keep retrying.
+      const cleanUrl=window.location.pathname+window.location.hash;
+      window.history.replaceState({},"",cleanUrl);
+      if(res.ok){
+        recordAudit(p=>p,{actor:user,action:"CREATE",resource:"org_member",message:`accepted invite to role ${res.role}`});
+        alert(`Welcome — you've joined as ${res.role}. Reloading your workspace…`);
+        setTimeout(()=>window.location.reload(),400);
+      } else {
+        alert(`Invitation couldn't be accepted: ${res.error}`);
+      }
+    })();
+  },[user?.id]);
+  // Session 29 (Option C): Plan quota snapshot — read once per org, refresh on
+  // user change. Exposed via the new `orgQuota` state for any panel that wants
+  // to show "Projects: 1 of 5" badges or upgrade nudges.
+  const[orgQuota,setOrgQuota]=useState([]);
+  useEffect(()=>{
+    if(!isSupabaseEnabled()||!user?.org_id)return;
+    let cancelled=false;
+    fetchOrgQuotaSnapshot(user.org_id).then(res=>{if(!cancelled&&res.ok)setOrgQuota(res.quotas);});
+    return()=>{cancelled=true;};
+  },[user?.id,user?.org_id]);
+
   // Realtime: when backend is on, push live activity/message inserts.
   useEffect(()=>{
     if(!isSupabaseEnabled()||!user)return;
@@ -310,7 +350,7 @@ export default function App(){
 
   const renderView=()=>{
     switch(effectiveView){
-      case"dashboard": return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
+      case"dashboard": return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP} orgQuota={orgQuota}/>;
       case"projects": return <ProjectsView user={user} projects={projects} setProjects={setProjects} setView={setView} setSP={setSP} setAuditLog={setAuditLog}/>;
       case"analytics": return <AnalyticsView user={user} projects={projects} expenses={expenses} updates={updates} teams={teams}/>;
       case"activity": return <ActivityView user={user} activity={activity} setActivity={setActivity} projects={projects}/>;
@@ -359,7 +399,7 @@ export default function App(){
       case"org-notifications": return <OrgNotificationRulesView user={user} orgs={orgs} notifRules={notifRules} setNotifRules={setNotifRules} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
       case"org-features": return <OrgFeatureSettingsView user={user} orgs={orgs} orgFlags={orgFlags} setOrgFlags={setOrgFlags} platformFlags={platformFlags} setAuditLog={setAuditLog}/>;
       case"org-onboarding": return <OnboardingWizardView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} setAdminUsers={setAdminUsers} projects={projects} setProjects={setProjects} orgFlags={orgFlags} setOrgFlags={setOrgFlags} orgIntegrations={orgIntegrations} setOrgIntegrations={setOrgIntegrations} opsToggles={opsToggles} setOpsToggles={setOpsToggles} setView={setView} setSP={setSP} setAuditLog={setAuditLog}/>;
-      default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP}/>;
+      default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP} orgQuota={orgQuota}/>;
     }
   };
 
