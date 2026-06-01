@@ -34,105 +34,139 @@ import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "../../lib
 // ── LOGIN SCREEN ───────────────────────────────────────────────────────────
 export function LoginScreen({onLogin,dark,toggleDark}){
   const backendEnabled = isSupabaseEnabled();
-  // Session 29: 3 modes — login (default) / signup / reset-password.
+  // Session 30 — production auth panel. Three modes: login / signup / reset.
+  // The legacy demo role-tile picker has been retired; production users sign
+  // in with their work email + password (or magic link). Local-mode fallback
+  // (when backendEnabled === false) is handled at the bottom of the panel.
   const[mode,setMode]=useState("login");
   const[email,setEmail]=useState("");
   const[password,setPassword]=useState("");
   const[mlState,setMlState]=useState({state:"idle",msg:""});
-  // Session 28.2: OTP code fallback (Gmail prefetches link tokens, so a
-  // 6-digit code that the user types manually is the more reliable path).
   const[otpCode,setOtpCode]=useState("");
-  // Session 29: signup form state — firm name, user name, plan.
   const[firmName,setFirmName]=useState("");
   const[userName,setUserName]=useState("");
   const[plans,setPlans]=useState([]);
   const[selectedPlan,setSelectedPlan]=useState("basic");
-  const[authMethod,setAuthMethod]=useState("magic");   // "magic" or "password"
+  const[authMethod,setAuthMethod]=useState("magic");          // "magic" or "password"
+  const[showPassword,setShowPassword]=useState(false);
+  const[touched,setTouched]=useState({email:false,password:false,firmName:false});
+
+  // ── Validation + friendly error mapping ─────────────────────────────────
+  // Raw Supabase errors leak SDK-speak ("Invalid login credentials",
+  // "User already registered"). We translate the common ones to plain
+  // English so the user never sees a stack trace.
+  const friendly=(raw)=>{
+    if(!raw)return "Something went wrong. Please try again.";
+    const s=String(raw).toLowerCase();
+    if(s.includes("invalid login credentials")||s.includes("invalid_credentials"))return "That email and password don't match. Try again or reset your password.";
+    if(s.includes("user already registered")||s.includes("already been registered"))return "An account with this email already exists. Sign in instead.";
+    if(s.includes("email not confirmed"))return "Please verify your email first — check your inbox for the confirmation link.";
+    if(s.includes("rate limit")||s.includes("too many requests"))return "Too many attempts. Please wait a minute and try again.";
+    if(s.includes("password should be at least")||s.includes("weak_password"))return "Choose a stronger password — at least 8 characters with a mix of letters and numbers.";
+    if(s.includes("for security purposes"))return "Please wait a few seconds before requesting another link.";
+    if(s.includes("invalid email"))return "That email address doesn't look right — double-check the spelling.";
+    if(s.includes("backend-disabled"))return "Cloud sign-in is not configured for this build.";
+    if(s.includes("network")||s.includes("failed to fetch"))return "Network error. Check your internet connection and try again.";
+    if(s.includes("token has expired")||s.includes("otp_expired")||s.includes("invalid otp")||s.includes("token expired"))return "That code expired or was already used. Send a fresh one.";
+    if(s.includes("custom plan"))return "The Custom plan requires sales contact. Pick Free trial, Pro or Business to continue.";
+    // Sentence-case anything else so it reads like a message, not a key.
+    return raw.charAt(0).toUpperCase()+raw.slice(1);
+  };
+  const validEmail=(e)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e||"").trim());
+  const emailErr=touched.email&&email.length>0&&!validEmail(email)?"Enter a valid email like name@firm.in":"";
+  const passwordErr=touched.password&&mode==="signup"&&password.length>0&&password.length<8?"Min 8 characters required.":"";
+  const firmErr=touched.firmName&&mode==="signup"&&firmName.length>0&&firmName.trim().length<2?"Firm name is too short.":"";
+
+  // Password-strength meter (signup only). 0-4 score → label + colour.
+  const pwStrength=(()=>{
+    if(!password)return{score:0,label:"",color:"bg-cream-200",pct:0};
+    let s=0;
+    if(password.length>=8)s++;
+    if(password.length>=12)s++;
+    if(/[A-Z]/.test(password)&&/[a-z]/.test(password))s++;
+    if(/\d/.test(password)&&/[^A-Za-z0-9]/.test(password))s++;
+    const labels=["Too short","Weak","Fair","Good","Strong"];
+    const colors=["bg-red-500","bg-red-500","bg-amber-500","bg-emerald-500","bg-emerald-600"];
+    return{score:s,label:labels[s]||"Weak",color:colors[s]||"bg-red-500",pct:(s/4)*100};
+  })();
+
   // Load public plans (filters out super-admin-only tiers) when signup opens.
   useEffect(()=>{
     if(mode==="signup"&&backendEnabled&&plans.length===0){
-      fetchPublicPlans().then(res=>{if(res.ok)setPlans(res.plans);});
+      fetchPublicPlans().then(res=>{if(res.ok&&res.plans?.length)setPlans(res.plans);});
     }
   },[mode,backendEnabled,plans.length]);
 
+  // Autofocus the email field when the panel first mounts / mode changes.
+  useEffect(()=>{
+    const el=document.querySelector("[data-autofocus-email]");
+    if(el&&typeof el.focus==="function")el.focus();
+  },[mode]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────
   const handleSignup=async()=>{
-    if(!email.trim()||!password||!firmName.trim()){
-      setMlState({state:"err",msg:"Email, password, and firm name are required."});return;
-    }
-    if(password.length<6){setMlState({state:"err",msg:"Password must be at least 6 characters."});return;}
+    setTouched({email:true,password:true,firmName:true});
+    if(!validEmail(email)){setMlState({state:"err",msg:"Enter a valid work email."});return;}
+    if(!firmName.trim()||firmName.trim().length<2){setMlState({state:"err",msg:"Firm or organization name is required."});return;}
+    if(password.length<8){setMlState({state:"err",msg:"Choose a password with at least 8 characters."});return;}
     setMlState({state:"signing-up",msg:""});
-    const res=await signUp({email:email.trim(),password,firmName:firmName.trim(),userName:userName.trim()||email.split("@")[0],plan:selectedPlan});
+    const res=await signUp({email:email.trim().toLowerCase(),password,firmName:firmName.trim(),userName:userName.trim()||email.split("@")[0],plan:selectedPlan});
     if(res.ok){
       if(res.needsConfirmation){
-        setMlState({state:"sent",msg:`Check ${email} — click the link OR enter the 6-digit code below to finish signup.`});
+        setMlState({state:"sent",msg:`Verification email sent to ${email}. Click the link or enter the 6-digit code below to finish.`});
       } else {
-        setMlState({state:"verified",msg:"Account created. Loading your workspace…"});
+        setMlState({state:"verified",msg:"Account created — loading your workspace…"});
         setTimeout(()=>window.location.reload(),600);
       }
-    } else setMlState({state:"err",msg:res.error||"Signup failed. Try again."});
+    } else setMlState({state:"err",msg:friendly(res.error)});
   };
 
   const handlePasswordLogin=async()=>{
-    if(!email.trim()||!password){setMlState({state:"err",msg:"Email and password required."});return;}
+    setTouched({email:true,password:true,firmName:false});
+    if(!validEmail(email)){setMlState({state:"err",msg:"Enter a valid email."});return;}
+    if(!password){setMlState({state:"err",msg:"Password is required."});return;}
     setMlState({state:"verifying",msg:""});
-    const res=await signInWithPassword(email.trim(),password);
-    if(res.ok){setMlState({state:"verified",msg:"Signed in. Loading…"});setTimeout(()=>window.location.reload(),400);}
-    else setMlState({state:"err",msg:res.error||"Invalid credentials."});
+    const res=await signInWithPassword(email.trim().toLowerCase(),password);
+    if(res.ok){setMlState({state:"verified",msg:"Signed in — loading your workspace…"});setTimeout(()=>window.location.reload(),400);}
+    else setMlState({state:"err",msg:friendly(res.error)});
   };
 
   const handlePasswordReset=async()=>{
-    if(!email.trim()){setMlState({state:"err",msg:"Enter your email first."});return;}
+    setTouched({email:true,password:false,firmName:false});
+    if(!validEmail(email)){setMlState({state:"err",msg:"Enter the email on your account first."});return;}
     setMlState({state:"sending",msg:""});
-    const res=await resetPassword(email.trim());
-    if(res.ok)setMlState({state:"sent",msg:`Reset link sent to ${email}.`});
-    else setMlState({state:"err",msg:res.error||"Failed to send reset link."});
-  };
-  const sendMagicLink=async()=>{
-    if(!email.trim()){setMlState({state:"err",msg:"Enter your email."});return;}
-    setMlState({state:"sending",msg:""});
-    const res=await signInWithMagicLink(email.trim());
-    if(res.ok)setMlState({state:"sent",msg:`Check ${email} — click the link OR enter the 6-digit code below.`});
-    else setMlState({state:"err",msg:res.error||"Failed to send. Try again."});
-  };
-  const submitOtp=async()=>{
-    const code=otpCode.replace(/\s/g,"").trim();
-    if(!email.trim()){setMlState({state:"err",msg:"Enter your email first."});return;}
-    if(code.length!==6||!/^\d{6}$/.test(code)){setMlState({state:"err",msg:"Enter the 6-digit code from your email."});return;}
-    setMlState({state:"verifying",msg:""});
-    const res=await verifyEmailOtp(email.trim(),code);
-    if(res.ok){setMlState({state:"verified",msg:"Signed in. Loading your workspace…"});setTimeout(()=>window.location.reload(),600);}
-    else setMlState({state:"err",msg:res.error||"Invalid code. Try again."});
+    const res=await resetPassword(email.trim().toLowerCase());
+    if(res.ok)setMlState({state:"sent",msg:`Password reset link sent to ${email}. Check your inbox in a moment.`});
+    else setMlState({state:"err",msg:friendly(res.error)});
   };
 
-  // Q6: SuperAdmin can hide the demo loader entirely via ops_toggles. Read it
-  // here because LoginScreen renders BEFORE the App-level useLS state exists.
+  const sendMagicLink=async()=>{
+    setTouched({email:true,password:false,firmName:false});
+    if(!validEmail(email)){setMlState({state:"err",msg:"Enter a valid email."});return;}
+    setMlState({state:"sending",msg:""});
+    const res=await signInWithMagicLink(email.trim().toLowerCase());
+    if(res.ok)setMlState({state:"sent",msg:`Sign-in link sent to ${email}. Click the link or enter the 6-digit code below.`});
+    else setMlState({state:"err",msg:friendly(res.error)});
+  };
+
+  const submitOtp=async()=>{
+    const code=otpCode.replace(/\s/g,"").trim();
+    if(!validEmail(email)){setMlState({state:"err",msg:"Enter your email first."});return;}
+    if(!/^\d{6}$/.test(code)){setMlState({state:"err",msg:"Enter the 6-digit code from your email."});return;}
+    setMlState({state:"verifying",msg:""});
+    const res=await verifyEmailOtp(email.trim().toLowerCase(),code);
+    if(res.ok){setMlState({state:"verified",msg:"Signed in — loading your workspace…"});setTimeout(()=>window.location.reload(),600);}
+    else setMlState({state:"err",msg:friendly(res.error)});
+  };
+
+  // ── Local-mode fallback (backend disabled) ──────────────────────────────
+  // Workspace-data controls (load demo / clear all) only appear when the
+  // backend is NOT configured — i.e. someone running the build without
+  // VITE_SUPABASE_URL set. Production users never see them.
   const opsToggles=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}").ops_toggles||{};}catch{return{};}})();
   const demoLoaderEnabled=opsToggles.demoLoaderEnabled!==false;
   const demoPersists=opsToggles.demoModePermanent!==false;
   const[dataInfo]=useState(()=>({summary:dataSummary(),isDemo:isDemoLoaded()}));
-
-  // Session 16: read platform + org flags so each role tile can show
-  // "X of Y features enabled for this role".
-  const featureSnapshot=(()=>{
-    try{
-      const store=JSON.parse(localStorage.getItem("sitetrack_v2")||"{}");
-      return{
-        platform:store.platform_feature_flags||{},
-        org:store.org_feature_flags||{},
-        orgs:store.orgs||[],
-      };
-    }catch{return{platform:{},org:{},orgs:[]};}
-  })();
-  const featureHintForRole=(roleKey,orgId)=>{
-    const ids=featuresForRole(roleKey);
-    if(!ids.length)return null;
-    const plan=(featureSnapshot.orgs.find(o=>o.id===orgId)?.plan)||"basic";
-    let enabled=0;
-    for(const id of ids){
-      if(isFeatureEnabled(featureSnapshot.platform,featureSnapshot.org,orgId,id,plan)) enabled++;
-    }
-    return{enabled,total:ids.length};
-  };
   const handleLoadDemo=()=>{
     if(loadDemoData()){
       if(!demoPersists){
@@ -152,23 +186,39 @@ export function LoginScreen({onLogin,dark,toggleDark}){
       window.location.reload();
     }
   };
-  const[role,setRole]=useState("architect");
-  const[anim,setAnim]=useState(false);
-  const roles=[
-    {key:"superadmin",label:"Super Admin (Operations)",sub:"Multi-tenant — all orgs, users, billing, system settings",ini:"RB",col:"slate",perms:["All Orgs","User Management","Billing","System Settings","Impersonate"]},
-    {key:"orgadmin",label:"Org Admin (Builder Firm Owner)",sub:"One org — members, billing, integrations, templates, approvals",ini:"MB",col:"amber",perms:["Members & Roles","Plan & Billing","Integrations","Templates","Approval Chains","Notification Rules"]},
-    {key:"architect",label:"Architect",sub:"Within one org — drawings, team, exports, activity feed",ini:"AR",col:"orange",perms:["Release Drawings","Manage Projects","View All Activity","Export & Share"]},
-    {key:"pm",label:"Project Manager",sub:"Field operations — updates, attendance, issues, materials",ini:"PS",col:"blue",perms:["Add Site Updates","Mark Attendance","Report Issues","Material Logs"]},
-    {key:"contractor",label:"Contractor",sub:"Worklogs, RFIs, RA bills, and field documents",ini:"KB",col:"violet",perms:["Worklogs","RFIs","RA Bills","Field Uploads"]},
-    {key:"client",label:"Client",sub:"Read-only — progress, milestones, released drawings",ini:"VN",col:"emerald",perms:["View Progress","View Milestones","Released Drawings","Updates"]},
-  ];
-  const selected=roles.find(r=>r.key===role);
 
-  // Helper — colour-bar token for the role tile leading bar.
-  const roleBar = (col)=>({
-    slate:"#0F1115", amber:"#FF6B1A", orange:"#FF6B1A", blue:"#1E40AF",
-    violet:"#7C3AED", emerald:"#047857",
-  }[col]||"#FF6B1A");
+  // Local-mode developer entry: pick any seeded MOCK_USER and continue. This
+  // is NOT a production login path — only renders when backendEnabled is
+  // false. The `featuresForRole` + `isFeatureEnabled` helpers below compute a
+  // "features enabled for this role" hint for the developer-mode role picker,
+  // and the substring is also a smoke-marker so we keep it in this file even
+  // when the cloud-backed UI hides the picker entirely.
+  const featureSnapshot=(()=>{
+    try{
+      const store=JSON.parse(localStorage.getItem("sitetrack_v2")||"{}");
+      return{platform:store.platform_feature_flags||{},org:store.org_feature_flags||{},orgs:store.orgs||[]};
+    }catch{return{platform:{},org:{},orgs:[]};}
+  })();
+  const featureHintForRole=(roleKey,orgId)=>{
+    const ids=featuresForRole(roleKey);
+    if(!ids.length)return null;
+    const plan=(featureSnapshot.orgs.find(o=>o.id===orgId)?.plan)||"basic";
+    let enabled=0;
+    for(const id of ids){
+      if(isFeatureEnabled(featureSnapshot.platform,featureSnapshot.org,orgId,id,plan))enabled++;
+    }
+    return{enabled,total:ids.length};
+  };
+  const localRoles=[
+    {key:"superadmin",label:"Super Admin",sub:"Multi-tenant operations console",ini:"RB",col:"slate"},
+    {key:"orgadmin",label:"Org Admin",sub:"Builder firm owner — one org",ini:"MB",col:"amber"},
+    {key:"architect",label:"Architect",sub:"Drawings, team, exports",ini:"AR",col:"orange"},
+    {key:"pm",label:"Project Manager",sub:"Field operations",ini:"PS",col:"blue"},
+    {key:"contractor",label:"Contractor",sub:"Worklogs, RFIs, RA bills",ini:"KB",col:"violet"},
+    {key:"client",label:"Client",sub:"Read-only progress view",ini:"VN",col:"emerald"},
+  ];
+  const[localRole,setLocalRole]=useState("architect");
+  const[anim,setAnim]=useState(false);
 
   return(
     <div className="min-h-screen bg-cream flex relative overflow-hidden">
@@ -224,48 +274,76 @@ export function LoginScreen({onLogin,dark,toggleDark}){
             <div className="font-display text-2xl font-bold text-ink-900 leading-none">SiteTrack</div>
           </div>
 
-          <div className="mb-7">
-            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 mb-3">Sign in · Magic link</div>
+          {/* Header */}
+          <div className="mb-6">
+            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 mb-3">
+              {!backendEnabled?"Local mode · Developer build":mode==="signup"?"Self-serve · Start a firm":"Sign in · Magic link or password"}
+            </div>
             <h2 className="font-display text-3xl md:text-4xl font-semibold leading-tight text-ink-900">
-              Welcome back.
+              {mode==="signup"?"Start your firm.":"Welcome back."}
             </h2>
-            <p className="text-ink-500 text-sm mt-2 leading-relaxed">{backendEnabled?"Enter your work email — we'll send a one-time sign-in link.":"Select your role to continue. Permissions and visible modules apply automatically."}</p>
+            <p className="text-ink-500 text-sm mt-2 leading-relaxed">
+              {!backendEnabled
+                ? "Cloud backend is not configured for this build. Continue in local-only developer mode below."
+                : mode==="signup"
+                  ? "14-day free trial. No credit card. Cancel anytime."
+                  : "Enter your work email and we'll sign you in — by link or with your password."}
+            </p>
           </div>
 
-          {/* Session 29: mode tabs — Sign in / Sign up */}
-          {backendEnabled&&<div className="mb-4 inline-flex bg-cream-100 rounded-lg p-1 text-xs font-semibold">
-            <button onClick={()=>{setMode("login");setMlState({state:"idle",msg:""});}} className={`px-3.5 py-1.5 rounded-md transition ${mode==="login"?"bg-white text-ink-900 shadow-sm":"text-ink-500 hover:text-ink-700"}`}>Sign in</button>
-            <button onClick={()=>{setMode("signup");setMlState({state:"idle",msg:""});}} className={`px-3.5 py-1.5 rounded-md transition ${mode==="signup"?"bg-white text-ink-900 shadow-sm":"text-ink-500 hover:text-ink-700"}`}>Start a firm</button>
+          {/* Mode tabs — only when cloud auth is available */}
+          {backendEnabled&&<div className="mb-5 inline-flex bg-cream-100 rounded-lg p-1 text-xs font-semibold" role="tablist" aria-label="Authentication mode">
+            <button role="tab" aria-selected={mode==="login"} onClick={()=>{setMode("login");setMlState({state:"idle",msg:""});setOtpCode("");setTouched({email:false,password:false,firmName:false});}} className={`px-3.5 py-1.5 rounded-md transition ${mode==="login"?"bg-white text-ink-900 shadow-sm":"text-ink-500 hover:text-ink-700"}`}>Sign in</button>
+            <button role="tab" aria-selected={mode==="signup"} onClick={()=>{setMode("signup");setMlState({state:"idle",msg:""});setOtpCode("");setTouched({email:false,password:false,firmName:false});}} className={`px-3.5 py-1.5 rounded-md transition ${mode==="signup"?"bg-white text-ink-900 shadow-sm":"text-ink-500 hover:text-ink-700"}`}>Start a firm</button>
           </div>}
 
-          {/* Session 29: Sign-up card (new) */}
+          {/* ── SIGN-UP CARD ──────────────────────────────────────────────── */}
           {backendEnabled&&mode==="signup"&&<div className="mb-5 bg-white rounded-xl p-5 border border-cream-200 shadow-card">
-            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 mb-3">Self-serve · Plan teesukoni</div>
-            <h3 className="font-display text-xl font-semibold text-ink-900 mb-1">Start your firm on SiteTrack</h3>
-            <p className="text-ink-500 text-xs mb-4">14-day free trial. No credit card. Upgrade anytime.</p>
-            <div className="space-y-3">
+            <div className="space-y-3.5">
+              {/* Firm name */}
               <div>
-                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Firm / Org name</label>
-                <input value={firmName} onChange={e=>setFirmName(e.target.value)} type="text" placeholder="Greenfield Developers Pvt Ltd" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+                <label htmlFor="firmName" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Firm / Org name <span className="text-safety-600">*</span></label>
+                <input id="firmName" value={firmName} onChange={e=>setFirmName(e.target.value)} onBlur={()=>setTouched(t=>({...t,firmName:true}))} type="text" placeholder="Greenfield Developers Pvt Ltd" autoComplete="organization" className={`w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-safety-500/15 bg-white transition ${firmErr?"border-red-400 focus:border-red-500":"border-cream-200 focus:border-safety-500"}`}/>
+                {firmErr&&<p className="mt-1 text-[11px] text-red-600 flex items-center gap-1"><Ic n="alert" s={11}/>{firmErr}</p>}
               </div>
+
+              {/* Your name (optional) */}
               <div>
-                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Your name</label>
-                <input value={userName} onChange={e=>setUserName(e.target.value)} type="text" placeholder="Mohan Boyapati" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+                <label htmlFor="userName" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Your name <span className="text-ink-500 normal-case tracking-normal text-[10px] font-normal">(optional)</span></label>
+                <input id="userName" value={userName} onChange={e=>setUserName(e.target.value)} type="text" placeholder="Mohan Boyapati" autoComplete="name" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white transition"/>
               </div>
+
+              {/* Email */}
               <div>
-                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Work email</label>
-                <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="you@yourcompany.in" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+                <label htmlFor="signupEmail" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Work email <span className="text-safety-600">*</span></label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 pointer-events-none"><Ic n="mail" s={16}/></span>
+                  <input id="signupEmail" data-autofocus-email value={email} onChange={e=>setEmail(e.target.value)} onBlur={()=>setTouched(t=>({...t,email:true}))} type="email" inputMode="email" placeholder="you@yourcompany.in" autoComplete="email" className={`w-full pl-10 pr-3.5 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-safety-500/15 bg-white transition ${emailErr?"border-red-400 focus:border-red-500":"border-cream-200 focus:border-safety-500"}`}/>
+                </div>
+                {emailErr&&<p className="mt-1 text-[11px] text-red-600 flex items-center gap-1"><Ic n="alert" s={11}/>{emailErr}</p>}
               </div>
+
+              {/* Password + show/hide + strength meter */}
               <div>
-                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Password</label>
-                <input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="min 6 characters" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+                <label htmlFor="signupPassword" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Password <span className="text-safety-600">*</span></label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 pointer-events-none"><Ic n="lock" s={16}/></span>
+                  <input id="signupPassword" value={password} onChange={e=>setPassword(e.target.value)} onBlur={()=>setTouched(t=>({...t,password:true}))} onKeyDown={e=>{if(e.key==="Enter")handleSignup();}} type={showPassword?"text":"password"} placeholder="At least 8 characters" autoComplete="new-password" className={`w-full pl-10 pr-10 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-safety-500/15 bg-white transition ${passwordErr?"border-red-400 focus:border-red-500":"border-cream-200 focus:border-safety-500"}`}/>
+                  <button type="button" onClick={()=>setShowPassword(s=>!s)} aria-label={showPassword?"Hide password":"Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-700 transition"><Ic n={showPassword?"eyeOff":"eye"} s={16}/></button>
+                </div>
+                {passwordErr&&<p className="mt-1 text-[11px] text-red-600 flex items-center gap-1"><Ic n="alert" s={11}/>{passwordErr}</p>}
+                {password&&!passwordErr&&<div className="mt-1.5 flex items-center gap-2">
+                  <div className="flex-1 h-1 bg-cream-200 rounded-full overflow-hidden"><div className={`h-full ${pwStrength.color} transition-all duration-300`} style={{width:`${pwStrength.pct}%`}}/></div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-500 tabular-nums">{pwStrength.label}</span>
+                </div>}
               </div>
+
               {/* Plan picker — filters out Custom (super-admin only) via fetchPublicPlans */}
               <div>
                 <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Pick a plan</label>
                 <div className="grid grid-cols-1 gap-2">
                   {(plans.length?plans:[{id:"basic",name:"Free trial",tagline:"14 days, no card",monthly_inr:0},{id:"pro",name:"Pro",tagline:"Solo builders",monthly_inr:99900},{id:"business",name:"Business",tagline:"Growing firms",monthly_inr:299900,recommended:true}]).map(pl=>(
-                    <button key={pl.id} type="button" onClick={()=>setSelectedPlan(pl.id)} className={`text-left px-3.5 py-2.5 rounded-lg border transition flex items-start justify-between gap-3 ${selectedPlan===pl.id?"border-safety-500 bg-safety-500/5":"border-cream-200 bg-white hover:border-ink-500/30"}`}>
+                    <button key={pl.id} type="button" onClick={()=>setSelectedPlan(pl.id)} aria-pressed={selectedPlan===pl.id} className={`text-left px-3.5 py-2.5 rounded-lg border transition flex items-start justify-between gap-3 ${selectedPlan===pl.id?"border-safety-500 bg-safety-500/5 shadow-sm":"border-cream-200 bg-white hover:border-ink-500/30"}`}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-ink-900">{pl.name}</span>
@@ -273,163 +351,160 @@ export function LoginScreen({onLogin,dark,toggleDark}){
                         </div>
                         <div className="text-[11px] text-ink-500 mt-0.5">{pl.tagline}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-mono text-sm font-bold text-ink-900">{pl.monthly_inr?`₹${Math.round(pl.monthly_inr/100).toLocaleString("en-IN")}`:"Free"}</div>
-                        <div className="text-[10px] text-ink-500">{pl.monthly_inr?"per month":"trial"}</div>
+                      <div className="text-right flex items-center gap-2">
+                        <div>
+                          <div className="font-mono text-sm font-bold text-ink-900">{pl.monthly_inr?`₹${Math.round(pl.monthly_inr/100).toLocaleString("en-IN")}`:"Free"}</div>
+                          <div className="text-[10px] text-ink-500">{pl.monthly_inr?"per month":"trial"}</div>
+                        </div>
+                        {selectedPlan===pl.id&&<span className="w-4 h-4 rounded-full bg-safety-500 flex items-center justify-center flex-shrink-0"><Ic n="check" s={10} c="text-white"/></span>}
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-            <Button variant="primary" size="lg" fullWidth onClick={handleSignup} disabled={mlState.state==="signing-up"} className="mt-4">{mlState.state==="signing-up"?"Creating your firm…":"Start your firm →"}</Button>
-            {mlState.state==="sent"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
-            {mlState.state==="verified"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
-            {mlState.state==="err"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="danger"/></div>}
-            {/* OTP fallback also available after sign-up — Supabase sends a confirmation email with both link + code */}
-            {(mlState.state==="sent"||mlState.state==="err")&&<div className="mt-4 pt-4 border-t border-cream-200">
-              <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Or enter 6-digit code from email</label>
+
+            <Button variant="primary" size="lg" fullWidth onClick={handleSignup} disabled={mlState.state==="signing-up"||mlState.state==="verifying"} className="mt-4" leftIcon={mlState.state==="signing-up"?<Ic n="loader" s={16}/>:null} rightIcon={mlState.state!=="signing-up"?<span aria-hidden>→</span>:null}>
+              {mlState.state==="signing-up"?"Creating your firm…":"Create account"}
+            </Button>
+
+            <p className="mt-3 text-[11px] text-ink-500 text-center leading-relaxed">By creating an account you agree to our <span className="font-semibold text-ink-700">Terms</span> and <span className="font-semibold text-ink-700">Privacy Policy</span>.</p>
+
+            {/* Status banners */}
+            {mlState.state==="sent"&&<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2"><Ic n="check" s={16} c="text-emerald-600 flex-shrink-0 mt-0.5"/><div className="flex-1"><div className="text-[12px] font-semibold text-emerald-800">Verification email sent</div><div className="text-[11px] text-emerald-700 mt-0.5 leading-snug">{mlState.msg}</div><button onClick={handleSignup} className="mt-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1"><Ic n="refresh" s={11}/>Resend email</button></div></div>}
+            {mlState.state==="verified"&&<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><Ic n="check" s={16} c="text-emerald-600 flex-shrink-0"/><div className="text-[12px] font-semibold text-emerald-800">{mlState.msg}</div></div>}
+            {mlState.state==="err"&&<div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 flex items-start gap-2"><Ic n="alert" s={16} c="text-red-600 flex-shrink-0 mt-0.5"/><div className="text-[12px] text-red-700 leading-snug">{mlState.msg}</div></div>}
+
+            {/* OTP fallback for signup */}
+            {(mlState.state==="sent"||mlState.state==="verifying")&&<div className="mt-4 pt-4 border-t border-cream-200">
+              <label htmlFor="signupOtp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Or enter 6-digit code from email</label>
               <div className="flex gap-2">
-                <input value={otpCode} onChange={e=>setOtpCode(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submitOtp();}} type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 font-mono tracking-[0.3em] text-center bg-white"/>
-                <Button variant="secondary" size="md" onClick={submitOtp} disabled={mlState.state==="verifying"}>{mlState.state==="verifying"?"…":"Verify"}</Button>
+                <input id="signupOtp" value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))} onKeyDown={e=>{if(e.key==="Enter")submitOtp();}} type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" autoComplete="one-time-code" className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 font-mono tracking-[0.3em] text-center bg-white"/>
+                <Button variant="secondary" size="md" onClick={submitOtp} disabled={mlState.state==="verifying"} leftIcon={mlState.state==="verifying"?<Ic n="loader" s={14}/>:null}>{mlState.state==="verifying"?"Verifying":"Verify"}</Button>
               </div>
+              <p className="mt-2 text-[11px] text-ink-500 leading-relaxed">Gmail sometimes burns the link via spam-scan. The 6-digit code from the email body is the safer path.</p>
             </div>}
           </div>}
 
+          {/* ── SIGN-IN CARD ─────────────────────────────────────────────── */}
           {backendEnabled&&mode==="login"&&<div className="mb-5 bg-white rounded-xl p-5 border border-cream-200 shadow-card">
-            {/* Session 29: auth method toggle — Magic link / Password */}
-            <div className="flex items-center gap-2 mb-3">
-              <button onClick={()=>setAuthMethod("magic")} className={`text-[10px] font-semibold tracking-[0.18em] uppercase transition ${authMethod==="magic"?"text-safety-600 border-b-2 border-safety-500":"text-ink-500 hover:text-ink-700"} pb-1`}>Magic link</button>
-              <button onClick={()=>setAuthMethod("password")} className={`text-[10px] font-semibold tracking-[0.18em] uppercase transition ${authMethod==="password"?"text-safety-600 border-b-2 border-safety-500":"text-ink-500 hover:text-ink-700"} pb-1`}>Password</button>
+            {/* Auth method toggle — Magic link / Password */}
+            <div className="flex items-center gap-4 mb-4 border-b border-cream-200">
+              <button onClick={()=>{setAuthMethod("magic");setMlState({state:"idle",msg:""});}} aria-selected={authMethod==="magic"} className={`text-[11px] font-semibold tracking-[0.14em] uppercase transition pb-2 -mb-px ${authMethod==="magic"?"text-safety-600 border-b-2 border-safety-500":"text-ink-500 hover:text-ink-700 border-b-2 border-transparent"}`}>Magic link</button>
+              <button onClick={()=>{setAuthMethod("password");setMlState({state:"idle",msg:""});}} aria-selected={authMethod==="password"} className={`text-[11px] font-semibold tracking-[0.14em] uppercase transition pb-2 -mb-px ${authMethod==="password"?"text-safety-600 border-b-2 border-safety-500":"text-ink-500 hover:text-ink-700 border-b-2 border-transparent"}`}>Password</button>
             </div>
-            <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Work email</label>
-            <input
-              value={email}
-              onChange={e=>setEmail(e.target.value)}
-              onKeyDown={e=>{if(e.key==="Enter")authMethod==="password"?handlePasswordLogin():sendMagicLink();}}
-              type="email"
-              placeholder="you@yourcompany.in"
-              className="w-full px-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 mb-3 bg-white"
-            />
-            {authMethod==="password"&&<>
-              <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Password</label>
-              <input
-                value={password}
-                onChange={e=>setPassword(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter")handlePasswordLogin();}}
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 mb-3 bg-white"
-              />
-            </>}
-            <Button variant="primary" size="lg" fullWidth onClick={authMethod==="password"?handlePasswordLogin:sendMagicLink} disabled={mlState.state==="sending"||mlState.state==="verifying"}>
+
+            {/* Email */}
+            <div className="mb-3">
+              <label htmlFor="loginEmail" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Work email</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 pointer-events-none"><Ic n="mail" s={16}/></span>
+                <input id="loginEmail" data-autofocus-email value={email} onChange={e=>setEmail(e.target.value)} onBlur={()=>setTouched(t=>({...t,email:true}))} onKeyDown={e=>{if(e.key==="Enter")authMethod==="password"?handlePasswordLogin():sendMagicLink();}} type="email" inputMode="email" placeholder="you@yourcompany.in" autoComplete="email" className={`w-full pl-10 pr-3.5 py-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-safety-500/15 bg-white transition ${emailErr?"border-red-400 focus:border-red-500":"border-cream-200 focus:border-safety-500"}`}/>
+              </div>
+              {emailErr&&<p className="mt-1 text-[11px] text-red-600 flex items-center gap-1"><Ic n="alert" s={11}/>{emailErr}</p>}
+            </div>
+
+            {/* Password */}
+            {authMethod==="password"&&<div className="mb-3">
+              <div className="flex items-baseline justify-between mb-1.5">
+                <label htmlFor="loginPassword" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Password</label>
+                <button onClick={handlePasswordReset} type="button" className="text-[11px] text-ink-500 hover:text-safety-600 hover:underline transition">Forgot password?</button>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 pointer-events-none"><Ic n="lock" s={16}/></span>
+                <input id="loginPassword" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")handlePasswordLogin();}} type={showPassword?"text":"password"} placeholder="••••••••" autoComplete="current-password" className="w-full pl-10 pr-10 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white transition"/>
+                <button type="button" onClick={()=>setShowPassword(s=>!s)} aria-label={showPassword?"Hide password":"Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-700 transition"><Ic n={showPassword?"eyeOff":"eye"} s={16}/></button>
+              </div>
+            </div>}
+
+            <Button variant="primary" size="lg" fullWidth onClick={authMethod==="password"?handlePasswordLogin:sendMagicLink} disabled={mlState.state==="sending"||mlState.state==="verifying"} leftIcon={(mlState.state==="sending"||mlState.state==="verifying")?<Ic n="loader" s={16}/>:null}>
               {authMethod==="password"
                 ? (mlState.state==="verifying"?"Signing in…":"Sign in")
-                : (mlState.state==="sending"?"Sending…":"Send sign-in link")}
+                : (mlState.state==="sending"?"Sending link…":"Send sign-in link")}
             </Button>
-            {authMethod==="password"&&<button onClick={handlePasswordReset} className="mt-2 text-[11px] text-ink-500 hover:text-safety-600 underline">Forgot password?</button>}
-            {mlState.state==="sent"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
-            {mlState.state==="verified"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
-            {mlState.state==="err"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="danger"/></div>}
 
-            {/* Session 28.2: OTP fallback — bypasses Gmail's link prefetch */}
-            {(mlState.state==="sent"||mlState.state==="err"||mlState.state==="verifying")&&<div className="mt-4 pt-4 border-t border-cream-200">
-              <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Or enter 6-digit code</label>
+            {/* Status banners */}
+            {mlState.state==="sent"&&<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2"><Ic n="check" s={16} c="text-emerald-600 flex-shrink-0 mt-0.5"/><div className="flex-1"><div className="text-[12px] font-semibold text-emerald-800">Email sent</div><div className="text-[11px] text-emerald-700 mt-0.5 leading-snug">{mlState.msg}</div><button onClick={authMethod==="password"?handlePasswordReset:sendMagicLink} className="mt-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1"><Ic n="refresh" s={11}/>Resend email</button></div></div>}
+            {mlState.state==="verified"&&<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><Ic n="check" s={16} c="text-emerald-600 flex-shrink-0"/><div className="text-[12px] font-semibold text-emerald-800">{mlState.msg}</div></div>}
+            {mlState.state==="err"&&<div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 flex items-start gap-2"><Ic n="alert" s={16} c="text-red-600 flex-shrink-0 mt-0.5"/><div className="text-[12px] text-red-700 leading-snug">{mlState.msg}</div></div>}
+
+            {/* OTP fallback — Gmail link-prefetch workaround */}
+            {(mlState.state==="sent"||(mlState.state==="err"&&authMethod==="magic")||(mlState.state==="verifying"&&authMethod==="magic"))&&<div className="mt-4 pt-4 border-t border-cream-200">
+              <label htmlFor="loginOtp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Or enter 6-digit code from email</label>
               <div className="flex gap-2">
-                <input
-                  value={otpCode}
-                  onChange={e=>setOtpCode(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter")submitOtp();}}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  placeholder="123456"
-                  className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 font-mono tracking-[0.3em] text-center bg-white"
-                />
-                <Button variant="secondary" size="md" onClick={submitOtp} disabled={mlState.state==="verifying"}>{mlState.state==="verifying"?"…":"Sign in"}</Button>
+                <input id="loginOtp" value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))} onKeyDown={e=>{if(e.key==="Enter")submitOtp();}} type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" autoComplete="one-time-code" className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 font-mono tracking-[0.3em] text-center bg-white"/>
+                <Button variant="secondary" size="md" onClick={submitOtp} disabled={mlState.state==="verifying"} leftIcon={mlState.state==="verifying"?<Ic n="loader" s={14}/>:null}>{mlState.state==="verifying"?"Verifying":"Verify"}</Button>
               </div>
-              <p className="mt-2 text-[11px] text-ink-500 leading-relaxed">Gmail sometimes burns the link via spam-scan. The 6-digit code at the bottom of the email is the safer path.</p>
+              <p className="mt-2 text-[11px] text-ink-500 leading-relaxed">Gmail's spam scanner sometimes burns the link before you can click it. The 6-digit code at the bottom of the email is the safer path.</p>
             </div>}
-
-            <div className="mt-4 pt-3 border-t border-cream-200 text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Or try a demo role below</div>
           </div>}
 
-          {/* Role tiles — flat cards with leading colour bar + initials chip */}
-          <div className="space-y-2 mb-6">
-            {roles.map(r=>{
-              const userOrgId=MOCK_USERS[r.key]?.org_id;
-              const hint=featureHintForRole(r.key,userOrgId);
-              const isActive=role===r.key;
-              return(
-                <button
-                  key={r.key}
-                  onClick={()=>setRole(r.key)}
-                  className={`group w-full text-left rounded-xl bg-white transition-all overflow-hidden border ${isActive?"border-safety-500 shadow-hover":"border-cream-200 hover:border-ink-500/30 hover:shadow-card"}`}
-                >
-                  <div className="flex items-stretch">
-                    {/* Leading colour bar */}
-                    <div className="w-1 flex-shrink-0" style={{backgroundColor:roleBar(r.col)}}/>
-                    <div className="flex-1 p-4">
-                      <div className="flex items-start gap-3">
-                        <Av i={r.ini} col={r.col} sz="md"/>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <div className="font-display text-sm font-semibold text-ink-900 leading-tight">{r.label}</div>
-                            {isActive&&<span className="w-4 h-4 rounded-full bg-safety-500 flex items-center justify-center flex-shrink-0"><Ic n="check" s={10} c="text-white"/></span>}
-                          </div>
-                          <div className="text-xs text-ink-500 leading-snug">{r.sub}</div>
-                          {hint&&<div className="text-[10px] font-semibold tracking-wide uppercase text-safety-600 mt-1.5 font-mono">{hint.enabled} of {hint.total} features enabled for this role</div>}
+          {/* ── LOCAL-MODE FALLBACK (developer build, backend disabled) ──── */}
+          {!backendEnabled&&<div className="space-y-3 mb-5">
+            <div className="rounded-xl border-2 border-dashed border-cream-200 bg-cream-100/60 p-4 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0"><Ic n="alert" s={18} c="text-amber-700"/></div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-sm font-semibold text-ink-900 leading-tight">Cloud sign-in unavailable</div>
+                <p className="text-[12px] text-ink-500 mt-1 leading-snug">Set <span className="font-mono text-ink-700">VITE_SUPABASE_URL</span> + <span className="font-mono text-ink-700">VITE_SUPABASE_ANON_KEY</span> to enable real auth. Until then, pick a developer role to preview the UI.</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {localRoles.map(r=>{
+                const userOrgId=MOCK_USERS[r.key]?.org_id;
+                const hint=featureHintForRole(r.key,userOrgId);
+                const isActive=localRole===r.key;
+                return(
+                  <button key={r.key} onClick={()=>setLocalRole(r.key)} className={`group w-full text-left rounded-xl bg-white transition-all border ${isActive?"border-safety-500 shadow-hover":"border-cream-200 hover:border-ink-500/30 hover:shadow-card"}`}>
+                    <div className="p-3 flex items-center gap-3">
+                      <Av i={r.ini} col={r.col} sz="md"/>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="font-display text-sm font-semibold text-ink-900 leading-tight">{r.label}</div>
+                          {isActive&&<span className="w-4 h-4 rounded-full bg-safety-500 flex items-center justify-center flex-shrink-0"><Ic n="check" s={10} c="text-white"/></span>}
                         </div>
+                        <div className="text-xs text-ink-500 leading-snug truncate">{r.sub}</div>
+                        {hint&&<div className="text-[10px] font-semibold tracking-wide uppercase text-safety-600 mt-0.5 font-mono">{hint.enabled} of {hint.total} features enabled for this role</div>}
                       </div>
-                      {isActive&&<div className="mt-3 pt-3 border-t border-cream-200 flex flex-wrap gap-1.5">
-                        {r.perms.map(p=><span key={p} className="text-[10px] font-semibold tracking-wide uppercase bg-orange-50 text-safety-600 px-2 py-0.5 rounded-md">{p}</span>)}
-                      </div>}
                     </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* CTA */}
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={()=>{setAnim(true);setTimeout(()=>onLogin(MOCK_USERS[role]),320);}}
-            rightIcon={<span aria-hidden>→</span>}
-          >
-            Continue as {selected?.label}
-          </Button>
-
-          {/* Workspace data — load demo / clear all */}
-          {demoLoaderEnabled&&<div className="mt-5 rounded-xl border border-cream-200 bg-white p-4">
-            <div className="flex items-center justify-between gap-3 mb-2.5">
-              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Workspace data</div>
-              <FlatStatus
-                variant={dataInfo.isDemo?"warning":dataInfo.summary.isEmpty?"neutral":"success"}
-                label={dataInfo.isDemo?"Demo loaded":dataInfo.summary.isEmpty?"Empty":`${dataInfo.summary.projects} project${dataInfo.summary.projects===1?"":"s"}`}
-              />
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-xs text-ink-500 leading-relaxed mb-3">
-              {dataInfo.summary.isEmpty
-                ? "Start with a clean workspace, or load the showcase dataset (5 orgs, 4 projects, BOQ, RA bills) to explore the product."
-                : dataInfo.isDemo
-                  ? "Showcase dataset is loaded. Clear it to return to an empty workspace for real work."
-                  : "Your workspace already has data. Loading the demo will overwrite it — back up first if needed."}
-            </p>
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" fullWidth onClick={handleLoadDemo}>
-                {dataInfo.isDemo?"Reload demo":"Load demo data"}
-              </Button>
-              <Button variant="ghost" size="sm" fullWidth onClick={handleClearAll} disabled={dataInfo.summary.isEmpty&&!dataInfo.isDemo}>
-                Clear all data
-              </Button>
-            </div>
-            {!demoPersists&&<div className="mt-3 text-[11px] text-safety-600 font-semibold">Session-only mode — demo data will be wiped when you close this browser.</div>}
+
+            <Button variant="primary" size="lg" fullWidth onClick={()=>{setAnim(true);setTimeout(()=>onLogin(MOCK_USERS[localRole]),320);}} rightIcon={<span aria-hidden>→</span>}>
+              Continue in developer mode
+            </Button>
+
+            {/* Workspace data — only available in local mode */}
+            {demoLoaderEnabled&&<div className="mt-3 rounded-xl border border-cream-200 bg-white p-4">
+              <div className="flex items-center justify-between gap-3 mb-2.5">
+                <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Workspace data</div>
+                <FlatStatus
+                  variant={dataInfo.isDemo?"warning":dataInfo.summary.isEmpty?"neutral":"success"}
+                  label={dataInfo.isDemo?"Demo loaded":dataInfo.summary.isEmpty?"Empty":`${dataInfo.summary.projects} project${dataInfo.summary.projects===1?"":"s"}`}
+                />
+              </div>
+              <p className="text-xs text-ink-500 leading-relaxed mb-3">
+                {dataInfo.summary.isEmpty
+                  ? "Start with a clean workspace, or load the showcase dataset (5 orgs, 4 projects, BOQ, RA bills) to explore the product."
+                  : dataInfo.isDemo
+                    ? "Showcase dataset is loaded. Clear it to return to an empty workspace for real work."
+                    : "Your workspace already has data. Loading the demo will overwrite it — back up first if needed."}
+              </p>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" fullWidth onClick={handleLoadDemo}>
+                  {dataInfo.isDemo?"Reload demo":"Load demo data"}
+                </Button>
+                <Button variant="ghost" size="sm" fullWidth onClick={handleClearAll} disabled={dataInfo.summary.isEmpty&&!dataInfo.isDemo}>
+                  Clear all data
+                </Button>
+              </div>
+              {!demoPersists&&<div className="mt-3 text-[11px] text-safety-600 font-semibold">Session-only mode — demo data will be wiped when you close this browser.</div>}
+            </div>}
           </div>}
 
+          {/* Footer mode indicator */}
           <p className="text-[11px] text-ink-500 mt-4 text-center leading-relaxed">
             {backendEnabled
               ? <>Production mode — data syncs to your secure cloud workspace.</>
