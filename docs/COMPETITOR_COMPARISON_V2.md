@@ -1,6 +1,29 @@
 # Site-Tracker vs Competitors — Feature-by-Feature, Honest Gap Report
 
-Last updated end-of-Session-24.
+> **Sprint 1 freeze notice (Session 30.2, June 2026)**
+>
+> The deep-research workflow (`wz3yologq`) verified Powerplay's pricing
+> (Pro INR 71,999/yr, Pro+ INR 1,19,999/yr) + March 2026 embedded credit
+> launch + Hyderabad marquee case-study gap (3-0 verified) — but it
+> **could NOT confirm** Powerplay's product LACKS RERA filing, GSTN
+> e-invoice, blockchain audit, kiosks, or vernacular UI. Absence from
+> marketing copy is not proof of absence in product.
+>
+> **Until 10 Sprint-1 customer interviews land** (see
+> `docs/research/VERIFIED_GAPS_MATRIX.md`), every 🏆 BEAT verdict
+> in this document that concerns RERA, GSTN, blockchain, kiosks, or
+> vernacular UI is downgraded to **🟡 UNVERIFIED**. Do NOT use these
+> claims in sales conversations, the pitch deck, or marketing copy
+> until backed by verbatim ex-Powerplay-customer evidence.
+>
+> The pricing comparison row that still cites "Powerplay INR 1,500/user/mo"
+> is also retired — verified Powerplay pricing is per-org annual, as
+> noted above. Updated pricing positioning lives in
+> `docs/POSITIONING.md`.
+>
+> See `docs/SITETRACK_V3_PLAN.md` §1 mistake #2 for context.
+
+Last updated Sprint 1 (Session 30.2, June 2026); previous: end-of-Session-24.
 
 Compares every implemented Site-Tracker feature against how
 **Procore** (US/global leader), **Powerplay** (Indian Series B),

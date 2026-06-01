@@ -411,6 +411,9 @@ export const canOpenView = (user, view) => {
   if (view === "logout" || view === "detail") return true;
   // Session 28.5: in-app User Guide reachable from every role (no exception).
   if (view === "help") return true;
+  // Sprint 1 (Session 30.2): Daily Progress Report placeholder is the primary
+  // workflow surfaced to every role. See docs/FEATURE_FREEZE.md.
+  if (view === "dpr") return true;
   if (view === "create") return can(user, "createProject");
   return PERMS[user.role]?.nav.includes(view);
 };

@@ -30,6 +30,10 @@ import { recordAudit } from "../../lib/audit.js";
 import { isSupabaseEnabled, signInWithMagicLink, verifyEmailOtp, signUp, signInWithPassword, resetPassword, fetchPublicPlans } from "../../lib/supabase.js";
 import { MOCK_USERS } from "../../data/seed.js";
 import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "../../lib/demoMode.js";
+// Sprint 1 (Session 30.2) — Feature Freeze gate. Hides 16 stub views
+// (RERA mocks, GSTN mock-mode, broken-persistence admin surfaces) from
+// non-staff users. See docs/FEATURE_FREEZE.md.
+import { isViewStubBlocked } from "../../lib/featureFlags.js";
 
 // ── LOGIN SCREEN ───────────────────────────────────────────────────────────
 export function LoginScreen({onLogin,dark,toggleDark}){
@@ -547,6 +551,9 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"org-activity",icon:"activity",label:"Audit log",group:"org"},
     // Tenant nav
     {id:"dashboard",icon:"dashboard",label:"Dashboard"},
+    // Sprint 1 (Session 30.2) — the ONE workflow surfaced to non-staff users.
+    // Placeholder until Sprint 2 ships the real implementation.
+    {id:"dpr",icon:"send",label:"Daily Progress"},
     {id:"projects",icon:"folder",label:"Projects"},
     {id:"hierarchy",icon:"building",label:"Hierarchy"},
     {id:"calendar",icon:"calendar",label:"Calendar"},
@@ -598,7 +605,17 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
   // Session 28.2: defensive fallback — fresh Supabase user might have a role
   // not in PERMS yet (no profiles row).
   const userPerms=PERMS[user.role]||PERMS.client||{nav:["dashboard","logout"]};
-  const items=allItems.filter(i=>userPerms.nav.includes(i.id)&&!kioskBlocked(i.id)&&!featureBlocked(i.id));
+  // Sprint 1 freeze: hide stub views from non-staff users (16 entries in
+  // src/lib/featureFlags.js#STUB_VIEWS). Staff still see them for QA.
+  const stubBlocked=(id)=>isViewStubBlocked(user,id);
+  // Universal nav entries — always visible regardless of per-role nav config.
+  // Currently just the Sprint 1 DPR placeholder.
+  const UNIVERSAL_NAV=new Set(["dpr"]);
+  const items=allItems.filter(i=>{
+    if(stubBlocked(i.id))return false;
+    if(UNIVERSAL_NAV.has(i.id))return true;
+    return userPerms.nav.includes(i.id)&&!kioskBlocked(i.id)&&!featureBlocked(i.id);
+  });
   const adminItems=items.filter(i=>i.group==="admin");
   const orgItems=items.filter(i=>i.group==="org");
   const tenantItems=items.filter(i=>!i.group);

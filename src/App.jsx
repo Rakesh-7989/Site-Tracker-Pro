@@ -89,6 +89,9 @@ import {
 import {
   LoginScreen, Sidebar, DashboardView, ProjectsView, CreateView,
 } from "./features/shell/index.jsx";
+// Sprint 1 (Session 30.2) — Daily Progress Report placeholder + freeze gate.
+import { DailyProgressView } from "./features/dpr/index.jsx";
+import { isViewStubBlocked } from "./lib/featureFlags.js";
 // Admin views (Batch 5) — lazy `admin` chunk.
 import {
   SuperAdminDashboard, OrgsAdminView, UsersAdminView, BillingAdminView,
@@ -342,7 +345,11 @@ export default function App(){
   const uc=notifsForUser(notifs,user,projects).filter(n=>!n.read).length;
   const ac=activity.filter(a=>!a.read).length;
   const selectedProject=projects.find(p=>p.id===sp);
-  const effectiveView=(canOpenView(user,view) && (view!=="detail" || !selectedProject || canAccessProject(user,selectedProject))) ? view : fallbackViewForUser(user);
+  // Sprint 1 freeze gate: even if canOpenView() permits the route, hide stub
+  // views (RERA mocks, GSTN mock-mode, broken-persistence admin surfaces)
+  // from non-staff users. See docs/FEATURE_FREEZE.md.
+  const stubBlocked=isViewStubBlocked(user,view);
+  const effectiveView=(canOpenView(user,view) && !stubBlocked && (view!=="detail" || !selectedProject || canAccessProject(user,selectedProject))) ? view : fallbackViewForUser(user);
   const dp={projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,
     tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang,
     // Production Phase 1: audit log + approval chains threaded into detail tabs
@@ -351,6 +358,7 @@ export default function App(){
   const renderView=()=>{
     switch(effectiveView){
       case"dashboard": return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP} orgQuota={orgQuota}/>;
+      case"dpr": return <DailyProgressView user={user}/>;
       case"projects": return <ProjectsView user={user} projects={projects} setProjects={setProjects} setView={setView} setSP={setSP} setAuditLog={setAuditLog}/>;
       case"analytics": return <AnalyticsView user={user} projects={projects} expenses={expenses} updates={updates} teams={teams}/>;
       case"activity": return <ActivityView user={user} activity={activity} setActivity={setActivity} projects={projects}/>;
