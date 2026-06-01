@@ -53,14 +53,43 @@ export async function signOut() {
   await sb.auth.signOut();
 }
 
+/**
+ * Session 28.2: verify a 6-digit OTP code from a magic-link email.
+ *
+ * Why this exists: Gmail's link-scanner prefetches every URL in every
+ * incoming email to check for malware. That GET request consumes the
+ * one-time token before the user can click it, leaving them with an
+ * "otp_expired" error. The 6-digit code printed at the bottom of the
+ * same email is plain text — Gmail can't auto-use it. So we offer it
+ * as a fallback path for Gmail/Outlook/Yahoo users.
+ */
+export async function verifyEmailOtp(email, token) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled" };
+  const { error } = await sb.auth.verifyOtp({
+    email: String(email || "").trim(),
+    token: String(token || "").trim(),
+    type: "email",
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export async function getCurrentUser() {
   const sb = await getSupabaseClient();
   if (!sb) return null;
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return null;
-  // Pull profile row to enrich with role/name/avatar
-  const { data: profile } = await sb.from("profiles").select("*").eq("id", user.id).single();
-  return { ...user, ...(profile || {}) };
+  // Pull profile row to enrich with role/name/avatar.
+  // A fresh magic-link user has no profiles row yet — use sensible defaults
+  // so the UI doesn't crash on ROLE_META[user.role].bg etc.
+  const { data: profile } = await sb.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const enriched = { ...user, ...(profile || {}) };
+  // Session 28.2: every user must have at least these fields populated. The
+  // ROLE_META map keys off `role` — fallback to 'client' (the safest, most
+  // restrictive role) when no profile row exists yet.
+  if (!enriched.role) enriched.role = "client";
+  if (!enriched.name) enriched.name = enriched.email?.split("@")[0] || "New user";
+  return enriched;
 }
 
 // ── Persistence adapter — paired with useLS in App.jsx ──────────────────────

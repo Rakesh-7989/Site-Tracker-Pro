@@ -20,7 +20,7 @@ import { typeChip } from "../../lib/projectTypes.js";
 // Session 25: project archive / restore — competitor-gap miss.
 import { archiveProject, restoreProject, isArchived, daysUntilPurge, partitionByArchive } from "../../lib/projectArchive.js";
 import { recordAudit } from "../../lib/audit.js";
-import { isSupabaseEnabled, signInWithMagicLink } from "../../lib/supabase.js";
+import { isSupabaseEnabled, signInWithMagicLink, verifyEmailOtp } from "../../lib/supabase.js";
 import { MOCK_USERS } from "../../data/seed.js";
 import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "../../lib/demoMode.js";
 
@@ -31,12 +31,24 @@ export function LoginScreen({onLogin,dark,toggleDark}){
   const backendEnabled = isSupabaseEnabled();
   const[email,setEmail]=useState("");
   const[mlState,setMlState]=useState({state:"idle",msg:""});
+  // Session 28.2: OTP code fallback (Gmail prefetches link tokens, so a
+  // 6-digit code that the user types manually is the more reliable path).
+  const[otpCode,setOtpCode]=useState("");
   const sendMagicLink=async()=>{
     if(!email.trim()){setMlState({state:"err",msg:"Enter your email."});return;}
     setMlState({state:"sending",msg:""});
     const res=await signInWithMagicLink(email.trim());
-    if(res.ok)setMlState({state:"sent",msg:`Check ${email} — open the link to finish signing in.`});
+    if(res.ok)setMlState({state:"sent",msg:`Check ${email} — click the link OR enter the 6-digit code below.`});
     else setMlState({state:"err",msg:res.error||"Failed to send. Try again."});
+  };
+  const submitOtp=async()=>{
+    const code=otpCode.replace(/\s/g,"").trim();
+    if(!email.trim()){setMlState({state:"err",msg:"Enter your email first."});return;}
+    if(code.length!==6||!/^\d{6}$/.test(code)){setMlState({state:"err",msg:"Enter the 6-digit code from your email."});return;}
+    setMlState({state:"verifying",msg:""});
+    const res=await verifyEmailOtp(email.trim(),code);
+    if(res.ok){setMlState({state:"verified",msg:"Signed in. Loading your workspace…"});setTimeout(()=>window.location.reload(),600);}
+    else setMlState({state:"err",msg:res.error||"Invalid code. Try again."});
   };
   // Data-mode controls: status pill + "Load demo data" / "Clear all data".
   // Production defaults to empty (see src/data/seed.js). Demo seed loads
@@ -170,9 +182,19 @@ export function LoginScreen({onLogin,dark,toggleDark}){
           {backendEnabled&&<div className="mb-6 bg-white rounded-2xl p-5 shadow-editorial-hover" style={{border:"1px solid var(--st-line)"}}>
             <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-2">— Magic link · production</div>
             <input value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")sendMagicLink();}} type="email" placeholder="you@yourcompany.in" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 mb-3"/>
-            <button onClick={sendMagicLink} disabled={mlState.state==="sending"} className="w-full py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{mlState.state==="sending"?"Sending…":"Send sign-in link"}</button>
+            <button onClick={sendMagicLink} disabled={mlState.state==="sending"||mlState.state==="verifying"} className="w-full py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{mlState.state==="sending"?"Sending…":"Send sign-in link"}</button>
             {mlState.state==="sent"&&<p className="mt-3 px-3 py-2 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
+            {mlState.state==="verified"&&<p className="mt-3 px-3 py-2 bg-emerald-100 text-emerald-900 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
             {mlState.state==="err"&&<p className="mt-3 px-3 py-2 bg-red-50 text-red-700 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
+            {/* Session 28.2: OTP fallback — bypasses Gmail's link prefetch */}
+            {(mlState.state==="sent"||mlState.state==="err"||mlState.state==="verifying")&&<div className="mt-4 pt-4 border-t border-stone-100">
+              <label className="text-[10px] font-bold tracking-[0.24em] uppercase text-stone-500 block mb-2">— Or enter 6-digit code</label>
+              <div className="flex gap-2">
+                <input value={otpCode} onChange={e=>setOtpCode(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submitOtp();}} type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" className="flex-1 p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 font-mono tracking-widest text-center"/>
+                <button onClick={submitOtp} disabled={mlState.state==="verifying"} className="px-5 py-3 bg-stone-900 text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{mlState.state==="verifying"?"…":"Sign in"}</button>
+              </div>
+              <p className="mt-2 text-[10px] text-stone-500 leading-relaxed">Gmail sometimes "burns" the magic link via spam-scan. The 6-digit code at the bottom of the email is the safer path.</p>
+            </div>}
             <div className="mt-4 pt-4 border-t border-stone-100">
               <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">— Or try a demo role below</div>
             </div>
@@ -326,11 +348,15 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     if(!featureId)return false; // not in catalog (essential nav like dashboard / projects)
     return !isFeatureEnabled(platformFlags,orgFlags,user?.org_id,featureId,plan);
   };
-  const items=allItems.filter(i=>PERMS[user.role].nav.includes(i.id)&&!kioskBlocked(i.id)&&!featureBlocked(i.id));
+  // Session 28.2: defensive fallback — fresh Supabase user might have a role
+  // not in PERMS yet (no profiles row). Treat unknown roles as `client` (most
+  // restrictive) so the sidebar still renders without crashing.
+  const userPerms=PERMS[user.role]||PERMS.client||{nav:["dashboard","logout"]};
+  const items=allItems.filter(i=>userPerms.nav.includes(i.id)&&!kioskBlocked(i.id)&&!featureBlocked(i.id));
   const adminItems=items.filter(i=>i.group==="admin");
   const orgItems=items.filter(i=>i.group==="org");
   const tenantItems=items.filter(i=>!i.group);
-  const rm=ROLE_META[user.role];
+  const rm=ROLE_META[user.role]||ROLE_META.client||{label:"Member",bg:"bg-stone-100",text:"text-stone-700",col:"stone"};
   return(
     <>
       {mobileOpen&&<div className="fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm md:hidden" onClick={()=>setMobileOpen(false)}/>}
