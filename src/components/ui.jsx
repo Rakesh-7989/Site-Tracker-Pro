@@ -208,14 +208,22 @@ export const SC = ({icon,label,value,sub,accent="orange"}) => {
     violet: {bar:"bg-violet-500", iconBg:"bg-violet-50",   iconFg:"text-violet-600"},
     red:    {bar:"bg-red-500",    iconBg:"bg-red-50",      iconFg:"text-red-600"},
   }[accent]||{bar:"bg-safety-500",iconBg:"bg-orange-50",iconFg:"text-safety-500"};
-  return <div className="relative bg-white rounded-xl border border-cream-200 p-4 md:p-5 hover:shadow-hover transition-shadow overflow-hidden">
+  // Session 29.2: SC tile mobile fixes —
+  //   • Drop `font-mono` on the big digit; JetBrains Mono at 3xl-32px renders
+  //     "0" as a vertical peanut shape on Android Chrome. Switch to display
+  //     sans + `tabular-nums` so it stays digit-grid-aligned without the
+  //     weird stylistic 0.
+  //   • Tighten padding on mobile (p-3 vs p-5) so 2 tiles fit ~165px each
+  //     without dominating the viewport.
+  //   • Smaller icon button (w-7/h-7) on mobile to free up the label space.
+  return <div className="relative bg-white rounded-xl border border-cream-200 p-3 md:p-5 hover:shadow-hover transition-shadow overflow-hidden">
     <div className={`absolute top-0 left-0 right-0 h-0.5 ${a.bar}`}/>
-    <div className="flex items-start justify-between gap-3 mb-3">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-500">{label}</div>
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${a.iconBg} ${a.iconFg}`}>{icon&&<Ic n={icon} s={16}/>}</div>
+    <div className="flex items-start justify-between gap-2 mb-2 md:mb-3">
+      <div className="text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-500 leading-tight">{label}</div>
+      <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${a.iconBg} ${a.iconFg}`}>{icon&&<Ic n={icon} s={14}/>}</div>
     </div>
-    <div className="font-mono font-semibold text-3xl md:text-[2rem] text-ink-900 leading-none tabular-nums">{value}</div>
-    {sub&&<div className="text-[11px] text-ink-500 mt-2">{sub}</div>}
+    <div className="font-sans font-bold text-2xl md:text-[2rem] text-ink-900 leading-none tabular-nums tracking-tight">{value}</div>
+    {sub&&<div className="text-[10px] md:text-[11px] text-ink-500 mt-1.5 md:mt-2 leading-tight">{sub}</div>}
   </div>;
 };
 
