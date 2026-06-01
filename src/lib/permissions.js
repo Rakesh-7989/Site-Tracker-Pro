@@ -409,6 +409,8 @@ export const fallbackViewForUser = user => {
 export const canOpenView = (user, view) => {
   if (!user) return false;
   if (view === "logout" || view === "detail") return true;
+  // Session 28.5: in-app User Guide reachable from every role (no exception).
+  if (view === "help") return true;
   if (view === "create") return can(user, "createProject");
   return PERMS[user.role]?.nav.includes(view);
 };

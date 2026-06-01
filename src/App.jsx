@@ -123,6 +123,8 @@ const OrgFeatureSettingsView = lazy(() => import("./features/org/index.jsx").the
 const OnboardingWizardView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OnboardingWizardView })));
 // Session 28: Vendor portal (closes the v2 "role exists, view doesn't" gap).
 const VendorPortal = lazy(() => import("./features/vendor/index.jsx").then(m => ({ default: m.VendorPortal })));
+// Session 28.5: In-app Help — renders docs/USER_GUIDE.md from public/.
+const HelpView = lazy(() => import("./features/help/index.jsx").then(m => ({ default: m.HelpView })));
 
 
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
@@ -344,6 +346,8 @@ export default function App(){
       case"snapshot": return <DailySnapshotPanelView user={user} projects={projects} boq={boq} ra={ra} ledger={ledger} updates={updates} labour={labour} issues={issues} dailySnapshots={dailySnapshots} setDailySnapshots={setDailySnapshots} setAuditLog={setAuditLog}/>;
       // ── Session 28: Vendor portal (vendor role → 4-tab self-serve) ────────
       case"vendor-dashboard": return <VendorPortal user={user} pos={Object.values(pos || {}).flat()} materialPrices={Object.values(materialPrices || {}).flat()} messages={Object.values(messages || {}).flat()} fmtCur={fmtCur} onAccept={(po)=>recordAudit(p=>p,{actor:user,action:"APPROVE",resource:"po",resource_id:po.id,message:`vendor accepted ${po.po_no}`})} onDecline={(po,reason)=>recordAudit(p=>p,{actor:user,action:"REJECT",resource:"po",resource_id:po.id,message:`vendor declined ${po.po_no}: ${reason}`})} onSendReply={(msg)=>recordAudit(p=>p,{actor:user,action:"CREATE",resource:"message",message:`vendor sent reply`})} />;
+      // Session 28.5: in-app User Guide — renders public/USER_GUIDE.md with TOC + search.
+      case"help": return <HelpView/>;
       // ── Production Phase 1: Org Admin tier ────────────────────────────────
       case"org-dashboard": return <OrgAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView} orgIntegrations={orgIntegrations} templates={templates} approvalChains={approvalChains}/>;
       case"org-members": return <OrgMembersView user={user} orgs={orgs} adminUsers={adminUsers} setAdminUsers={setAdminUsers} setAuditLog={setAuditLog}/>;

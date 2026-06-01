@@ -471,6 +471,8 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
               <div className="text-cream text-xs font-semibold truncate">{user.name}</div>
               <div className="text-cream/50 text-[10px] truncate">{user.email}</div>
             </div>
+            {/* Session 28.5: Help icon — opens in-app user guide */}
+            <button onClick={()=>setView("help")} className="text-cream/40 hover:text-cream p-1" aria-label="User guide" title="User guide"><Ic n="bell" s={15}/></button>
             <button onClick={()=>setView("logout")} className="text-cream/40 hover:text-cream p-1" aria-label="Logout"><Ic n="logout" s={15}/></button>
           </div>
         </div>
