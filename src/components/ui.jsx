@@ -1,20 +1,21 @@
 // SiteTrack Pro — shared UI atoms.
 //
+// Session 28.5 — Phase 1 of the A+C hybrid UI rebuild.
+// The atom set is refreshed for the "Construction Native + India Builder
+// Premium" look — flat colour bars, safety-orange accent, JetBrains Mono
+// digits, no serif. Public surface (ROLE_META keys, sCol() shape, exported
+// names) is unchanged so the 19 roles and every consumer in features/* keep
+// working without changes.
+//
 // This module exists because:
 //   1. App.jsx was approaching 6,000 lines after Batch 1/2/3 — feature
 //      extraction into src/features/ requires these atoms to be import-able.
-//   2. The atoms (Ic / Av / Badge / PBar / SC / AccessDenied) are
-//      genuinely shared across every view. Owning them in one file kills
-//      copy-paste drift.
+//   2. The atoms (Ic / Av / Badge / PBar / SC / AccessDenied) are genuinely
+//      shared across every view. Owning them in one file kills copy-paste drift.
 //   3. ROLE_META + sCol are tiny lookup tables that every view consults.
 //
 // Re-exports formatters from lib/format.js so feature files only need to
 // import from this one module for the basics.
-//
-// Migration note (Batch 4):
-//   App.jsx currently STILL has inline copies of these atoms. Once every
-//   in-App view consumes from this file (Batch 5), the inline copies are
-//   removed. Until then expect duplication.
 
 import { fmtDate as _fmtDate, fmtTime as _fmtTime, fmtCur as _fmtCur, fileKind as _fileKind, fmtSize as _fmtSize } from "../lib/format.js";
 
@@ -26,8 +27,14 @@ export const fileKind = _fileKind;
 export const fmtSize  = _fmtSize;
 
 // Role labels + colors — referenced in sidebar, banners, role pills.
+//
+// Session 28.5: bg/text values still use Tailwind utility class names so the
+// hundreds of `${rm.bg} ${rm.text}` consumers don't break. The colour mapping
+// is unchanged at the class level — index.css repaints each Tailwind colour to
+// the new A+C tokens, so a `bg-amber-100` chip now renders as a saffron tint
+// without any consumer edits.
 export const ROLE_META = {
-  superadmin:{label:"Super Admin",bg:"bg-slate-900",text:"text-amber-400",col:"slate"},
+  superadmin:{label:"Super Admin",bg:"bg-ink-900",text:"text-amber-400",col:"slate"},
   // v1 org tier
   orgadmin:{label:"Org Admin",bg:"bg-amber-100",text:"text-amber-800",col:"amber"},
   // v2 Phase B: org-tier additions
@@ -64,16 +71,18 @@ const ROLE_META_FALLBACK = Object.freeze({
 });
 export const roleMeta = (role) => ROLE_META[role] || ROLE_META_FALLBACK;
 
-// Status colour helper (used by Badge).
+// Status colour helper (used by Badge + FlatStatus).
+// Mapped to flat banner palette in Phase 1 (A+C). `bar` is the new leading
+// colour-bar token used by FlatStatus.
 export const sCol = s => ({
-  active:     {bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200",dot:"bg-emerald-500"},
-  completed:  {bg:"bg-blue-50",   text:"text-blue-700",   border:"border-blue-200",   dot:"bg-blue-500"},
-  on_hold:    {bg:"bg-amber-50",  text:"text-amber-700",  border:"border-amber-200",  dot:"bg-amber-500"},
-  in_progress:{bg:"bg-violet-50", text:"text-violet-700", border:"border-violet-200", dot:"bg-violet-500"},
-  pending:    {bg:"bg-slate-50",  text:"text-slate-500",  border:"border-slate-200",  dot:"bg-slate-300"},
-  current:    {bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200",dot:"bg-emerald-500"},
-  superseded: {bg:"bg-slate-50",  text:"text-slate-400",  border:"border-slate-200",  dot:"bg-slate-300"},
-}[s] || {bg:"bg-slate-50",text:"text-slate-600",border:"border-slate-200",dot:"bg-slate-400"});
+  active:     {bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200",dot:"bg-emerald-500",bar:"#047857"},
+  completed:  {bg:"bg-blue-50",   text:"text-blue-700",   border:"border-blue-200",   dot:"bg-blue-500",   bar:"#1E40AF"},
+  on_hold:    {bg:"bg-amber-50",  text:"text-amber-700",  border:"border-amber-200",  dot:"bg-amber-500",  bar:"#B45309"},
+  in_progress:{bg:"bg-violet-50", text:"text-violet-700", border:"border-violet-200", dot:"bg-violet-500", bar:"#7C3AED"},
+  pending:    {bg:"bg-slate-50",  text:"text-slate-500",  border:"border-slate-200",  dot:"bg-slate-300",  bar:"#8E887C"},
+  current:    {bg:"bg-emerald-50",text:"text-emerald-700",border:"border-emerald-200",dot:"bg-emerald-500",bar:"#047857"},
+  superseded: {bg:"bg-slate-50",  text:"text-slate-400",  border:"border-slate-200",  dot:"bg-slate-300",  bar:"#8E887C"},
+}[s] || {bg:"bg-slate-50",text:"text-slate-600",border:"border-slate-200",dot:"bg-slate-400",bar:"#8E887C"});
 
 // Lucide-style SVG icon set (one source, exported as Ic). Names follow camelCase.
 export const Ic = ({n,s=18,c=""}) => {
@@ -115,48 +124,163 @@ export const Ic = ({n,s=18,c=""}) => {
     zap:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={c}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
     moon:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={c}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
     sun2:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={c}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>,
+    menu:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={c}><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>,
+    home:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={c}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    user:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={c}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   };
   return m[n] || null;
 };
 
-// Avatar tile (initials + role colour).
+// Avatar tile (initials + role colour). Refreshed in Phase 1:
+//   • Less heavy weight, tighter ring on hover, square-ish rounded-lg shape
+//     instead of full circle (reads more like a construction badge).
+//   • Keeps the same prop surface: { i, sz, col }.
 export const Av = ({i,sz="md",col="orange"}) => {
-  const s={sm:"w-7 h-7 text-xs",md:"w-9 h-9 text-sm",lg:"w-12 h-12 text-base"}[sz];
-  const c={orange:"bg-orange-500",blue:"bg-blue-600",violet:"bg-violet-600",emerald:"bg-emerald-600",slate:"bg-slate-500"}[col]||"bg-orange-500";
-  return <div className={`${s} ${c} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>{i}</div>;
+  const s={sm:"w-7 h-7 text-[11px]",md:"w-9 h-9 text-sm",lg:"w-12 h-12 text-base"}[sz];
+  const c={
+    orange:"bg-safety-500",
+    amber:"bg-safety-500",
+    blue:"bg-blue-600",
+    violet:"bg-violet-600",
+    emerald:"bg-emerald-600",
+    teal:"bg-teal-600",
+    cyan:"bg-cyan-600",
+    stone:"bg-stone-600",
+    rose:"bg-rose-600",
+    pink:"bg-pink-600",
+    fuchsia:"bg-fuchsia-600",
+    purple:"bg-purple-600",
+    indigo:"bg-indigo-600",
+    yellow:"bg-yellow-500",
+    slate:"bg-ink-700",
+  }[col]||"bg-safety-500";
+  return <div className={`${s} ${c} rounded-lg flex items-center justify-center text-white font-semibold flex-shrink-0 ring-1 ring-black/5 hover:ring-2 hover:ring-safety-500/40 transition-shadow`}>{i}</div>;
 };
 
 // Status pill used in project / drawing / RA bill cards.
+// Phase 1: flat banner with leading colour bar (no pill border) — easier
+// to read at a glance, less "candy" feel.
 export const Badge = ({status}) => {
   const c=sCol(status);
-  return <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${c.bg} ${c.text} ${c.border}`}>
-    <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`}></span>{(status||"").replace("_"," ")}
+  return <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-md text-[11px] font-semibold ${c.bg} ${c.text}`} style={{boxShadow:`inset 3px 0 0 0 ${c.bar}`}}>
+    <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`}/>{(status||"").replace("_"," ")}
   </span>;
 };
 
-// Progress bar — 0-100 clamped.
+// Flat status banner — new atom for Phase 1. Slightly different visual contract
+// than Badge: meant for wider, full-row banners (top bar pills, info rows).
+// Variants drive the colour family.
+export const FlatStatus = ({label, variant="neutral", icon}) => {
+  const v={
+    neutral:{bg:"bg-cream-200", text:"text-ink-700", bar:"#5A5248"},
+    info:   {bg:"bg-blue-50",   text:"text-blue-700", bar:"#1E40AF"},
+    success:{bg:"bg-emerald-50",text:"text-emerald-700",bar:"#047857"},
+    warning:{bg:"bg-amber-50",  text:"text-amber-800",bar:"#B45309"},
+    danger: {bg:"bg-red-50",    text:"text-red-700",  bar:"#B91C1C"},
+    accent: {bg:"bg-orange-50", text:"text-orange-700",bar:"#FF6B1A"},
+  }[variant]||{bg:"bg-cream-200",text:"text-ink-700",bar:"#5A5248"};
+  return <span className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-md text-[11px] font-semibold ${v.bg} ${v.text}`} style={{boxShadow:`inset 3px 0 0 0 ${v.bar}`}}>
+    {icon&&<span className="flex-shrink-0">{icon}</span>}{label}
+  </span>;
+};
+
+// Progress bar — Phase 1: solid colour, 6px height, no gradient.
 export const PBar = ({v,col="orange"}) => {
-  const c={orange:"from-orange-400 to-amber-500",blue:"from-blue-500 to-blue-600",emerald:"from-emerald-400 to-emerald-500",red:"from-red-400 to-red-500",violet:"from-violet-400 to-violet-500"}[col]||"from-orange-400 to-amber-500";
-  return <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-    <div className={`h-full rounded-full bg-gradient-to-r ${c} transition-all duration-700`} style={{width:`${Math.min(Math.max(v||0,0),100)}%`}}/>
+  const c={
+    orange:"bg-safety-500",
+    blue:"bg-blue-500",
+    emerald:"bg-emerald-500",
+    red:"bg-red-500",
+    violet:"bg-violet-500",
+  }[col]||"bg-safety-500";
+  return <div className="w-full bg-cream-200 rounded-full h-1.5 overflow-hidden">
+    <div className={`h-full rounded-full ${c} transition-all duration-500`} style={{width:`${Math.min(Math.max(v||0,0),100)}%`}}/>
   </div>;
 };
 
-// Stat card (dashboard tiles + admin metrics).
+// Stat card — Phase 1 redesign: label-on-top, big mono digit value, accent bar
+// at the top for category, optional sub line under the number.
 export const SC = ({icon,label,value,sub,accent="orange"}) => {
-  const a={orange:"text-orange-500 bg-orange-50",blue:"text-blue-600 bg-blue-50",emerald:"text-emerald-600 bg-emerald-50",violet:"text-violet-600 bg-violet-50",red:"text-red-600 bg-red-50"}[accent]||"text-orange-500 bg-orange-50";
-  return <div className="bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-md transition-shadow">
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${a}`}><Ic n={icon} s={20}/></div>
-    <div className="text-2xl font-black text-slate-800">{value}</div>
-    <div className="text-xs font-semibold uppercase tracking-widest text-slate-400 mt-1">{label}</div>
-    {sub&&<div className="text-xs text-slate-500 mt-1">{sub}</div>}
+  const a={
+    orange: {bar:"bg-safety-500", iconBg:"bg-orange-50",   iconFg:"text-safety-500"},
+    blue:   {bar:"bg-blue-500",   iconBg:"bg-blue-50",     iconFg:"text-blue-600"},
+    emerald:{bar:"bg-emerald-500",iconBg:"bg-emerald-50",  iconFg:"text-emerald-600"},
+    violet: {bar:"bg-violet-500", iconBg:"bg-violet-50",   iconFg:"text-violet-600"},
+    red:    {bar:"bg-red-500",    iconBg:"bg-red-50",      iconFg:"text-red-600"},
+  }[accent]||{bar:"bg-safety-500",iconBg:"bg-orange-50",iconFg:"text-safety-500"};
+  return <div className="relative bg-white rounded-xl border border-cream-200 p-4 md:p-5 hover:shadow-hover transition-shadow overflow-hidden">
+    <div className={`absolute top-0 left-0 right-0 h-0.5 ${a.bar}`}/>
+    <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-500">{label}</div>
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${a.iconBg} ${a.iconFg}`}>{icon&&<Ic n={icon} s={16}/>}</div>
+    </div>
+    <div className="font-mono font-semibold text-3xl md:text-[2rem] text-ink-900 leading-none tabular-nums">{value}</div>
+    {sub&&<div className="text-[11px] text-ink-500 mt-2">{sub}</div>}
   </div>;
+};
+
+// ── New atom: <Button> with consistent variants + sizes ─────────────────────
+// Variants: primary (safety orange CTA) / secondary (ink outline) /
+// ghost (text-only) / danger (deep red).
+// Sizes: sm / md / lg — 44px min touch target on mobile.
+export const Button = ({
+  variant="primary", size="md", as="button", className="", children,
+  leftIcon, rightIcon, fullWidth=false, disabled=false, type, onClick, ...rest
+}) => {
+  const Tag = as;
+  const variants = {
+    primary:   "bg-safety-500 hover:bg-safety-600 text-white shadow-cta border border-transparent",
+    secondary: "bg-white hover:bg-cream-200 text-ink-900 border border-cream-200 hover:border-ink-500/30",
+    ghost:     "bg-transparent hover:bg-cream-200 text-ink-700 border border-transparent",
+    danger:    "bg-red-600 hover:bg-red-700 text-white border border-transparent",
+  };
+  const sizes = {
+    sm: "px-3 py-1.5 text-xs gap-1.5 rounded-md",
+    md: "px-4 py-2.5 text-sm gap-2 rounded-lg",
+    lg: "px-5 py-3.5 text-sm gap-2 rounded-lg",
+  };
+  const cls = [
+    "inline-flex items-center justify-center font-semibold tracking-tight transition-all",
+    "disabled:opacity-50 disabled:cursor-not-allowed",
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-safety-500",
+    variants[variant]||variants.primary,
+    sizes[size]||sizes.md,
+    fullWidth?"w-full":"",
+    className,
+  ].join(" ");
+  const props = { className: cls, disabled, ...rest };
+  if (Tag === "button") props.type = type || "button";
+  if (onClick) props.onClick = onClick;
+  return <Tag {...props}>
+    {leftIcon&&<span className="flex-shrink-0">{leftIcon}</span>}
+    <span>{children}</span>
+    {rightIcon&&<span className="flex-shrink-0">{rightIcon}</span>}
+  </Tag>;
+};
+
+// ── New atom: <Tile> — icon + label cell used in the dashboard quick-actions
+// row and various pickers. Subtle hover, large tap target.
+export const Tile = ({icon, label, sub, onClick, accent="neutral", className=""}) => {
+  const a = {
+    neutral: "text-ink-700 bg-cream-200/60",
+    orange:  "text-safety-600 bg-orange-50",
+    blue:    "text-blue-700 bg-blue-50",
+    emerald: "text-emerald-700 bg-emerald-50",
+    violet:  "text-violet-700 bg-violet-50",
+  }[accent]||"text-ink-700 bg-cream-200/60";
+  return <button onClick={onClick} className={`group flex items-center gap-3 p-3 md:p-4 rounded-xl border border-cream-200 bg-white hover:border-ink-500/20 hover:shadow-hover text-left transition-all min-h-[64px] ${className}`}>
+    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${a}`}>{icon&&<Ic n={icon} s={18}/>}</div>
+    <div className="flex-1 min-w-0">
+      <div className="font-semibold text-sm text-ink-900 leading-tight">{label}</div>
+      {sub&&<div className="text-[11px] text-ink-500 mt-0.5 truncate">{sub}</div>}
+    </div>
+  </button>;
 };
 
 // "Access denied" placeholder used by every view that role-gates itself.
 export const AccessDenied = ({msg="You don't have permission."}) =>
   <div className="flex flex-col items-center justify-center py-20 text-center">
-    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4"><Ic n="lock" s={28} c="text-slate-400"/></div>
-    <h3 className="font-bold text-slate-600 mb-1">Access Restricted</h3>
-    <p className="text-slate-400 text-sm max-w-xs">{msg}</p>
+    <div className="w-16 h-16 bg-cream-200 rounded-full flex items-center justify-center mb-4"><Ic n="lock" s={28} c="text-ink-500"/></div>
+    <h3 className="font-display font-semibold text-ink-800 mb-1">Access Restricted</h3>
+    <p className="text-ink-500 text-sm max-w-xs">{msg}</p>
   </div>;

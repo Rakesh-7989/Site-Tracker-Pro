@@ -1,114 +1,179 @@
-/* ── Editorial Premium fonts ──────────────────────────────────────────────── */
-/* Fraunces: variable serif for editorial display headings */
-/* Inter: clean modern sans for body */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* ── A+C Hybrid: Construction Native + India Builder Premium ───────────────── */
+/* Fonts: Sora (display), Inter (body), JetBrains Mono (numbers/data tables).
+   No serifs. Loaded via index.html <link rel="preconnect"> + Google Fonts. */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens ────────────────────────────────────────────────────────── */
+/* ── Design tokens (Session 28.5 — A+C) ───────────────────────────────────── */
 :root {
-  /* Editorial palette — Architectural Digest meets Apple */
-  --st-cream:    #fdfbf6;   /* warm cream — primary background */
-  --st-cream-2:  #f5f1e8;   /* deeper cream for subtle bands */
-  --st-paper:    #ffffff;   /* card surface */
-  --st-ink:      #1c1917;   /* primary text (stone-900) */
-  --st-ink-2:    #44403c;   /* secondary text (stone-700) */
-  --st-mute:     #78716c;   /* tertiary text (stone-500) */
-  --st-line:     #e7e5e4;   /* refined borders (stone-200) */
-  --st-line-2:   #d6d3d1;   /* stronger border (stone-300) */
-  --st-accent:   #d97706;   /* deep amber (amber-600) — primary accent */
-  --st-accent-2: #b45309;   /* burnished amber (amber-700) — pressed/active */
-  --st-gold:     #f59e0b;   /* gold highlight (amber-500) */
-  --st-shadow:   0 1px 2px rgba(28,25,23,.04), 0 4px 16px rgba(28,25,23,.06);
-  --st-shadow-hover: 0 4px 12px rgba(28,25,23,.06), 0 12px 32px rgba(28,25,23,.10);
-  --st-shadow-deep: 0 8px 24px rgba(28,25,23,.08), 0 24px 60px rgba(28,25,23,.14);
+  /* Surface */
+  --st-bg-primary:   #FAFAF8;   /* warm off-white — body */
+  --st-bg-panel:     #FFFFFF;   /* cards */
+  --st-bg-elevated:  #F4F2EC;   /* warm panel */
+  --st-border:       #E7E4DC;   /* subtle dividers */
+  --st-border-strong:#2A2520;   /* high-contrast borders */
+  --st-saffron-tint: #FFF1E6;   /* highlight tint */
+
+  /* Text */
+  --st-text-primary:   #0F1115;
+  --st-text-secondary: #5A5248;
+  --st-text-tertiary:  #8E887C;
+
+  /* Accents */
+  --st-accent:        #FF6B1A;  /* safety orange — primary CTA + active */
+  --st-accent-2:      #E55A0E;  /* pressed */
+  --st-accent-light:  #FF8A3D;  /* hover / gradient end */
+  --st-accent-tint:   #FFF1E6;  /* saffron */
+  --st-indigo:        #1E40AF;  /* info / link */
+  --st-success:       #047857;  /* deep green */
+  --st-warning:       #B45309;  /* amber */
+  --st-error:         #B91C1C;  /* deep red */
+  --st-gold:          #FF8A3D;  /* legacy alias — used in gradient-gold */
+
+  /* Legacy aliases (kept so feature files using --st-cream / --st-line keep working) */
+  --st-cream:    #FAFAF8;
+  --st-cream-2:  #F4F2EC;
+  --st-paper:    #FFFFFF;
+  --st-ink:      #0F1115;
+  --st-ink-2:    #2A2520;
+  --st-mute:     #5A5248;
+  --st-line:     #E7E4DC;
+  --st-line-2:   #D7D3C8;
+
+  /* Shadows */
+  --st-shadow:        0 1px 3px rgba(15,17,21,.06), 0 1px 2px rgba(15,17,21,.04);
+  --st-shadow-hover:  0 4px 12px rgba(15,17,21,.08);
+  --st-shadow-cta:    0 4px 14px rgba(255,107,26,.25);
+  --st-shadow-deep:   0 8px 24px rgba(15,17,21,.10);
 }
 
 /* ── Global ───────────────────────────────────────────────────────────────── */
 html, body, #root {
-  background-color: var(--st-cream);
+  background-color: var(--st-bg-primary);
 }
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-feature-settings: 'cv11', 'ss01', 'ss03';   /* refined Inter alts */
-  color: var(--st-ink);
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  color: var(--st-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Editorial serif display utility — for headings + hero text */
+/* Display font — was Fraunces serif, now Sora geometric sans */
 .font-display {
-  font-family: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
-  font-feature-settings: 'ss01', 'ss03';
+  font-family: 'Sora', 'Inter', system-ui, sans-serif;
   letter-spacing: -0.01em;
+  font-feature-settings: 'ss01';
+}
+
+/* Mono font utility — for numeric data, codes, IDs */
+.font-mono,
+.font-numeric {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-feature-settings: 'tnum', 'ss01';
 }
 
 /* Refined scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--st-line-2); border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: var(--st-mute); }
+::-webkit-scrollbar-thumb { background: var(--st-border); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--st-text-tertiary); }
 
-/* ── Tailwind palette overrides — warm up the slate→stone shift ─────────── */
-/* These soften the existing slate-based color usage without rewriting 2,300+ lines */
-.bg-slate-50  { background-color: var(--st-cream) !important; }
-.bg-slate-100 { background-color: var(--st-cream-2) !important; }
-.bg-white     { background-color: var(--st-paper) !important; }
-.border-slate-100 { border-color: var(--st-line) !important; }
-.border-slate-200 { border-color: var(--st-line) !important; }
+/* ── Tailwind palette overrides ─────────────────────────────────────────── */
+/* Keep the existing `bg-cream` / `text-ink-*` / `bg-amber-*` classes
+   so 5,000+ usages across feature files do not need to be touched, but
+   re-paint them in the new A+C tokens. */
+
+.bg-slate-50  { background-color: var(--st-bg-primary) !important; }
+.bg-slate-100 { background-color: var(--st-bg-elevated) !important; }
+.bg-white     { background-color: var(--st-bg-panel) !important; }
+.border-slate-100 { border-color: var(--st-border) !important; }
+.border-slate-200 { border-color: var(--st-border) !important; }
 .border-slate-300 { border-color: var(--st-line-2) !important; }
-.text-slate-400 { color: var(--st-mute) !important; }
-.text-slate-500 { color: var(--st-mute) !important; }
-.text-slate-600 { color: var(--st-ink-2) !important; }
-.text-slate-700 { color: var(--st-ink-2) !important; }
-.text-slate-800 { color: var(--st-ink) !important; }
-.divide-slate-50 > * + * { border-color: var(--st-line) !important; }
-.divide-slate-100 > * + * { border-color: var(--st-line) !important; }
+.text-slate-400 { color: var(--st-text-tertiary) !important; }
+.text-slate-500 { color: var(--st-text-tertiary) !important; }
+.text-slate-600 { color: var(--st-text-secondary) !important; }
+.text-slate-700 { color: var(--st-text-secondary) !important; }
+.text-slate-800 { color: var(--st-text-primary) !important; }
+.divide-slate-50 > * + * { border-color: var(--st-border) !important; }
+.divide-slate-100 > * + * { border-color: var(--st-border) !important; }
 
-/* Refine the primary accent from bright orange to editorial amber */
+/* Orange utilities → safety-orange accent */
 .bg-orange-500, .hover\:bg-orange-500:hover { background-color: var(--st-accent) !important; }
-.bg-orange-400, .hover\:bg-orange-400:hover { background-color: var(--st-gold) !important; }
+.bg-orange-400, .hover\:bg-orange-400:hover { background-color: var(--st-accent-light) !important; }
 .bg-orange-600 { background-color: var(--st-accent-2) !important; }
 .text-orange-500 { color: var(--st-accent) !important; }
 .text-orange-600 { color: var(--st-accent-2) !important; }
 .text-orange-700 { color: var(--st-accent-2) !important; }
-.border-orange-200 { border-color: rgba(217,119,6,.25) !important; }
-.border-orange-300 { border-color: rgba(217,119,6,.45) !important; }
-.bg-orange-50 { background-color: rgba(217,119,6,.06) !important; }
-.bg-orange-100 { background-color: rgba(217,119,6,.12) !important; }
-.bg-amber-50 { background-color: rgba(245,158,11,.08) !important; }
+.border-orange-200 { border-color: rgba(255,107,26,.25) !important; }
+.border-orange-300 { border-color: rgba(255,107,26,.45) !important; }
+.bg-orange-50 { background-color: var(--st-accent-tint) !important; }
+.bg-orange-100 { background-color: rgba(255,107,26,.12) !important; }
 
-/* Premium shadow utility */
-.shadow-editorial { box-shadow: var(--st-shadow); }
-.shadow-editorial-hover { box-shadow: var(--st-shadow-hover); }
-.shadow-editorial-deep { box-shadow: var(--st-shadow-deep); }
+/* Amber utilities (legacy editorial) → re-mapped to safety orange so existing
+   `bg-amber-*` / `text-amber-*` references inherit the new accent. */
+.bg-amber-50 { background-color: var(--st-accent-tint) !important; }
+.bg-amber-100 { background-color: rgba(255,107,26,.16) !important; }
+.bg-amber-500, .hover\:bg-amber-500:hover { background-color: var(--st-accent) !important; }
+.bg-amber-600, .hover\:bg-amber-600:hover { background-color: var(--st-accent-2) !important; }
+.text-amber-400 { color: var(--st-accent-light) !important; }
+.text-amber-500 { color: var(--st-accent) !important; }
+.text-amber-600 { color: var(--st-accent) !important; }
+.text-amber-700 { color: var(--st-accent-2) !important; }
+.text-amber-800 { color: var(--st-accent-2) !important; }
+.text-amber-900 { color: var(--st-accent-2) !important; }
+.border-amber-200 { border-color: rgba(255,107,26,.25) !important; }
+.border-amber-500 { border-color: var(--st-accent) !important; }
+.border-amber-600 { border-color: var(--st-accent) !important; }
+.focus\:border-amber-600:focus { border-color: var(--st-accent) !important; }
+.accent-amber-600 { accent-color: var(--st-accent) !important; }
 
-/* Gold gradient — for hero accents and premium CTAs */
+/* Legacy editorial shadows — now aliased to refined construction shadows */
+.shadow-editorial        { box-shadow: var(--st-shadow); }
+.shadow-editorial-hover  { box-shadow: var(--st-shadow-hover); }
+.shadow-editorial-deep   { box-shadow: var(--st-shadow-deep); }
+
+/* New design-system shadow utilities (Phase 1) */
+.shadow-card  { box-shadow: var(--st-shadow); }
+.shadow-hover { box-shadow: var(--st-shadow-hover); }
+.shadow-cta   { box-shadow: var(--st-shadow-cta); }
+
+/* Gradient-gold legacy utility — now solid safety orange with a subtle
+   light→deep ramp so existing buttons read as a single confident orange,
+   not a fancy gold gradient. */
 .bg-gradient-gold {
-  background-image: linear-gradient(135deg, #f59e0b 0%, #d97706 60%, #b45309 100%);
+  background-image: linear-gradient(180deg, var(--st-accent-light) 0%, var(--st-accent) 100%);
 }
 .text-gradient-gold {
-  background-image: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  background-image: linear-gradient(135deg, var(--st-accent) 0%, var(--st-accent-2) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* Subtle paper grain on hero areas (very faint) */
-.bg-paper-grain {
-  background-color: var(--st-cream);
-  background-image:
-    radial-gradient(at 20% 0%, rgba(245,158,11,.05), transparent 50%),
-    radial-gradient(at 80% 100%, rgba(120,113,108,.04), transparent 50%);
+/* Drop the editorial letterspacing — keep typography quiet + utilitarian */
+.tracking-editorial { letter-spacing: -0.005em; }
+
+/* Drop paper grain — flat, calm warm off-white */
+.bg-paper-grain { background-color: var(--st-bg-primary); }
+
+/* Construction-native CTA: safety orange with subtle inner highlight + glow */
+button.bg-orange-500, button.bg-orange-400 {
+  background-image: linear-gradient(180deg, var(--st-accent-light), var(--st-accent));
+  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, var(--st-shadow-cta);
 }
 
-/* Refined buttons get a touch of gradient + warm shadow */
-button.bg-orange-500, button.bg-orange-400 {
-  background-image: linear-gradient(180deg, var(--st-gold), var(--st-accent));
-  box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, 0 4px 14px rgba(217,119,6,.25);
-}
+/* Saffron-tint helper class — direct token access for flat status banners */
+.bg-saffron-tint { background-color: var(--st-saffron-tint) !important; }
 
 /* Smooth all transitions */
-button, a, input, select, textarea { transition: all .18s ease; }
+button, a, input, select, textarea { transition: all .15s ease; }
+
+/* Touch-friendly button minimum heights (mobile-first) */
+@media (max-width: 768px) {
+  button, [role="button"] {
+    min-height: 44px;
+  }
+}

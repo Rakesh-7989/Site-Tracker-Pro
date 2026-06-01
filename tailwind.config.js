@@ -1,4 +1,7 @@
 /** @type {import('tailwindcss').Config} */
+// Session 28.5 — A+C UI rebuild: remapped cream/ink palette to the new
+// "Construction Native + India Builder Premium" tokens, kept existing class
+// names so 5k+ usages across feature files don't churn.
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   darkMode: "class",
@@ -6,32 +9,51 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
+        display: ["Sora", "Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       colors: {
         cream: {
-          DEFAULT: "#fdfbf6",
-          50: "#fefdf9",
-          100: "#fdfbf6",
-          200: "#f5f1e8",
+          DEFAULT: "#FAFAF8",
+          50: "#FFFFFF",
+          100: "#FAFAF8",
+          200: "#F4F2EC",
         },
         ink: {
-          DEFAULT: "#1c1917",
-          900: "#1c1917",
-          800: "#292524",
-          700: "#44403c",
-          600: "#57534e",
-          500: "#78716c",
-          400: "#a8a29e",
+          DEFAULT: "#0F1115",
+          900: "#0F1115",
+          800: "#1B1D23",
+          700: "#2A2520",
+          600: "#3F3A33",
+          500: "#5A5248",
+          400: "#8E887C",
+        },
+        // New A+C tokens — addressable directly in JSX too.
+        safety: {
+          50:  "#FFF1E6",
+          100: "#FFE0C7",
+          400: "#FF8A3D",
+          500: "#FF6B1A",
+          600: "#E55A0E",
         },
       },
       letterSpacing: {
-        editorial: "-0.015em",
+        editorial: "-0.005em",  // dramatically toned down vs old 0.18em
+      },
+      borderRadius: {
+        md: "8px",
+        lg: "12px",
+        xl: "16px",
       },
       boxShadow: {
-        editorial: "0 1px 2px rgba(28,25,23,.04), 0 4px 16px rgba(28,25,23,.06)",
-        "editorial-hover": "0 4px 12px rgba(28,25,23,.06), 0 12px 32px rgba(28,25,23,.10)",
-        "editorial-deep": "0 8px 24px rgba(28,25,23,.08), 0 24px 60px rgba(28,25,23,.14)",
+        card:        "0 1px 3px rgba(15,17,21,.06), 0 1px 2px rgba(15,17,21,.04)",
+        hover:       "0 4px 12px rgba(15,17,21,.08)",
+        cta:         "0 4px 14px rgba(255,107,26,.25)",
+        // Legacy editorial — kept so existing className references still resolve,
+        // now mapped to the new construction-native shadow values.
+        editorial:        "0 1px 3px rgba(15,17,21,.06), 0 1px 2px rgba(15,17,21,.04)",
+        "editorial-hover":"0 4px 12px rgba(15,17,21,.08)",
+        "editorial-deep": "0 8px 24px rgba(15,17,21,.10)",
       },
     },
   },

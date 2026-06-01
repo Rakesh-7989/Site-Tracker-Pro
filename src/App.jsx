@@ -359,41 +359,59 @@ export default function App(){
     }
   };
 
-  const DCSS=`.dark .bg-white{background-color:#1e293b!important}.dark .bg-slate-50{background-color:#0f172a!important}.dark .bg-slate-100{background-color:#1e293b!important}.dark .border-slate-200{border-color:#334155!important}.dark .border-slate-100{border-color:#293548!important}.dark .text-slate-800{color:#f1f5f9!important}.dark .text-slate-700{color:#e2e8f0!important}.dark .text-slate-600{color:#cbd5e1!important}.dark .text-slate-500{color:#94a3b8!important}.dark .text-slate-400{color:#64748b!important}.dark .divide-slate-50>*+*{border-color:#1e293b!important}.dark input,.dark textarea,.dark select{background-color:#1e293b!important;color:#f1f5f9!important;border-color:#334155!important}.dark .hover\\:bg-slate-50:hover{background-color:#1e293b!important}`;
+  // Session 28.5 — Phase 1 A+C: dark-mode tokens refreshed to match the new
+  // construction-native palette (warm-ink surfaces, safety-orange accent).
+  const DCSS=`.dark .bg-white{background-color:#1B1D23!important}.dark .bg-cream{background-color:#0F1115!important}.dark .bg-cream-200,.dark .bg-slate-50{background-color:#1B1D23!important}.dark .bg-slate-100{background-color:#1B1D23!important}.dark .border-cream-200,.dark .border-slate-200{border-color:#2A2A30!important}.dark .border-slate-100{border-color:#252529!important}.dark .text-ink-900,.dark .text-slate-800{color:#FAFAF8!important}.dark .text-ink-700,.dark .text-slate-700{color:#E7E4DC!important}.dark .text-ink-600,.dark .text-slate-600{color:#C7C0B4!important}.dark .text-ink-500,.dark .text-slate-500{color:#8E887C!important}.dark .text-slate-400{color:#6A655B!important}.dark .divide-slate-50>*+*{border-color:#2A2A30!important}.dark input,.dark textarea,.dark select{background-color:#1B1D23!important;color:#FAFAF8!important;border-color:#2A2A30!important}.dark .hover\\:bg-slate-50:hover,.dark .hover\\:bg-cream-200:hover{background-color:#2A2A30!important}`;
 
   return(
     <div className={`flex h-screen overflow-hidden ${dark?"dark bg-ink-900":"bg-cream"} font-sans`}>
       <style>{`*{box-sizing:border-box;}.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}.line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}${DCSS}`}</style>
-      {impersonating&&<div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-ink-900 flex items-center justify-between gap-3 px-4 py-2 shadow-md">
-        <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-2 flex-1 truncate"><Ic n="eye" s={14}/>Impersonating <span className="font-display italic">{impersonating.asUser.name}</span> ({impersonating.asUser.role}) — as <span className="font-display italic">{impersonating.realUser.name}</span></div>
-        <button onClick={stopImpersonate} className="px-3 py-1 bg-ink-900 text-amber-400 text-xs font-bold rounded-lg tracking-wide">Stop &amp; return to admin</button>
+      {impersonating&&<div className="fixed top-0 left-0 right-0 z-[60] bg-safety-500 text-white flex items-center justify-between gap-3 px-4 py-2 shadow-hover">
+        <div className="text-xs font-semibold flex items-center gap-2 flex-1 truncate"><Ic n="eye" s={14}/>Impersonating <span className="font-semibold">{impersonating.asUser.name}</span> ({impersonating.asUser.role}) — as <span className="font-semibold">{impersonating.realUser.name}</span></div>
+        <button onClick={stopImpersonate} className="px-3 py-1 bg-ink-900 text-safety-400 text-xs font-semibold rounded-md">Stop &amp; return to admin</button>
       </div>}
       <Sidebar user={user} active={effectiveView} setView={setView} uc={uc} ac={user.role==="architect"?ac:0} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}/>
       <div className="flex-1 flex flex-col min-w-0 h-screen">
-        {/* Mobile header */}
-        <div className="md:hidden flex-shrink-0 flex items-center justify-between px-4 py-3" style={{backgroundColor:"#1c1917",borderBottom:"1px solid rgba(217,119,6,.12)"}}>
-          <button onClick={()=>setMobileOpen(true)} className="text-cream/70 hover:text-cream p-1"><Ic n="menu" s={22}/></button>
-          <div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-gradient-gold flex items-center justify-center"><Ic n="hardhat" s={14} c="text-white"/></div><span className="font-display text-cream font-bold text-lg tracking-editorial">SiteTrack</span></div>
-          <button onClick={()=>setDark(p=>!p)} className="text-cream/70 hover:text-cream p-1"><Ic n={dark?"sun2":"moon"} s={18}/></button>
+        {/* Mobile + tablet header — visible until the persistent sidebar takes over on lg:+ */}
+        <div className="lg:hidden flex-shrink-0 flex items-center justify-between px-4 py-3" style={{backgroundColor:"#0F1115",borderBottom:"1px solid rgba(255,107,26,.12)"}}>
+          <button onClick={()=>setMobileOpen(true)} className="text-cream/70 hover:text-cream p-1.5" aria-label="Open menu"><Ic n="menu" s={22}/></button>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-safety-500 flex items-center justify-center"><Ic n="hardhat" s={14} c="text-white"/></div>
+            <span className="font-display text-cream font-semibold text-lg">SiteTrack</span>
+          </div>
+          <button onClick={()=>setDark(p=>!p)} className="text-cream/70 hover:text-cream p-1.5" aria-label="Toggle theme"><Ic n={dark?"sun2":"moon"} s={18}/></button>
         </div>
-        {/* Desktop top bar — stays put while main scrolls below */}
-        <div className="hidden md:flex flex-shrink-0 items-center justify-between gap-4 px-6 py-3 bg-white" style={{borderBottom:"1px solid var(--st-line)",boxShadow:"0 1px 2px rgba(28,25,23,.03)"}}>
-          <div className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 ${(ROLE_META[user.role]||ROLE_META.client).bg} ${(ROLE_META[user.role]||ROLE_META.client).text}`}><Ic n="shield" s={11}/>{(ROLE_META[user.role]||ROLE_META.client).label}</div>
-          {!online&&<div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 bg-red-50 text-red-700" style={{border:"1px solid rgba(220,38,38,.2)"}} title={`${pendingOps} ops queued`}>● Offline {pendingOps>0&&`(${pendingOps})`}</div>}
-          {online&&pendingOps>0&&<div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 bg-amber-50 text-amber-800" style={{border:"1px solid rgba(217,119,6,.2)"}} title="Backend not connected; ops stay queued locally">↻ {pendingOps} queued</div>}
-          {/* Session 17: live backend connection pill. Click for diagnostics. */}
-          {conn.state!=="unknown"&&<button onClick={()=>alert(`Connection state: ${conn.state}\n\n${conn.detail||"No additional details."}\n\nRun \`npm run check:supabase\` for a full diagnostic.\nSee docs/CONNECT_SUPABASE.md.`)} className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full flex-shrink-0 cursor-pointer ${conn.state==="live"?"bg-emerald-50 text-emerald-700":conn.state==="off"?"bg-stone-100 text-stone-600":conn.state==="degraded"?"bg-amber-50 text-amber-800":"bg-red-50 text-red-700"}`} style={{border:"1px solid currentColor",borderOpacity:.2}} title={`Backend: ${conn.state} — ${conn.detail||"OK"}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${conn.state==="live"?"bg-emerald-500":conn.state==="off"?"bg-stone-400":conn.state==="degraded"?"bg-amber-500":"bg-red-500"}`}/>
+        {/* Desktop top bar — flat status pills (no more rounded-full + heavy borders) */}
+        <div className="hidden lg:flex flex-shrink-0 items-center justify-between gap-3 px-6 py-3 bg-white" style={{borderBottom:"1px solid var(--st-border)",boxShadow:"0 1px 2px rgba(15,17,21,.03)"}}>
+          {/* Role pill — flat banner with leading colour bar */}
+          <div className={`flex items-center gap-1.5 text-[11px] font-semibold tracking-tight pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 ${(ROLE_META[user.role]||ROLE_META.client).bg} ${(ROLE_META[user.role]||ROLE_META.client).text}`} style={{boxShadow:"inset 3px 0 0 0 #FF6B1A"}}>
+            <Ic n="shield" s={11}/>{(ROLE_META[user.role]||ROLE_META.client).label}
+          </div>
+          {!online&&<div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-red-50 text-red-700" style={{boxShadow:"inset 3px 0 0 0 #B91C1C"}} title={`${pendingOps} ops queued`}>● Offline {pendingOps>0&&`(${pendingOps})`}</div>}
+          {online&&pendingOps>0&&<div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-amber-50 text-amber-800" style={{boxShadow:"inset 3px 0 0 0 #B45309"}} title="Backend not connected; ops stay queued locally">↻ {pendingOps} queued</div>}
+          {/* Session 17: live backend connection pill — flat banner variant */}
+          {conn.state!=="unknown"&&<button
+            onClick={()=>alert(`Connection state: ${conn.state}\n\n${conn.detail||"No additional details."}\n\nRun \`npm run check:supabase\` for a full diagnostic.\nSee docs/CONNECT_SUPABASE.md.`)}
+            className={`flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 cursor-pointer ${conn.state==="live"?"bg-emerald-50 text-emerald-700":conn.state==="off"?"bg-cream-200 text-ink-700":conn.state==="degraded"?"bg-amber-50 text-amber-800":"bg-red-50 text-red-700"}`}
+            style={{boxShadow:`inset 3px 0 0 0 ${conn.state==="live"?"#047857":conn.state==="off"?"#5A5248":conn.state==="degraded"?"#B45309":"#B91C1C"}`}}
+            title={`Backend: ${conn.state} — ${conn.detail||"OK"}`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${conn.state==="live"?"bg-emerald-500":conn.state==="off"?"bg-ink-500":conn.state==="degraded"?"bg-amber-500":"bg-red-500"}`}/>
             {conn.state==="live"?"DB Live":conn.state==="off"?"Local mode":conn.state==="degraded"?"DB degraded":"DB offline"}
           </button>}
           <GlobalSearch projects={projects} milestones={milestones} issues={issues} vendors={vendors} setView={setView} setSP={setSP} lang={lang} user={user}/>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <select value={lang} onChange={e=>setLang(e.target.value)} className="px-2.5 py-1.5 text-[11px] font-bold bg-cream-200 border border-stone-200 rounded-lg outline-none cursor-pointer tracking-wider"><option value="en">EN</option><option value="te">తె</option><option value="hi">हि</option></select>
-            <button onClick={()=>setDark(p=>!p)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider transition-all ${dark?"bg-ink-900 text-amber-500":"bg-cream-200 text-ink-700 hover:bg-cream-100"}`}><Ic n={dark?"sun2":"moon"} s={13}/>{dark?t(lang,"lightMode"):t(lang,"darkMode")}</button>
+            <select value={lang} onChange={e=>setLang(e.target.value)} className="px-2.5 py-1.5 text-[11px] font-semibold bg-cream-200 border border-cream-200 rounded-md outline-none cursor-pointer hover:border-ink-500/30"><option value="en">EN</option><option value="te">తె</option><option value="hi">हि</option></select>
+            <button
+              onClick={()=>setDark(p=>!p)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all ${dark?"bg-ink-900 text-safety-400":"bg-cream-200 text-ink-700 hover:bg-cream-100"}`}
+            >
+              <Ic n={dark?"sun2":"moon"} s={13}/>{dark?t(lang,"lightMode"):t(lang,"darkMode")}
+            </button>
           </div>
         </div>
         <main className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="p-10 text-center text-ink-500"><div className="inline-block w-8 h-8 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin" /><div className="text-xs font-bold tracking-wider uppercase mt-3 text-ink-500">Loading…</div></div>}>{renderView()}</Suspense>
+          <Suspense fallback={<div className="p-10 text-center text-ink-500"><div className="inline-block w-8 h-8 border-2 border-safety-100 border-t-safety-500 rounded-full animate-spin" /><div className="text-xs font-semibold tracking-wide uppercase mt-3 text-ink-500">Loading…</div></div>}>{renderView()}</Suspense>
         </main>
       </div>
     </div>

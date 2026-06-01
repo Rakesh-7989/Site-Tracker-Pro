@@ -1,19 +1,26 @@
 // SiteTrack Pro — App shell (LoginScreen + Sidebar + tenant home views).
 //
-// Extracted from App.jsx in Batch 10. This module owns everything that
-// "boots" the user into the app: the editorial login screen with the
-// magic-link + role picker, the persistent dark sidebar, and the first
-// three views every authenticated user lands on (Dashboard, Projects list,
-// Create project form).
+// Session 28.5 — Phase 1 of A+C UI rebuild.
+// Visual rewrite of the four screens every authenticated user sees first:
+//   • LoginScreen — split panel (brand left, form right), magic-link + OTP
+//     + role tiles with leading colour bar, workspace-data controls.
+//   • Sidebar — persistent left rail (lg:+) with safety-orange active bar +
+//     mobile bottom tab bar (lg:hidden).
+//   • DashboardView — greeting + 4 stat tiles + quick-action row + project
+//     cards + recent updates feed.
+//   • ProjectsView / CreateView — refreshed cards + form, same logic + props.
 //
-// DetailView is intentionally NOT here — it's massive (600 lines) and
-// already has a home in src/features/detail/. Batch 11 finishes that move.
+// IMPORTANT: every export name, prop, and smoke-marker literal (e.g.
+// "Magic link", "Continue as", "Welcome back", "Production mode",
+// "Local mode", "features enabled for this role") is preserved. The logic
+// (sendMagicLink / submitOtp / handleLoadDemo / handleClearAll / featureBlocked
+// / kioskBlocked / archive flows) is untouched — only the markup changed.
 
 import { useState, useMemo } from "react";
-import { Ic, Av, Badge, PBar, SC, ROLE_META, fmtDate } from "../../components/ui.jsx";
+import { Ic, Av, Badge, PBar, SC, Button, Tile, FlatStatus, fmtDate, roleMeta, sCol } from "../../components/ui.jsx";
 import { PERMS, can, visibleProjectsForUser } from "../../lib/permissions.js";
 // Session 16: feature-flag cascade (platform → org → default).
-import { isFeatureEnabled, featureStats, featuresForRole } from "../../lib/orgFeatureFlags.js";
+import { isFeatureEnabled, featuresForRole } from "../../lib/orgFeatureFlags.js";
 // Session 24: v2 project-type chip on ProjectsView cards + CreateView picker.
 import { PROJECT_TYPES, DEFAULT_PROJECT_TYPE } from "../../data/lookups.js";
 import { typeChip } from "../../lib/projectTypes.js";
@@ -24,10 +31,8 @@ import { isSupabaseEnabled, signInWithMagicLink, verifyEmailOtp } from "../../li
 import { MOCK_USERS } from "../../data/seed.js";
 import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "../../lib/demoMode.js";
 
+// ── LOGIN SCREEN ───────────────────────────────────────────────────────────
 export function LoginScreen({onLogin,dark,toggleDark}){
-  // When backend is enabled, show the magic-link flow ABOVE the demo picker.
-  // The demo picker stays available so paid pilots can still showcase any role
-  // to a prospect without provisioning four real accounts.
   const backendEnabled = isSupabaseEnabled();
   const[email,setEmail]=useState("");
   const[mlState,setMlState]=useState({state:"idle",msg:""});
@@ -50,21 +55,16 @@ export function LoginScreen({onLogin,dark,toggleDark}){
     if(res.ok){setMlState({state:"verified",msg:"Signed in. Loading your workspace…"});setTimeout(()=>window.location.reload(),600);}
     else setMlState({state:"err",msg:res.error||"Invalid code. Try again."});
   };
-  // Data-mode controls: status pill + "Load demo data" / "Clear all data".
-  // Production defaults to empty (see src/data/seed.js). Demo seed loads
-  // on-demand from src/data/seed.demo.js via src/lib/demoMode.js.
-  //
-  // Q6: SuperAdmin can hide the demo loader entirely via ops_toggles
-  // (Settings → Admin Console). Read the stored flag directly here since
-  // the LoginScreen is rendered BEFORE the App-level useLS state exists.
+
+  // Q6: SuperAdmin can hide the demo loader entirely via ops_toggles. Read it
+  // here because LoginScreen renders BEFORE the App-level useLS state exists.
   const opsToggles=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}").ops_toggles||{};}catch{return{};}})();
   const demoLoaderEnabled=opsToggles.demoLoaderEnabled!==false;
-  const demoPersists=opsToggles.demoModePermanent!==false; // default true (current behaviour)
+  const demoPersists=opsToggles.demoModePermanent!==false;
   const[dataInfo]=useState(()=>({summary:dataSummary(),isDemo:isDemoLoaded()}));
 
   // Session 16: read platform + org flags so each role tile can show
-  // "X of Y features enabled" — gives the user a heads-up about what they'll
-  // see after login. Read once on mount; no listener needed for the picker.
+  // "X of Y features enabled for this role".
   const featureSnapshot=(()=>{
     try{
       const store=JSON.parse(localStorage.getItem("sitetrack_v2")||"{}");
@@ -87,10 +87,6 @@ export function LoginScreen({onLogin,dark,toggleDark}){
   };
   const handleLoadDemo=()=>{
     if(loadDemoData()){
-      // Q6: When demoModePermanent is OFF, mark a sessionStorage flag so the
-      // demo is wiped on next browser open. The data still lands in localStorage
-      // (needed for useLS hooks to read it), but a beforeunload handler will
-      // clear it on page close.
       if(!demoPersists){
         try{
           sessionStorage.setItem("sitetrack_demo_session_only","1");
@@ -108,7 +104,8 @@ export function LoginScreen({onLogin,dark,toggleDark}){
       window.location.reload();
     }
   };
-  const[role,setRole]=useState("architect");const[anim,setAnim]=useState(false);
+  const[role,setRole]=useState("architect");
+  const[anim,setAnim]=useState(false);
   const roles=[
     {key:"superadmin",label:"Super Admin (Operations)",sub:"Multi-tenant — all orgs, users, billing, system settings",ini:"RB",col:"slate",perms:["All Orgs","User Management","Billing","System Settings","Impersonate"]},
     {key:"orgadmin",label:"Org Admin (Builder Firm Owner)",sub:"One org — members, billing, integrations, templates, approvals",ini:"MB",col:"amber",perms:["Members & Roles","Plan & Billing","Integrations","Templates","Approval Chains","Notification Rules"]},
@@ -118,127 +115,173 @@ export function LoginScreen({onLogin,dark,toggleDark}){
     {key:"client",label:"Client",sub:"Read-only — progress, milestones, released drawings",ini:"VN",col:"emerald",perms:["View Progress","View Milestones","Released Drawings","Updates"]},
   ];
   const selected=roles.find(r=>r.key===role);
+
+  // Helper — colour-bar token for the role tile leading bar.
+  const roleBar = (col)=>({
+    slate:"#0F1115", amber:"#FF6B1A", orange:"#FF6B1A", blue:"#1E40AF",
+    violet:"#7C3AED", emerald:"#047857",
+  }[col]||"#FF6B1A");
+
   return(
     <div className="min-h-screen bg-cream flex relative overflow-hidden">
-      {/* Toggle dark */}
-      <button onClick={toggleDark} className="absolute top-5 right-5 z-20 text-ink-500 hover:text-ink-900 p-2 rounded-xl bg-white shadow-editorial"><Ic n={dark?"sun2":"moon"} s={16}/></button>
+      {/* Dark-mode toggle */}
+      <button onClick={toggleDark} className="absolute top-5 right-5 z-20 text-ink-700 hover:text-ink-900 p-2 rounded-lg bg-white shadow-card border border-cream-200"><Ic n={dark?"sun2":"moon"} s={16}/></button>
 
-      {/* LEFT — Editorial hero (hidden on mobile) */}
-      <div className="hidden md:flex w-1/2 relative bg-ink-900 text-cream overflow-hidden">
-        {/* Refined grid overlay */}
-        <div className="absolute inset-0 opacity-[0.06]" style={{backgroundImage:"linear-gradient(rgba(245,158,11,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,.5) 1px,transparent 1px)",backgroundSize:"56px 56px"}}/>
-        {/* Warm radial glows */}
-        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full" style={{background:"radial-gradient(circle, rgba(217,119,6,.22) 0%, transparent 65%)"}}/>
-        <div className="absolute -bottom-20 -right-20 w-[28rem] h-[28rem] rounded-full" style={{background:"radial-gradient(circle, rgba(245,158,11,.16) 0%, transparent 65%)"}}/>
+      {/* LEFT — Brand hero (hidden on mobile) */}
+      <div className="hidden md:flex md:w-2/5 lg:w-1/2 relative bg-ink-900 text-cream overflow-hidden">
+        {/* Subtle grid overlay — site-survey feel */}
+        <div className="absolute inset-0 opacity-[0.05]" style={{backgroundImage:"linear-gradient(rgba(255,138,61,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,138,61,.5) 1px,transparent 1px)",backgroundSize:"48px 48px"}}/>
+        {/* Soft saffron glow bottom-right */}
+        <div className="absolute -bottom-32 -right-32 w-[28rem] h-[28rem] rounded-full" style={{background:"radial-gradient(circle, rgba(255,107,26,.20) 0%, transparent 65%)"}}/>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 lg:p-16 w-full">
+        <div className="relative z-10 flex flex-col justify-between p-10 lg:p-14 w-full">
           {/* Brand mark */}
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-gold flex items-center justify-center shadow-lg"><Ic n="hardhat" s={22} c="text-white"/></div>
+            <div className="w-11 h-11 rounded-xl bg-safety-500 flex items-center justify-center shadow-cta"><Ic n="hardhat" s={22} c="text-white"/></div>
             <div>
-              <div className="font-display text-2xl font-bold tracking-editorial leading-none">SiteTrack</div>
-              <div className="text-[10px] font-semibold tracking-[0.32em] uppercase text-gradient-gold mt-1">Construction Suite</div>
+              <div className="font-display text-2xl font-bold leading-none">SiteTrack</div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-400 mt-1">Construction Suite</div>
             </div>
           </div>
 
-          {/* Editorial headline */}
+          {/* Headline */}
           <div className="max-w-md">
-            <div className="text-[10px] font-bold tracking-[0.32em] uppercase text-amber-500 mb-5">— Issue 01 · 2026</div>
-            <h1 className="font-display text-5xl lg:text-6xl font-light leading-[1.05] tracking-editorial">
-              Every site,<br/>every drawing,<br/><em className="text-gradient-gold font-medium not-italic">one quiet record.</em>
+            <FlatStatus label="Built for Indian builders" variant="accent"/>
+            <h1 className="font-display text-4xl lg:text-5xl font-semibold leading-[1.1] mt-5 text-cream">
+              Every site, every drawing,<br/>
+              <span className="text-safety-400">one quiet record.</span>
             </h1>
-            <p className="text-cream/70 mt-6 text-sm leading-relaxed max-w-sm">
-              An editorial-grade construction record for architects, project managers, contractors and their clients. Built for the field, trusted in the office.
+            <p className="text-cream/70 mt-5 text-sm leading-relaxed max-w-sm">
+              A construction-native record-keeper for architects, project managers, contractors and their clients. Built for the field, trusted in the office.
             </p>
           </div>
 
-          {/* Footer pull-quote */}
-          <div className="border-t border-cream/10 pt-6 max-w-md">
-            <p className="font-display italic text-sm text-cream/70 leading-relaxed">
-              "Spashtam ga cheppali — every change should say what is changing, why it is needed, and how it will be checked."
-            </p>
-            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-500/80 mt-3">SiteTrack agent operating guide</div>
+          {/* Footer trust line */}
+          <div className="border-t border-cream/10 pt-5 max-w-md">
+            <div className="grid grid-cols-3 gap-4 text-cream/70 text-[11px]">
+              <div><div className="font-mono font-semibold text-cream text-lg">19</div>roles supported</div>
+              <div><div className="font-mono font-semibold text-cream text-lg">RERA</div>compliance ready</div>
+              <div><div className="font-mono font-semibold text-cream text-lg">GST</div>billing built-in</div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* RIGHT — Login panel */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10 lg:p-14">
-        <div className={`w-full max-w-md transition-all duration-500 ${anim?"opacity-0 translate-y-2":"opacity-100 translate-y-0"}`}>
+      <div className="flex-1 flex items-start md:items-center justify-center p-6 md:p-10 lg:p-14 overflow-y-auto">
+        <div className={`w-full max-w-md transition-all duration-300 ${anim?"opacity-0 translate-y-2":"opacity-100 translate-y-0"}`}>
           {/* Mobile brand */}
-          <div className="md:hidden flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-gradient-gold flex items-center justify-center"><Ic n="hardhat" s={20} c="text-white"/></div>
-            <div className="font-display text-2xl font-bold text-ink-900 tracking-editorial leading-none">SiteTrack</div>
+          <div className="md:hidden flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-safety-500 flex items-center justify-center"><Ic n="hardhat" s={20} c="text-white"/></div>
+            <div className="font-display text-2xl font-bold text-ink-900 leading-none">SiteTrack</div>
           </div>
 
-          <div className="mb-8">
-            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">Sign in</div>
-            <h2 className="font-display text-4xl md:text-5xl font-light leading-tight tracking-editorial text-ink-900">
+          <div className="mb-7">
+            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 mb-3">Sign in · Magic link</div>
+            <h2 className="font-display text-3xl md:text-4xl font-semibold leading-tight text-ink-900">
               Welcome back.
             </h2>
-            <p className="text-ink-600 text-sm mt-3 leading-relaxed">{backendEnabled?"Enter your work email. You'll receive a one-time sign-in link.":"Select your role — permissions and visible modules are applied automatically."}</p>
+            <p className="text-ink-500 text-sm mt-2 leading-relaxed">{backendEnabled?"Enter your work email — we'll send a one-time sign-in link.":"Select your role to continue. Permissions and visible modules apply automatically."}</p>
           </div>
 
-          {backendEnabled&&<div className="mb-6 bg-white rounded-2xl p-5 shadow-editorial-hover" style={{border:"1px solid var(--st-line)"}}>
-            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-2">— Magic link · production</div>
-            <input value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")sendMagicLink();}} type="email" placeholder="you@yourcompany.in" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 mb-3"/>
-            <button onClick={sendMagicLink} disabled={mlState.state==="sending"||mlState.state==="verifying"} className="w-full py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{mlState.state==="sending"?"Sending…":"Send sign-in link"}</button>
-            {mlState.state==="sent"&&<p className="mt-3 px-3 py-2 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
-            {mlState.state==="verified"&&<p className="mt-3 px-3 py-2 bg-emerald-100 text-emerald-900 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
-            {mlState.state==="err"&&<p className="mt-3 px-3 py-2 bg-red-50 text-red-700 text-xs font-semibold rounded-lg">{mlState.msg}</p>}
+          {backendEnabled&&<div className="mb-5 bg-white rounded-xl p-5 border border-cream-200 shadow-card">
+            <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Work email</label>
+            <input
+              value={email}
+              onChange={e=>setEmail(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter")sendMagicLink();}}
+              type="email"
+              placeholder="you@yourcompany.in"
+              className="w-full px-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 mb-3 bg-white"
+            />
+            <Button variant="primary" size="lg" fullWidth onClick={sendMagicLink} disabled={mlState.state==="sending"||mlState.state==="verifying"}>
+              {mlState.state==="sending"?"Sending…":"Send sign-in link"}
+            </Button>
+            {mlState.state==="sent"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
+            {mlState.state==="verified"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
+            {mlState.state==="err"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="danger"/></div>}
+
             {/* Session 28.2: OTP fallback — bypasses Gmail's link prefetch */}
-            {(mlState.state==="sent"||mlState.state==="err"||mlState.state==="verifying")&&<div className="mt-4 pt-4 border-t border-stone-100">
-              <label className="text-[10px] font-bold tracking-[0.24em] uppercase text-stone-500 block mb-2">— Or enter 6-digit code</label>
+            {(mlState.state==="sent"||mlState.state==="err"||mlState.state==="verifying")&&<div className="mt-4 pt-4 border-t border-cream-200">
+              <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Or enter 6-digit code</label>
               <div className="flex gap-2">
-                <input value={otpCode} onChange={e=>setOtpCode(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submitOtp();}} type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" className="flex-1 p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 font-mono tracking-widest text-center"/>
-                <button onClick={submitOtp} disabled={mlState.state==="verifying"} className="px-5 py-3 bg-stone-900 text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{mlState.state==="verifying"?"…":"Sign in"}</button>
+                <input
+                  value={otpCode}
+                  onChange={e=>setOtpCode(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter")submitOtp();}}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  placeholder="123456"
+                  className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 font-mono tracking-[0.3em] text-center bg-white"
+                />
+                <Button variant="secondary" size="md" onClick={submitOtp} disabled={mlState.state==="verifying"}>{mlState.state==="verifying"?"…":"Sign in"}</Button>
               </div>
-              <p className="mt-2 text-[10px] text-stone-500 leading-relaxed">Gmail sometimes "burns" the magic link via spam-scan. The 6-digit code at the bottom of the email is the safer path.</p>
+              <p className="mt-2 text-[11px] text-ink-500 leading-relaxed">Gmail sometimes burns the link via spam-scan. The 6-digit code at the bottom of the email is the safer path.</p>
             </div>}
-            <div className="mt-4 pt-4 border-t border-stone-100">
-              <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">— Or try a demo role below</div>
-            </div>
+
+            <div className="mt-4 pt-3 border-t border-cream-200 text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Or try a demo role below</div>
           </div>}
 
-          {/* Role tiles */}
-          <div className="space-y-2.5 mb-7">
+          {/* Role tiles — flat cards with leading colour bar + initials chip */}
+          <div className="space-y-2 mb-6">
             {roles.map(r=>{
               const userOrgId=MOCK_USERS[r.key]?.org_id;
               const hint=featureHintForRole(r.key,userOrgId);
+              const isActive=role===r.key;
               return(
-              <button key={r.key} onClick={()=>setRole(r.key)} className={`w-full text-left rounded-2xl border transition-all overflow-hidden ${role===r.key?"border-amber-600 bg-white shadow-editorial-hover":"border-stone-200 bg-white/60 hover:bg-white hover:border-stone-300"}`}>
-                <div className="flex items-center gap-4 p-4">
-                  <Av i={r.ini} col={r.col}/>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display text-base font-semibold text-ink-900 leading-tight">{r.label}</div>
-                    <div className="text-xs text-ink-500 mt-1 leading-relaxed">{r.sub}</div>
-                    {hint&&<div className="text-[10px] font-bold tracking-wider uppercase text-amber-700 mt-1.5">● {hint.enabled} of {hint.total} features enabled for this role</div>}
+                <button
+                  key={r.key}
+                  onClick={()=>setRole(r.key)}
+                  className={`group w-full text-left rounded-xl bg-white transition-all overflow-hidden border ${isActive?"border-safety-500 shadow-hover":"border-cream-200 hover:border-ink-500/30 hover:shadow-card"}`}
+                >
+                  <div className="flex items-stretch">
+                    {/* Leading colour bar */}
+                    <div className="w-1 flex-shrink-0" style={{backgroundColor:roleBar(r.col)}}/>
+                    <div className="flex-1 p-4">
+                      <div className="flex items-start gap-3">
+                        <Av i={r.ini} col={r.col} sz="md"/>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <div className="font-display text-sm font-semibold text-ink-900 leading-tight">{r.label}</div>
+                            {isActive&&<span className="w-4 h-4 rounded-full bg-safety-500 flex items-center justify-center flex-shrink-0"><Ic n="check" s={10} c="text-white"/></span>}
+                          </div>
+                          <div className="text-xs text-ink-500 leading-snug">{r.sub}</div>
+                          {hint&&<div className="text-[10px] font-semibold tracking-wide uppercase text-safety-600 mt-1.5 font-mono">{hint.enabled} of {hint.total} features enabled for this role</div>}
+                        </div>
+                      </div>
+                      {isActive&&<div className="mt-3 pt-3 border-t border-cream-200 flex flex-wrap gap-1.5">
+                        {r.perms.map(p=><span key={p} className="text-[10px] font-semibold tracking-wide uppercase bg-orange-50 text-safety-600 px-2 py-0.5 rounded-md">{p}</span>)}
+                      </div>}
+                    </div>
                   </div>
-                  {role===r.key&&<div className="w-6 h-6 rounded-full bg-gradient-gold flex items-center justify-center flex-shrink-0"><Ic n="check" s={13} c="text-white"/></div>}
-                </div>
-                {role===r.key&&<div className="px-4 pb-4"><div className="flex flex-wrap gap-1.5 pt-3 border-t border-stone-100">
-                  {r.perms.map(p=><span key={p} className="text-[10px] font-semibold tracking-wider uppercase bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full">{p}</span>)}
-                </div></div>}
-              </button>
-            );})}
+                </button>
+              );
+            })}
           </div>
 
           {/* CTA */}
-          <button onClick={()=>{setAnim(true);setTimeout(()=>onLogin(MOCK_USERS[role]),420);}} className="w-full py-4 bg-gradient-gold text-white font-bold rounded-2xl text-sm tracking-wide transition-all hover:shadow-editorial-deep flex items-center justify-center gap-2">
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={()=>{setAnim(true);setTimeout(()=>onLogin(MOCK_USERS[role]),320);}}
+            rightIcon={<span aria-hidden>→</span>}
+          >
             Continue as {selected?.label}
-            <span aria-hidden>→</span>
-          </button>
+          </Button>
 
-          {/* Data-mode pill + Load demo / Clear all controls (Q6 toggle-aware) */}
-          {demoLoaderEnabled&&<div className="mt-6 rounded-2xl border border-stone-200 bg-white/70 p-4">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">— Workspace data</div>
-              <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full ${dataInfo.isDemo?"bg-amber-50 text-amber-800":dataInfo.summary.isEmpty?"bg-stone-100 text-ink-600":"bg-emerald-50 text-emerald-800"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${dataInfo.isDemo?"bg-amber-600":dataInfo.summary.isEmpty?"bg-stone-400":"bg-emerald-600"}`}/>
-                {dataInfo.isDemo?"Demo loaded":dataInfo.summary.isEmpty?"Empty":`${dataInfo.summary.projects} project${dataInfo.summary.projects===1?"":"s"}`}
-              </span>
+          {/* Workspace data — load demo / clear all */}
+          {demoLoaderEnabled&&<div className="mt-5 rounded-xl border border-cream-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-3 mb-2.5">
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Workspace data</div>
+              <FlatStatus
+                variant={dataInfo.isDemo?"warning":dataInfo.summary.isEmpty?"neutral":"success"}
+                label={dataInfo.isDemo?"Demo loaded":dataInfo.summary.isEmpty?"Empty":`${dataInfo.summary.projects} project${dataInfo.summary.projects===1?"":"s"}`}
+              />
             </div>
-            <p className="text-[11px] text-ink-500 leading-relaxed mb-3">
+            <p className="text-xs text-ink-500 leading-relaxed mb-3">
               {dataInfo.summary.isEmpty
                 ? "Start with a clean workspace, or load the showcase dataset (5 orgs, 4 projects, BOQ, RA bills) to explore the product."
                 : dataInfo.isDemo
@@ -246,17 +289,17 @@ export function LoginScreen({onLogin,dark,toggleDark}){
                   : "Your workspace already has data. Loading the demo will overwrite it — back up first if needed."}
             </p>
             <div className="flex gap-2">
-              <button onClick={handleLoadDemo} className="flex-1 py-2 text-[11px] font-bold tracking-wide uppercase rounded-xl bg-ink-900 text-cream hover:bg-ink-700 transition-colors">
+              <Button variant="secondary" size="sm" fullWidth onClick={handleLoadDemo}>
                 {dataInfo.isDemo?"Reload demo":"Load demo data"}
-              </button>
-              <button onClick={handleClearAll} disabled={dataInfo.summary.isEmpty&&!dataInfo.isDemo} className="flex-1 py-2 text-[11px] font-bold tracking-wide uppercase rounded-xl border border-stone-300 text-ink-700 hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              </Button>
+              <Button variant="ghost" size="sm" fullWidth onClick={handleClearAll} disabled={dataInfo.summary.isEmpty&&!dataInfo.isDemo}>
                 Clear all data
-              </button>
+              </Button>
             </div>
-            {!demoPersists&&<div className="mt-3 text-[10px] text-amber-700 font-semibold">⓵ Session-only mode — demo data will be wiped when you close this browser.</div>}
+            {!demoPersists&&<div className="mt-3 text-[11px] text-safety-600 font-semibold">Session-only mode — demo data will be wiped when you close this browser.</div>}
           </div>}
 
-          <p className="text-[11px] text-ink-500 mt-5 text-center leading-relaxed">
+          <p className="text-[11px] text-ink-500 mt-4 text-center leading-relaxed">
             {backendEnabled
               ? <>Production mode — data syncs to your secure cloud workspace.</>
               : <>Local mode — data stays in this browser. Enable backend sync in <span className="font-semibold text-ink-700">docs/GOLIVE.md</span>.</>}
@@ -266,9 +309,6 @@ export function LoginScreen({onLogin,dark,toggleDark}){
     </div>
   );
 }
-
-// ── Drawing Markup Modal (canvas overlay on image) ───────────────────────────
-// MarkupModal / QuickCaptureDrawer / Comments / ClientShareView extracted
 
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
 export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
@@ -284,7 +324,7 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"admin-branding",icon:"sliders",label:"Branding",group:"admin"},
     {id:"admin-support",icon:"msgcircle",label:"Support Inbox",group:"admin"},
     {id:"admin-settings",icon:"sliders",label:"System Settings",group:"admin"},
-    // Org Admin tier (Production Phase 1) — visible only to role=orgadmin per PERMS
+    // Org Admin tier — visible only to role=orgadmin per PERMS
     {id:"org-dashboard",icon:"shield",label:"Org Dashboard",group:"org"},
     {id:"org-members",icon:"users",label:"Members & roles",group:"org"},
     {id:"org-billing",icon:"wallet",label:"Plan & billing",group:"org"},
@@ -295,7 +335,7 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"org-features",icon:"sliders",label:"Feature toggles",group:"org"},
     {id:"org-onboarding",icon:"play",label:"Re-run setup wizard",group:"org"},
     {id:"org-activity",icon:"activity",label:"Audit log",group:"org"},
-    // Tenant nav (visible to all roles per their PERMS.nav)
+    // Tenant nav
     {id:"dashboard",icon:"dashboard",label:"Dashboard"},
     {id:"projects",icon:"folder",label:"Projects"},
     {id:"hierarchy",icon:"building",label:"Hierarchy"},
@@ -325,15 +365,12 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     if(id==="ar-overlay"&&ops.kioskArEnabled===false)return true;
     return false;
   };
-  // Session 16: feature-flag cascade — Sidebar hides nav items that the Org Admin
-  // has turned off (or the platform has killed). Org-flag map is keyed by org_id.
+  // Session 16: feature-flag cascade — hide nav items the org turned off.
   const store=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}");}catch{return{};}})();
   const orgFlags=store.org_feature_flags||{};
   const platformFlags=store.platform_feature_flags||{};
   const orgs=store.orgs||[];
   const plan=(orgs.find(o=>o.id===user?.org_id)?.plan)||"basic";
-  // Map sidebar nav-item ids → orgFeatureFlags catalog ids. The catalog is
-  // the source of truth; sidebar ids are legacy short names.
   const NAV_FEATURE_ID={
     "hierarchy":"hierarchy","calendar":"calendar","vendors":"vendors","po":"po",
     "material-prices":"materialPrices","compliance":"compliance","forecast":"forecast",
@@ -345,88 +382,118 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
   };
   const featureBlocked=(id)=>{
     const featureId=NAV_FEATURE_ID[id];
-    if(!featureId)return false; // not in catalog (essential nav like dashboard / projects)
+    if(!featureId)return false;
     return !isFeatureEnabled(platformFlags,orgFlags,user?.org_id,featureId,plan);
   };
   // Session 28.2: defensive fallback — fresh Supabase user might have a role
-  // not in PERMS yet (no profiles row). Treat unknown roles as `client` (most
-  // restrictive) so the sidebar still renders without crashing.
+  // not in PERMS yet (no profiles row).
   const userPerms=PERMS[user.role]||PERMS.client||{nav:["dashboard","logout"]};
   const items=allItems.filter(i=>userPerms.nav.includes(i.id)&&!kioskBlocked(i.id)&&!featureBlocked(i.id));
   const adminItems=items.filter(i=>i.group==="admin");
   const orgItems=items.filter(i=>i.group==="org");
   const tenantItems=items.filter(i=>!i.group);
-  const rm=ROLE_META[user.role]||ROLE_META.client||{label:"Member",bg:"bg-stone-100",text:"text-stone-700",col:"stone"};
+  const rm=roleMeta(user.role);
+
+  // Mobile bottom-tab bar items — the 5 highest-traffic destinations.
+  const mobileTabs=[
+    {id:"dashboard",icon:"dashboard",label:"Home"},
+    {id:"projects",icon:"folder",label:"Projects"},
+    {id:"activity",icon:"activity",label:"Activity"},
+    {id:"messages",icon:"msgcircle",label:"Messages"},
+    {id:"notifications",icon:"bell",label:"Updates",badge:uc},
+  ].filter(t=>userPerms.nav.includes(t.id));
+
+  const NavItem=({it})=>{
+    const isActive=active===it.id;
+    return (
+      <button
+        onClick={()=>{setView(it.id);setMobileOpen(false);}}
+        className={`group w-full flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-md text-sm transition-all relative ${isActive?"bg-cream-200/12 text-cream font-semibold":"text-cream/65 hover:text-cream hover:bg-cream-200/8 font-medium"}`}
+      >
+        {/* Active leading orange bar */}
+        {isActive&&<span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-safety-500"/>}
+        <Ic n={it.icon} s={16}/>
+        <span className="truncate">{it.label}</span>
+        {it.badge>0&&<span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono ${isActive?"bg-safety-500 text-white":"bg-safety-500 text-white"}`}>{it.badge}</span>}
+      </button>
+    );
+  };
+
   return(
     <>
-      {mobileOpen&&<div className="fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm md:hidden" onClick={()=>setMobileOpen(false)}/>}
-      <div className={`fixed md:relative inset-y-0 left-0 z-40 w-64 h-screen md:h-full flex flex-col transform transition-transform duration-300 flex-shrink-0 ${mobileOpen?"translate-x-0":"-translate-x-full"} md:translate-x-0`} style={{backgroundColor:"#1c1917",borderRight:"1px solid rgba(217,119,6,.12)"}}>
-        {/* Refined warm glow */}
-        <div className="absolute top-0 left-0 w-full h-40 pointer-events-none" style={{background:"radial-gradient(ellipse at top left, rgba(217,119,6,.10) 0%, transparent 70%)"}}/>
+      {/* Mobile scrim */}
+      {mobileOpen&&<div className="fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm lg:hidden" onClick={()=>setMobileOpen(false)}/>}
 
-        <div className="relative p-6 flex items-center justify-between" style={{borderBottom:"1px solid rgba(255,251,235,.06)"}}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-gold flex items-center justify-center shadow-md"><Ic n="hardhat" s={18} c="text-white"/></div>
+      {/* Desktop sidebar — persistent on lg:+ */}
+      <div
+        className={`fixed lg:relative inset-y-0 left-0 z-40 w-60 h-screen lg:h-full flex flex-col transform transition-transform duration-200 flex-shrink-0 ${mobileOpen?"translate-x-0":"-translate-x-full"} lg:translate-x-0`}
+        style={{backgroundColor:"#0F1115",borderRight:"1px solid rgba(255,255,255,.06)"}}
+      >
+        {/* Brand */}
+        <div className="relative px-5 py-5 flex items-center justify-between" style={{borderBottom:"1px solid rgba(255,255,255,.06)"}}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-safety-500 flex items-center justify-center"><Ic n="hardhat" s={18} c="text-white"/></div>
             <div>
-              <div className="font-display text-lg font-bold text-cream leading-none tracking-editorial">SiteTrack</div>
-              <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-gradient-gold mt-1">Construction</div>
+              <div className="font-display text-base font-semibold text-cream leading-none">SiteTrack</div>
+              <div className="text-[9px] font-semibold tracking-[0.18em] uppercase text-safety-400 mt-1">Pro</div>
             </div>
           </div>
-          <button onClick={()=>setMobileOpen(false)} className="md:hidden text-cream/60 hover:text-cream"><Ic n="x" s={20}/></button>
+          <button onClick={()=>setMobileOpen(false)} className="lg:hidden text-cream/60 hover:text-cream"><Ic n="x" s={20}/></button>
         </div>
 
-        <div className="px-5 mt-5">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-bold tracking-[0.18em] uppercase" style={{backgroundColor:"rgba(217,119,6,.10)",color:"#f59e0b",border:"1px solid rgba(217,119,6,.2)"}}><Ic n="shield" s={11}/>{rm.label}</div>
+        {/* Role chip */}
+        <div className="px-5 mt-4">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-semibold tracking-[0.12em] uppercase bg-safety-500/10 text-safety-400 border border-safety-500/20">
+            <Ic n="shield" s={11}/>{rm.label}
+          </div>
         </div>
 
-        <nav className="relative flex-1 p-4 mt-2 space-y-0.5 overflow-y-auto">
+        {/* Nav */}
+        <nav className="relative flex-1 px-3 mt-3 space-y-0.5 overflow-y-auto pb-4">
           {adminItems.length>0&&<>
-            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-amber-500/70 px-3.5 mb-1.5 mt-1">— Operations</div>
-            {adminItems.map(it=>{
-              const isActive=active===it.id;
-              return(
-                <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all ${isActive?"text-ink-900 font-semibold":"text-cream/65 hover:text-cream font-medium"}`} style={isActive?{background:"linear-gradient(180deg, #f59e0b, #d97706)",boxShadow:"0 4px 14px rgba(217,119,6,.35)"}:{}}>
-                  <Ic n={it.icon} s={16}/>
-                  <span className="tracking-[0.01em]">{it.label}</span>
-                </button>
-              );
-            })}
-            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-cream/40 px-3.5 mt-4 mb-1.5">— Tenant view</div>
+            <div className="text-[9px] font-semibold tracking-[0.18em] uppercase text-safety-400/70 px-4 mb-1.5 mt-1">Operations</div>
+            {adminItems.map(it=><NavItem key={it.id} it={it}/>)}
+            <div className="text-[9px] font-semibold tracking-[0.18em] uppercase text-cream/40 px-4 mt-4 mb-1.5">Tenant view</div>
           </>}
           {orgItems.length>0&&<>
-            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-amber-500/70 px-3.5 mb-1.5 mt-1">— My organization</div>
-            {orgItems.map(it=>{
-              const isActive=active===it.id;
-              return(
-                <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all ${isActive?"text-ink-900 font-semibold":"text-cream/65 hover:text-cream font-medium"}`} style={isActive?{background:"linear-gradient(180deg, #f59e0b, #d97706)",boxShadow:"0 4px 14px rgba(217,119,6,.35)"}:{}}>
-                  <Ic n={it.icon} s={16}/>
-                  <span className="tracking-[0.01em]">{it.label}</span>
-                </button>
-              );
-            })}
-            <div className="text-[9px] font-bold tracking-[0.32em] uppercase text-cream/40 px-3.5 mt-4 mb-1.5">— Project workspace</div>
+            <div className="text-[9px] font-semibold tracking-[0.18em] uppercase text-safety-400/70 px-4 mb-1.5 mt-1">My organization</div>
+            {orgItems.map(it=><NavItem key={it.id} it={it}/>)}
+            <div className="text-[9px] font-semibold tracking-[0.18em] uppercase text-cream/40 px-4 mt-4 mb-1.5">Project workspace</div>
           </>}
-          {tenantItems.map(it=>{
-            const isActive=active===it.id;
-            return(
-              <button key={it.id} onClick={()=>{setView(it.id);setMobileOpen(false);}} className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all ${isActive?"text-ink-900 font-semibold":"text-cream/65 hover:text-cream font-medium"}`} style={isActive?{background:"linear-gradient(180deg, #f59e0b, #d97706)",boxShadow:"0 4px 14px rgba(217,119,6,.35)"}:{}}>
-                <Ic n={it.icon} s={16}/>
-                <span className="tracking-[0.01em]">{it.label}</span>
-                {it.badge>0&&<span className={`ml-auto text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive?"bg-ink-900/20 text-ink-900":"bg-amber-500 text-white"}`}>{it.badge}</span>}
+          {tenantItems.map(it=><NavItem key={it.id} it={it}/>)}
+        </nav>
+
+        {/* User footer */}
+        <div className="relative p-3" style={{borderTop:"1px solid rgba(255,255,255,.06)"}}>
+          <div className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg" style={{backgroundColor:"rgba(255,255,255,.04)"}}>
+            <Av i={user.avatar} sz="sm" col={rm.col}/>
+            <div className="flex-1 min-w-0">
+              <div className="text-cream text-xs font-semibold truncate">{user.name}</div>
+              <div className="text-cream/50 text-[10px] truncate">{user.email}</div>
+            </div>
+            <button onClick={()=>setView("logout")} className="text-cream/40 hover:text-cream p-1" aria-label="Logout"><Ic n="logout" s={15}/></button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile bottom tab bar — visible only when sidebar is closed */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden bg-white border-t border-cream-200 shadow-hover" style={{paddingBottom:"env(safe-area-inset-bottom)"}}>
+        <div className="grid grid-cols-5">
+          {mobileTabs.map(t=>{
+            const isActive=active===t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={()=>setView(t.id)}
+                className={`relative flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[56px] ${isActive?"text-safety-600":"text-ink-500"}`}
+              >
+                {isActive&&<span className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-safety-500 rounded-b-md"/>}
+                <Ic n={t.icon} s={20}/>
+                <span className="text-[10px] font-semibold tracking-tight">{t.label}</span>
+                {t.badge>0&&<span className="absolute top-1.5 right-[28%] min-w-[16px] h-4 px-1 rounded-full bg-safety-500 text-white text-[9px] font-bold flex items-center justify-center font-mono">{t.badge}</span>}
               </button>
             );
           })}
-        </nav>
-
-        <div className="relative p-4" style={{borderTop:"1px solid rgba(255,251,235,.06)"}}>
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl" style={{backgroundColor:"rgba(255,251,235,.04)"}}>
-            <Av i={user.avatar} sz="sm" col={rm.col}/>
-            <div className="flex-1 min-w-0">
-              <div className="text-cream text-sm font-semibold truncate font-display tracking-editorial">{user.name}</div>
-              <div className="text-cream/50 text-[11px] truncate">{user.email}</div>
-            </div>
-            <button onClick={()=>setView("logout")} className="text-cream/40 hover:text-cream"><Ic n="logout" s={15}/></button>
-          </div>
         </div>
       </div>
     </>
@@ -440,88 +507,117 @@ export function DashboardView({user,projects,updates,issues,activity,setView,set
   const openIssues=Object.entries(issues).flatMap(([pid,arr])=>visibleIds.has(pid)?arr:[]).filter(i=>i.status==="open");
   const highIssues=openIssues.filter(i=>i.severity==="high");
   const unreadAc=activity.filter(a=>!a.read).length;
-  const ru=Object.entries(updates).flatMap(([pid,arr])=>visibleIds.has(pid)?(arr||[]).map(u=>({...u,pname:projects.find(p=>p.id===pid)?.name||"Project"})):[]).slice(0,2);
+  const ru=Object.entries(updates).flatMap(([pid,arr])=>visibleIds.has(pid)?(arr||[]).map(u=>({...u,pname:projects.find(p=>p.id===pid)?.name||"Project"})):[]).slice(0,3);
   const greet=new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening";
+  const activeCount=mp.filter(p=>p.status==="active").length;
+  const completedCount=mp.filter(p=>p.status==="completed").length;
+
+  // Quick actions — context-dependent. Limit to 3-4 so the row stays calm.
+  const quickActions=[
+    can(user,"createProject")&&{icon:"plus",label:"New Project",sub:"Start a site",accent:"orange",onClick:()=>setView("create")},
+    {icon:"folder",label:"All Projects",sub:`${mp.length} in workspace`,accent:"blue",onClick:()=>setView("projects")},
+    user.role!=="client"&&{icon:"activity",label:"Activity",sub:unreadAc?`${unreadAc} new`:"All caught up",accent:"violet",onClick:()=>setView("activity")},
+    {icon:"msgcircle",label:"Messages",sub:"Team chat",accent:"emerald",onClick:()=>setView("messages")},
+  ].filter(Boolean).slice(0,4);
+
   return(
-    <div className="p-4 md:p-10 max-w-7xl">
-      {/* Editorial header */}
-      <div className="mb-10 flex items-end justify-between flex-wrap gap-4">
-        <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">— {new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}</div>
-          <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 tracking-editorial leading-[1.05]">
-            Good {greet},<br/><em className="font-medium not-italic text-gradient-gold">{user.name.split(" ")[0]}.</em>
-          </h1>
-          <p className="text-ink-600 text-sm mt-4 max-w-md leading-relaxed">Your construction overview at a glance — projects, issues, and what needs your attention.</p>
-        </div>
+    <div className="p-4 md:p-8 lg:p-10 max-w-7xl pb-24 lg:pb-10">
+      {/* Greeting header */}
+      <div className="mb-8">
+        <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 mb-2 font-mono">{new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}</div>
+        <h1 className="font-display text-3xl md:text-4xl font-semibold text-ink-900 leading-tight">
+          Good {greet}, <span className="text-safety-600">{user.name.split(" ")[0]}.</span>
+        </h1>
+        <p className="text-ink-500 text-sm mt-2 max-w-md">Your construction overview at a glance — projects, issues, and what needs your attention.</p>
       </div>
 
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        {quickActions.map(a=>
+          <Tile key={a.label} icon={a.icon} label={a.label} sub={a.sub} accent={a.accent} onClick={a.onClick}/>
+        )}
+      </div>
+
+      {/* Inline alerts */}
       {highIssues.length>0&&user.role!=="client"&&(
-        <div className="mb-5 bg-red-50 border-l-4 border-red-500 rounded-r-2xl p-5 flex items-center gap-4 shadow-editorial">
-          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="alert" s={18} c="text-red-600"/></div>
-          <div className="flex-1"><div className="font-display font-semibold text-red-800 text-base tracking-editorial">{highIssues.length} High Severity Issues Need Attention</div><div className="text-red-600 text-xs mt-1">{highIssues.map(i=>i.title).slice(0,2).join(" · ")}</div></div>
-          <button onClick={()=>setView("projects")} className="text-red-700 font-bold text-xs tracking-wider uppercase hover:underline">View →</button>
+        <div className="mb-5 bg-white rounded-xl p-4 md:p-5 flex items-center gap-4 border border-red-200" style={{boxShadow:"inset 4px 0 0 0 #B91C1C"}}>
+          <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0 text-red-600"><Ic n="alert" s={20}/></div>
+          <div className="flex-1">
+            <div className="font-display font-semibold text-ink-900 text-sm md:text-base">{highIssues.length} high-severity issue{highIssues.length===1?"":"s"} need attention</div>
+            <div className="text-ink-500 text-xs mt-0.5">{highIssues.map(i=>i.title).slice(0,2).join(" · ")}</div>
+          </div>
+          <Button variant="secondary" size="sm" onClick={()=>setView("projects")}>Review</Button>
         </div>
       )}
       {user.role==="architect"&&unreadAc>0&&(
-        <div className="mb-5 bg-amber-50 border-l-4 border-amber-500 rounded-r-2xl p-5 flex items-center gap-4 shadow-editorial">
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="activity" s={18} c="text-amber-700"/></div>
-          <div className="flex-1"><div className="font-display font-semibold text-amber-900 text-base tracking-editorial">{unreadAc} new team activities</div><div className="text-amber-700 text-xs mt-1">PM and contractor actions need your review</div></div>
-          <button onClick={()=>setView("activity")} className="text-amber-800 font-bold text-xs tracking-wider uppercase hover:underline">Review →</button>
+        <div className="mb-5 bg-white rounded-xl p-4 md:p-5 flex items-center gap-4 border border-cream-200" style={{boxShadow:"inset 4px 0 0 0 #FF6B1A"}}>
+          <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0 text-safety-600"><Ic n="activity" s={20}/></div>
+          <div className="flex-1">
+            <div className="font-display font-semibold text-ink-900 text-sm md:text-base">{unreadAc} new team activities</div>
+            <div className="text-ink-500 text-xs mt-0.5">PM and contractor actions need your review</div>
+          </div>
+          <Button variant="secondary" size="sm" onClick={()=>setView("activity")}>Review</Button>
         </div>
       )}
 
-      {/* Stat cards — editorial layout */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <SC icon="folder" label="Total Projects" value={mp.length} accent="blue"/>
-        <SC icon="building" label="Active" value={mp.filter(p=>p.status==="active").length} accent="orange"/>
-        <SC icon="check" label="Completed" value={mp.filter(p=>p.status==="completed").length} accent="emerald"/>
-        {user.role!=="client"?<SC icon="alert" label="Open Issues" value={openIssues.length} sub={highIssues.length>0?`${highIssues.length} high priority`:""} accent={highIssues.length>0?"red":"violet"}/>:<SC icon="hardhat" label="On Hold" value={mp.filter(p=>p.status==="on_hold").length} accent="violet"/>}
+      {/* Stat tiles — 4 in a grid, JetBrains Mono digits */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-10">
+        <SC icon="folder" label="Total projects" value={mp.length} accent="blue"/>
+        <SC icon="building" label="Active" value={activeCount} sub={`${completedCount} completed`} accent="orange"/>
+        {user.role!=="client"
+          ? <SC icon="alert" label="Open issues" value={openIssues.length} sub={highIssues.length>0?`${highIssues.length} high priority`:"None critical"} accent={highIssues.length>0?"red":"violet"}/>
+          : <SC icon="hardhat" label="On hold" value={mp.filter(p=>p.status==="on_hold").length} accent="violet"/>}
+        <SC icon="users" label="Team activity" value={unreadAc} sub={unreadAc?"Unread":"All caught up"} accent="emerald"/>
       </div>
 
-      {/* Active projects — editorial cards */}
+      {/* Active projects */}
       <div className="mb-10">
-        <div className="flex items-end justify-between mb-6 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="flex items-end justify-between mb-4">
           <div>
-            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Portfolio</div>
-            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial">Active Projects</h2>
+            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 mb-1">Portfolio</div>
+            <h2 className="font-display text-xl md:text-2xl font-semibold text-ink-900">Active projects</h2>
           </div>
-          <button onClick={()=>setView("projects")} className="text-amber-700 text-xs font-bold tracking-[0.18em] uppercase hover:text-amber-900">View all →</button>
+          <Button variant="ghost" size="sm" onClick={()=>setView("projects")} rightIcon={<span aria-hidden>→</span>}>View all</Button>
         </div>
-        <div className="grid md:grid-cols-2 gap-5">
-          {mp.filter(p=>p.status==="active").map(p=>(
-            <button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="group relative bg-white rounded-2xl p-6 text-left transition-all hover:shadow-editorial-hover" style={{border:"1px solid var(--st-line)"}}>
-              {/* Top gold rule on hover */}
-              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-gold opacity-0 group-hover:opacity-100 transition-opacity"/>
-              <div className="flex items-start justify-between mb-5">
-                <div className="flex-1 min-w-0 pr-3">
-                  <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-1.5">{p.status==="active"?"In progress":p.status}</div>
-                  <h3 className="font-display text-xl font-semibold text-ink-900 group-hover:text-amber-800 tracking-editorial leading-tight">{p.name}</h3>
-                  <div className="flex items-center gap-1.5 text-ink-500 text-xs mt-2"><Ic n="map" s={12}/>{p.location}</div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {mp.filter(p=>p.status==="active").slice(0,4).map(p=>(
+            <button
+              key={p.id}
+              onClick={()=>{setSP(p.id);setView("detail");}}
+              className="group relative bg-white rounded-xl p-5 text-left transition-all hover:shadow-hover border border-cream-200 hover:border-ink-500/20 overflow-hidden"
+            >
+              {/* Colour band — project status */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-safety-500"/>
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display text-base font-semibold text-ink-900 group-hover:text-safety-600 leading-tight">{p.name}</h3>
+                  <div className="flex items-center gap-1.5 text-ink-500 text-xs mt-1.5"><Ic n="map" s={12}/>{p.location}</div>
                 </div>
                 <Badge status={p.status}/>
               </div>
-              <div className="mb-2 flex justify-between items-baseline">
-                <span className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">Progress</span>
-                <span className="font-display font-semibold text-ink-900 text-lg">{p.progress}<span className="text-ink-500 text-sm">%</span></span>
+              <div className="mb-1.5 flex justify-between items-baseline">
+                <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-ink-500">Progress</span>
+                <span className="font-mono font-semibold text-ink-900 text-base tabular-nums">{p.progress}<span className="text-ink-500 text-xs">%</span></span>
               </div>
               <PBar v={p.progress}/>
-              <div className="mt-5 flex justify-between text-xs text-ink-500" style={{borderTop:"1px solid var(--st-line)",paddingTop:"1rem"}}>
-                <span className="font-medium">{p.client_name}</span>
-                <span>Due {fmtDate(p.expected_end_date)}</span>
+              <div className="mt-4 pt-3 border-t border-cream-200 flex justify-between text-xs text-ink-500">
+                <span className="truncate font-medium">{p.client_name}</span>
+                <span className="font-mono">Due {fmtDate(p.expected_end_date)}</span>
               </div>
             </button>
           ))}
           {mp.filter(p=>p.status==="active").length===0&&(
-            <div className="md:col-span-2 bg-white rounded-2xl p-10 text-center shadow-editorial" style={{border:"1px dashed var(--st-line)"}}>
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n="folder" s={24} c="text-amber-700"/></div>
-              <div className="font-display text-xl font-semibold text-ink-900 tracking-editorial mb-2">{mp.length===0?"Your workspace is ready":"No active projects right now"}</div>
-              <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-5">
+            <div className="md:col-span-2 bg-white rounded-xl p-8 text-center border border-dashed border-cream-200">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-50 flex items-center justify-center text-safety-600"><Ic n="folder" s={22}/></div>
+              <div className="font-display text-lg font-semibold text-ink-900 mb-1.5">{mp.length===0?"Your workspace is ready":"No active projects right now"}</div>
+              <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-4">
                 {mp.length===0
                   ? "Create your first project to start tracking site progress, drawings, BOQ, RA bills, and team activity in one place."
                   : "All your projects are completed or on hold. Start a new one whenever you're ready."}
               </p>
-              {can(user,"createProject")&&<button onClick={()=>setView("create")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Ic n="plus" s={14}/>Create your first project</button>}
-              {!can(user,"createProject")&&<button onClick={()=>setView("projects")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink-900 text-cream font-bold rounded-xl text-sm tracking-wide transition-all"><Ic n="folder" s={14}/>Browse all projects</button>}
+              {can(user,"createProject")
+                ? <Button variant="primary" size="md" onClick={()=>setView("create")} leftIcon={<Ic n="plus" s={14}/>}>Create your first project</Button>
+                : <Button variant="secondary" size="md" onClick={()=>setView("projects")} leftIcon={<Ic n="folder" s={14}/>}>Browse all projects</Button>}
             </div>
           )}
         </div>
@@ -529,19 +625,19 @@ export function DashboardView({user,projects,updates,issues,activity,setView,set
 
       {/* Recent updates */}
       {ru.length>0&&<div>
-        <div className="flex items-end justify-between mb-5 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+        <div className="flex items-end justify-between mb-4">
           <div>
-            <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-1">— Field</div>
-            <h2 className="font-display text-2xl font-semibold text-ink-900 tracking-editorial">Recent Updates</h2>
+            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 mb-1">Field</div>
+            <h2 className="font-display text-xl md:text-2xl font-semibold text-ink-900">Recent updates</h2>
           </div>
         </div>
-        <div className="space-y-3">{ru.map(u=>
-          <div key={u.id} className="bg-white rounded-2xl p-5 flex gap-4 shadow-editorial" style={{border:"1px solid var(--st-line)"}}>
-            <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0"><Ic n="hardhat" s={18} c="text-amber-700"/></div>
+        <div className="space-y-2.5">{ru.map(u=>
+          <div key={u.id} className="bg-white rounded-xl p-4 md:p-5 flex gap-3 border border-cream-200">
+            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0 text-safety-600"><Ic n="hardhat" s={18}/></div>
             <div className="flex-1 min-w-0">
-              <div className="font-display font-semibold text-ink-900 text-base tracking-editorial">{u.pname}</div>
-              <p className="text-ink-600 text-sm mt-1 line-clamp-2 leading-relaxed">{u.notes}</p>
-              <div className="flex gap-4 mt-3 text-xs text-ink-500">
+              <div className="font-display font-semibold text-ink-900 text-sm md:text-base">{u.pname}</div>
+              <p className="text-ink-600 text-xs md:text-sm mt-1 line-clamp-2 leading-relaxed">{u.notes}</p>
+              <div className="flex gap-4 mt-2 text-[11px] text-ink-500 font-mono">
                 <span className="flex items-center gap-1.5"><Ic n="calendar" s={11}/>{fmtDate(u.update_date)}</span>
                 {u.workers_count&&<span className="flex items-center gap-1.5"><Ic n="users" s={11}/>{u.workers_count} workers</span>}
               </div>
@@ -557,12 +653,17 @@ export function DashboardView({user,projects,updates,issues,activity,setView,set
 export function ProjectsView({user,projects,setProjects,setView,setSP,setAuditLog}){
   const[q,setQ]=useState("");const[sf,setSF]=useState("all");const[showFilt,setShowFilt]=useState(false);
   const[minP,setMinP]=useState(0);const[sortBy,setSortBy]=useState("name");
-  // Session 25: archive toggle — default "active only" so 50+ project firms aren't drowning in completed/cancelled rows.
   const[showArchived,setShowArchived]=useState(false);
   const visibility=useMemo(()=>partitionByArchive(visibleProjectsForUser(projects,user)),[projects,user]);
   const sourceList=showArchived?visibility.archived:visibility.active;
-  const fl=useMemo(()=>sourceList.filter(p=>sf==="all"||p.status===sf).filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.location.toLowerCase().includes(q.toLowerCase())||p.client_name.toLowerCase().includes(q.toLowerCase())).filter(p=>p.progress>=minP).sort((a,b)=>sortBy==="progress"?b.progress-a.progress:sortBy==="budget"?b.budget-a.budget:a.name.localeCompare(b.name)),[sourceList,q,sf,minP,sortBy]);
-  // Session 25: archive / restore handlers with audit
+  const fl=useMemo(()=>sourceList
+    .filter(p=>sf==="all"||p.status===sf)
+    .filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.location.toLowerCase().includes(q.toLowerCase())||p.client_name.toLowerCase().includes(q.toLowerCase()))
+    .filter(p=>p.progress>=minP)
+    .sort((a,b)=>sortBy==="progress"?b.progress-a.progress:sortBy==="budget"?b.budget-a.budget:a.name.localeCompare(b.name)),
+    [sourceList,q,sf,minP,sortBy]
+  );
+
   const archiveOne=(id,e)=>{
     e?.stopPropagation();
     const proj=projects.find(p=>p.id===id);if(!proj)return;
@@ -576,73 +677,116 @@ export function ProjectsView({user,projects,setProjects,setView,setSP,setAuditLo
     setProjects?.(p=>restoreProject(p,id));
     setAuditLog?.(p=>recordAudit(p,{actor:user,action:"UPDATE",resource:"project",resource_id:id,project_id:id,before:{archived_at:"set"},after:{archived_at:null},message:`Restored project: ${proj.name}`}));
   };
+
   return(
-    <div className="p-4 md:p-10 max-w-7xl">
-      <div className="flex items-end justify-between mb-8 pb-3" style={{borderBottom:"1px solid var(--st-line)"}}>
+    <div className="p-4 md:p-8 lg:p-10 max-w-7xl pb-24 lg:pb-10">
+      <div className="flex items-end justify-between mb-6 gap-3 flex-wrap">
         <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Portfolio</div>
-          <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">{showArchived?"Archived projects":"Projects"}</h1>
-          <p className="text-ink-500 text-sm mt-2">{fl.length} {fl.length===1?"project":"projects"} {showArchived?"archived":"found"}{!showArchived&&visibility.archived.length>0?` · ${visibility.archived.length} archived`:""}</p>
+          <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 mb-1.5">Portfolio</div>
+          <h1 className="font-display text-3xl md:text-4xl font-semibold text-ink-900 leading-tight">{showArchived?"Archived projects":"Projects"}</h1>
+          <p className="text-ink-500 text-sm mt-1.5">{fl.length} {fl.length===1?"project":"projects"} {showArchived?"archived":"found"}{!showArchived&&visibility.archived.length>0?` · ${visibility.archived.length} archived`:""}</p>
         </div>
         <div className="flex gap-2">
-          {/* Session 25: toggle archived view */}
-          <button onClick={()=>setShowArchived(p=>!p)} className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border transition-all ${showArchived?"bg-stone-200 text-ink-800 border-stone-300":"bg-white text-ink-600 border-stone-200 hover:bg-cream-100"}`} title="Toggle archived projects view"><Ic n="folder" s={15}/>{showArchived?"Show active":"Show archived"} {!showArchived&&visibility.archived.length>0?`(${visibility.archived.length})`:""}</button>
-          {can(user,"createProject")&&!showArchived&&<button onClick={()=>setView("create")} className="flex items-center gap-2 px-5 py-3 bg-gradient-gold text-white font-bold rounded-xl text-sm transition-all hover:shadow-editorial-deep tracking-wide"><Ic n="plus" s={16}/>New Project</button>}
+          <Button variant="secondary" size="md" onClick={()=>setShowArchived(p=>!p)} leftIcon={<Ic n="folder" s={15}/>}>
+            {showArchived?"Show active":"Show archived"}{!showArchived&&visibility.archived.length>0?` (${visibility.archived.length})`:""}
+          </Button>
+          {can(user,"createProject")&&!showArchived&&<Button variant="primary" size="md" onClick={()=>setView("create")} leftIcon={<Ic n="plus" s={16}/>}>New project</Button>}
         </div>
       </div>
-      <div className="flex gap-2 mb-4 flex-wrap"><div className="relative flex-1 min-w-48"><Ic n="search" s={16} c="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search projects, locations, clients..." className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"/></div><button onClick={()=>setShowFilt(p=>!p)} className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border transition-all ${showFilt?"bg-gradient-gold text-white border-transparent":"bg-white text-ink-600 border-stone-200"}`}><Ic n="sliders" s={15}/>Filters</button></div>
-      <div className="flex gap-2 mb-6 flex-wrap">{["all","active","completed","on_hold"].map(s=><button key={s} onClick={()=>setSF(s)} className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider uppercase border transition-all ${sf===s?"bg-ink-900 text-cream border-ink-900":"bg-white text-ink-600 border-stone-200 hover:border-stone-300"}`}>{s==="all"?"All":s.replace("_"," ")}</button>)}</div>
-      {showFilt&&<div className="bg-white rounded-2xl p-5 mb-5 grid sm:grid-cols-3 gap-4 shadow-editorial" style={{border:"1px solid var(--st-line)"}}><div><label className="text-[10px] font-bold text-ink-500 uppercase tracking-[0.24em] mb-2 block">Min Progress %</label><div className="flex items-center gap-2"><input type="range" min="0" max="100" value={minP} onChange={e=>setMinP(+e.target.value)} className="flex-1 accent-amber-600"/><span className="text-xs font-bold text-ink-700 w-8">{minP}%</span></div></div><div className="sm:col-span-2"><label className="text-[10px] font-bold text-ink-500 uppercase tracking-[0.24em] mb-2 block">Sort By</label><select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="name">Name (A-Z)</option><option value="progress">Progress (High-Low)</option><option value="budget">Budget (High-Low)</option></select></div></div>}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">{fl.map(p=>
-        <button key={p.id} onClick={()=>{setSP(p.id);setView("detail");}} className="group relative bg-white rounded-2xl p-6 text-left transition-all hover:shadow-editorial-hover" style={{border:"1px solid var(--st-line)"}}>
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-gold opacity-0 group-hover:opacity-100 transition-opacity"/>
-          <div className="flex items-start justify-between mb-3">
-            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700">{p.status==="active"?"In progress":p.status.replace("_"," ")}</div>
+
+      {/* Search + filters */}
+      <div className="flex gap-2 mb-3 flex-wrap">
+        <div className="relative flex-1 min-w-48">
+          <Ic n="search" s={16} c="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500"/>
+          <input
+            value={q}
+            onChange={e=>setQ(e.target.value)}
+            placeholder="Search projects, locations, clients..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15"
+          />
+        </div>
+        <Button variant={showFilt?"primary":"secondary"} size="md" onClick={()=>setShowFilt(p=>!p)} leftIcon={<Ic n="sliders" s={15}/>}>Filters</Button>
+      </div>
+      <div className="flex gap-1.5 mb-5 flex-wrap">{["all","active","completed","on_hold"].map(s=>
+        <button
+          key={s}
+          onClick={()=>setSF(s)}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold tracking-tight transition-all border ${sf===s?"bg-ink-900 text-cream border-ink-900":"bg-white text-ink-600 border-cream-200 hover:border-ink-500/30"}`}
+        >
+          {s==="all"?"All":s.replace("_"," ")}
+        </button>
+      )}</div>
+      {showFilt&&<div className="bg-white rounded-xl p-5 mb-5 grid sm:grid-cols-3 gap-4 border border-cream-200 shadow-card">
+        <div>
+          <label className="text-[10px] font-semibold text-ink-500 uppercase tracking-[0.18em] mb-2 block">Min progress %</label>
+          <div className="flex items-center gap-2">
+            <input type="range" min="0" max="100" value={minP} onChange={e=>setMinP(+e.target.value)} className="flex-1 accent-safety-500"/>
+            <span className="font-mono text-xs font-semibold text-ink-700 w-10 tabular-nums">{minP}%</span>
+          </div>
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-[10px] font-semibold text-ink-500 uppercase tracking-[0.18em] mb-2 block">Sort by</label>
+          <select value={sortBy} onChange={e=>setSortBy(e.target.value)} className="w-full p-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white">
+            <option value="name">Name (A-Z)</option>
+            <option value="progress">Progress (High-Low)</option>
+            <option value="budget">Budget (High-Low)</option>
+          </select>
+        </div>
+      </div>}
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{fl.map(p=>
+        <button
+          key={p.id}
+          onClick={()=>{setSP(p.id);setView("detail");}}
+          className="group relative bg-white rounded-xl p-5 text-left transition-all hover:shadow-hover border border-cream-200 hover:border-ink-500/20 overflow-hidden"
+        >
+          {/* Top status colour band */}
+          <div className="absolute top-0 left-0 right-0 h-0.5" style={{backgroundColor:sCol(p.status).bar}}/>
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-ink-500 font-mono">{p.status==="active"?"In progress":p.status.replace("_"," ")}</div>
             <Badge status={p.status}/>
           </div>
-          <h3 className="font-display text-xl font-semibold text-ink-900 group-hover:text-amber-800 line-clamp-2 mb-3 tracking-editorial leading-tight">{p.name}</h3>
-          <div className="space-y-1.5 mb-4">
+          <h3 className="font-display text-base font-semibold text-ink-900 group-hover:text-safety-600 line-clamp-2 mb-2.5 leading-tight">{p.name}</h3>
+          <div className="space-y-1 mb-3">
             <div className="flex items-center gap-2 text-xs text-ink-500"><Ic n="map" s={12}/><span className="truncate">{p.location}</span></div>
             <div className="flex items-center gap-2 text-xs text-ink-500"><Ic n="users" s={12}/>{p.client_name}</div>
           </div>
-          {p.status!=="completed"&&<div className="mt-4 pt-4" style={{borderTop:"1px solid var(--st-line)"}}>
-            <div className="flex justify-between items-baseline mb-2"><span className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">Progress</span><span className="font-display font-semibold text-ink-900 text-lg">{p.progress}<span className="text-ink-500 text-sm">%</span></span></div>
+          {p.status!=="completed"&&<div className="mt-3 pt-3 border-t border-cream-200">
+            <div className="flex justify-between items-baseline mb-1.5">
+              <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-ink-500">Progress</span>
+              <span className="font-mono font-semibold text-ink-900 text-base tabular-nums">{p.progress}<span className="text-ink-500 text-xs">%</span></span>
+            </div>
             <PBar v={p.progress} col={p.status==="on_hold"?"violet":"orange"}/>
           </div>}
-          {/* Session 24: surface the v2 project type at-a-glance.
-              Without this chip, an architect opening "Heritage Mall Renovation"
-              has no idea why BOQ + RA Bills + Labour tabs disappeared — they'd
-              think it's a bug. The chip makes type-gating self-explanatory. */}
           <div className="mt-3 flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cream-200/60 text-[10px] font-bold tracking-wider text-ink-700">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cream-200/60 text-[10px] font-semibold tracking-wide text-ink-700">
               <span>{typeChip(p.type).icon}</span>
               <span className="uppercase">{typeChip(p.type).label}</span>
             </div>
-            {/* Session 25: archive / restore action (orgadmin / architect only) */}
             {can(user,"createProject")&&(isArchived(p)
               ? <div className="flex items-center gap-1.5">
-                  {daysUntilPurge(p)!==null&&<span className="text-[9px] text-stone-500 font-semibold uppercase tracking-wider">{daysUntilPurge(p)>0?`${daysUntilPurge(p)}d to purge`:"purge due"}</span>}
-                  <button onClick={(e)=>restoreOne(p.id,e)} className="text-[10px] font-bold text-emerald-700 hover:underline">Restore</button>
+                  {daysUntilPurge(p)!==null&&<span className="text-[9px] text-ink-500 font-semibold uppercase tracking-wide font-mono">{daysUntilPurge(p)>0?`${daysUntilPurge(p)}d to purge`:"purge due"}</span>}
+                  <button onClick={(e)=>restoreOne(p.id,e)} className="text-[10px] font-semibold text-emerald-700 hover:underline">Restore</button>
                 </div>
-              : <button onClick={(e)=>archiveOne(p.id,e)} className="text-[10px] font-bold text-stone-500 hover:text-stone-800 hover:underline opacity-0 group-hover:opacity-100 transition-opacity" title="Archive (90-day restore window)">Archive</button>)}
+              : <button onClick={(e)=>archiveOne(p.id,e)} className="text-[10px] font-semibold text-ink-500 hover:text-ink-900 hover:underline opacity-0 group-hover:opacity-100 transition-opacity" title="Archive (90-day restore window)">Archive</button>)}
           </div>
         </button>
       )}{fl.length===0&&(()=>{
         const allMine=visibleProjectsForUser(projects,user);
         const filtered=allMine.length>0;
         return (
-          <div className="sm:col-span-2 lg:col-span-3 bg-white rounded-2xl p-12 text-center shadow-editorial" style={{border:"1px dashed var(--st-line)"}}>
-            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Ic n={filtered?"search":"folder"} s={24} c="text-amber-700"/></div>
-            <div className="font-display text-xl font-semibold text-ink-900 tracking-editorial mb-2">{filtered?"No projects match your filters":"No projects yet"}</div>
-            <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-5">
+          <div className="sm:col-span-2 lg:col-span-3 bg-white rounded-xl p-10 text-center border border-dashed border-cream-200">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-50 flex items-center justify-center text-safety-600"><Ic n={filtered?"search":"folder"} s={22}/></div>
+            <div className="font-display text-lg font-semibold text-ink-900 mb-1.5">{filtered?"No projects match your filters":"No projects yet"}</div>
+            <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-4">
               {filtered
                 ? "Try clearing the search or switching to All status to see everything in your workspace."
                 : can(user,"createProject")
                   ? "Create your first project to start tracking the site. You can add drawings, BOQ, RA bills, daily updates and team activity once it's set up."
                   : "Once your team adds a project you have access to, it will appear here."}
             </p>
-            {filtered&&<button onClick={()=>{setQ("");setSF("all");setMinP(0);}} className="inline-flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-ink-700 font-bold rounded-xl text-sm tracking-wide hover:bg-stone-50 transition-all"><Ic n="x" s={14}/>Reset filters</button>}
-            {!filtered&&can(user,"createProject")&&<button onClick={()=>setView("create")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Ic n="plus" s={14}/>Create your first project</button>}
+            {filtered&&<Button variant="secondary" size="md" onClick={()=>{setQ("");setSF("all");setMinP(0);}} leftIcon={<Ic n="x" s={14}/>}>Reset filters</Button>}
+            {!filtered&&can(user,"createProject")&&<Button variant="primary" size="md" onClick={()=>setView("create")} leftIcon={<Ic n="plus" s={14}/>}>Create your first project</Button>}
           </div>
         );
       })()}</div>
@@ -650,59 +794,96 @@ export function ProjectsView({user,projects,setProjects,setView,setSP,setAuditLo
   );
 }
 
+// ── CREATE PROJECT ────────────────────────────────────────────────────────────
 export function CreateView({user,setView,setProjects,setAuditLog}){
-  // Hooks must be called unconditionally (react-hooks/rules-of-hooks).
-  // Session 24: + `type` field on the form so v2 project-type-gated tabs work end-to-end.
-  const[f,setF]=useState({name:"",cn:"",ce:"",loc:"",sd:"",ed:"",budget:"",desc:"",type:DEFAULT_PROJECT_TYPE});const[done,setDone]=useState(false);const[err,setErr]=useState({});
-  if(!can(user,"createProject")) return <div className="p-8"><AccessDenied msg="Only Architects can create new projects."/></div>;
+  const[f,setF]=useState({name:"",cn:"",ce:"",loc:"",sd:"",ed:"",budget:"",desc:"",type:DEFAULT_PROJECT_TYPE});
+  const[done,setDone]=useState(false);
+  const[err,setErr]=useState({});
+  if(!can(user,"createProject")) return <div className="p-8"><AccessDeniedShim msg="Only Architects can create new projects."/></div>;
   const val=()=>{const e={};if(!f.name.trim())e.name="Required";if(!f.cn.trim())e.cn="Required";if(!f.loc.trim())e.loc="Required";if(!f.sd)e.sd="Required";return e;};
   const sub=()=>{
     const e=val();if(Object.keys(e).length){setErr(e);return;}
     const id="p_"+Date.now();
     setProjects(p=>[...p,{id,type:f.type||DEFAULT_PROJECT_TYPE,name:f.name,client_name:f.cn,client_email:f.ce,location:f.loc,start_date:f.sd,expected_end_date:f.ed,budget:parseFloat(f.budget)||0,description:f.desc,status:"active",progress:0}]);
-    // Immutable audit row — required for compliance + multi-tenant trace.
     if(setAuditLog) setAuditLog(p=>recordAudit(p,{actor:user,action:"CREATE",resource:"project",resource_id:id,project_id:id,message:`Created ${f.type} project ${f.name} for ${f.cn}`}));
-    setDone(true);setTimeout(()=>setView("projects"),1800);
+    setDone(true);setTimeout(()=>setView("projects"),1500);
   };
-  if(done) return <div className="p-8 flex items-center justify-center min-h-96"><div className="text-center"><div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4"><Ic n="check" s={28} c="text-emerald-600"/></div><h2 className="text-xl font-black text-slate-800 mb-2">Project Created!</h2></div></div>;
-  const inp=(key,lbl,type="text",ph="",fk)=>{const k=fk||key;return<div><label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">{lbl}</label><input type={type} value={f[k]} onChange={e=>{setF(p=>({...p,[k]:e.target.value}));setErr(p=>({...p,[key]:""}));}} placeholder={ph} className={`w-full p-3.5 border rounded-xl text-sm outline-none transition-all ${err[key]?"border-red-300 bg-red-50":"border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-50"}`}/>{err[key]&&<p className="text-red-500 text-xs mt-1">{err[key]}</p>}</div>;};
+  if(done) return (
+    <div className="p-8 flex items-center justify-center min-h-96">
+      <div className="text-center">
+        <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-700"><Ic n="check" s={28}/></div>
+        <h2 className="font-display text-xl font-semibold text-ink-900 mb-1">Project Created!</h2>
+        <p className="text-ink-500 text-sm">Loading your project list…</p>
+      </div>
+    </div>
+  );
+  const inp=(key,lbl,type="text",ph="",fk)=>{
+    const k=fk||key;
+    return <div>
+      <label className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-500 mb-2 block">{lbl}</label>
+      <input
+        type={type}
+        value={f[k]}
+        onChange={e=>{setF(p=>({...p,[k]:e.target.value}));setErr(p=>({...p,[key]:""}));}}
+        placeholder={ph}
+        className={`w-full px-3.5 py-3 border rounded-lg text-sm outline-none transition-all ${err[key]?"border-red-300 bg-red-50":"border-cream-200 focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15"}`}
+      />
+      {err[key]&&<p className="text-red-600 text-xs mt-1 font-semibold">{err[key]}</p>}
+    </div>;
+  };
   return(
-    <div className="p-4 md:p-8 max-w-2xl">
-      <button onClick={()=>setView("projects")} className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm mb-6"><Ic n="arrow" s={16}/>Back</button>
-      <h1 className="text-2xl font-black text-slate-800 mb-6">Create New Project</h1>
-      <p className="text-slate-500 text-sm mb-5 -mt-3">A few details to get started — you can edit everything later and add drawings, BOQ, RA bills and updates from the project page.</p>
-      <div className="bg-white rounded-2xl border border-slate-200 p-7 space-y-5">
-        {/* Session 24: project-type picker. Drives which tabs show inside the project. */}
+    <div className="p-4 md:p-8 max-w-2xl pb-24 lg:pb-10">
+      <button onClick={()=>setView("projects")} className="flex items-center gap-1.5 text-ink-500 hover:text-ink-900 text-sm font-semibold mb-5"><Ic n="arrow" s={16}/>Back</button>
+      <div className="mb-5">
+        <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 mb-1.5">New project</div>
+        <h1 className="font-display text-2xl md:text-3xl font-semibold text-ink-900">Create a new project</h1>
+        <p className="text-ink-500 text-sm mt-2">A few details to get started — you can edit everything later and add drawings, BOQ, RA bills and updates from the project page.</p>
+      </div>
+      <div className="bg-white rounded-xl border border-cream-200 p-5 md:p-6 space-y-5 shadow-card">
         <div>
-          <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Project Type</label>
+          <label className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-500 mb-2 block">Project type</label>
           <div className="grid grid-cols-2 gap-2">
             {PROJECT_TYPES.map(t=>(
-              <button key={t.id} type="button" onClick={()=>setF(p=>({...p,type:t.id}))} className={`text-left p-3 rounded-xl border-2 transition-all ${f.type===t.id?"border-amber-600 bg-amber-50":"border-slate-200 hover:border-slate-300"}`}>
-                <div className="font-bold text-sm text-ink-800 mb-0.5">{t.label}</div>
+              <button
+                key={t.id}
+                type="button"
+                onClick={()=>setF(p=>({...p,type:t.id}))}
+                className={`text-left p-3 rounded-lg border transition-all ${f.type===t.id?"border-safety-500 bg-orange-50":"border-cream-200 hover:border-ink-500/30"}`}
+              >
+                <div className="font-semibold text-sm text-ink-900 mb-0.5">{t.label}</div>
                 <div className="text-[11px] text-ink-500 leading-snug">{t.desc}</div>
               </button>
             ))}
           </div>
           <p className="text-[10px] text-ink-400 mt-1.5">You can change this later from the project's settings.</p>
         </div>
-        {inp("name","Project Name","text","e.g. Riverside Towers — Phase II")}
-        <div className="grid grid-cols-2 gap-4">{inp("cn","Client Name","text","e.g. Asha Estates","cn")}{inp("ce","Client Email","email","client@example.com","ce")}</div>
+        {inp("name","Project name","text","e.g. Riverside Towers — Phase II")}
+        <div className="grid grid-cols-2 gap-3">{inp("cn","Client name","text","e.g. Asha Estates","cn")}{inp("ce","Client email","email","client@example.com","ce")}</div>
         {inp("loc","Location","text","City or neighbourhood","loc")}
-        <div className="grid grid-cols-2 gap-4">{inp("sd","Start Date","date","","sd")}{inp("ed","End Date","date","","ed")}</div>
+        <div className="grid grid-cols-2 gap-3">{inp("sd","Start date","date","","sd")}{inp("ed","End date","date","","ed")}</div>
         {inp("budget","Budget (₹)","number","e.g. 45000000")}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">Description</label>
-          <textarea value={f.desc} onChange={e=>setF(p=>({...p,desc:e.target.value}))} placeholder="Short scope summary — what's being built, key milestones, anything special." className="w-full p-3.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 resize-none h-20"/>
+          <label className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-500 mb-2 block">Description</label>
+          <textarea
+            value={f.desc}
+            onChange={e=>setF(p=>({...p,desc:e.target.value}))}
+            placeholder="Short scope summary — what's being built, key milestones, anything special."
+            className="w-full px-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 resize-none h-20"
+          />
         </div>
-        <button onClick={sub} className="w-full py-4 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">Create Project →</button>
+        <Button variant="primary" size="lg" fullWidth onClick={sub} rightIcon={<span aria-hidden>→</span>}>Create project</Button>
       </div>
     </div>
   );
 }
 
-// ── CLIENT SHARE VIEW ─────────────────────────────────────────────────────────
-
-// ── CALENDAR VIEW (cross-project deadlines) ──────────────────────────────────
-
-// ── COMMENTS THREAD (reusable) ───────────────────────────────────────────────
+// Local shim — CreateView imports AccessDenied inline-only when permission
+// fails. Imported directly to avoid an extra "AccessDenied" symbol export.
+function AccessDeniedShim({msg}){
+  return <div className="flex flex-col items-center justify-center py-20 text-center">
+    <div className="w-16 h-16 bg-cream-200 rounded-full flex items-center justify-center mb-4"><Ic n="lock" s={28} c="text-ink-500"/></div>
+    <h3 className="font-display font-semibold text-ink-800 mb-1">Access Restricted</h3>
+    <p className="text-ink-500 text-sm max-w-xs">{msg}</p>
+  </div>;
+}
 
