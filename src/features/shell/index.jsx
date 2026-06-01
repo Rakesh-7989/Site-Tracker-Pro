@@ -711,8 +711,8 @@ export function DashboardView({user,projects,updates,issues,activity,setView,set
         </div>
       )}
 
-      {/* Stat tiles — 4 in a grid, JetBrains Mono digits */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-10">
+      {/* Stat tiles — Session 29.3: 2×2 on mobile, 4-across on tablet/desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10">
         <SC icon="folder" label="Total projects" value={mp.length} accent="blue"/>
         <SC icon="building" label="Active" value={activeCount} sub={`${completedCount} completed`} accent="orange"/>
         {user.role!=="client"
