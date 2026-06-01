@@ -115,6 +115,13 @@ export function parseCsv(csv) {
   if (!csv || typeof csv !== "string") {
     return { vendor: "unknown", target: null, rows: [], errors: [{ line: 0, reason: "empty-input" }] };
   }
+  // Session 28.3: strip UTF-8 BOM (Byte Order Mark, U+FEFF) — Excel-saved
+  // CSVs on Mac and many web exports prefix the file with this character,
+  // which would otherwise be glued to the first header column (e.g.
+  // "BOM-prefixed project_id") and cause detectVendor() to mis-classify
+  // the file as "unknown-format". Check charCode to avoid ESLint's
+  // no-irregular-whitespace error on a literal BOM char.
+  if (csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1);
   const rows = parseRows(csv);
   if (rows.length < 2) {
     return { vendor: "unknown", target: null, rows: [], errors: [{ line: 0, reason: "no-data-rows" }] };

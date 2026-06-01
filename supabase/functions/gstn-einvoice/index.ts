@@ -79,8 +79,14 @@ function buildPayload({ invoice, seller, buyer, items, supplyType = "B2B" }: {
     };
   });
 
+  // Session 28.3: sum CGST + SGST + IGST independently so the value totals
+  // stay correct even if a future item type breaks the CGST=SGST symmetry
+  // (e.g. mixed service items where SGST might differ from CGST).
   const totalValue = itemList.reduce((s, it) => s + it.TotItemVal, 0);
-  const cgst = itemList.reduce((s, it) => s + it.CgstAmt, 0);
+  const totalCgst = itemList.reduce((s, it) => s + it.CgstAmt, 0);
+  const totalSgst = itemList.reduce((s, it) => s + it.SgstAmt, 0);
+  const totalIgst = itemList.reduce((s, it) => s + it.IgstAmt, 0);
+  const assVal = +(totalValue - totalCgst - totalSgst - totalIgst).toFixed(2);
 
   return {
     ok: true,
@@ -92,8 +98,8 @@ function buildPayload({ invoice, seller, buyer, items, supplyType = "B2B" }: {
       BuyerDtls: buyer?.gstin ? { Gstin: String(buyer.gstin).toUpperCase(), LglNm: buyer.name } : undefined,
       ItemList: itemList,
       ValDtls: {
-        AssVal: +(totalValue - cgst * 2).toFixed(2),
-        CgstVal: cgst, SgstVal: cgst, IgstVal: 0, TotInvVal: totalValue,
+        AssVal: assVal,
+        CgstVal: totalCgst, SgstVal: totalSgst, IgstVal: totalIgst, TotInvVal: totalValue,
       },
     },
   };

@@ -1743,7 +1743,7 @@ export function DetailView({pid,user,setView,projects,setProjects,milestones,set
         <div className="relative">
           <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
             <div className="flex-1 min-w-0 pr-4">
-              <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">— {ROLE_META[user.role].label} view</div>
+              <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-3">— {(ROLE_META[user.role]||ROLE_META.client||{label:"Member"}).label} view</div>
               <h1 className="font-display text-4xl md:text-5xl font-light text-ink-900 mb-3 tracking-editorial leading-[1.05]">{proj.name}</h1>
               <p className="text-ink-600 text-base leading-relaxed max-w-2xl">{proj.description}</p>
               <div className="flex flex-wrap gap-5 text-sm text-ink-500 mt-5">
