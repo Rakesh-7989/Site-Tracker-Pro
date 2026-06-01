@@ -74,6 +74,135 @@ export async function verifyEmailOtp(email, token) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+/**
+ * Session 29 — Self-serve sign-up (Point 2 from spec).
+ *
+ * Creates an auth.users row with metadata; the `trg_handle_signup` trigger
+ * in 34_signup_self_serve.sql then auto-creates:
+ *   - public.organizations row (firm)
+ *   - public.profiles row (set role='orgadmin')
+ *   - public.org_members row (linking user → org as admin)
+ *
+ * After this, Supabase sends a verification email; the user must click the
+ * link (or paste the OTP code) before they can sign in.
+ *
+ * @param {Object} args
+ * @param {string} args.email      — work email
+ * @param {string} args.password   — chosen password (>= 6 chars per Supabase default)
+ * @param {string} args.firmName   — firm / org name (becomes organizations.name)
+ * @param {string} args.userName   — full name of the signing-up person
+ * @param {string} args.plan       — 'basic' | 'pro' | 'business' (NOT 'custom')
+ */
+export async function signUp({ email, password, firmName, userName, plan = "basic" }) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled" };
+  if (plan === "custom") return { ok: false, error: "Custom plan requires sales contact." };
+  const { data, error } = await sb.auth.signUp({
+    email: String(email || "").trim(),
+    password: String(password || ""),
+    options: {
+      data: {
+        firm_name: String(firmName || "").trim(),
+        name: String(userName || "").trim(),
+        plan,
+      },
+      emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+    },
+  });
+  if (error) return { ok: false, error: error.message };
+  return {
+    ok: true,
+    user: data?.user || null,
+    needsConfirmation: !data?.session,   // true if email verification required
+  };
+}
+
+/**
+ * Session 29 — Password sign-in (Point 5 from spec).
+ * Alternative to magic-link for users who prefer typed credentials.
+ */
+export async function signInWithPassword(email, password) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled" };
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: String(email || "").trim(),
+    password: String(password || ""),
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, user: data?.user || null };
+}
+
+/**
+ * Session 29 — Request a password-reset email.
+ */
+export async function resetPassword(email) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled" };
+  const { error } = await sb.auth.resetPasswordForEmail(
+    String(email || "").trim(),
+    { redirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
+  );
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/**
+ * Session 29 — Accept an org invitation (called when ?invite=<token> is in URL).
+ * Calls accept_org_invitation() RPC defined in 37_org_invitations.sql.
+ */
+export async function acceptOrgInvitation(token) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled" };
+  const { data, error } = await sb.rpc("accept_org_invitation", { p_token: token });
+  if (error) return { ok: false, error: error.message };
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.ok) return { ok: false, error: row?.reason || "unknown" };
+  return { ok: true, orgId: row.org_id, role: row.role };
+}
+
+/**
+ * Session 29 — Create an org invitation (called from Org Admin → Members).
+ * Calls create_org_invitation() RPC. Returns the generated token so the UI
+ * can build a "?invite=<token>" share link if needed.
+ */
+export async function createOrgInvitation(email, role) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled" };
+  const { data, error } = await sb.rpc("create_org_invitation", {
+    p_email: String(email || "").trim(),
+    p_role: String(role || "client"),
+  });
+  if (error) return { ok: false, error: error.message };
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.ok) return { ok: false, error: row?.reason || "unknown" };
+  return { ok: true, invitationId: row.invitation_id, token: row.token };
+}
+
+/**
+ * Session 29 — Fetch the public plan list (filters out super-admin-only tiers).
+ * Reads the public_plans() RPC defined in 36_custom_plan_lock.sql.
+ */
+export async function fetchPublicPlans() {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled", plans: [] };
+  const { data, error } = await sb.from("plans").select("*")
+    .eq("status", "active").eq("requires_superadmin", false)
+    .order("display_order", { ascending: true });
+  if (error) return { ok: false, error: error.message, plans: [] };
+  return { ok: true, plans: data || [] };
+}
+
+/**
+ * Session 29 — Read the org's current quota snapshot.
+ * Returns: [{resource:'projects', current_count, max_allowed, at_quota}, ...]
+ */
+export async function fetchOrgQuotaSnapshot(orgId) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled", quotas: [] };
+  const { data, error } = await sb.rpc("org_quota_snapshot", { p_org_id: orgId });
+  if (error) return { ok: false, error: error.message, quotas: [] };
+  return { ok: true, quotas: data || [] };
+}
+
 export async function getCurrentUser() {
   const sb = await getSupabaseClient();
   if (!sb) return null;

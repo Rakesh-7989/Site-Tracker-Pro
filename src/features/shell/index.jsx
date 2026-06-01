@@ -16,7 +16,7 @@
 // (sendMagicLink / submitOtp / handleLoadDemo / handleClearAll / featureBlocked
 // / kioskBlocked / archive flows) is untouched — only the markup changed.
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Ic, Av, Badge, PBar, SC, Button, Tile, FlatStatus, fmtDate, roleMeta, sCol } from "../../components/ui.jsx";
 import { PERMS, can, visibleProjectsForUser } from "../../lib/permissions.js";
 // Session 16: feature-flag cascade (platform → org → default).
@@ -27,18 +27,66 @@ import { typeChip } from "../../lib/projectTypes.js";
 // Session 25: project archive / restore — competitor-gap miss.
 import { archiveProject, restoreProject, isArchived, daysUntilPurge, partitionByArchive } from "../../lib/projectArchive.js";
 import { recordAudit } from "../../lib/audit.js";
-import { isSupabaseEnabled, signInWithMagicLink, verifyEmailOtp } from "../../lib/supabase.js";
+import { isSupabaseEnabled, signInWithMagicLink, verifyEmailOtp, signUp, signInWithPassword, resetPassword, fetchPublicPlans } from "../../lib/supabase.js";
 import { MOCK_USERS } from "../../data/seed.js";
 import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "../../lib/demoMode.js";
 
 // ── LOGIN SCREEN ───────────────────────────────────────────────────────────
 export function LoginScreen({onLogin,dark,toggleDark}){
   const backendEnabled = isSupabaseEnabled();
+  // Session 29: 3 modes — login (default) / signup / reset-password.
+  const[mode,setMode]=useState("login");
   const[email,setEmail]=useState("");
+  const[password,setPassword]=useState("");
   const[mlState,setMlState]=useState({state:"idle",msg:""});
   // Session 28.2: OTP code fallback (Gmail prefetches link tokens, so a
   // 6-digit code that the user types manually is the more reliable path).
   const[otpCode,setOtpCode]=useState("");
+  // Session 29: signup form state — firm name, user name, plan.
+  const[firmName,setFirmName]=useState("");
+  const[userName,setUserName]=useState("");
+  const[plans,setPlans]=useState([]);
+  const[selectedPlan,setSelectedPlan]=useState("basic");
+  const[authMethod,setAuthMethod]=useState("magic");   // "magic" or "password"
+  // Load public plans (filters out super-admin-only tiers) when signup opens.
+  useEffect(()=>{
+    if(mode==="signup"&&backendEnabled&&plans.length===0){
+      fetchPublicPlans().then(res=>{if(res.ok)setPlans(res.plans);});
+    }
+  },[mode,backendEnabled,plans.length]);
+
+  const handleSignup=async()=>{
+    if(!email.trim()||!password||!firmName.trim()){
+      setMlState({state:"err",msg:"Email, password, and firm name are required."});return;
+    }
+    if(password.length<6){setMlState({state:"err",msg:"Password must be at least 6 characters."});return;}
+    setMlState({state:"signing-up",msg:""});
+    const res=await signUp({email:email.trim(),password,firmName:firmName.trim(),userName:userName.trim()||email.split("@")[0],plan:selectedPlan});
+    if(res.ok){
+      if(res.needsConfirmation){
+        setMlState({state:"sent",msg:`Check ${email} — click the link OR enter the 6-digit code below to finish signup.`});
+      } else {
+        setMlState({state:"verified",msg:"Account created. Loading your workspace…"});
+        setTimeout(()=>window.location.reload(),600);
+      }
+    } else setMlState({state:"err",msg:res.error||"Signup failed. Try again."});
+  };
+
+  const handlePasswordLogin=async()=>{
+    if(!email.trim()||!password){setMlState({state:"err",msg:"Email and password required."});return;}
+    setMlState({state:"verifying",msg:""});
+    const res=await signInWithPassword(email.trim(),password);
+    if(res.ok){setMlState({state:"verified",msg:"Signed in. Loading…"});setTimeout(()=>window.location.reload(),400);}
+    else setMlState({state:"err",msg:res.error||"Invalid credentials."});
+  };
+
+  const handlePasswordReset=async()=>{
+    if(!email.trim()){setMlState({state:"err",msg:"Enter your email first."});return;}
+    setMlState({state:"sending",msg:""});
+    const res=await resetPassword(email.trim());
+    if(res.ok)setMlState({state:"sent",msg:`Reset link sent to ${email}.`});
+    else setMlState({state:"err",msg:res.error||"Failed to send reset link."});
+  };
   const sendMagicLink=async()=>{
     if(!email.trim()){setMlState({state:"err",msg:"Enter your email."});return;}
     setMlState({state:"sending",msg:""});
@@ -184,19 +232,102 @@ export function LoginScreen({onLogin,dark,toggleDark}){
             <p className="text-ink-500 text-sm mt-2 leading-relaxed">{backendEnabled?"Enter your work email — we'll send a one-time sign-in link.":"Select your role to continue. Permissions and visible modules apply automatically."}</p>
           </div>
 
-          {backendEnabled&&<div className="mb-5 bg-white rounded-xl p-5 border border-cream-200 shadow-card">
+          {/* Session 29: mode tabs — Sign in / Sign up */}
+          {backendEnabled&&<div className="mb-4 inline-flex bg-cream-100 rounded-lg p-1 text-xs font-semibold">
+            <button onClick={()=>{setMode("login");setMlState({state:"idle",msg:""});}} className={`px-3.5 py-1.5 rounded-md transition ${mode==="login"?"bg-white text-ink-900 shadow-sm":"text-ink-500 hover:text-ink-700"}`}>Sign in</button>
+            <button onClick={()=>{setMode("signup");setMlState({state:"idle",msg:""});}} className={`px-3.5 py-1.5 rounded-md transition ${mode==="signup"?"bg-white text-ink-900 shadow-sm":"text-ink-500 hover:text-ink-700"}`}>Start a firm</button>
+          </div>}
+
+          {/* Session 29: Sign-up card (new) */}
+          {backendEnabled&&mode==="signup"&&<div className="mb-5 bg-white rounded-xl p-5 border border-cream-200 shadow-card">
+            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 mb-3">Self-serve · Plan teesukoni</div>
+            <h3 className="font-display text-xl font-semibold text-ink-900 mb-1">Start your firm on SiteTrack</h3>
+            <p className="text-ink-500 text-xs mb-4">14-day free trial. No credit card. Upgrade anytime.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Firm / Org name</label>
+                <input value={firmName} onChange={e=>setFirmName(e.target.value)} type="text" placeholder="Greenfield Developers Pvt Ltd" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Your name</label>
+                <input value={userName} onChange={e=>setUserName(e.target.value)} type="text" placeholder="Mohan Boyapati" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Work email</label>
+                <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="you@yourcompany.in" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1">Password</label>
+                <input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="min 6 characters" className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 bg-white"/>
+              </div>
+              {/* Plan picker — filters out Custom (super-admin only) via fetchPublicPlans */}
+              <div>
+                <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Pick a plan</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {(plans.length?plans:[{id:"basic",name:"Free trial",tagline:"14 days, no card",monthly_inr:0},{id:"pro",name:"Pro",tagline:"Solo builders",monthly_inr:99900},{id:"business",name:"Business",tagline:"Growing firms",monthly_inr:299900,recommended:true}]).map(pl=>(
+                    <button key={pl.id} type="button" onClick={()=>setSelectedPlan(pl.id)} className={`text-left px-3.5 py-2.5 rounded-lg border transition flex items-start justify-between gap-3 ${selectedPlan===pl.id?"border-safety-500 bg-safety-500/5":"border-cream-200 bg-white hover:border-ink-500/30"}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-ink-900">{pl.name}</span>
+                          {pl.recommended&&<span className="text-[9px] font-bold uppercase tracking-wide bg-safety-500 text-white px-1.5 py-0.5 rounded">Recommended</span>}
+                        </div>
+                        <div className="text-[11px] text-ink-500 mt-0.5">{pl.tagline}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-sm font-bold text-ink-900">{pl.monthly_inr?`₹${Math.round(pl.monthly_inr/100).toLocaleString("en-IN")}`:"Free"}</div>
+                        <div className="text-[10px] text-ink-500">{pl.monthly_inr?"per month":"trial"}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <Button variant="primary" size="lg" fullWidth onClick={handleSignup} disabled={mlState.state==="signing-up"} className="mt-4">{mlState.state==="signing-up"?"Creating your firm…":"Start your firm →"}</Button>
+            {mlState.state==="sent"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
+            {mlState.state==="verified"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
+            {mlState.state==="err"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="danger"/></div>}
+            {/* OTP fallback also available after sign-up — Supabase sends a confirmation email with both link + code */}
+            {(mlState.state==="sent"||mlState.state==="err")&&<div className="mt-4 pt-4 border-t border-cream-200">
+              <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Or enter 6-digit code from email</label>
+              <div className="flex gap-2">
+                <input value={otpCode} onChange={e=>setOtpCode(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submitOtp();}} type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} placeholder="123456" className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 font-mono tracking-[0.3em] text-center bg-white"/>
+                <Button variant="secondary" size="md" onClick={submitOtp} disabled={mlState.state==="verifying"}>{mlState.state==="verifying"?"…":"Verify"}</Button>
+              </div>
+            </div>}
+          </div>}
+
+          {backendEnabled&&mode==="login"&&<div className="mb-5 bg-white rounded-xl p-5 border border-cream-200 shadow-card">
+            {/* Session 29: auth method toggle — Magic link / Password */}
+            <div className="flex items-center gap-2 mb-3">
+              <button onClick={()=>setAuthMethod("magic")} className={`text-[10px] font-semibold tracking-[0.18em] uppercase transition ${authMethod==="magic"?"text-safety-600 border-b-2 border-safety-500":"text-ink-500 hover:text-ink-700"} pb-1`}>Magic link</button>
+              <button onClick={()=>setAuthMethod("password")} className={`text-[10px] font-semibold tracking-[0.18em] uppercase transition ${authMethod==="password"?"text-safety-600 border-b-2 border-safety-500":"text-ink-500 hover:text-ink-700"} pb-1`}>Password</button>
+            </div>
             <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Work email</label>
             <input
               value={email}
               onChange={e=>setEmail(e.target.value)}
-              onKeyDown={e=>{if(e.key==="Enter")sendMagicLink();}}
+              onKeyDown={e=>{if(e.key==="Enter")authMethod==="password"?handlePasswordLogin():sendMagicLink();}}
               type="email"
               placeholder="you@yourcompany.in"
               className="w-full px-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 mb-3 bg-white"
             />
-            <Button variant="primary" size="lg" fullWidth onClick={sendMagicLink} disabled={mlState.state==="sending"||mlState.state==="verifying"}>
-              {mlState.state==="sending"?"Sending…":"Send sign-in link"}
+            {authMethod==="password"&&<>
+              <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Password</label>
+              <input
+                value={password}
+                onChange={e=>setPassword(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Enter")handlePasswordLogin();}}
+                type="password"
+                placeholder="••••••••"
+                className="w-full px-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 focus:ring-2 focus:ring-safety-500/15 mb-3 bg-white"
+              />
+            </>}
+            <Button variant="primary" size="lg" fullWidth onClick={authMethod==="password"?handlePasswordLogin:sendMagicLink} disabled={mlState.state==="sending"||mlState.state==="verifying"}>
+              {authMethod==="password"
+                ? (mlState.state==="verifying"?"Signing in…":"Sign in")
+                : (mlState.state==="sending"?"Sending…":"Send sign-in link")}
             </Button>
+            {authMethod==="password"&&<button onClick={handlePasswordReset} className="mt-2 text-[11px] text-ink-500 hover:text-safety-600 underline">Forgot password?</button>}
             {mlState.state==="sent"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
             {mlState.state==="verified"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="success"/></div>}
             {mlState.state==="err"&&<div className="mt-3"><FlatStatus label={mlState.msg} variant="danger"/></div>}
