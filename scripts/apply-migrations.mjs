@@ -41,8 +41,17 @@ if (!dbUrl || dbUrl.includes("YOUR_") || dbUrl.length < 20) {
 
 // ── List migration files ────────────────────────────────────────────────
 const dir = join(root, "scripts/supabase");
+
+// Files 04 + 05 are legacy RLS assertion harnesses written when the project
+// assumed service_role context (they INSERT into auth.users + call a custom
+// assert_eq function not defined here). They're meaningful only in a freshly
+// seeded test database — skip them in the regular runner. Apply manually via
+// Supabase SQL Editor when running RLS regression sweeps.
+const SKIP_FILES = new Set(["04_rls_tests.sql", "05_rls_phase1_tests.sql"]);
+
 const files = readdirSync(dir)
   .filter(f => /^\d+_.*\.sql$/.test(f))
+  .filter(f => !SKIP_FILES.has(f))
   .sort();   // numeric prefix ensures order
 
 if (files.length === 0) {
@@ -62,6 +71,24 @@ const client = new pg.Client({
 
 try {
   await client.connect();
+  // Session 28.1: allow `--reset` flag to drop + recreate the public schema
+  // before applying migrations. Useful when a previous partial run left
+  // policies/constraints behind that aren't `if not exists`-aware. Safe on
+  // a fresh project (no data yet); destructive on an existing one — guard
+  // by requiring an explicit flag.
+  if (process.argv.includes("--reset")) {
+    console.log("\n⚠️  --reset flag: dropping + recreating public schema...");
+    await client.query(`
+      drop schema if exists public cascade;
+      create schema public;
+      grant usage on schema public to postgres, anon, authenticated, service_role;
+      grant all on schema public to postgres, service_role;
+      alter default privileges in schema public grant all on tables to postgres, service_role;
+      alter default privileges in schema public grant all on functions to postgres, service_role;
+      alter default privileges in schema public grant all on sequences to postgres, service_role;
+    `);
+    console.log("   ✅ public schema reset.\n");
+  }
 } catch (e) {
   console.error("❌ Could not connect to Postgres:");
   console.error(`   ${e.message}`);

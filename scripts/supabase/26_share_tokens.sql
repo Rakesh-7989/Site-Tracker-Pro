@@ -27,9 +27,13 @@ create table if not exists share_tokens (
 
 create index if not exists idx_share_tokens_token on share_tokens(token);
 create index if not exists idx_share_tokens_org on share_tokens(org_id);
+-- Session 28.1: Postgres index predicates require IMMUTABLE functions.
+-- now() is STABLE, not IMMUTABLE, so we only filter by `revoked_at` in the
+-- predicate. The expires-at check happens at query time via the
+-- validate_share_token() function below.
 create index if not exists idx_share_tokens_active
   on share_tokens(project_id, scope)
-  where revoked_at is null and (expires_at is null or expires_at > now());
+  where revoked_at is null;
 
 alter table share_tokens enable row level security;
 

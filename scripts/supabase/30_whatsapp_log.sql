@@ -11,7 +11,7 @@ create table if not exists whatsapp_log (
   id              uuid primary key default gen_random_uuid(),
   org_id          uuid references organizations(id) on delete set null,
   project_id      uuid references projects(id) on delete set null,
-  to              text not null,                              -- E.164
+  to_phone        text not null,                              -- E.164 (was `to`; renamed because `to` is a Postgres reserved word)
   wa_id           text,                                       -- normalized by Meta
   kind            text not null check (kind in ('text','template')),
   template_name   text,

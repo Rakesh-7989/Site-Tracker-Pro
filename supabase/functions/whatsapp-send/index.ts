@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
   if (!rl.ok) {
     await supa.from("whatsapp_log").insert({
       org_id: body.org_id, project_id: body.project_id,
-      to: body.to, kind: body.kind, status: "rate-limited", failure_reason: rl.reason,
+      to_phone: body.to, kind: body.kind, status: "rate-limited", failure_reason: rl.reason,
     });
     return json({ error: "rate-limited", reason: rl.reason }, 429);
   }
@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
   await supa.from("whatsapp_log").insert({
     org_id: body.org_id,
     project_id: body.project_id,
-    to: body.to,
+    to_phone: body.to,
     wa_id: waId,
     kind: body.kind,
     template_name: body.kind === "template" ? body.template_name : null,
