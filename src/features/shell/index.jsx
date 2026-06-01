@@ -69,6 +69,10 @@ export function LoginScreen({onLogin,dark,toggleDark}){
     if(s.includes("network")||s.includes("failed to fetch"))return "Network error. Check your internet connection and try again.";
     if(s.includes("token has expired")||s.includes("otp_expired")||s.includes("invalid otp")||s.includes("token expired"))return "That code expired or was already used. Send a fresh one.";
     if(s.includes("custom plan"))return "The Custom plan requires sales contact. Pick Free trial, Pro or Business to continue.";
+    if(s.includes("is invalid")||s.includes("unable to validate email"))return "That email address doesn't look right — try a real work address.";
+    if(s.includes("signups not allowed"))return "Self-serve signup is paused. Please contact sales to provision your account.";
+    if(s.includes("user not found"))return "No account found with this email. Sign up to get started.";
+    if(s.includes("captcha"))return "Couldn't verify you're human. Refresh the page and try again.";
     // Sentence-case anything else so it reads like a message, not a key.
     return raw.charAt(0).toUpperCase()+raw.slice(1);
   };
