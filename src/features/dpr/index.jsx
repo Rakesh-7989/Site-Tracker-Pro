@@ -16,12 +16,24 @@
 
 import React, { useState } from "react";
 import { Ic, Button, FlatStatus } from "../../components/ui.jsx";
+import { isStaffUser } from "../../lib/featureFlags.js";
+import { BuildNowBadgeGallery } from "./BuildNowBadge.jsx";
+import { DPRStatusBadgeGallery } from "./DPRStatusBadge.jsx";
+import { VoiceConfidenceBarGallery } from "./VoiceConfidenceBar.jsx";
+import { SUPPORTED_DPR_LANGS } from "../../lib/i18nDpr.js";
 
 export function DailyProgressView({ user }) {
   const [signal, setSignal] = useState({ state: "idle", msg: "" });
   const [supervisorPhone, setSupervisorPhone] = useState("");
   const [promoterPhone, setPromoterPhone] = useState("");
   const [siteName, setSiteName] = useState("");
+  // Sprint 2 (Session 30.8) — staff-only design-system gallery preview.
+  // Lets the founder QA the BuildNow / DPRStatus / VoiceConfidence atoms
+  // in EN / TE / HI before they get used in the real Sprint 2 mid-cycle
+  // DPRComposerView (Day 20-22). Hidden from non-staff users so the
+  // pilot prospect doesn't see "design-system primitives".
+  const [galleryLang, setGalleryLang] = useState("en");
+  const staff = isStaffUser(user);
 
   const submit = () => {
     if (!supervisorPhone.trim() || !promoterPhone.trim() || !siteName.trim()) {
@@ -211,6 +223,68 @@ export function DailyProgressView({ user }) {
         Sprint 1 · Feature Freeze · 16 stub views hidden from non-staff users.
         See <span className="font-semibold text-ink-700">docs/FEATURE_FREEZE.md</span>.
       </p>
+
+      {/* Staff-only design-system gallery — Sprint 2 atom preview */}
+      {staff && (
+        <div className="mt-10 rounded-xl border-2 border-dashed border-cream-200 bg-cream-100/40 p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 mb-1">
+                Staff only · Sprint 2 atom preview
+              </div>
+              <div className="font-display text-sm font-semibold text-ink-900">
+                Design-system gallery
+              </div>
+            </div>
+            <div className="inline-flex bg-white rounded-lg p-1 text-xs font-semibold border border-cream-200">
+              {SUPPORTED_DPR_LANGS.map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setGalleryLang(l)}
+                  className={`px-2.5 py-1 rounded-md transition ${
+                    galleryLang === l
+                      ? "bg-safety-500 text-white"
+                      : "text-ink-500 hover:text-ink-700"
+                  }`}
+                  aria-pressed={galleryLang === l}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-ink-500 mb-2">
+                BuildNowBadge · 5 states
+              </div>
+              <BuildNowBadgeGallery lang={galleryLang} />
+            </div>
+
+            <div>
+              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-ink-500 mb-2">
+                DPRStatusBadge · 6 lifecycle states
+              </div>
+              <DPRStatusBadgeGallery lang={galleryLang} />
+            </div>
+
+            <div>
+              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-ink-500 mb-2">
+                VoiceConfidenceBar · 3 representative samples (low / medium / high)
+              </div>
+              <VoiceConfidenceBarGallery lang={galleryLang} />
+            </div>
+          </div>
+
+          <p className="mt-5 text-[11px] text-ink-500 leading-relaxed">
+            Sprint 2 mid-cycle (Day 20-22) wires these into{" "}
+            <span className="font-semibold text-ink-700">DPRComposerView</span>,{" "}
+            <span className="font-semibold text-ink-700">DPRDetailView</span>, and the promoter digest cron.
+            See <span className="font-semibold text-ink-700">docs/SPRINT_2_ARCHITECTURE.md</span>.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
