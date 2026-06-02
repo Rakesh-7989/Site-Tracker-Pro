@@ -149,6 +149,35 @@ This is the inverse of PART A.
 2. Turn **"Confirm email"** back **ON**.
 3. Click **Save**.
 
+### Step 6a — Pre-flight verification (3 min, recommended)
+
+Before going through Supabase's SMTP form, verify your Resend API key
+and sender combination actually work in isolation. Run our test sender
+locally:
+
+```bash
+RESEND_API_KEY=re_xxxxx \
+RESEND_FROM=hello@sitetrack.in \
+  node scripts/test-resend-smtp.mjs your-personal-email@gmail.com
+```
+
+Expected output on success:
+
+```
+Sending test email …
+  From:    hello@sitetrack.in
+  To:      your-personal-email@gmail.com
+  API key: re_xxx…last4
+
+✅ SENT — message_id=01900a3f-2b67-…
+   Check the your-personal-email@gmail.com inbox (also check spam).
+```
+
+If you get a failure, the script prints the specific fix to apply
+(API key invalid → regenerate; sender unverified → verify in Resend;
+etc.). Until this passes, **do NOT continue to Step 4 or 5** — you'd
+just be moving a broken config into Supabase.
+
 ### Step 6 — Test signup (5 min)
 
 1. Open <https://sitetrack-rakesh.vercel.app> or your localhost.
@@ -164,10 +193,33 @@ This is the inverse of PART A.
    - The email comes FROM `hello@sitetrack.in` (or your single sender).
 8. Click the magic link in the email → you land on the dashboard.
 
-### Step 7 — Update the doc + commit (1 min)
+### Step 7 — Run the full verification gate (5 min)
 
-Once verified, edit `docs/SIGNUP_EMAIL_RATELIMIT_RUNBOOK.md` and
-mark PART B as **DONE**.
+Once Steps 1-6 are done, run the three-script gate to confirm
+end-to-end working:
+
+```bash
+# 1. Probe Supabase Auth + plans + trigger config
+node scripts/check-auth-config.mjs
+
+# 2. (Optional) Try a real Supabase Auth signup against your project
+node scripts/check-auth-config.mjs --signup founder-test@yourdomain.in
+
+# 3. Run the Playwright E2E spec — exercises the browser flow
+npx playwright test tests/e2e/signup-flow.spec.js
+```
+
+Expected:
+- Step 1 → 6/6 PASS
+- Step 2 → either HTTP 200 (SMTP working) or a precise hint about
+  which knob to flip; "EMAIL RATE LIMIT" should NOT appear after
+  Resend is wired correctly
+- Step 3 → 4/4 PASS
+
+### Step 8 — Update the doc + commit (1 min)
+
+Once Step 7 is all-green, edit `docs/SIGNUP_EMAIL_RATELIMIT_RUNBOOK.md`
+and mark PART B as **DONE**. Push.
 
 ---
 
