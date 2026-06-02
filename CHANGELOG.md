@@ -4,6 +4,119 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Session 30.4 — Sprint Coach subagent (founder field-work guide)
+
+The 90-day v3 plan has a clean split: code work that this AI builds + field
+work that only the founder can do (interviews, in-person meetings, LinkedIn /
+WhatsApp outreach, pilot signature pursuit, CREDAI presence). Session 30.4
+ships a Claude Code subagent that operationalizes the field-work track.
+
+- `.claude/agents/sprint-coach.md` — Claude Code subagent definition with
+  frontmatter (name: sprint-coach, description, tools: Read/Glob/Grep/
+  Edit/Write, model: sonnet). System prompt establishes persona as an
+  experienced India-B2B-SaaS coach who reads the Sprint 1+2 docs literally
+  and gives doc-cited next-action recommendations. Six pre-baked playbooks
+  (daily check-in, pre-meeting prep, post-interview capture, draft DM,
+  warm-intro next step, gate scoring, Telugu translation). Hard boundaries
+  (no fabricated outcomes, no forbidden positioning claims, no code work,
+  no commitments on founder's behalf, no skipping the doc read).
+- `.agents/sitetrack-pro/founder-sprint-coach.md` — team charter following
+  the existing agent-team pattern (team-lead, product-manager, etc).
+  Mission, responsibilities, boundaries, knowledge sources, routing.
+  Registered in `.agents/sitetrack-pro/README.md`.
+- `docs/SPRINT_COACH_GUIDE.md` — founder-facing usage guide. How to invoke,
+  8 common asks with sample outputs (Today emi cheyali / pre-meeting prep
+  / post-interview capture / draft LinkedIn DM / Telugu translation / gate
+  score / warm-intro step / Bhashini API application). Doc → action mapping
+  table. Sample week-1 conversation flow. Founder rule of thumb: coach
+  reads docs + updates logs + drafts messages + scores progress; coach
+  does NOT do the work. Routes code asks to the engineering agents.
+
+Sample invocation in Claude Code:
+  > Use the sprint-coach agent. Today emi cheyali?
+  → Coach reads SITETRACK_V3_PLAN.md, identifies Sprint Day, returns
+    3 concrete actions with time-budgets, citing the relevant playbook
+    section per action.
+
+Sample log update:
+  > sprint-coach: Interview chesa — Ramesh from Sumadhura. RERA Powerplay
+    lo direct ga ledhu. Telugu voice ledhu. Blockchain — 'what's that'.
+  → Coach confirms ("Capture cheyamantarra?"), then appends a row to
+    INTERVIEW_LOG_2026-06.md + flips 3 rows in VERIFIED_GAPS_MATRIX.md
+    from UNVERIFIED to VERIFIED-ABSENT / VERIFIED-PRESENT with the
+    interview as source. Suggests 4-hour WhatsApp follow-up template.
+
+### Session 30.3 — Sprint 2 Day 16 foundation (DPR + voice + BuildNow)
+
+`docs/SPRINT_2_ARCHITECTURE.md` — decision log + interface contracts +
+day-by-day founder/code split + risks. Lays out what's buildable now vs
+what waits for customer signal.
+
+3 SQL migrations (applied to prod via scripts/apply-only.mjs):
+- `50_dpr_delivery_log.sql` — dpr_messages (client_token idempotency
+  key, voice/photo/geotag/buildnow_anchor columns, 6-state lifecycle)
+  + dpr_delivery_log (per-attempt audit) + dpr_delivery_slo_window
+  RPC.
+- `51_voice_transcripts.sql` — cache keyed by audio_sha256;
+  attempts_count telemetry; record_voice_cache_hit + voice_transcripts_stats
+  RPCs.
+- `52_buildnow_anchors.sql` — daily snapshots PK (project_id,
+  sync_date); buildnow_latest_for_project + buildnow_stale_anchors
+  helper RPCs; raw_payload jsonb.
+
+3 libs (browser + Deno compatible, mock-adapter-tested):
+- `src/lib/voiceTranscribe.js` — pickProviderOrder, hashAudio
+  (SubtleCrypto sha256), mock transcribe with te/hi/en canned
+  responses, public entry that hits EF, meetsAccuracyBar at 0.85.
+- `src/lib/offlineQueue.js` — IndexedDB queue for basement-parking
+  2G. enqueue/drain/queueDepth/clearAll. Exponential backoff (1s/4s/
+  16s/64s/256s, max 5 retries). 7-day stale-failed GC.
+  makeMemoryAdapter for tests + makeIndexedDbAdapter for runtime.
+- `src/lib/buildnowAnchor.js` — 3-way invariant pattern (browser +
+  EF + Sprint 4 handover packet use the same canonicalize + sha256
+  algorithm). generateBadgeUrl, canonicalizeDprPayload (sort + drop
+  volatile fields + round lat/lon to 6 decimals), computeAnchorHash,
+  pickAcquisitionPath (api > scrape > mock), mockFetcher, badgeStateFor
+  (5-state machine with custom staleHours threshold).
+
+3 i18n string tables (DPR-specific keys):
+- `src/i18n/en.json` (source of truth)
+- `src/i18n/te.json` (Telangana dialect, English loan words preserved
+  for technical terms — matches docs/sales/TELUGU_PHRASE_BANK_DPR.md
+  register)
+- `src/i18n/hi.json` (Hyderabadi-Hindi register)
+
+3 Edge Function shells with idempotency contracts:
+- `_shared/retry.ts` — exponential backoff with shouldRetry hook
+  (don't retry validation/auth errors).
+- `whatsapp_dpr_send/index.ts` — UPSERT dpr_messages by client_token,
+  3-attempt Meta Cloud API retry, per-attempt dpr_delivery_log row,
+  idempotent re-call returns cached terminal status. SITETRACK_DRY_RUN
+  env for testing without WHATSAPP token.
+- `voice_transcribe/index.ts` — cache lookup → provider chain →
+  cache write. Provider implementations are explicit stubs returning
+  structured "not implemented" until Sprint 2 mid-cycle wiring.
+- `buildnow_anchor/index.ts` — same canonical-hash algorithm as the
+  lib. api/scrape/mock paths. Upserts buildnow_anchors per-day.
+
+Tests (72 new across 3 files, total 660 from 588):
+- tests/voiceTranscribe.test.js (24 tests)
+- tests/offlineQueue.test.js (17 tests)
+- tests/buildnowAnchor.test.js (31 tests)
+
+docs/sales/PILOT_ONBOARDING_RUNBOOK.md — minute-by-minute 90-min
+on-site activation script. Pre-activation checklist, 6 timed segments
+(arrival → product walkthrough → first project → supervisor setup →
+promoter setup → commit + handoff), post-activation 4-hour follow-up,
+Day 1-7 daily supervisor WhatsApp check-in template (in Telugu),
+8 contingency scenarios, Day 14 success rubric, Day 30 outcome matrix.
+
+UI views intentionally NOT in this commit (DPRComposerView,
+VoiceNoteRecorder, PhotoGeotagCapture, DPRDetailView, BuildNowBadge)
+— they wait for Sprint 1 pilot interview feedback (Day 18+) so they
+get baked with real customer signal, not founder hypothesis. Per
+Mistake #1 in docs/SITETRACK_V3_PLAN.md.
+
 ### Session 30.2 — Sprint 1 Day 1+2: Feature Freeze + Hyderabad-First wedge
 
 End of Session 30.1 we shipped polished cloud auth. Session 30.2 starts

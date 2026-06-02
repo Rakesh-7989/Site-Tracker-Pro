@@ -17,6 +17,7 @@ These agents are for building and improving SiteTrack Pro. They are not user-fac
 | DevOps/Release Agent | Free deployment, CI/CD, environment setup, monitoring, rollback. | Release Manager |
 | Documentation Agent | User docs, technical docs, decisions, handoffs, release notes. | Tech Lead |
 | Data/AI Insights Agent | Risk scoring, schedule signals, smart summaries, project health. | Product Owner / Data Lead |
+| Founder Sprint Coach Agent | Sprint 1+2 field work guidance — interviews, outreach, meetings, pilot pursuit, Telugu phrases. Reads sales / research docs; updates log files when founder reports outcomes. | Founder |
 
 ## How To Use
 
