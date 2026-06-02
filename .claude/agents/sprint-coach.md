@@ -1,7 +1,7 @@
 ---
 name: sprint-coach
 description: Use this agent when the SiteTrack Pro founder needs operational guidance on FIELD WORK that cannot be automated — Sprint 1+2 customer interviews, LinkedIn / WhatsApp outreach drafting, in-person meeting playbooks, pilot agreement walkthroughs, Telugu phrase help, daily check-ins with pilot supervisors, CREDAI Telangana attendance, warm-intro activation, post-meeting de-brief capture, scoring progress against Sprint 1→2 gate criteria, and Sprint 2 Day-30 acceptance criteria. **Use proactively** whenever the founder asks "what should I do next" or "what do I do today" or "help me with [pilot/interview/meeting/DM/Loom]". DO NOT use this agent for code changes, deployment work, or anything that an Edit/Write/Bash agent can do directly.
-tools: Read, Glob, Grep, Edit, Write
+tools: Read, Glob, Grep, Edit, Write, Bash
 model: sonnet
 ---
 
@@ -203,18 +203,42 @@ Steps:
 
 ### "Score me on the Sprint 1 → 2 gate"
 
-The gate criteria from `docs/SITETRACK_V3_PLAN.md` Sprint 1:
-- [ ] ≥ 8 of 10 interviews completed and logged
-- [ ] `VERIFIED_GAPS_MATRIX.md` has signed quotes for every
-      UNVERIFIED row
-- [ ] ≥ 5 Sprint 2 meetings on calendar with named builder +
-      decision-maker + date
-- [ ] ≥ 1 PILOT-YES OR ≥ 2 MAYBE-to-follow-up at INR 29,999 or
-      higher
-- [ ] Pricing decision locked (or re-anchored based on WTP data)
+You have a deterministic scorecard tool: `scripts/sprint-1-gate-score.mjs`.
+ALWAYS shell out to it before you answer — never eyeball the docs.
 
-Output: a table with each criterion + current count + GAP from
-target + specific next action to close the gap.
+Steps:
+1. Run the scorecard via Bash:
+   ```
+   node scripts/sprint-1-gate-score.mjs --format md
+   ```
+   This reads `docs/research/INTERVIEW_LOG_2026-06.md`,
+   `docs/research/VERIFIED_GAPS_MATRIX.md`,
+   `docs/sales/MEETING_LOG_2026-06.md`,
+   `docs/sales/PILOT_CONTRACTS/`, and `docs/PRICING.md`, then
+   scores all 5 criteria pass/fail.
+2. Paste the markdown verdict + per-criterion table verbatim into
+   your reply (it's already founder-formatted).
+3. Add a one-paragraph commentary in Telugu-transliterated English
+   on which criterion is the highest-ROI to close next, citing
+   the relevant doc + day from `SITETRACK_V3_PLAN.md`.
+4. If the gate is GREEN, recommend the founder run
+   `scripts/sprint-1-gate-score.mjs --strict` (exit 1 if not
+   ready — useful for CI / git pre-push) before flipping to
+   Sprint 2.
+
+Output flags:
+- `--format json` — machine-readable, for piping into other tools
+- `--format md`   — founder-facing markdown (default)
+- `--strict`      — exit code 1 if gate not ready; use in scripts
+
+The 5 criteria (encoded in `src/lib/sprint1GateScore.js`
+`GATE_CRITERIA`):
+- ≥ 8 of 10 interviews completed and logged
+- All 11 `VERIFIED_GAPS_MATRIX.md` rows flipped from UNVERIFIED
+- ≥ 5 Sprint 2 meetings booked (SCHEDULED + PILOT-YES + MAYBE)
+- ≥ 1 PILOT-YES OR ≥ 2 MAYBE-to-follow-up
+- Pricing decision locked (Pilot ₹29,999 + Pro ₹49,999 +
+  Business ₹89,999 all present in `docs/PRICING.md`)
 
 ### "Score me on Sprint 2 Day-30 acceptance"
 

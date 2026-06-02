@@ -213,24 +213,64 @@ construction-Telugu register if not present.
 
 ### 6. "Score me on the Sprint 1 → 2 gate"
 
-The coach checks `VERIFIED_GAPS_MATRIX.md` + `INTERVIEW_LOG_2026-06.md`
-+ `MEETING_LOG_2026-06.md` + `PILOT_CONTRACTS/` and returns a
-scorecard.
+The coach now has a **deterministic scorecard tool** that the
+founder can also run directly from the shell:
 
-**Sample**:
+```bash
+# Markdown verdict (what the coach prints back)
+node scripts/sprint-1-gate-score.mjs --format md
 
-> Sprint 1 → 2 gate (Day 15 deadline):
+# Machine-readable JSON (pipe into other tools / CI)
+node scripts/sprint-1-gate-score.mjs --format json
+
+# Gate-aware: exit 1 if not ready (use in pre-push hook)
+node scripts/sprint-1-gate-score.mjs --strict
+```
+
+The tool reads the same 5 docs the coach used to read manually:
+- `docs/research/INTERVIEW_LOG_2026-06.md` (interviews completed)
+- `docs/research/VERIFIED_GAPS_MATRIX.md` (verdict per claim)
+- `docs/sales/MEETING_LOG_2026-06.md` (Sprint 2 meetings booked)
+- `docs/sales/PILOT_CONTRACTS/` (signed pilot agreements)
+- `docs/PRICING.md` (pricing-decision locked)
+
+It returns a verdict + per-criterion table + next-action list. The
+parser (`src/lib/sprint1GateScore.js`) is unit-tested so the score
+is stable across runs — no human eyeballing needed.
+
+**Sample (Day 1, no fieldwork yet)**:
+
+> # Sprint 1 → 2 Gate Scorecard
+> *Generated 2026-06-02*
 >
-> | Criterion | Target | Current | Gap | Action |
-> |---|---|---|---|---|
-> | Interviews completed | 8 / 10 | 3 | 5 | Send T2 to non-responders today |
-> | VERIFIED_GAPS rows with quotes | 11 | 4 | 7 | Need 4 more interviews to cover RERA / GSTN / kiosk / vernacular |
-> | Sprint 2 meetings on calendar | 5 | 2 | 3 | CREDAI meet attendance (Day 6) likely unlocks 2 more |
-> | PILOT-YES or 2 MAYBE | ≥1 / ≥2 | 0 / 1 | 1+ | Vasavi follow-up + Lansum DM are highest-prob |
-> | Pricing decision | locked | tentative | data | Need 2 more WTP calls at INR 75k anchor |
+> ## Verdict
 >
-> **Verdict**: Not gate-ready. 5 more interviews + 3 more meetings
-> needed in the next 11 days.
+> ⏳ **4/5 CRITERIA OPEN**
+>
+> 4 of 5 criteria still open. See detail per row.
+>
+> ## Per-criterion breakdown
+>
+> | # | Criterion | Target | Current | Pass | Detail |
+> |---|---|---|---|---|---|
+> | 1 | Interviews completed | ≥ 8 | 0 | ❌ | 0 of 10 logged |
+> | 2 | Verified gaps closed | 11 | 0 | ❌ | 11 still UNVERIFIED |
+> | 3 | Sprint 2 meetings booked | ≥ 5 | 0 | ❌ | 0 scheduled |
+> | 4 | Pilot signals | ≥ 1 YES or ≥ 2 MAYBE | 0 / 0 | ❌ | No signals yet |
+> | 5 | Pricing locked | yes | yes | ✅ | All 3 tiers present |
+>
+> ## Next action
+>
+> 1. **Interviews** — Run 2 today (Group A LinkedIn responses
+>    pending). See POWERPLAY_RECON_SCRIPT.md.
+> 2. **Meetings** — CREDAI Telangana monthly meet on Day 6 is the
+>    highest-ROI booking. Register today.
+> 3. **Pilot signals** — Vasavi walk-in (Day 5) + Lansum founder
+>    DM are the two paths most likely to flip a MAYBE.
+
+**Wiring**: the coach (`.claude/agents/sprint-coach.md`) now
+ALWAYS shells out to this script via Bash before answering — it
+never eyeballs the docs.
 
 ### 7. "What's my next warm-intro step for My Home?"
 
