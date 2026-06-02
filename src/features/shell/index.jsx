@@ -350,7 +350,15 @@ export function LoginScreen({onLogin,dark,toggleDark}){
               <div>
                 <label className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Pick a plan</label>
                 <div className="grid grid-cols-1 gap-2">
-                  {(plans.length?plans:[{id:"basic",name:"Free trial",tagline:"14 days, no card",monthly_inr:0},{id:"pro",name:"Pro",tagline:"Solo builders",monthly_inr:99900},{id:"business",name:"Business",tagline:"Growing firms",monthly_inr:299900,recommended:true}]).map(pl=>(
+                  {/* Sprint 1 reprice (Session 30.5): annual per-org tiers anchored
+                      vs Powerplay's verified ₹71,999 Pro / ₹1,19,999 Pro+. The
+                      DB sets yearly_inr; we fall back to monthly_inr × 12 for
+                      legacy rows. Fallback array below also annual now. */}
+                  {(plans.length?plans:[{id:"basic",name:"Pilot",tagline:"Design partner · first 5 only",yearly_inr:2999900},{id:"pro",name:"Pro",tagline:"30% under Powerplay",yearly_inr:4999900,recommended:true},{id:"business",name:"Business",tagline:"Multi-state + GSTN + handover",yearly_inr:8999900}]).map(pl=>{
+                    const annualPaise = pl.yearly_inr || (pl.monthly_inr ? pl.monthly_inr * 12 : 0);
+                    const priceLabel = annualPaise ? `₹${Math.round(annualPaise/100).toLocaleString("en-IN")}` : "Free";
+                    const periodLabel = annualPaise ? "per year" : "trial";
+                    return (
                     <button key={pl.id} type="button" onClick={()=>setSelectedPlan(pl.id)} aria-pressed={selectedPlan===pl.id} className={`text-left px-3.5 py-2.5 rounded-lg border transition flex items-start justify-between gap-3 ${selectedPlan===pl.id?"border-safety-500 bg-safety-500/5 shadow-sm":"border-cream-200 bg-white hover:border-ink-500/30"}`}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -361,13 +369,13 @@ export function LoginScreen({onLogin,dark,toggleDark}){
                       </div>
                       <div className="text-right flex items-center gap-2">
                         <div>
-                          <div className="font-mono text-sm font-bold text-ink-900">{pl.monthly_inr?`₹${Math.round(pl.monthly_inr/100).toLocaleString("en-IN")}`:"Free"}</div>
-                          <div className="text-[10px] text-ink-500">{pl.monthly_inr?"per month":"trial"}</div>
+                          <div className="font-mono text-sm font-bold text-ink-900">{priceLabel}</div>
+                          <div className="text-[10px] text-ink-500">{periodLabel}</div>
                         </div>
                         {selectedPlan===pl.id&&<span className="w-4 h-4 rounded-full bg-safety-500 flex items-center justify-center flex-shrink-0"><Ic n="check" s={10} c="text-white"/></span>}
                       </div>
-                    </button>
-                  ))}
+                    </button>);
+                  })}
                 </div>
               </div>
             </div>
