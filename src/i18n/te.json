@@ -1,0 +1,83 @@
+{
+  "$meta": {
+    "language": "te",
+    "name": "Telugu (Telangana dialect)",
+    "version": "30.3.0",
+    "purpose": "Telugu strings for the Sprint 2 DPR + WhatsApp + BuildNow flow. Dialect calibrated for Hyderabad construction site supervisors (TS Telugu mixed with English loan words for technical terms: slab, concrete, photo, send, geotag — see docs/sales/TELUGU_PHRASE_BANK_DPR.md)."
+  },
+  "dpr": {
+    "composer": {
+      "title": "Roju Site Update",
+      "subtitle": "Telugu lo voice note record cheyandi, photo teesi promoter ki pampandi.",
+      "siteLabel": "Site peru",
+      "sitePlaceholder": "Udaharanaki: Vasavi Vista Phase 2",
+      "promoterPhoneLabel": "Promoter WhatsApp number",
+      "promoterPhonePlaceholder": "+91 98765 43210",
+      "voiceRecordPrompt": "Press chesi voice note record cheyandi",
+      "voiceReleasePrompt": "Vidicipettandi recording ki stop ki",
+      "voiceRecording": "Record avuthondi…",
+      "photoCaptureCta": "Site photo teeyandi",
+      "photoRetakeCta": "Marala teeyandi",
+      "sendCta": "Promoter ki pampandi",
+      "sendingCta": "Pampisthondi…",
+      "sentSuccess": "Ayipoyindi — promoter ki WhatsApp lo vasthondi",
+      "saveDraftCta": "Draft la save cheyandi"
+    },
+    "status": {
+      "queued": "Queue lo unde — network kosam wait avuthondi",
+      "sending": "Promoter ki pampisthondi…",
+      "sent": "Promoter ki pampamayindi",
+      "delivered": "WhatsApp lo delivered ayindi",
+      "read": "Promoter chesaru",
+      "failed": "Fail ayindi — retry kosam tap cheyandi"
+    },
+    "errors": {
+      "noNetwork": "Network ledhu — offline queue lo save ayindi, network vacchaka pampisthadi",
+      "voiceTooShort": "Voice note chala chinnaga undi. Konchem ekkuva sepu hold cheyandi (kanisam 3 seconds).",
+      "voiceNoMicPermission": "Microphone permission ledhu. Browser settings lo allow cheyandi.",
+      "photoNoCameraPermission": "Camera permission ledhu. Browser settings lo allow cheyandi.",
+      "geolocationDenied": "Location permission ledhu — geotag ledhi photo pamputhadi.",
+      "supervisorPhoneInvalid": "Phone number sariga ledhu. +91XXXXXXXXXX format lo enter cheyandi.",
+      "promoterPhoneInvalid": "Promoter number sariga ledhu. +91XXXXXXXXXX format lo cheppandi.",
+      "transcriptionFailed": "Transcription ravadam ledhu — audio matrame pampisthadi.",
+      "buildnowDown": "BuildNow Telangana reach avvadam ledhu — verified badge ledhi pamputhadi."
+    }
+  },
+  "voice": {
+    "language": {
+      "te": "Telugu",
+      "hi": "Hindi",
+      "en": "English",
+      "auto": "Automatic ga gurthinchadam"
+    },
+    "confidence": {
+      "high": "Manchi accuracy",
+      "medium": "Medium — pampedi mundhu chudandi",
+      "low": "Takkuva accuracy — marala record cheyandi leda text edit cheyandi"
+    },
+    "providerLabel": "Voice service",
+    "fallbackNotice": "Bhashini available kavadam ledhu — AWS use chesaru ee clip ki."
+  },
+  "buildnow": {
+    "badgeVerified": "BuildNow Telangana lo verified",
+    "badgeStale": "BuildNow data 24 gantala kanna purathadi",
+    "badgeUnverified": "BuildNow status teliyadhu",
+    "badgeWarning": "BuildNow ee project ni flag chesindi",
+    "badgeNone": "BuildNow ki anchor avva ledhu",
+    "viewOnPortal": "BuildNow portal lo chudandi",
+    "lastSyncedLabel": "Last sync",
+    "sprint2Placeholder": "Real BuildNow integration Sprint 2 lo ships avuthondi"
+  },
+  "common": {
+    "retry": "Marala try cheyandi",
+    "cancel": "Cancel cheyandi",
+    "save": "Save cheyandi",
+    "discard": "Padaveyandi",
+    "today": "Ee roju",
+    "yesterday": "Ninna",
+    "loading": "Load avuthondi…",
+    "offline": "Offline",
+    "online": "Online",
+    "queueDepth": "{count} pending unayi"
+  }
+}

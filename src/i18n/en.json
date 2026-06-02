@@ -1,0 +1,83 @@
+{
+  "$meta": {
+    "language": "en",
+    "name": "English",
+    "version": "30.3.0",
+    "purpose": "Source-of-truth English strings for the DPR + WhatsApp + BuildNow flow shipped in Sprint 2. te.json + hi.json mirror these keys."
+  },
+  "dpr": {
+    "composer": {
+      "title": "Daily Progress Report",
+      "subtitle": "Speak in Telugu, take a photo, send to your promoter.",
+      "siteLabel": "Site",
+      "sitePlaceholder": "e.g. Vasavi Vista Phase 2",
+      "promoterPhoneLabel": "Promoter WhatsApp number",
+      "promoterPhonePlaceholder": "+91 98765 43210",
+      "voiceRecordPrompt": "Tap and hold to record",
+      "voiceReleasePrompt": "Release to stop",
+      "voiceRecording": "Recording…",
+      "photoCaptureCta": "Take site photo",
+      "photoRetakeCta": "Retake",
+      "sendCta": "Send to promoter",
+      "sendingCta": "Sending…",
+      "sentSuccess": "Sent — promoter will receive on WhatsApp",
+      "saveDraftCta": "Save as draft"
+    },
+    "status": {
+      "queued": "Queued — waiting for network",
+      "sending": "Sending to promoter…",
+      "sent": "Sent to promoter",
+      "delivered": "Delivered on WhatsApp",
+      "read": "Read by promoter",
+      "failed": "Failed — tap to retry"
+    },
+    "errors": {
+      "noNetwork": "No network — saved to offline queue, will send when connected",
+      "voiceTooShort": "Voice note too short. Hold to record at least 3 seconds.",
+      "voiceNoMicPermission": "Microphone permission denied. Enable in browser settings.",
+      "photoNoCameraPermission": "Camera permission denied. Enable in browser settings.",
+      "geolocationDenied": "Location permission denied — photo will send without geotag.",
+      "supervisorPhoneInvalid": "That phone number doesn't look right. Use +91XXXXXXXXXX format.",
+      "promoterPhoneInvalid": "Promoter number invalid. Use +91XXXXXXXXXX format.",
+      "transcriptionFailed": "Couldn't transcribe — sending with audio only.",
+      "buildnowDown": "BuildNow Telangana unreachable — DPR will send without verified badge."
+    }
+  },
+  "voice": {
+    "language": {
+      "te": "Telugu",
+      "hi": "Hindi",
+      "en": "English",
+      "auto": "Auto-detect"
+    },
+    "confidence": {
+      "high": "High accuracy",
+      "medium": "Medium — review before sending",
+      "low": "Low — please re-record or edit text"
+    },
+    "providerLabel": "Voice provider",
+    "fallbackNotice": "Bhashini unavailable — used AWS for this clip."
+  },
+  "buildnow": {
+    "badgeVerified": "Verified by BuildNow Telangana",
+    "badgeStale": "BuildNow data stale (>24h)",
+    "badgeUnverified": "BuildNow status unknown",
+    "badgeWarning": "BuildNow flagged this project",
+    "badgeNone": "Not anchored to BuildNow",
+    "viewOnPortal": "View on BuildNow portal",
+    "lastSyncedLabel": "Last synced",
+    "sprint2Placeholder": "Real BuildNow integration ships in Sprint 2"
+  },
+  "common": {
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "discard": "Discard",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "loading": "Loading…",
+    "offline": "Offline",
+    "online": "Online",
+    "queueDepth": "{count} pending"
+  }
+}

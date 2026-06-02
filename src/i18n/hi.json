@@ -1,0 +1,83 @@
+{
+  "$meta": {
+    "language": "hi",
+    "name": "Hindi",
+    "version": "30.3.0",
+    "purpose": "Hindi strings for the Sprint 2 DPR + WhatsApp + BuildNow flow. Calibrated for mixed Hyderabadi Hindi (English technical loan words preserved)."
+  },
+  "dpr": {
+    "composer": {
+      "title": "Daily Progress Report",
+      "subtitle": "Hindi mein voice note record karo, photo lo, promoter ko bhej do.",
+      "siteLabel": "Site ka naam",
+      "sitePlaceholder": "Jaise: Vasavi Vista Phase 2",
+      "promoterPhoneLabel": "Promoter ka WhatsApp number",
+      "promoterPhonePlaceholder": "+91 98765 43210",
+      "voiceRecordPrompt": "Tap karke hold karo recording ke liye",
+      "voiceReleasePrompt": "Release karo recording band karne ke liye",
+      "voiceRecording": "Record ho raha hai…",
+      "photoCaptureCta": "Site photo lo",
+      "photoRetakeCta": "Phir se lo",
+      "sendCta": "Promoter ko bhejo",
+      "sendingCta": "Bhej raha hai…",
+      "sentSuccess": "Ho gaya — promoter ko WhatsApp pe mil jayega",
+      "saveDraftCta": "Draft mein save karo"
+    },
+    "status": {
+      "queued": "Queue mein hai — network ka wait kar raha hai",
+      "sending": "Promoter ko bhej raha hai…",
+      "sent": "Promoter ko bhej diya",
+      "delivered": "WhatsApp pe deliver ho gaya",
+      "read": "Promoter ne dekha",
+      "failed": "Fail ho gaya — retry karne ke liye tap karo"
+    },
+    "errors": {
+      "noNetwork": "Network nahi hai — offline queue mein save kiya, network aate hi bhej dega",
+      "voiceTooShort": "Voice note bahut chhota hai. Kam se kam 3 second hold karo.",
+      "voiceNoMicPermission": "Microphone ki permission nahi hai. Browser settings mein allow karo.",
+      "photoNoCameraPermission": "Camera ki permission nahi hai. Browser settings mein allow karo.",
+      "geolocationDenied": "Location permission nahi hai — photo geotag ke bina bhej dega.",
+      "supervisorPhoneInvalid": "Phone number sahi nahi hai. +91XXXXXXXXXX format mein daalo.",
+      "promoterPhoneInvalid": "Promoter number sahi nahi hai. +91XXXXXXXXXX format mein bolo.",
+      "transcriptionFailed": "Transcription nahi ho payi — sirf audio bhej dega.",
+      "buildnowDown": "BuildNow Telangana reach nahi ho raha — verified badge ke bina bhej dega."
+    }
+  },
+  "voice": {
+    "language": {
+      "te": "Telugu",
+      "hi": "Hindi",
+      "en": "English",
+      "auto": "Apne aap pehchaan lega"
+    },
+    "confidence": {
+      "high": "Achhi accuracy",
+      "medium": "Medium — bhejne se pehle dekh lo",
+      "low": "Kam accuracy — phir se record karo ya text edit karo"
+    },
+    "providerLabel": "Voice service",
+    "fallbackNotice": "Bhashini available nahi tha — is clip ke liye AWS use kiya."
+  },
+  "buildnow": {
+    "badgeVerified": "BuildNow Telangana se verified",
+    "badgeStale": "BuildNow data 24 ghante se purana hai",
+    "badgeUnverified": "BuildNow status pata nahi",
+    "badgeWarning": "BuildNow ne is project ko flag kiya hai",
+    "badgeNone": "BuildNow se anchor nahi hai",
+    "viewOnPortal": "BuildNow portal pe dekho",
+    "lastSyncedLabel": "Last sync",
+    "sprint2Placeholder": "Asli BuildNow integration Sprint 2 mein ship hoga"
+  },
+  "common": {
+    "retry": "Phir se try karo",
+    "cancel": "Cancel karo",
+    "save": "Save karo",
+    "discard": "Hata do",
+    "today": "Aaj",
+    "yesterday": "Kal",
+    "loading": "Load ho raha hai…",
+    "offline": "Offline",
+    "online": "Online",
+    "queueDepth": "{count} pending hain"
+  }
+}

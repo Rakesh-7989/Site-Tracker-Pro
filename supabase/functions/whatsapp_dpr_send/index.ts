@@ -1,0 +1,286 @@
+// SiteTrack Pro — Sprint 2 (Session 30.3): WhatsApp DPR send Edge Function.
+//
+// Production hardening of the existing whatsapp-send EF specifically for
+// the Daily Progress Report flow. Adds:
+//   - Idempotency via client_token (UPSERT on dpr_messages.client_token)
+//   - 3-attempt exponential backoff retry (1s, 4s, 16s) via _shared/retry
+//   - Per-attempt audit log to dpr_delivery_log
+//   - Builder-promoter routing (different from a generic recipient)
+//   - Telemetry: total_ms, attempts, provider response
+//
+// Status today: SHELL only. Real Meta Cloud API call wired in Sprint 2
+// mid-cycle once founder confirms WHATSAPP_PERMANENT_TOKEN access for the
+// 2 pilot orgs. Until then, the EF returns a structured "dry-run" response
+// that the mobile client treats as success in non-prod.
+//
+// See docs/SPRINT_2_ARCHITECTURE.md for the contract.
+
+// deno-lint-ignore-file no-explicit-any
+import { retry } from "../_shared/retry.ts";
+
+interface DprSendRequest {
+  client_token: string;        // UUID, the idempotency key
+  org_id: string;
+  project_id?: string;
+  supervisor_user_id?: string;
+  promoter_phone_e164: string;
+  language: "te" | "hi" | "en";
+  voice_audio_url?: string;
+  voice_audio_sha256?: string;
+  transcript_text?: string;
+  transcript_confidence?: number;
+  transcript_provider?: string;
+  photo_url?: string;
+  photo_taken_at?: string;
+  photo_lat?: number;
+  photo_lon?: number;
+  photo_accuracy_metres?: number;
+  buildnow_anchor_url?: string;
+  buildnow_anchor_hash?: string;
+}
+
+interface DprSendResponse {
+  ok: boolean;
+  dpr_message_id?: string;
+  status?: "queued" | "sending" | "sent" | "delivered" | "failed";
+  meta_message_id?: string;
+  cached?: boolean;
+  attempts?: number;
+  total_ms?: number;
+  error?: string;
+}
+
+const REQUIRED_FIELDS: (keyof DprSendRequest)[] = [
+  "client_token",
+  "org_id",
+  "promoter_phone_e164",
+  "language",
+];
+
+const ALLOWED_LANGS = new Set(["te", "hi", "en"]);
+
+function validate(req: DprSendRequest): string | null {
+  for (const k of REQUIRED_FIELDS) {
+    if (!req[k]) return `missing required field: ${k}`;
+  }
+  if (!ALLOWED_LANGS.has(req.language)) return `unsupported language: ${req.language}`;
+  if (!/^\+\d{10,15}$/.test(String(req.promoter_phone_e164))) {
+    return "promoter_phone_e164 must be +XXXXXXXXXXX (E.164)";
+  }
+  if (typeof req.transcript_confidence === "number") {
+    if (req.transcript_confidence < 0 || req.transcript_confidence > 1) {
+      return "transcript_confidence must be in [0, 1]";
+    }
+  }
+  return null;
+}
+
+/**
+ * Stub: future real Meta Cloud API send. For Sprint 2 Day 16 this is
+ * intentionally a TODO — it returns success when SITETRACK_DRY_RUN is set,
+ * else returns a 503 so the founder knows env wiring is required before
+ * a live pilot demo.
+ */
+async function sendViaMetaCloudApi(
+  _payload: DprSendRequest,
+  env: Record<string, string>,
+): Promise<{ ok: boolean; meta_message_id?: string; error?: string }> {
+  // TODO Sprint 2 mid-cycle: wire to _shared/whatsapp_client.ts once the
+  // founder confirms WHATSAPP_PERMANENT_TOKEN for the 2 pilot orgs.
+  if (env.SITETRACK_DRY_RUN === "true") {
+    return {
+      ok: true,
+      meta_message_id: `wamid.DRY_RUN_${Date.now()}`,
+    };
+  }
+  if (!env.WHATSAPP_PERMANENT_TOKEN) {
+    return {
+      ok: false,
+      error:
+        "WHATSAPP_PERMANENT_TOKEN missing. Set SITETRACK_DRY_RUN=true to test the EF without Meta wiring.",
+    };
+  }
+  // Placeholder for the real Meta Cloud API call. Returns 501 until wired.
+  return { ok: false, error: "not implemented yet — Sprint 2 mid-cycle" };
+}
+
+Deno.serve(async (httpReq: Request) => {
+  if (httpReq.method !== "POST") {
+    return new Response("method not allowed", { status: 405 });
+  }
+  let payload: DprSendRequest;
+  try {
+    payload = await httpReq.json();
+  } catch {
+    return Response.json(
+      { ok: false, error: "invalid JSON" } satisfies DprSendResponse,
+      { status: 400 },
+    );
+  }
+  const invalid = validate(payload);
+  if (invalid) {
+    return Response.json(
+      { ok: false, error: invalid } satisfies DprSendResponse,
+      { status: 400 },
+    );
+  }
+
+  const env = Deno.env.toObject();
+  const supabaseUrl = env.SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    return Response.json(
+      { ok: false, error: "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing" } satisfies DprSendResponse,
+      { status: 500 },
+    );
+  }
+
+  // ── Idempotency check (UPSERT by client_token) ───────────────────────────
+  // Use the REST endpoint instead of a full client to keep cold-start small.
+  const upsertUrl = `${supabaseUrl}/rest/v1/dpr_messages?on_conflict=org_id,client_token`;
+  const messageRow = {
+    org_id: payload.org_id,
+    project_id: payload.project_id ?? null,
+    client_token: payload.client_token,
+    supervisor_user_id: payload.supervisor_user_id ?? null,
+    promoter_phone_e164: payload.promoter_phone_e164,
+    language: payload.language,
+    voice_audio_url: payload.voice_audio_url ?? null,
+    voice_audio_sha256: payload.voice_audio_sha256 ?? null,
+    transcript_text: payload.transcript_text ?? null,
+    transcript_confidence: payload.transcript_confidence ?? null,
+    transcript_provider: payload.transcript_provider ?? null,
+    photo_url: payload.photo_url ?? null,
+    photo_taken_at: payload.photo_taken_at ?? null,
+    photo_lat: payload.photo_lat ?? null,
+    photo_lon: payload.photo_lon ?? null,
+    photo_accuracy_metres: payload.photo_accuracy_metres ?? null,
+    buildnow_anchor_url: payload.buildnow_anchor_url ?? null,
+    buildnow_anchor_hash: payload.buildnow_anchor_hash ?? null,
+    status: "sending",
+  };
+
+  const upsertRes = await fetch(upsertUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": serviceKey,
+      "Authorization": `Bearer ${serviceKey}`,
+      "Prefer": "return=representation,resolution=merge-duplicates",
+    },
+    body: JSON.stringify(messageRow),
+  });
+  if (!upsertRes.ok) {
+    const text = await upsertRes.text();
+    return Response.json(
+      { ok: false, error: `upsert failed: ${upsertRes.status} ${text.slice(0, 200)}` } satisfies DprSendResponse,
+      { status: 500 },
+    );
+  }
+  const rows = await upsertRes.json();
+  const message = Array.isArray(rows) ? rows[0] : rows;
+  const dprMessageId = message?.id as string | undefined;
+
+  // If the existing row is already terminal, return idempotently.
+  if (message?.status === "sent" || message?.status === "delivered" || message?.status === "read") {
+    return Response.json({
+      ok: true,
+      dpr_message_id: dprMessageId,
+      status: message.status,
+      meta_message_id: message.meta_message_id ?? undefined,
+      cached: true,
+    } satisfies DprSendResponse);
+  }
+
+  // ── Send via Meta Cloud API with retry ───────────────────────────────────
+  const attemptResults: { attempt: number; outcome: "success" | "retry" | "failed"; durationMs: number; error?: string }[] = [];
+  const t0 = Date.now();
+  const final = await retry(
+    async (attempt) => {
+      const ta = Date.now();
+      const res = await sendViaMetaCloudApi(payload, env);
+      const durationMs = Date.now() - ta;
+      attemptResults.push({
+        attempt,
+        outcome: res.ok ? "success" : "retry",
+        durationMs,
+        error: res.ok ? undefined : res.error,
+      });
+      if (!res.ok) throw new Error(res.error ?? "send failed");
+      return res;
+    },
+    {
+      maxAttempts: 3,
+      baseMs: 1000,
+      shouldRetry: (err) => {
+        const msg = String((err as Error)?.message ?? err);
+        // Don't retry validation / auth errors — they won't go away on retry.
+        if (/missing|not implemented|unauthorized|forbidden/i.test(msg)) return false;
+        return true;
+      },
+    },
+  );
+
+  // Mark the last attempt as 'failed' if final result failed.
+  if (!final.ok && attemptResults.length > 0) {
+    attemptResults[attemptResults.length - 1].outcome = "failed";
+  }
+
+  // ── Write delivery log (one row per attempt) ─────────────────────────────
+  if (dprMessageId) {
+    const logRows = attemptResults.map((a) => ({
+      dpr_message_id: dprMessageId,
+      attempt_number: a.attempt,
+      outcome: a.outcome,
+      duration_ms: a.durationMs,
+      error_detail: a.error ?? null,
+    }));
+    if (logRows.length > 0) {
+      await fetch(`${supabaseUrl}/rest/v1/dpr_delivery_log`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": serviceKey,
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify(logRows),
+      });
+    }
+  }
+
+  // ── Update message status ────────────────────────────────────────────────
+  if (dprMessageId) {
+    const patch = final.ok
+      ? {
+          status: "sent",
+          meta_message_id: final.result?.meta_message_id ?? null,
+          failure_reason: null,
+        }
+      : {
+          status: "failed",
+          failure_reason: String((final.error as Error)?.message ?? final.error ?? "unknown"),
+        };
+    await fetch(`${supabaseUrl}/rest/v1/dpr_messages?id=eq.${dprMessageId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": serviceKey,
+        "Authorization": `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify(patch),
+    });
+  }
+
+  return Response.json(
+    {
+      ok: final.ok,
+      dpr_message_id: dprMessageId,
+      status: final.ok ? "sent" : "failed",
+      meta_message_id: final.result?.meta_message_id,
+      attempts: final.attempts,
+      total_ms: Date.now() - t0,
+      error: final.ok ? undefined : String((final.error as Error)?.message ?? final.error ?? "send failed"),
+    } satisfies DprSendResponse,
+    { status: final.ok ? 200 : 502 },
+  );
+});
