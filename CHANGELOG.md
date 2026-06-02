@@ -4,6 +4,136 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Session 30.2 — Sprint 1 Day 1+2: Feature Freeze + Hyderabad-First wedge
+
+End of Session 30.1 we shipped polished cloud auth. Session 30.2 starts
+the 90-day v3 plan (see `docs/SITETRACK_V3_PLAN.md`). Sprint 1's bet:
+freeze build, sell one workflow, sign 1+ Hyderabad marquee builder before
+Day 90. Day 1 = repo work. Day 2 = founder field prep docs.
+
+**Day 1 — Feature freeze guardrail + Hyderabad pivot (code)**
+- `src/lib/featureFlags.js` — new module. `STUB_VIEWS` Set with 16
+  view ids that are stubs or have broken persistence per audit (RERA
+  TG/KA/MH mocks, GSTN mock-IRN, admin surfaces missing from TABLE_BY_KEY
+  map). `isStubView()`, `isStubTab()`, `isStaffUser()` (checks
+  `user.is_staff` + role==superadmin + VITE_STAFF_EMAILS allowlist),
+  `isViewStubBlocked()`, `isTabStubBlocked()`. Composable atom.
+- `scripts/supabase/49_feature_flags_freeze.sql` — audit table
+  `staff_only_features` seeded with the same 16 view ids + freeze
+  reasons. `is_staff` column on profiles. `list_staff_only_features()`
+  RPC for smoke-test parity check. RLS: read open, write superadmin-only.
+- `src/features/dpr/index.jsx` — new placeholder `DailyProgressView`.
+  Hero + 3 feature cards (Telugu voice / Photo+geotag / WhatsApp digest)
+  + Sprint 2 honesty banner + pilot-interest capture form (persists to
+  localStorage `sitetrack_dpr_interest`).
+- `src/App.jsx` — `effectiveView` calc gated by `isViewStubBlocked`;
+  added `case "dpr"` route.
+- `src/lib/permissions.js` — `canOpenView` allows `dpr` universally
+  (matches `help` pattern).
+- `src/features/shell/index.jsx` — Sidebar gets `dpr` nav entry; filter
+  chain extended with `stubBlocked` + `UNIVERSAL_NAV` Set.
+
+**Day 1 — Repositioning + pricing fix + sales playbook (docs)**
+- `docs/FEATURE_FREEZE.md` — the charter. Why 16 views are gated,
+  who counts as staff, un-freeze procedure (both JS and SQL flip in
+  same commit), Day 90 fewer-than-3 target.
+- `docs/POSITIONING.md` — canonical positioning. One-line pitch
+  ("Hyderabad-first construction record-keeper that runs over
+  WhatsApp in Telugu, anchored to BuildNow Telangana"). ICP, 5 proof
+  points, 8 forbidden claims (don't say until verified).
+- `docs/PRICING.md` — **REPRICED**. Old INR 999/2,999/7,999 monthly
+  tiers retired (anchored to falsified per-user Powerplay assumption).
+  New annual per-org tiers: Pilot INR 29,999 (first 5 only) → Pro
+  INR 49,999 (-30% vs Powerplay) → Business INR 89,999 (-25%) →
+  Enterprise INR 2,49,999+. Old tiers preserved at bottom for audit.
+- `docs/PILOT_AGREEMENT_v1.md` — 10-section design-partner contract.
+  Pilot tier INR 29,999/yr + 18% GST, 24-month lock, 3-month micro-
+  segment exclusivity, 90-min founder on-site activation, data
+  ownership + portability, SLOs only for production-ready features.
+- `docs/COMPETITOR_COMPARISON_V2.md` — prepended Sprint 1 freeze
+  notice. Every unverified BEAT verdict (RERA, GSTN, blockchain,
+  kiosks, vernacular) downgraded to UNVERIFIED until interview data.
+- `docs/research/POWERPLAY_RECON_SCRIPT.md` — 10-interview script.
+  Group A (5 ex-Powerplay) + Group B (5 named Hyderabad targets: My
+  Home, Aparna, Sumadhura, Vasavi, Lansum + 8 stretch alternates).
+  6 questions each, decision rules, Sprint 1->2 unlock gate.
+- `docs/research/INTERVIEW_LOG_2026-06.md` + `VERIFIED_GAPS_MATRIX.md`
+  — log tables + per-interview capture template + Powerplay-product
+  claim matrix (11 currently UNVERIFIED, conversion rules need 2/5
+  consistent quotes to flip).
+- `docs/sales/DESIGN_PARTNER_DECK.md` — 9-slide pitch markdown source
+  with per-slide founder beat sheet + 6 retired-slide explanations
+  (AI-powered, 30x-cheaper-than-Procore, multi-state RERA, etc).
+- `docs/sales/DEMO_SCRIPT_DPR.md` — 60-sec Loom beat sheet sent 48h
+  before every meeting. Real Rs 8,000 Android, real Telugu voice,
+  real basement parking, honest BuildNow Sprint-2 placeholder badge.
+- `docs/sales/MEETING_LOG_2026-06.md` — operational log for 5 founder
+  meetings. WhatsApp templates (cold reach / pre-meeting / post / maybe
+  follow-up). Aggregate stats + Sprint 1->2 gate criteria.
+- `docs/SITETRACK_V3_PLAN.md` — synthesized v3 plan (388 lines).
+  7 sections covering top-10 mistakes ranked critical-low, market
+  reality, 3 architecture paths + chosen (Hyderabad-First), 90-day
+  6-sprint plan with file-level deliverables, success metrics, open
+  questions. Co-authored from deep-research workflow + 3-lens audit +
+  diagnose + judge-panel design + synthesize.
+
+**Day 2 — Loom shoot prep + LinkedIn recon prep (docs)**
+- `docs/sales/LOOM_SHOOT_CHECKLIST.md` — printable equipment, location,
+  timeline. Realme C53 / Redmi A2+ for talent. Banjara Hills 06:30 AM.
+  Lighting + audio + tripod + 4 contingencies.
+- `docs/sales/TELUGU_PHRASE_BANK_DPR.md` — exact Telugu (TS dialect) +
+  English glosses + pronunciation hints + Hindi-mix fallbacks. Caption
+  spec (Inter Bold 28pt + safety-orange number highlight).
+- `docs/sales/LOOM_STORYBOARD.md` — 12-shot storyboard mapping the 60s
+  to camera framings + transitions + on-screen text. Capture order +
+  ~1h 40min editing budget.
+- `docs/sales/LINKEDIN_TARGET_LIST.md` — Group A LinkedIn search recipe
+  + Group B (M1-M5) profiles with Indeed-verified facts (My Home:
+  Dr. Rao founder, 201-500 employees, 4.2/5; Aparna: ISO 9001+OHSAS
+  18001, 4.0/5; Sumadhura: 40+ projects, 4.3/5 culture; Lansum: 4.8/5
+  highest accessibility).
+- `docs/sales/LINKEDIN_OUTREACH_SEQUENCE.md` — DM templates per
+  audience + 3-touch cadence (T1 → T2 +5d → T3 +7d) + reply handling
+  for 5 common responses.
+- `docs/sales/WARM_INTRO_MAPPING.md` — 6 intro-path ecosystems ranked
+  by ROI: CREDAI Telangana (#1, 60% prob), Vasavi walk-in (#2, 50%),
+  Lansum founder DM (#3, 40%). Per-builder atlas + failure modes.
+
+### Session 30.1 — E2E spec + friendly error mapping
+- `tests/e2e/auth-panel.spec.js` — 14 Playwright tests across cloud-
+  mode / local-mode-fallback / responsive. 12 active tests pass, 2
+  auto-skip when backend enabled. Verified email validation pill on
+  blur/clear, password tab + eye toggle + Forgot password, signup
+  panel renders 4 inputs + 3 plan tiles, strength meter Weak→Strong,
+  plan-picker aria-pressed flip, email survives mode-switch, mobile
+  + tablet responsive layouts.
+- `playwright.config.js` — baseURL changed to localhost (Vite default
+  bind) so reuseExistingServer works in dev.
+- `src/features/shell/index.jsx` — extended friendly() helper to map
+  5 more Supabase error patterns: "is invalid" / "unable to validate
+  email" (was leaking raw "Email address X is invalid"), "signups not
+  allowed", "user not found", "captcha", + sentence-case fallback.
+
+### Session 30 — Production auth panel (demo logins removed)
+- `src/features/shell/index.jsx` — full LoginScreen rewrite. Removed
+  the 6 demo role tiles (Super Admin / Org Admin / Architect / PM /
+  Contractor / Client), "Continue as X" CTA, "Or try a demo role below"
+  eyebrow. WORKSPACE DATA load/clear controls moved to local-mode-only
+  fallback (never render when backend configured). Cloud-mode panel
+  shows ONLY real auth: Sign in / Start a firm tabs, Magic link /
+  Password method toggle, OTP fallback for Gmail link-prefetch.
+- Auth UX professionalized: email regex validation (blur-triggered),
+  password show/hide eye toggle, password strength meter on signup
+  (4-bar Weak → Strong), friendly error mapping (15+ Supabase errors
+  → plain English), inline alert banners replace flat-status pills,
+  resend-email link in sent state, autofocus on mode change, lowercase+
+  trim email before submit, Stripe-style "Forgot password" beside
+  label. ARIA: role="tab" + aria-selected on tabs, aria-label on
+  show/hide button.
+- `src/components/ui.jsx` — added Ic atom: mail, eyeOff, info, loader
+  (animate-spin), refresh.
+- All 320 smoke checks + 556 unit tests pass; lint clean.
+
 ### Session 28 — Doc-driven gap closure (audit-found pending items)
 Spawned an Explore subagent over every .md file in the repo (docs/, .agents/,
 .brain/decisions/) and cross-checked promises against code. Built every

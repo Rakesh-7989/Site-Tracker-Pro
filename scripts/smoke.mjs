@@ -408,6 +408,56 @@ add(".mcp.json contains no literal GitHub PAT", !/github_pat_[A-Za-z0-9]/.test(m
 add(".mcp.json uses env-var references", mcpRaw.includes("${SUPABASE_ACCESS_TOKEN}") && mcpRaw.includes("${GITHUB_PERSONAL_ACCESS_TOKEN}"));
 add("Vite manual chunks configured", vite.includes("manualChunks") && vite.includes("charts"));
 
+// ── Sprint 1 freeze parity (Session 30.2) ──────────────────────────────────
+// The JS source of truth (src/lib/featureFlags.js#STUB_VIEWS) and the SQL
+// audit table (scripts/supabase/49_feature_flags_freeze.sql staff_only_features
+// seed inserts) must list the same view ids. If they drift, ops would think
+// a view is frozen when the runtime still serves it (or vice versa). Lint-
+// level parity check below catches the drift before deploy.
+{
+  const flagsJs = read("src/lib/featureFlags.js");
+  const freezeSql = read("scripts/supabase/49_feature_flags_freeze.sql");
+
+  // Extract STUB_VIEWS literal entries: matches the strings inside the Set
+  // constructor body. The literal block is delimited by `STUB_VIEWS = new Set([`
+  // and the matching `]);`.
+  const stubBlock = flagsJs.match(/STUB_VIEWS\s*=\s*new\s+Set\(\[([\s\S]*?)\]\)/);
+  const jsViews = stubBlock ? [...stubBlock[1].matchAll(/"([a-z0-9-]+)"/g)].map(m => m[1]) : [];
+
+  // Extract view_id values from the seed INSERT (each row starts with a
+  // single-quoted view_id token at the start of the row).
+  const sqlSection = freezeSql.split("insert into staff_only_features")[1] || "";
+  const insertBlock = (sqlSection.split(" values")[1] || "").split("on conflict")[0] || "";
+  const sqlViews = [...insertBlock.matchAll(/^\s*\(\s*'([a-z0-9-]+)'/gm)].map(m => m[1]);
+
+  const jsSet = new Set(jsViews);
+  const sqlSet = new Set(sqlViews);
+  const jsMinusSql = jsViews.filter(v => !sqlSet.has(v));
+  const sqlMinusJs = sqlViews.filter(v => !jsSet.has(v));
+
+  add(
+    "STUB_VIEWS parity — same count in JS and SQL",
+    jsViews.length === sqlViews.length,
+    `JS=${jsViews.length} SQL=${sqlViews.length}`,
+  );
+  add(
+    "STUB_VIEWS parity — JS subset of SQL",
+    jsMinusSql.length === 0,
+    jsMinusSql.length ? `missing from SQL: ${jsMinusSql.join(",")}` : "",
+  );
+  add(
+    "STUB_VIEWS parity — SQL subset of JS",
+    sqlMinusJs.length === 0,
+    sqlMinusJs.length ? `missing from JS: ${sqlMinusJs.join(",")}` : "",
+  );
+  add(
+    "Sprint 1 freeze docs present",
+    existsSync(join(root, "docs/FEATURE_FREEZE.md"))
+      && existsSync(join(root, "docs/POSITIONING.md"))
+      && existsSync(join(root, "docs/SITETRACK_V3_PLAN.md")),
+  );
+}
+
 const failures = checks.filter(c => !c.pass);
 for (const c of checks) {
   console.log(`${c.pass ? "PASS" : "FAIL"} ${c.name}${c.detail ? ` - ${c.detail}` : ""}`);
