@@ -50,7 +50,9 @@ export function LoginScreen({onLogin,dark,toggleDark}){
   const[firmName,setFirmName]=useState("");
   const[userName,setUserName]=useState("");
   const[plans,setPlans]=useState([]);
-  const[selectedPlan,setSelectedPlan]=useState("basic");
+  // Default selection — Free trial (14 days, no card). When a paying tier
+  // is preferred this falls back at runtime via the useEffect below.
+  const[selectedPlan,setSelectedPlan]=useState("free");
   const[authMethod,setAuthMethod]=useState("magic");          // "magic" or "password"
   const[showPassword,setShowPassword]=useState(false);
   const[touched,setTouched]=useState({email:false,password:false,firmName:false});
