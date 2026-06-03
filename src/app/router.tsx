@@ -9,11 +9,12 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { ShellLayout } from "@/features/shell/ShellLayout";
-import { DashboardView } from "@/features/shell/DashboardView";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
 import { CreateProjectView } from "@/features/shell/CreateProjectView";
 import { PlaceholderView, NotFoundView } from "@/features/shell/PlaceholderView";
 import { DetailView } from "@/features/project/DetailView";
+import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
+import { DPRComposer } from "@/features/dpr/DPRComposer";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
 
 export const router = createBrowserRouter([
@@ -23,12 +24,12 @@ export const router = createBrowserRouter([
     element: <ShellLayout />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: "dashboard", element: <DashboardView /> },
+      { path: "dashboard", element: <RoleDashboard /> },
       { path: "projects", element: <ProjectsListView /> },
       { path: "projects/new", element: <CreateProjectView /> },
       { path: "projects/:id", element: <DetailView /> },
       { path: "projects/:id/:tab", element: <DetailView /> },
-      { path: "dpr", element: <PlaceholderView title="Daily Reports" phase="Phase 7" /> },
+      { path: "dpr", element: <DPRComposer /> },
       { path: "activity", element: <PlaceholderView title="Activity" phase="Phase 6" /> },
       { path: "audit", element: <PlaceholderView title="Audit Log" phase="Phase 8" /> },
       { path: "org/members", element: <PlaceholderView title="Members" phase="Phase 7" /> },
