@@ -10,6 +10,8 @@
 
 // deno-lint-ignore-file no-explicit-any
 
+import { authenticate } from "../_shared/auth.ts";
+
 interface AnchorRequest {
   project_id?: string;             // our internal projects.id (optional — if missing, we just fetch)
   buildnow_project_id: string;     // the ID from the state portal
@@ -138,6 +140,17 @@ Deno.serve(async (httpReq: Request) => {
       { status: 400 },
     );
   }
+
+  // ── Security gate (Phase 5 hardening) ──
+  // Require an authenticated caller. When project_id is provided (we'll
+  // write a buildnow_anchors row for it), the caller must be a member of
+  // that project's org — only project_admin / pm / site_engineer /
+  // site_supervisor sync state, plus org admins. Read-only fetches (no
+  // project_id) just need a valid session.
+  const auth = await authenticate(httpReq, {
+    ...(req.project_id ? { requireProjectId: req.project_id } : {}),
+  });
+  if (!auth.ok) return auth.response;
 
   const env = Deno.env.toObject();
   const path = req.path ?? (env.BUILDNOW_API_TOKEN

@@ -18,6 +18,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { retry } from "../_shared/retry.ts";
 import { getBudgetMode } from "../_shared/budget.ts";
+import { authenticate } from "../_shared/auth.ts";
 
 /**
  * Meta Cloud API gives 1k free service conversations per WABA per UTC
@@ -199,6 +200,18 @@ Deno.serve(async (httpReq: Request) => {
       { status: 400 },
     );
   }
+
+  // ── Security gate (Phase 5 hardening) ──
+  // A DPR send must come from someone authorised to report on the project.
+  // Gate to site_supervisor / site_engineer / pm / project_admin (the
+  // roles that submit DPRs) plus org admins. When project_id is present we
+  // verify project membership too. Previously this EF had NO caller check —
+  // cross-org message spoofing was possible.
+  const auth = await authenticate(httpReq, {
+    requireRole: ["site_supervisor", "site_engineer", "pm", "project_admin", "promoter", "orgadmin", "superadmin", "admin"],
+    ...(payload.project_id ? { requireProjectId: payload.project_id } : {}),
+  });
+  if (!auth.ok) return auth.response;
 
   const env = Deno.env.toObject();
   const supabaseUrl = env.SUPABASE_URL;

@@ -22,6 +22,7 @@
 //     the UI shows the Meta error code which is well-documented).
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authenticate } from "../_shared/auth.ts";
 
 const META_API_BASE = "https://graph.facebook.com/v18.0";
 
@@ -132,19 +133,28 @@ Deno.serve(async (req) => {
   }
   if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405);
 
-  // Caller auth — we trust the standard Supabase JWT verification done by
-  // the platform when invoked from the SPA. For service-to-service calls
-  // (e.g. cashfree-webhook → whatsapp-send), require X-Internal-Token.
-  const internal = req.headers.get("X-Internal-Token");
-  const expectedInternal = Deno.env.get("WHATSAPP_INTERNAL_TOKEN");
-  if (expectedInternal && internal !== expectedInternal) {
-    const auth = req.headers.get("Authorization") || "";
-    if (!auth.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
-  }
-
   let body: SendRequest;
   try { body = (await req.json()) as SendRequest; }
   catch { return json({ error: "invalid-json" }, 400); }
+
+  // ── Security gate (Phase 5 hardening) ──
+  // Two trusted callers:
+  //   1. Service-to-service (e.g. cashfree-webhook → whatsapp-send) presents
+  //      a matching X-Internal-Token. We trust it without a user JWT.
+  //   2. The SPA presents a user JWT. Previously the EF only checked the
+  //      Bearer header EXISTED (never verified it) — any string passed.
+  //      Now we verify the JWT + gate to message-sending roles, and verify
+  //      project membership when project_id is present.
+  const internal = req.headers.get("X-Internal-Token");
+  const expectedInternal = Deno.env.get("WHATSAPP_INTERNAL_TOKEN");
+  const isService = Boolean(expectedInternal && internal === expectedInternal);
+  if (!isService) {
+    const auth = await authenticate(req, {
+      requireRole: ["pm", "project_admin", "site_engineer", "site_supervisor", "promoter", "orgadmin", "superadmin", "admin"],
+      ...(body.project_id ? { requireProjectId: body.project_id } : {}),
+    });
+    if (!auth.ok) return auth.response;
+  }
 
   if (!body?.to) return json({ error: "to-required" }, 400);
   if (body.kind === "text" && (!body.body || body.body.length > 4096)) {

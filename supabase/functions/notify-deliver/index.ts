@@ -106,9 +106,15 @@ async function sendPush(
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405);
 
+  // ── Security gate (Phase 5 hardening) ──
+  // notify-deliver is INTERNAL-ONLY — invoked by a Postgres trigger via
+  // net.http_post with the X-Internal-Token header. Fail CLOSED: if the
+  // token isn't configured, reject rather than allow anyone (the previous
+  // `expected && ...` check was fail-OPEN when the env var was unset).
   const internal = req.headers.get("X-Internal-Token");
   const expected = Deno.env.get("NOTIFY_INTERNAL_TOKEN");
-  if (expected && internal !== expected) return json({ error: "unauthorized" }, 401);
+  if (!expected) return json({ error: "notify-internal-token-not-configured" }, 500);
+  if (internal !== expected) return json({ error: "unauthorized" }, 401);
 
   let body: { id?: string } = {};
   try { body = await req.json(); } catch { return json({ error: "invalid-json" }, 400); }
