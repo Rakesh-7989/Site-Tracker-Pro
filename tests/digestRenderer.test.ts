@@ -14,7 +14,7 @@ import {
   renderDigest,
   safeRenderDigest,
   type DigestInput,
-} from "../supabase/functions/_shared/digest_renderer.ts";
+} from "../supabase/functions/_shared/digest_renderer";
 
 const baseInput: DigestInput = {
   projectName: "Vasavi Vista Phase 2",

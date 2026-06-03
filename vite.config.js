@@ -1,8 +1,25 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
+
+// Path aliases mirrored from tsconfig.json. Vite + Vitest read these so that
+// new TypeScript code can use @/auth/* @/components/* etc. without breaking
+// existing relative-path JS imports.
+const r = (p) => fileURLToPath(new URL(p, import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@/auth':       r('./src/auth'),
+      '@/components': r('./src/components'),
+      '@/features':   r('./src/features'),
+      '@/hooks':      r('./src/hooks'),
+      '@/lib':        r('./src/lib'),
+      '@/data':       r('./src/data'),
+      '@':            r('./src'),
+    },
+  },
   server: { port: 5173, open: true },
   build: {
     rollupOptions: {
