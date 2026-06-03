@@ -14,6 +14,37 @@ export const BACKEND_MODE = ENV.VITE_BACKEND || "local";
 
 let _clientPromise = null;
 
+/**
+ * Returns the canonical app URL the Supabase Auth emails should redirect to.
+ *
+ * Priority:
+ *   1. VITE_APP_URL env var, if set AND not the stale `app.sitetrack.in`
+ *      placeholder. We deliberately reject the placeholder because pasting
+ *      a non-existent domain into Supabase Redirect URLs would silently
+ *      send users to a NXDOMAIN page.
+ *   2. window.location.origin (works in dev: localhost:5173, AND in prod
+ *      when the user hits the live site directly).
+ *   3. Hardcoded prod fallback (sitetrack-rakesh.vercel.app) — ONLY used
+ *      for SSR / tests; the browser path always uses #2.
+ *
+ * Caveat: Supabase Auth has its OWN URL allow-list ("Site URL" +
+ * "Redirect URLs" in the Dashboard). If our returned URL isn't in that
+ * allow-list, Supabase IGNORES the value we send and falls back to
+ * Site URL — which is why a stale `localhost:5173` Site URL routes
+ * production password resets to localhost. That side needs a dashboard
+ * fix per docs/SIGNUP_TROUBLESHOOTING.md.
+ */
+export function getCanonicalAppUrl() {
+  const envUrl = ENV.VITE_APP_URL;
+  if (envUrl && typeof envUrl === "string" && !/app\.sitetrack\.in/.test(envUrl)) {
+    return envUrl.replace(/\/+$/, "");
+  }
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin.replace(/\/+$/, "");
+  }
+  return "https://sitetrack-rakesh.vercel.app";
+}
+
 export function isSupabaseEnabled() {
   return BACKEND_MODE === "supabase" && !!ENV.VITE_SUPABASE_URL && !!ENV.VITE_SUPABASE_ANON_KEY;
 }
@@ -42,7 +73,7 @@ export async function signInWithMagicLink(email) {
   if (!sb) return { ok: false, error: "backend-disabled" };
   const { error } = await sb.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: window.location.origin },
+    options: { emailRedirectTo: getCanonicalAppUrl() },
   });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
@@ -106,7 +137,7 @@ export async function signUp({ email, password, firmName, userName, plan = "basi
         name: String(userName || "").trim(),
         plan,
       },
-      emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+      emailRedirectTo: getCanonicalAppUrl(),
     },
   });
   // Supabase wraps multiple distinct failure modes under HTTP 500 + the
@@ -174,7 +205,7 @@ export async function resetPassword(email) {
   if (!sb) return { ok: false, error: "backend-disabled" };
   const { error } = await sb.auth.resetPasswordForEmail(
     String(email || "").trim(),
-    { redirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
+    { redirectTo: `${getCanonicalAppUrl()}/auth/reset` },
   );
   return error ? { ok: false, error: error.message } : { ok: true };
 }
