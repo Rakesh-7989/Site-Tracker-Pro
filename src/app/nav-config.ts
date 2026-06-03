@@ -8,6 +8,7 @@
 import type { AuthSession } from "@/auth";
 import { capabilitiesAnywhere } from "@/auth";
 import type { Capability } from "@/auth";
+import type { IconName } from "@/components/ui/icons";
 
 export interface NavItem {
   /** Route path (relative to the shell root). */
@@ -15,7 +16,7 @@ export interface NavItem {
   /** Display label. */
   label: string;
   /** Icon name (resolved by the Icon atom). */
-  icon: string;
+  icon: IconName;
   /**
    * The capability that unlocks this item. When omitted, the item is
    * always shown to any signed-in user (e.g. Dashboard).

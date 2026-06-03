@@ -2,7 +2,7 @@
 
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { ROLE_LABEL } from "@/auth";
-import { Icon, Button } from "@/components/ui/atoms";
+import { Icon, Button, Avatar } from "@/components/ui/atoms";
 
 export function TopBar(): JSX.Element {
   const { session } = useAuth();
@@ -47,9 +47,7 @@ export function TopBar(): JSX.Element {
         {/* User chip */}
         {session && (
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-cream-200 text-ink-700 grid place-items-center text-xs font-bold">
-              {session.user.name.charAt(0).toUpperCase()}
-            </div>
+            <Avatar initials={session.user.name} size="sm" role={session.user.identityRole} />
             <div className="hidden md:block text-right leading-tight">
               <div className="text-xs font-semibold text-ink-800">{session.user.name}</div>
               <div className="text-[10px] text-ink-500">{ROLE_LABEL[session.user.identityRole]}</div>

@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 
 import { useAuth, useOrgSwitcher, useCan, ROLE_LABEL } from "@/auth";
 import { Card, Icon, Badge } from "@/components/ui/atoms";
+import type { IconName } from "@/components/ui/icons";
 
 export function DashboardView(): JSX.Element {
   const { session } = useAuth();
@@ -21,7 +22,7 @@ export function DashboardView(): JSX.Element {
 
   if (!session) return <></>;
 
-  const actions: Array<{ to: string; label: string; icon: string; show: boolean }> = [
+  const actions: Array<{ to: string; label: string; icon: IconName; show: boolean }> = [
     { to: "/projects/new", label: "New Project", icon: "plus", show: canCreate },
     { to: "/dpr", label: "Daily Reports", icon: "clipboard", show: canViewDpr },
     { to: "/org/members", label: "Members", icon: "users", show: canManageMembers },
