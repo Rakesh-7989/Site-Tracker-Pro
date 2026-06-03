@@ -109,7 +109,41 @@ export async function signUp({ email, password, firmName, userName, plan = "basi
       emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
     },
   });
-  if (error) return { ok: false, error: error.message };
+  // Supabase wraps multiple distinct failure modes under HTTP 500 + the
+  // generic "Database error saving new user" mask. The two we hit most
+  // often in production:
+  //   - Email send rate limit (Supabase shared SMTP throttled to ~3/hr).
+  //     Fix: wire Resend SMTP (docs/RESEND_SMTP_SETUP.md).
+  //   - handle_new_signup trigger raised — usually a missing GRANT or
+  //     stale enum value.
+  // We surface a more actionable message so the UX doesn't dead-end on
+  // a generic "Database error".
+  if (error) {
+    const msg = String(error.message || "");
+    if (/database error saving new user/i.test(msg)) {
+      return {
+        ok: false,
+        error: "signup-rate-limited",
+        detail: "Sign-up is temporarily blocked. This usually means the Supabase shared SMTP rate limit is hit — wire Resend SMTP via docs/RESEND_SMTP_SETUP.md, or try again in ~30 minutes.",
+      };
+    }
+    return { ok: false, error: error.message };
+  }
+  // Supabase enumeration-protection: when the email is ALREADY registered,
+  // signUp returns 200 OK with a user object that has NO identities, NO
+  // session, and the original created_at. This is intentional (prevents
+  // enumeration attacks) but it dead-ends our UX because the FE would
+  // optimistically show "verification email sent" when no email was sent.
+  //
+  // Detect the pattern and route the user to the sign-in flow.
+  const identities = data?.user?.identities;
+  if (Array.isArray(identities) && identities.length === 0) {
+    return {
+      ok: false,
+      error: "email-already-registered",
+      detail: `An account already exists for ${email}. Please sign in instead — or use "Forgot password" if you don't remember it.`,
+    };
+  }
   return {
     ok: true,
     user: data?.user || null,

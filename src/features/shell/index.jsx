@@ -123,11 +123,18 @@ export function LoginScreen({onLogin,dark,toggleDark}){
     const res=await signUp({email:email.trim().toLowerCase(),password,firmName:firmName.trim(),userName:userName.trim()||email.split("@")[0],plan:selectedPlan});
     if(res.ok){
       if(res.needsConfirmation){
-        setMlState({state:"sent",msg:`Verification email sent to ${email}. Click the link or enter the 6-digit code below to finish.`});
+        setMlState({state:"sent",msg:`Verification email sent to ${email}. Click the link or enter the 6-digit code below to finish. Not seeing it after 2 minutes? You may already have an account — try the Sign in tab.`});
       } else {
         setMlState({state:"verified",msg:"Account created — loading your workspace…"});
         setTimeout(()=>window.location.reload(),600);
       }
+    } else if(res.error==="email-already-registered"){
+      // Auto-pivot to Sign in tab; the email is already prefilled.
+      setMlState({state:"err",msg:res.detail||"This email is already registered. Please sign in instead."});
+      setMode("login");
+      setAuthMethod("password");
+    } else if(res.error==="signup-rate-limited"){
+      setMlState({state:"err",msg:res.detail||"Sign-up is temporarily blocked. Please try again in a few minutes."});
     } else setMlState({state:"err",msg:friendly(res.error)});
   };
 
@@ -389,7 +396,7 @@ export function LoginScreen({onLogin,dark,toggleDark}){
             <p className="mt-3 text-[11px] text-ink-500 text-center leading-relaxed">By creating an account you agree to our <span className="font-semibold text-ink-700">Terms</span> and <span className="font-semibold text-ink-700">Privacy Policy</span>.</p>
 
             {/* Status banners */}
-            {mlState.state==="sent"&&<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2"><Ic n="check" s={16} c="text-emerald-600 flex-shrink-0 mt-0.5"/><div className="flex-1"><div className="text-[12px] font-semibold text-emerald-800">Verification email sent</div><div className="text-[11px] text-emerald-700 mt-0.5 leading-snug">{mlState.msg}</div><button onClick={handleSignup} className="mt-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1"><Ic n="refresh" s={11}/>Resend email</button></div></div>}
+            {mlState.state==="sent"&&<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2"><Ic n="check" s={16} c="text-emerald-600 flex-shrink-0 mt-0.5"/><div className="flex-1"><div className="text-[12px] font-semibold text-emerald-800">Verification email sent</div><div className="text-[11px] text-emerald-700 mt-0.5 leading-snug">{mlState.msg}</div><div className="mt-2 flex items-center gap-3 flex-wrap"><button onClick={handleSignup} className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1"><Ic n="refresh" s={11}/>Resend email</button><span className="text-emerald-300">·</span><button onClick={()=>{setMode("login");setAuthMethod("password");setMlState({state:"idle",msg:""});}} className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1"><Ic n="user" s={11}/>Already have an account? Sign in</button></div></div></div>}
             {mlState.state==="verified"&&<div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><Ic n="check" s={16} c="text-emerald-600 flex-shrink-0"/><div className="text-[12px] font-semibold text-emerald-800">{mlState.msg}</div></div>}
             {mlState.state==="err"&&<div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 flex items-start gap-2"><Ic n="alert" s={16} c="text-red-600 flex-shrink-0 mt-0.5"/><div className="text-[12px] text-red-700 leading-snug">{mlState.msg}</div></div>}
 
