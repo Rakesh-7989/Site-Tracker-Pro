@@ -1,5 +1,18 @@
 // SiteTrack Pro — pure permission helpers.
 //
+// @deprecated Phase 1 (June 4, 2026) — REPLACED by src/auth/* (TypeScript).
+// New code MUST use src/auth/RoleResolver instead:
+//
+//   import { can, resolveCapabilities } from "@/auth";
+//
+// This file stays operational during the strangler-fig rebuild because
+// src/App.jsx still consumes PERMS, canAccessProject(), etc. It will be
+// deleted in Phase 8 (kill the monolith) once every JSX call site has
+// been migrated to the TS auth layer.
+//
+// NEW capabilities + roles ship to src/auth/permissions-matrix.ts ONLY.
+// Do NOT add new entries here.
+//
 // This module mirrors the PERMS object in App.jsx so that role rules can be
 // unit-tested without booting React/JSDOM. App.jsx still owns the in-app source
 // of truth for now; a follow-up refactor (tracked in BACKLOG.md) should make
