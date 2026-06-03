@@ -89,16 +89,18 @@ export function ProjectsListView(): JSX.Element {
       {state.kind === "ready" && state.projects.length > 0 && (
         <div className="grid sm:grid-cols-2 gap-3">
           {state.projects.map(p => (
-            <Card key={p.id} className="p-4 hover:border-safety-300 transition">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-semibold text-ink-800">{p.name}</div>
-                  {p.location && <div className="text-xs text-ink-500 mt-0.5">{p.location}</div>}
+            <Link key={p.id} to={`/projects/${p.id}`}>
+              <Card className="p-4 hover:border-safety-300 transition cursor-pointer h-full">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-semibold text-ink-800">{p.name}</div>
+                    {p.location && <div className="text-xs text-ink-500 mt-0.5">{p.location}</div>}
+                  </div>
+                  <Badge tone={TYPE_TONE[p.type] ?? "neutral"}>{p.type}</Badge>
                 </div>
-                <Badge tone={TYPE_TONE[p.type] ?? "neutral"}>{p.type}</Badge>
-              </div>
-              {p.status && <div className="mt-2 text-[11px] text-ink-400 uppercase tracking-wide">{p.status}</div>}
-            </Card>
+                {p.status && <div className="mt-2 text-[11px] text-ink-400 uppercase tracking-wide">{p.status}</div>}
+              </Card>
+            </Link>
           ))}
         </div>
       )}

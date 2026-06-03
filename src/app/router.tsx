@@ -13,6 +13,7 @@ import { DashboardView } from "@/features/shell/DashboardView";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
 import { CreateProjectView } from "@/features/shell/CreateProjectView";
 import { PlaceholderView, NotFoundView } from "@/features/shell/PlaceholderView";
+import { DetailView } from "@/features/project/DetailView";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
 
 export const router = createBrowserRouter([
@@ -25,6 +26,8 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <DashboardView /> },
       { path: "projects", element: <ProjectsListView /> },
       { path: "projects/new", element: <CreateProjectView /> },
+      { path: "projects/:id", element: <DetailView /> },
+      { path: "projects/:id/:tab", element: <DetailView /> },
       { path: "dpr", element: <PlaceholderView title="Daily Reports" phase="Phase 7" /> },
       { path: "activity", element: <PlaceholderView title="Activity" phase="Phase 6" /> },
       { path: "audit", element: <PlaceholderView title="Audit Log" phase="Phase 8" /> },
