@@ -27,6 +27,7 @@
 //                                    the real portal until you've explicitly opted in
 
 import { validateRera } from "../../../src/lib/compliance.js";  // type-only import via Deno
+import { authenticate } from "../_shared/auth.ts";
 
 const ALLOWED_ORIGINS = (Deno.env.get("CORS_ALLOWED_ORIGINS") ||
   "https://app.sitetrack.in,http://localhost:5173"
@@ -46,6 +47,20 @@ function cors(req: Request) {
 Deno.serve(async (req) => {
   const CORS = cors(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+
+  // ── Security gate (Phase 0.5 hardening) ──
+  // RERA filings are legally binding — only compliance officers or
+  // orgadmins of the project's org may file. site_supervisor may
+  // initiate but real submission needs higher authority.
+  const auth = await authenticate(req, {
+    requireRole: ["orgadmin", "project_admin", "site_inspector", "consultant", "superadmin", "admin"],
+  });
+  if (!auth.ok) {
+    // Preserve CORS so the browser surfaces the 401/403 cleanly.
+    const headers = new Headers(auth.response.headers);
+    Object.entries(CORS).forEach(([k, v]) => headers.set(k, v));
+    return new Response(auth.response.body, { status: auth.response.status, headers });
+  }
 
   const url = new URL(req.url);
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), {

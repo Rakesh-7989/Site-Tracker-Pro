@@ -64,6 +64,7 @@
     "src/**/*.jsx",
     "tests/**/*.ts",
     "tests/**/*.tsx",
+    "supabase/functions/esm-shims.d.ts",
     "vite.config.ts",
     "vitest.config.ts"
   ],
@@ -72,6 +73,7 @@
     "dist",
     "build",
     "coverage",
-    ".vercel"
+    ".vercel",
+    "supabase/functions/**"
   ]
 }

@@ -13,6 +13,7 @@
 // Mandatory for B2B invoices when org annual turnover > ₹5cr.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authenticate } from "../_shared/auth.ts";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -108,9 +109,20 @@ function buildPayload({ invoice, seller, buyer, items, supplyType = "B2B" }: {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405);
 
-  let body: { invoice_id?: string } = {};
+  let body: { invoice_id?: string; project_id?: string } = {};
   try { body = await req.json(); } catch { return json({ error: "invalid-json" }, 400); }
   if (!body.invoice_id) return json({ error: "invoice_id-required" }, 400);
+
+  // ── Security gate (Phase 0.5 hardening) ──
+  // Only orgadmin / project_admin can generate e-invoices for their org's
+  // projects. project_id is optional in the request body but required for
+  // the project_members check when present. When missing, we still
+  // require an orgadmin / superadmin identity role.
+  const auth = await authenticate(req, {
+    requireRole: ["orgadmin", "project_admin", "superadmin", "admin"],
+    ...(body.project_id ? { requireProjectId: body.project_id } : {}),
+  });
+  if (!auth.ok) return auth.response;
 
   const supa = createClient(
     Deno.env.get("SUPABASE_URL")!,

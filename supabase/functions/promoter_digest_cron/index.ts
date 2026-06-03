@@ -31,6 +31,7 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { renderDigest, type DigestInput } from "../_shared/digest_renderer.ts";
+import { authenticateCron } from "../_shared/auth.ts";
 
 interface CronResponse {
   ok: boolean;
@@ -57,6 +58,13 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response("method not allowed", { status: 405 });
   }
+  // ── Security gate (Phase 0.5 hardening) ──
+  // Verify the Bearer token matches CRON_SECRET. Previously this EF
+  // accepted ANY caller, exposing it as a spam / DoS vector and letting
+  // the dispatch table be drained outside its hourly schedule.
+  const cronAuth = authenticateCron(req, "CRON_SECRET");
+  if (!cronAuth.ok) return cronAuth.response;
+
   const env = Deno.env.toObject();
   const supabaseUrl = env.SUPABASE_URL;
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;

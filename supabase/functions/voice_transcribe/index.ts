@@ -12,12 +12,15 @@
 
 // deno-lint-ignore-file no-explicit-any
 
+import { authenticate } from "../_shared/auth.ts";
+
 interface TranscribeRequest {
   audio_sha256: string;
   audio_url?: string;                          // Supabase Storage URL of the clip
   lang: "te" | "hi" | "en" | "auto";
   provider_order: ("bhashini" | "aws" | "mock")[];
   org_id?: string;
+  project_id?: string;
 }
 
 interface TranscribeResponse {
@@ -108,6 +111,7 @@ Deno.serve(async (httpReq: Request) => {
   if (httpReq.method !== "POST") {
     return new Response("method not allowed", { status: 405 });
   }
+
   let req: TranscribeRequest;
   try {
     req = await httpReq.json();
@@ -124,6 +128,17 @@ Deno.serve(async (httpReq: Request) => {
       { status: 400 },
     );
   }
+
+  // ── Security gate (Phase 0.5 hardening) ──
+  // Cache writes bound to a real user. Previously this EF accepted ANY
+  // caller, enabling cache-poisoning (attacker submits a wrong transcript
+  // for a shared audio SHA, future legitimate callers receive the wrong
+  // text). We require any authenticated user; project_members check is
+  // applied only when project_id is provided.
+  const auth = await authenticate(httpReq, {
+    ...(req.project_id ? { requireProjectId: req.project_id } : {}),
+  });
+  if (!auth.ok) return auth.response;
 
   const env = Deno.env.toObject();
   const supabaseUrl = env.SUPABASE_URL;

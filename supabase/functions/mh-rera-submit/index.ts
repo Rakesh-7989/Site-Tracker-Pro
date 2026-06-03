@@ -4,6 +4,7 @@
 // MahaRERA is quarterly (not per-stage); each filing covers Q1-Apr-Jun etc.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authenticate } from "../_shared/auth.ts";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -11,6 +12,13 @@ const json = (data: unknown, status = 200) =>
 const PERIODS = ["Q1-Apr-Jun", "Q2-Jul-Sep", "Q3-Oct-Dec", "Q4-Jan-Mar"];
 
 Deno.serve(async (req) => {
+  // ── Security gate (Phase 0.5 hardening) ──
+  if (req.method !== "OPTIONS") {
+    const auth = await authenticate(req, {
+      requireRole: ["orgadmin", "project_admin", "site_inspector", "consultant", "superadmin", "admin"],
+    });
+    if (!auth.ok) return auth.response;
+  }
   const u = new URL(req.url);
   if (req.method === "GET" && u.pathname.endsWith("/status")) {
     return json({
