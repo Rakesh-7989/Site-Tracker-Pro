@@ -58,3 +58,56 @@ export type {
   ResolvedCapabilities,
   CapabilityDecision,
 } from "./types";
+
+// ── Phase 1.5: React layer ────────────────────────────────────────────────
+export {
+  fetchAuthSession,
+  buildAuthSession,
+  normalizeProfile,
+  normalizeOrgMembership,
+  normalizeProjectMembership,
+  pickActiveOrgId,
+  type FetchOutcome,
+  type FetchResult,
+  type FetchFailure,
+  type FetchInput,
+} from "./fetchAuthSession";
+
+export {
+  readActiveOrgId,
+  writeActiveOrgId,
+  defaultStorage,
+  memoryStorage,
+  type StorageLike,
+} from "./activeOrgStore";
+
+export {
+  useAuthUser,
+  type AuthStatus,
+  type UseAuthUserReturn,
+  type UseAuthUserOptions,
+} from "./useAuthUser";
+
+export {
+  AuthProvider,
+  useAuth,
+  useSession,
+  type AuthContextValue,
+} from "./OrganizationContext";
+
+export {
+  useOrgSwitcher,
+  type UseOrgSwitcherReturn,
+} from "./useOrgSwitcher";
+
+export {
+  useCan,
+  useDecide,
+  useHasRole,
+  RequireCapability,
+  RequireRole,
+  RequireSession,
+  type RequireCapabilityProps,
+  type RequireRoleProps,
+  type RequireSessionProps,
+} from "./guards";
