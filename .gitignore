@@ -14,3 +14,4 @@ playwright-report/
 blob-report/
 playwright/.cache/
 .vercel
+TEST_USERS_CREDENTIALS.md
