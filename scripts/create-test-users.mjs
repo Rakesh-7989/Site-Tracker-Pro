@@ -48,13 +48,22 @@ const rotate = args.includes("--rotate");
 // architect|pm|contractor|client|admin). profiles.role is the 18-value
 // canonical role for app permissions. orgadmin in profiles maps to
 // 'admin' in org_members.
+// v2 role architecture — 9 test users covering every distinct UI surface.
+// See docs/ROLE_ARCHITECTURE.md for the full 25-role catalog.
 const ROSTER = [
-  { role: "superadmin", orgRole: null,         name: "Test Superadmin",  isStaff: true,  joinOrg: false },
-  { role: "orgadmin",   orgRole: "admin",      name: "Test OrgAdmin",    isStaff: false, joinOrg: true  },
-  { role: "architect",  orgRole: "architect",  name: "Test Architect",   isStaff: false, joinOrg: true  },
-  { role: "pm",         orgRole: "pm",         name: "Test PM",          isStaff: false, joinOrg: true  },
-  { role: "contractor", orgRole: "contractor", name: "Test Contractor",  isStaff: false, joinOrg: true  },
-  { role: "client",     orgRole: "client",     name: "Test Client",      isStaff: false, joinOrg: true  },
+  // Org / firm level
+  { role: "superadmin",     orgRole: null,         name: "Test Superadmin",     isStaff: true,  joinOrg: false },
+  { role: "orgadmin",       orgRole: "admin",      name: "Test OrgAdmin",       isStaff: false, joinOrg: true  },
+  { role: "promoter",       orgRole: "admin",      name: "Test Promoter",       isStaff: false, joinOrg: true  },   // NEW: paying firm owner
+  { role: "project_admin",  orgRole: "admin",      name: "Test Project Admin",  isStaff: false, joinOrg: true  },
+  // Project execution
+  { role: "pm",             orgRole: "pm",         name: "Test PM",             isStaff: false, joinOrg: true  },
+  { role: "architect",      orgRole: "architect",  name: "Test Architect",      isStaff: false, joinOrg: true  },
+  { role: "site_supervisor",orgRole: "architect",  name: "Test Site Supervisor",isStaff: false, joinOrg: true  },   // NEW: Sprint 2 DPR voice source
+  // Supply chain
+  { role: "contractor",     orgRole: "contractor", name: "Test Contractor",     isStaff: false, joinOrg: true  },
+  // External
+  { role: "client",         orgRole: "client",     name: "Test Client",         isStaff: false, joinOrg: true  },
 ];
 
 const passwordFor = (role) => `SiteTrack-Test-${role.replace(/(^.|_.)/g, m => m.replace("_","").toUpperCase())}-2026!`;
