@@ -43,9 +43,9 @@ describe("Identity role catalog (profiles.role)", () => {
 });
 
 describe("Org-tier role catalog (org_members.role)", () => {
-  it("has exactly the 5 DB-allowed values", () => {
-    expect(ORG_TIER_ROLES.length).toBe(5);
-    expect([...ORG_TIER_ROLES].sort()).toEqual(["admin", "architect", "client", "contractor", "pm"]);
+  it("has exactly the 6 DB-allowed values (migration 65 added vendor)", () => {
+    expect(ORG_TIER_ROLES.length).toBe(6);
+    expect([...ORG_TIER_ROLES].sort()).toEqual(["admin", "architect", "client", "contractor", "pm", "vendor"]);
   });
 });
 
@@ -112,9 +112,12 @@ describe("defaultOrgTierFor / defaultProjectTierFor", () => {
     expect(defaultOrgTierFor("site_engineer")).toBe("architect");
     expect(defaultOrgTierFor("mep_consultant")).toBe("architect");
   });
-  it("vendor / contractor → contractor", () => {
+  it("contractor / sub_contractor → contractor", () => {
     expect(defaultOrgTierFor("contractor")).toBe("contractor");
-    expect(defaultOrgTierFor("vendor")).toBe("contractor");
+    expect(defaultOrgTierFor("sub_contractor")).toBe("contractor");
+  });
+  it("vendor → vendor (migration 65 org tier)", () => {
+    expect(defaultOrgTierFor("vendor")).toBe("vendor");
   });
   it("client → client", () => {
     expect(defaultOrgTierFor("client")).toBe("client");

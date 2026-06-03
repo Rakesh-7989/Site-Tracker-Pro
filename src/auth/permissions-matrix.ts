@@ -319,6 +319,14 @@ const ORG_TIER_CAPS: Record<OrgTierRole, Capability[]> = {
     "activity:view",
     "handover:view",
   ),
+  vendor: arr(
+    // Org-tier vendor — material supplier serving the org across projects.
+    // Vendor portal: respond to quotes, raise invoices, see price master.
+    "activity:view",
+    "po:create",            // submit quote against a PO request
+    "invoice:create",
+    "material:price:view",
+  ),
 };
 
 // ── Project tier (project_members.role — 22 values) ───────────────────────

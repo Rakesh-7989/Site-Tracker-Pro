@@ -49,8 +49,8 @@ export const IDENTITY_ROLES = [
 ] as const;
 export type IdentityRole = (typeof IDENTITY_ROLES)[number];
 
-// ── Org-tier roles (org_members.role — 5 values) ──────────────────────────
-export const ORG_TIER_ROLES = ["admin", "pm", "architect", "contractor", "client"] as const;
+// ── Org-tier roles (org_members.role — 6 values, migration 65) ─────────────
+export const ORG_TIER_ROLES = ["admin", "pm", "architect", "contractor", "client", "vendor"] as const;
 export type OrgTierRole = (typeof ORG_TIER_ROLES)[number];
 
 // ── Project-tier roles (project_members.role — 22 values) ──────────────────
@@ -224,7 +224,8 @@ export function defaultOrgTierFor(role: IdentityRole): OrgTierRole {
     role === "site_engineer" || role === "civil_engineer" || role === "site_supervisor" ||
     role === "site_inspector"
   ) return "architect";
-  if (role === "contractor" || role === "sub_contractor" || role === "vendor") return "contractor";
+  if (role === "vendor") return "vendor";
+  if (role === "contractor" || role === "sub_contractor") return "contractor";
   return "client";
 }
 
