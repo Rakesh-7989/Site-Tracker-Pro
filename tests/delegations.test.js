@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import { activeDelegationsFor, resolveApprover, addDelegation, revokeDelegation, delegationStatus } from "../src/lib/delegations.js";
 
 const archUser = { id: "u_arch", name: "Ramesh", role: "architect" };
-const pmUser   = { id: "u_pm",   name: "Suresh", role: "pm" };
+// pmUser kept as documentation of the canonical delegation target shape — used
+// in upcoming Sprint 3 cross-role delegation tests. Prefixed with `_` to
+// silence the unused-vars lint while preserving intent.
+const _pmUser  = { id: "u_pm",   name: "Suresh", role: "pm" };
 
 // Pin "now" to a time inside the test delegation window so tests don't drift
 // as real-world dates pass May 26. resolveApprover takes `now` as a 4th arg.

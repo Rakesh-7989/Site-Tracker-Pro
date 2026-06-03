@@ -72,7 +72,7 @@ export async function merkleRoot(leaves) {
     for (let i = 0; i < level.length; i += 2) {
       const left = level[i];
       const right = level[i + 1] ?? left; // duplicate last node when odd
-      // eslint-disable-next-line no-await-in-loop
+       
       next.push(await sha256Hex(left + right));
     }
     level = next;

@@ -62,7 +62,7 @@ export function usePersistent(key, defaultValue) {
       }
     })();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [key]);
 
   // Wrap setValue: write to LS immediately, debounce remote write.

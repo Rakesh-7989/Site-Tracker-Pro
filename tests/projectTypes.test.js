@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  TYPE_TABS, TYPE_TEAM_TEMPLATES, TYPE_BOQ_PRESETS,
+  TYPE_TABS, TYPE_TEAM_TEMPLATES,
   projectTypeOf, isTabApplicableToProjectType, recommendedTeam,
   boqPresets, isTabVisible, tabHiddenByType, typeChip,
 } from "../src/lib/projectTypes.js";

@@ -60,7 +60,7 @@ export function initSentry() {
       return Sentry;
     } catch (err) {
       // Don't let Sentry's own failure crash the host app.
-      // eslint-disable-next-line no-console
+       
       console.warn("Sentry init failed (continuing without):", err?.message);
       _sentry = null;
       return null;

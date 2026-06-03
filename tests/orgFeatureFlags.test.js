@@ -3,7 +3,7 @@ import {
   FEATURE_CATALOG, FEATURE_GROUPS,
   isFeatureEnabled, setOrgFeature, setPlatformFeature, resetOrgFeatures,
   featureStats, catalogByGroup, featuresForRole,
-  INIT_ORG_FEATURE_FLAGS, INIT_PLATFORM_FEATURE_FLAGS,
+  INIT_ORG_FEATURE_FLAGS,
 } from "../src/lib/orgFeatureFlags.js";
 
 describe("orgFeatureFlags — catalog integrity", () => {

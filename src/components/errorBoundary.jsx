@@ -26,7 +26,7 @@ export class ErrorBoundary extends React.Component {
     this.setState({ info });
     // Session 27.4: forward to Sentry (no-op without VITE_SENTRY_DSN).
     captureException(error, { extra: { componentStack: info?.componentStack } });
-    // eslint-disable-next-line no-console
+     
     console.error("SiteTrack uncaught error:", error, info?.componentStack);
   }
 

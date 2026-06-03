@@ -12,7 +12,8 @@
 
 import { parseBoq } from "./boqImport.js";
 
-const TARGETS = ["projects", "vendors", "boq", "ra_bills", "labour"];
+/** Target SiteTrack tables that contractor migrators can write into. */
+export const TARGETS = ["projects", "vendors", "boq", "ra_bills", "labour"];
 
 const HEADER_FINGERPRINTS = {
   powerplay_projects: ["project_id", "client_name", "site_address", "budget_inr"],

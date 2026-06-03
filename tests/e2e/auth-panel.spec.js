@@ -17,7 +17,9 @@ import { test, expect } from "@playwright/test";
 
 const BACKEND_ENABLED_HINT_SEL = 'button[role="tab"]';   // Sign in / Start a firm tabs only render in cloud mode
 
-async function backendEnabled(page) {
+// Helper retained for cloud-mode E2E specs (auth panel only renders when
+// backend is enabled); not yet wired. Underscore prefix silences lint.
+async function _backendEnabled(page) {
   await page.goto("/");
   await page.waitForLoadState("domcontentloaded");
   return (await page.locator(BACKEND_ENABLED_HINT_SEL).count()) > 0;
