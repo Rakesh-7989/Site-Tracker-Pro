@@ -3,7 +3,11 @@
 // Provider-agnostic interface for converting a Telugu/Hindi/English voice
 // clip to text. Selects Bhashini (primary, government's official India-
 // language pipeline, ~free for non-profit usage tiers) → AWS Transcribe
-// (paid fallback) → mock (tests).
+// (paid fallback, gated by BUDGET_MODE=paid) → mock (tests).
+//
+// Budget guard: AWS is gated by `budgetMode.isProviderAllowed('aws')` so
+// the EF cannot accidentally bill while the founder's zero-spend window
+// is active. See docs/ZERO_SPEND_POLICY.md.
 //
 // This module is pure-JS (no Node-only deps) so it works in:
 //   - The browser (preflight cache lookup before sending the EF call).
@@ -19,6 +23,8 @@
 //   4. `mockTranscribe()` — deterministic test stub.
 //
 // See docs/SPRINT_2_ARCHITECTURE.md for the full contract.
+
+import { isProviderAllowed } from './budgetMode.js';
 
 /** @typedef {'te'|'hi'|'en'|'auto'} Language */
 /** @typedef {'auto'|'bhashini'|'aws'|'mock'} Provider */
@@ -39,17 +45,21 @@ export const DEFAULT_PROVIDER_ORDER = ['bhashini', 'aws'];
  * @returns {Provider[]}
  */
 export function pickProviderOrder({ lang, provider, env = {} }) {
+  const awsAllowed = isProviderAllowed('aws', env).allowed;
   if (provider === 'mock') return ['mock'];
   if (provider === 'bhashini') {
     return env.BHASHINI_API_KEY ? ['bhashini'] : [];
   }
   if (provider === 'aws') {
+    if (!awsAllowed) return [];   // explicit aws request blocked by budget
     return (env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY) ? ['aws'] : [];
   }
-  // 'auto' — try Bhashini first if configured, then AWS, then nothing.
+  // 'auto' — try Bhashini first if configured, then AWS (if budget allows).
   const out = [];
   if (env.BHASHINI_API_KEY) out.push('bhashini');
-  if (env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY) out.push('aws');
+  if (awsAllowed && env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY) {
+    out.push('aws');
+  }
   // Test-mode escape hatch: if NOTHING is configured AND VITEST is set,
   // fall back to mock so tests don't hard-fail on missing creds.
   if (!out.length && (env.VITEST || env.NODE_ENV === 'test')) out.push('mock');
@@ -173,9 +183,12 @@ export async function transcribe(audio, opts = {}) {
 
   // No transport configured AND no providers available — fail explicit.
   if (!order.length) {
+    const awsBlocked = !isProviderAllowed('aws', env).allowed;
     return {
       ok: false,
-      error: 'No voice provider configured. Set BHASHINI_API_KEY or AWS_ACCESS_KEY_ID.',
+      error: awsBlocked
+        ? 'No voice provider configured. Set BHASHINI_API_KEY. (AWS is blocked by BUDGET_MODE=zero-spend.)'
+        : 'No voice provider configured. Set BHASHINI_API_KEY or AWS_ACCESS_KEY_ID.',
       provider_tried: [],
     };
   }

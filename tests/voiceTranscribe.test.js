@@ -46,30 +46,57 @@ describe("pickProviderOrder()", () => {
     expect(pickProviderOrder({ lang: "te", provider: "bhashini", env: {} })).toEqual([]);
   });
 
-  it("returns ['aws'] only when BOTH AWS keys present", () => {
+  it("returns ['aws'] only when BOTH AWS keys present AND BUDGET_MODE=paid", () => {
     expect(pickProviderOrder({ lang: "hi", provider: "aws", env: {} })).toEqual([]);
     expect(
       pickProviderOrder({
         lang: "hi",
         provider: "aws",
-        env: { AWS_ACCESS_KEY_ID: "a" },
+        env: { AWS_ACCESS_KEY_ID: "a", BUDGET_MODE: "paid" },
       }),
     ).toEqual([]);
     expect(
       pickProviderOrder({
         lang: "hi",
         provider: "aws",
-        env: { AWS_ACCESS_KEY_ID: "a", AWS_SECRET_ACCESS_KEY: "b" },
+        env: { AWS_ACCESS_KEY_ID: "a", AWS_SECRET_ACCESS_KEY: "b", BUDGET_MODE: "paid" },
       }),
     ).toEqual(["aws"]);
   });
 
-  it("auto: prefers Bhashini, falls back to AWS", () => {
+  it("BUDGET_MODE=zero-spend (default) strips AWS even with creds set", () => {
+    // provider='aws' explicitly requested but mode blocks → []
+    expect(
+      pickProviderOrder({
+        lang: "hi",
+        provider: "aws",
+        env: { AWS_ACCESS_KEY_ID: "a", AWS_SECRET_ACCESS_KEY: "b" /* mode defaults zero-spend */ },
+      }),
+    ).toEqual([]);
+  });
+
+  it("auto + BUDGET_MODE=zero-spend strips AWS from chain (Bhashini-only)", () => {
     expect(
       pickProviderOrder({
         lang: "te",
         provider: "auto",
         env: {
+          BHASHINI_API_KEY: "x",
+          AWS_ACCESS_KEY_ID: "a",
+          AWS_SECRET_ACCESS_KEY: "b",
+          /* no BUDGET_MODE → defaults to zero-spend */
+        },
+      }),
+    ).toEqual(["bhashini"]);   // AWS stripped by budget guard
+  });
+
+  it("auto + BUDGET_MODE=paid: prefers Bhashini, falls back to AWS", () => {
+    expect(
+      pickProviderOrder({
+        lang: "te",
+        provider: "auto",
+        env: {
+          BUDGET_MODE: "paid",
           BHASHINI_API_KEY: "x",
           AWS_ACCESS_KEY_ID: "a",
           AWS_SECRET_ACCESS_KEY: "b",

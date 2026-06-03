@@ -17,6 +17,81 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { retry } from "../_shared/retry.ts";
+import { getBudgetMode } from "../_shared/budget.ts";
+
+/**
+ * Meta Cloud API gives 1k free service conversations per WABA per UTC
+ * month. The Supabase function `whatsapp_quota_increment(waba_id)`
+ * atomically bumps + returns the current month's count so we can
+ * pass / soft-warn / hard-block in a single round-trip.
+ *
+ * BUDGET_MODE=zero-spend  → hard-block at hard_limit (1000 default)
+ * BUDGET_MODE=paid        → log warning past soft_limit but proceed
+ * WHATSAPP_OVERRIDE_PAID=1 → bypass guard even in zero-spend
+ */
+interface QuotaRow {
+  waba_id: string;
+  utc_month: string;
+  sent_count: number;
+  soft_limit: number;
+  hard_limit: number;
+  last_increment: string;
+}
+
+interface QuotaDecision {
+  allowed: boolean;
+  reason?: string;
+  quota?: QuotaRow;
+  warning?: string;
+}
+
+async function incrementQuota(
+  supabaseUrl: string,
+  serviceKey: string,
+  wabaId: string,
+  env: Record<string, string>,
+): Promise<QuotaDecision> {
+  // Atomic bump via RPC defined in migration 57.
+  const rpcRes = await fetch(`${supabaseUrl}/rest/v1/rpc/whatsapp_quota_increment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": serviceKey,
+      "Authorization": `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ p_waba_id: wabaId }),
+  });
+  if (!rpcRes.ok) {
+    // If the RPC doesn't exist yet (migration 57 not applied), don't fail
+    // — log a warning + proceed (fail-open during initial rollout).
+    return {
+      allowed: true,
+      warning: `quota RPC unavailable (status ${rpcRes.status}); proceeding without meter`,
+    };
+  }
+  const quota = (await rpcRes.json()) as QuotaRow;
+  const override = env.WHATSAPP_OVERRIDE_PAID === "1";
+  const mode = getBudgetMode(env);
+
+  if (override) {
+    return { allowed: true, quota, warning: "WHATSAPP_OVERRIDE_PAID=1 — bypassing budget guard" };
+  }
+  if (quota.sent_count > quota.hard_limit && mode === "zero-spend") {
+    return {
+      allowed: false,
+      reason: `whatsapp quota exceeded: ${quota.sent_count}/${quota.hard_limit} this month (${quota.utc_month}). Set WHATSAPP_OVERRIDE_PAID=1 or BUDGET_MODE=paid to send.`,
+      quota,
+    };
+  }
+  if (quota.sent_count > quota.soft_limit) {
+    return {
+      allowed: true,
+      quota,
+      warning: `whatsapp quota at ${quota.sent_count}/${quota.hard_limit} (soft limit ${quota.soft_limit} crossed)`,
+    };
+  }
+  return { allowed: true, quota };
+}
 
 interface DprSendRequest {
   client_token: string;        // UUID, the idempotency key
@@ -190,6 +265,46 @@ Deno.serve(async (httpReq: Request) => {
       meta_message_id: message.meta_message_id ?? undefined,
       cached: true,
     } satisfies DprSendResponse);
+  }
+
+  // ── Budget guard: enforce Meta's 1k free-tier cap unless overridden ──────
+  // Only run the meter when the EF is about to make a REAL (non-dry-run)
+  // call — dry-run rows don't bill, so they shouldn't burn quota.
+  if (env.SITETRACK_DRY_RUN !== "true" && env.WHATSAPP_PHONE_NUMBER_ID) {
+    const quotaDecision = await incrementQuota(
+      supabaseUrl,
+      serviceKey,
+      env.WHATSAPP_PHONE_NUMBER_ID,   // proxy for WABA id
+      env,
+    );
+    if (quotaDecision.warning) console.warn(`[whatsapp_dpr_send] ${quotaDecision.warning}`);
+    if (!quotaDecision.allowed) {
+      // Mark the message as 'failed' with budget-blocked reason so the
+      // dashboard can surface this distinctly from network failures.
+      if (dprMessageId) {
+        await fetch(`${supabaseUrl}/rest/v1/dpr_messages?id=eq.${dprMessageId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": serviceKey,
+            "Authorization": `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({
+            status: "failed",
+            failure_reason: `budget-blocked: ${quotaDecision.reason}`,
+          }),
+        });
+      }
+      return Response.json(
+        {
+          ok: false,
+          dpr_message_id: dprMessageId,
+          status: "failed",
+          error: quotaDecision.reason,
+        } satisfies DprSendResponse,
+        { status: 402 },   // 402 Payment Required — fitting for budget block
+      );
+    }
   }
 
   // ── Send via Meta Cloud API with retry ───────────────────────────────────

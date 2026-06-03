@@ -17,6 +17,8 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
+import { getBudgetMode, isProviderAllowed } from "../src/lib/budgetMode.js";
+
 const root = process.cwd();
 const envPath = join(root, ".env.local");
 
@@ -51,7 +53,7 @@ const EF_REQUIREMENTS = [
   },
   {
     ef: "voice_transcribe",
-    purpose: "Telugu/Hindi voice → text via Bhashini (primary) + AWS (fallback)",
+    purpose: "Telugu/Hindi voice → text via Bhashini (primary). AWS fallback is gated by BUDGET_MODE.",
     required: ["BHASHINI_API_KEY"],
     optional: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
   },
@@ -81,9 +83,9 @@ const EF_REQUIREMENTS = [
   },
   {
     ef: "anchor-digest",
-    purpose: "Polygon blockchain anchor for audit rows",
+    purpose: "Polygon blockchain anchor for audit rows. Defaults to polygon-amoy testnet (free).",
     required: ["POLYGON_RPC_URL", "POLYGON_CONTRACT_ADDRESS"],
-    optional: ["POLYGON_SIGNER_PRIVATE_KEY", "POLYGON_SIGNER_URL"],
+    optional: ["POLYGON_SIGNER_PRIVATE_KEY", "POLYGON_SIGNER_URL", "POLYGON_NETWORK"],
   },
 ];
 
@@ -97,6 +99,24 @@ const args = process.argv.slice(2);
 const strict = args.includes("--strict");
 
 const isSet = (k) => env[k] && String(env[k]).trim().length > 0 && !/^<.*>$/.test(env[k]);
+
+// ── Budget mode banner ──────────────────────────────────────────────────────
+const budgetMode = getBudgetMode(env);
+const budgetIcon = budgetMode === "zero-spend" ? "🔒" : "💳";
+console.log(`${budgetIcon} Budget mode: ${budgetMode}`);
+if (budgetMode === "zero-spend") {
+  console.log("   ↳ Paid providers (AWS, polygon-mainnet, OpenAI, Twilio) will be REFUSED at call time.");
+  console.log("   ↳ Override with BUDGET_MODE=paid in .env.local (founder approval required).");
+}
+const polygonNet = env.POLYGON_NETWORK || "polygon-amoy (default)";
+const polygonAllowed = isProviderAllowed(env.POLYGON_NETWORK || "polygon-amoy", env);
+const polyIcon = polygonAllowed.allowed ? "✅" : "🚨";
+console.log(`${polyIcon} POLYGON_NETWORK: ${polygonNet}${polygonAllowed.allowed ? "" : " — BLOCKED by budget mode"}`);
+const awsAllowed = isProviderAllowed("aws", env);
+if (isSet("AWS_ACCESS_KEY_ID") && !awsAllowed.allowed) {
+  console.log("🚨 AWS keys set but BUDGET_MODE=zero-spend will refuse them at call time. Remove keys or flip mode.");
+}
+console.log("");
 
 // ── Print browser vars ─────────────────────────────────────────────────────
 console.log("📦 Browser-shipped Vite envs:");

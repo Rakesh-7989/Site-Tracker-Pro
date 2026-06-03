@@ -18,6 +18,18 @@
 // expected (HTTP timeouts, RPC flakiness).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isProviderAllowed, getBudgetMode } from "../_shared/budget.ts";
+
+/**
+ * Map a POLYGON_NETWORK env value to the cost-classification provider name
+ * the budget guard understands. Mainnet is paid; amoy / mumbai are free.
+ */
+function networkToProvider(network: string): string {
+  if (network === "polygon-mainnet") return "polygon-mainnet";
+  if (network === "polygon-amoy") return "polygon-amoy";
+  if (network === "polygon-mumbai") return "polygon-mumbai";
+  return network;
+}
 
 // ── Helpers we copy here rather than import from src/lib/ because EFs run on
 //    Deno, not Node, and importing browser-targeted JS modules is brittle.
@@ -196,7 +208,35 @@ Deno.serve(async (req) => {
   const contract = Deno.env.get("POLYGON_CONTRACT_ADDRESS")!;
   const signerUrl = Deno.env.get("POLYGON_SIGNER_URL");
   const signerToken = Deno.env.get("POLYGON_SIGNER_TOKEN") || "";
-  const network = (Deno.env.get("POLYGON_NETWORK") || "polygon-mainnet") as "polygon-mainnet" | "polygon-amoy" | "polygon-mumbai";
+  // Default flipped from polygon-mainnet → polygon-amoy to honour the zero-
+  // spend policy (mainnet gas ≈ ₹0.50/anchor). Mainnet requires both an
+  // explicit POLYGON_NETWORK=polygon-mainnet AND BUDGET_MODE=paid.
+  const network = (Deno.env.get("POLYGON_NETWORK") || "polygon-amoy") as "polygon-mainnet" | "polygon-amoy" | "polygon-mumbai";
+  const envObj = Deno.env.toObject();
+
+  // Budget guard: if the configured network is paid AND budget mode is
+  // zero-spend, refuse to submit. Persist a 'pending' row so the digest
+  // can be re-anchored later when the founder flips BUDGET_MODE=paid.
+  const networkDecision = isProviderAllowed(networkToProvider(network), envObj);
+  if (!networkDecision.allowed) {
+    await supa.from("audit_anchors").upsert({
+      day, row_count: rows?.length ?? 0,
+      merkle_root: rootBytes,
+      status: "pending",
+      network,
+      failure_reason: `budget-blocked: ${networkDecision.reason}`,
+      metadata: { budgetMode: getBudgetMode(envObj), leafCount: leaves.length },
+    });
+    return Response.json({
+      day,
+      status: "pending-budget-blocked",
+      merkle_root: rootHex,
+      row_count: rows?.length ?? 0,
+      network,
+      budget_mode: getBudgetMode(envObj),
+      reason: networkDecision.reason,
+    });
+  }
 
   if (!rpcUrl || !contract) {
     return Response.json({ error: "POLYGON_RPC_URL and POLYGON_CONTRACT_ADDRESS required" }, { status: 500 });
