@@ -29,7 +29,7 @@ export const CAPABILITIES = [
   "milestone:delete",
 
   // ── Daily Progress Report ────────────────────────────────────────────────
-  "dpr:submit",          // submit a DPR (typically site_supervisor)
+  "dpr:submit",          // submit a DPR (typically site_engineer)
   "dpr:approve",         // approve / publish a DPR
   "dpr:view",            // read DPRs
 

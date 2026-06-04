@@ -32,8 +32,12 @@ function rolesFromCheck(file: string, constraintMarker: string): string[] {
 }
 
 describe("TS ↔ SQL role catalog parity", () => {
-  it("IDENTITY_ROLES matches migration 58 profiles_role_check", () => {
-    const sqlRoles = rolesFromCheck("58_role_catalog_expansion.sql", "profiles_role_check CHECK (role IN (");
+  // The canonical constraints are the LATEST migration that defines them.
+  // Migration 68 (role consolidation) redefined profiles_role_check (22),
+  // project_members_role_check (18) + the role_catalog view. Org tier was
+  // untouched, so it still points at migration 65.
+  it("IDENTITY_ROLES matches migration 68 profiles_role_check", () => {
+    const sqlRoles = rolesFromCheck("68_role_consolidation.sql", "profiles_role_check CHECK (role IN (");
     expect(sqlRoles.sort()).toEqual([...IDENTITY_ROLES].sort());
   });
 
@@ -42,13 +46,13 @@ describe("TS ↔ SQL role catalog parity", () => {
     expect(sqlRoles.sort()).toEqual([...ORG_TIER_ROLES].sort());
   });
 
-  it("PROJECT_TIER_ROLES matches migration 59 project_members_role_check", () => {
-    const sqlRoles = rolesFromCheck("59_project_members.sql", "project_members_role_check CHECK (role IN (");
+  it("PROJECT_TIER_ROLES matches migration 68 project_members_role_check", () => {
+    const sqlRoles = rolesFromCheck("68_role_consolidation.sql", "project_members_role_check CHECK (role IN (");
     expect(sqlRoles.sort()).toEqual([...PROJECT_TIER_ROLES].sort());
   });
 
-  it("role_catalog view (migration 66) lists the same identity roles", () => {
-    const sql = readFileSync(join(sqlDir, "66_rls_role_catalog_sync.sql"), "utf8");
+  it("role_catalog view (migration 68) lists the same identity roles", () => {
+    const sql = readFileSync(join(sqlDir, "68_role_consolidation.sql"), "utf8");
     // Start the slice AFTER the marker so the 'identity' tier literal
     // isn't captured as a role token.
     const marker = "SELECT 'identity' AS tier, unnest(ARRAY[";

@@ -6,7 +6,7 @@ import { statusColors, KNOWN_STATUSES } from "@/components/ui/status";
 import { IDENTITY_ROLES } from "@/auth";
 
 describe("roleMeta", () => {
-  it("returns a label + classes for every one of the 26 identity roles", () => {
+  it("returns a label + classes for every one of the 22 identity roles", () => {
     for (const role of IDENTITY_ROLES) {
       const m = roleMeta(role);
       expect(m.label.length).toBeGreaterThan(0);
@@ -23,16 +23,16 @@ describe("roleMeta", () => {
     expect(roleMeta("").label).toBe("Member");
   });
 
-  it("allRoleMeta covers exactly the 26 identity roles", () => {
+  it("allRoleMeta covers exactly the 22 identity roles", () => {
     const all = allRoleMeta();
     expect(all.length).toBe(IDENTITY_ROLES.length);
-    expect(new Set(all.map(r => r.role)).size).toBe(26);
+    expect(new Set(all.map(r => r.role)).size).toBe(22);
   });
 
   it("superadmin + promoter have distinct intentional palettes", () => {
     expect(roleMeta("superadmin").accent).toBe("slate");
     expect(roleMeta("promoter").accent).toBe("amber");
-    expect(roleMeta("site_supervisor").accent).toBe("blue");
+    expect(roleMeta("site_engineer").accent).toBe("blue");
     expect(roleMeta("client").accent).toBe("emerald");
   });
 });

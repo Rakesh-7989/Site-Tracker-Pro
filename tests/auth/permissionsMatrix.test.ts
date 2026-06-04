@@ -44,8 +44,8 @@ describe("Identity-tier coverage", () => {
     expect(caps).toContain("handover:view" as never);
   });
 
-  it("site_supervisor has DPR submit + voice + photo (Sprint 2 origin)", () => {
-    const caps = identityCapabilities("site_supervisor");
+  it("site_engineer has DPR submit + voice + photo (absorbed site_supervisor)", () => {
+    const caps = identityCapabilities("site_engineer");
     expect(caps).toContain("dpr:submit" as never);
     expect(caps).toContain("voice:record" as never);
     expect(caps).toContain("photo:upload" as never);
@@ -102,8 +102,8 @@ describe("Project-tier coverage", () => {
       expect(projectTierCapabilities(r).length, `role=${r}`).toBeGreaterThan(0);
     }
   });
-  it("site_supervisor (project tier) mirrors the Sprint 2 DPR flow", () => {
-    const caps = projectTierCapabilities("site_supervisor");
+  it("site_engineer (project tier) carries the Sprint 2 DPR flow", () => {
+    const caps = projectTierCapabilities("site_engineer");
     expect(caps).toContain("dpr:submit" as never);
     expect(caps).toContain("voice:record" as never);
     expect(caps).toContain("photo:upload" as never);

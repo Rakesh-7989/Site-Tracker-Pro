@@ -104,7 +104,7 @@ describe("previewDigest", () => {
 describe("dashboardForRole", () => {
   it("maps the special roles", () => {
     expect(dashboardForRole("promoter")).toBe("promoter");
-    expect(dashboardForRole("site_supervisor")).toBe("site-supervisor");
+    expect(dashboardForRole("site_engineer")).toBe("field");   // absorbed site_supervisor
     expect(dashboardForRole("client")).toBe("client");
   });
   it("everything else → default", () => {

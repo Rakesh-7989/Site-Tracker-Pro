@@ -66,9 +66,9 @@ describe("buildNav", () => {
     expect(paths).toContain("/admin/orgs");
   });
 
-  it("site_supervisor sees Daily Reports but not org admin", () => {
+  it("site_engineer sees Daily Reports but not org admin", () => {
     const nav = buildNav(session({
-      user: { id: "u", email: "a@b", name: "SS", identityRole: "site_supervisor", isStaff: false },
+      user: { id: "u", email: "a@b", name: "SE", identityRole: "site_engineer", isStaff: false },
     }));
     const paths = nav.map(n => n.to);
     expect(paths).toContain("/dpr");

@@ -18,18 +18,24 @@ import {
 } from "@/auth/roles";
 
 describe("Identity role catalog (profiles.role)", () => {
-  it("has 26 distinct roles matching migration 58", () => {
-    expect(IDENTITY_ROLES.length).toBe(26);
-    expect(new Set(IDENTITY_ROLES).size).toBe(26);
+  it("has 22 distinct roles matching migration 68 (consolidated)", () => {
+    expect(IDENTITY_ROLES.length).toBe(22);
+    expect(new Set(IDENTITY_ROLES).size).toBe(22);
   });
 
-  it("includes the v2 new roles", () => {
+  it("includes the v2 surviving roles", () => {
     for (const r of [
       "promoter", "senior_architect", "junior_architect",
       "structural_consultant", "design_head", "consultant_head",
-      "site_supervisor", "vendor",
+      "site_engineer", "vendor",
     ]) {
       expect(IDENTITY_ROLES).toContain(r as never);
+    }
+  });
+
+  it("drops the 4 consolidated roles", () => {
+    for (const r of ["site_supervisor", "project_head", "civil_engineer", "interior_designer"]) {
+      expect(IDENTITY_ROLES).not.toContain(r as never);
     }
   });
 
@@ -50,9 +56,9 @@ describe("Org-tier role catalog (org_members.role)", () => {
 });
 
 describe("Project-tier role catalog (project_members.role)", () => {
-  it("has 22 values matching migration 59 CHECK", () => {
-    expect(PROJECT_TIER_ROLES.length).toBe(22);
-    expect(new Set(PROJECT_TIER_ROLES).size).toBe(22);
+  it("has 18 values matching migration 68 CHECK (consolidated)", () => {
+    expect(PROJECT_TIER_ROLES.length).toBe(18);
+    expect(new Set(PROJECT_TIER_ROLES).size).toBe(18);
   });
   it("excludes org-only roles (superadmin/orgadmin/prospector/vendor)", () => {
     for (const r of ["superadmin", "orgadmin", "prospector", "vendor"]) {
@@ -72,11 +78,11 @@ describe("Project types", () => {
       expect(roles).toContain("client");   // every type has client
     }
   });
-  it("construction includes site_supervisor", () => {
-    expect(VALID_PROJECT_ROLES_BY_TYPE.construction).toContain("site_supervisor");
+  it("construction includes site_engineer (the merged field role)", () => {
+    expect(VALID_PROJECT_ROLES_BY_TYPE.construction).toContain("site_engineer");
   });
-  it("design does NOT include site_supervisor (no construction on design projects)", () => {
-    expect(VALID_PROJECT_ROLES_BY_TYPE.design).not.toContain("site_supervisor");
+  it("design does NOT include site_engineer (no construction on design projects)", () => {
+    expect(VALID_PROJECT_ROLES_BY_TYPE.design).not.toContain("site_engineer");
   });
 });
 
@@ -90,8 +96,9 @@ describe("Type guards", () => {
   it("isOrgTierRole / isProjectTierRole / isProjectType behave", () => {
     expect(isOrgTierRole("admin")).toBe(true);
     expect(isOrgTierRole("orgadmin")).toBe(false);
-    expect(isProjectTierRole("site_supervisor")).toBe(true);
+    expect(isProjectTierRole("site_engineer")).toBe(true);
     expect(isProjectTierRole("superadmin")).toBe(false);
+    expect(isProjectTierRole("site_supervisor")).toBe(false);   // consolidated away
     expect(isProjectType("interior")).toBe(true);
     expect(isProjectType("residential")).toBe(false);
   });
@@ -103,9 +110,8 @@ describe("defaultOrgTierFor / defaultProjectTierFor", () => {
     expect(defaultOrgTierFor("promoter")).toBe("admin");
     expect(defaultOrgTierFor("project_admin")).toBe("admin");
   });
-  it("pm / project_head → pm", () => {
+  it("pm → pm", () => {
     expect(defaultOrgTierFor("pm")).toBe("pm");
-    expect(defaultOrgTierFor("project_head")).toBe("pm");
   });
   it("architect / engineering / design → architect", () => {
     expect(defaultOrgTierFor("architect")).toBe("architect");
@@ -128,7 +134,7 @@ describe("defaultOrgTierFor / defaultProjectTierFor", () => {
     expect(defaultProjectTierFor("vendor")).toBeNull();
   });
   it("defaultProjectTierFor passes through for project roles", () => {
-    expect(defaultProjectTierFor("site_supervisor")).toBe("site_supervisor");
+    expect(defaultProjectTierFor("site_engineer")).toBe("site_engineer");
     expect(defaultProjectTierFor("contractor")).toBe("contractor");
   });
 });

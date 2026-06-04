@@ -13,7 +13,10 @@
 // catalog purposes, but a single user can hold roles across all three
 // tiers — see RoleResolver.ts for the 3-axis composition.
 
-// ── Identity-tier roles (profiles.role — 26 values) ────────────────────────
+// ── Identity-tier roles (profiles.role — 22 values) ────────────────────────
+// Consolidated 2026-06-04 per founder: site_supervisor merged into
+// site_engineer, project_head into pm, interior_designer into
+// design_architect_interior, and civil_engineer dropped (→ site_engineer).
 export const IDENTITY_ROLES = [
   // Platform staff
   "superadmin",
@@ -28,7 +31,6 @@ export const IDENTITY_ROLES = [
   "senior_architect",
   "junior_architect",
   "design_architect_interior",
-  "interior_designer",
   "design_head",
   "consultant_head",
   "mep_consultant",
@@ -36,9 +38,6 @@ export const IDENTITY_ROLES = [
   "consultant",
   "designer",
   "site_engineer",
-  "civil_engineer",
-  "site_supervisor",
-  "project_head",
   // Supply chain
   "contractor",
   "sub_contractor",
@@ -53,13 +52,12 @@ export type IdentityRole = (typeof IDENTITY_ROLES)[number];
 export const ORG_TIER_ROLES = ["admin", "pm", "architect", "contractor", "client", "vendor"] as const;
 export type OrgTierRole = (typeof ORG_TIER_ROLES)[number];
 
-// ── Project-tier roles (project_members.role — 22 values) ──────────────────
+// ── Project-tier roles (project_members.role — 18 values) ──────────────────
 export const PROJECT_TIER_ROLES = [
   "architect",
   "senior_architect",
   "junior_architect",
   "design_architect_interior",
-  "interior_designer",
   "design_head",
   "consultant_head",
   "designer",
@@ -67,12 +65,9 @@ export const PROJECT_TIER_ROLES = [
   "mep_consultant",
   "structural_consultant",
   "site_engineer",
-  "civil_engineer",
-  "site_supervisor",
   "site_inspector",
   "pm",
   "project_admin",
-  "project_head",
   "contractor",
   "sub_contractor",
   "client",
@@ -92,15 +87,15 @@ export const VALID_PROJECT_ROLES_BY_TYPE: Record<ProjectType, ReadonlyArray<Proj
   construction: [
     "architect", "senior_architect", "junior_architect",
     "mep_consultant", "structural_consultant",
-    "site_engineer", "civil_engineer", "site_supervisor", "site_inspector",
+    "site_engineer", "site_inspector",
     "pm", "project_admin",
     "contractor", "sub_contractor",
     "client",
   ],
   interior: [
-    "architect", "design_architect_interior", "interior_designer",
+    "architect", "design_architect_interior",
     "mep_consultant",
-    "site_engineer", "site_supervisor", "site_inspector",
+    "site_engineer", "site_inspector",
     "pm", "project_admin",
     "contractor", "sub_contractor",
     "client",
@@ -140,10 +135,8 @@ export const ROLE_CATEGORY: Record<IdentityRole, RoleCategory> = {
   architect: "project-execution",
   senior_architect: "project-execution",
   junior_architect: "project-execution",
-  project_head: "project-execution",
 
   design_architect_interior: "design-discipline",
-  interior_designer: "design-discipline",
   design_head: "design-discipline",
   designer: "design-discipline",
 
@@ -152,10 +145,7 @@ export const ROLE_CATEGORY: Record<IdentityRole, RoleCategory> = {
 
   mep_consultant: "engineering-discipline",
   structural_consultant: "engineering-discipline",
-  civil_engineer: "engineering-discipline",
   site_engineer: "engineering-discipline",
-
-  site_supervisor: "field-supervision",
 
   contractor: "supply-chain",
   sub_contractor: "supply-chain",
@@ -177,7 +167,6 @@ export const ROLE_LABEL: Record<IdentityRole, string> = {
   senior_architect: "Senior Architect",
   junior_architect: "Junior Architect",
   design_architect_interior: "Design Architect (Interior)",
-  interior_designer: "Interior Designer",
   design_head: "Design Head",
   consultant_head: "Consultant Head",
   mep_consultant: "MEP Consultant",
@@ -185,9 +174,6 @@ export const ROLE_LABEL: Record<IdentityRole, string> = {
   consultant: "Consultant",
   designer: "Designer",
   site_engineer: "Site Engineer",
-  civil_engineer: "Civil Engineer",
-  site_supervisor: "Site Supervisor",
-  project_head: "Project Head",
   contractor: "Contractor",
   sub_contractor: "Sub-contractor",
   vendor: "Vendor",
@@ -215,13 +201,13 @@ export function isProjectType(value: unknown): value is ProjectType {
  */
 export function defaultOrgTierFor(role: IdentityRole): OrgTierRole {
   if (role === "superadmin" || role === "orgadmin" || role === "promoter" || role === "project_admin") return "admin";
-  if (role === "pm" || role === "project_head") return "pm";
+  if (role === "pm") return "pm";
   if (
     role === "architect" || role === "senior_architect" || role === "junior_architect" ||
-    role === "design_architect_interior" || role === "interior_designer" ||
+    role === "design_architect_interior" ||
     role === "design_head" || role === "consultant_head" || role === "designer" ||
     role === "consultant" || role === "mep_consultant" || role === "structural_consultant" ||
-    role === "site_engineer" || role === "civil_engineer" || role === "site_supervisor" ||
+    role === "site_engineer" ||
     role === "site_inspector"
   ) return "architect";
   if (role === "vendor") return "vendor";

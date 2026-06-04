@@ -1,0 +1,42 @@
+refactor(roles): consolidate 26→22 roles per founder diagram review
+
+Founder reviewed the role catalog against his hand-drawn diagram and
+merged four redundant roles into their nearest survivor:
+
+  site_supervisor + civil_engineer → site_engineer   (one field role)
+  project_head                     → pm               (one PM role)
+  interior_designer                → design_architect_interior
+
+Kept: promoter (digest buyer), designer (design projects).
+
+Code:
+- roles.ts: IDENTITY_ROLES 26→22, PROJECT_TIER_ROLES 22→18,
+  ROLE_CATEGORY/ROLE_LABEL/VALID_PROJECT_ROLES_BY_TYPE/defaults updated.
+- permissions-matrix.ts: site_engineer gains voice:record; pm gains
+  rabill:approve + export:csv (no capability lost in the merges); the 4
+  role entries removed from identity + project tiers.
+- dashboards: dashboardForRole maps site_engineer → "field" (was
+  site_supervisor → "site-supervisor"); SiteSupervisorDashboard now
+  renders for site_engineer with a Site Engineer badge.
+- role-meta.ts: 4 colour entries removed.
+
+Data:
+- migration 68: dedupe-safe data migration (handles project_members PK
+  collisions + the two-sources-to-site_engineer case) THEN tightens
+  profiles_role_check (22) + project_members_role_check (18) + rebuilds
+  the role_catalog view. Idempotent. NOT yet applied to live DB.
+
+Tests + scripts + docs:
+- catalogParity now reads migration 68; roles/roleDiagram/permsMatrix/
+  roleMeta/dashboard/navConfig/fetchAuthSession/projectQueries/tabsConfig
+  tests updated to the consolidated catalog.
+- create-test-users.mjs: site_supervisor → site_engineer test user.
+- ROLE_DIAGRAM_RECONCILIATION.md + V3_LIVE_DEMO_PATH.md updated.
+
+Legacy (strangler-fig) untouched: permissions.js, projectTypes.js,
+ui.jsx, seed.demo.js, detail/org feature files still reference old role
+names — they fall back gracefully and no longer receive those roles.
+
+Validation: 1024 tests green, tsc clean, 0 lint errors, smoke 324, build OK.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>

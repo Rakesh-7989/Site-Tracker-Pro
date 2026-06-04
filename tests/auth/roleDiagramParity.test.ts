@@ -4,11 +4,13 @@
 // photographed 2026-06-03) as the canonical source structure, then asserts
 // the TS role catalog (src/auth/roles.ts) COVERS every box the founder drew.
 //
-// Decision (founder, 2026-06-04): RECONCILE, not exact-match. The code may
-// hold extra pilot-critical roles the diagram omits (promoter = WhatsApp
-// digest buyer, site_supervisor = DPR voice origin, pm, civil_engineer,
-// designer, consultant, interior_designer). So this test checks COVERAGE
-// (every drawn box exists), NOT equality (code is allowed to be a superset).
+// Decision (founder, 2026-06-04): RECONCILE, then CONSOLIDATE. The diagram
+// is the source structure; the code keeps a few extras it omits (promoter =
+// WhatsApp digest buyer, designer, consultant, pm). A second founder pass
+// merged 4 redundant roles into survivors: site_supervisor + civil_engineer
+// → site_engineer, project_head → pm, interior_designer →
+// design_architect_interior. So this test checks COVERAGE (every drawn box
+// exists), NOT equality (code is still a small deliberate superset).
 //
 // Why this test exists: it locks the founder's diagram to the code so a
 // future refactor can't silently drop a role he explicitly drew. If a box
@@ -90,12 +92,18 @@ describe("Founder role diagram → catalog coverage (project subtrees)", () => {
   });
 });
 
-describe("Reconcile decision is explicit (code is a deliberate superset)", () => {
-  it("keeps promoter — the WhatsApp digest buyer the diagram omits", () => {
+describe("Consolidation decision is explicit (2026-06-04)", () => {
+  it("keeps promoter (digest buyer) + designer (design projects)", () => {
     expect(IDENTITY_ROLES).toContain("promoter" as never);
+    expect(IDENTITY_ROLES).toContain("designer" as never);
   });
-  it("keeps site_supervisor — the DPR voice origin the diagram omits", () => {
-    expect(IDENTITY_ROLES).toContain("site_supervisor" as never);
-    expect(VALID_PROJECT_ROLES_BY_TYPE.construction).toContain("site_supervisor");
+  it("site_engineer is the single field role — absorbed site_supervisor + civil_engineer", () => {
+    expect(IDENTITY_ROLES).toContain("site_engineer" as never);
+    expect(VALID_PROJECT_ROLES_BY_TYPE.construction).toContain("site_engineer");
+  });
+  it("the 4 consolidated roles are gone from the catalog", () => {
+    for (const gone of ["site_supervisor", "project_head", "civil_engineer", "interior_designer"]) {
+      expect(IDENTITY_ROLES).not.toContain(gone as never);
+    }
   });
 });

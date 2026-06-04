@@ -1,7 +1,9 @@
-// SiteTrack Pro — Site Supervisor dashboard (Phase 7).
+// SiteTrack Pro — field dashboard (Phase 7).
 //
-// Minimal, action-first. A supervisor's whole job in the app is: file the
-// daily progress report. So the dashboard is one big CTA + today's status.
+// Rendered for the site_engineer role (which absorbed site_supervisor in
+// the 2026-06-04 consolidation). Minimal, action-first: the field user's
+// whole job in the app is to file the daily progress report. So the
+// dashboard is one big CTA + today's status.
 
 import { Link } from "react-router-dom";
 
@@ -16,7 +18,7 @@ export function SiteSupervisorDashboard(): JSX.Element {
     <div className="max-w-xl mx-auto space-y-5">
       <div>
         <h1 className="font-display text-2xl font-bold text-ink-900">Namaskaram, {session.user.name.split(" ")[0]}</h1>
-        <div className="mt-1.5"><Badge tone="info">Site Supervisor</Badge></div>
+        <div className="mt-1.5"><Badge tone="info">Site Engineer</Badge></div>
       </div>
 
       {/* Primary CTA — file the DPR */}

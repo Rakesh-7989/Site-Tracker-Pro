@@ -60,7 +60,7 @@ describe("listProjectMembers", () => {
     const c = mockClient({
       list: {
         data: [
-          { profile_id: "u1", role: "site_supervisor", assigned_at: "2026-06-01", profiles: { name: "Ramesh" } },
+          { profile_id: "u1", role: "site_engineer", assigned_at: "2026-06-01", profiles: { name: "Ramesh" } },
           { profile_id: "u2", role: "not-a-role", assigned_at: "2026-06-01", profiles: { name: "Bad" } },
         ],
         error: null,
@@ -71,7 +71,7 @@ describe("listProjectMembers", () => {
     if (r.ok) {
       expect(r.data).toHaveLength(1);
       expect(r.data[0]!.name).toBe("Ramesh");
-      expect(r.data[0]!.role).toBe("site_supervisor");
+      expect(r.data[0]!.role).toBe("site_engineer");
     }
   });
 

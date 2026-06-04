@@ -6,12 +6,13 @@
 
 import type { IdentityRole } from "@/auth";
 
-export type DashboardKind = "promoter" | "site-supervisor" | "client" | "default";
+export type DashboardKind = "promoter" | "field" | "client" | "default";
 
 /**
  * Pick the dashboard for an identity role.
  *   - promoter            → finance-first promoter view
- *   - site_supervisor     → minimal voice-DPR-first view
+ *   - site_engineer       → minimal voice-DPR-first field view
+ *                           (absorbs the former site_supervisor role)
  *   - client              → read-only buyer view
  *   - everyone else       → the standard capability-driven dashboard
  */
@@ -19,8 +20,8 @@ export function dashboardForRole(role: IdentityRole): DashboardKind {
   switch (role) {
     case "promoter":
       return "promoter";
-    case "site_supervisor":
-      return "site-supervisor";
+    case "site_engineer":
+      return "field";
     case "client":
       return "client";
     default:

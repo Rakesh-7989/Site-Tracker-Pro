@@ -64,8 +64,8 @@ describe("visibleTabs — capability gating", () => {
     expect(ids).toContain("approvals");
   });
 
-  it("site_supervisor sees field/site tabs but not finance", () => {
-    const caps = capsFor(baseSession("site_supervisor"));
+  it("site_engineer sees field/site tabs but not finance", () => {
+    const caps = capsFor(baseSession("site_engineer"));
     const ids = visibleTabs(caps, "construction").map(t => t.id);
     expect(ids).toContain("attendance");
     expect(ids).toContain("safety");

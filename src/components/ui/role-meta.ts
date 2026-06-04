@@ -1,6 +1,6 @@
 // SiteTrack Pro — role display metadata (Phase 4).
 //
-// Typed against the full 26-role identity catalog. Maps each role to a
+// Typed against the full 22-role identity catalog. Maps each role to a
 // Tailwind chip palette + accent color key (used by Avatar). Labels come
 // from @/auth ROLE_LABEL so there's one source for the human-readable
 // name; this module only owns the COLOR mapping.
@@ -30,14 +30,10 @@ const COLOR: Record<IdentityRole, { bg: string; text: string; accent: AccentColo
   architect:                 { bg: "bg-orange-100",  text: "text-orange-700",  accent: "orange" },
   senior_architect:          { bg: "bg-orange-100",  text: "text-orange-800",  accent: "orange" },
   junior_architect:          { bg: "bg-orange-50",   text: "text-orange-700",  accent: "orange" },
-  project_head:              { bg: "bg-orange-50",   text: "text-orange-800",  accent: "orange" },
   mep_consultant:            { bg: "bg-cyan-100",    text: "text-cyan-700",    accent: "cyan" },
   structural_consultant:     { bg: "bg-stone-200",   text: "text-stone-700",   accent: "stone" },
-  civil_engineer:            { bg: "bg-stone-200",   text: "text-stone-700",   accent: "stone" },
   site_engineer:             { bg: "bg-blue-50",     text: "text-blue-800",    accent: "blue" },
-  site_supervisor:           { bg: "bg-blue-50",     text: "text-blue-700",    accent: "blue" },
   site_inspector:            { bg: "bg-rose-100",    text: "text-rose-700",    accent: "rose" },
-  interior_designer:         { bg: "bg-pink-100",    text: "text-pink-700",    accent: "pink" },
   design_architect_interior: { bg: "bg-fuchsia-100", text: "text-fuchsia-700", accent: "fuchsia" },
   design_head:               { bg: "bg-fuchsia-100", text: "text-fuchsia-800", accent: "fuchsia" },
   designer:                  { bg: "bg-purple-100",  text: "text-purple-700",  accent: "purple" },

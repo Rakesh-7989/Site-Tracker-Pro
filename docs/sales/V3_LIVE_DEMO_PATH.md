@@ -24,10 +24,11 @@ laptop/phone in the room. The runbook is what you do after they say yes.
    The `?shell=v3` flag persists in localStorage — you only append it once.
 2. Have **two** logins ready from `TEST_USERS_CREDENTIALS.md` (gitignored):
    - **Promoter** — `test-promoter@sitetrack.test` (the buyer's view)
-   - **Site supervisor** — `test-site-supervisor@sitetrack.test` (the daily user)
+   - **Site engineer** — `test-site-engineer@sitetrack.test` (the daily field user)
    > Email format: `test-<role>@sitetrack.test` with underscores → hyphens
-   > (so `site_supervisor` → `test-site-supervisor`). Passwords in the
-   > gitignored `TEST_USERS_CREDENTIALS.md`.
+   > (so `site_engineer` → `test-site-engineer`). Passwords in the
+   > gitignored `TEST_USERS_CREDENTIALS.md`. (site_engineer absorbed the
+   > old site_supervisor role in the 2026-06-04 consolidation.)
 3. Pre-create ONE project named after the builder's real site (e.g.
    "Vasavi Vista") so the demo feels theirs, not a sandbox.
 4. Phone on the same device for the DPR voice step (or describe it if the
@@ -39,12 +40,12 @@ laptop/phone in the room. The runbook is what you do after they say yes.
 |---|---|---|
 | `/login` | Clean, no demo clutter, password + magic-link | — |
 | `/dashboard` | **Role-routed** — promoter sees finance-first | promoter |
-| `/dashboard` | Supervisor sees a minimal, field-first surface | site_supervisor |
+| `/dashboard` | Site engineer sees a minimal, field-first surface | site_engineer |
 | `/projects` | Portfolio list | either |
 | `/projects/new` | Create a project in ~10 sec | promoter |
 | `/projects/:id` → **Overview** tab | Real project summary | either |
 | `/projects/:id` → **Team** tab | Real member list, role-aware | either |
-| `/dpr` | **The wedge** — voice + photo + geo + WhatsApp preview | site_supervisor |
+| `/dpr` | **The wedge** — voice + photo + geo + WhatsApp preview | site_engineer |
 
 ## ❌ Do NOT click these (placeholders — credibility leak)
 
@@ -71,9 +72,9 @@ your pilot-first discipline, stated out loud.
    **Overview** only. "Project summary." Then **Team** tab. "Evaru ఈ
    site lo." Stop there.
 
-### Act 2 — The field reality (3 min) · switch login to **site_supervisor**
-5. Log out, log in as supervisor. Land on `/dashboard`. "Idi mీ site
-   supervisor view — minimal, ఒక్క pని: report."
+### Act 2 — The field reality (3 min) · switch login to **site_engineer**
+5. Log out, log in as the site engineer. Land on `/dashboard`. "Idi mీ site
+   engineer view — minimal, ఒక్క pని: report."
 6. Go to `/dpr`. Walk the composer top to bottom:
    - **Language** toggle (te / hi / en). "Telugu lo."
    - **Voice** — record a line ("slab pour ayindi, aaj 80 cubic metres").
@@ -85,13 +86,13 @@ your pilot-first discipline, stated out loud.
    - **WhatsApp preview** — show the rendered digest the promoter receives.
      "Idే promoter ki WhatsApp lo coffee time ki vస్తుంది."
 7. Land the line: **"No app install for the promoter. No training for the
-   supervisor. Just WhatsApp + ఒక voice note."**
+   site engineer. Just WhatsApp + ఒక voice note."**
 
 ### Act 3 — The close (3 min)
 8. Back to laptop. One sentence: *"Idi mీ ఒక్క site tho rేపే start avvొచ్చు.
    First 5 builders — INR 29,999/yr, per-seat charge ledhu."*
 9. Pull up `PILOT_AGREEMENT_v1.md`. "Ee paper 1-page — design partner terms."
-10. Ask the one question (from the Loom playbook): **"Mీ site supervisor
+10. Ask the one question (from the Loom playbook): **"Mీ site engineer
     ఇది use chేస్తారా? YES / NO / TELL ME MORE."** Then shut up.
 
 ## If something breaks mid-demo
@@ -100,8 +101,8 @@ your pilot-first discipline, stated out loud.
   (founder action pending). Fall back to the Loom + screenshots. Don't
   debug live.
 - **DPR composer shows "Access denied"** → you're logged in as the wrong
-  role. Only `site_supervisor` (and PM/contractor tiers) have `dpr:submit`.
-  Re-login as `test-site-supervisor@sitetrack.test`.
+  role. Only `site_engineer` (and PM/contractor tiers) have `dpr:submit`.
+  Re-login as `test-site-engineer@sitetrack.test`.
 - **A placeholder appears** → you clicked a Gap route. Recover: *"Adi inka
   port avvaledhu — pilot lo mీ priority batti vస్తుంది,"* and navigate back
   to `/dashboard`. Never apologize twice.

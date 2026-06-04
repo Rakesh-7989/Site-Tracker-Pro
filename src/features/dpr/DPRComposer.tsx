@@ -6,7 +6,7 @@
 // HYDERABAD_BBOX geo-verification + the previewDigest renderer.
 //
 // Gated on dpr:submit — only roles that can submit a DPR reach the
-// compose surface (site_supervisor, site_engineer, pm via project ctx).
+// compose surface (site_engineer, pm via project ctx).
 
 import { useReducer, useState, useCallback } from "react";
 

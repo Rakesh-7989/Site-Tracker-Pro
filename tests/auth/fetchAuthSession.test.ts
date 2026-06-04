@@ -83,14 +83,14 @@ describe("normalizeProjectMembership", () => {
   it("normalizes a valid row including assigned_by + removed_at", () => {
     const r = normalizeProjectMembership({
       project_id: "p-1",
-      role: "site_supervisor",
+      role: "site_engineer",
       assigned_by: "u-pm",
       assigned_at: "2026-06-01T00:00:00Z",
       removed_at: null,
       projects: { id: "p-1", name: "Vasavi", type: "construction" },
     });
     expect(r).not.toBeNull();
-    expect(r!.role).toBe("site_supervisor");
+    expect(r!.role).toBe("site_engineer");
     expect(r!.projectType).toBe("construction");
     expect(r!.assignedBy).toBe("u-pm");
     expect(r!.removedAt).toBeNull();
@@ -126,7 +126,7 @@ describe("buildAuthSession", () => {
         { org_id: "o-bad", role: "orgadmin" /* invalid org tier */, joined_at: "x", organizations: { id: "o-bad", name: "B", slug: "b" } },
       ],
       [
-        { project_id: "p-1", role: "site_supervisor", assigned_by: null, assigned_at: "x", removed_at: null, projects: { id: "p-1", name: "Vasavi", type: "construction" } },
+        { project_id: "p-1", role: "site_engineer", assigned_by: null, assigned_at: "x", removed_at: null, projects: { id: "p-1", name: "Vasavi", type: "construction" } },
         { project_id: "p-bad", role: "architect", projects: { id: "p-bad", name: "X", type: "residential" /* invalid */ } },
       ],
       "o-1",
@@ -203,7 +203,7 @@ describe("fetchAuthSession", () => {
       }),
       project_members: async () => ({
         data: [
-          { project_id: "p-1", role: "site_supervisor", assigned_by: null, assigned_at: "2026-01-01", removed_at: null, projects: { id: "p-1", name: "Vasavi", type: "construction" } },
+          { project_id: "p-1", role: "site_engineer", assigned_by: null, assigned_at: "2026-01-01", removed_at: null, projects: { id: "p-1", name: "Vasavi", type: "construction" } },
         ],
         error: null,
       }),

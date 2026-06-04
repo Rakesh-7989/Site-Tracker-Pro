@@ -1,5 +1,5 @@
-// SiteTrack Pro — capability matrix for all 26 identity roles + 5 org tiers
-// + 22 project tiers.
+// SiteTrack Pro — capability matrix for all 22 identity roles + 6 org tiers
+// + 18 project tiers.
 //
 // This is the AUTHORITATIVE matrix. RoleResolver.ts composes a user's
 // capability set from 1-3 entries in this file (one per tier the user
@@ -70,6 +70,8 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "activity:view",
     "project:create",   // Can create draft projects for prospects
   ),
+  // pm absorbs the former project_head role (founder consolidation
+  // 2026-06-04): gains rabill:approve + export:csv on top of its own set.
   pm: arr(
     "activity:view",
     "project:create", "project:settings:edit",
@@ -83,12 +85,12 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rfi:respond", "rfi:close",
     "changeorder:create", "changeorder:approve",
     "expense:add", "expense:approve",
-    "rabill:create",
+    "rabill:create", "rabill:approve",
     "budget:view", "ledger:view",
     "dpr:view", "dpr:approve",
     "drawings:upload",
     "message:send", "whatsapp:send",
-    "export:pdf",
+    "export:pdf", "export:csv",
   ),
 
   // Design / architecture identities.
@@ -119,18 +121,14 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rfi:create",
     "update:add",
   ),
+  // design_architect_interior absorbs the former interior_designer role
+  // (founder consolidation 2026-06-04).
   design_architect_interior: arr(
     "activity:view",
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
     "material:add", "material:edit", "material:price:view",
     "rfi:create", "rfi:respond",
     "boq:edit",
-    "update:add",
-  ),
-  interior_designer: arr(
-    "activity:view",
-    "drawings:upload", "drawings:markup",
-    "material:add", "material:edit",
     "update:add",
   ),
   design_head: arr(
@@ -180,14 +178,10 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rfi:create", "rfi:respond",
     "update:add",
   ),
-  civil_engineer: arr(
-    "activity:view",
-    "drawings:markup",
-    "rfi:create",
-    "issue:add",
-    "inspection:create",
-    "update:add",
-  ),
+  // site_engineer is now the single field role — it absorbs the former
+  // site_supervisor (voice DPR origin) and civil_engineer (founder
+  // consolidation 2026-06-04). voice:record was site_supervisor's only
+  // unique cap; everything else site_engineer already had.
   site_engineer: arr(
     "activity:view",
     "progress:edit",
@@ -199,38 +193,9 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "material:add", "material:edit",
     "rfi:create",
     "inspection:create", "inspection:close",
-    "photo:upload",
+    "voice:record", "photo:upload",
     "dpr:submit", "dpr:approve", "dpr:view",
     "drawings:markup",
-  ),
-
-  // Field supervision.
-  site_supervisor: arr(
-    // Sprint 2 origin role — voice DPR + photo + minimal nav.
-    "activity:view",
-    "dpr:submit", "dpr:view",
-    "voice:record", "photo:upload",
-    "update:add",
-    "issue:add",
-    "attendance:mark",
-    "safety:report",
-  ),
-
-  project_head: arr(
-    "activity:view",
-    "project:settings:edit",
-    "progress:edit",
-    "milestone:add", "milestone:edit",
-    "team:manage",
-    "update:add", "update:edit",
-    "issue:add", "issue:resolve",
-    "rfi:close",
-    "changeorder:approve",
-    "expense:approve",
-    "rabill:approve",
-    "budget:view", "ledger:view",
-    "dpr:view", "dpr:approve",
-    "export:pdf", "export:csv",
   ),
 
   // Supply chain.
@@ -277,7 +242,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
   ),
 };
 
-// ── Org tier (org_members.role — 5 values) ────────────────────────────────
+// ── Org tier (org_members.role — 6 values) ────────────────────────────────
 // What the user can do at the ORG level (across all projects in that org)
 // based on their org_members.role.
 
@@ -329,7 +294,7 @@ const ORG_TIER_CAPS: Record<OrgTierRole, Capability[]> = {
   ),
 };
 
-// ── Project tier (project_members.role — 22 values) ───────────────────────
+// ── Project tier (project_members.role — 18 values) ───────────────────────
 // What the user can do on a SPECIFIC project based on project_members.role.
 // Reuses many capabilities from the identity-tier set but scoped to one
 // project (RLS enforces project scope at the DB layer).
@@ -365,11 +330,6 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "material:add", "material:edit",
     "rfi:create", "rfi:respond",
     "boq:edit",
-    "update:add",
-  ),
-  interior_designer: arr(
-    "drawings:upload", "drawings:markup",
-    "material:add", "material:edit",
     "update:add",
   ),
   design_head: arr(
@@ -409,6 +369,8 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "inspection:create", "inspection:close",
     "update:add",
   ),
+  // Single field role on a project — absorbs site_supervisor (voice DPR)
+  // and civil_engineer (founder consolidation 2026-06-04).
   site_engineer: arr(
     "progress:edit",
     "update:add", "update:edit",
@@ -419,25 +381,9 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "material:add", "material:edit",
     "rfi:create",
     "inspection:create", "inspection:close",
-    "photo:upload",
+    "voice:record", "photo:upload",
     "dpr:submit", "dpr:approve", "dpr:view",
     "drawings:markup",
-  ),
-  civil_engineer: arr(
-    "drawings:markup",
-    "rfi:create",
-    "issue:add",
-    "inspection:create",
-    "update:add",
-  ),
-  site_supervisor: arr(
-    // The Sprint 2 voice DPR origin role.
-    "dpr:submit", "dpr:view",
-    "voice:record", "photo:upload",
-    "update:add",
-    "issue:add",
-    "attendance:mark",
-    "safety:report",
   ),
   site_inspector: arr(
     // External read-only audit. Write-once assignment (trigger-enforced).
@@ -445,7 +391,11 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "drawings:markup",
     "rera:file",
   ),
+  // pm absorbs the former project_head role (founder consolidation
+  // 2026-06-04): gains project:settings:edit, rabill:approve, budget:view,
+  // ledger:view, export:csv on top of its own project-tier set.
   pm: arr(
+    "project:settings:edit",
     "progress:edit",
     "milestone:add", "milestone:edit", "milestone:delete",
     "update:add", "update:edit",
@@ -456,32 +406,18 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "rfi:respond", "rfi:close",
     "changeorder:create", "changeorder:approve",
     "expense:add", "expense:approve",
-    "rabill:create",
+    "rabill:create", "rabill:approve",
+    "budget:view", "ledger:view",
     "dpr:view", "dpr:approve",
     "drawings:upload",
     "message:send", "whatsapp:send",
-    "export:pdf",
+    "export:pdf", "export:csv",
   ),
   project_admin: arr(
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
     "invoice:create", "invoice:approve",
     "rabill:create", "rabill:approve",
     "milestone:add", "milestone:edit",
-    "export:pdf", "export:csv",
-  ),
-  project_head: arr(
-    "project:settings:edit",
-    "progress:edit",
-    "milestone:add", "milestone:edit",
-    "team:manage",
-    "update:add", "update:edit",
-    "issue:add", "issue:resolve",
-    "rfi:close",
-    "changeorder:approve",
-    "expense:approve",
-    "rabill:approve",
-    "budget:view", "ledger:view",
-    "dpr:view", "dpr:approve",
     "export:pdf", "export:csv",
   ),
   contractor: arr(

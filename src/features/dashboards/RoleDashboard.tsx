@@ -19,7 +19,7 @@ export function RoleDashboard(): JSX.Element {
   switch (kind) {
     case "promoter":
       return <PromoterDashboard />;
-    case "site-supervisor":
+    case "field":
       return <SiteSupervisorDashboard />;
     // 'client' + 'default' use the capability-driven generic dashboard for
     // now; a dedicated client portal lands in a Phase 7 sub-pass.

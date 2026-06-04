@@ -60,13 +60,13 @@ describe("resolveCapabilities — project tier composition", () => {
       user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false },
       projectMemberships: [{
         projectId: "p-1", projectName: "Vasavi", projectType: "construction",
-        role: "site_supervisor",
+        role: "site_engineer",
         assignedBy: "u-pm", assignedAt: "2026-01-01", removedAt: null,
       }],
     });
     const r = resolveCapabilities(s, { projectId: "p-1" });
     // architect identity does NOT have dpr:submit, but project tier as
-    // site_supervisor does.
+    // site_engineer does.
     expect(r.capabilities.has("dpr:submit")).toBe(true);
     expect(r.capabilities.has("voice:record")).toBe(true);
     expect(r.trace.fromProjectTier).toContain("dpr:submit");
@@ -77,7 +77,7 @@ describe("resolveCapabilities — project tier composition", () => {
       user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false },
       projectMemberships: [{
         projectId: "p-1", projectName: "Old", projectType: "construction",
-        role: "site_supervisor",
+        role: "site_engineer",
         assignedBy: "u-pm", assignedAt: "2026-01-01", removedAt: "2026-02-01",
       }],
     });
@@ -92,14 +92,14 @@ describe("resolveCapabilities — project tier composition", () => {
       orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "demo", role: "admin", joinedAt: "2026-01-01" }],
       projectMemberships: [{
         projectId: "p-1", projectName: "Vasavi", projectType: "construction",
-        role: "site_supervisor",
+        role: "site_engineer",
         assignedBy: "u-pm", assignedAt: "2026-01-01", removedAt: null,
       }],
     });
     const r = resolveCapabilities(s, { orgId: "o-1", projectId: "p-1" });
     expect(r.capabilities.has("drawings:upload")).toBe(true);   // from architect identity
     expect(r.capabilities.has("project:create")).toBe(true);    // from admin org tier
-    expect(r.capabilities.has("voice:record")).toBe(true);      // from site_supervisor project tier
+    expect(r.capabilities.has("voice:record")).toBe(true);      // from site_engineer project tier
     expect(r.trace.fromIdentity.length).toBeGreaterThan(0);
     expect(r.trace.fromOrgTier!.length).toBeGreaterThan(0);
     expect(r.trace.fromProjectTier!.length).toBeGreaterThan(0);
@@ -121,7 +121,7 @@ describe("Superadmin universal access", () => {
 describe("can() and decide()", () => {
   it("can() is a thin wrapper around resolveCapabilities", () => {
     const s = sessionFor({
-      user: { id: "u", email: "a@b", name: "x", identityRole: "site_supervisor", isStaff: false },
+      user: { id: "u", email: "a@b", name: "x", identityRole: "site_engineer", isStaff: false },
     });
     expect(can(s, "voice:record")).toBe(true);
     expect(can(s, "platform:impersonate")).toBe(false);
@@ -161,14 +161,14 @@ describe("capabilitiesAnywhere", () => {
         { orgId: "o-2", orgName: "B", orgSlug: "b", role: "client", joinedAt: "2026-01-01" },
       ],
       projectMemberships: [
-        { projectId: "p-1", projectName: "X", projectType: "construction", role: "site_supervisor", assignedBy: null, assignedAt: "2026-01-01", removedAt: null },
+        { projectId: "p-1", projectName: "X", projectType: "construction", role: "site_engineer", assignedBy: null, assignedAt: "2026-01-01", removedAt: null },
         { projectId: "p-2", projectName: "Y", projectType: "interior", role: "pm", assignedBy: null, assignedAt: "2026-01-01", removedAt: null },
       ],
     });
     const all = capabilitiesAnywhere(s);
     expect(all.has("drawings:upload")).toBe(true);     // from architect identity
     expect(all.has("project:create")).toBe(true);      // from o-1 admin
-    expect(all.has("dpr:submit")).toBe(true);          // from p-1 site_supervisor
+    expect(all.has("dpr:submit")).toBe(true);          // from p-1 site_engineer
     expect(all.has("milestone:add")).toBe(true);       // from p-2 pm
   });
 });

@@ -3,25 +3,28 @@
 *Maps the founder's hand-drawn "Role-Based" tree (site-tracker-Pro,
 photographed 2026-06-03) to the live TypeScript role catalog.*
 
-**Decision (founder, 2026-06-04):** RECONCILE — the diagram is the source
-structure; the code keeps a few pilot-critical roles the diagram omits.
-Confirmed: the org box reads **Prospector** (Sales/BD), and **promoter**
-stays a separate role from org admin.
+**Decision (founder, 2026-06-04):** RECONCILE, then CONSOLIDATE.
+- Step 1 — RECONCILE: the diagram is the source structure; confirmed the org
+  box reads **Prospector** (Sales/BD), and **promoter** stays separate from
+  org admin.
+- Step 2 — CONSOLIDATE: the founder merged four redundant roles into their
+  nearest survivor (migration 68):
+  - `site_supervisor` + `civil_engineer` → **`site_engineer`** (one field role)
+  - `project_head` → **`pm`** (one PM role; pm gains rabill:approve + export:csv)
+  - `interior_designer` → **`design_architect_interior`** (one interior design role)
 
-**Result: every box in the diagram is already a live role.** No catalog
-change was needed — the structure was built in Phase 1 (migrations 58/59/65)
-from the founder's earlier architecture sketch. This doc + the parity test
-(`tests/auth/roleDiagramParity.test.ts`) lock that mapping so it can't
-silently drift.
+**Result: every box in the diagram is a live role; the catalog dropped from
+26 → 22 identity roles (project tier 22 → 18).** This doc + the parity test
+(`tests/auth/roleDiagramParity.test.ts`) lock the mapping so it can't drift.
 
 ## Tier model recap
 
 A role lives in one of three tiers, and one user can hold roles across all
 three (resolved as a UNION — see `src/auth/RoleResolver.ts`):
 
-- **Identity** (`profiles.role`, 26 values, migration 58) — who you are.
+- **Identity** (`profiles.role`, 22 values, migration 68) — who you are.
 - **Org tier** (`org_members.role`, 6 values, migration 65) — your power in a firm.
-- **Project tier** (`project_members.role`, 22 values, migration 59) — your power on one project.
+- **Project tier** (`project_members.role`, 18 values, migration 68) — your power on one project.
 
 ## Org branch (top of the tree)
 
@@ -74,21 +77,31 @@ Source of truth: `VALID_PROJECT_ROLES_BY_TYPE` in `src/auth/roles.ts`.
 | Architect | `architect` |
 | Client | `client` |
 
+## Consolidation — the 4 merged roles (migration 68)
+
+The founder's second pass merged redundant roles. Existing rows were
+data-migrated to the survivor; the CHECK constraints now reject the old
+names.
+
+| Old role (removed) | Merged into | Why |
+|---|---|---|
+| `site_supervisor` | `site_engineer` | One field role. site_engineer already held every cap; it gained `voice:record` (the only supervisor-unique cap). It now carries the DPR voice wedge + the field dashboard. |
+| `civil_engineer` | `site_engineer` | "Vadu" — dropped; its caps were a subset of site_engineer. |
+| `project_head` | `pm` | One PM role. pm gained `rabill:approve` + `export:csv` so no approval power was lost. |
+| `interior_designer` | `design_architect_interior` | One interior design role; the survivor was already a superset. |
+
 ## Deliberate superset — roles in code but NOT drawn
 
-Per the RECONCILE decision, the catalog keeps these because they serve the
-pilot wedge or fill an obvious hierarchy gap. They are NOT a mistake; they
-are intentional extras the diagram simply didn't enumerate.
+After consolidation, the catalog still keeps a few roles the diagram omits,
+because they serve the pilot wedge or fill an obvious gap. Intentional, not
+a mistake.
 
 | Code role | Tier | Why kept |
 |---|---|---|
 | **promoter** | identity / org `admin` | The paying firm owner who receives the 7am WhatsApp digest — the core wedge. Distinct from `orgadmin` (workspace manager). |
-| **site_supervisor** | identity / project | The DPR voice-note origin role (Sprint 2 wedge). The diagram's field role is Site Engineer; supervisor is the phone-in-hand reporter. |
-| pm / project_head | identity / project | PM hierarchy for larger firms. |
-| civil_engineer | identity / project | Engineering-discipline variant. |
-| interior_designer | identity / project | Separate from `design_architect_interior` for firms that split the roles. |
-| designer | identity / project | Design-discipline variant (design projects). |
-| consultant | identity / project | Generic consultant (consultant projects). |
+| **pm** | identity / project | Single PM role (absorbed project_head). |
+| designer | project | Design-discipline role (design projects). |
+| consultant | project | Generic consultant (consultant projects). |
 
 ## If the diagram changes
 
@@ -102,7 +115,8 @@ are intentional extras the diagram simply didn't enumerate.
 ## Source
 
 - Diagram: founder photo 2026-06-03 23:11.
-- Catalog: `src/auth/roles.ts` (Phase 1).
-- Constraints: `scripts/supabase/58_*.sql`, `59_*.sql`, `65_*.sql`.
+- Catalog: `src/auth/roles.ts` (Phase 1 + migration-68 consolidation).
+- Constraints: `scripts/supabase/68_role_consolidation.sql` (current),
+  superseding `58_*.sql` / `59_*.sql`; org tier `65_*.sql`.
 - Parity tests: `tests/auth/roleDiagramParity.test.ts` (this mapping) +
   `tests/auth/catalogParity.test.ts` (TS ↔ SQL).

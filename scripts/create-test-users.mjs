@@ -49,7 +49,7 @@ const rotate = args.includes("--rotate");
 // canonical role for app permissions. orgadmin in profiles maps to
 // 'admin' in org_members.
 // v2 role architecture — 9 test users covering every distinct UI surface.
-// See docs/ROLE_ARCHITECTURE.md for the full 25-role catalog.
+// See docs/ROLE_DIAGRAM_RECONCILIATION.md for the consolidated 22-role catalog.
 const ROSTER = [
   // Org / firm level
   { role: "superadmin",     orgRole: null,         name: "Test Superadmin",     isStaff: true,  joinOrg: false },
@@ -59,7 +59,7 @@ const ROSTER = [
   // Project execution
   { role: "pm",             orgRole: "pm",         name: "Test PM",             isStaff: false, joinOrg: true  },
   { role: "architect",      orgRole: "architect",  name: "Test Architect",      isStaff: false, joinOrg: true  },
-  { role: "site_supervisor",orgRole: "architect",  name: "Test Site Supervisor",isStaff: false, joinOrg: true  },   // NEW: Sprint 2 DPR voice source
+  { role: "site_engineer",  orgRole: "architect",  name: "Test Site Engineer",  isStaff: false, joinOrg: true  },   // Sprint 2 DPR voice source (absorbed site_supervisor)
   // Supply chain
   { role: "contractor",     orgRole: "contractor", name: "Test Contractor",     isStaff: false, joinOrg: true  },
   // External
