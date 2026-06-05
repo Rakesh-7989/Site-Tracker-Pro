@@ -21,6 +21,9 @@ import { OrgMembersView } from "@/features/org/OrgMembersView";
 import { OrgDashboardView } from "@/features/org/OrgDashboardView";
 import { OrgBillingView } from "@/features/org/OrgBillingView";
 import { OrgActivityView } from "@/features/org/OrgActivityView";
+import { OrgTemplatesView } from "@/features/org/OrgTemplatesView";
+import { OrgApprovalsView } from "@/features/org/OrgApprovalsView";
+import { OrgNotificationsView } from "@/features/org/OrgNotificationsView";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginScreenV3 /> },
@@ -40,6 +43,9 @@ export const router = createBrowserRouter([
       { path: "org", element: <OrgDashboardView /> },
       { path: "org/members", element: <OrgMembersView /> },
       { path: "org/billing", element: <OrgBillingView /> },
+      { path: "org/templates", element: <OrgTemplatesView /> },
+      { path: "org/approvals", element: <OrgApprovalsView /> },
+      { path: "org/notifications", element: <OrgNotificationsView /> },
       { path: "org/integrations", element: <PlaceholderView title="Integrations" phase="Phase 8" /> },
       { path: "admin/users", element: <PlaceholderView title="Users (Platform)" phase="Phase 7" /> },
       { path: "admin/orgs", element: <PlaceholderView title="Organizations (Platform)" phase="Phase 7" /> },

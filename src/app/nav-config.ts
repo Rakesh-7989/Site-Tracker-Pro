@@ -43,6 +43,9 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/org", label: "Org Home", icon: "building", requires: "org:members:manage", group: "Org Admin" },
   { to: "/org/members", label: "Members", icon: "users", requires: "org:members:manage", group: "Org Admin" },
   { to: "/org/billing", label: "Billing", icon: "credit-card", requires: "org:billing:manage", group: "Org Admin" },
+  { to: "/org/templates", label: "Templates", icon: "doc", requires: "org:templates:manage", group: "Org Admin" },
+  { to: "/org/approvals", label: "Approvals", icon: "check", requires: "org:approvals:manage", group: "Org Admin" },
+  { to: "/org/notifications", label: "Notifications", icon: "bell", requires: "org:notifications:manage", group: "Org Admin" },
   { to: "/org/integrations", label: "Integrations", icon: "plug", requires: "org:integrations:manage", group: "Org Admin" },
 
   { to: "/admin/users", label: "Users", icon: "user-cog", requires: "platform:users:manage", group: "Platform" },
