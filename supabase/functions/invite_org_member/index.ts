@@ -71,7 +71,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
       return json({ ok: false, error: "already-exists", message: "This email already has an account — use Find to add them." }, 409);
     }
-    return json({ ok: false, error: "invite-failed", detail: invErr?.message }, 502);
+    if (msg.includes("invalid") && msg.includes("email")) {
+      return json({ ok: false, error: "invalid-email", message: "That email address looks invalid — please check it." }, 400);
+    }
+    return json({ ok: false, error: "invite-failed", message: "Could not send the invite. Try again, or check the email.", detail: invErr?.message }, 502);
   }
 
   const newUserId = inv.user.id;
