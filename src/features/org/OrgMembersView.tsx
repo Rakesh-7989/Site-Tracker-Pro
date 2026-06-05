@@ -17,6 +17,7 @@ import { listOrgRoles } from "@/app/customRoleQueries";
 import {
   listOrgMembers, lookupUserForInvite, addOrgMember, setOrgTierRole,
   deactivateMember, reactivateMember, assignCustomRole, unassignCustomRole,
+  inviteNewOrgMember,
   type OrgMemberRow, type InviteCandidate,
 } from "@/app/orgMemberQueries";
 
@@ -57,6 +58,9 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
   const [searching, setSearching] = useState(false);
   const [candidate, setCandidate] = useState<InviteCandidate | null | undefined>(undefined); // undefined = not searched
   const [inviteRole, setInviteRole] = useState<OrgTierRole>("architect");
+  const [inviteName, setInviteName] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -96,6 +100,20 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
     if (!candidate) return;
     await run(`add-${candidate.profileId}`, c => addOrgMember(c, { orgId, profileId: candidate.profileId, orgRole: inviteRole }));
     setEmail(""); setCandidate(undefined);
+    setNotice(`Added ${candidate.name} to ${orgName}.`);
+  };
+
+  const sendInvite = async () => {
+    if (!email.trim()) return;
+    setInviting(true); setError(null); setNotice(null);
+    const client = await getClient();
+    if (!client) { setError("Backend not configured."); setInviting(false); return; }
+    const res = await inviteNewOrgMember(client, { orgId, email: email.trim(), orgRole: inviteRole, name: inviteName.trim() || undefined });
+    setInviting(false);
+    if (!res.ok) { setError(res.error); return; }
+    setNotice(`Invite emailed to ${email.trim()}. They'll set a password and join ${orgName}.`);
+    setEmail(""); setInviteName(""); setCandidate(undefined);
+    await reload();
   };
 
   const active = members.filter(m => m.active);
@@ -109,19 +127,28 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
+      {notice && <Alert variant="success">{notice}</Alert>}
 
       {/* Add member */}
       <Card className="p-4 space-y-3">
         <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">Add a member</h3>
         <div className="flex gap-2">
           <Input className="flex-1" type="email" placeholder="their@email.com" value={email}
-                 onChange={e => { setEmail(e.target.value); setCandidate(undefined); }} />
+                 onChange={e => { setEmail(e.target.value); setCandidate(undefined); setNotice(null); }} />
           <Button variant="secondary" onClick={() => void search()} disabled={searching || !email.trim()}>
             {searching ? <Spinner size={14} /> : "Find"}
           </Button>
         </div>
         {candidate === null && (
-          <Alert variant="info">No SiteTrack account for that email. Ask them to sign up first, then add them.</Alert>
+          <div className="space-y-2">
+            <Alert variant="info">No account yet — email them an invite to join {orgName}.</Alert>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Input className="w-40" placeholder="Name (optional)" value={inviteName} onChange={e => setInviteName(e.target.value)} />
+              <Select className="w-auto" value={inviteRole} onChange={e => setInviteRole(e.target.value as OrgTierRole)}
+                      options={ORG_TIER_ROLES.map(r => ({ value: r, label: ORG_TIER_LABEL[r] }))} />
+              <Button size="sm" onClick={() => void sendInvite()} disabled={inviting}>{inviting ? <Spinner size={14} /> : "Send invite"}</Button>
+            </div>
+          </div>
         )}
         {candidate && (
           <div className="flex items-center gap-2 flex-wrap">

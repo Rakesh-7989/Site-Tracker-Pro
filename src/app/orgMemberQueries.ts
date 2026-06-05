@@ -47,6 +47,31 @@ export async function listOrgMembers(client: any, orgId: string): Promise<MResul
   }
 }
 
+/**
+ * Invite a BRAND-NEW user by email (no account yet). Calls the
+ * invite_org_member Edge Function (server-side, service role): creates the
+ * auth user + sends a set-password email + adds them to the org. For EXISTING
+ * accounts use lookupUserForInvite + addOrgMember instead.
+ */
+export async function inviteNewOrgMember(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  input: { orgId: string; email: string; orgRole: OrgTierRole; name?: string },
+): Promise<MResult<{ invited: true }>> {
+  try {
+    const { data, error } = await client.functions.invoke("invite_org_member", { body: input });
+    if (error) {
+      let msg = error.message ?? "Could not send the invite.";
+      try { const b = await error.context?.json?.(); if (b?.message) msg = b.message; } catch { /* ignore */ }
+      return { ok: false, error: msg };
+    }
+    if (data && data.ok === false) return { ok: false, error: String(data.message ?? data.error ?? "Invite failed.") };
+    return { ok: true, data: { invited: true } };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /** Look up an existing account by email so it can be added to the org. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function lookupUserForInvite(client: any, email: string): Promise<MResult<InviteCandidate | null>> {

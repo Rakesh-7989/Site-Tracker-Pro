@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import {
   listOrgMembers, lookupUserForInvite, addOrgMember,
-  deactivateMember, assignCustomRole, unassignCustomRole,
+  deactivateMember, assignCustomRole, unassignCustomRole, inviteNewOrgMember,
 } from "@/app/orgMemberQueries";
 
 // Minimal chainable mock: every builder method returns the same thenable that
@@ -15,10 +15,11 @@ function makeChain(result: { data?: unknown; error?: unknown }) {
   chain.then = (resolve: (v: unknown) => unknown) => resolve(result);
   return chain;
 }
-function mockClient(opts: { rpc?: Record<string, { data?: unknown; error?: unknown }>; table?: { data?: unknown; error?: unknown } }) {
+function mockClient(opts: { rpc?: Record<string, { data?: unknown; error?: unknown }>; table?: { data?: unknown; error?: unknown }; invoke?: { data?: unknown; error?: unknown } }) {
   return {
     rpc: async (name: string) => opts.rpc?.[name] ?? { data: [], error: null },
     from: () => makeChain(opts.table ?? { error: null }),
+    functions: { invoke: async () => opts.invoke ?? { data: { ok: true }, error: null } },
   };
 }
 
@@ -74,5 +75,16 @@ describe("mutations return ok on success", () => {
   it("surfaces a write error", async () => {
     const r = await deactivateMember(mockClient({ table: { error: { message: "rls" } } }), "o", "p");
     expect(r).toEqual({ ok: false, error: "rls" });
+  });
+});
+
+describe("inviteNewOrgMember (Edge Function)", () => {
+  it("ok when the function succeeds", async () => {
+    const r = await inviteNewOrgMember(mockClient({ invoke: { data: { ok: true, invited: true }, error: null } }), { orgId: "o", email: "new@x.com", orgRole: "architect" });
+    expect(r.ok).toBe(true);
+  });
+  it("surfaces the function's structured failure", async () => {
+    const r = await inviteNewOrgMember(mockClient({ invoke: { data: { ok: false, message: "This email already has an account — use Find to add them." }, error: null } }), { orgId: "o", email: "x@x.com", orgRole: "pm" });
+    expect(r).toEqual({ ok: false, error: "This email already has an account — use Find to add them." });
   });
 });
