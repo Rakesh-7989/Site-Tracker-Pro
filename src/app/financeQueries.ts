@@ -95,3 +95,62 @@ export async function createExpense(client: any, input: { projectId: string; cat
 export const setExpenseStatus = (client: any, id: string, status: ExpenseStatus) => upd(client, "expenses", id, { status });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const deleteExpense = (client: any, id: string) => del(client, "expenses", id);
+
+// ── RA Bills (running account) ────────────────────────────────────────────
+export type RaBillStatus = "submitted" | "approved" | "paid" | "rejected";
+export interface RaBill { id: string; no: string; subcontractor: string | null; scope: string | null; billAmount: number; retentionPct: number; paidAmount: number; status: RaBillStatus; billDate: string | null; }
+const asRa = oneOf<RaBillStatus>(["submitted", "approved", "paid", "rejected"], "submitted");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listRaBills(client: any, projectId: string): Promise<Result<RaBill[]>> {
+  try {
+    const { data, error } = await client.from("ra_bills").select("id, no, subcontractor, scope, bill_amount, retention_pct, paid_amount, status, bill_date").eq("project_id", projectId).order("bill_date", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), no: String(r.no ?? ""), subcontractor: r.subcontractor == null ? null : String(r.subcontractor), scope: r.scope == null ? null : String(r.scope), billAmount: Number(r.bill_amount ?? 0), retentionPct: Number(r.retention_pct ?? 0), paidAmount: Number(r.paid_amount ?? 0), status: asRa(r.status), billDate: r.bill_date == null ? null : String(r.bill_date) })));
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createRaBill(client: any, input: { projectId: string; no: string; subcontractor?: string; scope?: string; billAmount: number; retentionPct?: number }): Promise<Result<{ id: string }>> {
+  try {
+    const { data, error } = await client.from("ra_bills").insert({ project_id: input.projectId, no: input.no, subcontractor: input.subcontractor || null, scope: input.scope || null, bill_amount: input.billAmount, retention_pct: input.retentionPct ?? 5 }).select("id").single();
+    if (error) return dbe(error); return ok({ id: String(data.id) });
+  } catch (e) { return er(e); }
+}
+/** Net payable after retention = bill_amount * (1 - retention_pct/100). */
+export function raNetPayable(b: { billAmount: number; retentionPct: number }): number { return Math.round(b.billAmount * (1 - (b.retentionPct || 0) / 100)); }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setRaBillStatus = (client: any, id: string, status: RaBillStatus, paidAmount?: number) => upd(client, "ra_bills", id, { status, ...(paidAmount != null ? { paid_amount: paidAmount } : {}) });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const deleteRaBill = (client: any, id: string) => del(client, "ra_bills", id);
+
+// ── Ledger (inventory transactions) ───────────────────────────────────────
+export type LedgerDirection = "inward" | "outward" | "return" | "wastage";
+export interface LedgerTxn { id: string; txnDate: string; material: string; unit: string | null; qty: number; direction: LedgerDirection; source: string | null; refNo: string | null; }
+const asDir = oneOf<LedgerDirection>(["inward", "outward", "return", "wastage"], "inward");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listLedger(client: any, projectId: string): Promise<Result<LedgerTxn[]>> {
+  try {
+    const { data, error } = await client.from("inventory_transactions").select("id, txn_date, material, unit, qty, direction, source, ref_no").eq("project_id", projectId).order("txn_date", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), txnDate: String(r.txn_date ?? ""), material: String(r.material ?? ""), unit: r.unit == null ? null : String(r.unit), qty: Number(r.qty ?? 0), direction: asDir(r.direction), source: r.source == null ? null : String(r.source), refNo: r.ref_no == null ? null : String(r.ref_no) })));
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createLedgerTxn(client: any, input: { projectId: string; material: string; unit?: string; qty: number; direction: LedgerDirection; source?: string; refNo?: string; recordedBy: string }): Promise<Result<{ id: string }>> {
+  try {
+    const { data, error } = await client.from("inventory_transactions").insert({ project_id: input.projectId, material: input.material, unit: input.unit || null, qty: input.qty, direction: input.direction, source: input.source || null, ref_no: input.refNo || null, recorded_by: input.recordedBy }).select("id").single();
+    if (error) return dbe(error); return ok({ id: String(data.id) });
+  } catch (e) { return er(e); }
+}
+/** Net stock balance per material from a transaction list (inward/return add, outward/wastage subtract). */
+export function stockBalance(txns: LedgerTxn[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of txns) {
+    const sign = t.direction === "inward" || t.direction === "return" ? 1 : -1;
+    m.set(t.material, (m.get(t.material) ?? 0) + sign * t.qty);
+  }
+  return m;
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const deleteLedgerTxn = (client: any, id: string) => del(client, "inventory_transactions", id);
