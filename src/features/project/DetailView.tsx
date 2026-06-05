@@ -18,7 +18,13 @@ import { visibleTabs, DEFAULT_TAB, tabById } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { MilestonesTab } from "./tabs/MilestonesTab";
+import { TasksTab } from "./tabs/TasksTab";
+import { UpdatesTab } from "./tabs/UpdatesTab";
+import { IssuesTab } from "./tabs/IssuesTab";
 import { TabPlaceholder } from "./tabs/TabPlaceholder";
+
+// Tabs that have a real ported implementation (others fall to the placeholder).
+const REAL_TABS = new Set(["overview", "team", "milestones", "tasks", "updates", "issues"]);
 
 export function DetailView(): JSX.Element {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
@@ -96,7 +102,10 @@ export function DetailView(): JSX.Element {
         {activeId === "overview" && <OverviewTab project={project} members={members} />}
         {activeId === "team" && <TeamTab projectId={project.id} members={members} />}
         {activeId === "milestones" && <MilestonesTab projectId={project.id} />}
-        {activeId !== "overview" && activeId !== "team" && activeId !== "milestones" && activeDef && (
+        {activeId === "tasks" && <TasksTab projectId={project.id} />}
+        {activeId === "updates" && <UpdatesTab projectId={project.id} />}
+        {activeId === "issues" && <IssuesTab projectId={project.id} />}
+        {!REAL_TABS.has(activeId) && activeDef && (
           <TabPlaceholder label={activeDef.label} icon={activeDef.icon} />
         )}
       </div>
