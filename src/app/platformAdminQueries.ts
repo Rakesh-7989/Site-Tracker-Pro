@@ -32,4 +32,31 @@ export async function listPlatformUsers(client: any, limit = 200): Promise<PResu
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
+export interface PlatformStats {
+  orgCount: number;
+  userCount: number;
+  projectCount: number;
+  staffCount: number;
+  pendingSignups: number;
+  approvedSignups: number;
+  plans: Record<string, number>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getPlatformStats(client: any): Promise<PResult<PlatformStats | null>> {
+  try {
+    const { data, error } = await client.rpc("platform_stats");
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (!data) return { ok: true, data: null };
+    const r = data as Record<string, unknown>;
+    const plans: Record<string, number> = {};
+    const pr = (r.plans ?? {}) as Record<string, unknown>;
+    for (const k of Object.keys(pr)) plans[k] = num(pr[k]);
+    return { ok: true, data: {
+      orgCount: num(r.orgCount), userCount: num(r.userCount), projectCount: num(r.projectCount),
+      staffCount: num(r.staffCount), pendingSignups: num(r.pendingSignups), approvedSignups: num(r.approvedSignups), plans,
+    } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
 export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };

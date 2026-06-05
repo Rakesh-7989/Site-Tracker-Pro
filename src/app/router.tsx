@@ -22,6 +22,7 @@ import { RoleManager } from "@/features/admin/RoleManager";
 import { SignupRequestsView } from "@/features/admin/SignupRequestsView";
 import { PlatformOrgsView } from "@/features/admin/PlatformOrgsView";
 import { PlatformUsersView } from "@/features/admin/PlatformUsersView";
+import { PlatformDashboardView } from "@/features/admin/PlatformDashboardView";
 import { OrgMembersView } from "@/features/org/OrgMembersView";
 import { OrgDashboardView } from "@/features/org/OrgDashboardView";
 import { OrgBillingView } from "@/features/org/OrgBillingView";
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
       { path: "org/approvals", element: <OrgApprovalsView /> },
       { path: "org/notifications", element: <OrgNotificationsView /> },
       { path: "org/integrations", element: <PlaceholderView title="Integrations" phase="Phase 8" /> },
+      { path: "admin", element: <PlatformDashboardView /> },
       { path: "admin/users", element: <PlatformUsersView /> },
       { path: "admin/orgs", element: <PlatformOrgsView /> },
       { path: "admin/roles", element: <RoleManager /> },

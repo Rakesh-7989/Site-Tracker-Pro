@@ -46,7 +46,7 @@ export function Sidebar(): JSX.Element {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === "/dashboard"}
+                  end={item.to === "/dashboard" || item.to === "/admin"}
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
                       isActive
