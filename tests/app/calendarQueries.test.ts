@@ -11,10 +11,10 @@ describe("getOrgCalendar", () => {
     const r = await getOrgCalendar(rpcClient({ data: [
       { kind: "milestone", id: "m1", project_id: "p1", project_name: "Tower A", title: "Plinth", due_date: "2026-07-01", status: "pending" },
       { kind: "weird", id: "t1", project_id: "p1", project_name: "Tower A", title: "Order steel", due_date: "2026-06-10", status: "in_progress" },
-    ], error: null }));
+    ], error: null }), "o");
     expect(r.ok && r.data[0]).toMatchObject({ kind: "milestone", title: "Plinth", dueDate: "2026-07-01", projectName: "Tower A" });
     expect(r.ok && r.data[1].kind).toBe("milestone"); // unknown → milestone fallback
-    const e = await getOrgCalendar(rpcClient({ data: null, error: { message: "x" } }));
+    const e = await getOrgCalendar(rpcClient({ data: null, error: { message: "x" } }), "o");
     expect(e).toEqual({ ok: false, error: "x" });
   });
 });

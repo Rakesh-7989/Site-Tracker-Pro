@@ -33,6 +33,7 @@ import { OrgNotificationsView } from "@/features/org/OrgNotificationsView";
 import { OrgIntegrationsView } from "@/features/org/OrgIntegrationsView";
 import { VendorsView } from "@/features/org/VendorsView";
 import { CalendarView } from "@/features/org/CalendarView";
+import { AnalyticsView } from "@/features/org/AnalyticsView";
 
 export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
       { path: "dpr", element: <DPRComposer /> },
       { path: "vendors", element: <VendorsView /> },
       { path: "calendar", element: <CalendarView /> },
+      { path: "analytics", element: <AnalyticsView /> },
       { path: "activity", element: <OrgActivityView /> },
       { path: "audit", element: <OrgActivityView /> },
       { path: "org", element: <OrgDashboardView /> },
