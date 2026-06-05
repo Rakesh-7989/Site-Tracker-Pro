@@ -1,0 +1,61 @@
+// SiteTrack Pro — platform Organizations (/admin/orgs, superadmin). Cross-tenant
+// list of every org with member + project counts. Read-only.
+
+import { useCallback, useEffect, useState } from "react";
+import { useCan } from "@/auth";
+import { Card, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Input } from "@/components/ui/forms";
+import { listPlatformOrgs, PLAN_LABEL, type PlatformOrg } from "@/app/platformAdminQueries";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+const planTone = (p: string): "neutral" | "info" | "success" | "warning" => (p === "business" ? "success" : p === "pro" ? "info" : p === "custom" ? "warning" : "neutral");
+const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
+
+export function PlatformOrgsView(): JSX.Element {
+  const can = useCan("platform:orgs:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+  return <Inner />;
+}
+
+function Inner(): JSX.Element {
+  const [rows, setRows] = useState<PlatformOrg[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+
+  const reload = useCallback(async () => {
+    setLoading(true); setError(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const res = await listPlatformOrgs(client); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
+  }, []);
+  useEffect(() => { void reload(); }, [reload]);
+
+  const term = q.trim().toLowerCase();
+  const shown = term ? rows.filter(r => r.name.toLowerCase().includes(term) || r.slug.toLowerCase().includes(term)) : rows;
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h1 className="font-display text-2xl font-bold text-ink-900">Organizations</h1>
+        <span className="text-sm text-ink-500">{rows.length} total</span>
+      </div>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {!loading && rows.length > 0 && <Input placeholder="Search by name or slug…" value={q} onChange={e => setQ(e.target.value)} />}
+      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
+        : shown.length === 0 ? <Card className="p-8 text-center text-sm text-ink-500"><Icon name="building" size={24} className="mx-auto text-ink-300 mb-2" />No organizations{term ? " match your search." : " yet."}</Card>
+        : <div className="space-y-2">{shown.map(o => (
+            <Card key={o.id} className="p-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2"><span className="font-semibold text-ink-900 truncate">{o.name}</span><Badge tone={planTone(o.plan)}>{PLAN_LABEL[o.plan] ?? o.plan}</Badge></div>
+                <div className="text-[11px] text-ink-400">{o.slug} · created {fmtDate(o.createdAt)}</div>
+              </div>
+              <div className="flex items-center gap-4 flex-shrink-0 text-center">
+                <div><div className="text-lg font-bold text-ink-900 leading-none">{o.memberCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">members</div></div>
+                <div><div className="text-lg font-bold text-ink-900 leading-none">{o.projectCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">projects</div></div>
+              </div>
+            </Card>
+          ))}</div>}
+    </div>
+  );
+}
