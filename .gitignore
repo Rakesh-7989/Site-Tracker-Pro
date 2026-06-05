@@ -17,3 +17,5 @@ playwright/.cache/
 TEST_USERS_CREDENTIALS.md
 
 .git-commit-msg.tmp
+
+supabase/.temp/

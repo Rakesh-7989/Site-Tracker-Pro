@@ -36,6 +36,12 @@ import { RfiTab } from "./tabs/RfiTab";
 import { ChangeOrdersTab } from "./tabs/ChangeOrdersTab";
 import { EstimateTab } from "./tabs/EstimateTab";
 import { MapTab } from "./tabs/MapTab";
+import { BoqTab } from "./tabs/BoqTab";
+import { LabourTab } from "./tabs/LabourTab";
+import { ComplianceTab } from "./tabs/ComplianceTab";
+import { FieldOpsTab } from "./tabs/FieldOpsTab";
+import { GanttTab } from "./tabs/GanttTab";
+import { ApprovalsTab } from "./tabs/ApprovalsTab";
 import { TabPlaceholder } from "./tabs/TabPlaceholder";
 
 // Tabs that have a real ported implementation (others fall to the placeholder).
@@ -45,6 +51,7 @@ const REAL_TABS = new Set([
   "attendance", "po", "invoices", "budget",
   "rabills", "ledger", "drawings", "rfi",
   "changeorders", "estimate", "map",
+  "boq", "labour", "compliance", "fieldops", "gantt", "approvals",
 ]);
 
 export function DetailView(): JSX.Element {
@@ -141,6 +148,12 @@ export function DetailView(): JSX.Element {
         {activeId === "changeorders" && <ChangeOrdersTab projectId={project.id} />}
         {activeId === "estimate" && <EstimateTab projectId={project.id} />}
         {activeId === "map" && <MapTab project={project} />}
+        {activeId === "boq" && <BoqTab projectId={project.id} />}
+        {activeId === "labour" && <LabourTab projectId={project.id} />}
+        {activeId === "compliance" && <ComplianceTab projectId={project.id} orgId={project.orgId} />}
+        {activeId === "fieldops" && <FieldOpsTab projectId={project.id} />}
+        {activeId === "gantt" && <GanttTab projectId={project.id} />}
+        {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
         {!REAL_TABS.has(activeId) && activeDef && (
           <TabPlaceholder label={activeDef.label} icon={activeDef.icon} />
         )}
