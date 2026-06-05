@@ -549,7 +549,10 @@ export function OrgMembersView({ user, orgs, adminUsers, setAdminUsers, setAudit
     const dataLines = hasHeader ? lines.slice(1) : lines;
     const rows = [];
     const errors = [];
-    const ALLOWED = ["architect", "pm", "contractor", "client", "orgadmin", "project_admin", "project_head", "site_engineer", "site_inspector", "mep_consultant", "civil_engineer", "interior_designer", "design_architect_interior", "designer", "consultant", "sub_contractor", "prospector", "vendor"];
+    // Consolidated 2026-06-04 (migration 68): project_head→pm,
+    // civil_engineer→site_engineer, interior_designer→design_architect_interior
+    // removed so a CSV row can't pick a role the DB CHECK now rejects.
+    const ALLOWED = ["architect", "pm", "contractor", "client", "orgadmin", "project_admin", "site_engineer", "site_inspector", "mep_consultant", "design_architect_interior", "designer", "consultant", "sub_contractor", "prospector", "vendor"];
     const existingEmails = new Set(members.map(m => m.email.toLowerCase()));
     dataLines.forEach((line, i) => {
       const cells = split(line);
