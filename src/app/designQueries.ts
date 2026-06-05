@@ -67,3 +67,53 @@ export const respondRfi = (client: any, id: string, response: string) => upd(cli
 export const setRfiStatus = (client: any, id: string, status: RfiStatus) => upd(client, "rfi", id, { status });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const deleteRfi = (client: any, id: string) => del(client, "rfi", id);
+
+// ── Change Orders ───────────────────────────────────────────────────────────
+export type CoStatus = "submitted" | "approved" | "rejected" | "cancelled";
+export interface ChangeOrder { id: string; no: string; description: string; costImpact: number | null; scheduleImpact: number | null; reason: string | null; status: CoStatus; }
+const asCo = oneOf<CoStatus>(["submitted", "approved", "rejected", "cancelled"], "submitted");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listChangeOrders(client: any, projectId: string): Promise<Result<ChangeOrder[]>> {
+  try {
+    const { data, error } = await client.from("change_orders").select("id, no, description, cost_impact, schedule_impact, reason, status").eq("project_id", projectId).order("raised_at", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), no: String(r.no ?? ""), description: String(r.description ?? ""), costImpact: r.cost_impact == null ? null : Number(r.cost_impact), scheduleImpact: r.schedule_impact == null ? null : Number(r.schedule_impact), reason: r.reason == null ? null : String(r.reason), status: asCo(r.status) })));
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createChangeOrder(client: any, input: { projectId: string; no: string; description: string; costImpact?: number; scheduleImpact?: number; reason?: string; raisedBy: string }): Promise<Result<{ id: string }>> {
+  try {
+    const { data, error } = await client.from("change_orders").insert({ project_id: input.projectId, no: input.no, description: input.description, cost_impact: input.costImpact ?? null, schedule_impact: input.scheduleImpact ?? null, reason: input.reason || null, raised_by: input.raisedBy }).select("id").single();
+    if (error) return dbe(error); return ok({ id: String(data.id) });
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setCoStatus = (client: any, id: string, status: CoStatus) => upd(client, "change_orders", id, { status });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const deleteChangeOrder = (client: any, id: string) => del(client, "change_orders", id);
+
+// ── Estimates ───────────────────────────────────────────────────────────────
+export type EstimateStatus = "draft" | "submitted" | "approved" | "superseded" | "rejected";
+export interface Estimate { id: string; name: string; version: number; totalAmount: number; status: EstimateStatus; }
+const asEst = oneOf<EstimateStatus>(["draft", "submitted", "approved", "superseded", "rejected"], "draft");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listEstimates(client: any, projectId: string): Promise<Result<Estimate[]>> {
+  try {
+    const { data, error } = await client.from("estimate").select("id, name, version, total_amount, status").eq("project_id", projectId).order("version", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), name: String(r.name ?? ""), version: Number(r.version ?? 1), totalAmount: Number(r.total_amount ?? 0), status: asEst(r.status) })));
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createEstimate(client: any, input: { projectId: string; name: string; totalAmount: number; createdBy: string }): Promise<Result<{ id: string }>> {
+  try {
+    const { data, error } = await client.from("estimate").insert({ project_id: input.projectId, name: input.name, total_amount: input.totalAmount, created_by: input.createdBy }).select("id").single();
+    if (error) return dbe(error); return ok({ id: String(data.id) });
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setEstimateStatus = (client: any, id: string, status: EstimateStatus) => upd(client, "estimate", id, { status });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const deleteEstimate = (client: any, id: string) => del(client, "estimate", id);
