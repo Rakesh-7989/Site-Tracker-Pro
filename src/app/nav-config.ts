@@ -34,6 +34,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: "home", group: "Workspace" },
   { to: "/projects", label: "Projects", icon: "folder", group: "Workspace" },
   { to: "/calendar", label: "Calendar", icon: "calendar", group: "Workspace" },
+  { to: "/search", label: "Search", icon: "search", group: "Workspace" },
   { to: "/projects/new", label: "New Project", icon: "plus", requires: "project:create", group: "Workspace" },
 
   { to: "/dpr", label: "Daily Reports", icon: "clipboard", requires: "dpr:view", group: "Field" },
