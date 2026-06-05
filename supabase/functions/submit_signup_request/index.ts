@@ -51,6 +51,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const phone = body.phone ? String(body.phone).trim() : null;
   const plan = String(body.plan ?? "basic").trim();
   const message = body.message ? String(body.message).trim().slice(0, 1000) : null;
+  // Honeypot: a hidden field real users never fill. Bots do → pretend success,
+  // insert nothing.
+  const honeypot = String(body.website ?? "").trim();
+  if (honeypot) return json({ ok: true }, 200);
 
   if (!firmName || !contactName) return json({ ok: false, error: "missing-fields", message: "Firm name and your name are required." }, 400);
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ ok: false, error: "invalid-email", message: "Please enter a valid work email." }, 400);
@@ -61,15 +65,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!url || !key) return json({ ok: false, error: "service-not-configured" }, 500);
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  // Block if this email already has an account.
-  const { data: existingUsers } = await admin.from("profiles").select("id").limit(1);
-  void existingUsers; // (account check is enforced at approval; we don't leak existence here)
+  // Source IP for rate-limiting (first hop in x-forwarded-for).
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+
+  // Throttle: max 5 signup requests per IP per hour.
+  if (ip) {
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await admin
+      .from("signup_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .gt("created_at", since);
+    if ((count ?? 0) >= 5) {
+      return json({ ok: false, error: "rate-limited", message: "Too many requests from your network. Please try again later." }, 429);
+    }
+  }
 
   // Insert the pending request. The partial unique index blocks a 2nd pending
   // row for the same email → friendly 409.
   const { data: row, error } = await admin
     .from("signup_requests")
-    .insert({ firm_name: firmName, contact_name: contactName, email, phone, plan, message, status: "pending" })
+    .insert({ firm_name: firmName, contact_name: contactName, email, phone, plan, message, ip, status: "pending" })
     .select("id")
     .single();
 

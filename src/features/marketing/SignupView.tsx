@@ -31,6 +31,7 @@ export function SignupView(): JSX.Element {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot — hidden from real users
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -48,6 +49,7 @@ export function SignupView(): JSX.Element {
     const res = await submitSignupRequest({
       firmName: firmName.trim(), contactName: contactName.trim(), email: email.trim().toLowerCase(),
       phone: phone.trim() || undefined, plan, message: message.trim() || undefined,
+      website: website.trim() || undefined,
     });
     setBusy(false);
     if (res.ok) setDone(true);
@@ -120,6 +122,11 @@ export function SignupView(): JSX.Element {
           </div>
           <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Anything we should know? <span className="text-ink-300 normal-case">(optional)</span></span>
             <Input className="mt-1" value={message} onChange={e => setMessage(e.target.value)} placeholder="Team size, number of sites, etc." /></label>
+
+          {/* Honeypot: hidden from humans (off-screen + not focusable). Bots fill it → request is dropped server-side. */}
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
+            value={website} onChange={e => setWebsite(e.target.value)}
+            style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
           <Button className="w-full" onClick={() => void submit()} disabled={busy}>
             {busy ? <Spinner size={16} /> : <>Request access on the {PLAN_TIERS.find(p => p.id === plan)?.name} plan</>}

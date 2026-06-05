@@ -10,6 +10,8 @@ export interface SignupInput {
   phone?: string;
   plan: SignupPlan;
   message?: string;
+  /** Honeypot — real users leave this empty; bots fill it. */
+  website?: string;
 }
 export type SignupResult = { ok: true } | { ok: false; error: string };
 

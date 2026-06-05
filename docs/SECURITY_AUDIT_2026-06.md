@@ -1,5 +1,15 @@
 # SiteTrack Pro — Security R&D + Audit (2026-06-06)
 
+> **Status update (2026-06-06):** P0 #1 + all of P1 are **DONE & deployed**.
+> - ✅ react-router → v7.17 (`npm audit`: **0 vulnerabilities**)
+> - ✅ migration 82: `validate_share_token` search_path pinned · `org_integrations`
+>   + `subscriptions` reads tightened to org admins · signup IP column
+> - ✅ `submit_signup_request` EF: honeypot + 5/hour/IP rate-limit (redeployed)
+> - ⏳ **Founder action still pending:** rotate the 2 keys exposed in chat
+>   (Supabase `sbp_…` access token + Resend `re_…` key). P2 items remain optional.
+
+
+
 *What security do regular SaaS apps have, and where does SiteTrack Pro stand?*
 Audit method: 3 parallel codebase sweeps (Edge Functions, Postgres/RLS,
 frontend/config) + `npm audit`. Findings below are **triaged** — real vs

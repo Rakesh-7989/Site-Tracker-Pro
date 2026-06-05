@@ -64,10 +64,4 @@ export const router = createBrowserRouter([
   },
   // Public catch-all 404 (works signed-out too).
   { path: "*", element: <NotFoundView /> },
-], {
-  // Opt into v7 behaviors early to silence the future-flag console warnings
-  // and ease the eventual v7 upgrade.
-  future: {
-    v7_relativeSplatPath: true,
-  },
-});
+]);
