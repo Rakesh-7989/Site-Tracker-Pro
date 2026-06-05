@@ -11,26 +11,28 @@ import "./index.css";
 // — we don't want to block first paint on a monitoring SDK load.
 initSentry();
 
-// ── v3 TypeScript shell opt-in (Phase 3 strangler-fig) ──────────────────────
-// The new TS shell (src/app/AppV3) mounts ONLY when explicitly opted in.
-// The legacy App.jsx remains the production default until the rebuild
-// reaches feature parity (Phase 8).
+// ── v3 TypeScript shell is now the DEFAULT (soft cutover, 2026-06-04) ────────
+// The new TS shell (src/app/AppV3) mounts by default. The legacy App.jsx is
+// kept as a fallback for surfaces v3 hasn't ported yet (most detail tabs,
+// org/admin panels, mid-size views) — reachable via ?shell=legacy until v3
+// hits feature parity, at which point App.jsx gets deleted.
 //
-//   ?shell=v3      → switch to the new shell + remember the choice
-//   ?shell=legacy  → switch back to the legacy app + forget the choice
+//   (default)      → the new v3 shell
+//   ?shell=legacy  → switch to the legacy app + remember the choice
+//   ?shell=v3      → switch back to v3 + forget the legacy choice
 //
 // The choice is persisted to localStorage so React Router navigation (which
-// drops the query param) doesn't bounce the user back to legacy on reload.
+// drops the query param) doesn't bounce the user on reload.
 const SHELL_KEY = "sitetrack:shell";
 function resolveShell() {
   try {
     const params = new URLSearchParams(window.location.search);
     const param = params.get("shell");
-    if (param === "v3") { localStorage.setItem(SHELL_KEY, "v3"); return "v3"; }
-    if (param === "legacy") { localStorage.removeItem(SHELL_KEY); return "legacy"; }
-    return localStorage.getItem(SHELL_KEY) === "v3" ? "v3" : "legacy";
+    if (param === "legacy") { localStorage.setItem(SHELL_KEY, "legacy"); return "legacy"; }
+    if (param === "v3") { localStorage.removeItem(SHELL_KEY); return "v3"; }
+    return localStorage.getItem(SHELL_KEY) === "legacy" ? "legacy" : "v3";
   } catch {
-    return "legacy";
+    return "v3";
   }
 }
 
