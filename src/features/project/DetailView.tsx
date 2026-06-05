@@ -21,10 +21,17 @@ import { MilestonesTab } from "./tabs/MilestonesTab";
 import { TasksTab } from "./tabs/TasksTab";
 import { UpdatesTab } from "./tabs/UpdatesTab";
 import { IssuesTab } from "./tabs/IssuesTab";
+import { MaterialsTab } from "./tabs/MaterialsTab";
+import { SafetyTab } from "./tabs/SafetyTab";
+import { InspectionsTab } from "./tabs/InspectionsTab";
+import { PunchTab } from "./tabs/PunchTab";
 import { TabPlaceholder } from "./tabs/TabPlaceholder";
 
 // Tabs that have a real ported implementation (others fall to the placeholder).
-const REAL_TABS = new Set(["overview", "team", "milestones", "tasks", "updates", "issues"]);
+const REAL_TABS = new Set([
+  "overview", "team", "milestones", "tasks", "updates", "issues",
+  "materials", "safety", "inspections", "punchlist",
+]);
 
 export function DetailView(): JSX.Element {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
@@ -105,6 +112,10 @@ export function DetailView(): JSX.Element {
         {activeId === "tasks" && <TasksTab projectId={project.id} />}
         {activeId === "updates" && <UpdatesTab projectId={project.id} />}
         {activeId === "issues" && <IssuesTab projectId={project.id} />}
+        {activeId === "materials" && <MaterialsTab projectId={project.id} />}
+        {activeId === "safety" && <SafetyTab projectId={project.id} />}
+        {activeId === "inspections" && <InspectionsTab projectId={project.id} />}
+        {activeId === "punchlist" && <PunchTab projectId={project.id} />}
         {!REAL_TABS.has(activeId) && activeDef && (
           <TabPlaceholder label={activeDef.label} icon={activeDef.icon} />
         )}
