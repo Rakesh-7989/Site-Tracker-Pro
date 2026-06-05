@@ -19,6 +19,7 @@ import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
 import { DPRComposer } from "@/features/dpr/DPRComposer";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
 import { RoleManager } from "@/features/admin/RoleManager";
+import { SignupRequestsView } from "@/features/admin/SignupRequestsView";
 import { OrgMembersView } from "@/features/org/OrgMembersView";
 import { OrgDashboardView } from "@/features/org/OrgDashboardView";
 import { OrgBillingView } from "@/features/org/OrgBillingView";
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
       { path: "admin/users", element: <PlaceholderView title="Users (Platform)" phase="Phase 7" /> },
       { path: "admin/orgs", element: <PlaceholderView title="Organizations (Platform)" phase="Phase 7" /> },
       { path: "admin/roles", element: <RoleManager /> },
+      { path: "admin/signups", element: <SignupRequestsView /> },
     ],
   },
   // Public catch-all 404 (works signed-out too).
