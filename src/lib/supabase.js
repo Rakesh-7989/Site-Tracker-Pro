@@ -9,8 +9,21 @@
 // This module deliberately uses dynamic import so the Supabase SDK is NOT
 // bundled into the demo build (saves ~150 KB gzipped).
 
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "./supabasePublicConfig.js";
+
 const ENV = typeof import.meta !== "undefined" ? import.meta.env : {};
-export const BACKEND_MODE = ENV.VITE_BACKEND || "local";
+
+// Resolved Supabase config: build-time env vars ALWAYS win (local dev + any
+// properly-configured deployment); otherwise we fall back to the committed
+// public config so the production build is never "backend-disabled" just
+// because the Vercel build env lacked the VITE_* vars. The anon key is
+// RLS-protected + ships in every browser bundle anyway, so this is safe.
+const SUPABASE_URL = ENV.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = ENV.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_ANON_KEY;
+
+// Default to the Supabase backend whenever we have a URL + anon key (we always
+// do, via the fallback). An explicit VITE_BACKEND still overrides (e.g. "local").
+export const BACKEND_MODE = ENV.VITE_BACKEND || (SUPABASE_URL && SUPABASE_ANON_KEY ? "supabase" : "local");
 
 let _clientPromise = null;
 
@@ -46,7 +59,7 @@ export function getCanonicalAppUrl() {
 }
 
 export function isSupabaseEnabled() {
-  return BACKEND_MODE === "supabase" && !!ENV.VITE_SUPABASE_URL && !!ENV.VITE_SUPABASE_ANON_KEY;
+  return BACKEND_MODE === "supabase" && !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
 }
 
 export function getSupabaseClient() {
@@ -56,7 +69,7 @@ export function getSupabaseClient() {
     try {
       // Dynamic import so the SDK only ships when actually enabled.
       const { createClient } = await import("@supabase/supabase-js");
-      return createClient(ENV.VITE_SUPABASE_URL, ENV.VITE_SUPABASE_ANON_KEY, {
+      return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: { persistSession: true, autoRefreshToken: true },
       });
     } catch (err) {
