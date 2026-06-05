@@ -13,7 +13,7 @@ import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
 import { CreateProjectView } from "@/features/shell/CreateProjectView";
-import { PlaceholderView, NotFoundView } from "@/features/shell/PlaceholderView";
+import { NotFoundView } from "@/features/shell/PlaceholderView";
 import { DetailView } from "@/features/project/DetailView";
 import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
 import { DPRComposer } from "@/features/dpr/DPRComposer";
@@ -30,6 +30,7 @@ import { OrgActivityView } from "@/features/org/OrgActivityView";
 import { OrgTemplatesView } from "@/features/org/OrgTemplatesView";
 import { OrgApprovalsView } from "@/features/org/OrgApprovalsView";
 import { OrgNotificationsView } from "@/features/org/OrgNotificationsView";
+import { OrgIntegrationsView } from "@/features/org/OrgIntegrationsView";
 
 export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
@@ -54,7 +55,7 @@ export const router = createBrowserRouter([
       { path: "org/templates", element: <OrgTemplatesView /> },
       { path: "org/approvals", element: <OrgApprovalsView /> },
       { path: "org/notifications", element: <OrgNotificationsView /> },
-      { path: "org/integrations", element: <PlaceholderView title="Integrations" phase="Phase 8" /> },
+      { path: "org/integrations", element: <OrgIntegrationsView /> },
       { path: "admin", element: <PlatformDashboardView /> },
       { path: "admin/users", element: <PlatformUsersView /> },
       { path: "admin/orgs", element: <PlatformOrgsView /> },
