@@ -7,7 +7,7 @@ command, delete the legacy app.*
 ## The honest scale
 
 ~50 surfaces across ~7,200 lines of legacy JSX:
-- **25 project-detail tabs** (2 ported, 23 to go)
+- **27 project-detail tabs** ✅ **ALL 27 ported + live** (as of 2026-06-05)
 - **9 org-admin panels** (members done → 8 to go)
 - **8 super-admin panels**
 - **11 mid-size views**
@@ -75,8 +75,17 @@ vanish with App.jsx. The `?shell=legacy` flag is removed.
 
 ## Progress tracker
 - [x] Login, role dashboards, projects CRUD, DPR composer
-- [x] Project detail: Overview, Team
 - [x] HRMS: Role Permissions (/admin/roles), People + invite (/org/members)
-- [ ] Batch 1 — Core PM tabs
-- [ ] Batches 2-8 …
-- [ ] Delete legacy
+- [x] **ALL 27 project-detail tabs** (migrations 72–76 bridge every legacy
+      project child table; Gantt+Map display-only, Approvals cross-entity):
+  - Overview · Team · Milestones · Tasks · Updates · Issues · Punch List
+  - Drawings · RFIs · Change Orders · BOQ · Estimate
+  - Field Ops · Materials · Attendance · Labour · Safety · Inspections
+  - Budget · Ledger · POs · Invoices · RA Bills
+  - Approvals · Compliance · Map · Gantt
+- [ ] Batch 6 — Org-admin panels (8: dashboard, billing, integrations, audit,
+      templates, approval chains, feature settings, notification rules)
+- [ ] Batch 7 — Super-admin panels (8)
+- [ ] Batch 8 — Mid-size views (11: calendar, vendors, analytics, messages,
+      global search, notifications, …)
+- [ ] **Delete legacy** (on founder command)
