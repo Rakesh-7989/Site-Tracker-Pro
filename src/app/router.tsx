@@ -18,6 +18,9 @@ import { DPRComposer } from "@/features/dpr/DPRComposer";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
 import { RoleManager } from "@/features/admin/RoleManager";
 import { OrgMembersView } from "@/features/org/OrgMembersView";
+import { OrgDashboardView } from "@/features/org/OrgDashboardView";
+import { OrgBillingView } from "@/features/org/OrgBillingView";
+import { OrgActivityView } from "@/features/org/OrgActivityView";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginScreenV3 /> },
@@ -32,10 +35,11 @@ export const router = createBrowserRouter([
       { path: "projects/:id", element: <DetailView /> },
       { path: "projects/:id/:tab", element: <DetailView /> },
       { path: "dpr", element: <DPRComposer /> },
-      { path: "activity", element: <PlaceholderView title="Activity" phase="Phase 6" /> },
-      { path: "audit", element: <PlaceholderView title="Audit Log" phase="Phase 8" /> },
+      { path: "activity", element: <OrgActivityView /> },
+      { path: "audit", element: <OrgActivityView /> },
+      { path: "org", element: <OrgDashboardView /> },
       { path: "org/members", element: <OrgMembersView /> },
-      { path: "org/billing", element: <PlaceholderView title="Billing" phase="Phase 7" /> },
+      { path: "org/billing", element: <OrgBillingView /> },
       { path: "org/integrations", element: <PlaceholderView title="Integrations" phase="Phase 8" /> },
       { path: "admin/users", element: <PlaceholderView title="Users (Platform)" phase="Phase 7" /> },
       { path: "admin/orgs", element: <PlaceholderView title="Organizations (Platform)" phase="Phase 7" /> },
