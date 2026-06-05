@@ -37,6 +37,8 @@ export const NAV_CATALOG: NavItem[] = [
 
   { to: "/dpr", label: "Daily Reports", icon: "clipboard", requires: "dpr:view", group: "Field" },
 
+  { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement" },
+
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },
   { to: "/audit", label: "Audit Log", icon: "shield", requires: "audit:read", group: "Insights" },
 
