@@ -17,6 +17,7 @@ import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
 import { DPRComposer } from "@/features/dpr/DPRComposer";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
 import { RoleManager } from "@/features/admin/RoleManager";
+import { OrgMembersView } from "@/features/org/OrgMembersView";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginScreenV3 /> },
@@ -33,7 +34,7 @@ export const router = createBrowserRouter([
       { path: "dpr", element: <DPRComposer /> },
       { path: "activity", element: <PlaceholderView title="Activity" phase="Phase 6" /> },
       { path: "audit", element: <PlaceholderView title="Audit Log" phase="Phase 8" /> },
-      { path: "org/members", element: <PlaceholderView title="Members" phase="Phase 7" /> },
+      { path: "org/members", element: <OrgMembersView /> },
       { path: "org/billing", element: <PlaceholderView title="Billing" phase="Phase 7" /> },
       { path: "org/integrations", element: <PlaceholderView title="Integrations" phase="Phase 8" /> },
       { path: "admin/users", element: <PlaceholderView title="Users (Platform)" phase="Phase 7" /> },
