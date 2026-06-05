@@ -9,6 +9,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth, useCan } from "@/auth";
 import { buildNav, groupNav } from "@/app/nav-config";
 import { pendingSignupCount } from "@/app/signupAdminQueries";
+import { unreadCount } from "@/app/notificationQueries";
 import { Icon } from "@/components/ui/atoms";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,14 +20,14 @@ export function Sidebar(): JSX.Element {
   const groups = groupNav(buildNav(session));
   const isSuper = useCan("platform:orgs:manage");
   const [pending, setPending] = useState(0);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    if (!isSuper) return;
     let alive = true;
     void (async () => {
       const client = await getClient(); if (!client) return;
-      const n = await pendingSignupCount(client);
-      if (alive) setPending(n);
+      const [p, u] = await Promise.all([isSuper ? pendingSignupCount(client) : Promise.resolve(0), unreadCount(client)]);
+      if (alive) { setPending(p); setUnread(u); }
     })();
     return () => { alive = false; };
   }, [isSuper]);
@@ -59,6 +60,9 @@ export function Sidebar(): JSX.Element {
                   <span className="flex-1">{item.label}</span>
                   {item.to === "/admin/signups" && pending > 0 && (
                     <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pending}</span>
+                  )}
+                  {item.to === "/notifications" && unread > 0 && (
+                    <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unread}</span>
                   )}
                 </NavLink>
               ))}
