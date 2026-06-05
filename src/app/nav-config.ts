@@ -40,6 +40,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/dpr", label: "Daily Reports", icon: "clipboard", requires: "dpr:view", group: "Field" },
 
   { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement" },
+  { to: "/pos", label: "Purchase Orders", icon: "doc", requires: "po:create", group: "Procurement" },
 
   { to: "/analytics", label: "Analytics", icon: "barChart", requires: "budget:view", group: "Insights" },
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },

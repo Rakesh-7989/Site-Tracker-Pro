@@ -35,6 +35,7 @@ import { VendorsView } from "@/features/org/VendorsView";
 import { CalendarView } from "@/features/org/CalendarView";
 import { AnalyticsView } from "@/features/org/AnalyticsView";
 import { GlobalSearchView } from "@/features/org/GlobalSearchView";
+import { CrossProjectPOsView } from "@/features/org/CrossProjectPOsView";
 
 export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
       { path: "calendar", element: <CalendarView /> },
       { path: "analytics", element: <AnalyticsView /> },
       { path: "search", element: <GlobalSearchView /> },
+      { path: "pos", element: <CrossProjectPOsView /> },
       { path: "activity", element: <OrgActivityView /> },
       { path: "audit", element: <OrgActivityView /> },
       { path: "org", element: <OrgDashboardView /> },
