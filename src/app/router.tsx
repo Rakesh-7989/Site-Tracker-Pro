@@ -6,9 +6,11 @@
 // Strangler note: this router only mounts when ?shell=v3 is present
 // (see main.jsx). The legacy App.jsx remains the production default.
 
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 
 import { ShellLayout } from "@/features/shell/ShellLayout";
+import { LandingView } from "@/features/marketing/LandingView";
+import { SignupView } from "@/features/marketing/SignupView";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
 import { CreateProjectView } from "@/features/shell/CreateProjectView";
 import { PlaceholderView, NotFoundView } from "@/features/shell/PlaceholderView";
@@ -26,12 +28,14 @@ import { OrgApprovalsView } from "@/features/org/OrgApprovalsView";
 import { OrgNotificationsView } from "@/features/org/OrgNotificationsView";
 
 export const router = createBrowserRouter([
+  // ── Public routes (no auth) ──
+  { path: "/", element: <LandingView /> },
+  { path: "/signup", element: <SignupView /> },
   { path: "/login", element: <LoginScreenV3 /> },
+  // ── Authenticated app (pathless layout route wraps RequireSession) ──
   {
-    path: "/",
     element: <ShellLayout />,
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <RoleDashboard /> },
       { path: "projects", element: <ProjectsListView /> },
       { path: "projects/new", element: <CreateProjectView /> },
@@ -50,9 +54,10 @@ export const router = createBrowserRouter([
       { path: "admin/users", element: <PlaceholderView title="Users (Platform)" phase="Phase 7" /> },
       { path: "admin/orgs", element: <PlaceholderView title="Organizations (Platform)" phase="Phase 7" /> },
       { path: "admin/roles", element: <RoleManager /> },
-      { path: "*", element: <NotFoundView /> },
     ],
   },
+  // Public catch-all 404 (works signed-out too).
+  { path: "*", element: <NotFoundView /> },
 ], {
   // Opt into v7 behaviors early to silence the future-flag console warnings
   // and ease the eventual v7 upgrade.

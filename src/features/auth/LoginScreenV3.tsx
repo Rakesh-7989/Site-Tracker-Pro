@@ -6,7 +6,7 @@
 // dashboard. Password + magic-link tabs; OTP fallback for the magic link.
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
@@ -27,7 +27,7 @@ const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 export function LoginScreenV3(): JSX.Element {
   const navigate = useNavigate();
-  const { refresh } = useAuth();
+  const { refresh, session, status: authStatus } = useAuth();
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,6 +67,12 @@ export function LoginScreenV3(): JSX.Element {
     if (res.ok) await afterAuth();
     else setStatus({ kind: "error", msg: res.error ?? "Invalid code." });
   };
+
+  // Already signed in (e.g. arriving via an invite / magic-link redirect) →
+  // go straight to the app instead of showing the form.
+  if (authStatus !== "loading" && authStatus !== "idle" && session) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const busy = status.kind === "busy";
 
