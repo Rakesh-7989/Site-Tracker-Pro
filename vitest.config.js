@@ -10,7 +10,9 @@ export default mergeConfig(
     test: {
       environment: 'node',
       include: ['tests/**/*.test.{js,jsx,ts,tsx}'],
-      exclude: ['tests/e2e/**', 'node_modules/**'],
+      // tests/_gen/** are doc codegen scripts (e.g. roleFeatures.gen) — they
+      // WRITE files as a side effect, so they only run when targeted explicitly.
+      exclude: ['tests/e2e/**', 'tests/_gen/**', 'node_modules/**'],
       reporters: 'default',
     },
   }),
