@@ -53,6 +53,22 @@ export interface CapabilityOverride {
   orgId: string | null;
 }
 
+/**
+ * A per-org custom role (HRMS designation, migration 70). Superadmin-defined;
+ * org admins assign members to it. Its capabilities layer (additively) on the
+ * member's resolved set when they operate in that org.
+ */
+export interface OrgCustomRole {
+  id: string;
+  orgId: string;
+  key: string;
+  label: string;
+  description: string | null;
+  /** optional standard role it was templated from (informational) */
+  basedOn: string | null;
+  capabilities: Capability[];
+}
+
 /** Row from project_members joined with projects (name + type). */
 export interface ProjectMembership {
   projectId: string;

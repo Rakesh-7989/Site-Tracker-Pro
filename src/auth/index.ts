@@ -56,6 +56,11 @@ export {
 } from "./capabilityOverrides";
 
 export {
+  normalizeOrgRole,
+  customRoleGrants,
+} from "./customRoles";
+
+export {
   FEATURE_LABEL,
   capabilityLabel,
   capabilityGroups,
@@ -70,6 +75,7 @@ export type {
   ProjectMembership,
   AuthSession,
   CapabilityOverride,
+  OrgCustomRole,
   ResolveContext,
   ResolvedCapabilities,
   CapabilityDecision,

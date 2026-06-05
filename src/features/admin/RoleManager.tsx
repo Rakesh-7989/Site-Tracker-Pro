@@ -19,6 +19,7 @@ import {
   listOrgsForOverrides, listCapabilityOverrides,
   setCapabilityOverride, clearCapabilityOverride, type OrgOption,
 } from "@/app/capabilityOverrideQueries";
+import { CustomRolesPanel } from "./CustomRolesPanel";
 
 type CellState = "inherit" | "grant" | "revoke";
 
@@ -131,6 +132,15 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
           />
         </label>
       </Card>
+
+      {/* Custom roles live per-org (not Global) */}
+      {orgId !== null && <CustomRolesPanel orgId={orgId} createdBy={session.user.id} />}
+
+      <div className="pt-1">
+        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">
+          Standard role overrides — {ROLE_LABEL[role]}
+        </h2>
+      </div>
 
       {role === "superadmin" && (
         <Alert variant="info">Superadmin always holds every capability — overrides don't apply to it.</Alert>

@@ -28,6 +28,8 @@ import {
   isProjectType,
 } from "./roles";
 import { normalizeOverride } from "./capabilityOverrides";
+import { customRoleGrants } from "./customRoles";
+import { isCapability, type Capability } from "./capabilities";
 
 // Narrow shape we expect from the Supabase client. Decoupled so we can
 // mock without pulling @supabase/supabase-js into Node tests.
@@ -241,6 +243,37 @@ export async function fetchAuthSession(
       }
     } catch {
       // overrides are best-effort; absence = base matrix.
+    }
+
+    // 5. custom-role grants (migration 70) for the active org → grant overrides.
+    //    Best-effort: pre-migration / RLS-denied / no assignment → no change.
+    try {
+      if (session.activeOrgId) {
+        const amrRes = await client
+          .from("org_member_roles")
+          .select("org_role_id")
+          .eq("profile_id", input.authUserId)
+          .eq("org_id", session.activeOrgId)
+          .is("removed_at", null);
+        const roleIds = Array.isArray(amrRes?.data)
+          ? (amrRes.data as Array<Record<string, unknown>>).map(r => String(r.org_role_id)).filter(Boolean)
+          : [];
+        if (roleIds.length > 0) {
+          const capRes = await client
+            .from("org_role_capabilities")
+            .select("capability")
+            .in("org_role_id", roleIds);
+          if (Array.isArray(capRes?.data)) {
+            const caps = (capRes.data as Array<Record<string, unknown>>)
+              .map(r => r.capability)
+              .filter(isCapability) as Capability[];
+            const grants = customRoleGrants(normalized.user.identityRole, session.activeOrgId, caps);
+            session.capabilityOverrides = [...(session.capabilityOverrides ?? []), ...grants];
+          }
+        }
+      }
+    } catch {
+      // custom roles are best-effort.
     }
 
     return { ok: true, session };
