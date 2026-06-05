@@ -49,11 +49,27 @@ export {
   capabilitiesAnywhere,
 } from "./RoleResolver";
 
+export {
+  applyOverrides,
+  normalizeOverride,
+  baseCapabilitiesFor,
+} from "./capabilityOverrides";
+
+export {
+  FEATURE_LABEL,
+  capabilityLabel,
+  capabilityGroups,
+  groupOf,
+  GROUP_LABEL,
+  GROUP_ORDER,
+} from "./capabilityLabels";
+
 export type {
   AuthUser,
   OrgMembership,
   ProjectMembership,
   AuthSession,
+  CapabilityOverride,
   ResolveContext,
   ResolvedCapabilities,
   CapabilityDecision,

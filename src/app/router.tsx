@@ -16,6 +16,7 @@ import { DetailView } from "@/features/project/DetailView";
 import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
 import { DPRComposer } from "@/features/dpr/DPRComposer";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
+import { RoleManager } from "@/features/admin/RoleManager";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginScreenV3 /> },
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: "org/integrations", element: <PlaceholderView title="Integrations" phase="Phase 8" /> },
       { path: "admin/users", element: <PlaceholderView title="Users (Platform)" phase="Phase 7" /> },
       { path: "admin/orgs", element: <PlaceholderView title="Organizations (Platform)" phase="Phase 7" /> },
+      { path: "admin/roles", element: <RoleManager /> },
       { path: "*", element: <NotFoundView /> },
     ],
   },

@@ -28,6 +28,7 @@ import {
   isOrgTierRole,
   isProjectTierRole,
 } from "./roles";
+import { applyOverrides } from "./capabilityOverrides";
 
 /**
  * Compute the capability set for a user in the given context.
@@ -65,17 +66,27 @@ export function resolveCapabilities(
   }
 
   // ── Union ──
-  const all = new Set<Capability>();
-  for (const c of fromIdentity) all.add(c);
-  if (fromOrgTier) for (const c of fromOrgTier) all.add(c);
-  if (fromProjectTier) for (const c of fromProjectTier) all.add(c);
+  const union = new Set<Capability>();
+  for (const c of fromIdentity) union.add(c);
+  if (fromOrgTier) for (const c of fromOrgTier) union.add(c);
+  if (fromProjectTier) for (const c of fromProjectTier) union.add(c);
 
+  // ── Superadmin capability overrides (migration 69) ──
+  // Pre-filtered at fetch time to (global + activeOrg) for this user's role.
+  const overrides = session.capabilityOverrides ?? [];
+  const all = applyOverrides(union, overrides, user.identityRole);
+
+  const applied = overrides.filter(o => o.role === user.identityRole);
   return {
     capabilities: all,
     trace: {
       fromIdentity,
       ...(fromOrgTier !== undefined ? { fromOrgTier } : {}),
       ...(fromProjectTier !== undefined ? { fromProjectTier } : {}),
+      ...(applied.length ? {
+        overrideGrants: applied.filter(o => o.mode === "grant").map(o => o.capability),
+        overrideRevokes: applied.filter(o => o.mode === "revoke").map(o => o.capability),
+      } : {}),
     },
   };
 }
@@ -146,5 +157,6 @@ export function capabilitiesAnywhere(session: AuthSession): Set<Capability> {
       for (const c of projectTierCapabilities(pm.role)) out.add(c);
     }
   }
-  return out;
+  // Superadmin overrides (migration 69) — same set the per-context resolver uses.
+  return applyOverrides(out, session.capabilityOverrides ?? [], session.user.identityRole);
 }

@@ -141,6 +141,7 @@ export const CAPABILITIES = [
   "platform:settings:manage",
   "platform:impersonate",
   "platform:audit:read:cross-org",
+  "platform:roles:configure",   // assign/revoke capabilities to roles (superadmin)
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];

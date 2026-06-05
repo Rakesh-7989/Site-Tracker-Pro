@@ -17,6 +17,7 @@
 import type {
   AuthSession,
   AuthUser,
+  CapabilityOverride,
   OrgMembership,
   ProjectMembership,
 } from "./types";
@@ -26,6 +27,7 @@ import {
   isProjectTierRole,
   isProjectType,
 } from "./roles";
+import { normalizeOverride } from "./capabilityOverrides";
 
 // Narrow shape we expect from the Supabase client. Decoupled so we can
 // mock without pulling @supabase/supabase-js into Node tests.
@@ -221,6 +223,26 @@ export async function fetchAuthSession(
     const projectRows = (pmRes.data as Array<Record<string, unknown>> | null) ?? [];
 
     const session = buildAuthSession(normalized.user, orgRows, projectRows, preferredOrgId);
+
+    // 4. capability overrides (migration 69) for this user's identity role.
+    //    Best-effort: if the table is absent (pre-migration) or RLS denies,
+    //    we fall back to the base matrix. Filter to global + the active org.
+    try {
+      const ovRes = await client
+        .from("role_capability_overrides")
+        .select("org_id, role, capability, mode")
+        .eq("role", normalized.user.identityRole);
+      if (!ovRes.error && Array.isArray(ovRes.data)) {
+        const active = session.activeOrgId;
+        session.capabilityOverrides = (ovRes.data as Array<Record<string, unknown>>)
+          .map(normalizeOverride)
+          .filter((o): o is CapabilityOverride => o !== null)
+          .filter(o => o.orgId === null || o.orgId === active);
+      }
+    } catch {
+      // overrides are best-effort; absence = base matrix.
+    }
+
     return { ok: true, session };
   } catch (e) {
     return {

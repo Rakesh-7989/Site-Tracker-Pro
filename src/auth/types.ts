@@ -39,6 +39,20 @@ export interface OrgMembership {
   joinedAt: string;   // ISO timestamp
 }
 
+/**
+ * Superadmin-managed capability override (migration 69). Layered on top of
+ * the hardcoded matrix for a given identity role, scoped to one org or
+ * global (orgId null). Applied by RoleResolver after the tier union.
+ */
+export interface CapabilityOverride {
+  /** identity role this override customizes */
+  role: IdentityRole;
+  capability: Capability;
+  mode: "grant" | "revoke";
+  /** null = global (every org); otherwise this org only */
+  orgId: string | null;
+}
+
 /** Row from project_members joined with projects (name + type). */
 export interface ProjectMembership {
   projectId: string;
@@ -67,6 +81,12 @@ export interface AuthSession {
   activeOrgId: string | null;
   /** Project memberships across ALL orgs the user is in. */
   projectMemberships: ProjectMembership[];
+  /**
+   * Superadmin capability overrides relevant to THIS user — pre-filtered at
+   * fetch time to (global + activeOrg) for the user's identity role. Optional
+   * so existing session builders stay valid; resolver treats absent as [].
+   */
+  capabilityOverrides?: CapabilityOverride[];
 }
 
 /** Context for a capability resolution decision. */
@@ -86,6 +106,10 @@ export interface ResolvedCapabilities {
     fromIdentity: Capability[];
     fromOrgTier?: Capability[];
     fromProjectTier?: Capability[];
+    /** Capabilities added by a superadmin override (migration 69). */
+    overrideGrants?: Capability[];
+    /** Capabilities removed by a superadmin override (migration 69). */
+    overrideRevokes?: Capability[];
   };
 }
 
