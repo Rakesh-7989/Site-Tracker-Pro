@@ -1,0 +1,97 @@
+// SiteTrack Pro — finance queries (v3 port, Batch 3). DB-wired to
+// purchase_orders / invoices / expenses via the migration 74 bridge.
+
+export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
+const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
+const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
+const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: String(e.message ?? e) });
+const oneOf = <T extends string>(vals: readonly T[], fb: T) => (v: unknown): T => (vals.includes(v as T) ? (v as T) : fb);
+
+/** Format a rupee amount (stored as a whole-rupee bigint) for display. */
+export function fmtRupees(n: number): string {
+  return "₹" + (Number.isFinite(n) ? n : 0).toLocaleString("en-IN");
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function upd(client: any, table: string, id: string, patch: Record<string, unknown>): Promise<Result<{ ok: true }>> {
+  try { const { error } = await client.from(table).update(patch).eq("id", id); if (error) return dbe(error); return ok({ ok: true }); } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function del(client: any, table: string, id: string): Promise<Result<{ ok: true }>> {
+  try { const { error } = await client.from(table).delete().eq("id", id); if (error) return dbe(error); return ok({ ok: true }); } catch (e) { return er(e); }
+}
+
+// ── Purchase Orders ───────────────────────────────────────────────────────
+export type POStatus = "pending" | "approved" | "delivered" | "cancelled";
+export interface PurchaseOrder { id: string; poNo: string; items: string | null; amount: number; status: POStatus; deliveryDate: string | null; }
+const asPO = oneOf<POStatus>(["pending", "approved", "delivered", "cancelled"], "pending");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listPOs(client: any, projectId: string): Promise<Result<PurchaseOrder[]>> {
+  try {
+    const { data, error } = await client.from("purchase_orders").select("id, po_no, items, amount, status, delivery_date").eq("project_id", projectId).order("created_date", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), poNo: String(r.po_no ?? ""), items: r.items == null ? null : String(r.items), amount: Number(r.amount ?? 0), status: asPO(r.status), deliveryDate: r.delivery_date == null ? null : String(r.delivery_date) })));
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createPO(client: any, input: { projectId: string; poNo: string; items?: string; amount: number; deliveryDate?: string | null }): Promise<Result<{ id: string }>> {
+  try {
+    const { data, error } = await client.from("purchase_orders").insert({ project_id: input.projectId, po_no: input.poNo, items: input.items || null, amount: input.amount, delivery_date: input.deliveryDate || null }).select("id").single();
+    if (error) return dbe(error); return ok({ id: String(data.id) });
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setPOStatus = (client: any, id: string, status: POStatus) => upd(client, "purchase_orders", id, { status });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const deletePO = (client: any, id: string) => del(client, "purchase_orders", id);
+
+// ── Invoices ──────────────────────────────────────────────────────────────
+export type InvoiceStatus = "sent" | "paid" | "overdue" | "cancelled";
+export interface Invoice { id: string; no: string; amount: number; gst: number; tds: number; status: InvoiceStatus; issuedDate: string | null; }
+const asInv = oneOf<InvoiceStatus>(["sent", "paid", "overdue", "cancelled"], "sent");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listInvoices(client: any, projectId: string): Promise<Result<Invoice[]>> {
+  try {
+    const { data, error } = await client.from("invoices").select("id, no, amount, gst, tds, status, issued_date").eq("project_id", projectId).order("issued_date", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), no: String(r.no ?? ""), amount: Number(r.amount ?? 0), gst: Number(r.gst ?? 0), tds: Number(r.tds ?? 0), status: asInv(r.status), issuedDate: r.issued_date == null ? null : String(r.issued_date) })));
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createInvoice(client: any, input: { projectId: string; no: string; amount: number; gst?: number; tds?: number }): Promise<Result<{ id: string }>> {
+  try {
+    const { data, error } = await client.from("invoices").insert({ project_id: input.projectId, no: input.no, amount: input.amount, gst: input.gst ?? 18, tds: input.tds ?? 2, issued_date: new Date().toISOString().slice(0, 10) }).select("id").single();
+    if (error) return dbe(error); return ok({ id: String(data.id) });
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setInvoiceStatus = (client: any, id: string, status: InvoiceStatus) => upd(client, "invoices", id, { status, paid_date: status === "paid" ? new Date().toISOString().slice(0, 10) : null });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const deleteInvoice = (client: any, id: string) => del(client, "invoices", id);
+
+// ── Expenses (Budget) ─────────────────────────────────────────────────────
+export type ExpenseStatus = "recorded" | "reimbursed" | "approved" | "rejected" | "disputed";
+export interface Expense { id: string; category: string; description: string; amount: number; paidTo: string | null; expenseDate: string | null; status: ExpenseStatus; }
+const asExp = oneOf<ExpenseStatus>(["recorded", "reimbursed", "approved", "rejected", "disputed"], "recorded");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listExpenses(client: any, projectId: string): Promise<Result<Expense[]>> {
+  try {
+    const { data, error } = await client.from("expenses").select("id, category, description, amount, paid_to, expense_date, status").eq("project_id", projectId).order("expense_date", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), category: String(r.category ?? ""), description: String(r.description ?? ""), amount: Number(r.amount ?? 0), paidTo: r.paid_to == null ? null : String(r.paid_to), expenseDate: r.expense_date == null ? null : String(r.expense_date), status: asExp(r.status) })));
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createExpense(client: any, input: { projectId: string; category: string; description: string; amount: number; paidTo?: string; recordedBy: string }): Promise<Result<{ id: string }>> {
+  try {
+    const { data, error } = await client.from("expenses").insert({ project_id: input.projectId, category: input.category, description: input.description, amount: input.amount, paid_to: input.paidTo || null, recorded_by: input.recordedBy }).select("id").single();
+    if (error) return dbe(error); return ok({ id: String(data.id) });
+  } catch (e) { return er(e); }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setExpenseStatus = (client: any, id: string, status: ExpenseStatus) => upd(client, "expenses", id, { status });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const deleteExpense = (client: any, id: string) => del(client, "expenses", id);

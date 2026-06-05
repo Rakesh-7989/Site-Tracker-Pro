@@ -25,12 +25,17 @@ import { MaterialsTab } from "./tabs/MaterialsTab";
 import { SafetyTab } from "./tabs/SafetyTab";
 import { InspectionsTab } from "./tabs/InspectionsTab";
 import { PunchTab } from "./tabs/PunchTab";
+import { AttendanceTab } from "./tabs/AttendanceTab";
+import { POsTab } from "./tabs/POsTab";
+import { InvoicesTab } from "./tabs/InvoicesTab";
+import { BudgetTab } from "./tabs/BudgetTab";
 import { TabPlaceholder } from "./tabs/TabPlaceholder";
 
 // Tabs that have a real ported implementation (others fall to the placeholder).
 const REAL_TABS = new Set([
   "overview", "team", "milestones", "tasks", "updates", "issues",
   "materials", "safety", "inspections", "punchlist",
+  "attendance", "po", "invoices", "budget",
 ]);
 
 export function DetailView(): JSX.Element {
@@ -116,6 +121,10 @@ export function DetailView(): JSX.Element {
         {activeId === "safety" && <SafetyTab projectId={project.id} />}
         {activeId === "inspections" && <InspectionsTab projectId={project.id} />}
         {activeId === "punchlist" && <PunchTab projectId={project.id} />}
+        {activeId === "attendance" && <AttendanceTab projectId={project.id} />}
+        {activeId === "po" && <POsTab projectId={project.id} />}
+        {activeId === "invoices" && <InvoicesTab projectId={project.id} />}
+        {activeId === "budget" && <BudgetTab projectId={project.id} />}
         {!REAL_TABS.has(activeId) && activeDef && (
           <TabPlaceholder label={activeDef.label} icon={activeDef.icon} />
         )}
