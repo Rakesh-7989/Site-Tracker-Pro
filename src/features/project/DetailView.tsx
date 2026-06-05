@@ -17,6 +17,7 @@ import { useProject } from "./useProject";
 import { visibleTabs, DEFAULT_TAB, tabById } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
+import { MilestonesTab } from "./tabs/MilestonesTab";
 import { TabPlaceholder } from "./tabs/TabPlaceholder";
 
 export function DetailView(): JSX.Element {
@@ -94,7 +95,8 @@ export function DetailView(): JSX.Element {
       <div>
         {activeId === "overview" && <OverviewTab project={project} members={members} />}
         {activeId === "team" && <TeamTab projectId={project.id} members={members} />}
-        {activeId !== "overview" && activeId !== "team" && activeDef && (
+        {activeId === "milestones" && <MilestonesTab projectId={project.id} />}
+        {activeId !== "overview" && activeId !== "team" && activeId !== "milestones" && activeDef && (
           <TabPlaceholder label={activeDef.label} icon={activeDef.icon} />
         )}
       </div>
