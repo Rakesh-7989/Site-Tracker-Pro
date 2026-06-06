@@ -7,6 +7,37 @@
 
 ---
 
+## ⏸ Deferred — explicitly parked for later (founder decision 2026-06-06)
+
+These are built-ready or scoped but **intentionally NOT started yet** —
+founder said "ship pricing / MFA / go-live first, then these":
+
+1. **Enterprise self-service custom roles (Phase 3).** Superadmin Enterprise
+   control (Phase 1+2) is DONE + live (migration 95 + `/admin/orgs` plan picker
+   + RoleManager plan context). Phase 3 = let **Enterprise org admins** define
+   their OWN roles + capabilities (today only superadmin defines; org admins
+   assign). Requires: RLS write policy `has_org_tier(org_id,'admin') AND
+   org.plan IN ('enterprise','custom')` on `org_roles`/`org_role_capabilities`/
+   `role_capability_overrides`, a **safe capability allowlist** (org admins
+   must NOT be able to grant `platform:*` or billing caps — privilege-escalation
+   guard), and an org-side UI (expose `CustomRolesPanel` under `/org`, plan-gated).
+   Est: ~1 day + security review.
+
+2. **`vendor:select` UI wiring.** The `vendor:select` capability exists +
+   tested (granted to pm/contractor/site_engineer/project_admin/etc) but is NOT
+   yet consumed by any picker, because the PO / material / invoice forms don't
+   have a vendor-picker dropdown component yet. When those tabs get a vendor
+   picker, gate it on `useCan("vendor:select")`. Likely lands during Phase 8
+   legacy-port of the finance/procurement tabs. Est: ~half-day once the picker
+   component exists.
+
+3. **Full plan-gating enforcement (steps 1–9 below).** The 4-gating-system
+   reconciliation + `usePlanCaps` + `<PlanGate>` + server-side EF checks. This
+   is the big one that makes Pro a real product tier. ~2.5–3 days. Start after
+   the 10 open decisions in §5 are answered.
+
+---
+
 ## 1. The problem (one-paragraph)
 
 SiteTrack today has **four independent plan-gating systems** running
