@@ -35,6 +35,7 @@ const NotificationsView = lazy(() => import("@/features/org/NotificationsView").
 const OrgActivityView = lazy(() => import("@/features/org/OrgActivityView").then(m => ({ default: m.OrgActivityView })));
 const OrgDashboardView = lazy(() => import("@/features/org/OrgDashboardView").then(m => ({ default: m.OrgDashboardView })));
 const OrgMembersView = lazy(() => import("@/features/org/OrgMembersView").then(m => ({ default: m.OrgMembersView })));
+const OrgRolesView = lazy(() => import("@/features/org/OrgRolesView").then(m => ({ default: m.OrgRolesView })));
 const OrgBillingView = lazy(() => import("@/features/org/OrgBillingView").then(m => ({ default: m.OrgBillingView })));
 const OrgTemplatesView = lazy(() => import("@/features/org/OrgTemplatesView").then(m => ({ default: m.OrgTemplatesView })));
 const OrgApprovalsView = lazy(() => import("@/features/org/OrgApprovalsView").then(m => ({ default: m.OrgApprovalsView })));
@@ -74,6 +75,7 @@ export const router = createBrowserRouter([
       { path: "audit", element: <OrgActivityView /> },
       { path: "org", element: <OrgDashboardView /> },
       { path: "org/members", element: <OrgMembersView /> },
+      { path: "org/roles", element: <OrgRolesView /> },
       { path: "org/billing", element: <OrgBillingView /> },
       { path: "org/templates", element: <OrgTemplatesView /> },
       { path: "org/approvals", element: <OrgApprovalsView /> },

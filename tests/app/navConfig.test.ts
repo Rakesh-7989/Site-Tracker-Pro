@@ -46,7 +46,7 @@ describe("buildNav", () => {
     expect(nav.map(n => n.to)).toContain("/dpr");
   });
 
-  it("orgadmin with admin org tier sees New Project + Members + Billing", () => {
+  it("orgadmin with admin org tier sees New Project + Members + Billing + Custom Roles", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
       orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", role: "admin", joinedAt: "2026-01-01" }],
@@ -55,6 +55,7 @@ describe("buildNav", () => {
     expect(paths).toContain("/projects/new");
     expect(paths).toContain("/org/members");
     expect(paths).toContain("/org/billing");
+    expect(paths).toContain("/org/roles");
   });
 
   it("superadmin sees the Platform section", () => {

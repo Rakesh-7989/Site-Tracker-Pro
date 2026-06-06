@@ -32,13 +32,21 @@ interface Draft {
   caps: Set<Capability>;
 }
 
-export function CustomRolesPanel({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.Element {
+export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }: { orgId: string; createdBy: string; hidePlatformCaps?: boolean }): JSX.Element {
   const [roles, setRoles] = useState<OrgCustomRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
-  const groups = useMemo(() => capabilityGroups(), []);
+  // Org admins (self-service, Enterprise) cannot grant platform:* caps — the DB
+  // RLS rejects them (migration 98); we also hide them from the picker.
+  const groups = useMemo(() => {
+    const all = capabilityGroups();
+    if (!hidePlatformCaps) return all;
+    return all
+      .map(g => ({ ...g, capabilities: g.capabilities.filter((c: string) => !c.startsWith("platform:")) }))
+      .filter(g => g.capabilities.length > 0);
+  }, [hidePlatformCaps]);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
