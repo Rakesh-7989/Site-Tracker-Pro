@@ -7,34 +7,28 @@
 
 ---
 
-## ⏸ Deferred — explicitly parked for later (founder decision 2026-06-06)
+## ✅ Status (updated 2026-06-06 — most of this is now DONE)
 
-These are built-ready or scoped but **intentionally NOT started yet** —
-founder said "ship pricing / MFA / go-live first, then these":
+1. **Full plan-gating enforcement — ✅ DONE + LIVE.** feature_caps (mig 96),
+   `usePlanCaps`/`<PlanGate>`, project-tab gates, server-side EF checks
+   (cashfree/whatsapp/gstn DEPLOYED), project-ceiling backstop (mig 97),
+   marketing copy + Enterprise card. Pro is now a real product tier.
 
-1. **Enterprise self-service custom roles (Phase 3).** Superadmin Enterprise
-   control (Phase 1+2) is DONE + live (migration 95 + `/admin/orgs` plan picker
-   + RoleManager plan context). Phase 3 = let **Enterprise org admins** define
-   their OWN roles + capabilities (today only superadmin defines; org admins
-   assign). Requires: RLS write policy `has_org_tier(org_id,'admin') AND
-   org.plan IN ('enterprise','custom')` on `org_roles`/`org_role_capabilities`/
-   `role_capability_overrides`, a **safe capability allowlist** (org admins
-   must NOT be able to grant `platform:*` or billing caps — privilege-escalation
-   guard), and an org-side UI (expose `CustomRolesPanel` under `/org`, plan-gated).
-   Est: ~1 day + security review.
+2. **Superadmin Enterprise control — ✅ DONE + LIVE.** mig 95 + `/admin/orgs`
+   plan picker + RoleManager plan context.
 
-2. **`vendor:select` UI wiring.** The `vendor:select` capability exists +
-   tested (granted to pm/contractor/site_engineer/project_admin/etc) but is NOT
-   yet consumed by any picker, because the PO / material / invoice forms don't
-   have a vendor-picker dropdown component yet. When those tabs get a vendor
-   picker, gate it on `useCan("vendor:select")`. Likely lands during Phase 8
-   legacy-port of the finance/procurement tabs. Est: ~half-day once the picker
-   component exists.
+3. **Enterprise self-service custom roles (Phase 3) — ✅ DONE + LIVE.** mig 98:
+   Enterprise/Custom org admins define their own roles + caps; RLS blocks
+   `platform:*` escalation + plan-gates by `custom_roles`. `/org/roles` UI.
+   Proof: `scripts/test-self-service-rls.mjs` (7/7 RLS assertions pass).
 
-3. **Full plan-gating enforcement (steps 1–9 below).** The 4-gating-system
-   reconciliation + `usePlanCaps` + `<PlanGate>` + server-side EF checks. This
-   is the big one that makes Pro a real product tier. ~2.5–3 days. Start after
-   the 10 open decisions in §5 are answered.
+### ⏸ Still deferred
+- **`vendor:select` UI wiring** — cap exists + tested, but the PO / material /
+  invoice forms have no vendor-picker component yet. Gate on `useCan("vendor:select")`
+  when those pickers are built (Phase 8 legacy-port of finance/procurement). ~half-day.
+- **storage_gb enforcement** — attachments table has no size column; needs the
+  upload pipeline to record `size_bytes` first. (Seat + project caps ARE enforced.)
+- **Step 1 (legacy gating reconcile)** — moot; legacy is being deleted.
 
 ---
 
