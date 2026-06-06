@@ -133,3 +133,11 @@ export {
   type RequireRoleProps,
   type RequireSessionProps,
 } from "./guards";
+
+// ── Plan gating (plan feature_caps, orthogonal to RBAC) ──────────────────────
+export {
+  hasPlanCap, planLimit, FEATURE_MIN_PLAN, PLAN_FEATURE_LABEL, PLAN_RANK,
+  type PlanFeature, type PlanLimit, type PlanCaps,
+} from "./planCaps";
+export { usePlanCaps, useCanByPlan, type UsePlanCapsReturn } from "./usePlanCaps";
+export { PlanGate } from "./PlanGate";
