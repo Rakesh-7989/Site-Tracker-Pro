@@ -1,12 +1,28 @@
 // SiteTrack Pro — public landing page (route "/"). Hero + value props + plan
 // teaser + CTAs. Logged-in users are bounced to the dashboard.
 
+import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
-import { PLAN_TIERS } from "./plans";
+import { PLAN_TIERS, priceFor, type BillingPeriod } from "./plans";
 import { CONTACT_EMAIL } from "./legalContent";
+
+function BillingToggle({ value, onChange }: { value: BillingPeriod; onChange: (p: BillingPeriod) => void }): JSX.Element {
+  return (
+    <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-cream-100 border border-cream-200">
+      <button type="button" onClick={() => onChange("monthly")}
+        className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition ${value === "monthly" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}>
+        Monthly
+      </button>
+      <button type="button" onClick={() => onChange("annual")}
+        className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5 ${value === "annual" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}>
+        Annual <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">2 months free</span>
+      </button>
+    </div>
+  );
+}
 
 const FEATURES: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: "clipboard", title: "Daily site reports", body: "Voice-to-text DPRs, photos with geo-tags, and a promoter digest — from the field, in minutes." },
@@ -25,6 +41,7 @@ function Logo(): JSX.Element {
 
 export function LandingView(): JSX.Element {
   const { session, status } = useAuth();
+  const [billing, setBilling] = useState<BillingPeriod>("annual");
   if (status === "loading" || status === "idle") {
     return <div className="min-h-screen grid place-items-center bg-cream-50"><Spinner size={26} /></div>;
   }
@@ -76,22 +93,29 @@ export function LandingView(): JSX.Element {
         <div className="text-center mb-6">
           <h2 className="font-display text-2xl font-bold">Plans for every firm size</h2>
           <p className="text-sm text-ink-500 mt-1">Pick a plan when you sign up — change it any time.</p>
+          <div className="mt-4 flex justify-center"><BillingToggle value={billing} onChange={setBilling} /></div>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
-          {PLAN_TIERS.map(p => (
+          {PLAN_TIERS.map(p => {
+            const pr = priceFor(p, billing);
+            return (
             <Card key={p.id} className={`p-5 relative ${p.popular ? "ring-2 ring-safety-400" : ""}`}>
               {p.popular && <div className="absolute -top-2 left-1/2 -translate-x-1/2"><Badge tone="warning">Most popular</Badge></div>}
               <div className="font-display font-bold text-lg">{p.name}</div>
-              <div className="text-2xl font-bold mt-1">{p.price}<span className="text-sm font-normal text-ink-400">{p.cadence}</span></div>
-              <div className="text-xs text-ink-500 mt-0.5">{p.tagline}</div>
+              <div className="text-2xl font-bold mt-1">{pr.amount}<span className="text-sm font-normal text-ink-400">{pr.cadence}</span></div>
+              {billing === "annual"
+                ? <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">{pr.effectiveMonthly} · save {pr.savingsAmount} ({pr.savingsPct}%)</div>
+                : <div className="text-[11px] text-ink-400 mt-0.5">or pay yearly &amp; save ~17%</div>}
+              <div className="text-xs text-ink-500 mt-1">{p.tagline}</div>
               <ul className="mt-3 space-y-1.5">
                 {p.features.slice(0, 4).map(ft => (
                   <li key={ft} className="text-sm text-ink-600 flex items-start gap-1.5"><Icon name="check" size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" /> {ft}</li>
                 ))}
               </ul>
-              <Link to={`/signup?plan=${p.id}`} className="mt-4 block text-center text-sm font-semibold text-white bg-safety-500 hover:bg-safety-600 py-2 rounded-lg transition">Choose {p.name}</Link>
+              <Link to={`/signup?plan=${p.id}&billing=${billing}`} className="mt-4 block text-center text-sm font-semibold text-white bg-safety-500 hover:bg-safety-600 py-2 rounded-lg transition">Choose {p.name}</Link>
             </Card>
-          ))}
+            );
+          })}
         </div>
       </section>
 

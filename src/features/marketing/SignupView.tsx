@@ -7,11 +7,26 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
-import { PLAN_TIERS } from "./plans";
+import { PLAN_TIERS, priceFor, type BillingPeriod } from "./plans";
 import { CONSENT_VERSION } from "./legalContent";
 import { submitSignupRequest, type SignupPlan } from "@/app/signupQueries";
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+function BillingToggle({ value, onChange }: { value: BillingPeriod; onChange: (p: BillingPeriod) => void }): JSX.Element {
+  return (
+    <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-cream-100 border border-cream-200">
+      <button type="button" onClick={() => onChange("monthly")}
+        className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition ${value === "monthly" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}>
+        Monthly
+      </button>
+      <button type="button" onClick={() => onChange("annual")}
+        className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5 ${value === "annual" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}>
+        Annual <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">2 months free</span>
+      </button>
+    </div>
+  );
+}
 function Logo(): JSX.Element {
   return (
     <Link to="/" className="flex items-center gap-2">
@@ -25,8 +40,10 @@ export function SignupView(): JSX.Element {
   const { session, status } = useAuth();
   const [params] = useSearchParams();
   const initialPlan = (PLAN_TIERS.find(p => p.id === params.get("plan"))?.id ?? "pro") as SignupPlan;
+  const initialBilling: BillingPeriod = params.get("billing") === "monthly" ? "monthly" : "annual";
 
   const [plan, setPlan] = useState<SignupPlan>(initialPlan);
+  const [billing, setBilling] = useState<BillingPeriod>(initialBilling);
   const [firmName, setFirmName] = useState("");
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
@@ -49,9 +66,12 @@ export function SignupView(): JSX.Element {
     if (!validEmail(email)) return setError("Please enter a valid work email.");
     if (!consent) return setError("Please accept the Terms of Service and Privacy Policy to continue.");
     setBusy(true);
+    // Capture the chosen billing cycle for the reviewer (no dedicated column yet).
+    const billingNote = `Billing: ${billing}`;
+    const fullMessage = [message.trim(), billingNote].filter(Boolean).join(" — ");
     const res = await submitSignupRequest({
       firmName: firmName.trim(), contactName: contactName.trim(), email: email.trim().toLowerCase(),
-      phone: phone.trim() || undefined, plan, message: message.trim() || undefined,
+      phone: phone.trim() || undefined, plan, message: fullMessage,
       website: website.trim() || undefined, consentVersion: CONSENT_VERSION,
     });
     setBusy(false);
@@ -89,10 +109,14 @@ export function SignupView(): JSX.Element {
           <p className="text-sm text-ink-500 mt-1">Pick a plan and tell us about your firm. Activation takes one quick review.</p>
         </div>
 
+        {/* Billing toggle */}
+        <div className="flex justify-center mb-4"><BillingToggle value={billing} onChange={setBilling} /></div>
+
         {/* Plan selector */}
         <div className="grid sm:grid-cols-3 gap-3 mb-8">
           {PLAN_TIERS.map(p => {
             const active = plan === p.id;
+            const pr = priceFor(p, billing);
             return (
               <button key={p.id} type="button" onClick={() => setPlan(p.id)}
                 className={`text-left p-4 rounded-xl border-2 transition relative ${active ? "border-safety-500 bg-white shadow-sm" : "border-cream-200 bg-white hover:border-cream-300"}`}>
@@ -101,7 +125,8 @@ export function SignupView(): JSX.Element {
                   <div className="font-display font-bold">{p.name}</div>
                   {active && <Icon name="check" size={16} className="text-safety-600" />}
                 </div>
-                <div className="text-xl font-bold mt-1">{p.price}<span className="text-xs font-normal text-ink-400">{p.cadence}</span></div>
+                <div className="text-xl font-bold mt-1">{pr.amount}<span className="text-xs font-normal text-ink-400">{pr.cadence}</span></div>
+                {billing === "annual" && <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">{pr.effectiveMonthly} · save {pr.savingsAmount}</div>}
                 <div className="text-[11px] text-ink-500 mt-0.5">{p.tagline}</div>
               </button>
             );

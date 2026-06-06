@@ -3,6 +3,25 @@
 Date: 2026-06-01 (Sprint 1, Day 1 · Session 30.2)
 Last hypothesis: 2026-05-22 (retired below).
 
+> **⚠️ 2026-06-06 — LIVE self-serve pricing changed (founder decision)**
+>
+> The public landing + signup (`src/features/marketing/plans.ts`) and the DB
+> `plans` table (migration 93) now show **monthly + annual** self-serve tiers:
+>
+> | Tier | Monthly | Annual (2 months free) | Save |
+> |------|---------|------------------------|------|
+> | Basic | ₹7,999/mo | ₹79,990/yr | ₹15,998 (17%) |
+> | Pro | ₹19,999/mo | ₹1,99,990/yr | ₹39,998 (17%) |
+> | Business | ₹43,333/mo | ₹4,33,330/yr | ₹86,666 (17%) |
+>
+> **Open strategy question (flag to founder):** these annual numbers are
+> **above** Powerplay's verified pricing (Pro+ ₹1,19,999/yr), so the "25–30%
+> below Powerplay" positioning in the table + competitor docs below no longer
+> holds — it's now a *premium* position. Per-seat at Business (₹4,333/user/yr)
+> is ~Powerplay-comparable, but Pro (₹10k/user/yr) is ~2.5× Powerplay per seat.
+> The Sprint 1 rationale below is preserved as history; **revisit the GTM
+> narrative + `COMPETITOR_COMPARISON` + `POSITIONING` before quoting prospects.**
+
 > **Sprint 1 repricing notice**
 >
 > The previous per-organization MONTHLY tiers (INR 999 / 2,999 / 7,999)
