@@ -3,24 +3,27 @@
 Date: 2026-06-01 (Sprint 1, Day 1 · Session 30.2)
 Last hypothesis: 2026-05-22 (retired below).
 
-> **⚠️ 2026-06-06 — LIVE self-serve pricing changed (founder decision)**
+> **⚠️ 2026-06-06 — LIVE self-serve pricing (founder decision, refined)**
 >
 > The public landing + signup (`src/features/marketing/plans.ts`) and the DB
-> `plans` table (migration 93) now show **monthly + annual** self-serve tiers:
+> `plans` table (migration 94, supersedes 93) now show **monthly + annual**
+> self-serve tiers:
 >
-> | Tier | Monthly | Annual (2 months free) | Save |
-> |------|---------|------------------------|------|
-> | Basic | ₹7,999/mo | ₹79,990/yr | ₹15,998 (17%) |
-> | Pro | ₹19,999/mo | ₹1,99,990/yr | ₹39,998 (17%) |
-> | Business | ₹43,333/mo | ₹4,33,330/yr | ₹86,666 (17%) |
+> | Tier | Monthly | Annual (2 months free) | Save | vs Powerplay |
+> |------|---------|------------------------|------|--------------|
+> | Basic | ₹5,999/mo | ₹59,990/yr | ₹11,998 (17%) | entry tier |
+> | Pro | ₹11,999/mo | ₹1,19,990/yr | ₹23,998 (17%) | ≈ Pro+ (₹1,19,999) parity |
+> | Business | ₹19,999/mo | ₹1,99,990/yr | ₹39,998 (17%) | slightly premium |
 >
-> **Open strategy question (flag to founder):** these annual numbers are
-> **above** Powerplay's verified pricing (Pro+ ₹1,19,999/yr), so the "25–30%
-> below Powerplay" positioning in the table + competitor docs below no longer
-> holds — it's now a *premium* position. Per-seat at Business (₹4,333/user/yr)
-> is ~Powerplay-comparable, but Pro (₹10k/user/yr) is ~2.5× Powerplay per seat.
-> The Sprint 1 rationale below is preserved as history; **revisit the GTM
-> narrative + `COMPETITOR_COMPARISON` + `POSITIONING` before quoting prospects.**
+> **Positioning:** intentionally a *slightly premium* place — Pro sits at
+> parity with Powerplay's top tier (Pro+ ₹1,19,999/yr) and Business a notch
+> above, on the bet that SiteTrack's DPR/voice/compliance depth justifies it.
+> This is NOT the "25–30% below Powerplay" Sprint 1 narrative below — that
+> rationale is preserved as history. **Update `COMPETITOR_COMPARISON` +
+> `POSITIONING` to the parity/premium story before quoting prospects.**
+>
+> *(First cut on 2026-06-06 used ₹7,999/19,999/43,333/mo — pulled down to the
+> above after the founder flagged it was too far above Powerplay.)*
 
 > **Sprint 1 repricing notice**
 >
