@@ -1,7 +1,7 @@
 // SiteTrack Pro — org-admin panel query tests (Batch 6).
 
 import { describe, it, expect } from "vitest";
-import { getOrgOverview, listOrgActivity } from "@/app/orgAdminQueries";
+import { getOrgOverview, listOrgActivity, deleteOrganization } from "@/app/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({
@@ -42,5 +42,22 @@ describe("listOrgActivity", () => {
     expect(r.ok && r.data[0].actorName).toBe("System");
     const e = await listOrgActivity(rpcClient({ data: null, error: { message: "denied" } }), "org1");
     expect(e).toEqual({ ok: false, error: "denied" });
+  });
+});
+
+describe("deleteOrganization", () => {
+  it("returns deleted name on ok payload", async () => {
+    const r = await deleteOrganization(rpcClient({ data: { ok: true, deleted: "Sri Builders" }, error: null }), "org1");
+    expect(r).toEqual({ ok: true, data: { deleted: "Sri Builders" } });
+  });
+
+  it("surfaces a not-found payload error", async () => {
+    const r = await deleteOrganization(rpcClient({ data: { ok: false, error: "organization not found" }, error: null }), "org1");
+    expect(r).toEqual({ ok: false, error: "organization not found" });
+  });
+
+  it("surfaces an rpc-level error (not authorized)", async () => {
+    const r = await deleteOrganization(rpcClient({ data: null, error: { message: "not authorized to delete this organization" } }), "org1");
+    expect(r).toEqual({ ok: false, error: "not authorized to delete this organization" });
   });
 });

@@ -5,9 +5,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Icon, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { Card, Icon, Badge, Spinner, Alert, Button, AccessDenied } from "@/components/ui/atoms";
+import { Input } from "@/components/ui/forms";
 import type { IconName } from "@/components/ui/icons";
-import { getOrgOverview, PLAN_LABEL, type OrgOverview } from "@/app/orgAdminQueries";
+import { getOrgOverview, deleteOrganization, PLAN_LABEL, type OrgOverview } from "@/app/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
@@ -34,6 +35,9 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
   const [data, setData] = useState<OrgOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDanger, setShowDanger] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -41,6 +45,16 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
     const res = await getOrgOverview(client, orgId); if (res.ok) setData(res.data); else setError(res.error); setLoading(false);
   }, [orgId]);
   useEffect(() => { void reload(); }, [reload]);
+
+  const orgDisplayName = data?.name || orgName;
+  const doDelete = async () => {
+    if (confirmName.trim() !== orgDisplayName) return;
+    setDeleting(true); setError(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setDeleting(false); return; }
+    const res = await deleteOrganization(client, orgId);
+    if (res.ok) { window.location.href = "/dashboard"; } // org gone → fresh session
+    else { setError(res.error); setDeleting(false); }
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -72,6 +86,32 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
                 </Link>
               ))}
             </div>
+          </div>
+
+          {/* Danger zone — DPDP right-to-erasure */}
+          <div>
+            <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-rose-500 mb-2">Danger zone</h2>
+            <Card className="p-4 border-rose-200">
+              {!showDanger ? (
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-sm text-ink-600">Permanently delete this organization and <b>all</b> its data (projects, finance, members…). This cannot be undone.</div>
+                  <Button size="sm" variant="secondary" onClick={() => setShowDanger(true)}>Delete organization</Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="text-sm text-ink-700">Type <b className="text-rose-600">{orgDisplayName}</b> to confirm permanent deletion:</div>
+                  <Input value={confirmName} onChange={e => setConfirmName(e.target.value)} placeholder={orgDisplayName} autoComplete="off" />
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="ghost" onClick={() => { setShowDanger(false); setConfirmName(""); }}>Cancel</Button>
+                    <button type="button" disabled={deleting || confirmName.trim() !== orgDisplayName}
+                      onClick={() => void doDelete()}
+                      className="text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition inline-flex items-center gap-2">
+                      {deleting ? <Spinner size={14} /> : "Permanently delete"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </Card>
           </div>
         </>
       )}

@@ -3,9 +3,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
-import { Card, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { listPlatformOrgs, PLAN_LABEL, type PlatformOrg } from "@/app/platformAdminQueries";
+import { deleteOrganization } from "@/app/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
@@ -23,6 +24,7 @@ function Inner(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -30,6 +32,19 @@ function Inner(): JSX.Element {
     const res = await listPlatformOrgs(client); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, []);
   useEffect(() => { void reload(); }, [reload]);
+
+  const onDelete = useCallback(async (o: PlatformOrg) => {
+    // Two-step confirm: must retype the org name. DPDP erasure — irreversible.
+    const typed = window.prompt(`Permanently delete "${o.name}" and ALL its data?\n\nThis cannot be undone. Type the org name to confirm:`);
+    if (typed == null) return; // cancelled
+    if (typed.trim() !== o.name) { window.alert("Name did not match — deletion cancelled."); return; }
+    setDeletingId(o.id); setError(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setDeletingId(null); return; }
+    const res = await deleteOrganization(client, o.id);
+    setDeletingId(null);
+    if (res.ok) { setRows(prev => prev.filter(r => r.id !== o.id)); }
+    else setError(res.error);
+  }, []);
 
   const term = q.trim().toLowerCase();
   const shown = term ? rows.filter(r => r.name.toLowerCase().includes(term) || r.slug.toLowerCase().includes(term)) : rows;
@@ -53,6 +68,10 @@ function Inner(): JSX.Element {
               <div className="flex items-center gap-4 flex-shrink-0 text-center">
                 <div><div className="text-lg font-bold text-ink-900 leading-none">{o.memberCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">members</div></div>
                 <div><div className="text-lg font-bold text-ink-900 leading-none">{o.projectCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">projects</div></div>
+                <Button size="sm" variant="ghost" disabled={deletingId === o.id} onClick={() => void onDelete(o)}
+                  className="!text-rose-600 hover:!bg-rose-50" title="Delete organization">
+                  {deletingId === o.id ? <Spinner size={14} /> : <Icon name="trash" size={16} />}
+                </Button>
               </div>
             </Card>
           ))}</div>}

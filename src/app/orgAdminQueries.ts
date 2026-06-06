@@ -78,3 +78,14 @@ export async function listOrgActivity(client: any, orgId: string, limit = 100): 
 // Plan display metadata (seat soft-limits mirror data/seed.js PLAN_META).
 export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
 export const PLAN_SEATS: Record<string, number | null> = { basic: 5, pro: 20, business: 100, custom: null };
+
+/** DPDP erasure — delete an org + ALL its data (cascade). Superadmin or org admin. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function deleteOrganization(client: any, orgId: string): Promise<OAResult<{ deleted: string }>> {
+  try {
+    const { data, error } = await client.rpc("delete_organization", { p_org: orgId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (data?.ok) return { ok: true, data: { deleted: String(data.deleted ?? "") } };
+    return { ok: false, error: String(data?.error ?? "Delete failed.") };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
