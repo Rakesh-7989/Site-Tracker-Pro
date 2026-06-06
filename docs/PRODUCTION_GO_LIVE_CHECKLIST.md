@@ -35,7 +35,7 @@ to close before flipping the "open for business" switch.*
 | Check | Status | Notes / zero-spend how |
 |-------|--------|------------------------|
 | Unit + integration tests green | ✅ | 1134 tests; CI must run on every push |
-| **Role-by-role manual pass** (superadmin, org admin, PM, site engineer, client, vendor) | ❌ | Use `TEST_USERS_CREDENTIALS.md`; walk each role's nav + tabs |
+| **Role-by-role manual pass** (superadmin, org admin, PM, site engineer, client, vendor) | ⚠️ | Backend RBAC automated ✅ (`npm run qa:roles` — 9/9 roles' access boundaries verified via real auth); manual UI nav/tabs walk per role still TODO |
 | Happy-path E2E (signup → approve → login → create project → DPR → invoice) | ⚠️ | Playwright specs exist; run full flow on prod |
 | Cross-browser (Chrome, Safari, Edge, Android Chrome) | ❌ | Manual; mobile is the field reality |
 | Mobile / responsive (phone + tablet) | ⚠️ | Built mobile-first; verify on a real phone |

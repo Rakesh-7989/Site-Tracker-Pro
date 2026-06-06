@@ -12,6 +12,7 @@
     "check:supabase": "node scripts/check-supabase-connection.mjs",
     "check:mcp": "node scripts/check-mcp.mjs",
     "uptime": "node scripts/uptime-check.mjs",
+    "qa:roles": "node scripts/role-access-probe.mjs",
     "deploy:all": "node scripts/deploy-all.mjs",
     "db:apply": "node scripts/apply-migrations.mjs",
     "lint": "eslint . --max-warnings=200",
