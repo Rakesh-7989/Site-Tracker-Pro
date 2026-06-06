@@ -67,6 +67,7 @@ export const TAB_CATALOG: readonly TabDef[] = [
   // Always-on viewers
   { id: "map",          label: "Map",           icon: "map" },
   { id: "gantt",        label: "Gantt",         icon: "barChart" },
+  { id: "messages",     label: "Messages",      icon: "msgcircle" },
 ] as const;
 
 export const TAB_IDS = TAB_CATALOG.map(t => t.id);

@@ -42,6 +42,7 @@ import { ComplianceTab } from "./tabs/ComplianceTab";
 import { FieldOpsTab } from "./tabs/FieldOpsTab";
 import { GanttTab } from "./tabs/GanttTab";
 import { ApprovalsTab } from "./tabs/ApprovalsTab";
+import { MessagesTab } from "./tabs/MessagesTab";
 import { TabPlaceholder } from "./tabs/TabPlaceholder";
 
 // Tabs that have a real ported implementation (others fall to the placeholder).
@@ -51,7 +52,7 @@ const REAL_TABS = new Set([
   "attendance", "po", "invoices", "budget",
   "rabills", "ledger", "drawings", "rfi",
   "changeorders", "estimate", "map",
-  "boq", "labour", "compliance", "fieldops", "gantt", "approvals",
+  "boq", "labour", "compliance", "fieldops", "gantt", "approvals", "messages",
 ]);
 
 export function DetailView(): JSX.Element {
@@ -154,6 +155,7 @@ export function DetailView(): JSX.Element {
         {activeId === "fieldops" && <FieldOpsTab projectId={project.id} />}
         {activeId === "gantt" && <GanttTab projectId={project.id} />}
         {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
+        {activeId === "messages" && <MessagesTab projectId={project.id} />}
         {!REAL_TABS.has(activeId) && activeDef && (
           <TabPlaceholder label={activeDef.label} icon={activeDef.icon} />
         )}
