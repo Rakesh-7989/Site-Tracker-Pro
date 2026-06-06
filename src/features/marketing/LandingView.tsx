@@ -94,6 +94,9 @@ export function LandingView(): JSX.Element {
           <h2 className="font-display text-2xl font-bold">Plans for every firm size</h2>
           <p className="text-sm text-ink-500 mt-1">Pick a plan when you sign up — change it any time.</p>
           <div className="mt-4 flex justify-center"><BillingToggle value={billing} onChange={setBilling} /></div>
+          <div className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+            <Icon name="check" size={14} /> Every plan starts with a 14-day free trial — no credit card
+          </div>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
           {PLAN_TIERS.map(p => {
