@@ -23,6 +23,7 @@
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticate } from "../_shared/auth.ts";
+import { requirePlanFeature } from "../_shared/planCheck.ts";
 
 const META_API_BASE = "https://graph.facebook.com/v18.0";
 
@@ -155,6 +156,10 @@ Deno.serve(async (req) => {
     });
     if (!auth.ok) return auth.response;
   }
+
+  // Plan gate: programmatic WhatsApp send is a Business+ feature.
+  const planChk = await requirePlanFeature(body.org_id, "whatsapp_send");
+  if (!planChk.allow) return json({ error: "plan-upgrade-required", feature: "whatsapp_send", required: "business" }, 402);
 
   if (!body?.to) return json({ error: "to-required" }, 400);
   if (body.kind === "text" && (!body.body || body.body.length > 4096)) {

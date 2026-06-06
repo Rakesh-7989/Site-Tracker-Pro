@@ -19,6 +19,7 @@
 import { retry } from "../_shared/retry.ts";
 import { getBudgetMode } from "../_shared/budget.ts";
 import { authenticate } from "../_shared/auth.ts";
+import { requirePlanFeature } from "../_shared/planCheck.ts";
 
 /**
  * Meta Cloud API gives 1k free service conversations per WABA per UTC
@@ -212,6 +213,15 @@ Deno.serve(async (httpReq: Request) => {
     ...(payload.project_id ? { requireProjectId: payload.project_id } : {}),
   });
   if (!auth.ok) return auth.response;
+
+  // Plan gate: automated WhatsApp DPR send is a Business+ feature.
+  const planChk = await requirePlanFeature(payload.org_id, "dpr_auto");
+  if (!planChk.allow) {
+    return Response.json(
+      { ok: false, error: "plan-upgrade-required: automated WhatsApp DPR needs the Business plan" } satisfies DprSendResponse,
+      { status: 402 },
+    );
+  }
 
   const env = Deno.env.toObject();
   const supabaseUrl = env.SUPABASE_URL;

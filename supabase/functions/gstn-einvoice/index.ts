@@ -14,6 +14,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticate } from "../_shared/auth.ts";
+import { requirePlanFeature } from "../_shared/planCheck.ts";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -133,6 +134,10 @@ Deno.serve(async (req) => {
   const { data: invoice, error: ie } = await supa
     .from("invoices").select("*").eq("id", body.invoice_id).maybeSingle();
   if (ie || !invoice) return json({ error: "invoice-not-found" }, 404);
+
+  // Plan gate: GSTN e-invoice filing is a Business+ feature.
+  const planChk = await requirePlanFeature(invoice.org_id, "gstn_filing");
+  if (!planChk.allow) return json({ error: "plan-upgrade-required", feature: "gstn_filing", required: "business" }, 402);
 
   // Build payload from existing data (in practice we'd join seller/buyer/items
   // from organizations + invoice_items tables).

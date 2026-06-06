@@ -23,6 +23,7 @@ import {
   cashfreeBaseUrl,
   isCashfreeConfigured,
 } from "../_shared/cashfree.ts";
+import { requirePlanFeature } from "../_shared/planCheck.ts";
 
 // Session 24 hardening: CORS is allow-list based. The Edge Function reads
 // CORS_ALLOWED_ORIGINS (comma-separated) from env. Default = our two domains.
@@ -74,6 +75,10 @@ Deno.serve(async (req) => {
   const { data: membership } = await supa.from("org_members").select("org_id").eq("profile_id", user.id).eq("org_id", org_id).maybeSingle();
   const isAuthorised = profile?.role === "superadmin" || (profile?.role === "orgadmin" && membership);
   if (!isAuthorised) return respond({ error: "only orgadmin or superadmin can manage subscriptions" }, 403);
+
+  // Plan gate: programmatic payments are a Business+ feature.
+  const planChk = await requirePlanFeature(org_id, "cashfree_payments");
+  if (!planChk.allow) return respond({ error: "plan-upgrade-required", feature: "cashfree_payments", required: "business", plan: planChk.plan }, 402);
 
   // 2. Load Cashfree creds for the org
   const { data: integ } = await supa.from("org_integrations").select("cashfree").eq("org_id", org_id).single();
