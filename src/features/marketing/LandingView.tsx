@@ -118,6 +118,15 @@ export function LandingView(): JSX.Element {
             );
           })}
         </div>
+
+        {/* Enterprise — sales-led, not self-serve */}
+        <Card className="mt-4 p-5 flex items-center justify-between gap-4 flex-wrap border-ink-200">
+          <div>
+            <div className="font-display font-bold text-lg">Enterprise</div>
+            <div className="text-sm text-ink-500 mt-0.5">Custom roles & permissions, SSO, white-label client portal, API access, dedicated CSM & on-prem audit mirror. For pan-state / multi-org builders.</div>
+          </div>
+          <a href={`mailto:${CONTACT_EMAIL}?subject=SiteTrack%20Enterprise%20enquiry`} className="text-sm font-semibold text-ink-700 hover:text-ink-900 px-5 py-2.5 rounded-lg border border-cream-300 whitespace-nowrap">Contact sales</a>
+        </Card>
       </section>
 
       <footer className="border-t border-cream-200 py-6 text-center text-xs text-ink-400 space-y-1">

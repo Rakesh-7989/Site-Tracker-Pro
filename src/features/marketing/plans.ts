@@ -29,7 +29,7 @@ export const PLAN_TIERS: PlanTier[] = [
     monthly: 5999,
     annual: 59990,
     tagline: "Small contractors getting organised",
-    features: ["Up to 5 team members", "3 active projects", "Daily progress reports (DPR)", "Materials + attendance", "Issues + punch lists"],
+    features: ["Up to 5 team members", "5 active projects", "Daily progress reports (DPR)", "Materials + attendance", "Issues + punch lists", "WhatsApp share + Telugu / Hindi", "5 GB storage"],
   },
   {
     id: "pro",
@@ -37,7 +37,7 @@ export const PLAN_TIERS: PlanTier[] = [
     monthly: 11999,
     annual: 119990,
     tagline: "Growing firms running multiple sites",
-    features: ["Up to 20 members", "Unlimited projects", "Finance — POs, invoices, RA bills", "Approval chains", "RERA / GST compliance tracking", "Drawings + RFIs"],
+    features: ["Up to 20 members", "Unlimited projects", "Finance — POs, invoices, RA bills", "Approval chains", "Drawings + RFIs + change orders", "RERA / GST compliance tracking", "30-day audit log", "50 GB storage"],
     popular: true,
   },
   {
@@ -46,7 +46,7 @@ export const PLAN_TIERS: PlanTier[] = [
     monthly: 19999,
     annual: 199990,
     tagline: "Established builders who need control",
-    features: ["Up to 100 members", "Everything in Pro", "Custom roles & permissions", "Integrations (WhatsApp, payments)", "Org-wide audit trail", "Priority support"],
+    features: ["Up to 100 members", "Everything in Pro", "Custom roles & permissions", "Automated WhatsApp DPR + payments", "RERA / GSTN filing (rolling out)", "Org-wide audit log + export", "Priority support", "250 GB storage"],
   },
 ];
 
