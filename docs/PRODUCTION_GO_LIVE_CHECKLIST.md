@@ -57,7 +57,7 @@ to close before flipping the "open for business" switch.*
 | Rate limiting on public endpoints | ✅ | Signup throttled (5/h/IP) + honeypot |
 | MFA / 2FA for admins | ❌ P2 | Supabase TOTP (free) |
 | Audit log immutability | ⚠️ P2 | REVOKE-based; add a trigger |
-| Penetration sanity (try to read another org's data) | ❌ | Manual: log in as org A, attempt org B ids |
+| Penetration sanity (try to read another org's data) | ✅ | `scripts/prod-readiness-probe.mjs` — 11/11; non-member sees 0 rows + synthetic 2-org isolation verified (rolled back) |
 
 ## 3. Data & database
 
@@ -65,7 +65,7 @@ to close before flipping the "open for business" switch.*
 |-------|--------|-------|
 | All migrations applied to prod | ✅ | 01–90 live |
 | **Backup exists + restore tested** | ⚠️ | Supabase daily backup (free); do ONE restore drill |
-| No test/demo data leaking into prod | ⚠️ | Verify seed/demo rows are gone from the live org |
+| No test/demo data leaking into prod | ⚠️ | Audited: live DB = 1 seed org + 9 test profiles + 8 memberships, **0 projects / 0 tenant rows**. Decide: keep as pilot org or wipe the test users. |
 | PII inventory + minimisation (Aadhaar/EPF/ESI) | ✅ | Masked in UI; RLS-scoped |
 | Data-retention + delete-on-request policy | ❌ P1 | DPDP requirement (see §9) |
 | Indexes on hot queries | ✅ | Present on project_id/org_id/status |
@@ -160,8 +160,8 @@ to close before flipping the "open for business" switch.*
 
 | Check | Status | Notes |
 |-------|--------|-------|
-| Go-live runbook (steps + owners + rollback) | ❌ | Write it |
-| Smoke test on prod immediately post-deploy | ❌ | Login + create + DPR + logout |
+| Go-live runbook (steps + owners + rollback) | ✅ | `docs/GO_LIVE_RUNBOOK.md` |
+| Smoke test on prod immediately post-deploy | ✅ | `scripts/prod-smoke.mjs` (3/3 passing on live) + manual 2-min pass in runbook |
 | First 48h monitoring window | ❌ | Watch Sentry + logs |
 | Incident response: who, how, comms template | ❌ | 1-pager |
 | Backout criteria defined | ❌ | "If X breaks → revert" |
@@ -171,12 +171,12 @@ to close before flipping the "open for business" switch.*
 ## Suggested execution order (when you say go)
 
 **P0 — must close before launch**
-1. 🔵 Rotate the 2 exposed keys.
-2. Manual role-by-role + happy-path E2E pass on prod (catch real bugs).
-3. Set `VITE_SENTRY_DSN` + an UptimeRobot monitor (free) — so we *see* failures.
-4. Verify no demo/test data in the live pilot org; run one backup-restore drill.
-5. Cross-org isolation pen-check (org A cannot see org B).
-6. Write the go-live runbook + post-deploy smoke test.
+1. 🔵 Rotate the 2 exposed keys. — *founder, pending*
+2. Manual role-by-role + happy-path E2E pass on prod (catch real bugs). — *founder, pending*
+3. Set `VITE_SENTRY_DSN` + an UptimeRobot monitor (free) — so we *see* failures. — *founder, pending*
+4. ✅ Live-DB audited (empty of tenant data; only seed org + test users). Backup-restore drill still TODO.
+5. ✅ **DONE** — cross-org isolation pen-check passed 11/11 (`scripts/prod-readiness-probe.mjs`).
+6. ✅ **DONE** — `docs/GO_LIVE_RUNBOOK.md` + `scripts/prod-smoke.mjs` (3/3 on live).
 
 **P1 — before charging real customers**
 7. Privacy Policy + Terms + signup consent checkbox + data-delete process (DPDP).
