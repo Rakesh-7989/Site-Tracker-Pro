@@ -15,16 +15,16 @@ to close before flipping the "open for business" switch.*
 
 | # | Gate | Where we stand |
 |---|------|----------------|
-| 1 | Functional / QA | ⚠️ unit-tested (1131), no manual role-by-role pass |
+| 1 | Functional / QA | ⚠️ unit-tested (1134), no manual role-by-role pass |
 | 2 | Security | ✅ P0+P1 closed + audit; ⚠️ MFA, keys to rotate |
-| 3 | Data & database | ✅ migrations live, RLS; ⚠️ backup-restore drill, retention |
-| 4 | Performance | ⚠️ build OK; no Lighthouse / load test |
+| 3 | Data & database | ✅ migrations live, RLS, retention/erasure; ⚠️ restore drill |
+| 4 | Performance | ✅ heavy routes lazy-loaded; ⚠️ Lighthouse run pending |
 | 5 | Reliability / errors | ✅ error boundary, idempotency; ⚠️ graceful-degradation pass |
-| 6 | Monitoring / observability | ⚠️ Sentry wired but DSN unset; no uptime monitor |
-| 7 | Deploy / release / rollback | ✅ CI build, shell flag rollback; ⚠️ no staging env |
+| 6 | Monitoring / observability | ⚠️ Sentry wired (DSN unset); uptime runbook+script ready (account pending) |
+| 7 | Deploy / release / rollback | ✅ CI build, shell-flag rollback, staging branch+preview |
 | 8 | Domain / DNS / email | ⚠️ vercel.app subdomain; Resend domain unverified |
-| 9 | Legal / compliance (DPDP) | ❌ privacy policy / terms / consent |
-| 10 | Business readiness | ⚠️ pricing placeholders, support channel undefined |
+| 9 | Legal / compliance (DPDP) | ✅ privacy/terms/consent/erasure (drafts → lawyer review) |
+| 10 | Business readiness | ✅ support link; ⚠️ pricing placeholders |
 | 11 | Accessibility / UX polish | ⚠️ not audited |
 | 12 | Launch + post-launch ops | ❌ runbook, smoke pass, incident plan |
 
@@ -34,7 +34,7 @@ to close before flipping the "open for business" switch.*
 
 | Check | Status | Notes / zero-spend how |
 |-------|--------|------------------------|
-| Unit + integration tests green | ✅ | 1131 tests; CI must run on every push |
+| Unit + integration tests green | ✅ | 1134 tests; CI must run on every push |
 | **Role-by-role manual pass** (superadmin, org admin, PM, site engineer, client, vendor) | ❌ | Use `TEST_USERS_CREDENTIALS.md`; walk each role's nav + tabs |
 | Happy-path E2E (signup → approve → login → create project → DPR → invoice) | ⚠️ | Playwright specs exist; run full flow on prod |
 | Cross-browser (Chrome, Safari, Edge, Android Chrome) | ❌ | Manual; mobile is the field reality |
@@ -64,10 +64,10 @@ to close before flipping the "open for business" switch.*
 | Check | Status | Notes |
 |-------|--------|-------|
 | All migrations applied to prod | ✅ | 01–90 live |
-| **Backup exists + restore tested** | ⚠️ | Supabase daily backup (free); do ONE restore drill |
+| **Backup exists + restore tested** | ⚠️ | Supabase daily backup (free) + `scripts/db-export.mjs` off-site JSON drill ✅; **restore** drill still TODO (founder) |
 | No test/demo data leaking into prod | ⚠️ | Audited: live DB = 1 seed org + 9 test profiles + 8 memberships, **0 projects / 0 tenant rows**. Decide: keep as pilot org or wipe the test users. |
 | PII inventory + minimisation (Aadhaar/EPF/ESI) | ✅ | Masked in UI; RLS-scoped |
-| Data-retention + delete-on-request policy | ❌ P1 | DPDP requirement (see §9) |
+| Data-retention + delete-on-request policy | ✅ | `delete_organization` RPC (mig 92) + org-admin & superadmin UI — DPDP erasure |
 | Indexes on hot queries | ✅ | Present on project_id/org_id/status |
 | `seed-first-org` / real first customer set up | ⚠️ | Confirm the pilot org is clean |
 
@@ -76,8 +76,8 @@ to close before flipping the "open for business" switch.*
 | Check | Status | Notes |
 |-------|--------|-------|
 | Production build succeeds + reproducible | ✅ | Vite/rolldown |
-| Bundle size sane (code-split heavy routes) | ⚠️ | Build warns >500KB chunk; lazy-load admin/charts |
-| Lighthouse (perf/PWA/best-practices) ≥ 80 | ❌ | Run on the live URL (free, Chrome devtools) |
+| Bundle size sane (code-split heavy routes) | ✅ | v3 entry 176→61.5 kB; recharts/legacy split to own lazy chunks |
+| Lighthouse (perf/PWA/best-practices) ≥ 80 | ⚠️ | `scripts/psi-check.mjs` ready (PageSpeed Insights); run pending |
 | Slow-3G load test (field connectivity) | ❌ | Chrome devtools throttle |
 | DB query timing on the biggest org | ⚠️ | RPCs are indexed; spot-check with EXPLAIN |
 | Image/photo upload sized + thumbnailed | ✅ | photoStorage lib |
@@ -97,9 +97,9 @@ to close before flipping the "open for business" switch.*
 | Check | Status | Notes |
 |-------|--------|-------|
 | Error tracking live | ⚠️ | Sentry wired; **set VITE_SENTRY_DSN** (free tier) |
-| Uptime monitor on the prod URL | ❌ | UptimeRobot / Better Uptime free tier |
+| Uptime monitor on the prod URL | ⚠️ | `docs/setup/UPTIME_MONITORING.md` + `scripts/uptime-check.mjs` ready; founder: create free UptimeRobot acct + 2 monitors |
 | Edge Function logs reviewed | ⚠️ | Supabase dashboard → Functions logs |
-| A basic "is the DB up / signup works" healthcheck | ❌ | Cron or UptimeRobot keyword check |
+| A basic "is the DB up / signup works" healthcheck | ✅ | `npm run uptime` — frontend HTTP 200 + Supabase GoTrue health, both 🟢 |
 | Usage analytics (optional, privacy-safe) | N/A | Defer; respect DPDP |
 
 ## 7. Deployment, release & rollback
@@ -108,7 +108,7 @@ to close before flipping the "open for business" switch.*
 |-------|--------|-------|
 | CI runs typecheck + tests + build on push | ⚠️ | Confirm GitHub Actions / Vercel checks block bad builds |
 | All prod env vars set in Vercel | ✅ | Baked public config + VITE_* (verified earlier) |
-| **Staging environment** separate from prod | ❌ P1 | A 2nd Vercel preview + Supabase branch (free) |
+| **Staging environment** separate from prod | ✅ | `staging` branch → Vercel free preview; workflow in `docs/STAGING_WORKFLOW.md` (shared DB caveat noted) |
 | Documented rollback (git revert + Vercel "Promote previous") | ⚠️ | Add to runbook; `?shell=legacy` is the app-level escape hatch |
 | Feature-flag kill switch for risky features | ✅ | feature flags + shell flag |
 | Deploy during low-traffic window + announce | ❌ | Process step |
@@ -131,7 +131,7 @@ to close before flipping the "open for business" switch.*
 | Privacy Policy page | ✅ | `/privacy` (DPDP-aligned draft — have a lawyer review) |
 | Terms of Service | ✅ | `/terms` (draft — lawyer review) |
 | Consent capture at signup ("I agree…") | ✅ | Required checkbox + `consent_version` stored on the signup_request (mig 91) |
-| Data-deletion / export on request process | ❌ P1 | DPDP "right to erasure" |
+| Data-deletion / export on request process | ✅ | DPDP erasure: `delete_organization` RPC (mig 92) + org-admin self-delete + superadmin delete; export via `scripts/db-export.mjs` |
 | Cookie/tracking notice | N/A-ish | Minimal tracking today |
 | Data Processing terms with sub-processors (Supabase/Vercel/Resend) | ⚠️ | Note in privacy policy |
 
@@ -141,7 +141,7 @@ to close before flipping the "open for business" switch.*
 |-------|--------|-------|
 | **Real plan pricing** finalised | ⚠️ 🔵 | `plans.ts` has placeholders |
 | Billing/payment path (if charging at launch) | ⚠️ | Cashfree/Razorpay creds via Integrations panel |
-| Support channel (email/WhatsApp) on the app | ❌ | Add a "Contact / Help" link |
+| Support channel (email/WhatsApp) on the app | ✅ | Contact (mailto) link in landing footer + legal pages |
 | Onboarding runbook for first customer | ✅ | `PILOT_ONBOARDING_RUNBOOK.md` |
 | User-facing help/docs | ✅ | `public/USER_GUIDE.md` (link it in-app) |
 | Refund / cancellation policy | ❌ P1 | |
@@ -171,19 +171,19 @@ to close before flipping the "open for business" switch.*
 ## Suggested execution order (when you say go)
 
 **P0 — must close before launch**
-1. 🔵 Rotate the 2 exposed keys. — *founder, pending*
+1. 🔵 Rotate the 2 exposed keys. — *founder, pending* **(do this first)**
 2. Manual role-by-role + happy-path E2E pass on prod (catch real bugs). — *founder, pending*
-3. Set `VITE_SENTRY_DSN` + an UptimeRobot monitor (free) — so we *see* failures. — *founder, pending*
-4. ✅ Live-DB audited (empty of tenant data; only seed org + test users). Backup-restore drill still TODO.
+3. 🔵 Set `VITE_SENTRY_DSN` (Vercel env) + create the free UptimeRobot monitors per `docs/setup/UPTIME_MONITORING.md`. Wiring + healthcheck (`npm run uptime`) ready; only the account/DSN paste remains. — *founder, pending*
+4. ✅ Live-DB audited (empty of tenant data; only seed org + test users). Off-site export drill ✅ (`db-export.mjs`); **restore** drill still TODO (founder).
 5. ✅ **DONE** — cross-org isolation pen-check passed 11/11 (`scripts/prod-readiness-probe.mjs`).
 6. ✅ **DONE** — `docs/GO_LIVE_RUNBOOK.md` + `scripts/prod-smoke.mjs` (3/3 on live).
 
 **P1 — before charging real customers**
-7. Privacy Policy + Terms + signup consent checkbox + data-delete process (DPDP).
-8. 🔵 Real pricing in `plans.ts`; support/contact link in-app.
-9. 🔵 Custom domain + Resend domain verify (branded email + SPF/DKIM).
-10. Separate staging environment.
-11. Lighthouse + slow-3G pass; lazy-load heavy routes.
+7. ✅ **DONE** — Privacy Policy + Terms + signup consent + DPDP data-delete (erasure RPC + UI).
+8. 🔵 Real pricing in `plans.ts` (founder gives ₹ numbers → edit). Support/contact link ✅ done.
+9. 🔵 Custom domain + Resend domain verify (branded email + SPF/DKIM). — *founder*
+10. ✅ **DONE** — staging `staging` branch + Vercel preview (`docs/STAGING_WORKFLOW.md`).
+11. ⚠️ Lazy-load heavy routes ✅; Lighthouse + slow-3G pass pending (`scripts/psi-check.mjs` ready).
 
 **P2 — soon after**
 12. MFA for admins · audit-log immutability trigger · accessibility audit · i18n coverage.
