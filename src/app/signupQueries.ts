@@ -12,6 +12,8 @@ export interface SignupInput {
   message?: string;
   /** Honeypot — real users leave this empty; bots fill it. */
   website?: string;
+  /** Version of Terms + Privacy the applicant agreed to (DPDP consent). */
+  consentVersion?: string;
 }
 export type SignupResult = { ok: true } | { ok: false; error: string };
 

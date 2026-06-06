@@ -8,6 +8,7 @@ import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { PLAN_TIERS } from "./plans";
+import { CONSENT_VERSION } from "./legalContent";
 import { submitSignupRequest, type SignupPlan } from "@/app/signupQueries";
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -32,6 +33,7 @@ export function SignupView(): JSX.Element {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [website, setWebsite] = useState(""); // honeypot — hidden from real users
+  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -45,11 +47,12 @@ export function SignupView(): JSX.Element {
     setError(null);
     if (!firmName.trim() || !contactName.trim()) return setError("Please enter your firm name and your name.");
     if (!validEmail(email)) return setError("Please enter a valid work email.");
+    if (!consent) return setError("Please accept the Terms of Service and Privacy Policy to continue.");
     setBusy(true);
     const res = await submitSignupRequest({
       firmName: firmName.trim(), contactName: contactName.trim(), email: email.trim().toLowerCase(),
       phone: phone.trim() || undefined, plan, message: message.trim() || undefined,
-      website: website.trim() || undefined,
+      website: website.trim() || undefined, consentVersion: CONSENT_VERSION,
     });
     setBusy(false);
     if (res.ok) setDone(true);
@@ -128,7 +131,12 @@ export function SignupView(): JSX.Element {
             value={website} onChange={e => setWebsite(e.target.value)}
             style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
 
-          <Button className="w-full" onClick={() => void submit()} disabled={busy}>
+          <label className="flex items-start gap-2 text-[12px] text-ink-600 cursor-pointer">
+            <input type="checkbox" className="mt-0.5 accent-safety-500" checked={consent} onChange={e => setConsent(e.target.checked)} />
+            <span>I agree to SiteTrack Pro's <Link to="/terms" target="_blank" className="text-safety-600 font-semibold hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-safety-600 font-semibold hover:underline">Privacy Policy</Link>.</span>
+          </label>
+
+          <Button className="w-full" onClick={() => void submit()} disabled={busy || !consent}>
             {busy ? <Spinner size={16} /> : <>Request access on the {PLAN_TIERS.find(p => p.id === plan)?.name} plan</>}
           </Button>
           <p className="text-[11px] text-ink-400 text-center">Already have an account? <Link to="/login" className="text-safety-600 font-semibold">Sign in</Link></p>

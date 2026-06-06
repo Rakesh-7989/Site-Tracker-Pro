@@ -12,7 +12,7 @@
 //
 // Usage: node scripts/prod-readiness-probe.mjs   (uses SUPABASE_DB_URL)
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
 

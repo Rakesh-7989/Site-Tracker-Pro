@@ -51,6 +51,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const phone = body.phone ? String(body.phone).trim() : null;
   const plan = String(body.plan ?? "basic").trim();
   const message = body.message ? String(body.message).trim().slice(0, 1000) : null;
+  const consentVersion = body.consentVersion ? String(body.consentVersion).slice(0, 40) : null;
   // Honeypot: a hidden field real users never fill. Bots do → pretend success,
   // insert nothing.
   const honeypot = String(body.website ?? "").trim();
@@ -85,7 +86,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // row for the same email → friendly 409.
   const { data: row, error } = await admin
     .from("signup_requests")
-    .insert({ firm_name: firmName, contact_name: contactName, email, phone, plan, message, ip, status: "pending" })
+    .insert({ firm_name: firmName, contact_name: contactName, email, phone, plan, message, ip, consent_version: consentVersion, status: "pending" })
     .select("id")
     .single();
 

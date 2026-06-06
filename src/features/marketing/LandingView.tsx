@@ -94,8 +94,13 @@ export function LandingView(): JSX.Element {
         </div>
       </section>
 
-      <footer className="border-t border-cream-200 py-6 text-center text-xs text-ink-400">
-        © SiteTrack Pro · GiggleZen Technologies · Hyderabad
+      <footer className="border-t border-cream-200 py-6 text-center text-xs text-ink-400 space-y-1">
+        <div>
+          <Link to="/privacy" className="hover:text-ink-600">Privacy Policy</Link>
+          {" · "}
+          <Link to="/terms" className="hover:text-ink-600">Terms of Service</Link>
+        </div>
+        <div>© SiteTrack Pro · GiggleZen Technologies · Hyderabad</div>
       </footer>
     </div>
   );

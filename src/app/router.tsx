@@ -11,6 +11,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
+import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
 import { CreateProjectView } from "@/features/shell/CreateProjectView";
 import { NotFoundView } from "@/features/shell/PlaceholderView";
@@ -42,6 +43,8 @@ export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
   { path: "/", element: <LandingView /> },
   { path: "/signup", element: <SignupView /> },
+  { path: "/privacy", element: <PrivacyView /> },
+  { path: "/terms", element: <TermsView /> },
   { path: "/login", element: <LoginScreenV3 /> },
   // ── Authenticated app (pathless layout route wraps RequireSession) ──
   {

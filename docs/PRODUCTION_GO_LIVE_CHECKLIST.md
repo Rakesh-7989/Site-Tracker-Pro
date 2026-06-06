@@ -128,9 +128,9 @@ to close before flipping the "open for business" switch.*
 
 | Check | Status | Notes |
 |-------|--------|-------|
-| Privacy Policy page | ❌ P1 | Required once collecting personal data |
-| Terms of Service | ❌ P1 | |
-| Consent capture at signup ("I agree…") | ❌ P1 | Add a checkbox + store consent |
+| Privacy Policy page | ✅ | `/privacy` (DPDP-aligned draft — have a lawyer review) |
+| Terms of Service | ✅ | `/terms` (draft — lawyer review) |
+| Consent capture at signup ("I agree…") | ✅ | Required checkbox + `consent_version` stored on the signup_request (mig 91) |
 | Data-deletion / export on request process | ❌ P1 | DPDP "right to erasure" |
 | Cookie/tracking notice | N/A-ish | Minimal tracking today |
 | Data Processing terms with sub-processors (Supabase/Vercel/Resend) | ⚠️ | Note in privacy policy |
