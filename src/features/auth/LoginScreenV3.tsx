@@ -10,6 +10,7 @@ import { useNavigate, Navigate } from "react-router-dom";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
+import { getMfaChallenge, verifyMfa } from "@/auth/mfa";
 
 type Method = "password" | "magic";
 type Status =
@@ -33,10 +34,40 @@ export function LoginScreenV3(): JSX.Element {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  // MFA challenge (only shown when the just-signed-in user has a verified factor).
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
 
   const afterAuth = async () => {
     await refresh();
     navigate("/dashboard");
+  };
+
+  // After a successful sign-in, gate on MFA: if the user has a verified factor
+  // the session is at aal1 and we must collect a 6-digit code (→ aal2) before
+  // entering. Users without 2FA proceed straight through (no behaviour change).
+  const proceedOrChallenge = async () => {
+    const lib = await authLib();
+    const sb = await lib.getSupabaseClient();
+    if (sb) {
+      const ch = await getMfaChallenge(sb);
+      if (ch.ok && ch.required && ch.factorId) {
+        setMfaFactorId(ch.factorId);
+        setStatus({ kind: "idle" });
+        return;
+      }
+    }
+    await afterAuth();
+  };
+
+  const onSubmitMfa = async () => {
+    if (!mfaFactorId) return;
+    setStatus({ kind: "busy" });
+    const lib = await authLib();
+    const sb = await lib.getSupabaseClient();
+    const res = await verifyMfa(sb, mfaFactorId, mfaCode);
+    if (res.ok) await afterAuth();
+    else setStatus({ kind: "error", msg: res.error ?? "Invalid code." });
   };
 
   const onPasswordLogin = async () => {
@@ -45,7 +76,7 @@ export function LoginScreenV3(): JSX.Element {
     setStatus({ kind: "busy" });
     const lib = await authLib();
     const res = await lib.signInWithPassword(email.trim().toLowerCase(), password);
-    if (res.ok) await afterAuth();
+    if (res.ok) await proceedOrChallenge();
     else setStatus({ kind: "error", msg: res.error ?? "Sign-in failed." });
   };
 
@@ -64,7 +95,7 @@ export function LoginScreenV3(): JSX.Element {
     setStatus({ kind: "busy" });
     const lib = await authLib();
     const res = await lib.verifyEmailOtp(email.trim().toLowerCase(), code);
-    if (res.ok) await afterAuth();
+    if (res.ok) await proceedOrChallenge();
     else setStatus({ kind: "error", msg: res.error ?? "Invalid code." });
   };
 
@@ -105,6 +136,28 @@ export function LoginScreenV3(): JSX.Element {
             </div>
           </div>
 
+          {mfaFactorId ? (
+            /* MFA challenge — only when the signed-in user has 2FA enabled */
+            <div>
+              <div className="text-sm font-semibold text-ink-900 mb-1">Two-factor authentication</div>
+              <p className="text-[12px] text-ink-500 mb-3">Enter the 6-digit code from your authenticator app to finish signing in.</p>
+              <input
+                id="mfa" value={mfaCode} inputMode="numeric" maxLength={6} autoFocus
+                onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onKeyDown={e => { if (e.key === "Enter") onSubmitMfa(); }}
+                placeholder="123456"
+                className="w-full px-3 py-3 border border-cream-200 rounded-lg text-base font-mono tracking-[0.4em] text-center outline-none focus:border-safety-500 bg-white"
+              />
+              {status.kind === "error" && (
+                <div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[12px] text-red-700 flex items-start gap-2">
+                  <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {status.msg}
+                </div>
+              )}
+              <Button fullWidth size="lg" className="mt-3" disabled={busy} onClick={onSubmitMfa} leftIcon={busy ? <Spinner size={16} /> : null}>
+                {busy ? "Verifying…" : "Verify & continue"}
+              </Button>
+            </div>
+          ) : (<>
           {/* Method tabs */}
           <div className="flex items-center gap-4 mb-4 border-b border-cream-200">
             {(["password", "magic"] as Method[]).map(m => (
@@ -186,6 +239,7 @@ export function LoginScreenV3(): JSX.Element {
               </div>
             </div>
           )}
+          </>)}
         </Card>
       </div>
     </div>

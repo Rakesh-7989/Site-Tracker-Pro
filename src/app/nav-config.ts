@@ -60,6 +60,9 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/admin/users", label: "Users", icon: "user-cog", requires: "platform:users:manage", group: "Platform" },
   { to: "/admin/orgs", label: "Organizations", icon: "building", requires: "platform:orgs:manage", group: "Platform" },
   { to: "/admin/roles", label: "Role Permissions", icon: "lock", requires: "platform:roles:configure", group: "Platform" },
+
+  // Always visible — every signed-in user can manage their own account security (2FA).
+  { to: "/settings/security", label: "Security", icon: "lock", group: "Account" },
 ];
 
 /**

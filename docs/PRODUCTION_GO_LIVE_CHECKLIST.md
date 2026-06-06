@@ -55,7 +55,7 @@ to close before flipping the "open for business" switch.*
 | **Rotate the 2 keys exposed in chat** (`sbp_…`, `re_…`) | 🔵 ❌ | Runbook: `docs/setup/KEY_ROTATION_RUNBOOK.md` + `npm run verify:keys`. As of 2026-06-06: `sbp_…` STILL LIVE (rotate now); `re_…` already dead. |
 | Security headers (CSP, HSTS, X-Frame-Options) | ✅ | `vercel.json` — excellent |
 | Rate limiting on public endpoints | ✅ | Signup throttled (5/h/IP) + honeypot |
-| MFA / 2FA for admins | ❌ P2 | Supabase TOTP (free) |
+| MFA / 2FA for admins | ✅ | Self-service TOTP at `/settings/security` (Supabase MFA, free); login challenges aal1→aal2; admins nudged. Enforcement (require for admins) = future opt-in. |
 | Audit log immutability | ⚠️ P2 | REVOKE-based; add a trigger |
 | Penetration sanity (try to read another org's data) | ✅ | `scripts/prod-readiness-probe.mjs` — 11/11; non-member sees 0 rows + synthetic 2-org isolation verified (rolled back) |
 
