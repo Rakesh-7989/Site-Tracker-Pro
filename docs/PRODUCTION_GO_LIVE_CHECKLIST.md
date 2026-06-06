@@ -52,7 +52,7 @@ to close before flipping the "open for business" switch.*
 | RLS on every table + GRANT present | ✅ | Verified via migrations 67–90 bridges |
 | Edge Functions authenticated / signature-verified | ✅ | Phase 0.5 + audit |
 | Secrets out of code + gitignored | ✅ | `.env.local` ignored; anon key public (safe) |
-| **Rotate the 2 keys exposed in chat** (`sbp_…`, `re_…`) | 🔵 ❌ | Founder: Supabase tokens + Resend API keys |
+| **Rotate the 2 keys exposed in chat** (`sbp_…`, `re_…`) | 🔵 ❌ | Runbook: `docs/setup/KEY_ROTATION_RUNBOOK.md` + `npm run verify:keys`. As of 2026-06-06: `sbp_…` STILL LIVE (rotate now); `re_…` already dead. |
 | Security headers (CSP, HSTS, X-Frame-Options) | ✅ | `vercel.json` — excellent |
 | Rate limiting on public endpoints | ✅ | Signup throttled (5/h/IP) + honeypot |
 | MFA / 2FA for admins | ❌ P2 | Supabase TOTP (free) |

@@ -13,6 +13,7 @@
     "check:mcp": "node scripts/check-mcp.mjs",
     "uptime": "node scripts/uptime-check.mjs",
     "qa:roles": "node scripts/role-access-probe.mjs",
+    "verify:keys": "node scripts/verify-keys.mjs",
     "deploy:all": "node scripts/deploy-all.mjs",
     "db:apply": "node scripts/apply-migrations.mjs",
     "lint": "eslint . --max-warnings=200",
