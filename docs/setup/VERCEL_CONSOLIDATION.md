@@ -1,3 +1,5 @@
+<!-- 2026-06-06: founder reconnected sitetrack-rakesh → GitHub main. This commit triggers the first fresh deploy. -->
+
 # Vercel consolidation — one canonical production
 
 **Goal:** `https://sitetrack-rakesh.vercel.app` becomes the single, always-fresh
