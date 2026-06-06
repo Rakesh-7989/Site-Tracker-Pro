@@ -98,3 +98,35 @@ describe("isTabVisible", () => {
     expect(isTabVisible("budget", caps, "construction")).toBe(false);
   });
 });
+
+describe("visibleTabs — plan gating", () => {
+  // A Basic-plan predicate: only base features unlocked (no finance/rfi/etc).
+  const basicPlan = (f: string) => f === "whatsapp_share";
+  // A Pro+ predicate: everything the predicate is asked about is unlocked.
+  const proPlan = () => true;
+
+  it("hides finance / rfi / estimate / approvals / compliance / gantt on Basic plan (even for a pm)", () => {
+    const caps = capsFor(baseSession("pm"));
+    const ids = visibleTabs(caps, "construction", basicPlan).map(t => t.id);
+    for (const gated of ["budget", "ledger", "po", "invoices", "rabills", "rfi", "changeorders", "estimate", "approvals", "compliance", "gantt"]) {
+      expect(ids, `expected ${gated} hidden on Basic`).not.toContain(gated);
+    }
+    // Base tabs still show
+    expect(ids).toContain("overview");
+    expect(ids).toContain("attendance");
+  });
+
+  it("shows the Pro+ tabs when the plan unlocks them", () => {
+    const caps = capsFor(baseSession("pm"));
+    const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
+    expect(ids).toContain("budget");
+    expect(ids).toContain("rabills");
+    expect(ids).toContain("approvals");
+  });
+
+  it("no plan predicate = role-only gating (backward compatible)", () => {
+    const caps = capsFor(baseSession("pm"));
+    const ids = visibleTabs(caps, "construction").map(t => t.id);
+    expect(ids).toContain("budget"); // unchanged when planCan omitted
+  });
+});

@@ -11,7 +11,7 @@
 // visibleTabs(caps, projectType) returns the ordered list a user sees.
 // Tab CONTENT still re-checks edit capabilities with the precise context.
 
-import type { Capability, ProjectType } from "@/auth";
+import type { Capability, ProjectType, PlanFeature } from "@/auth";
 import type { IconName } from "@/components/ui/icons";
 
 export interface TabDef {
@@ -20,6 +20,8 @@ export interface TabDef {
   icon: IconName;
   requires?: Capability;
   projectTypes?: ReadonlyArray<ProjectType>;
+  /** Plan feature that must be unlocked for this tab (omit = all plans). */
+  planFeature?: PlanFeature;
 }
 
 // Project types that involve physical site execution (attendance, labour,
@@ -40,10 +42,10 @@ export const TAB_CATALOG: readonly TabDef[] = [
 
   // Design + docs
   { id: "drawings",     label: "Drawings",      icon: "image" },
-  { id: "rfi",          label: "RFIs",          icon: "msgcircle", requires: "rfi:create" },
-  { id: "changeorders", label: "Change Orders", icon: "doc",       requires: "changeorder:create" },
+  { id: "rfi",          label: "RFIs",          icon: "msgcircle", requires: "rfi:create", planFeature: "rfi" },
+  { id: "changeorders", label: "Change Orders", icon: "doc",       requires: "changeorder:create", planFeature: "approvals" },
   { id: "boq",          label: "BOQ",           icon: "barChart",  requires: "boq:edit" },
-  { id: "estimate",     label: "Estimate",      icon: "wallet",    requires: "estimate:edit" },
+  { id: "estimate",     label: "Estimate",      icon: "wallet",    requires: "estimate:edit", planFeature: "estimate" },
 
   // Site execution (construction / interior only)
   { id: "fieldops",     label: "Field Ops",     icon: "hardhat",   projectTypes: SITE_TYPES, requires: "progress:edit" },
@@ -53,20 +55,20 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "safety",       label: "Safety",        icon: "shield",    requires: "safety:report", projectTypes: SITE_TYPES },
   { id: "inspections",  label: "Inspections",   icon: "eye",       requires: "inspection:create", projectTypes: SITE_TYPES },
 
-  // Finance
-  { id: "budget",       label: "Budget",        icon: "barChart",  requires: "budget:view" },
-  { id: "ledger",       label: "Ledger",        icon: "wallet",    requires: "ledger:view" },
-  { id: "po",           label: "POs",           icon: "truck",     requires: "po:create" },
-  { id: "invoices",     label: "Invoices",      icon: "doc",       requires: "invoice:create" },
-  { id: "rabills",      label: "RA Bills",      icon: "wallet",    requires: "rabill:create" },
+  // Finance (Pro+)
+  { id: "budget",       label: "Budget",        icon: "barChart",  requires: "budget:view",     planFeature: "finance" },
+  { id: "ledger",       label: "Ledger",        icon: "wallet",    requires: "ledger:view",     planFeature: "finance" },
+  { id: "po",           label: "POs",           icon: "truck",     requires: "po:create",       planFeature: "finance" },
+  { id: "invoices",     label: "Invoices",      icon: "doc",       requires: "invoice:create",  planFeature: "finance" },
+  { id: "rabills",      label: "RA Bills",      icon: "wallet",    requires: "rabill:create",   planFeature: "finance" },
 
-  // Approvals + compliance
-  { id: "approvals",    label: "Approvals",     icon: "check",     requires: "changeorder:approve" },
-  { id: "compliance",   label: "Compliance",    icon: "shield",    requires: "compliance:view" },
+  // Approvals + compliance (Pro+)
+  { id: "approvals",    label: "Approvals",     icon: "check",     requires: "changeorder:approve", planFeature: "approvals" },
+  { id: "compliance",   label: "Compliance",    icon: "shield",    requires: "compliance:view", planFeature: "compliance_read" },
 
   // Always-on viewers
   { id: "map",          label: "Map",           icon: "map" },
-  { id: "gantt",        label: "Gantt",         icon: "barChart" },
+  { id: "gantt",        label: "Gantt",         icon: "barChart",  planFeature: "gantt" },
   { id: "messages",     label: "Messages",      icon: "msgcircle" },
 ] as const;
 
@@ -83,17 +85,28 @@ export const DEFAULT_TAB = "overview";
  *                     a context-scoped resolve)
  * @param projectType  the project.type
  */
-export function visibleTabs(caps: ReadonlySet<Capability>, projectType: ProjectType): TabDef[] {
+export function visibleTabs(
+  caps: ReadonlySet<Capability>,
+  projectType: ProjectType,
+  planCan?: (feature: PlanFeature) => boolean,
+): TabDef[] {
   return TAB_CATALOG.filter(tab => {
     if (tab.projectTypes && !tab.projectTypes.includes(projectType)) return false;
     if (tab.requires && !caps.has(tab.requires)) return false;
+    // Plan gate: when a predicate is supplied, hide tabs the plan doesn't unlock.
+    if (tab.planFeature && planCan && !planCan(tab.planFeature)) return false;
     return true;
   });
 }
 
-/** Is a tab id valid + visible for the given caps + project type? */
-export function isTabVisible(tabId: string, caps: ReadonlySet<Capability>, projectType: ProjectType): boolean {
-  return visibleTabs(caps, projectType).some(t => t.id === tabId);
+/** Is a tab id valid + visible for the given caps + project type (+ optional plan)? */
+export function isTabVisible(
+  tabId: string,
+  caps: ReadonlySet<Capability>,
+  projectType: ProjectType,
+  planCan?: (feature: PlanFeature) => boolean,
+): boolean {
+  return visibleTabs(caps, projectType, planCan).some(t => t.id === tabId);
 }
 
 /** Look up a tab definition by id (any tab, regardless of visibility). */

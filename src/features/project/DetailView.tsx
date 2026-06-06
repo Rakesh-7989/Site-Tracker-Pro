@@ -14,6 +14,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth, resolveCapabilities } from "@/auth";
 import { Card, Icon, Spinner, Badge } from "@/components/ui/atoms";
 import { useProject } from "./useProject";
+import { usePlanCaps } from "@/auth";
 import { visibleTabs, DEFAULT_TAB, tabById } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
@@ -59,6 +60,7 @@ export function DetailView(): JSX.Element {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { can: planCan } = usePlanCaps();
   const { state } = useProject(id);
 
   // Resolve the user's capabilities for THIS project's context.
@@ -72,8 +74,9 @@ export function DetailView(): JSX.Element {
 
   const tabs = useMemo(() => {
     if (state.kind !== "ready") return [];
-    return visibleTabs(caps, state.project.type);
-  }, [caps, state]);
+    // planCan hides Pro+ tabs (finance/rfi/estimate/etc) on lower plans.
+    return visibleTabs(caps, state.project.type, planCan);
+  }, [caps, state, planCan]);
 
   if (state.kind === "loading") {
     return <div className="grid place-items-center py-20 text-safety-500"><Spinner size={26} /></div>;
