@@ -62,7 +62,8 @@ export const CAPABILITIES = [
   "material:edit",
   "material:delete",
   "material:price:view",
-  "vendor:manage",
+  "vendor:manage",       // Curate the vendor directory (add / edit / rate / delete).
+  "vendor:select",       // Pick a vendor from the directory inside a PO / material / invoice form.
   "po:create",
   "po:approve",
 

@@ -246,7 +246,11 @@ From `src/lib/featureFlags.js#STUB_VIEWS` + `scripts/supabase/49_feature_flags_f
 
 ## 9. Discoveries / gotchas
 
-1. ~~**🐛 `vendor:manage` missing from matrix.**~~ **FIXED 2026-06-06.** The cap was declared in `capabilities.ts` but unassigned. Founder restricted it to **superadmin + orgadmin + prospector + org-tier admin** (NOT pm, contractor, client, site_engineer). `VendorsView` also renders `AccessDenied` for unauthorized users hitting `/vendors` directly via URL. Tests in `tests/app/navConfig.test.ts` lock the behaviour.
+1. ~~**🐛 `vendor:manage` missing from matrix.**~~ **FIXED 2026-06-06.** Two capabilities now split the vendor surface:
+   - **`vendor:manage`** — curate the directory (`/vendors` page; add / edit / rate / delete). Granted ONLY to: superadmin, orgadmin, prospector, org-tier admin.
+   - **`vendor:select`** — pick a vendor inside a PO / material / invoice form. Broader: superadmin, orgadmin, prospector, pm, project_admin, site_engineer, contractor, design_architect_interior + org-tier admin + project-tier pm/project_admin/site_engineer/contractor.
+
+   `VendorsView` renders `AccessDenied` on direct URL hits by users without `vendor:manage`. Tests in `tests/auth/permissionsMatrix.test.ts` ("Vendor capability split") and `tests/app/navConfig.test.ts` lock the behaviour. Client + site_inspector + sub_contractor get NEITHER cap.
 
 2. **`/activity` and `/audit` render the same component** (`OrgActivityView`). Two URLs, one view. Probably intentional alias but worth confirming.
 

@@ -46,7 +46,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "org:members:manage", "org:billing:manage", "org:integrations:manage",
     "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
     "org:branding:manage", "org:features:configure",
-    "vendor:manage",                       // Org admins curate the vendor directory.
+    "vendor:manage", "vendor:select",      // Org admins curate the vendor directory + pick vendors anywhere.
     "compliance:view", "ledger:view", "budget:view",
     "export:pdf", "export:csv",
   ),
@@ -64,13 +64,14 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "invoice:create", "invoice:approve",
     "rabill:create", "rabill:approve",
     "milestone:add", "milestone:edit",
+    "vendor:select",   // Pick vendors when creating invoices / RA bills.
     "export:pdf", "export:csv",
   ),
   prospector: arr(
     // Sales / BD — reads only the prospects they own.
     "activity:view",
-    "project:create",   // Can create draft projects for prospects
-    "vendor:manage",    // Adds + maintains vendor leads during prospecting.
+    "project:create",                 // Can create draft projects for prospects
+    "vendor:manage", "vendor:select", // Curates + picks vendor leads during prospecting.
   ),
   // pm absorbs the former project_head role (founder consolidation
   // 2026-06-04): gains rabill:approve + export:csv on top of its own set.
@@ -83,7 +84,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "issue:add", "issue:resolve",
     "team:manage", "attendance:view", "attendance:mark",
     "material:add", "material:edit",
-    "po:create",
+    "po:create", "vendor:select",   // PMs raise POs and pick vendors in the form.
     "rfi:respond", "rfi:close",
     "changeorder:create", "changeorder:approve",
     "expense:add", "expense:approve",
@@ -129,6 +130,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "activity:view",
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
     "material:add", "material:edit", "material:price:view",
+    "vendor:select",   // Interior designers raise material requests; pick vendor.
     "rfi:create", "rfi:respond",
     "boq:edit",
     "update:add",
@@ -192,7 +194,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "punchlist:add", "punchlist:close",
     "safety:report",
     "attendance:mark", "attendance:view", "labour:manage",
-    "material:add", "material:edit",
+    "material:add", "material:edit", "vendor:select",   // Logs material receipts; pick vendor.
     "rfi:create",
     "inspection:create", "inspection:close",
     "voice:record", "photo:upload",
@@ -205,7 +207,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "activity:view",
     "update:add",
     "attendance:mark", "attendance:view",
-    "material:add",
+    "material:add", "vendor:select",   // Receives material from approved vendors.
     "rfi:create",
     "rabill:create",
     "photo:upload",
@@ -254,7 +256,7 @@ const ORG_TIER_CAPS: Record<OrgTierRole, Capability[]> = {
     "org:members:manage", "org:billing:manage", "org:integrations:manage",
     "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
     "org:branding:manage", "org:features:configure",
-    "vendor:manage",                       // Org admins manage the vendor directory.
+    "vendor:manage", "vendor:select",      // Org admins manage the directory + pick vendors.
     "project:create", "project:archive", "project:restore", "project:settings:edit",
     "team:manage",
     "compliance:view",
@@ -381,7 +383,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "punchlist:add", "punchlist:close",
     "safety:report",
     "attendance:mark", "attendance:view", "labour:manage",
-    "material:add", "material:edit",
+    "material:add", "material:edit", "vendor:select",   // Logs material receipts; pick vendor.
     "rfi:create",
     "inspection:create", "inspection:close",
     "voice:record", "photo:upload",
@@ -405,7 +407,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "issue:add", "issue:resolve",
     "team:manage", "attendance:view", "attendance:mark",
     "material:add", "material:edit",
-    "po:create",
+    "po:create", "vendor:select",   // PMs raise POs and pick vendors in the form.
     "rfi:respond", "rfi:close",
     "changeorder:create", "changeorder:approve",
     "expense:add", "expense:approve",
@@ -421,12 +423,13 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "invoice:create", "invoice:approve",
     "rabill:create", "rabill:approve",
     "milestone:add", "milestone:edit",
+    "vendor:select",   // Picks vendors when creating invoices / RA bills.
     "export:pdf", "export:csv",
   ),
   contractor: arr(
     "update:add",
     "attendance:mark", "attendance:view",
-    "material:add",
+    "material:add", "vendor:select",   // Receives material from approved vendors.
     "rfi:create",
     "rabill:create",
     "photo:upload",

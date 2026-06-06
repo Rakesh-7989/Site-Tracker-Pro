@@ -129,3 +129,43 @@ describe("Project-tier coverage", () => {
     expect(a).not.toContain("changeorder:approve" as never);
   });
 });
+
+// Vendor capability split (founder decision 2026-06-06):
+//   vendor:manage = curate the directory (/vendors page). Admins + prospector only.
+//   vendor:select = pick a vendor inside a PO / material / invoice form. Broader.
+describe("Vendor capability split", () => {
+  it("vendor:manage is restricted to admins + prospector", () => {
+    expect(identityCapabilities("orgadmin")).toContain("vendor:manage" as never);
+    expect(identityCapabilities("prospector")).toContain("vendor:manage" as never);
+    expect(orgTierCapabilities("admin")).toContain("vendor:manage" as never);
+    // NOT granted to procurement workflow roles:
+    expect(identityCapabilities("pm")).not.toContain("vendor:manage" as never);
+    expect(identityCapabilities("contractor")).not.toContain("vendor:manage" as never);
+    expect(identityCapabilities("site_engineer")).not.toContain("vendor:manage" as never);
+    expect(identityCapabilities("client")).not.toContain("vendor:manage" as never);
+  });
+
+  it("vendor:select is broad — every role that creates POs / materials / invoices gets it", () => {
+    // Procurement workflow roles must be able to pick a vendor in a form.
+    expect(identityCapabilities("pm")).toContain("vendor:select" as never);
+    expect(identityCapabilities("contractor")).toContain("vendor:select" as never);
+    expect(identityCapabilities("site_engineer")).toContain("vendor:select" as never);
+    expect(identityCapabilities("project_admin")).toContain("vendor:select" as never);
+    expect(identityCapabilities("design_architect_interior")).toContain("vendor:select" as never);
+    // Admins + prospector also get it (they already manage).
+    expect(identityCapabilities("orgadmin")).toContain("vendor:select" as never);
+    expect(identityCapabilities("prospector")).toContain("vendor:select" as never);
+    expect(orgTierCapabilities("admin")).toContain("vendor:select" as never);
+    // Project tier mirrors.
+    expect(projectTierCapabilities("pm")).toContain("vendor:select" as never);
+    expect(projectTierCapabilities("contractor")).toContain("vendor:select" as never);
+    expect(projectTierCapabilities("site_engineer")).toContain("vendor:select" as never);
+    expect(projectTierCapabilities("project_admin")).toContain("vendor:select" as never);
+  });
+
+  it("clients + read-only roles never get vendor:select", () => {
+    expect(identityCapabilities("client")).not.toContain("vendor:select" as never);
+    expect(identityCapabilities("site_inspector")).not.toContain("vendor:select" as never);
+    expect(projectTierCapabilities("client")).not.toContain("vendor:select" as never);
+  });
+});
