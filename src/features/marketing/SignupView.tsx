@@ -55,10 +55,9 @@ export function SignupView(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  if (status === "loading" || status === "idle") {
-    return <div className="min-h-screen grid place-items-center bg-cream-50"><Spinner size={26} /></div>;
-  }
-  if (session) return <Navigate to="/dashboard" replace />;
+  // Public signup renders instantly — no auth-loading spinner gate. Redirect
+  // only once a logged-in session is confirmed.
+  if (status === "ready" && session) return <Navigate to="/dashboard" replace />;
 
   const submit = async () => {
     setError(null);

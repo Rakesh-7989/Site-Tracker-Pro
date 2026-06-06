@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/auth";
-import { Card, Icon, Badge, Spinner } from "@/components/ui/atoms";
+import { Card, Icon, Badge } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "./plans";
 import { CONTACT_EMAIL } from "./legalContent";
@@ -42,10 +42,10 @@ function Logo(): JSX.Element {
 export function LandingView(): JSX.Element {
   const { session, status } = useAuth();
   const [billing, setBilling] = useState<BillingPeriod>("annual");
-  if (status === "loading" || status === "idle") {
-    return <div className="min-h-screen grid place-items-center bg-cream-50"><Spinner size={26} /></div>;
-  }
-  if (session) return <Navigate to="/dashboard" replace />;
+  // Public landing renders INSTANTLY — never gate on auth loading (no spinner,
+  // no dependency on Supabase being reachable). Only redirect once a logged-in
+  // session is actually confirmed.
+  if (status === "ready" && session) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="min-h-screen bg-cream-50 text-ink-900">
