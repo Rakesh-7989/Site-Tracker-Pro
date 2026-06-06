@@ -6,6 +6,7 @@ import { useAuth } from "@/auth";
 import { Card, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
 import { PLAN_TIERS } from "./plans";
+import { CONTACT_EMAIL } from "./legalContent";
 
 const FEATURES: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: "clipboard", title: "Daily site reports", body: "Voice-to-text DPRs, photos with geo-tags, and a promoter digest — from the field, in minutes." },
@@ -99,6 +100,8 @@ export function LandingView(): JSX.Element {
           <Link to="/privacy" className="hover:text-ink-600">Privacy Policy</Link>
           {" · "}
           <Link to="/terms" className="hover:text-ink-600">Terms of Service</Link>
+          {" · "}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink-600">Contact</a>
         </div>
         <div>© SiteTrack Pro · GiggleZen Technologies · Hyderabad</div>
       </footer>

@@ -1,8 +1,12 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.jsx";
 import { AppV3 } from "./app/AppV3.tsx";
 import { ErrorBoundary } from "./components/errorBoundary.jsx";
+
+// Legacy App is lazy-loaded — it only ships to the browser on ?shell=legacy, so
+// v3 (the default) never downloads the ~1 MB legacy bundle (detail/admin/help/
+// roadmap). It gets deleted entirely once the founder retires legacy.
+const LegacyApp = lazy(() => import("./App.jsx"));
 import { initSentry } from "./lib/sentry.js";
 import "./index.css";
 
@@ -46,7 +50,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         Session 27.4: ErrorBoundary.componentDidCatch reports via Sentry when
         configured. */}
     <ErrorBoundary>
-      {useV3 ? <AppV3 /> : <App />}
+      {useV3 ? <AppV3 /> : <Suspense fallback={null}><LegacyApp /></Suspense>}
     </ErrorBoundary>
   </React.StrictMode>
 );

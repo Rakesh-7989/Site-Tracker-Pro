@@ -1,43 +1,50 @@
 // SiteTrack Pro — v3 route tree.
 //
-// React Router v6. The shell layout wraps the authenticated routes;
-// /login is public. Unknown paths → 404. The dashboard is the index.
+// React Router v7. The shell layout wraps the authenticated routes; the public
+// landing / signup / legal / login sit outside it. Unknown paths → 404.
 //
-// Strangler note: this router only mounts when ?shell=v3 is present
-// (see main.jsx). The legacy App.jsx remains the production default.
+// Performance: the entry + first-paint views are imported eagerly; everything
+// reached by navigation (the 28-tab project detail, all org + admin panels, the
+// recharts-heavy Analytics view) is React.lazy() so it is NOT in the initial
+// bundle. ShellLayout wraps <Outlet/> in <Suspense>, so lazy routes get a
+// spinner while their chunk loads.
 
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 
+// ── Eager: entry + first paint + small ──────────────────────────────────────
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
+import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
+import { NotFoundView } from "@/features/shell/PlaceholderView";
+import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
 import { CreateProjectView } from "@/features/shell/CreateProjectView";
-import { NotFoundView } from "@/features/shell/PlaceholderView";
-import { DetailView } from "@/features/project/DetailView";
-import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
-import { DPRComposer } from "@/features/dpr/DPRComposer";
-import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
-import { RoleManager } from "@/features/admin/RoleManager";
-import { SignupRequestsView } from "@/features/admin/SignupRequestsView";
-import { PlatformOrgsView } from "@/features/admin/PlatformOrgsView";
-import { PlatformUsersView } from "@/features/admin/PlatformUsersView";
-import { PlatformDashboardView } from "@/features/admin/PlatformDashboardView";
-import { OrgMembersView } from "@/features/org/OrgMembersView";
-import { OrgDashboardView } from "@/features/org/OrgDashboardView";
-import { OrgBillingView } from "@/features/org/OrgBillingView";
-import { OrgActivityView } from "@/features/org/OrgActivityView";
-import { OrgTemplatesView } from "@/features/org/OrgTemplatesView";
-import { OrgApprovalsView } from "@/features/org/OrgApprovalsView";
-import { OrgNotificationsView } from "@/features/org/OrgNotificationsView";
-import { OrgIntegrationsView } from "@/features/org/OrgIntegrationsView";
-import { VendorsView } from "@/features/org/VendorsView";
-import { CalendarView } from "@/features/org/CalendarView";
-import { AnalyticsView } from "@/features/org/AnalyticsView";
-import { GlobalSearchView } from "@/features/org/GlobalSearchView";
-import { CrossProjectPOsView } from "@/features/org/CrossProjectPOsView";
-import { NotificationsView } from "@/features/org/NotificationsView";
+
+// ── Lazy: loaded on navigation (keeps the initial bundle lean) ──────────────
+const DetailView = lazy(() => import("@/features/project/DetailView").then(m => ({ default: m.DetailView })));
+const DPRComposer = lazy(() => import("@/features/dpr/DPRComposer").then(m => ({ default: m.DPRComposer })));
+const VendorsView = lazy(() => import("@/features/org/VendorsView").then(m => ({ default: m.VendorsView })));
+const CalendarView = lazy(() => import("@/features/org/CalendarView").then(m => ({ default: m.CalendarView })));
+const AnalyticsView = lazy(() => import("@/features/org/AnalyticsView").then(m => ({ default: m.AnalyticsView })));
+const GlobalSearchView = lazy(() => import("@/features/org/GlobalSearchView").then(m => ({ default: m.GlobalSearchView })));
+const CrossProjectPOsView = lazy(() => import("@/features/org/CrossProjectPOsView").then(m => ({ default: m.CrossProjectPOsView })));
+const NotificationsView = lazy(() => import("@/features/org/NotificationsView").then(m => ({ default: m.NotificationsView })));
+const OrgActivityView = lazy(() => import("@/features/org/OrgActivityView").then(m => ({ default: m.OrgActivityView })));
+const OrgDashboardView = lazy(() => import("@/features/org/OrgDashboardView").then(m => ({ default: m.OrgDashboardView })));
+const OrgMembersView = lazy(() => import("@/features/org/OrgMembersView").then(m => ({ default: m.OrgMembersView })));
+const OrgBillingView = lazy(() => import("@/features/org/OrgBillingView").then(m => ({ default: m.OrgBillingView })));
+const OrgTemplatesView = lazy(() => import("@/features/org/OrgTemplatesView").then(m => ({ default: m.OrgTemplatesView })));
+const OrgApprovalsView = lazy(() => import("@/features/org/OrgApprovalsView").then(m => ({ default: m.OrgApprovalsView })));
+const OrgNotificationsView = lazy(() => import("@/features/org/OrgNotificationsView").then(m => ({ default: m.OrgNotificationsView })));
+const OrgIntegrationsView = lazy(() => import("@/features/org/OrgIntegrationsView").then(m => ({ default: m.OrgIntegrationsView })));
+const RoleManager = lazy(() => import("@/features/admin/RoleManager").then(m => ({ default: m.RoleManager })));
+const SignupRequestsView = lazy(() => import("@/features/admin/SignupRequestsView").then(m => ({ default: m.SignupRequestsView })));
+const PlatformOrgsView = lazy(() => import("@/features/admin/PlatformOrgsView").then(m => ({ default: m.PlatformOrgsView })));
+const PlatformUsersView = lazy(() => import("@/features/admin/PlatformUsersView").then(m => ({ default: m.PlatformUsersView })));
+const PlatformDashboardView = lazy(() => import("@/features/admin/PlatformDashboardView").then(m => ({ default: m.PlatformDashboardView })));
 
 export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
@@ -46,7 +53,7 @@ export const router = createBrowserRouter([
   { path: "/privacy", element: <PrivacyView /> },
   { path: "/terms", element: <TermsView /> },
   { path: "/login", element: <LoginScreenV3 /> },
-  // ── Authenticated app (pathless layout route wraps RequireSession) ──
+  // ── Authenticated app (pathless layout route wraps RequireSession + Suspense) ──
   {
     element: <ShellLayout />,
     children: [

@@ -3,6 +3,7 @@
 // Wraps the authenticated area. Renders the loading / signed-out / error
 // states via RequireSession, then the chrome + <Outlet/> for child routes.
 
+import { Suspense } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 
 import { RequireSession } from "@/auth";
@@ -33,7 +34,9 @@ export function ShellLayout(): JSX.Element {
         <div className="flex-1 flex overflow-hidden">
           <Sidebar />
           <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <Outlet />
+            <Suspense fallback={<div className="grid place-items-center py-20 text-safety-500"><Spinner size={24} /></div>}>
+              <Outlet />
+            </Suspense>
           </main>
         </div>
       </div>
