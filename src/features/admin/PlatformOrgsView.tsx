@@ -4,13 +4,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
-import { Input } from "@/components/ui/forms";
-import { listPlatformOrgs, PLAN_LABEL, type PlatformOrg } from "@/app/platformAdminQueries";
+import { Input, Select } from "@/components/ui/forms";
+import { listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, type PlatformOrg } from "@/app/platformAdminQueries";
 import { deleteOrganization } from "@/app/orgAdminQueries";
+
+const PLAN_OPTIONS = ASSIGNABLE_PLANS.map(p => ({ value: p, label: PLAN_LABEL[p] ?? p }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
-const planTone = (p: string): "neutral" | "info" | "success" | "warning" => (p === "business" ? "success" : p === "pro" ? "info" : p === "custom" ? "warning" : "neutral");
+const planTone = (p: string): "neutral" | "info" | "success" | "warning" => (p === "business" ? "success" : p === "pro" ? "info" : (p === "custom" || p === "enterprise") ? "warning" : "neutral");
 const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
 
 export function PlatformOrgsView(): JSX.Element {
@@ -25,6 +27,7 @@ function Inner(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [planBusyId, setPlanBusyId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -46,6 +49,19 @@ function Inner(): JSX.Element {
     else setError(res.error);
   }, []);
 
+  const onChangePlan = useCallback(async (o: PlatformOrg, plan: string) => {
+    if (plan === o.plan) return;
+    const enterprise = planUnlocksCustomRoles(plan);
+    const note = enterprise ? "\n\nThis plan UNLOCKS per-org role + feature customization (custom roles)." : "";
+    if (!window.confirm(`Change "${o.name}" plan from ${PLAN_LABEL[o.plan] ?? o.plan} → ${PLAN_LABEL[plan] ?? plan}?${note}`)) return;
+    setPlanBusyId(o.id); setError(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setPlanBusyId(null); return; }
+    const res = await setOrgPlan(client, o.id, plan);
+    setPlanBusyId(null);
+    if (res.ok) setRows(prev => prev.map(r => r.id === o.id ? { ...r, plan } : r));
+    else setError(res.error);
+  }, []);
+
   const term = q.trim().toLowerCase();
   const shown = term ? rows.filter(r => r.name.toLowerCase().includes(term) || r.slug.toLowerCase().includes(term)) : rows;
 
@@ -62,12 +78,21 @@ function Inner(): JSX.Element {
         : <div className="space-y-2">{shown.map(o => (
             <Card key={o.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2"><span className="font-semibold text-ink-900 truncate">{o.name}</span><Badge tone={planTone(o.plan)}>{PLAN_LABEL[o.plan] ?? o.plan}</Badge></div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-ink-900 truncate">{o.name}</span>
+                  <Badge tone={planTone(o.plan)}>{PLAN_LABEL[o.plan] ?? o.plan}</Badge>
+                  {planUnlocksCustomRoles(o.plan) && <span title="Per-org custom roles unlocked"><Badge tone="warning"><Icon name="lock" size={11} /> custom roles</Badge></span>}
+                </div>
                 <div className="text-[11px] text-ink-400">{o.slug} · created {fmtDate(o.createdAt)}</div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0 text-center">
                 <div><div className="text-lg font-bold text-ink-900 leading-none">{o.memberCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">members</div></div>
                 <div><div className="text-lg font-bold text-ink-900 leading-none">{o.projectCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">projects</div></div>
+                <div className="w-28">
+                  {planBusyId === o.id
+                    ? <div className="grid place-items-center h-9"><Spinner size={16} /></div>
+                    : <Select aria-label="Change plan" options={PLAN_OPTIONS} value={o.plan} onChange={e => void onChangePlan(o, e.target.value)} />}
+                </div>
                 <Button size="sm" variant="ghost" disabled={deletingId === o.id} onClick={() => void onDelete(o)}
                   className="!text-rose-600 hover:!bg-rose-50" title="Delete organization">
                   {deletingId === o.id ? <Spinner size={14} /> : <Icon name="trash" size={16} />}

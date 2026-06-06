@@ -1,7 +1,7 @@
 // SiteTrack Pro — platform (superadmin) query tests.
 
 import { describe, it, expect } from "vitest";
-import { listPlatformOrgs, listPlatformUsers, getPlatformStats } from "@/app/platformAdminQueries";
+import { listPlatformOrgs, listPlatformUsers, getPlatformStats, setOrgPlan, planUnlocksCustomRoles, ASSIGNABLE_PLANS } from "@/app/platformAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({ rpc: async () => result });
@@ -37,5 +37,30 @@ describe("getPlatformStats", () => {
   it("null data (non-superadmin) → ok null; error surfaced", async () => {
     expect(await getPlatformStats(rpcClient({ data: null, error: null }))).toEqual({ ok: true, data: null });
     expect(await getPlatformStats(rpcClient({ data: null, error: { message: "denied" } }))).toEqual({ ok: false, error: "denied" });
+  });
+});
+
+describe("setOrgPlan + plan helpers", () => {
+  it("returns the from/to transition on success", async () => {
+    const r = await setOrgPlan(rpcClient({ data: { ok: true, org: "ABC", from: "basic", to: "enterprise" }, error: null }), "o1", "enterprise");
+    expect(r).toEqual({ ok: true, data: { org: "ABC", from: "basic", to: "enterprise" } });
+  });
+  it("surfaces an unknown-plan payload error", async () => {
+    const r = await setOrgPlan(rpcClient({ data: { ok: false, error: "unknown plan: gold" }, error: null }), "o1", "gold");
+    expect(r).toEqual({ ok: false, error: "unknown plan: gold" });
+  });
+  it("surfaces an rpc-level error (non-superadmin)", async () => {
+    const r = await setOrgPlan(rpcClient({ data: null, error: { message: "only a superadmin can change an organization plan" } }), "o1", "pro");
+    expect(r.ok).toBe(false);
+  });
+  it("planUnlocksCustomRoles is true only for enterprise + custom", () => {
+    expect(planUnlocksCustomRoles("enterprise")).toBe(true);
+    expect(planUnlocksCustomRoles("custom")).toBe(true);
+    expect(planUnlocksCustomRoles("basic")).toBe(false);
+    expect(planUnlocksCustomRoles("pro")).toBe(false);
+    expect(planUnlocksCustomRoles("business")).toBe(false);
+  });
+  it("ASSIGNABLE_PLANS includes enterprise", () => {
+    expect(ASSIGNABLE_PLANS).toContain("enterprise");
   });
 });

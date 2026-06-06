@@ -15,6 +15,7 @@ export type OverrideResult<T> =
 export interface OrgOption {
   id: string;
   name: string;
+  plan: string;
 }
 
 /** List orgs the caller can see (superadmin → all). For the org selector. */
@@ -23,11 +24,11 @@ export async function listOrgsForOverrides(client: any): Promise<OverrideResult<
   try {
     const { data, error } = await client
       .from("organizations")
-      .select("id, name")
+      .select("id, name, plan")
       .order("name", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
     const orgs = ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
-      id: String(r.id), name: String(r.name ?? "Org"),
+      id: String(r.id), name: String(r.name ?? "Org"), plan: String(r.plan ?? "basic"),
     }));
     return { ok: true, data: orgs };
   } catch (e) {

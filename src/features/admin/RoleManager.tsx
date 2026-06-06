@@ -19,6 +19,7 @@ import {
   listOrgsForOverrides, listCapabilityOverrides,
   setCapabilityOverride, clearCapabilityOverride, type OrgOption,
 } from "@/app/capabilityOverrideQueries";
+import { planUnlocksCustomRoles, PLAN_LABEL } from "@/app/platformAdminQueries";
 import { CustomRolesPanel } from "./CustomRolesPanel";
 
 type CellState = "inherit" | "grant" | "revoke";
@@ -52,6 +53,8 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
   const [savingCap, setSavingCap] = useState<Capability | null>(null);
 
   const orgId = scope === "" ? null : scope;
+  const selectedOrg = useMemo(() => orgs.find(o => o.id === orgId) ?? null, [orgs, orgId]);
+  const orgUnlocksCustom = selectedOrg ? planUnlocksCustomRoles(selectedOrg.plan) : false;
 
   // Load org list once.
   useEffect(() => {
@@ -132,6 +135,16 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
           />
         </label>
       </Card>
+
+      {/* Plan context for the selected org (soft gate — superadmin can always configure) */}
+      {selectedOrg && (
+        <Alert variant={orgUnlocksCustom ? "success" : "info"}>
+          {selectedOrg.name} is on the <b>{PLAN_LABEL[selectedOrg.plan] ?? selectedOrg.plan}</b> plan.{" "}
+          {orgUnlocksCustom
+            ? "Per-org custom roles + feature overrides are unlocked (Enterprise feature)."
+            : "Custom roles are an Enterprise feature for self-service — set this org to Enterprise on /admin/orgs to surface it to its admins. (You, as superadmin, can still configure overrides below.)"}
+        </Alert>
+      )}
 
       {/* Custom roles live per-org (not Global) */}
       {orgId !== null && <CustomRolesPanel orgId={orgId} createdBy={session.user.id} />}

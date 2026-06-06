@@ -8,6 +8,24 @@ export interface PlatformUser { id: string; name: string; email: string | null; 
 
 const num = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
+/** Plans a superadmin can assign. Order = display order in the picker. */
+export const ASSIGNABLE_PLANS = ["basic", "pro", "business", "enterprise", "custom"] as const;
+export type AssignablePlan = (typeof ASSIGNABLE_PLANS)[number];
+/** Plans that unlock per-org role + capability customization (mirrors plans.feature_caps.custom_roles). */
+export const CUSTOM_ROLE_PLANS = new Set<string>(["enterprise", "custom"]);
+export const planUnlocksCustomRoles = (plan: string): boolean => CUSTOM_ROLE_PLANS.has(plan);
+
+/** Superadmin-only: change an org's plan (incl. granting Enterprise). RPC set_org_plan (migration 95). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function setOrgPlan(client: any, orgId: string, plan: string): Promise<PResult<{ org: string; from: string; to: string }>> {
+  try {
+    const { data, error } = await client.rpc("set_org_plan", { p_org: orgId, p_plan: plan });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (data?.ok) return { ok: true, data: { org: String(data.org ?? ""), from: String(data.from ?? ""), to: String(data.to ?? "") } };
+    return { ok: false, error: String(data?.error ?? "Plan change failed.") };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listPlatformOrgs(client: any): Promise<PResult<PlatformOrg[]>> {
   try {
@@ -59,4 +77,4 @@ export async function getPlatformStats(client: any): Promise<PResult<PlatformSta
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
+export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", enterprise: "Enterprise", custom: "Custom", free: "Free" };

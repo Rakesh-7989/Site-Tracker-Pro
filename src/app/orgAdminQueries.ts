@@ -76,8 +76,8 @@ export async function listOrgActivity(client: any, orgId: string, limit = 100): 
 }
 
 // Plan display metadata (seat soft-limits mirror data/seed.js PLAN_META).
-export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
-export const PLAN_SEATS: Record<string, number | null> = { basic: 5, pro: 20, business: 100, custom: null };
+export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", enterprise: "Enterprise", custom: "Custom", free: "Free" };
+export const PLAN_SEATS: Record<string, number | null> = { basic: 5, pro: 20, business: 100, enterprise: null, custom: null };
 
 /** DPDP erasure — delete an org + ALL its data (cascade). Superadmin or org admin. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
