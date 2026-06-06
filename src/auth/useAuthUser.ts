@@ -15,6 +15,18 @@ import { defaultStorage, readActiveOrgId, writeActiveOrgId, type StorageLike } f
 
 export type AuthStatus = "idle" | "loading" | "ready" | "signed-out" | "error";
 
+/**
+ * Race a promise against a timeout so a hung network call (e.g. a stale /
+ * misconfigured Supabase URL on a bad deploy) can never leave the app stuck
+ * on an infinite loading spinner. Rejects with "auth-timeout" after `ms`.
+ */
+export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("auth-timeout")), ms)),
+  ]);
+}
+
 export interface UseAuthUserReturn {
   session: AuthSession | null;
   status: AuthStatus;
@@ -81,29 +93,44 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = client as any;
-    const { data, error: getUserErr } = await sb.auth.getUser();
-    if (getUserErr || !data?.user) {
+    // Everything below is wrapped so a rejected OR hung auth call can never
+    // leave status stuck on "loading" (which renders an infinite spinner).
+    // On any unexpected failure we fall back to signed-out → the public
+    // landing / login renders instead of a frozen page.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: getUserErr } = (await withTimeout(sb.auth.getUser(), 12000)) as { data: any; error: any };
+      if (getUserErr || !data?.user) {
+        setSession(null);
+        setStatus("signed-out");
+        return;
+      }
+      const preferredOrgId = readActiveOrgId(storageRef.current);
+      const outcome: FetchOutcome = await withTimeout(
+        fetchAuthSession(
+          sb,
+          { authUserId: data.user.id, authUserEmail: data.user.email ?? "" },
+          preferredOrgId,
+        ),
+        12000,
+      );
+      if (!outcome.ok) {
+        setSession(null);
+        setStatus("error");
+        setError(`${outcome.code}: ${outcome.error}`);
+        return;
+      }
+      setSession(outcome.session);
+      setStatus("ready");
+      // Persist (in case pickActiveOrgId chose a different / first org).
+      if (outcome.session.activeOrgId !== preferredOrgId) {
+        writeActiveOrgId(outcome.session.activeOrgId, storageRef.current);
+      }
+    } catch (e) {
+      // Network hang / timeout / unexpected throw → don't freeze the app.
       setSession(null);
       setStatus("signed-out");
-      return;
-    }
-    const preferredOrgId = readActiveOrgId(storageRef.current);
-    const outcome: FetchOutcome = await fetchAuthSession(
-      sb,
-      { authUserId: data.user.id, authUserEmail: data.user.email ?? "" },
-      preferredOrgId,
-    );
-    if (!outcome.ok) {
-      setSession(null);
-      setStatus("error");
-      setError(`${outcome.code}: ${outcome.error}`);
-      return;
-    }
-    setSession(outcome.session);
-    setStatus("ready");
-    // Persist (in case pickActiveOrgId chose a different / first org).
-    if (outcome.session.activeOrgId !== preferredOrgId) {
-      writeActiveOrgId(outcome.session.activeOrgId, storageRef.current);
+      setError(e instanceof Error ? e.message : String(e));
     }
   }, [getClient]);
 
