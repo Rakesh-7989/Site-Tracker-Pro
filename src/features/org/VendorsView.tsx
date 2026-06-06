@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { listVendors, createVendor, setVendorRating, deleteVendor, type Vendor } from "@/app/vendorQueries";
 
@@ -17,6 +17,10 @@ export function VendorsView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("vendor:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
+  // Vendor details are restricted: only org admins (orgadmin / org-tier admin)
+  // and the Prospector identity role can view them. Others see AccessDenied
+  // even on a direct URL hit, not just a hidden nav item.
+  if (!canManage) return <AccessDenied message="Vendor directory is restricted to org admins and prospectors." />;
   return <Inner orgId={activeOrg.orgId} canManage={canManage} />;
 }
 

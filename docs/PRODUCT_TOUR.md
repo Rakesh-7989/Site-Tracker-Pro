@@ -50,7 +50,7 @@ Source: `src/app/nav-config.ts`. Nav items appear only if the user holds the `re
 
 | Route | What it does | Capability gate | Status |
 |---|---|---|---|
-| `/vendors` | Org-shared vendor directory (material suppliers / subcontractors). CRUD on `vendors` table (mig 84). | `vendor:manage` ⚠️ (currently missing from matrix — see [§9 #1](#9-discoveries--gotchas)) | production (nav-visibility bug) |
+| `/vendors` | Org-shared vendor directory (material suppliers / subcontractors). CRUD on `vendors` table (mig 84). | `vendor:manage` → **superadmin, orgadmin, prospector, org-tier admin** (founder-restricted, 2026-06-06) | production |
 | `/pos` | Cross-project POs rollup, filterable by status. Read-only. RPC `org_purchase_orders` (mig 88). | `po:create` → superadmin, pm, vendor, org-tier admin | production |
 
 ### 2.4 Insights
@@ -246,7 +246,7 @@ From `src/lib/featureFlags.js#STUB_VIEWS` + `scripts/supabase/49_feature_flags_f
 
 ## 9. Discoveries / gotchas
 
-1. **🐛 `vendor:manage` capability is missing from the matrix.** The nav item `/vendors` requires `vendor:manage` (`nav-config.ts:43`) but that string does not appear in `src/auth/capabilities.ts` or in any role's array in `permissions-matrix.ts`. **Result: nobody sees the Vendors nav item.** The view itself works once you hit the URL directly. **Quick fix:** add `vendor:manage` to `CAPABILITIES` and grant to superadmin + orgadmin + org-tier admin + pm.
+1. ~~**🐛 `vendor:manage` missing from matrix.**~~ **FIXED 2026-06-06.** The cap was declared in `capabilities.ts` but unassigned. Founder restricted it to **superadmin + orgadmin + prospector + org-tier admin** (NOT pm, contractor, client, site_engineer). `VendorsView` also renders `AccessDenied` for unauthorized users hitting `/vendors` directly via URL. Tests in `tests/app/navConfig.test.ts` lock the behaviour.
 
 2. **`/activity` and `/audit` render the same component** (`OrgActivityView`). Two URLs, one view. Probably intentional alias but worth confirming.
 

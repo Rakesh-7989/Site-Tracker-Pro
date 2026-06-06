@@ -74,6 +74,45 @@ describe("buildNav", () => {
     expect(paths).toContain("/dpr");
     expect(paths).not.toContain("/org/members");
   });
+
+  // Vendor directory access: org admins (orgadmin / org-tier admin) + prospector + superadmin only.
+  it("orgadmin sees /vendors", () => {
+    const nav = buildNav(session({
+      user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
+    }));
+    expect(nav.map(n => n.to)).toContain("/vendors");
+  });
+
+  it("prospector sees /vendors", () => {
+    const nav = buildNav(session({
+      user: { id: "u", email: "a@b", name: "P", identityRole: "prospector", isStaff: false },
+    }));
+    expect(nav.map(n => n.to)).toContain("/vendors");
+  });
+
+  it("org-tier admin sees /vendors (e.g. a PM granted org admin via membership)", () => {
+    const nav = buildNav(session({
+      user: { id: "u", email: "a@b", name: "PM", identityRole: "pm", isStaff: false },
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", role: "admin", joinedAt: "2026-01-01" }],
+    }));
+    expect(nav.map(n => n.to)).toContain("/vendors");
+  });
+
+  it("plain pm WITHOUT org-tier admin does NOT see /vendors", () => {
+    const nav = buildNav(session({
+      user: { id: "u", email: "a@b", name: "PM", identityRole: "pm", isStaff: false },
+    }));
+    expect(nav.map(n => n.to)).not.toContain("/vendors");
+  });
+
+  it("contractor / client / site_engineer do NOT see /vendors", () => {
+    for (const r of ["contractor", "client", "site_engineer"] as const) {
+      const nav = buildNav(session({
+        user: { id: "u", email: "a@b", name: r, identityRole: r, isStaff: false },
+      }));
+      expect(nav.map(n => n.to)).not.toContain("/vendors");
+    }
+  });
 });
 
 describe("groupNav", () => {

@@ -46,6 +46,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "org:members:manage", "org:billing:manage", "org:integrations:manage",
     "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
     "org:branding:manage", "org:features:configure",
+    "vendor:manage",                       // Org admins curate the vendor directory.
     "compliance:view", "ledger:view", "budget:view",
     "export:pdf", "export:csv",
   ),
@@ -69,6 +70,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     // Sales / BD — reads only the prospects they own.
     "activity:view",
     "project:create",   // Can create draft projects for prospects
+    "vendor:manage",    // Adds + maintains vendor leads during prospecting.
   ),
   // pm absorbs the former project_head role (founder consolidation
   // 2026-06-04): gains rabill:approve + export:csv on top of its own set.
@@ -252,6 +254,7 @@ const ORG_TIER_CAPS: Record<OrgTierRole, Capability[]> = {
     "org:members:manage", "org:billing:manage", "org:integrations:manage",
     "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
     "org:branding:manage", "org:features:configure",
+    "vendor:manage",                       // Org admins manage the vendor directory.
     "project:create", "project:archive", "project:restore", "project:settings:edit",
     "team:manage",
     "compliance:view",
