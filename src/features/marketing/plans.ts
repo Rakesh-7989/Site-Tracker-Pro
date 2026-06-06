@@ -55,6 +55,14 @@ export function formatINR(n: number): string {
   return "₹" + Math.round(n).toLocaleString("en-IN");
 }
 
+/** India GST on SaaS. Listed prices are EXCLUSIVE of GST (B2B claims input credit). */
+export const GST_RATE = 0.18;
+
+/** GST-inclusive total for a listed (pre-GST) amount, rounded to whole rupees. */
+export function gstInclusive(n: number): number {
+  return Math.round(n * (1 + GST_RATE));
+}
+
 export interface PriceView {
   amount: string;             // headline price, e.g. "₹7,999" or "₹79,990"
   cadence: string;            // "/month" or "/year"

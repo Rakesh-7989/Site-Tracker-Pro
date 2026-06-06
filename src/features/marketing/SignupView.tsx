@@ -7,7 +7,7 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
-import { PLAN_TIERS, priceFor, type BillingPeriod } from "./plans";
+import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "./plans";
 import { CONSENT_VERSION } from "./legalContent";
 import { submitSignupRequest, type SignupPlan } from "@/app/signupQueries";
 
@@ -127,6 +127,7 @@ export function SignupView(): JSX.Element {
                 </div>
                 <div className="text-xl font-bold mt-1">{pr.amount}<span className="text-xs font-normal text-ink-400">{pr.cadence}</span></div>
                 {billing === "annual" && <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">{pr.effectiveMonthly} · save {pr.savingsAmount}</div>}
+                <div className="text-[10px] text-ink-400 mt-0.5">+ 18% GST · {formatINR(gstInclusive(billing === "annual" ? p.annual : p.monthly))} incl.</div>
                 <div className="text-[11px] text-ink-500 mt-0.5">{p.tagline}</div>
               </button>
             );

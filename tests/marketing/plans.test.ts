@@ -1,7 +1,7 @@
 // SiteTrack Pro — marketing plan pricing helpers.
 
 import { describe, it, expect } from "vitest";
-import { PLAN_TIERS, formatINR, priceFor } from "@/features/marketing/plans";
+import { PLAN_TIERS, formatINR, priceFor, gstInclusive, GST_RATE } from "@/features/marketing/plans";
 
 describe("formatINR", () => {
   it("formats with Indian digit grouping + ₹, no decimals", () => {
@@ -49,5 +49,14 @@ describe("priceFor", () => {
 
   it("every tier saves ~17% on annual", () => {
     for (const t of PLAN_TIERS) expect(priceFor(t, "annual").savingsPct).toBe(17);
+  });
+});
+
+describe("gstInclusive", () => {
+  it("adds 18% GST, rounded to whole rupees", () => {
+    expect(GST_RATE).toBe(0.18);
+    expect(gstInclusive(11999)).toBe(14159);   // 11999 × 1.18 = 14158.82 → 14159
+    expect(gstInclusive(119990)).toBe(141588);  // Pro annual incl. GST
+    expect(gstInclusive(5999)).toBe(7079);      // 5999 × 1.18 = 7078.82 → 7079
   });
 });

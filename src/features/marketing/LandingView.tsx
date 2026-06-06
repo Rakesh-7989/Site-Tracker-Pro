@@ -6,7 +6,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
-import { PLAN_TIERS, priceFor, type BillingPeriod } from "./plans";
+import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "./plans";
 import { CONTACT_EMAIL } from "./legalContent";
 
 function BillingToggle({ value, onChange }: { value: BillingPeriod; onChange: (p: BillingPeriod) => void }): JSX.Element {
@@ -106,6 +106,7 @@ export function LandingView(): JSX.Element {
               {billing === "annual"
                 ? <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">{pr.effectiveMonthly} · save {pr.savingsAmount} ({pr.savingsPct}%)</div>
                 : <div className="text-[11px] text-ink-400 mt-0.5">or pay yearly &amp; save ~17%</div>}
+              <div className="text-[10px] text-ink-400 mt-0.5">+ 18% GST · {formatINR(gstInclusive(billing === "annual" ? p.annual : p.monthly))} incl.</div>
               <div className="text-xs text-ink-500 mt-1">{p.tagline}</div>
               <ul className="mt-3 space-y-1.5">
                 {p.features.slice(0, 4).map(ft => (
