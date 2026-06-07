@@ -74,14 +74,23 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     return await (mod as any).getSupabaseClient();
   }, [opts]);
 
-  const hydrate = useCallback(async (): Promise<void> => {
-    setStatus("loading");
+  const hydrate = useCallback(async (silent = false): Promise<void> => {
+    // `silent` re-hydrations (triggered by background auth events such as a
+    // token refresh) must NOT flip status back to "loading" — otherwise the
+    // shell flashes the full-screen spinner on every refresh. Only the first
+    // load (and an explicit refresh()) shows the loading state.
+    if (!silent) setStatus("loading");
     setError(null);
     let client: unknown;
     try {
-      client = await getClient();
+      // getClient() loads the Supabase SDK via dynamic import. Cap it with a
+      // timeout so a hung / stale chunk fetch (e.g. a bad deploy or a stale
+      // service-worker cache) can never leave the app frozen on an infinite
+      // spinner — fall back to signed-out so the public login renders.
+      client = await withTimeout(getClient(), 8000);
     } catch (e) {
-      setStatus("error");
+      setSession(null);
+      setStatus("signed-out");
       setError(e instanceof Error ? e.message : String(e));
       return;
     }
@@ -98,9 +107,14 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     // On any unexpected failure we fall back to signed-out → the public
     // landing / login renders instead of a frozen page.
     try {
+      // getSession() reads the persisted session from localStorage (fast, no
+      // network round-trip) instead of getUser() — which hit /auth/v1/user on
+      // every cold load and flashed a spinner. autoRefreshToken keeps the token
+      // valid; RLS still enforces every request server-side.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error: getUserErr } = (await withTimeout(sb.auth.getUser(), 12000)) as { data: any; error: any };
-      if (getUserErr || !data?.user) {
+      const { data } = (await withTimeout(sb.auth.getSession(), 8000)) as { data: any };
+      const authUser = data?.session?.user;
+      if (!authUser) {
         setSession(null);
         setStatus("signed-out");
         return;
@@ -109,7 +123,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       const outcome: FetchOutcome = await withTimeout(
         fetchAuthSession(
           sb,
-          { authUserId: data.user.id, authUserEmail: data.user.email ?? "" },
+          { authUserId: authUser.id, authUserEmail: authUser.email ?? "" },
           preferredOrgId,
         ),
         12000,
@@ -145,7 +159,9 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = client as any;
       sb.auth.onAuthStateChange(() => {
-        if (!cancelled) void hydrate();
+        // Background re-hydrate (sign-in / sign-out / token refresh) — silent so
+        // it never re-flashes the full-screen "Loading your workspace…" spinner.
+        if (!cancelled) void hydrate(true);
       });
     })();
     return () => { cancelled = true; };
