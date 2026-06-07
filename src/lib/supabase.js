@@ -224,6 +224,18 @@ export async function resetPassword(email) {
 }
 
 /**
+ * Set a new password for the currently-authenticated user. Used by the
+ * /auth/reset page after a recovery link puts a session in place (and also
+ * works for a normal logged-in user changing their password).
+ */
+export async function updatePassword(newPassword) {
+  const sb = await getSupabaseClient();
+  if (!sb) return { ok: false, error: "backend-disabled" };
+  const { error } = await sb.auth.updateUser({ password: String(newPassword || "") });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/**
  * Session 29 — Accept an org invitation (called when ?invite=<token> is in URL).
  * Calls accept_org_invitation() RPC defined in 37_org_invitations.sql.
  */

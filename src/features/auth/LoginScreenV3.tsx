@@ -32,6 +32,7 @@ export function LoginScreenV3(): JSX.Element {
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   // MFA challenge (only shown when the just-signed-in user has a verified factor).
@@ -87,6 +88,15 @@ export function LoginScreenV3(): JSX.Element {
     const res = await lib.signInWithMagicLink(email.trim().toLowerCase());
     if (res.ok) setStatus({ kind: "sent", msg: `Sign-in link sent to ${email}. Click it or enter the 6-digit code below.` });
     else setStatus({ kind: "error", msg: res.error ?? "Could not send link." });
+  };
+
+  const onForgotPassword = async () => {
+    if (!validEmail(email)) return setStatus({ kind: "error", msg: "Enter your email above first, then tap Forgot password." });
+    setStatus({ kind: "busy" });
+    const lib = await authLib();
+    const res = await lib.resetPassword(email.trim().toLowerCase());
+    if (res.ok) setStatus({ kind: "sent", msg: `Password reset link sent to ${email}. Check your inbox (and spam) to set a new password.` });
+    else setStatus({ kind: "error", msg: res.error ?? "Could not send reset link." });
   };
 
   const onVerifyOtp = async () => {
@@ -190,15 +200,26 @@ export function LoginScreenV3(): JSX.Element {
           {/* Password */}
           {method === "password" && (
             <div className="mb-3">
-              <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Password</label>
+                <button type="button" onClick={onForgotPassword} disabled={busy}
+                  className="text-[11px] font-semibold text-safety-600 hover:text-safety-700 disabled:opacity-50">
+                  Forgot password?
+                </button>
+              </div>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
                 <input
-                  id="pw" type="password" value={password} onChange={e => setPassword(e.target.value)}
+                  id="pw" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••" autoComplete="current-password"
                   onKeyDown={e => { if (e.key === "Enter") onPasswordLogin(); }}
-                  className="w-full pl-10 pr-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+                  className="w-full pl-10 pr-10 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
                 />
+                <button type="button" onClick={() => setShowPassword(s => !s)} tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600">
+                  <Icon name={showPassword ? "eyeOff" : "eye"} size={16} />
+                </button>
               </div>
             </div>
           )}
