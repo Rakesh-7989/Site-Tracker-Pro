@@ -62,17 +62,26 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
   // Avoid stale-closure problems in the auth state listener.
   const storageRef = useRef(storage);
   storageRef.current = storage;
+  // Keep the latest opts in a ref so getClient / hydrate stay STABLE across
+  // renders. CRITICAL: <AuthProvider> spreads a fresh `opts` object on every
+  // render ({ children, ...opts }). Depending on its identity made getClient →
+  // hydrate → the mount effect all re-run every render, which re-fired hydrate()
+  // in a tight loop → endless fetchAuthSession requests + a permanently stuck
+  // "Loading your workspace…" after login. Reading opts from a ref (so the
+  // callbacks have empty/stable deps) breaks that loop — the effect runs once.
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
 
   // Resolve the client lazily — supabase.js getSupabaseClient is a JS
   // module; we accept either a custom getter or the default lib export.
   const getClient = useCallback(async () => {
-    if (opts.getClient) return await opts.getClient();
+    if (optsRef.current.getClient) return await optsRef.current.getClient();
     // Default import path — guarded so tests that pass getClient never
     // touch the lib.
     const mod = await import("../lib/supabase.js");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return await (mod as any).getSupabaseClient();
-  }, [opts]);
+  }, []);
 
   const hydrate = useCallback(async (silent = false): Promise<void> => {
     // `silent` re-hydrations (triggered by background auth events such as a
@@ -150,6 +159,8 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let subscription: { unsubscribe: () => void } | null = null;
     void (async () => {
       await hydrate();
       if (cancelled) return;
@@ -158,13 +169,20 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       if (!client || cancelled) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = client as any;
-      sb.auth.onAuthStateChange(() => {
+      const res = sb.auth.onAuthStateChange(() => {
         // Background re-hydrate (sign-in / sign-out / token refresh) — silent so
         // it never re-flashes the full-screen "Loading your workspace…" spinner.
         if (!cancelled) void hydrate(true);
       });
+      subscription = res?.data?.subscription ?? null;
+      // If we were torn down while awaiting, clean up immediately.
+      if (cancelled) subscription?.unsubscribe();
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      subscription?.unsubscribe();
+    };
+    // getClient + hydrate are stable (see optsRef above) → this runs once on mount.
   }, [hydrate, getClient]);
 
   const setActiveOrgId = useCallback((orgId: string | null) => {
