@@ -4,7 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { Card, Badge, Button, Spinner, Alert, AccessDenied, Icon } from "@/components/ui/atoms";
+import { requestPlanUpgrade } from "@/app/upgradeQueries";
 import { getOrgOverview, PLAN_LABEL, PLAN_SEATS, type OrgOverview } from "@/app/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,8 +80,70 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
               </dl>
             ) : <div className="text-sm text-ink-500">No active subscription on record. You&apos;re on the default {PLAN_LABEL[data.plan] ?? data.plan} plan.</div>}
           </Card>
+
+          <RequestUpgradeCard orgId={orgId} currentPlan={data.plan} />
         </>
       )}
     </div>
+  );
+}
+
+const UPGRADE_TARGETS = ["pro", "business", "enterprise"];
+
+function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan: string }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [desired, setDesired] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  // Only offer plans above the current one.
+  const order = ["free", "basic", "pro", "business", "enterprise"];
+  const targets = UPGRADE_TARGETS.filter(t => order.indexOf(t) > order.indexOf(currentPlan));
+
+  const submit = async () => {
+    setErr(null);
+    if (!desired) return setErr("Pick a plan you'd like to move to.");
+    setBusy(true);
+    const client = await getClient();
+    if (!client) { setBusy(false); return setErr("Backend not configured."); }
+    const res = await requestPlanUpgrade(client, orgId, desired, note);
+    setBusy(false);
+    if (res.ok) { setDone(true); setOpen(false); } else setErr(res.error);
+  };
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="font-semibold text-ink-800">Need more? Upgrade your plan</div>
+          <div className="text-[13px] text-ink-500 mt-0.5">Send a request — our team contacts you to move you up.</div>
+        </div>
+        {!open && !done && <Button onClick={() => setOpen(true)} leftIcon={<Icon name="trend" size={15} />}>Request an upgrade</Button>}
+      </div>
+
+      {done && <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700">✅ Request sent — our team will reach out to you shortly.</div>}
+
+      {open && (
+        <div className="mt-4 border-t border-cream-100 pt-4 space-y-3">
+          {err && <Alert variant="danger">{err}</Alert>}
+          <label className="block">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Move to plan</span>
+            <select value={desired} onChange={e => setDesired(e.target.value)} className="w-full mt-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white">
+              <option value="">Choose a plan…</option>
+              {targets.map(t => <option key={t} value={t}>{PLAN_LABEL[t] ?? t}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Anything we should know? (optional)</span>
+            <input value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. need RERA filing + more seats" className="w-full mt-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white" />
+          </label>
+          <div className="flex gap-2">
+            <Button onClick={submit} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? "Sending…" : "Send request"}</Button>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
