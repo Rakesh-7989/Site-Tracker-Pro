@@ -19,7 +19,7 @@ export function TopBar(): JSX.Element {
   };
 
   return (
-    <header className="h-14 flex items-center justify-between px-4 border-b border-cream-200 bg-white">
+    <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-cream-200 bg-white z-20">
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-safety-500 text-white grid place-items-center font-bold text-sm">S</div>
         <span className="font-display font-bold text-ink-900 text-sm tracking-tight">SiteTrack Pro</span>

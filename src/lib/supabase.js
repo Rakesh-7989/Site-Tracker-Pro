@@ -86,7 +86,11 @@ export async function signInWithMagicLink(email) {
   if (!sb) return { ok: false, error: "backend-disabled" };
   const { error } = await sb.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: getCanonicalAppUrl() },
+    // shouldCreateUser:false → a magic link only signs in EXISTING users; it
+    // never silently creates an account for an unknown email. New users come in
+    // only via a superadmin-approved invite (admin API), so the public can't
+    // self-provision a workspace by typing any email here.
+    options: { emailRedirectTo: getCanonicalAppUrl(), shouldCreateUser: false },
   });
   return error ? { ok: false, error: error.message } : { ok: true };
 }

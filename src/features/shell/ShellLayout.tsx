@@ -29,11 +29,14 @@ export function ShellLayout(): JSX.Element {
       signedOut={<Navigate to="/login" replace />}
       errorView={<Navigate to="/login?error=session" replace />}
     >
-      <div className="min-h-screen flex flex-col bg-cream-50">
+      {/* Fixed-height app frame: the TopBar stays put while the Sidebar and the
+          main content each scroll on their own (min-h-0 lets the flex children
+          actually shrink so their overflow-y-auto kicks in). */}
+      <div className="h-screen flex flex-col bg-cream-50 overflow-hidden">
         <TopBar />
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex min-h-0 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">
             <Suspense fallback={<div className="grid place-items-center py-20 text-safety-500"><Spinner size={24} /></div>}>
               <Outlet />
             </Suspense>
