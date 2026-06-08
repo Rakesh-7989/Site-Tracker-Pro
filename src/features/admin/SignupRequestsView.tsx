@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useCan, useAuth } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listSignupRequests, reviewSignupRequest, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
+import { listSignupRequests, reviewSignupRequest, markSignupPaid, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
 import { listStaff, assignSignupRequest, type StaffMember } from "@/app/staffQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,6 +14,14 @@ const FILTERS = [{ value: "pending", label: "Pending" }, { value: "approved", la
 const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
 const statusTone = (s: SignupStatus): "neutral" | "warning" | "success" | "danger" => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");
 const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
+const PAY_TONE: Record<string, "warning" | "success" | "neutral"> = { unpaid: "warning", paid: "success", waived: "neutral" };
+const PAY_LABEL: Record<string, string> = { unpaid: "Payment due", paid: "Paid", waived: "Waived" };
+// 24h provisioning SLA — clock starts at payment confirmation.
+function slaText(r: SignupRequestRow): { text: string; over: boolean } | null {
+  if (r.status !== "pending" || r.paymentStatus === "unpaid" || !r.paidAt) return null;
+  const hrs = Math.round((new Date(r.paidAt).getTime() + 24 * 3600 * 1000 - Date.now()) / 3600000);
+  return hrs >= 0 ? { text: `Provision due in ${hrs}h`, over: false } : { text: `Overdue by ${-hrs}h`, over: true };
+}
 
 export function SignupRequestsView(): JSX.Element {
   const canManage = useCan("platform:orgs:manage");
@@ -43,6 +51,15 @@ function Inner(): JSX.Element {
       if (res.ok) setStaff(res.data);
     })();
   }, [canAssign]);
+
+  const markPaid = async (r: SignupRequestRow, status: "unpaid" | "paid" | "waived") => {
+    setBusy(r.id); setError(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
+    const res = await markSignupPaid(client, r.id, status);
+    if (res.ok) { setNotice(status === "paid" ? `Payment confirmed for ${r.firmName} — provision within 24h.` : `Payment ${status} for ${r.firmName}.`); await reload(); }
+    else setError(res.error);
+    setBusy(null);
+  };
 
   const assign = async (r: SignupRequestRow, staffId: string) => {
     setBusy(r.id); setError(null);
@@ -98,6 +115,8 @@ function Inner(): JSX.Element {
                   <span className="font-semibold text-ink-900">{r.firmName}</span>
                   <Badge tone="info">{PLAN_LABEL[r.plan] ?? r.plan}</Badge>
                   <Badge tone={statusTone(r.status)}>{r.status}</Badge>
+                  {r.status === "pending" && <Badge tone={PAY_TONE[r.paymentStatus]}>{PAY_LABEL[r.paymentStatus]}</Badge>}
+                  {(() => { const s = slaText(r); return s ? <span className={`text-[11px] font-semibold ${s.over ? "text-rose-600" : "text-amber-600"}`}>⏱ {s.text}</span> : null; })()}
                 </div>
                 <div className="text-sm text-ink-600 mt-0.5">{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ""}</div>
                 {r.message && <div className="text-[12px] text-ink-500 mt-1 italic">“{r.message}”</div>}
@@ -116,6 +135,19 @@ function Inner(): JSX.Element {
                 <Select className="w-56" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
                   onChange={e => void assign(r, e.target.value)}
                   options={[{ value: "", label: "— Unassigned —" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
+              </div>
+            )}
+            {r.status === "pending" && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap text-[12px]">
+                <span className="text-ink-400 font-semibold">Payment:</span>
+                {r.paymentStatus === "unpaid" ? (<>
+                  <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
+                  <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "waived")}>Waive</Button>
+                  <span className="text-ink-400">— confirm payment before you provision the org (24h SLA)</span>
+                </>) : (<>
+                  <span className="text-ink-700">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
+                  <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>
+                </>)}
               </div>
             )}
             {rejecting === r.id && (

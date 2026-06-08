@@ -17,6 +17,9 @@ export interface SignupRequestRow {
   reviewedAt: string | null;
   createdOrgId: string | null;
   assignedStaffId: string | null;
+  paymentStatus: "unpaid" | "paid" | "waived";
+  paymentRef: string | null;
+  paidAt: string | null;
   createdAt: string;
 }
 
@@ -25,7 +28,7 @@ const asStatus = (v: unknown): SignupStatus => (["pending", "approved", "rejecte
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listSignupRequests(client: any, status?: SignupStatus): Promise<SAResult<SignupRequestRow[]>> {
   try {
-    let q = client.from("signup_requests").select("id, firm_name, contact_name, email, phone, plan, message, status, review_notes, reviewed_at, created_org_id, assigned_staff_id, created_at").order("created_at", { ascending: false });
+    let q = client.from("signup_requests").select("id, firm_name, contact_name, email, phone, plan, message, status, review_notes, reviewed_at, created_org_id, assigned_staff_id, payment_status, payment_ref, paid_at, created_at").order("created_at", { ascending: false });
     if (status) q = q.eq("status", status);
     const { data, error } = await q;
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -37,6 +40,9 @@ export async function listSignupRequests(client: any, status?: SignupStatus): Pr
       reviewedAt: r.reviewed_at == null ? null : String(r.reviewed_at),
       createdOrgId: r.created_org_id == null ? null : String(r.created_org_id),
       assignedStaffId: r.assigned_staff_id == null ? null : String(r.assigned_staff_id),
+      paymentStatus: (["unpaid", "paid", "waived"].includes(String(r.payment_status)) ? String(r.payment_status) : "unpaid") as "unpaid" | "paid" | "waived",
+      paymentRef: r.payment_ref == null ? null : String(r.payment_ref),
+      paidAt: r.paid_at == null ? null : String(r.paid_at),
       createdAt: String(r.created_at ?? ""),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
@@ -66,5 +72,15 @@ export async function reviewSignupRequest(client: any, requestId: string, action
     }
     if (data?.ok) return { ok: true, data: { ok: true, orgId: data.orgId, emailSent: data.emailSent } };
     return { ok: false, error: data?.message || data?.error || "Review failed." };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Staff confirms (manual) payment for a paid-plan signup. RPC mark_signup_paid (mig 104). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function markSignupPaid(client: any, requestId: string, status: "unpaid" | "paid" | "waived", ref?: string): Promise<SAResult<true>> {
+  try {
+    const { error } = await client.rpc("mark_signup_paid", { p_request: requestId, p_ref: ref ?? null, p_status: status });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: true };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
