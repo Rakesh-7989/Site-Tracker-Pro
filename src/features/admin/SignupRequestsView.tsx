@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useCan, useAuth } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listSignupRequests, reviewSignupRequest, markSignupPaid, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
+import { listSignupRequests, reviewSignupRequest, markSignupPaid, createCheckoutLink, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
 import { listStaff, assignSignupRequest, type StaffMember } from "@/app/staffQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +51,15 @@ function Inner(): JSX.Element {
       if (res.ok) setStaff(res.data);
     })();
   }, [canAssign]);
+
+  const sendPayLink = async (r: SignupRequestRow) => {
+    setBusy(r.id); setError(null); setNotice(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
+    const res = await createCheckoutLink(client, r.id, "annual");
+    if (res.ok) setNotice(`Cashfree payment link (₹${res.data.amount}) emailed to ${r.email}. Marks paid automatically once they pay.`);
+    else setError(res.error.includes("not-configured") ? "Cashfree keys not set yet — add CASHFREE_APP_ID + CASHFREE_SECRET (sandbox) first." : res.error);
+    setBusy(null);
+  };
 
   const markPaid = async (r: SignupRequestRow, status: "unpaid" | "paid" | "waived") => {
     setBusy(r.id); setError(null);
@@ -141,9 +150,10 @@ function Inner(): JSX.Element {
               <div className="mt-2 flex items-center gap-2 flex-wrap text-[12px]">
                 <span className="text-ink-400 font-semibold">Payment:</span>
                 {r.paymentStatus === "unpaid" ? (<>
+                  <Button size="sm" disabled={busy === r.id} onClick={() => void sendPayLink(r)}>Send payment link</Button>
                   <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
                   <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "waived")}>Waive</Button>
-                  <span className="text-ink-400">— confirm payment before you provision the org (24h SLA)</span>
+                  <span className="text-ink-400">— Cashfree link, or confirm manually (24h SLA)</span>
                 </>) : (<>
                   <span className="text-ink-700">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
                   <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>
