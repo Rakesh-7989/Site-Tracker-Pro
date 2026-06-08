@@ -86,6 +86,7 @@ export function normalizeProfile(
     avatarUrl: typeof row.avatar === "string" && row.avatar.length > 0 ? row.avatar : null,
     isStaff: Boolean(row.is_staff),
     staffTier: tier === "owner" || tier === "head" || tier === "member" ? tier : null,
+    profileCompleted: Boolean(row.profile_completed),
   };
   return { ok: true, user };
 }
@@ -196,7 +197,7 @@ export async function fetchAuthSession(
     // 1. profile
     const profileRes = await client
       .from("profiles")
-      .select("id, name, avatar, role, is_staff, staff_tier")
+      .select("id, name, avatar, role, is_staff, staff_tier, profile_completed")
       .eq("id", input.authUserId)
       .maybeSingle();
     if (profileRes.error) {

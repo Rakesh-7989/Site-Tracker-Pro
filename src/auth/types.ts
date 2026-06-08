@@ -30,6 +30,8 @@ export interface AuthUser {
   isStaff: boolean;
   /** profiles.staff_tier — platform staff hierarchy (null = not staff). */
   staffTier?: StaffTier | null;
+  /** profiles.profile_completed — false → user must finish their profile first. */
+  profileCompleted?: boolean;
 }
 
 /** Platform staff hierarchy tier (migration 99). Owner > Head > Member. */

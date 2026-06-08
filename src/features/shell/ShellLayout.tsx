@@ -6,7 +6,7 @@
 import { Suspense } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 
-import { RequireSession } from "@/auth";
+import { RequireSession, useAuth } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
@@ -29,9 +29,24 @@ export function ShellLayout(): JSX.Element {
       signedOut={<Navigate to="/login" replace />}
       errorView={<Navigate to="/login?error=session" replace />}
     >
-      {/* Fixed-height app frame: the TopBar stays put while the Sidebar and the
-          main content each scroll on their own (min-h-0 lets the flex children
-          actually shrink so their overflow-y-auto kicks in). */}
+      <GatedShell />
+    </RequireSession>
+  );
+}
+
+/**
+ * Inside a ready session: force profile completion first (every user fills it
+ * once — migration 102), then render the app chrome.
+ */
+function GatedShell(): JSX.Element {
+  const { session } = useAuth();
+  if (session && session.user.profileCompleted === false) {
+    return <Navigate to="/profile/complete" replace />;
+  }
+  return (
+      /* Fixed-height app frame: the TopBar stays put while the Sidebar and the
+         main content each scroll on their own (min-h-0 lets the flex children
+         actually shrink so their overflow-y-auto kicks in). */
       <div className="h-screen flex flex-col bg-cream-50 overflow-hidden">
         <TopBar />
         <div className="flex-1 flex min-h-0 overflow-hidden">
@@ -43,6 +58,5 @@ export function ShellLayout(): JSX.Element {
           </main>
         </div>
       </div>
-    </RequireSession>
   );
 }
