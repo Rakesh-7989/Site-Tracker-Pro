@@ -9,9 +9,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import {
-  createStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
+  createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
   staffJoinUrl, inviteStatus, type StaffMember, type StaffInvite,
 } from "@/app/staffQueries";
+
+const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any> {
@@ -39,6 +41,8 @@ export function StaffAdminView(): JSX.Element {
   const [justCreated, setJustCreated] = useState<StaffInvite | null>(null);
   const [copied, setCopied] = useState(false);
   const [inviteTier, setInviteTier] = useState<"member" | "head">("member");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [emailNote, setEmailNote] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -53,13 +57,28 @@ export function StaffAdminView(): JSX.Element {
   useEffect(() => { if (canManage) void load(); else setLoading(false); }, [canManage, load]);
 
   const onGenerate = async () => {
-    setBusy(true); setError(null); setCopied(false);
+    setBusy(true); setError(null); setCopied(false); setEmailNote(null);
     const client = await getClient();
     const res = await createStaffInvite(client, { tier: inviteTier });
     setBusy(false);
     if (!res.ok) return setError(res.error);
     setJustCreated(res.data);
     setInvites(prev => [res.data, ...prev]);
+  };
+
+  const onEmailInvite = async () => {
+    if (!validEmail(inviteEmail)) return setError("Enter a valid email to send the invite to.");
+    setBusy(true); setError(null); setEmailNote(null); setCopied(false);
+    const client = await getClient();
+    const res = await sendStaffInvite(client, { email: inviteEmail.trim().toLowerCase(), tier: inviteTier });
+    setBusy(false);
+    if (!res.ok) return setError(res.error);
+    setEmailNote(res.data.emailSent
+      ? `✅ Invite emailed to ${inviteEmail}.`
+      : `Invite created, but the email didn't send — copy the link below and share it manually.`);
+    setJustCreated({ id: "", token: res.data.token, email: inviteEmail, tier: inviteTier, usedAt: null, revokedAt: null, expiresAt: "", createdAt: "" });
+    setInviteEmail("");
+    void load();
   };
 
   const onRevoke = async (id: string) => {
@@ -99,24 +118,27 @@ export function StaffAdminView(): JSX.Element {
 
       {/* Generate invite */}
       <Card className="p-5">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <div className="font-semibold text-ink-800">Invite a staff member</div>
-            <div className="text-[13px] text-ink-500 mt-0.5">Creates a one-time link. After someone joins with it, it's spent automatically.</div>
-          </div>
-          <div className="flex items-center gap-2">
-            {tier === "owner" && (
-              <select value={inviteTier} onChange={e => setInviteTier(e.target.value as "member" | "head")}
-                className="text-sm border border-cream-200 rounded-lg px-2.5 py-2 bg-white">
-                <option value="member">As Member</option>
-                <option value="head">As Head</option>
-              </select>
-            )}
-            <Button onClick={onGenerate} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : <Icon name="plus" size={15} />}>
-              {busy ? "Generating…" : "Generate invite link"}
-            </Button>
-          </div>
+        <div className="font-semibold text-ink-800">Invite a staff member</div>
+        <div className="text-[13px] text-ink-500 mt-0.5 mb-3">One-time link. After someone joins with it, it's spent automatically.</div>
+        <div className="flex items-end gap-2 flex-wrap">
+          <label className="flex-1 min-w-[200px]">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Invitee email (optional)</span>
+            <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="person@email.com"
+              className="w-full mt-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white" />
+          </label>
+          {tier === "owner" && (
+            <select value={inviteTier} onChange={e => setInviteTier(e.target.value as "member" | "head")}
+              className="text-sm border border-cream-200 rounded-lg px-2.5 py-2.5 bg-white">
+              <option value="member">As Member</option>
+              <option value="head">As Head</option>
+            </select>
+          )}
+          <Button onClick={onEmailInvite} disabled={busy || !inviteEmail} leftIcon={busy ? <Spinner size={15} /> : <Icon name="mail" size={15} />}>
+            Email invite
+          </Button>
+          <Button variant="secondary" onClick={onGenerate} disabled={busy}>Just get a link</Button>
         </div>
+        {emailNote && <div className="mt-3 text-[12px] text-emerald-700">{emailNote}</div>}
 
         {justCreated && (
           <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
@@ -142,7 +164,7 @@ export function StaffAdminView(): JSX.Element {
                 <div key={m.id} className="flex items-center justify-between py-2 border-b border-cream-100 last:border-0">
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-ink-800 truncate">{m.name || m.email}</div>
-                    <div className="text-[12px] text-ink-500 truncate">{m.email}{m.managerEmail ? ` · reports to ${m.managerEmail}` : ""}</div>
+                    <div className="text-[12px] text-ink-500 truncate">{m.email}{m.managerEmail ? ` · reports to ${m.managerEmail}` : ""} · {m.managedOrgs} org{m.managedOrgs === 1 ? "" : "s"}</div>
                   </div>
                   <Badge tone={TIER_BADGE[m.tier]?.tone ?? "neutral"}>{TIER_BADGE[m.tier]?.label ?? m.tier}</Badge>
                 </div>

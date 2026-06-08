@@ -103,9 +103,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
   const redirectTo = `${siteUrl}/login`;
 
-  // 1. Create the org on the requested plan.
+  // 1. Create the org on the requested plan. Attribute it to the staff member
+  //    who approved the request (organizations.created_by_staff, migration 99).
   const { data: org, error: orgErr } = await admin
-    .from("organizations").insert({ slug: slugify(firm), name: firm, plan }).select("id").single();
+    .from("organizations").insert({ slug: slugify(firm), name: firm, plan, created_by_staff: auth.user.id }).select("id").single();
   if (orgErr) return json({ ok: false, error: "org-create-failed", detail: orgErr.message }, 500);
   const orgId = String(org.id);
 

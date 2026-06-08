@@ -11,6 +11,7 @@ export interface StaffMember {
   name: string;
   tier: StaffTier;
   managerEmail: string | null;
+  managedOrgs: number;
   createdAt: string;
 }
 
@@ -48,6 +49,30 @@ export async function createStaffInvite(client: any, opts: { email?: string; tie
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
+/** Owner+Head: mint an invite AND email the join link via the send-staff-invite EF. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function sendStaffInvite(client: any, opts: { email: string; tier?: StaffTier }): Promise<SResult<{ token: string; emailSent: boolean }>> {
+  try {
+    const { data, error } = await client.functions.invoke("send-staff-invite", { body: { email: opts.email.trim().toLowerCase(), tier: opts.tier ?? "member" } });
+    if (error) {
+      let msg = String(error.message ?? "Invite failed.");
+      try { const b = await error.context.json(); msg = b.error || b.message || msg; } catch { /* ignore */ }
+      return { ok: false, error: msg };
+    }
+    return data?.ok ? { ok: true, data: { token: String(data.token), emailSent: !!data.emailSent } } : { ok: false, error: String(data?.error ?? "Invite failed.") };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Owner/Head/superadmin: route a (enterprise) signup request to a staff member. RPC assign_signup_to_staff (mig 101). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function assignSignupRequest(client: any, requestId: string, staffId: string | null): Promise<SResult<true>> {
+  try {
+    const { error } = await client.rpc("assign_signup_to_staff", { p_request: requestId, p_staff: staffId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: true };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
 /** Owner+Head: the staff roster with emails. RPC list_platform_staff (mig 100). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listStaff(client: any): Promise<SResult<StaffMember[]>> {
@@ -60,6 +85,7 @@ export async function listStaff(client: any): Promise<SResult<StaffMember[]>> {
       name: String(r.name ?? ""),
       tier: (r.staff_tier as StaffTier) ?? "member",
       managerEmail: r.manager_email ? String(r.manager_email) : null,
+      managedOrgs: Number(r.managed_orgs ?? 0),
       createdAt: String(r.created_at ?? ""),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }

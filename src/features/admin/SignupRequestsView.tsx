@@ -2,10 +2,11 @@
 // signup requests: approve (creates org + invites the applicant) or reject.
 
 import { useCallback, useEffect, useState } from "react";
-import { useCan } from "@/auth";
+import { useCan, useAuth } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listSignupRequests, reviewSignupRequest, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
+import { listStaff, assignSignupRequest, type StaffMember } from "@/app/staffQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
@@ -29,6 +30,28 @@ function Inner(): JSX.Element {
   const [notice, setNotice] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState("");
+  // Staff routing (owner/head only): load the roster + assign requests to a staff.
+  const { session } = useAuth();
+  const canAssign = session?.user.staffTier === "owner" || session?.user.staffTier === "head";
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+
+  useEffect(() => {
+    if (!canAssign) return;
+    void (async () => {
+      const client = await getClient(); if (!client) return;
+      const res = await listStaff(client);
+      if (res.ok) setStaff(res.data);
+    })();
+  }, [canAssign]);
+
+  const assign = async (r: SignupRequestRow, staffId: string) => {
+    setBusy(r.id); setError(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
+    const res = await assignSignupRequest(client, r.id, staffId || null);
+    if (res.ok) { setNotice(staffId ? `Assigned ${r.firmName} to a staff member.` : `Unassigned ${r.firmName}.`); await reload(); }
+    else setError(res.error);
+    setBusy(null);
+  };
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -87,6 +110,14 @@ function Inner(): JSX.Element {
                 </div>
               )}
             </div>
+            {canAssign && (
+              <div className="mt-3 flex items-center gap-2 border-t border-cream-100 pt-3 flex-wrap">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Handled by</span>
+                <Select className="w-56" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
+                  onChange={e => void assign(r, e.target.value)}
+                  options={[{ value: "", label: "— Unassigned —" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
+              </div>
+            )}
             {rejecting === r.id && (
               <div className="mt-3 flex gap-2 items-end border-t border-cream-100 pt-3">
                 <div className="flex-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Reason (optional)</span>

@@ -16,6 +16,7 @@ export interface SignupRequestRow {
   reviewNotes: string | null;
   reviewedAt: string | null;
   createdOrgId: string | null;
+  assignedStaffId: string | null;
   createdAt: string;
 }
 
@@ -24,7 +25,7 @@ const asStatus = (v: unknown): SignupStatus => (["pending", "approved", "rejecte
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listSignupRequests(client: any, status?: SignupStatus): Promise<SAResult<SignupRequestRow[]>> {
   try {
-    let q = client.from("signup_requests").select("id, firm_name, contact_name, email, phone, plan, message, status, review_notes, reviewed_at, created_org_id, created_at").order("created_at", { ascending: false });
+    let q = client.from("signup_requests").select("id, firm_name, contact_name, email, phone, plan, message, status, review_notes, reviewed_at, created_org_id, assigned_staff_id, created_at").order("created_at", { ascending: false });
     if (status) q = q.eq("status", status);
     const { data, error } = await q;
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -35,6 +36,7 @@ export async function listSignupRequests(client: any, status?: SignupStatus): Pr
       reviewNotes: r.review_notes == null ? null : String(r.review_notes),
       reviewedAt: r.reviewed_at == null ? null : String(r.reviewed_at),
       createdOrgId: r.created_org_id == null ? null : String(r.created_org_id),
+      assignedStaffId: r.assigned_staff_id == null ? null : String(r.assigned_staff_id),
       createdAt: String(r.created_at ?? ""),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
