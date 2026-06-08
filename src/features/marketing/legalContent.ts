@@ -7,7 +7,7 @@
 
 export const CONSENT_VERSION = "2026-06-06";
 export const LAST_UPDATED = "6 June 2026";
-export const COMPANY = "GiggleZen Technologies";
+export const COMPANY = "Rakesh Boyapati";
 export const PRODUCT = "SiteTrack Pro";
 export const CONTACT_EMAIL = "support@sitetrack.in"; // TODO: confirm a real inbox
 export const JURISDICTION = "Hyderabad, Telangana, India";

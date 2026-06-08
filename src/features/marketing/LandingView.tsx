@@ -275,7 +275,7 @@ export function LandingView(): JSX.Element {
           {" · "}
           <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink-600">Contact</a>
         </div>
-        <div>© SiteTrack Pro · GiggleZen Technologies · Hyderabad, India</div>
+        <div>© SiteTrack Pro · Rakesh Boyapati · Hyderabad, India</div>
       </footer>
     </div>
   );

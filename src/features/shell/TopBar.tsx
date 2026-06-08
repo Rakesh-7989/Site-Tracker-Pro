@@ -1,5 +1,7 @@
 // SiteTrack Pro — v3 shell top bar.
 
+import { Link } from "react-router-dom";
+
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { ROLE_LABEL } from "@/auth";
 import { Icon, Button, Avatar } from "@/components/ui/atoms";
@@ -44,15 +46,15 @@ export function TopBar(): JSX.Element {
           <span className="text-xs text-ink-600 font-medium hidden sm:inline">{activeOrg.orgName}</span>
         )}
 
-        {/* User chip */}
+        {/* User chip → click to view / edit your profile */}
         {session && (
-          <div className="flex items-center gap-2">
+          <Link to="/settings/profile" title="View your profile" className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-cream-100 transition">
             <Avatar initials={session.user.name} size="sm" role={session.user.identityRole} />
             <div className="hidden md:block text-right leading-tight">
               <div className="text-xs font-semibold text-ink-800">{session.user.name}</div>
               <div className="text-[10px] text-ink-500">{ROLE_LABEL[session.user.identityRole]}</div>
             </div>
-          </div>
+          </Link>
         )}
 
         <Button variant="ghost" size="sm" onClick={onSignOut} leftIcon={<Icon name="logout" size={14} />}>

@@ -52,6 +52,7 @@ const PlatformDashboardView = lazy(() => import("@/features/admin/PlatformDashbo
 const StaffAdminView = lazy(() => import("@/features/admin/StaffAdminView").then(m => ({ default: m.StaffAdminView })));
 const UpgradeRequestsView = lazy(() => import("@/features/admin/UpgradeRequestsView").then(m => ({ default: m.UpgradeRequestsView })));
 const SecurityView = lazy(() => import("@/features/account/SecurityView").then(m => ({ default: m.SecurityView })));
+const ProfileView = lazy(() => import("@/features/account/ProfileView").then(m => ({ default: m.ProfileView })));
 
 export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
@@ -97,6 +98,7 @@ export const router = createBrowserRouter([
       { path: "admin/upgrades", element: <UpgradeRequestsView /> },
       { path: "admin/signups", element: <SignupRequestsView /> },
       { path: "settings/security", element: <SecurityView /> },
+      { path: "settings/profile", element: <ProfileView /> },
     ],
   },
   // Public catch-all 404 (works signed-out too).
