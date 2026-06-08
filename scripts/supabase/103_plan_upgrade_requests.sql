@@ -106,3 +106,7 @@ grant execute on function public.request_plan_upgrade(uuid,text,text) to authent
 grant execute on function public.assign_upgrade_request(uuid,uuid) to authenticated;
 grant execute on function public.set_upgrade_request_status(uuid,text,text) to authenticated;
 grant execute on function public.list_upgrade_requests() to authenticated;
+
+-- authenticated needs table-level SELECT for the RLS read policy to take effect
+-- (writes go through SECURITY DEFINER RPCs, so no insert/update grant needed).
+grant select on public.plan_upgrade_requests to authenticated;
