@@ -19,6 +19,7 @@ import { SignupView } from "@/features/marketing/SignupView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
 import { ResetPasswordView } from "@/features/auth/ResetPasswordView";
+import { StaffJoinView } from "@/features/auth/StaffJoinView";
 import { NotFoundView } from "@/features/shell/PlaceholderView";
 import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
   { path: "/terms", element: <TermsView /> },
   { path: "/login", element: <LoginScreenV3 /> },
   { path: "/auth/reset", element: <ResetPasswordView /> },
+  { path: "/staff/join", element: <StaffJoinView /> },
   // ── Authenticated app (pathless layout route wraps RequireSession + Suspense) ──
   {
     element: <ShellLayout />,

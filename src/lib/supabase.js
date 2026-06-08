@@ -240,6 +240,35 @@ export async function updatePassword(newPassword) {
 }
 
 /**
+ * Redeem a single-use STAFF invite (platform staff hierarchy). The invitee has
+ * no account yet, so the invite token is the credential — we call the public
+ * redeem-staff-invite Edge Function (which creates the account + promotes it to
+ * staff via the service role). On success the caller signs in with the chosen
+ * password.
+ */
+export async function redeemStaffInvite({ token, name, email, password }) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return { ok: false, error: "backend-disabled" };
+  let res;
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/redeem-staff-invite`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ token, name, email, password }),
+    });
+  } catch (e) {
+    return { ok: false, error: e?.message || "network-error" };
+  }
+  const j = await res.json().catch(() => ({}));
+  return j.ok
+    ? { ok: true, email: j.email, tier: j.tier }
+    : { ok: false, error: j.message || j.error || `HTTP ${res.status}` };
+}
+
+/**
  * Session 29 — Accept an org invitation (called when ?invite=<token> is in URL).
  * Calls accept_org_invitation() RPC defined in 37_org_invitations.sql.
  */
