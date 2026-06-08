@@ -24,6 +24,12 @@ export interface NavItem {
   requires?: Capability;
   /** Optional grouping header shown above the item. */
   group?: string;
+  /**
+   * Platform staff-tier gate (migration 99). When set, the item is shown ONLY
+   * to staff whose tier is in this list (e.g. owner+head). Orthogonal to
+   * `requires` — both must pass.
+   */
+  requiresStaffTier?: Array<"owner" | "head" | "member">;
 }
 
 /**
@@ -61,6 +67,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/admin/users", label: "Users", icon: "user-cog", requires: "platform:users:manage", group: "Platform" },
   { to: "/admin/orgs", label: "Organizations", icon: "building", requires: "platform:orgs:manage", group: "Platform" },
   { to: "/admin/roles", label: "Role Permissions", icon: "lock", requires: "platform:roles:configure", group: "Platform" },
+  { to: "/admin/staff", label: "Staff", icon: "users", requiresStaffTier: ["owner", "head"], group: "Platform" },
 
   // Always visible — every signed-in user can manage their own account security (2FA).
   { to: "/settings/security", label: "Security", icon: "lock", group: "Account" },
@@ -77,7 +84,11 @@ export const NAV_CATALOG: NavItem[] = [
 export function buildNav(session: AuthSession | null): NavItem[] {
   if (!session) return [];
   const caps = capabilitiesAnywhere(session);
-  return NAV_CATALOG.filter(item => !item.requires || caps.has(item.requires));
+  const tier = session.user.staffTier ?? null;
+  return NAV_CATALOG.filter(item =>
+    (!item.requires || caps.has(item.requires)) &&
+    (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))),
+  );
 }
 
 /**

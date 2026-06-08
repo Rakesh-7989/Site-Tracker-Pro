@@ -67,6 +67,16 @@ describe("buildNav", () => {
     expect(paths).toContain("/admin/orgs");
   });
 
+  it("owner + head see /admin/staff; plain superadmin + member do not", () => {
+    const mk = (staffTier: "owner" | "head" | "member" | null) => buildNav(session({
+      user: { id: "u", email: "a@b", name: "S", identityRole: "superadmin", isStaff: true, staffTier },
+    })).map(n => n.to);
+    expect(mk("owner")).toContain("/admin/staff");
+    expect(mk("head")).toContain("/admin/staff");
+    expect(mk("member")).not.toContain("/admin/staff");
+    expect(mk(null)).not.toContain("/admin/staff");
+  });
+
   it("site_engineer sees Daily Reports but not org admin", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "SE", identityRole: "site_engineer", isStaff: false },

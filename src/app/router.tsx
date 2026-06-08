@@ -48,6 +48,7 @@ const SignupRequestsView = lazy(() => import("@/features/admin/SignupRequestsVie
 const PlatformOrgsView = lazy(() => import("@/features/admin/PlatformOrgsView").then(m => ({ default: m.PlatformOrgsView })));
 const PlatformUsersView = lazy(() => import("@/features/admin/PlatformUsersView").then(m => ({ default: m.PlatformUsersView })));
 const PlatformDashboardView = lazy(() => import("@/features/admin/PlatformDashboardView").then(m => ({ default: m.PlatformDashboardView })));
+const StaffAdminView = lazy(() => import("@/features/admin/StaffAdminView").then(m => ({ default: m.StaffAdminView })));
 const SecurityView = lazy(() => import("@/features/account/SecurityView").then(m => ({ default: m.SecurityView })));
 
 export const router = createBrowserRouter([
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
       { path: "admin/users", element: <PlatformUsersView /> },
       { path: "admin/orgs", element: <PlatformOrgsView /> },
       { path: "admin/roles", element: <RoleManager /> },
+      { path: "admin/staff", element: <StaffAdminView /> },
       { path: "admin/signups", element: <SignupRequestsView /> },
       { path: "settings/security", element: <SecurityView /> },
     ],

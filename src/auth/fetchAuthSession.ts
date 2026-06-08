@@ -77,6 +77,7 @@ export function normalizeProfile(
   if (!isIdentityRole(role)) {
     return { ok: false, error: `profile.role "${String(role)}" is not a known identity role`, code: "invalid-role" };
   }
+  const tier = row.staff_tier;
   const user: AuthUser = {
     id: String(row.id ?? ""),
     email: authUserEmail,
@@ -84,6 +85,7 @@ export function normalizeProfile(
     name: String(row.name ?? authUserEmail.split("@")[0] ?? "User"),
     avatarUrl: typeof row.avatar === "string" && row.avatar.length > 0 ? row.avatar : null,
     isStaff: Boolean(row.is_staff),
+    staffTier: tier === "owner" || tier === "head" || tier === "member" ? tier : null,
   };
   return { ok: true, user };
 }
@@ -194,7 +196,7 @@ export async function fetchAuthSession(
     // 1. profile
     const profileRes = await client
       .from("profiles")
-      .select("id, name, avatar, role, is_staff")
+      .select("id, name, avatar, role, is_staff, staff_tier")
       .eq("id", input.authUserId)
       .maybeSingle();
     if (profileRes.error) {

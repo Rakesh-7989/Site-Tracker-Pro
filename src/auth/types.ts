@@ -28,7 +28,12 @@ export interface AuthUser {
   avatarUrl?: string | null;
   /** profiles.is_staff — orthogonal flag for SiteTrack staff (us) */
   isStaff: boolean;
+  /** profiles.staff_tier — platform staff hierarchy (null = not staff). */
+  staffTier?: StaffTier | null;
 }
+
+/** Platform staff hierarchy tier (migration 99). Owner > Head > Member. */
+export type StaffTier = "owner" | "head" | "member";
 
 /** Row from org_members joined with organizations.name. */
 export interface OrgMembership {
