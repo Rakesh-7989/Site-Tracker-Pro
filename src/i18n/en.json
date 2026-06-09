@@ -176,5 +176,26 @@
     "projectAssignments": "Project assignments",
     "viewProjects": "View projects",
     "browseManage": "Browse + manage"
+  },
+  "profile": {
+    "back": "Back to dashboard",
+    "title": "My profile",
+    "edit": "Edit",
+    "updated": "Profile updated.",
+    "goToDashboard": "Go to dashboard →",
+    "emailLabel": "Email (primary — not editable)",
+    "fullName": "Full name",
+    "mobile": "Mobile / WhatsApp",
+    "unverified": "Unverified",
+    "company": "Company / Firm",
+    "designation": "Designation",
+    "city": "City",
+    "prefLanguage": "Preferred language",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "errName": "Name is required.",
+    "errPhone": "Enter a valid 10-digit mobile number.",
+    "errCompany": "Company / firm is required."
   }
 }

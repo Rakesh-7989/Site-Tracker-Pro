@@ -9,6 +9,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner, Badge } from "@/components/ui/atoms";
 import { getMyProfile, completeMyProfile } from "@/app/profileQueries";
+import { useT } from "@/i18n/I18nProvider";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any> {
@@ -21,6 +22,7 @@ const LANGS: Record<string, string> = { en: "English", te: "తెలుగు (
 
 export function ProfileView(): JSX.Element {
   const navigate = useNavigate();
+  const t = useT();
   const { session, status, refresh } = useAuth();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -57,9 +59,9 @@ export function ProfileView(): JSX.Element {
 
   const save = async () => {
     setError(null);
-    if (!name.trim()) return setError("Name is required.");
-    if (!phone.trim() || phone.replace(/\D/g, "").length < 10) return setError("Enter a valid 10-digit mobile number.");
-    if (!company.trim()) return setError("Company / firm is required.");
+    if (!name.trim()) return setError(t("profile.errName"));
+    if (!phone.trim() || phone.replace(/\D/g, "").length < 10) return setError(t("profile.errPhone"));
+    if (!company.trim()) return setError(t("profile.errCompany"));
     setBusy(true);
     const client = await getClient();
     const res = await completeMyProfile(client, { name, phone, company, jobTitle, city, language });
@@ -80,19 +82,19 @@ export function ProfileView(): JSX.Element {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Link to="/dashboard" title="Back to dashboard" className="w-8 h-8 rounded-lg grid place-items-center text-ink-500 hover:bg-cream-100 transition">
+          <Link to="/dashboard" title={t("profile.back")} className="w-8 h-8 rounded-lg grid place-items-center text-ink-500 hover:bg-cream-100 transition">
             <Icon name="arrow" size={18} />
           </Link>
-          <h1 className="font-display text-2xl font-bold">My profile</h1>
+          <h1 className="font-display text-2xl font-bold">{t("profile.title")}</h1>
         </div>
-        {!editing && <Button variant="secondary" leftIcon={<Icon name="sliders" size={15} />} onClick={() => setEditing(true)}>Edit</Button>}
+        {!editing && <Button variant="secondary" leftIcon={<Icon name="sliders" size={15} />} onClick={() => setEditing(true)}>{t("profile.edit")}</Button>}
       </div>
 
       {error && <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[13px] text-red-700 flex items-start gap-2"><Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}</div>}
       {saved && (
         <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700 flex items-center justify-between gap-3 flex-wrap">
-          <span>✅ Profile updated.</span>
-          <Button size="sm" variant="secondary" onClick={() => navigate("/dashboard")}>Go to dashboard →</Button>
+          <span>✅ {t("profile.updated")}</span>
+          <Button size="sm" variant="secondary" onClick={() => navigate("/dashboard")}>{t("profile.goToDashboard")}</Button>
         </div>
       )}
 
@@ -107,42 +109,42 @@ export function ProfileView(): JSX.Element {
 
         {loading ? <div className="grid place-items-center py-8"><Spinner size={20} /></div> : !editing ? (
           <div>
-            <Row label="Email (primary — not editable)" value={session.user.email} />
-            <Row label="Full name" value={name} />
-            <Row label="Mobile / WhatsApp">
+            <Row label={t("profile.emailLabel")} value={session.user.email} />
+            <Row label={t("profile.fullName")} value={name} />
+            <Row label={t("profile.mobile")}>
               <div className="text-sm text-ink-800 mt-0.5 flex items-center gap-2">
                 {phone || <span className="text-ink-300">—</span>}
-                {phone && <Badge tone="warning">Unverified</Badge>}
+                {phone && <Badge tone="warning">{t("profile.unverified")}</Badge>}
               </div>
             </Row>
-            <Row label="Company / Firm" value={company} />
-            <Row label="Designation" value={jobTitle} />
-            <Row label="City" value={city} />
-            <Row label="Preferred language" value={LANGS[language] ?? language} />
+            <Row label={t("profile.company")} value={company} />
+            <Row label={t("profile.designation")} value={jobTitle} />
+            <Row label={t("profile.city")} value={city} />
+            <Row label={t("profile.prefLanguage")} value={LANGS[language] ?? language} />
           </div>
         ) : (
           <div className="space-y-3">
             <div>
-              <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">Email (primary — not editable)</div>
+              <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">{t("profile.emailLabel")}</div>
               <input value={session.user.email} readOnly className={`mt-1 ${lockedCls}`} />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Full name *</span><input value={name} onChange={e => setName(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Mobile / WhatsApp *</span><input value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.fullName")} *</span><input value={name} onChange={e => setName(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.mobile")} *</span><input value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" className={`mt-1 ${inputCls}`} /></label>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Company / Firm *</span><input value={company} onChange={e => setCompany(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Designation</span><input value={jobTitle} onChange={e => setJobTitle(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.company")} *</span><input value={company} onChange={e => setCompany(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.designation")}</span><input value={jobTitle} onChange={e => setJobTitle(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">City</span><input value={city} onChange={e => setCity(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Preferred language</span>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.city")}</span><input value={city} onChange={e => setCity(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.prefLanguage")}</span>
                 <select value={language} onChange={e => setLanguage(e.target.value)} className={`mt-1 ${inputCls}`}>{Object.entries(LANGS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
               </label>
             </div>
             <div className="flex gap-2 pt-1">
-              <Button onClick={save} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? "Saving…" : "Save changes"}</Button>
-              <Button variant="secondary" onClick={() => setEditing(false)} disabled={busy}>Cancel</Button>
+              <Button onClick={save} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? t("profile.saving") : t("profile.save")}</Button>
+              <Button variant="secondary" onClick={() => setEditing(false)} disabled={busy}>{t("profile.cancel")}</Button>
             </div>
           </div>
         )}
