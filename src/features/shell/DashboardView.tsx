@@ -9,10 +9,12 @@ import { Link } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan, ROLE_LABEL } from "@/auth";
 import { Card, Icon, Badge } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
+import { useT } from "@/i18n/I18nProvider";
 
 export function DashboardView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
+  const t = useT();
   const orgCtx = activeOrg ? { orgId: activeOrg.orgId } : {};
 
   const canCreate = useCan("project:create", orgCtx);
@@ -22,11 +24,12 @@ export function DashboardView(): JSX.Element {
 
   if (!session) return <></>;
 
-  const actions: Array<{ to: string; label: string; icon: IconName; show: boolean }> = [
-    { to: "/projects/new", label: "New Project", icon: "plus", show: canCreate },
-    { to: "/dpr", label: "Daily Reports", icon: "clipboard", show: canViewDpr },
-    { to: "/org/members", label: "Members", icon: "users", show: canManageMembers },
-    { to: "/audit", label: "Audit Log", icon: "shield", show: canViewAudit },
+  // Labels reuse the nav i18n keys (same surfaces).
+  const actions: Array<{ to: string; labelKey: string; icon: IconName; show: boolean }> = [
+    { to: "/projects/new", labelKey: "nav.newProject", icon: "plus", show: canCreate },
+    { to: "/dpr", labelKey: "nav.dailyReports", icon: "clipboard", show: canViewDpr },
+    { to: "/org/members", labelKey: "nav.members", icon: "users", show: canManageMembers },
+    { to: "/audit", labelKey: "nav.auditLog", icon: "shield", show: canViewAudit },
   ];
   const visibleActions = actions.filter(a => a.show);
 
@@ -35,19 +38,19 @@ export function DashboardView(): JSX.Element {
       {/* Greeting */}
       <div>
         <h1 className="font-display text-2xl font-bold text-ink-900">
-          Welcome, {session.user.name.split(" ")[0]}
+          {t("dash.welcome", { name: session.user.name.split(" ")[0] })}
         </h1>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <Badge tone="info">{ROLE_LABEL[session.user.identityRole]}</Badge>
-          {activeOrg && <span className="text-sm text-ink-500">at {activeOrg.orgName}</span>}
-          {session.user.isStaff && <Badge tone="warning">Staff</Badge>}
+          {activeOrg && <span className="text-sm text-ink-500">{t("dash.atOrg", { org: activeOrg.orgName })}</span>}
+          {session.user.isStaff && <Badge tone="warning">{t("dash.staff")}</Badge>}
         </div>
       </div>
 
       {/* Quick actions */}
       {visibleActions.length > 0 && (
         <div>
-          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-2">Quick actions</h2>
+          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-2">{t("dash.quickActions")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {visibleActions.map(a => (
               <Link key={a.to} to={a.to}>
@@ -55,7 +58,7 @@ export function DashboardView(): JSX.Element {
                   <div className="w-9 h-9 rounded-lg bg-safety-50 text-safety-600 grid place-items-center mb-2">
                     <Icon name={a.icon} size={18} />
                   </div>
-                  <div className="text-sm font-semibold text-ink-800">{a.label}</div>
+                  <div className="text-sm font-semibold text-ink-800">{t(a.labelKey)}</div>
                 </Card>
               </Link>
             ))}
@@ -67,17 +70,17 @@ export function DashboardView(): JSX.Element {
       <div className="grid sm:grid-cols-3 gap-3">
         <Card className="p-4">
           <div className="text-3xl font-display font-bold text-ink-900">{session.orgs.length}</div>
-          <div className="text-xs text-ink-500 mt-0.5">Organization{session.orgs.length === 1 ? "" : "s"}</div>
+          <div className="text-xs text-ink-500 mt-0.5">{t("dash.orgs")}</div>
         </Card>
         <Card className="p-4">
           <div className="text-3xl font-display font-bold text-ink-900">{session.projectMemberships.length}</div>
-          <div className="text-xs text-ink-500 mt-0.5">Project assignment{session.projectMemberships.length === 1 ? "" : "s"}</div>
+          <div className="text-xs text-ink-500 mt-0.5">{t("dash.projectAssignments")}</div>
         </Card>
         <Card className="p-4">
           <Link to="/projects" className="flex items-center justify-between h-full group">
             <div>
-              <div className="text-sm font-semibold text-ink-800">View projects</div>
-              <div className="text-xs text-ink-500 mt-0.5">Browse + manage</div>
+              <div className="text-sm font-semibold text-ink-800">{t("dash.viewProjects")}</div>
+              <div className="text-xs text-ink-500 mt-0.5">{t("dash.browseManage")}</div>
             </div>
             <Icon name="chevron" size={18} className="text-ink-400 group-hover:text-safety-500 transition" />
           </Link>

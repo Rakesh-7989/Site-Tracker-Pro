@@ -166,5 +166,15 @@
     "doneTitle": "Request received 🎉",
     "doneBody": "Thanks, {name}! We've got your request for {firm} on the {plan} plan. Once we review it, you'll get an email at {email} to set your password and enter your workspace.",
     "backHome": "← Back to home"
+  },
+  "dash": {
+    "welcome": "Welcome, {name}",
+    "atOrg": "at {org}",
+    "staff": "Staff",
+    "quickActions": "Quick actions",
+    "orgs": "Organizations",
+    "projectAssignments": "Project assignments",
+    "viewProjects": "View projects",
+    "browseManage": "Browse + manage"
   }
 }
