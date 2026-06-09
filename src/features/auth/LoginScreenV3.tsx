@@ -10,6 +10,8 @@ import { useNavigate, Navigate } from "react-router-dom";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { useT } from "@/i18n/I18nProvider";
 import { getMfaChallenge, verifyMfa } from "@/auth/mfa";
 
 type Method = "password" | "magic";
@@ -28,6 +30,7 @@ const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 export function LoginScreenV3(): JSX.Element {
   const navigate = useNavigate();
+  const t = useT();
   const { refresh, session, status: authStatus } = useAuth();
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
@@ -68,45 +71,45 @@ export function LoginScreenV3(): JSX.Element {
     const sb = await lib.getSupabaseClient();
     const res = await verifyMfa(sb, mfaFactorId, mfaCode);
     if (res.ok) await afterAuth();
-    else setStatus({ kind: "error", msg: res.error ?? "Invalid code." });
+    else setStatus({ kind: "error", msg: res.error ?? t("auth.errInvalidCode") });
   };
 
   const onPasswordLogin = async () => {
-    if (!validEmail(email)) return setStatus({ kind: "error", msg: "Enter a valid email." });
-    if (!password) return setStatus({ kind: "error", msg: "Password is required." });
+    if (!validEmail(email)) return setStatus({ kind: "error", msg: t("auth.errInvalidEmail") });
+    if (!password) return setStatus({ kind: "error", msg: t("auth.errPasswordRequired") });
     setStatus({ kind: "busy" });
     const lib = await authLib();
     const res = await lib.signInWithPassword(email.trim().toLowerCase(), password);
     if (res.ok) await proceedOrChallenge();
-    else setStatus({ kind: "error", msg: res.error ?? "Sign-in failed." });
+    else setStatus({ kind: "error", msg: res.error ?? t("auth.errSignInFailed") });
   };
 
   const onMagicLink = async () => {
-    if (!validEmail(email)) return setStatus({ kind: "error", msg: "Enter a valid email." });
+    if (!validEmail(email)) return setStatus({ kind: "error", msg: t("auth.errInvalidEmail") });
     setStatus({ kind: "busy" });
     const lib = await authLib();
     const res = await lib.signInWithMagicLink(email.trim().toLowerCase());
-    if (res.ok) setStatus({ kind: "sent", msg: `Sign-in link sent to ${email}. Click it or enter the 6-digit code below.` });
-    else setStatus({ kind: "error", msg: res.error ?? "Could not send link." });
+    if (res.ok) setStatus({ kind: "sent", msg: t("auth.magicSent", { email }) });
+    else setStatus({ kind: "error", msg: res.error ?? t("auth.errCouldNotSendLink") });
   };
 
   const onForgotPassword = async () => {
-    if (!validEmail(email)) return setStatus({ kind: "error", msg: "Enter your email above first, then tap Forgot password." });
+    if (!validEmail(email)) return setStatus({ kind: "error", msg: t("auth.errEnterEmailFirst") });
     setStatus({ kind: "busy" });
     const lib = await authLib();
     const res = await lib.resetPassword(email.trim().toLowerCase());
-    if (res.ok) setStatus({ kind: "sent", msg: `Password reset link sent to ${email}. Check your inbox (and spam) to set a new password.` });
-    else setStatus({ kind: "error", msg: res.error ?? "Could not send reset link." });
+    if (res.ok) setStatus({ kind: "sent", msg: t("auth.resetSent", { email }) });
+    else setStatus({ kind: "error", msg: res.error ?? t("auth.errCouldNotSendReset") });
   };
 
   const onVerifyOtp = async () => {
     const code = otp.replace(/\s/g, "").trim();
-    if (!/^\d{6}$/.test(code)) return setStatus({ kind: "error", msg: "Enter the 6-digit code." });
+    if (!/^\d{6}$/.test(code)) return setStatus({ kind: "error", msg: t("auth.errEnter6") });
     setStatus({ kind: "busy" });
     const lib = await authLib();
     const res = await lib.verifyEmailOtp(email.trim().toLowerCase(), code);
     if (res.ok) await proceedOrChallenge();
-    else setStatus({ kind: "error", msg: res.error ?? "Invalid code." });
+    else setStatus({ kind: "error", msg: res.error ?? t("auth.errInvalidCode") });
   };
 
   // Already signed in (e.g. arriving via an invite / magic-link redirect) →
@@ -118,20 +121,22 @@ export function LoginScreenV3(): JSX.Element {
   const busy = status.kind === "busy";
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-ink-900">
+    <div className="relative min-h-screen grid lg:grid-cols-2 bg-ink-900">
+      {/* Pre-login language picker (top-right) */}
+      <div className="absolute top-4 right-4 z-10"><LanguageSwitcher /></div>
+
       {/* Left brand panel */}
       <div className="hidden lg:flex flex-col justify-center px-12 text-white">
         <h1 className="font-display text-5xl font-bold leading-tight">
-          Every site, every drawing,
+          {t("auth.heroTitle1")}
           <br />
-          <span className="text-safety-500">one quiet record.</span>
+          <span className="text-safety-500">{t("auth.heroTitle2")}</span>
         </h1>
         <p className="mt-5 text-ink-300 text-base max-w-md leading-relaxed">
-          A construction-native record-keeper for architects, project managers,
-          contractors and their clients. Built for the field, trusted in the office.
+          {t("auth.heroSub")}
         </p>
         <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] uppercase text-safety-500">
-          <span className="w-2 h-2 rounded-full bg-safety-500" /> v3 TypeScript shell
+          <span className="w-2 h-2 rounded-full bg-safety-500" /> {t("auth.shellTag")}
         </div>
       </div>
 
@@ -142,15 +147,15 @@ export function LoginScreenV3(): JSX.Element {
             <div className="w-9 h-9 rounded-lg bg-safety-500 text-white grid place-items-center font-bold">S</div>
             <div>
               <div className="font-display font-bold text-ink-900">SiteTrack Pro</div>
-              <div className="text-[11px] text-ink-500">Sign in to your workspace</div>
+              <div className="text-[11px] text-ink-500">{t("auth.signInSub")}</div>
             </div>
           </div>
 
           {mfaFactorId ? (
             /* MFA challenge — only when the signed-in user has 2FA enabled */
             <div>
-              <div className="text-sm font-semibold text-ink-900 mb-1">Two-factor authentication</div>
-              <p className="text-[12px] text-ink-500 mb-3">Enter the 6-digit code from your authenticator app to finish signing in.</p>
+              <div className="text-sm font-semibold text-ink-900 mb-1">{t("auth.mfaTitle")}</div>
+              <p className="text-[12px] text-ink-500 mb-3">{t("auth.mfaSub")}</p>
               <input
                 id="mfa" value={mfaCode} inputMode="numeric" maxLength={6} autoFocus
                 onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -164,7 +169,7 @@ export function LoginScreenV3(): JSX.Element {
                 </div>
               )}
               <Button fullWidth size="lg" className="mt-3" disabled={busy} onClick={onSubmitMfa} leftIcon={busy ? <Spinner size={16} /> : null}>
-                {busy ? "Verifying…" : "Verify & continue"}
+                {busy ? t("auth.verifying") : t("auth.verifyContinue")}
               </Button>
             </div>
           ) : (<>
@@ -178,19 +183,19 @@ export function LoginScreenV3(): JSX.Element {
                   method === m ? "text-safety-600 border-b-2 border-safety-500" : "text-ink-500 hover:text-ink-700 border-b-2 border-transparent"
                 }`}
               >
-                {m === "password" ? "Password" : "Magic link"}
+                {m === "password" ? t("auth.tabPassword") : t("auth.tabMagic")}
               </button>
             ))}
           </div>
 
           {/* Email */}
           <div className="mb-3">
-            <label htmlFor="email" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Work email</label>
+            <label htmlFor="email" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">{t("auth.workEmail")}</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="mail" size={16} /></span>
               <input
                 id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@yourcompany.in" autoComplete="email"
+                placeholder={t("auth.emailPlaceholder")} autoComplete="email"
                 onKeyDown={e => { if (e.key === "Enter") method === "password" ? onPasswordLogin() : onMagicLink(); }}
                 className="w-full pl-10 pr-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
               />
@@ -201,10 +206,10 @@ export function LoginScreenV3(): JSX.Element {
           {method === "password" && (
             <div className="mb-3">
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">Password</label>
+                <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">{t("auth.passwordLabel")}</label>
                 <button type="button" onClick={onForgotPassword} disabled={busy}
                   className="text-[11px] font-semibold text-safety-600 hover:text-safety-700 disabled:opacity-50">
-                  Forgot password?
+                  {t("auth.forgot")}
                 </button>
               </div>
               <div className="relative">
@@ -216,7 +221,7 @@ export function LoginScreenV3(): JSX.Element {
                   className="w-full pl-10 pr-10 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
                 />
                 <button type="button" onClick={() => setShowPassword(s => !s)} tabIndex={-1}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600">
                   <Icon name={showPassword ? "eyeOff" : "eye"} size={16} />
                 </button>
@@ -229,7 +234,7 @@ export function LoginScreenV3(): JSX.Element {
             onClick={method === "password" ? onPasswordLogin : onMagicLink}
             leftIcon={busy ? <Spinner size={16} /> : null}
           >
-            {busy ? "Please wait…" : method === "password" ? "Sign in" : "Send magic link"}
+            {busy ? t("auth.pleaseWait") : method === "password" ? t("auth.signIn") : t("auth.sendMagic")}
           </Button>
 
           {/* Status */}
@@ -247,7 +252,7 @@ export function LoginScreenV3(): JSX.Element {
           {/* OTP fallback after magic link */}
           {status.kind === "sent" && (
             <div className="mt-4 pt-4 border-t border-cream-200">
-              <label htmlFor="otp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">Or enter 6-digit code</label>
+              <label htmlFor="otp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">{t("auth.orEnterCode")}</label>
               <div className="flex gap-2">
                 <input
                   id="otp" value={otp} inputMode="numeric" maxLength={6}
@@ -256,7 +261,7 @@ export function LoginScreenV3(): JSX.Element {
                   placeholder="123456"
                   className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm font-mono tracking-[0.3em] text-center outline-none focus:border-safety-500 bg-white"
                 />
-                <Button variant="secondary" size="md" onClick={onVerifyOtp} disabled={busy}>Verify</Button>
+                <Button variant="secondary" size="md" onClick={onVerifyOtp} disabled={busy}>{t("auth.verify")}</Button>
               </div>
             </div>
           )}
