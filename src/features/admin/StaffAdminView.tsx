@@ -10,12 +10,51 @@ import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import {
   createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
-  staffJoinUrl, inviteStatus, type StaffMember, type StaffInvite,
+  staffJoinUrl, inviteStatus, listStaffAreas, setStaffAreas, STAFF_AREAS, STAFF_AREA_LABEL,
+  type StaffMember, type StaffInvite,
 } from "@/app/staffQueries";
 import { getPaymentSettings, setPlatformSetting } from "@/app/paymentQueries";
 import { isValidVpa } from "@/lib/upi";
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+function MemberAreas({ staffId }: { staffId: string }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [areas, setAreas] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    setOpen(true);
+    if (areas) return;
+    const c = await getClient(); if (!c) return;
+    const r = await listStaffAreas(c, staffId);
+    // Empty grants = full access (the default), so show all checked.
+    setAreas(r.ok ? (r.data.length ? r.data : [...STAFF_AREAS]) : [...STAFF_AREAS]);
+  };
+  const toggle = (a: string) => setAreas(prev => prev?.includes(a) ? prev.filter(x => x !== a) : [...(prev ?? []), a]);
+  const save = async () => {
+    setBusy(true);
+    const c = await getClient();
+    if (c) await setStaffAreas(c, staffId, areas ?? []);
+    setBusy(false); setOpen(false);
+  };
+  if (!open) return <button type="button" onClick={() => void load()} className="text-[11px] font-semibold text-safety-600 hover:text-safety-700">Access ▾</button>;
+  return (
+    <div className="mt-2 p-2.5 rounded-lg bg-cream-50 border border-cream-200 w-full">
+      <div className="text-[11px] text-ink-500 mb-1.5">Admin areas this member can access:</div>
+      <div className="flex flex-wrap gap-2">
+        {STAFF_AREAS.map(a => (
+          <label key={a} className="inline-flex items-center gap-1 text-[12px] text-ink-700 cursor-pointer">
+            <input type="checkbox" className="accent-safety-500" checked={(areas ?? []).includes(a)} onChange={() => toggle(a)} /> {STAFF_AREA_LABEL[a]}
+          </label>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-2">
+        <Button size="sm" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save access"}</Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
 
 function UpiSettingsCard(): JSX.Element {
   const [upi, setUpi] = useState("");
@@ -197,12 +236,15 @@ export function StaffAdminView(): JSX.Element {
             <div className="font-semibold text-ink-800 mb-3">Staff team ({staff.length})</div>
             <div className="space-y-2">
               {staff.map(m => (
-                <div key={m.id} className="flex items-center justify-between py-2 border-b border-cream-100 last:border-0">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-ink-800 truncate">{m.name || m.email}</div>
-                    <div className="text-[12px] text-ink-500 truncate">{m.email}{m.managerEmail ? ` · reports to ${m.managerEmail}` : ""} · {m.managedOrgs} org{m.managedOrgs === 1 ? "" : "s"}</div>
+                <div key={m.id} className="py-2 border-b border-cream-100 last:border-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-ink-800 truncate">{m.name || m.email}</div>
+                      <div className="text-[12px] text-ink-500 truncate">{m.email}{m.managerEmail ? ` · reports to ${m.managerEmail}` : ""} · {m.managedOrgs} org{m.managedOrgs === 1 ? "" : "s"}</div>
+                    </div>
+                    <Badge tone={TIER_BADGE[m.tier]?.tone ?? "neutral"}>{TIER_BADGE[m.tier]?.label ?? m.tier}</Badge>
                   </div>
-                  <Badge tone={TIER_BADGE[m.tier]?.tone ?? "neutral"}>{TIER_BADGE[m.tier]?.label ?? m.tier}</Badge>
+                  {m.tier === "member" && <MemberAreas staffId={m.id} />}
                 </div>
               ))}
               {staff.length === 0 && <div className="text-sm text-ink-400 py-2">No staff yet.</div>}

@@ -10,9 +10,10 @@
 // spinner while their chunk loads.
 
 import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // ── Eager: entry + first paint + small ──────────────────────────────────────
+import { RequireStaffArea } from "@/auth";
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
@@ -93,12 +94,12 @@ export const router = createBrowserRouter([
       { path: "org/notifications", element: <OrgNotificationsView /> },
       { path: "org/integrations", element: <OrgIntegrationsView /> },
       { path: "admin", element: <PlatformDashboardView /> },
-      { path: "admin/users", element: <PlatformUsersView /> },
-      { path: "admin/orgs", element: <PlatformOrgsView /> },
-      { path: "admin/roles", element: <RoleManager /> },
+      { path: "admin/users", element: <RequireStaffArea area="users" fallback={<Navigate to="/admin" replace />}><PlatformUsersView /></RequireStaffArea> },
+      { path: "admin/orgs", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformOrgsView /></RequireStaffArea> },
+      { path: "admin/roles", element: <RequireStaffArea area="roles" fallback={<Navigate to="/admin" replace />}><RoleManager /></RequireStaffArea> },
       { path: "admin/staff", element: <StaffAdminView /> },
-      { path: "admin/upgrades", element: <UpgradeRequestsView /> },
-      { path: "admin/signups", element: <SignupRequestsView /> },
+      { path: "admin/upgrades", element: <RequireStaffArea area="upgrades" fallback={<Navigate to="/admin" replace />}><UpgradeRequestsView /></RequireStaffArea> },
+      { path: "admin/signups", element: <RequireStaffArea area="signups" fallback={<Navigate to="/admin" replace />}><SignupRequestsView /></RequireStaffArea> },
       { path: "settings/security", element: <SecurityView /> },
       { path: "settings/profile", element: <ProfileView /> },
     ],

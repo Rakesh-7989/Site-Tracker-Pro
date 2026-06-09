@@ -32,7 +32,15 @@ export interface AuthUser {
   staffTier?: StaffTier | null;
   /** profiles.profile_completed — false → user must finish their profile first. */
   profileCompleted?: boolean;
+  /**
+   * Admin areas a staff MEMBER may access (migration 106). Owner/head → all.
+   * Undefined for non-staff. A member with no explicit grants defaults to all.
+   */
+  staffAreas?: string[];
 }
+
+/** The admin areas a staff member can be scoped to (migration 106). */
+export const STAFF_AREAS = ["signups", "orgs", "users", "roles", "upgrades"] as const;
 
 /** Platform staff hierarchy tier (migration 99). Owner > Head > Member. */
 export type StaffTier = "owner" | "head" | "member";

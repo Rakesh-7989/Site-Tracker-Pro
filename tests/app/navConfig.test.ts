@@ -77,6 +77,44 @@ describe("buildNav", () => {
     expect(mk(null)).not.toContain("/admin/staff");
   });
 
+  it("staff MEMBER scoped to specific areas only sees those admin items (mig 106)", () => {
+    const nav = buildNav(session({
+      user: { id: "u", email: "a@b", name: "M", identityRole: "superadmin", isStaff: true, staffTier: "member", staffAreas: ["signups", "upgrades"] },
+    }));
+    const paths = nav.map(n => n.to);
+    // granted areas → visible
+    expect(paths).toContain("/admin/signups");
+    expect(paths).toContain("/admin/upgrades");
+    // ungranted areas → hidden
+    expect(paths).not.toContain("/admin/users");
+    expect(paths).not.toContain("/admin/orgs");
+    expect(paths).not.toContain("/admin/roles");
+    // owner/head-only item stays hidden for members regardless
+    expect(paths).not.toContain("/admin/staff");
+  });
+
+  it("staff MEMBER with empty grants sees ALL admin areas (empty = full access)", () => {
+    const nav = buildNav(session({
+      user: { id: "u", email: "a@b", name: "M", identityRole: "superadmin", isStaff: true, staffTier: "member", staffAreas: [] },
+    }));
+    const paths = nav.map(n => n.to);
+    for (const p of ["/admin/signups", "/admin/users", "/admin/orgs", "/admin/roles", "/admin/upgrades"]) {
+      expect(paths).toContain(p);
+    }
+  });
+
+  it("owner/head ignore area scoping — always see every admin area", () => {
+    for (const t of ["owner", "head"] as const) {
+      const nav = buildNav(session({
+        user: { id: "u", email: "a@b", name: t, identityRole: "superadmin", isStaff: true, staffTier: t, staffAreas: ["signups"] },
+      }));
+      const paths = nav.map(n => n.to);
+      for (const p of ["/admin/signups", "/admin/users", "/admin/orgs", "/admin/roles", "/admin/upgrades", "/admin/staff"]) {
+        expect(paths).toContain(p);
+      }
+    }
+  });
+
   it("site_engineer sees Daily Reports but not org admin", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "SE", identityRole: "site_engineer", isStaff: false },

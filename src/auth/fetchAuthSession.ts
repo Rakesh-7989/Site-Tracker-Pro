@@ -206,6 +206,20 @@ export async function fetchAuthSession(
     const normalized = normalizeProfile(profileRes.data as Record<string, unknown> | null, input.authUserEmail);
     if (!normalized.ok) return normalized;
 
+    // Staff admin-area access (migration 106): owner/head see all; a member is
+    // scoped to its granted areas (empty grants → all, the default).
+    const ALL_AREAS = ["signups", "orgs", "users", "roles", "upgrades"];
+    const tierNow = normalized.user.staffTier;
+    if (tierNow === "owner" || tierNow === "head") {
+      normalized.user.staffAreas = ALL_AREAS;
+    } else if (tierNow === "member") {
+      try {
+        const ag = await client.from("staff_area_grants").select("area").eq("staff_id", input.authUserId);
+        const granted = Array.isArray(ag?.data) ? (ag.data as Array<Record<string, unknown>>).map(r => String(r.area)) : [];
+        normalized.user.staffAreas = granted.length ? granted : ALL_AREAS;
+      } catch { normalized.user.staffAreas = ALL_AREAS; }
+    }
+
     // 2. org_members joined with organizations
     const orgsRes = await client
       .from("org_members")

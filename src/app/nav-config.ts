@@ -30,6 +30,11 @@ export interface NavItem {
    * `requires` — both must pass.
    */
   requiresStaffTier?: Array<"owner" | "head" | "member">;
+  /**
+   * Admin-area key (migration 106). A staff MEMBER sees this item only if the
+   * area is in their granted set; owner/head always see it.
+   */
+  area?: "signups" | "orgs" | "users" | "roles" | "upgrades";
 }
 
 /**
@@ -63,12 +68,12 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/org/integrations", label: "Integrations", icon: "plug", requires: "org:integrations:manage", group: "Org Admin" },
 
   { to: "/admin", label: "Platform", icon: "dashboard", requires: "platform:orgs:manage", group: "Platform" },
-  { to: "/admin/signups", label: "Signups", icon: "mail", requires: "platform:orgs:manage", group: "Platform" },
-  { to: "/admin/users", label: "Users", icon: "user-cog", requires: "platform:users:manage", group: "Platform" },
-  { to: "/admin/orgs", label: "Organizations", icon: "building", requires: "platform:orgs:manage", group: "Platform" },
-  { to: "/admin/roles", label: "Role Permissions", icon: "lock", requires: "platform:roles:configure", group: "Platform" },
+  { to: "/admin/signups", label: "Signups", icon: "mail", requires: "platform:orgs:manage", area: "signups", group: "Platform" },
+  { to: "/admin/users", label: "Users", icon: "user-cog", requires: "platform:users:manage", area: "users", group: "Platform" },
+  { to: "/admin/orgs", label: "Organizations", icon: "building", requires: "platform:orgs:manage", area: "orgs", group: "Platform" },
+  { to: "/admin/roles", label: "Role Permissions", icon: "lock", requires: "platform:roles:configure", area: "roles", group: "Platform" },
   { to: "/admin/staff", label: "Staff", icon: "users", requiresStaffTier: ["owner", "head"], group: "Platform" },
-  { to: "/admin/upgrades", label: "Upgrade requests", icon: "trend", requiresStaffTier: ["owner", "head", "member"], group: "Platform" },
+  { to: "/admin/upgrades", label: "Upgrade requests", icon: "trend", requiresStaffTier: ["owner", "head", "member"], area: "upgrades", group: "Platform" },
 
   // Always visible — every signed-in user can manage their own account security (2FA).
   { to: "/settings/security", label: "Security", icon: "lock", group: "Account" },
@@ -86,9 +91,15 @@ export function buildNav(session: AuthSession | null): NavItem[] {
   if (!session) return [];
   const caps = capabilitiesAnywhere(session);
   const tier = session.user.staffTier ?? null;
+  const isMember = tier === "member";
+  const areas = session.user.staffAreas ?? [];
   return NAV_CATALOG.filter(item =>
     (!item.requires || caps.has(item.requires)) &&
-    (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))),
+    (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))) &&
+    // A staff MEMBER only sees admin items for areas they're granted (owner/head
+    // are not members, so they see everything). Empty grants = full access (the
+    // default), matching useHasStaffArea + the set_staff_areas RPC semantics.
+    (!item.area || !isMember || areas.length === 0 || areas.includes(item.area)),
   );
 }
 

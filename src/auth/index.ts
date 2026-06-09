@@ -126,12 +126,15 @@ export {
   useCan,
   useDecide,
   useHasRole,
+  useHasStaffArea,
   RequireCapability,
   RequireRole,
   RequireSession,
+  RequireStaffArea,
   type RequireCapabilityProps,
   type RequireRoleProps,
   type RequireSessionProps,
+  type RequireStaffAreaProps,
 } from "./guards";
 
 // ── Plan gating (plan feature_caps, orthogonal to RBAC) ──────────────────────

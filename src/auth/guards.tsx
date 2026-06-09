@@ -92,6 +92,36 @@ export function RequireRole({ roles, children, fallback = null }: RequireRolePro
 }
 
 /**
+ * Hook form of the staff-area check (migration 106). Returns true when the
+ * current session may access the given admin area. Owner/head (and any
+ * non-member, e.g. a superadmin without a member tier) see everything; a
+ * staff MEMBER is scoped to its granted areas (empty grants → all).
+ */
+export function useHasStaffArea(area: string): boolean {
+  const { session } = useAuth();
+  if (!session) return false;
+  if (session.user.staffTier !== "member") return true;
+  const areas = session.user.staffAreas ?? [];
+  return areas.length === 0 || areas.includes(area);
+}
+
+export interface RequireStaffAreaProps {
+  area: string;
+  children: ReactNode;
+  /** Rendered when a member isn't granted this area. Default: nothing. */
+  fallback?: ReactNode;
+}
+
+/**
+ * Route/section guard for the platform admin areas (migration 106). Use to
+ * bounce a staff member who manually navigates to an area they aren't granted.
+ */
+export function RequireStaffArea({ area, children, fallback = null }: RequireStaffAreaProps): JSX.Element {
+  const allowed = useHasStaffArea(area);
+  return <>{allowed ? children : fallback}</>;
+}
+
+/**
  * Render `children` only when the session is fully loaded + ready.
  * Render `loading` while we're still fetching. Render `signedOut` if
  * no auth user is present.

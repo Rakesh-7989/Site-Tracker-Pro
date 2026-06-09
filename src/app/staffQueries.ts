@@ -115,6 +115,29 @@ export async function revokeStaffInvite(client: any, id: string): Promise<SResul
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
+export const STAFF_AREAS = ["signups", "orgs", "users", "roles", "upgrades"] as const;
+export const STAFF_AREA_LABEL: Record<string, string> = { signups: "Signups", orgs: "Organizations", users: "Users", roles: "Role permissions", upgrades: "Upgrade requests" };
+
+/** Owner/head: a staff member's currently-granted admin areas. RPC list_staff_areas. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listStaffAreas(client: any, staffId: string): Promise<SResult<string[]>> {
+  try {
+    const { data, error } = await client.rpc("list_staff_areas", { p_staff: staffId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => String(r.area)) };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Owner/head: replace a staff member's admin areas (empty → full access). RPC set_staff_areas. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function setStaffAreas(client: any, staffId: string, areas: string[]): Promise<SResult<true>> {
+  try {
+    const { error } = await client.rpc("set_staff_areas", { p_staff: staffId, p_areas: areas });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: true };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
 /** Live status of an invite for display. */
 export function inviteStatus(inv: StaffInvite): "used" | "revoked" | "expired" | "active" {
   if (inv.usedAt) return "used";
