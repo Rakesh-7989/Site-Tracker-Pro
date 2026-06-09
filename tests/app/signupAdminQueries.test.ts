@@ -5,7 +5,7 @@ import { listSignupRequests, reviewSignupRequest, pendingSignupCount } from "@/a
 
 function selectChain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "order"]) c[m] = () => c;
+  for (const m of ["select", "eq", "order", "limit"]) c[m] = () => c;
   c.then = (resolve: (v: unknown) => unknown) => resolve(result);
   return c;
 }

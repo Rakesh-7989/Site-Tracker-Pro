@@ -128,6 +128,25 @@ export async function listStaffAreas(client: any, staffId: string): Promise<SRes
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
+/**
+ * Owner/head: every staff member's granted areas in ONE call (RPC
+ * list_all_staff_areas, mig 107). Returns a Map<staffId, areas[]> so the staff
+ * list can render each member's access without firing a query per row.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listAllStaffAreas(client: any): Promise<SResult<Map<string, string[]>>> {
+  try {
+    const { data, error } = await client.rpc("list_all_staff_areas");
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    const map = new Map<string, string[]>();
+    for (const r of (data ?? []) as Array<Record<string, unknown>>) {
+      const id = String(r.staff_id); const area = String(r.area);
+      map.set(id, [...(map.get(id) ?? []), area]);
+    }
+    return { ok: true, data: map };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
 /** Owner/head: replace a staff member's admin areas (empty → full access). RPC set_staff_areas. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function setStaffAreas(client: any, staffId: string, areas: string[]): Promise<SResult<true>> {

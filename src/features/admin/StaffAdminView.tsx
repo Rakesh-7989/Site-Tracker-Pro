@@ -10,7 +10,7 @@ import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import {
   createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
-  staffJoinUrl, inviteStatus, listStaffAreas, setStaffAreas, STAFF_AREAS, STAFF_AREA_LABEL,
+  staffJoinUrl, inviteStatus, listAllStaffAreas, setStaffAreas, STAFF_AREAS, STAFF_AREA_LABEL,
   type StaffMember, type StaffInvite,
 } from "@/app/staffQueries";
 import { getPaymentSettings, setPlatformSetting } from "@/app/paymentQueries";
@@ -18,33 +18,37 @@ import { isValidVpa } from "@/lib/upi";
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-function MemberAreas({ staffId }: { staffId: string }): JSX.Element {
+// `initial` = the member's currently-granted areas (batch-loaded once by the
+// parent via list_all_staff_areas — no per-row query). Empty = full access.
+function MemberAreas({ staffId, initial }: { staffId: string; initial: string[] }): JSX.Element {
+  const full = [...STAFF_AREAS] as string[];
+  const [committed, setCommitted] = useState<string[]>(initial.length ? initial : full);
+  const [draft, setDraft] = useState<string[]>(committed);
   const [open, setOpen] = useState(false);
-  const [areas, setAreas] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
-  const load = async () => {
-    setOpen(true);
-    if (areas) return;
-    const c = await getClient(); if (!c) return;
-    const r = await listStaffAreas(c, staffId);
-    // Empty grants = full access (the default), so show all checked.
-    setAreas(r.ok ? (r.data.length ? r.data : [...STAFF_AREAS]) : [...STAFF_AREAS]);
-  };
-  const toggle = (a: string) => setAreas(prev => prev?.includes(a) ? prev.filter(x => x !== a) : [...(prev ?? []), a]);
+  const openEditor = () => { setDraft(committed); setOpen(true); };
+  const toggle = (a: string) => setDraft(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
   const save = async () => {
     setBusy(true);
     const c = await getClient();
-    if (c) await setStaffAreas(c, staffId, areas ?? []);
+    if (c) { const r = await setStaffAreas(c, staffId, draft); if (r.ok) setCommitted(draft.length ? draft : full); }
     setBusy(false); setOpen(false);
   };
-  if (!open) return <button type="button" onClick={() => void load()} className="text-[11px] font-semibold text-safety-600 hover:text-safety-700">Access ▾</button>;
+  const isAll = committed.length >= STAFF_AREAS.length;
+  if (!open) {
+    return (
+      <button type="button" onClick={openEditor} className="mt-1 text-[11px] font-semibold text-safety-600 hover:text-safety-700">
+        Access: {isAll ? "all areas" : committed.map(a => STAFF_AREA_LABEL[a]).join(", ")} ▾
+      </button>
+    );
+  }
   return (
     <div className="mt-2 p-2.5 rounded-lg bg-cream-50 border border-cream-200 w-full">
-      <div className="text-[11px] text-ink-500 mb-1.5">Admin areas this member can access:</div>
+      <div className="text-[11px] text-ink-500 mb-1.5">Admin areas this member can access (none ticked = full access):</div>
       <div className="flex flex-wrap gap-2">
         {STAFF_AREAS.map(a => (
           <label key={a} className="inline-flex items-center gap-1 text-[12px] text-ink-700 cursor-pointer">
-            <input type="checkbox" className="accent-safety-500" checked={(areas ?? []).includes(a)} onChange={() => toggle(a)} /> {STAFF_AREA_LABEL[a]}
+            <input type="checkbox" className="accent-safety-500" checked={draft.includes(a)} onChange={() => toggle(a)} /> {STAFF_AREA_LABEL[a]}
           </label>
         ))}
       </div>
@@ -107,6 +111,7 @@ export function StaffAdminView(): JSX.Element {
   const canManage = tier === "owner" || tier === "head";
 
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [areaMap, setAreaMap] = useState<Map<string, string[]>>(new Map());
   const [invites, setInvites] = useState<StaffInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -121,9 +126,10 @@ export function StaffAdminView(): JSX.Element {
     setLoading(true); setError(null);
     const client = await getClient();
     if (!client) { setError("Backend unavailable."); setLoading(false); return; }
-    const [s, i] = await Promise.all([listStaff(client), listStaffInvites(client)]);
+    const [s, i, a] = await Promise.all([listStaff(client), listStaffInvites(client), listAllStaffAreas(client)]);
     if (s.ok) setStaff(s.data); else setError(s.error);
     if (i.ok) setInvites(i.data);
+    if (a.ok) setAreaMap(a.data);
     setLoading(false);
   }, []);
 
@@ -244,7 +250,7 @@ export function StaffAdminView(): JSX.Element {
                     </div>
                     <Badge tone={TIER_BADGE[m.tier]?.tone ?? "neutral"}>{TIER_BADGE[m.tier]?.label ?? m.tier}</Badge>
                   </div>
-                  {m.tier === "member" && <MemberAreas staffId={m.id} />}
+                  {m.tier === "member" && <MemberAreas staffId={m.id} initial={areaMap.get(m.id) ?? []} />}
                 </div>
               ))}
               {staff.length === 0 && <div className="text-sm text-ink-400 py-2">No staff yet.</div>}

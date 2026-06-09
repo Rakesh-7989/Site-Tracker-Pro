@@ -30,6 +30,8 @@ export async function listSignupRequests(client: any, status?: SignupStatus): Pr
   try {
     let q = client.from("signup_requests").select("id, firm_name, contact_name, email, phone, plan, message, status, review_notes, reviewed_at, created_org_id, assigned_staff_id, payment_status, payment_ref, paid_at, created_at").order("created_at", { ascending: false });
     if (status) q = q.eq("status", status);
+    // Scale guard: never pull an unbounded set into the admin table (mig 107 audit).
+    q = q.limit(300);
     const { data, error } = await q;
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
