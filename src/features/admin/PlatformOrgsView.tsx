@@ -5,8 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, type PlatformOrg } from "@/app/platformAdminQueries";
+import { listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, type PlatformOrg } from "@/app/platformAdminQueries";
 import { deleteOrganization } from "@/app/orgAdminQueries";
+import { Pager } from "@/components/ui/Pager";
 
 const PLAN_OPTIONS = ASSIGNABLE_PLANS.map(p => ({ value: p, label: PLAN_LABEL[p] ?? p }));
 
@@ -26,14 +27,21 @@ function Inner(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [search, setSearch] = useState("");   // debounced, server-side
+  const [page, setPage] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [planBusyId, setPlanBusyId] = useState<string | null>(null);
+
+  // Debounce the search box → server-side query, reset to first page.
+  useEffect(() => { const t = setTimeout(() => { setSearch(q.trim()); setPage(0); }, 350); return () => clearTimeout(t); }, [q]);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listPlatformOrgs(client); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, []);
+    const res = await listPlatformOrgs(client, { limit: ADMIN_PAGE_SIZE, offset: page * ADMIN_PAGE_SIZE, search });
+    if (res.ok) setRows(res.data); else setError(res.error);
+    setLoading(false);
+  }, [page, search]);
   useEffect(() => { void reload(); }, [reload]);
 
   const onDelete = useCallback(async (o: PlatformOrg) => {
@@ -62,20 +70,19 @@ function Inner(): JSX.Element {
     else setError(res.error);
   }, []);
 
-  const term = q.trim().toLowerCase();
-  const shown = term ? rows.filter(r => r.name.toLowerCase().includes(term) || r.slug.toLowerCase().includes(term)) : rows;
+  const hasNext = rows.length === ADMIN_PAGE_SIZE;
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="font-display text-2xl font-bold text-ink-900">Organizations</h1>
-        <span className="text-sm text-ink-500">{rows.length} total</span>
+        <span className="text-sm text-ink-500">{search ? "filtered" : `page ${page + 1}`}</span>
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
-      {!loading && rows.length > 0 && <Input placeholder="Search by name or slug…" value={q} onChange={e => setQ(e.target.value)} />}
+      <Input placeholder="Search by name or slug…" value={q} onChange={e => setQ(e.target.value)} />
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
-        : shown.length === 0 ? <Card className="p-8 text-center text-sm text-ink-500"><Icon name="building" size={24} className="mx-auto text-ink-300 mb-2" />No organizations{term ? " match your search." : " yet."}</Card>
-        : <div className="space-y-2">{shown.map(o => (
+        : rows.length === 0 ? <Card className="p-8 text-center text-sm text-ink-500"><Icon name="building" size={24} className="mx-auto text-ink-300 mb-2" />No organizations{search ? " match your search." : " yet."}</Card>
+        : <><div className="space-y-2">{rows.map(o => (
             <Card key={o.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -99,7 +106,9 @@ function Inner(): JSX.Element {
                 </Button>
               </div>
             </Card>
-          ))}</div>}
+          ))}</div>
+          <Pager page={page} hasNext={hasNext} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />
+          </>}
     </div>
   );
 }

@@ -9,6 +9,9 @@ import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import { listUpgradeRequests, assignUpgradeRequest, setUpgradeStatus, type UpgradeRequest, type UpgradeStatus } from "@/app/upgradeQueries";
 import { listStaff, type StaffMember } from "@/app/staffQueries";
+import { Pager } from "@/components/ui/Pager";
+
+const UPGRADE_PAGE_SIZE = 100;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any> {
@@ -31,16 +34,20 @@ export function UpgradeRequestsView(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient();
     if (!client) { setError("Backend unavailable."); setLoading(false); return; }
-    const [r, s] = await Promise.all([listUpgradeRequests(client), canAssign ? listStaff(client) : Promise.resolve({ ok: true as const, data: [] as StaffMember[] })]);
+    const [r, s] = await Promise.all([
+      listUpgradeRequests(client, { limit: UPGRADE_PAGE_SIZE, offset: page * UPGRADE_PAGE_SIZE }),
+      canAssign ? listStaff(client) : Promise.resolve({ ok: true as const, data: [] as StaffMember[] }),
+    ]);
     if (r.ok) setRows(r.data); else setError(r.error);
     if (s.ok) setStaff(s.data);
     setLoading(false);
-  }, [canAssign]);
+  }, [canAssign, page]);
 
   useEffect(() => { if (isStaff) void load(); else setLoading(false); }, [isStaff, load]);
 
@@ -86,8 +93,8 @@ export function UpgradeRequestsView(): JSX.Element {
 
       {loading ? <div className="grid place-items-center py-12 text-safety-500"><Spinner size={24} /></div>
         : rows.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-ink-500"><Icon name="trend" size={24} className="mx-auto text-ink-300 mb-2" />No upgrade requests yet.</Card>
-        ) : rows.map(r => (
+          <Card className="p-8 text-center text-sm text-ink-500"><Icon name="trend" size={24} className="mx-auto text-ink-300 mb-2" />No upgrade requests {page > 0 ? "on this page." : "yet."}</Card>
+        ) : <>{rows.map(r => (
           <Card key={r.id} className="p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
@@ -118,6 +125,8 @@ export function UpgradeRequestsView(): JSX.Element {
             </div>
           </Card>
         ))}
+        <Pager page={page} hasNext={rows.length === UPGRADE_PAGE_SIZE} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />
+        </>}
     </div>
   );
 }

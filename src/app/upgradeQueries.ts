@@ -29,11 +29,11 @@ export async function requestPlanUpgrade(client: any, orgId: string, desiredPlan
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-/** Staff list (owner/head all; member assigned). RPC list_upgrade_requests. */
+/** Staff list (owner/head all; member assigned). RPC list_upgrade_requests. Paged (mig 108). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listUpgradeRequests(client: any): Promise<UResult<UpgradeRequest[]>> {
+export async function listUpgradeRequests(client: any, opts: { limit?: number; offset?: number } = {}): Promise<UResult<UpgradeRequest[]>> {
   try {
-    const { data, error } = await client.rpc("list_upgrade_requests");
+    const { data, error } = await client.rpc("list_upgrade_requests", { p_limit: opts.limit ?? 100, p_offset: opts.offset ?? 0 });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), orgId: String(r.org_id), orgName: String(r.org_name ?? ""),

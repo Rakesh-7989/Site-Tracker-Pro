@@ -8,6 +8,11 @@ export interface PlatformUser { id: string; name: string; email: string | null; 
 
 const num = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
+/** Server-side paging + search options (migration 108). */
+export interface PageOpts { limit?: number; offset?: number; search?: string }
+/** Default admin page size. */
+export const ADMIN_PAGE_SIZE = 50;
+
 /** Plans a superadmin can assign. Order = display order in the picker. */
 export const ASSIGNABLE_PLANS = ["basic", "pro", "business", "enterprise", "custom"] as const;
 export type AssignablePlan = (typeof ASSIGNABLE_PLANS)[number];
@@ -27,9 +32,9 @@ export async function setOrgPlan(client: any, orgId: string, plan: string): Prom
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listPlatformOrgs(client: any): Promise<PResult<PlatformOrg[]>> {
+export async function listPlatformOrgs(client: any, opts: PageOpts = {}): Promise<PResult<PlatformOrg[]>> {
   try {
-    const { data, error } = await client.rpc("platform_orgs");
+    const { data, error } = await client.rpc("platform_orgs", { p_limit: opts.limit ?? ADMIN_PAGE_SIZE, p_offset: opts.offset ?? 0, p_search: opts.search?.trim() || null });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), name: String(r.name ?? ""), slug: String(r.slug ?? ""), plan: String(r.plan ?? "basic"),
@@ -39,9 +44,9 @@ export async function listPlatformOrgs(client: any): Promise<PResult<PlatformOrg
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listPlatformUsers(client: any, limit = 200): Promise<PResult<PlatformUser[]>> {
+export async function listPlatformUsers(client: any, opts: PageOpts = {}): Promise<PResult<PlatformUser[]>> {
   try {
-    const { data, error } = await client.rpc("platform_users", { p_limit: limit });
+    const { data, error } = await client.rpc("platform_users", { p_limit: opts.limit ?? ADMIN_PAGE_SIZE, p_offset: opts.offset ?? 0, p_search: opts.search?.trim() || null });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), name: String(r.name ?? ""), email: r.email == null ? null : String(r.email),
