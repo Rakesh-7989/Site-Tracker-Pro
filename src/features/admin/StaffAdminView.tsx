@@ -12,8 +12,42 @@ import {
   createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
   staffJoinUrl, inviteStatus, type StaffMember, type StaffInvite,
 } from "@/app/staffQueries";
+import { getPaymentSettings, setPlatformSetting } from "@/app/paymentQueries";
+import { isValidVpa } from "@/lib/upi";
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+function UpiSettingsCard(): JSX.Element {
+  const [upi, setUpi] = useState("");
+  const [payee, setPayee] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { void (async () => { const c = await getClient(); if (!c) return; const r = await getPaymentSettings(c); if (r.ok) { setUpi(r.data.upiId ?? ""); setPayee(r.data.payeeName ?? ""); } })(); }, []);
+  const save = async () => {
+    setErr(null);
+    if (upi && !isValidVpa(upi)) return setErr("Enter a valid UPI ID, e.g. name@okhdfcbank.");
+    setBusy(true);
+    const c = await getClient();
+    const a = await setPlatformSetting(c, "upi_id", upi);
+    const b = await setPlatformSetting(c, "payee_name", payee);
+    setBusy(false);
+    if (a.ok && b.ok) { setSaved(true); setTimeout(() => setSaved(false), 2500); } else setErr((a.ok ? b : a).ok ? "" : "Save failed.");
+  };
+  return (
+    <Card className="p-5">
+      <div className="font-semibold text-ink-800">Payment UPI</div>
+      <div className="text-[13px] text-ink-500 mt-0.5 mb-3">The UPI ID customers pay to (used for the QR on payment pages). Zero gateway fees.</div>
+      {err && <div className="mb-2 text-[12px] text-red-600">{err}</div>}
+      {saved && <div className="mb-2 text-[12px] text-emerald-700">✅ Saved.</div>}
+      <div className="grid sm:grid-cols-2 gap-2">
+        <input value={upi} onChange={e => setUpi(e.target.value)} placeholder="yourname@okhdfcbank" className="px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white" />
+        <input value={payee} onChange={e => setPayee(e.target.value)} placeholder="Payee name (e.g. Rakesh Boyapati)" className="px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white" />
+      </div>
+      <Button className="mt-3" disabled={busy} onClick={save} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? "Saving…" : "Save UPI"}</Button>
+    </Card>
+  );
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any> {
@@ -115,6 +149,8 @@ export function StaffAdminView(): JSX.Element {
           <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}
         </div>
       )}
+
+      <UpiSettingsCard />
 
       {/* Generate invite */}
       <Card className="p-5">

@@ -150,10 +150,11 @@ function Inner(): JSX.Element {
               <div className="mt-2 flex items-center gap-2 flex-wrap text-[12px]">
                 <span className="text-ink-400 font-semibold">Payment:</span>
                 {r.paymentStatus === "unpaid" ? (<>
-                  <Button size="sm" disabled={busy === r.id} onClick={() => void sendPayLink(r)}>Send payment link</Button>
+                  <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied — share it with ${r.email}.`); }}>Copy UPI link</Button>
+                  <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void sendPayLink(r)}>Cashfree link</Button>
                   <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
                   <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "waived")}>Waive</Button>
-                  <span className="text-ink-400">— Cashfree link, or confirm manually (24h SLA)</span>
+                  {r.paymentRef && <span className="text-ink-500">claim UTR: {r.paymentRef}</span>}
                 </>) : (<>
                   <span className="text-ink-700">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
                   <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>

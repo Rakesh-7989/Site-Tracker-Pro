@@ -16,6 +16,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
+import { PayView } from "@/features/marketing/PayView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
 import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
 import { ResetPasswordView } from "@/features/auth/ResetPasswordView";
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
   { path: "/auth/reset", element: <ResetPasswordView /> },
   { path: "/staff/join", element: <StaffJoinView /> },
   { path: "/profile/complete", element: <ProfileCompleteView /> },
+  { path: "/pay/:requestId", element: <PayView /> },
   // ── Authenticated app (pathless layout route wraps RequireSession + Suspense) ──
   {
     element: <ShellLayout />,
