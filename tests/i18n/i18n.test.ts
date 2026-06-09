@@ -50,7 +50,7 @@ describe("locale meta + storage", () => {
 describe("bundle parity (nav/navGroup/shell must be key-identical across locales)", () => {
   const keysOf = (obj: Record<string, unknown>, ns: string): string[] =>
     Object.keys((obj[ns] ?? {}) as Record<string, unknown>).sort();
-  for (const ns of ["nav", "navGroup", "shell", "auth", "signup", "dash", "profile", "billing"]) {
+  for (const ns of ["nav", "navGroup", "shell", "auth", "signup", "dash", "profile", "billing", "projTab"]) {
     it(`'${ns}' has the same keys in en/te/hi`, () => {
       const enK = keysOf(en as Record<string, unknown>, ns);
       expect(keysOf(te as Record<string, unknown>, ns)).toEqual(enK);

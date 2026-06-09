@@ -13,6 +13,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 
 import { useAuth, resolveCapabilities } from "@/auth";
 import { Card, Icon, Spinner, Badge } from "@/components/ui/atoms";
+import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
 import { visibleTabs, DEFAULT_TAB, tabById } from "./tabs-config";
@@ -59,6 +60,7 @@ const REAL_TABS = new Set([
 export function DetailView(): JSX.Element {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
+  const t = useT();
   const { session } = useAuth();
   const { can: planCan } = usePlanCaps();
   const { state } = useProject(id);
@@ -86,14 +88,14 @@ export function DetailView(): JSX.Element {
       <Card className="max-w-lg mx-auto p-8 text-center">
         <Icon name="alert" size={24} className="mx-auto text-red-500 mb-2" />
         <div className="text-sm text-ink-700">{state.message}</div>
-        <Link to="/projects" className="inline-block mt-4 text-sm font-semibold text-safety-600 hover:text-safety-700">← Back to projects</Link>
+        <Link to="/projects" className="inline-block mt-4 text-sm font-semibold text-safety-600 hover:text-safety-700">← {t("nav.projects")}</Link>
       </Card>
     );
   }
 
   const { project, members } = state;
   // Resolve the active tab: requested → if visible use it, else default.
-  const activeId = tab && tabs.some(t => t.id === tab) ? tab : DEFAULT_TAB;
+  const activeId = tab && tabs.some(tb => tb.id === tab) ? tab : DEFAULT_TAB;
   const activeDef = tabById(activeId);
 
   return (
@@ -101,7 +103,7 @@ export function DetailView(): JSX.Element {
       {/* Breadcrumb + title */}
       <div className="mb-4">
         <Link to="/projects" className="text-xs text-ink-500 hover:text-safety-600 inline-flex items-center gap-1">
-          <Icon name="arrow" size={12} /> Projects
+          <Icon name="arrow" size={12} /> {t("nav.projects")}
         </Link>
         <div className="mt-1 flex items-center gap-2 flex-wrap">
           <h1 className="font-display text-xl font-bold text-ink-900">{project.name}</h1>
@@ -112,18 +114,18 @@ export function DetailView(): JSX.Element {
       {/* Tab bar */}
       <div className="border-b border-cream-200 mb-5 overflow-x-auto">
         <div className="flex gap-1 min-w-max">
-          {tabs.map(t => (
+          {tabs.map(tb => (
             <button
-              key={t.id}
-              onClick={() => navigate(`/projects/${project.id}/${t.id}`)}
+              key={tb.id}
+              onClick={() => navigate(`/projects/${project.id}/${tb.id}`)}
               className={`flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 -mb-px transition ${
-                t.id === activeId
+                tb.id === activeId
                   ? "border-safety-500 text-safety-700 font-semibold"
                   : "border-transparent text-ink-500 hover:text-ink-700"
               }`}
             >
-              <Icon name={t.icon} size={15} />
-              {t.label}
+              <Icon name={tb.icon} size={15} />
+              {t(`projTab.${tb.id}`)}
             </button>
           ))}
         </div>
@@ -160,7 +162,7 @@ export function DetailView(): JSX.Element {
         {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
         {activeId === "messages" && <MessagesTab projectId={project.id} />}
         {!REAL_TABS.has(activeId) && activeDef && (
-          <TabPlaceholder label={activeDef.label} icon={activeDef.icon} />
+          <TabPlaceholder label={t(`projTab.${activeId}`)} icon={activeDef.icon} />
         )}
       </div>
     </div>

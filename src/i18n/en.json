@@ -226,5 +226,14 @@
     "cancel": "Cancel",
     "errPickPlan": "Pick a plan you'd like to move to.",
     "backendError": "Backend not configured."
+  },
+  "projTab": {
+    "overview": "Overview", "team": "Team", "milestones": "Milestones", "tasks": "Tasks",
+    "updates": "Updates", "issues": "Issues", "punchlist": "Punch List", "drawings": "Drawings",
+    "rfi": "RFIs", "changeorders": "Change Orders", "boq": "BOQ", "estimate": "Estimate",
+    "fieldops": "Field Ops", "materials": "Materials", "attendance": "Attendance", "labour": "Labour",
+    "safety": "Safety", "inspections": "Inspections", "budget": "Budget", "ledger": "Ledger",
+    "po": "POs", "invoices": "Invoices", "rabills": "RA Bills", "approvals": "Approvals",
+    "compliance": "Compliance", "map": "Map", "gantt": "Gantt", "messages": "Messages"
   }
 }

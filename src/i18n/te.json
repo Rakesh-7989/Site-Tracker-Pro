@@ -226,5 +226,14 @@
     "cancel": "రద్దు చేయండి",
     "errPickPlan": "మీరు మారాలనుకునే ప్లాన్‌ను ఎంచుకోండి.",
     "backendError": "బ్యాకెండ్ కాన్ఫిగర్ చేయబడలేదు."
+  },
+  "projTab": {
+    "overview": "అవలోకనం", "team": "బృందం", "milestones": "మైలురాళ్లు", "tasks": "టాస్క్‌లు",
+    "updates": "నవీకరణలు", "issues": "సమస్యలు", "punchlist": "పంచ్ లిస్ట్", "drawings": "డ్రాయింగ్‌లు",
+    "rfi": "RFIలు", "changeorders": "ఛేంజ్ ఆర్డర్‌లు", "boq": "BOQ", "estimate": "అంచనా",
+    "fieldops": "ఫీల్డ్ ఆప్స్", "materials": "మెటీరియల్స్", "attendance": "హాజరు", "labour": "కార్మికులు",
+    "safety": "భద్రత", "inspections": "తనిఖీలు", "budget": "బడ్జెట్", "ledger": "లెడ్జర్",
+    "po": "POలు", "invoices": "ఇన్‌వాయిస్‌లు", "rabills": "RA బిల్లులు", "approvals": "ఆమోదాలు",
+    "compliance": "కంప్లయన్స్", "map": "మ్యాప్", "gantt": "గ్యాంట్", "messages": "సందేశాలు"
   }
 }

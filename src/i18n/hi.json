@@ -226,5 +226,14 @@
     "cancel": "रद्द करें",
     "errPickPlan": "जिस प्लान पर जाना चाहते हैं उसे चुनें।",
     "backendError": "बैकएंड कॉन्फ़िगर नहीं है।"
+  },
+  "projTab": {
+    "overview": "अवलोकन", "team": "टीम", "milestones": "मील के पत्थर", "tasks": "कार्य",
+    "updates": "अपडेट", "issues": "समस्याएं", "punchlist": "पंच लिस्ट", "drawings": "ड्रॉइंग",
+    "rfi": "RFI", "changeorders": "चेंज ऑर्डर", "boq": "BOQ", "estimate": "अनुमान",
+    "fieldops": "फील्ड ऑप्स", "materials": "सामग्री", "attendance": "उपस्थिति", "labour": "श्रमिक",
+    "safety": "सुरक्षा", "inspections": "निरीक्षण", "budget": "बजट", "ledger": "खाता-बही",
+    "po": "PO", "invoices": "चालान", "rabills": "RA बिल", "approvals": "अनुमोदन",
+    "compliance": "अनुपालन", "map": "मानचित्र", "gantt": "गैंट", "messages": "संदेश"
   }
 }
