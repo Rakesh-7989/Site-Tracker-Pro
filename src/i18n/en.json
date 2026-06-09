@@ -79,5 +79,24 @@
     "offline": "Offline",
     "online": "Online",
     "queueDepth": "{count} pending"
+  },
+  "nav": {
+    "dashboard": "Dashboard", "projects": "Projects", "calendar": "Calendar", "search": "Search",
+    "notifications": "Notifications", "newProject": "New Project", "dailyReports": "Daily Reports",
+    "vendors": "Vendors", "purchaseOrders": "Purchase Orders", "analytics": "Analytics",
+    "activity": "Activity", "auditLog": "Audit Log", "orgHome": "Org Home", "members": "Members",
+    "customRoles": "Custom Roles", "billing": "Billing", "templates": "Templates",
+    "orgApprovals": "Approvals", "orgNotifications": "Notifications", "integrations": "Integrations",
+    "platform": "Platform", "signups": "Signups", "users": "Users", "organizations": "Organizations",
+    "rolePermissions": "Role Permissions", "staff": "Staff", "upgradeRequests": "Upgrade requests",
+    "security": "Security"
+  },
+  "navGroup": {
+    "Workspace": "Workspace", "Field": "Field", "Procurement": "Procurement", "Insights": "Insights",
+    "Org Admin": "Org Admin", "Platform": "Platform", "Account": "Account"
+  },
+  "shell": {
+    "signOut": "Sign out", "switchOrg": "Switch organization", "language": "Language",
+    "searchPlaceholder": "Search anything…", "viewProfile": "View your profile"
   }
 }

@@ -11,12 +11,29 @@ import { buildNav, groupNav } from "@/app/nav-config";
 import { pendingSignupCount } from "@/app/signupAdminQueries";
 import { unreadCount } from "@/app/notificationQueries";
 import { Icon } from "@/components/ui/atoms";
+import { useT } from "@/i18n/I18nProvider";
+
+// Map each nav route → its i18n key (migration: app-wide i18n). Labels fall
+// back to the English string baked into nav-config when a key is missing.
+const NAV_KEY: Record<string, string> = {
+  "/dashboard": "nav.dashboard", "/projects": "nav.projects", "/calendar": "nav.calendar",
+  "/search": "nav.search", "/notifications": "nav.notifications", "/projects/new": "nav.newProject",
+  "/dpr": "nav.dailyReports", "/vendors": "nav.vendors", "/pos": "nav.purchaseOrders",
+  "/analytics": "nav.analytics", "/activity": "nav.activity", "/audit": "nav.auditLog",
+  "/org": "nav.orgHome", "/org/members": "nav.members", "/org/roles": "nav.customRoles",
+  "/org/billing": "nav.billing", "/org/templates": "nav.templates", "/org/approvals": "nav.orgApprovals",
+  "/org/notifications": "nav.orgNotifications", "/org/integrations": "nav.integrations",
+  "/admin": "nav.platform", "/admin/signups": "nav.signups", "/admin/users": "nav.users",
+  "/admin/orgs": "nav.organizations", "/admin/roles": "nav.rolePermissions", "/admin/staff": "nav.staff",
+  "/admin/upgrades": "nav.upgradeRequests", "/settings/security": "nav.security",
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 
 export function Sidebar(): JSX.Element {
   const { session } = useAuth();
+  const t = useT();
   const groups = groupNav(buildNav(session));
   const isSuper = useCan("platform:orgs:manage");
   const [pending, setPending] = useState(0);
@@ -39,7 +56,7 @@ export function Sidebar(): JSX.Element {
           <div key={group}>
             {group && (
               <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">
-                {group}
+                {t(`navGroup.${group}`)}
               </div>
             )}
             <div className="space-y-0.5">
@@ -57,7 +74,7 @@ export function Sidebar(): JSX.Element {
                   }
                 >
                   <Icon name={item.icon} size={16} />
-                  <span className="flex-1">{item.label}</span>
+                  <span className="flex-1">{NAV_KEY[item.to] ? t(NAV_KEY[item.to]) : item.label}</span>
                   {item.to === "/admin/signups" && pending > 0 && (
                     <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pending}</span>
                   )}

@@ -5,10 +5,13 @@ import { Link } from "react-router-dom";
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { ROLE_LABEL } from "@/auth";
 import { Icon, Button, Avatar } from "@/components/ui/atoms";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { useT } from "@/i18n/I18nProvider";
 
 export function TopBar(): JSX.Element {
   const { session } = useAuth();
   const { orgs, activeOrg, switchOrg } = useOrgSwitcher();
+  const t = useT();
 
   const onSignOut = async () => {
     try {
@@ -35,7 +38,7 @@ export function TopBar(): JSX.Element {
             value={activeOrg?.orgId ?? ""}
             onChange={e => switchOrg(e.target.value)}
             className="text-xs border border-cream-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 outline-none focus:border-safety-500"
-            aria-label="Switch organization"
+            aria-label={t("shell.switchOrg")}
           >
             {orgs.map(o => (
               <option key={o.orgId} value={o.orgId}>{o.orgName}</option>
@@ -46,9 +49,11 @@ export function TopBar(): JSX.Element {
           <span className="text-xs text-ink-600 font-medium hidden sm:inline">{activeOrg.orgName}</span>
         )}
 
+        <LanguageSwitcher />
+
         {/* User chip → click to view / edit your profile */}
         {session && (
-          <Link to="/settings/profile" title="View your profile" className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-cream-100 transition">
+          <Link to="/settings/profile" title={t("shell.viewProfile")} className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-cream-100 transition">
             <Avatar initials={session.user.name} size="sm" role={session.user.identityRole} />
             <div className="hidden md:block text-right leading-tight">
               <div className="text-xs font-semibold text-ink-800">{session.user.name}</div>
@@ -58,7 +63,7 @@ export function TopBar(): JSX.Element {
         )}
 
         <Button variant="ghost" size="sm" onClick={onSignOut} leftIcon={<Icon name="logout" size={14} />}>
-          <span className="hidden sm:inline">Sign out</span>
+          <span className="hidden sm:inline">{t("shell.signOut")}</span>
         </Button>
       </div>
     </header>

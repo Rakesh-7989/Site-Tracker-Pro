@@ -79,5 +79,24 @@
     "offline": "Offline",
     "online": "Online",
     "queueDepth": "{count} pending hain"
+  },
+  "nav": {
+    "dashboard": "डैशबोर्ड", "projects": "परियोजनाएं", "calendar": "कैलेंडर", "search": "खोज",
+    "notifications": "सूचनाएं", "newProject": "नई परियोजना", "dailyReports": "दैनिक रिपोर्ट",
+    "vendors": "विक्रेता", "purchaseOrders": "खरीद आदेश", "analytics": "विश्लेषण",
+    "activity": "गतिविधि", "auditLog": "ऑडिट लॉग", "orgHome": "संगठन होम", "members": "सदस्य",
+    "customRoles": "कस्टम भूमिकाएं", "billing": "बिलिंग", "templates": "टेम्पलेट",
+    "orgApprovals": "अनुमोदन", "orgNotifications": "सूचनाएं", "integrations": "एकीकरण",
+    "platform": "प्लेटफ़ॉर्म", "signups": "साइन अप", "users": "उपयोगकर्ता", "organizations": "संगठन",
+    "rolePermissions": "भूमिका अनुमतियां", "staff": "स्टाफ", "upgradeRequests": "अपग्रेड अनुरोध",
+    "security": "सुरक्षा"
+  },
+  "navGroup": {
+    "Workspace": "वर्कस्पेस", "Field": "फील्ड", "Procurement": "खरीद", "Insights": "इनसाइट्स",
+    "Org Admin": "संगठन एडमिन", "Platform": "प्लेटफ़ॉर्म", "Account": "खाता"
+  },
+  "shell": {
+    "signOut": "साइन आउट", "switchOrg": "संगठन बदलें", "language": "भाषा",
+    "searchPlaceholder": "कुछ भी खोजें…", "viewProfile": "अपनी प्रोफ़ाइल देखें"
   }
 }

@@ -79,5 +79,24 @@
     "offline": "Offline",
     "online": "Online",
     "queueDepth": "{count} pending unayi"
+  },
+  "nav": {
+    "dashboard": "డాష్‌బోర్డ్", "projects": "ప్రాజెక్ట్‌లు", "calendar": "క్యాలెండర్", "search": "శోధన",
+    "notifications": "నోటిఫికేషన్లు", "newProject": "కొత్త ప్రాజెక్ట్", "dailyReports": "రోజువారీ నివేదికలు",
+    "vendors": "సరఫరాదారులు", "purchaseOrders": "కొనుగోలు ఆర్డర్‌లు", "analytics": "విశ్లేషణ",
+    "activity": "కార్యకలాపం", "auditLog": "ఆడిట్ లాగ్", "orgHome": "సంస్థ హోమ్", "members": "సభ్యులు",
+    "customRoles": "కస్టమ్ రోల్స్", "billing": "బిల్లింగ్", "templates": "టెంప్లేట్‌లు",
+    "orgApprovals": "ఆమోదాలు", "orgNotifications": "నోటిఫికేషన్లు", "integrations": "ఇంటిగ్రేషన్లు",
+    "platform": "ప్లాట్‌ఫారమ్", "signups": "సైన్‌అప్‌లు", "users": "వినియోగదారులు", "organizations": "సంస్థలు",
+    "rolePermissions": "రోల్ అనుమతులు", "staff": "సిబ్బంది", "upgradeRequests": "అప్‌గ్రేడ్ అభ్యర్థనలు",
+    "security": "భద్రత"
+  },
+  "navGroup": {
+    "Workspace": "వర్క్‌స్పేస్", "Field": "ఫీల్డ్", "Procurement": "సేకరణ", "Insights": "ఇన్‌సైట్స్",
+    "Org Admin": "సంస్థ అడ్మిన్", "Platform": "ప్లాట్‌ఫారమ్", "Account": "ఖాతా"
+  },
+  "shell": {
+    "signOut": "సైన్ అవుట్", "switchOrg": "సంస్థ మార్చండి", "language": "భాష",
+    "searchPlaceholder": "ఏదైనా శోధించండి…", "viewProfile": "మీ ప్రొఫైల్ చూడండి"
   }
 }
