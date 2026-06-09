@@ -235,5 +235,38 @@
     "safety": "భద్రత", "inspections": "తనిఖీలు", "budget": "బడ్జెట్", "ledger": "లెడ్జర్",
     "po": "POలు", "invoices": "ఇన్‌వాయిస్‌లు", "rabills": "RA బిల్లులు", "approvals": "ఆమోదాలు",
     "compliance": "కంప్లయన్స్", "map": "మ్యాప్", "gantt": "గ్యాంట్", "messages": "సందేశాలు"
+  },
+  "projType": {
+    "construction": "నిర్మాణం", "interior": "ఇంటీరియర్", "design": "డిజైన్", "consultant": "కన్సల్టెంట్"
+  },
+  "overviewTab": {
+    "settings": "సెట్టింగ్‌లు",
+    "team": "బృందం",
+    "started": "ప్రారంభమైంది",
+    "type": "రకం",
+    "status": "స్థితి",
+    "teamComposition": "బృంద కూర్పు",
+    "noMembers": "ఈ ప్రాజెక్ట్‌కు ఇంకా సభ్యులు కేటాయించబడలేదు.",
+    "active": "సక్రియం"
+  },
+  "tasksTab": {
+    "task": "టాస్క్",
+    "taskPlaceholder": "ఉదా. TMT స్టీల్ ఆర్డర్ చేయండి",
+    "assignee": "కేటాయించినవారు",
+    "assigneeName": "పేరు",
+    "priority": "ప్రాధాన్యత",
+    "due": "గడువు",
+    "add": "జోడించు",
+    "high": "అధికం",
+    "medium": "మధ్యమం",
+    "low": "తక్కువ",
+    "pending": "పెండింగ్",
+    "inProgress": "ప్రోగ్రెస్‌లో",
+    "done": "పూర్తయింది",
+    "unassigned": "కేటాయించలేదు",
+    "dueLabel": "గడువు",
+    "noTasks": "ఇంకా టాస్క్‌లు లేవు.",
+    "backendError": "బ్యాకెండ్ కాన్ఫిగర్ చేయబడలేదు.",
+    "actionFailed": "చర్య విఫలమైంది."
   }
 }

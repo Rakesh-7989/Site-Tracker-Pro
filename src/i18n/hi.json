@@ -235,5 +235,38 @@
     "safety": "सुरक्षा", "inspections": "निरीक्षण", "budget": "बजट", "ledger": "खाता-बही",
     "po": "PO", "invoices": "चालान", "rabills": "RA बिल", "approvals": "अनुमोदन",
     "compliance": "अनुपालन", "map": "मानचित्र", "gantt": "गैंट", "messages": "संदेश"
+  },
+  "projType": {
+    "construction": "निर्माण", "interior": "इंटीरियर", "design": "डिज़ाइन", "consultant": "सलाहकार"
+  },
+  "overviewTab": {
+    "settings": "सेटिंग्स",
+    "team": "टीम",
+    "started": "शुरू हुआ",
+    "type": "प्रकार",
+    "status": "स्थिति",
+    "teamComposition": "टीम संरचना",
+    "noMembers": "इस परियोजना में अभी तक कोई सदस्य असाइन नहीं किया गया।",
+    "active": "सक्रिय"
+  },
+  "tasksTab": {
+    "task": "कार्य",
+    "taskPlaceholder": "जैसे TMT स्टील ऑर्डर करें",
+    "assignee": "असाइनी",
+    "assigneeName": "नाम",
+    "priority": "प्राथमिकता",
+    "due": "नियत",
+    "add": "जोड़ें",
+    "high": "उच्च",
+    "medium": "मध्यम",
+    "low": "निम्न",
+    "pending": "लंबित",
+    "inProgress": "प्रगति में",
+    "done": "पूर्ण",
+    "unassigned": "अनासाइन",
+    "dueLabel": "नियत",
+    "noTasks": "अभी तक कोई कार्य नहीं।",
+    "backendError": "बैकएंड कॉन्फ़िगर नहीं है।",
+    "actionFailed": "कार्रवाई विफल रही।"
   }
 }

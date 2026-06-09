@@ -235,5 +235,38 @@
     "safety": "Safety", "inspections": "Inspections", "budget": "Budget", "ledger": "Ledger",
     "po": "POs", "invoices": "Invoices", "rabills": "RA Bills", "approvals": "Approvals",
     "compliance": "Compliance", "map": "Map", "gantt": "Gantt", "messages": "Messages"
+  },
+  "projType": {
+    "construction": "Construction", "interior": "Interior", "design": "Design", "consultant": "Consultant"
+  },
+  "overviewTab": {
+    "settings": "Settings",
+    "team": "Team",
+    "started": "Started",
+    "type": "Type",
+    "status": "Status",
+    "teamComposition": "Team composition",
+    "noMembers": "No members assigned to this project yet.",
+    "active": "Active"
+  },
+  "tasksTab": {
+    "task": "Task",
+    "taskPlaceholder": "e.g. Order TMT steel",
+    "assignee": "Assignee",
+    "assigneeName": "Name",
+    "priority": "Priority",
+    "due": "Due",
+    "add": "Add",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "pending": "Pending",
+    "inProgress": "In progress",
+    "done": "Done",
+    "unassigned": "Unassigned",
+    "dueLabel": "Due",
+    "noTasks": "No tasks yet.",
+    "backendError": "Backend not configured.",
+    "actionFailed": "Action failed."
   }
 }
