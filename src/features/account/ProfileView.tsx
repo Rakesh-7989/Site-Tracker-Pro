@@ -4,7 +4,7 @@
 // see the note; until then it stays "unverified").
 
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner, Badge } from "@/components/ui/atoms";
@@ -20,6 +20,7 @@ async function getClient(): Promise<any> {
 const LANGS: Record<string, string> = { en: "English", te: "తెలుగు (Telugu)", hi: "हिंदी (Hindi)" };
 
 export function ProfileView(): JSX.Element {
+  const navigate = useNavigate();
   const { session, status, refresh } = useAuth();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -78,12 +79,22 @@ export function ProfileView(): JSX.Element {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-5">
-        <h1 className="font-display text-2xl font-bold">My profile</h1>
+        <div className="flex items-center gap-2">
+          <Link to="/dashboard" title="Back to dashboard" className="w-8 h-8 rounded-lg grid place-items-center text-ink-500 hover:bg-cream-100 transition">
+            <Icon name="arrow" size={18} />
+          </Link>
+          <h1 className="font-display text-2xl font-bold">My profile</h1>
+        </div>
         {!editing && <Button variant="secondary" leftIcon={<Icon name="sliders" size={15} />} onClick={() => setEditing(true)}>Edit</Button>}
       </div>
 
       {error && <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[13px] text-red-700 flex items-start gap-2"><Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}</div>}
-      {saved && <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700">✅ Profile updated.</div>}
+      {saved && (
+        <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700 flex items-center justify-between gap-3 flex-wrap">
+          <span>✅ Profile updated.</span>
+          <Button size="sm" variant="secondary" onClick={() => navigate("/dashboard")}>Go to dashboard →</Button>
+        </div>
+      )}
 
       <Card className="p-5">
         <div className="flex items-center gap-3 mb-4">
