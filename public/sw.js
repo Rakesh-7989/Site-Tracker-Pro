@@ -25,7 +25,7 @@ self.addEventListener("activate", (event) => {
         await self.registration.unregister();
         const clients = await self.clients.matchAll({ type: "window" });
         clients.forEach((c) => c.navigate(c.url));
-      } catch (_) {
+      } catch {
         /* best-effort cleanup — never throw from activate */
       }
     })()

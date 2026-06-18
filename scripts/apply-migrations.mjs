@@ -52,7 +52,7 @@ const SKIP_FILES = new Set(["04_rls_tests.sql", "05_rls_phase1_tests.sql"]);
 const files = readdirSync(dir)
   .filter(f => /^\d+_.*\.sql$/.test(f))
   .filter(f => !SKIP_FILES.has(f))
-  .sort();   // numeric prefix ensures order
+  .sort((a, b) => Number(a.split("_", 1)[0]) - Number(b.split("_", 1)[0]) || a.localeCompare(b));
 
 if (files.length === 0) {
   console.error("❌ No migration files found in scripts/supabase/");

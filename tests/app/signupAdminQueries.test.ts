@@ -40,12 +40,17 @@ describe("pendingSignupCount", () => {
 
 describe("reviewSignupRequest", () => {
   it("returns ok + orgId on approve", async () => {
-    const r = await reviewSignupRequest(fnClient({ data: { ok: true, orgId: "org1", emailSent: true }, error: null }), "req1", "approve");
-    expect(r.ok && r.data).toMatchObject({ orgId: "org1", emailSent: true });
+    const r = await reviewSignupRequest(fnClient({ data: { ok: true, orgId: "org1", emailSent: true, existingUser: true }, error: null }), "req1", "approve");
+    expect(r.ok && r.data).toMatchObject({ orgId: "org1", emailSent: true, existingUser: true });
   });
   it("surfaces EF error body on conflict", async () => {
     const err = { message: "non-2xx", context: { json: async () => ({ ok: false, message: "This email already has an account" }) } };
     const r = await reviewSignupRequest(fnClient({ data: null, error: err }), "req1", "approve");
     expect(r).toEqual({ ok: false, error: "This email already has an account" });
+  });
+  it("surfaces EF detail when message is absent", async () => {
+    const err = { message: "non-2xx", context: { json: async () => ({ ok: false, error: "org-create-failed", detail: "created_by_staff column missing" }) } };
+    const r = await reviewSignupRequest(fnClient({ data: null, error: err }), "req1", "approve");
+    expect(r).toEqual({ ok: false, error: "created_by_staff column missing" });
   });
 });

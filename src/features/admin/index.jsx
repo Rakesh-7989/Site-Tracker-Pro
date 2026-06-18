@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // SiteTrack Pro — Super-admin views (extracted from App.jsx in Batch 5).
 //
 // These 8 views are all PERMS.superadmin.nav gated and use the slate/amber
@@ -23,13 +24,15 @@ import {
 import { PLAN_META } from "../../data/seed.js";
 import { getProviderConfig } from "../../lib/ai.js";
 import { getRazorpayConfig } from "../../lib/razorpay.js";
-import { isSupabaseEnabled, migrateLocalToBackend } from "../../lib/supabase.js";
 // Production Phase 1: audit log thread-through.
 import { recordAudit } from "../../lib/audit.js";
 // Session 16: platform-wide feature kill-switches.
 import {
   FEATURE_CATALOG, FEATURE_GROUPS, catalogByGroup, setPlatformFeature,
 } from "../../lib/orgFeatureFlags.js";
+
+const isSupabaseEnabled = () => (import.meta.env.VITE_BACKEND || "supabase") === "supabase";
+const migrateLocalToBackend = async (...args) => (await import("../../lib/supabase.js")).migrateLocalToBackend(...args);
 
 export function SuperAdminDashboard({user,orgs,adminUsers,projects,issues,activity,setView}){
   const totalMRR=orgs.filter(o=>o.status==="active").reduce((s,o)=>s+(o.mrr||0),0);

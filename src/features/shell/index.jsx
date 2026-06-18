@@ -27,13 +27,21 @@ import { typeChip } from "../../lib/projectTypes.js";
 // Session 25: project archive / restore — competitor-gap miss.
 import { archiveProject, restoreProject, isArchived, daysUntilPurge, partitionByArchive } from "../../lib/projectArchive.js";
 import { recordAudit } from "../../lib/audit.js";
-import { isSupabaseEnabled, signInWithMagicLink, verifyEmailOtp, signUp, signInWithPassword, resetPassword, fetchPublicPlans } from "../../lib/supabase.js";
 import { MOCK_USERS } from "../../data/seed.js";
 import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "../../lib/demoMode.js";
 // Sprint 1 (Session 30.2) — Feature Freeze gate. Hides 16 stub views
 // (RERA mocks, GSTN mock-mode, broken-persistence admin surfaces) from
 // non-staff users. See docs/FEATURE_FREEZE.md.
 import { isViewStubBlocked } from "../../lib/featureFlags.js";
+
+const isSupabaseEnabled = () => (import.meta.env.VITE_BACKEND || "supabase") === "supabase";
+const supabaseLib = () => import("../../lib/supabase.js");
+const fetchPublicPlans = async (...args) => (await supabaseLib()).fetchPublicPlans(...args);
+const signUp = async (...args) => (await supabaseLib()).signUp(...args);
+const signInWithPassword = async (...args) => (await supabaseLib()).signInWithPassword(...args);
+const resetPassword = async (...args) => (await supabaseLib()).resetPassword(...args);
+const signInWithMagicLink = async (...args) => (await supabaseLib()).signInWithMagicLink(...args);
+const verifyEmailOtp = async (...args) => (await supabaseLib()).verifyEmailOtp(...args);
 
 // ── LOGIN SCREEN ───────────────────────────────────────────────────────────
 export function LoginScreen({onLogin,dark,toggleDark}){
@@ -999,9 +1007,12 @@ export function ProjectsView({user,projects,setProjects,setView,setSP,setAuditLo
       </div>}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{fl.map(p=>
-        <button
+        <div
           key={p.id}
+          role="button"
+          tabIndex={0}
           onClick={()=>{setSP(p.id);setView("detail");}}
+          onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSP(p.id);setView("detail");}}}
           className="group relative bg-white rounded-xl p-5 text-left transition-all hover:shadow-hover border border-cream-200 hover:border-ink-500/20 overflow-hidden"
         >
           {/* Top status colour band */}
@@ -1034,7 +1045,7 @@ export function ProjectsView({user,projects,setProjects,setView,setSP,setAuditLo
                 </div>
               : <button onClick={(e)=>archiveOne(p.id,e)} className="text-[10px] font-semibold text-ink-500 hover:text-ink-900 hover:underline opacity-0 group-hover:opacity-100 transition-opacity" title="Archive (90-day restore window)">Archive</button>)}
           </div>
-        </button>
+        </div>
       )}{fl.length===0&&(()=>{
         const allMine=visibleProjectsForUser(projects,user);
         const filtered=allMine.length>0;

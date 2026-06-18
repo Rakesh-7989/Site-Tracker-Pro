@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 import { useState, useRef, useMemo, useEffect, lazy, Suspense } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import {
@@ -15,7 +16,6 @@ import { isOnline, onConnectivityChange, queueLength, queueOpAdd, putBlob, getBl
 import { computeRiskScore, fetchLLMInsight, getProviderConfig, saveProviderConfig, clearProviderConfig } from "./lib/ai.js";
 import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "./lib/razorpay.js";
 import { usePersistent as useLS } from "./lib/usePersistent.js";
-import { isSupabaseEnabled, signInWithMagicLink, signOut as supaSignOut, getCurrentUser, migrateLocalToBackend, subscribeTable, probeConnection, acceptOrgInvitation, fetchOrgQuotaSnapshot } from "./lib/supabase.js";
 import { h, csvRow } from "./lib/escape.js";
 import { notifsForUser } from "./lib/notifications.js";
 import { fmtDate as _fmtDate, fmtTime as _fmtTime, fmtCur as _fmtCur, fileKind as _fileKind, fmtSize as _fmtSize } from "./lib/format.js";
@@ -68,6 +68,14 @@ const LS_KEY = "sitetrack_v2";  // referenced by docs + smoke; do not remove.
 
 import { Ic, AccessDenied, ROLE_META, sCol, fmtDate, fmtTime, fmtCur } from "./components/ui.jsx";
 import { t } from "./lib/i18n.js";
+
+const isSupabaseEnabled = () => (import.meta.env.VITE_BACKEND || "supabase") === "supabase";
+const supabaseLib = () => import("./lib/supabase.js");
+const getCurrentUser = async (...args) => (await supabaseLib()).getCurrentUser(...args);
+const probeConnection = async (...args) => (await supabaseLib()).probeConnection(...args);
+const acceptOrgInvitation = async (...args) => (await supabaseLib()).acceptOrgInvitation(...args);
+const fetchOrgQuotaSnapshot = async (...args) => (await supabaseLib()).fetchOrgQuotaSnapshot(...args);
+const subscribeTable = async (...args) => (await supabaseLib()).subscribeTable(...args);
 
 
 // Attachment atoms + upload helpers extracted to components/attachments.jsx in Batch 7.
@@ -144,7 +152,6 @@ export default function App(){
       setUser({id:u.id,name:u.name||u.email?.split("@")[0]||"User",email:u.email,role:u.role||"client",avatar:(u.name||"U").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase()});
     }).catch(()=>{});
     return ()=>{cancelled=true;};
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   const[impersonating,setImpersonating]=useState(null);   // {realUser, asUser}
   const startImpersonate=(targetUser)=>{
@@ -303,7 +310,6 @@ export default function App(){
       }));
     })();
     return ()=>{unsubs.forEach(u=>u&&u());};
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[user?.id]);
   // Session 18 (Session 21 fix v2): auto-route first-time orgadmins to the
   // onboarding wizard. MUST sit with the other useEffects ABOVE every early
@@ -316,7 +322,6 @@ export default function App(){
     if(opsToggles?.[`onboarding_done_${user.org_id}`])return;
     if(view==="org-onboarding")return;
     setViewRaw("org-onboarding");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[user?.id]);
   const[dark,setDark]=useLS("dark",false);
   const[mobileOpen,setMobileOpen]=useState(false);

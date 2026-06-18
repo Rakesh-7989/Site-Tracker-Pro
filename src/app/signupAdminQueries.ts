@@ -59,7 +59,7 @@ export async function pendingSignupCount(client: any): Promise<number> {
   } catch { return 0; }
 }
 
-export interface ReviewResult { ok: true; orgId?: string; emailSent?: boolean }
+export interface ReviewResult { ok: true; orgId?: string; emailSent?: boolean; existingUser?: boolean }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function reviewSignupRequest(client: any, requestId: string, action: "approve" | "reject", notes?: string): Promise<SAResult<ReviewResult>> {
   try {
@@ -68,12 +68,12 @@ export async function reviewSignupRequest(client: any, requestId: string, action
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body = await (error as any).context?.json?.();
-        if (body?.message || body?.error) return { ok: false, error: String(body.message ?? body.error) };
+        if (body?.message || body?.detail || body?.error) return { ok: false, error: String(body.message ?? body.detail ?? body.error) };
       } catch { /* fall through */ }
       return { ok: false, error: error.message || "Review failed." };
     }
-    if (data?.ok) return { ok: true, data: { ok: true, orgId: data.orgId, emailSent: data.emailSent } };
-    return { ok: false, error: data?.message || data?.error || "Review failed." };
+    if (data?.ok) return { ok: true, data: { ok: true, orgId: data.orgId, emailSent: data.emailSent, existingUser: data.existingUser } };
+    return { ok: false, error: data?.message || data?.detail || data?.error || "Review failed." };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 

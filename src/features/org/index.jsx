@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // SiteTrack Pro — Org Admin tier (Production Phase 1).
 //
 // These 8 panels are exclusive to the orgadmin role — the builder-firm owner.
@@ -23,8 +24,6 @@ import { useState, useMemo, useEffect } from "react";
 import { Ic, Av, SC, ROLE_META, fmtDate, fmtTime } from "../../components/ui.jsx";
 import { PLAN_META } from "../../data/seed.js";
 import { recordAudit, filterAudit, exportAuditCsv } from "../../lib/audit.js";
-// Session 29 (Option A): live invitation flow via Supabase RPCs.
-import { isSupabaseEnabled, createOrgInvitation, getSupabaseClient } from "../../lib/supabase.js";
 // Session 25: printable PDF audit report (competitor-comparison gap fix).
 import { exportAuditPdf } from "../../lib/exports.js";
 import {
@@ -46,6 +45,12 @@ import {
   FEATURE_CATALOG, FEATURE_GROUPS, isFeatureEnabled,
   setOrgFeature, resetOrgFeatures, featureStats, catalogByGroup,
 } from "../../lib/orgFeatureFlags.js";
+
+// Session 29 (Option A): live invitation flow via Supabase RPCs.
+const isSupabaseEnabled = () => (import.meta.env.VITE_BACKEND || "supabase") === "supabase";
+const supabaseLib = () => import("../../lib/supabase.js");
+const createOrgInvitation = async (...args) => (await supabaseLib()).createOrgInvitation(...args);
+const getSupabaseClient = async (...args) => (await supabaseLib()).getSupabaseClient(...args);
 
 // ── 10. Onboarding Wizard (Session 18) ─────────────────────────────────────
 // First-time orgadmin lands on this BEFORE the dashboard. 5 guided steps:

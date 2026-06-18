@@ -106,10 +106,10 @@ begin
 end $$;
 
 -- 7. seed current hierarchy + demote the test superadmin ---------------------
-update public.profiles p set staff_tier='owner', staff_manager_id=null
+update public.profiles p set role='superadmin', is_staff=true, staff_tier='owner', staff_manager_id=null
   from auth.users u where u.id=p.id and lower(u.email)='boyapatirakesh7777@gmail.com';
 
-update public.profiles p set staff_tier='head',
+update public.profiles p set role='superadmin', is_staff=true, staff_tier='head',
   staff_manager_id=(select id from auth.users where lower(email)='boyapatirakesh7777@gmail.com')
   from auth.users u where u.id=p.id and lower(u.email)='boyapatirakesh.mahespaddy@gmail.com';
 

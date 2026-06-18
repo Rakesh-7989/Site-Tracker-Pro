@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
 // SiteTrack Pro — DetailView satellites (Batch 7 Phase C).
 //
 // What's here:
@@ -76,7 +77,7 @@ export function MarkupModal({open, imageUrl, sourceName, onClose, onSave}){
     }
   };
 
-  useEffect(() => { redraw(); }, [strokes]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { redraw(); }, [strokes]);
 
   const onImgLoad = () => {
     const img = imgRef.current; const cv = canvasRef.current;

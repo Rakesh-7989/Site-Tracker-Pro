@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const e2ePort = process.env.E2E_PORT || "5174";
+
 /**
  * SiteTrack Pro — Playwright E2E config.
  *
@@ -21,7 +23,7 @@ export default defineConfig({
   workers: 1,                     // sequential — same domain, same storage
   reporter: "list",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: `http://127.0.0.1:${e2ePort}`,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -29,9 +31,9 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173",
-    reuseExistingServer: !process.env.CI,
+    command: "node scripts/e2e-dev-server.mjs",
+    url: `http://127.0.0.1:${e2ePort}`,
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 });

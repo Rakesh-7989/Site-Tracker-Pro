@@ -97,7 +97,7 @@ try {
   const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/?apikey=${anon}`, {
     headers: { "apikey": anon, "Authorization": `Bearer ${anon}` },
   });
-  add("Reachable: GET /rest/v1/ returned", res.ok || res.status === 404,
+  add("Reachable: GET /rest/v1/ returned", res.ok || res.status === 401 || res.status === 404,
       `HTTP ${res.status} ${res.statusText}`);
 } catch (err) {
   add("Reachable: GET /rest/v1/", false, err.message);

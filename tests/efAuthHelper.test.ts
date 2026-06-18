@@ -74,6 +74,7 @@ function reqWithAuth(token: string | null): Request {
 function setupHappyUser(opts: {
   role: string;
   isStaff?: boolean;
+  staffTier?: "owner" | "head" | "member" | null;
   orgs?: Array<{ org_id: string; role: string }>;
 } = { role: "architect" }) {
   mockGetUser = vi.fn(async () => ({
@@ -81,7 +82,9 @@ function setupHappyUser(opts: {
     error: null,
   }));
   mockFrom = vi.fn((table: string) => {
-    if (table === "profiles") return fluent({ data: { role: opts.role, is_staff: opts.isStaff ?? false } });
+    if (table === "profiles") return fluent({
+      data: { role: opts.role, is_staff: opts.isStaff ?? false, staff_tier: opts.staffTier ?? null },
+    });
     if (table === "org_members") return fluent({ data: opts.orgs ?? [] });
     if (table === "projects") return fluent({ data: { id: "p-1", org_id: "o-1" } });
     if (table === "project_members") return fluent({ data: null });
@@ -142,6 +145,19 @@ describe("authenticate() — role gate", () => {
     setupHappyUser({ role: "superadmin" });
     const res = await authenticate(reqWithAuth("ok"), { requireRole: ["does-not-exist"] });
     expect(res.ok).toBe(true);
+  });
+
+  it("platform staff owner can pass a superadmin gate even when legacy role data is stale", async () => {
+    setupHappyUser({ role: "client", isStaff: true, staffTier: "owner" });
+    const res = await authenticate(reqWithAuth("ok"), { requireRole: ["superadmin"] });
+    expect(res.ok).toBe(true);
+  });
+
+  it("is_staff alone does not pass a superadmin gate without a staff tier", async () => {
+    setupHappyUser({ role: "client", isStaff: true, staffTier: null });
+    const res = await authenticate(reqWithAuth("ok"), { requireRole: ["superadmin"] });
+    expect(res.ok).toBe(false);
+    expect((res as any).response.status).toBe(403);
   });
 });
 

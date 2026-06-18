@@ -20,10 +20,13 @@
 //   When back online: queue drains.
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { isSupabaseEnabled, loadKey, saveKey } from "./supabase.js";
 import { isOnline, queueOpAdd } from "./offline.js";
 
 const LS_KEY = "sitetrack_v2";
+const isSupabaseEnabled = () => (import.meta.env.VITE_BACKEND || "supabase") === "supabase";
+const supabaseLib = () => import("./supabase.js");
+const loadKey = async (...args) => (await supabaseLib()).loadKey(...args);
+const saveKey = async (...args) => (await supabaseLib()).saveKey(...args);
 
 function readLS(key, fallback) {
   try {

@@ -40,6 +40,8 @@ export interface AuthenticatedUser {
   identityRole: string;
   /** profiles.is_staff */
   isStaff: boolean;
+  /** profiles.staff_tier */
+  staffTier: "owner" | "head" | "member" | null;
 }
 
 export interface AuthSuccess {
@@ -90,6 +92,11 @@ function getServiceClient(): SupabaseClient {
   });
 }
 
+function isPlatformStaff(user: AuthenticatedUser): boolean {
+  return user.identityRole === "superadmin"
+    || (user.isStaff && (user.staffTier === "owner" || user.staffTier === "head" || user.staffTier === "member"));
+}
+
 /**
  * Authenticate the caller's JWT + enforce optional role/project/org gates.
  *
@@ -122,10 +129,10 @@ export async function authenticate(
   }
   const authUser = userData.user;
 
-  // Fetch profile (identity role + is_staff).
+  // Fetch profile (identity role + staff flags).
   const { data: profile, error: profileErr } = await sb
     .from("profiles")
-    .select("role, is_staff")
+    .select("role, is_staff, staff_tier")
     .eq("id", authUser.id)
     .maybeSingle();
 
@@ -154,15 +161,19 @@ export async function authenticate(
     email: authUser.email || "",
     identityRole: String(profile.role),
     isStaff: Boolean(profile.is_staff),
+    staffTier: profile.staff_tier === "owner" || profile.staff_tier === "head" || profile.staff_tier === "member"
+      ? profile.staff_tier
+      : null,
   };
+  const platformStaff = isPlatformStaff(user);
 
   // ── Gate 1: required identity role ──
   if (opts.requireRole && opts.requireRole.length > 0) {
     const orgTierRoles = new Set(orgMemberships.map((m: OrgMemberRow) => m.role));
     const hasIdentity = opts.requireRole.includes(user.identityRole);
     const hasOrgTier  = opts.requireRole.some((r: string) => orgTierRoles.has(r));
-    // superadmin bypasses all role gates (cross-tenant staff).
-    if (user.identityRole !== "superadmin" && !hasIdentity && !hasOrgTier) {
+    // Platform staff bypass role gates, even if an old seed left role != superadmin.
+    if (!platformStaff && !hasIdentity && !hasOrgTier) {
       return {
         ok: false,
         response: json({
@@ -178,7 +189,7 @@ export async function authenticate(
   // ── Gate 2: required org membership ──
   if (opts.requireOrgId) {
     const inOrg = orgMemberships.some((m: OrgMemberRow) => m.org_id === opts.requireOrgId);
-    if (user.identityRole !== "superadmin" && !inOrg) {
+    if (!platformStaff && !inOrg) {
       return {
         ok: false,
         response: json({
@@ -193,7 +204,7 @@ export async function authenticate(
   // ── Gate 3: required project_members row ──
   let projectMembership: { project_id: string; role: string } | undefined;
   if (opts.requireProjectId) {
-    if (user.identityRole === "superadmin") {
+    if (platformStaff) {
       projectMembership = { project_id: opts.requireProjectId, role: "superadmin" };
     } else {
       // First, allow orgadmin of the project's org.

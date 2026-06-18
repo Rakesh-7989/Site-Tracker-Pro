@@ -92,8 +92,12 @@ function Inner(): JSX.Element {
     setBusy(r.id); setError(null); setNotice(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
     const res = await reviewSignupRequest(client, r.id, "approve");
-    if (res.ok) setNotice(`Approved ${r.firmName}. ${res.data.emailSent ? "Invite email sent." : "Org created — invite email may be delayed."}`);
-    else setError(res.error);
+    if (res.ok) {
+      const delivery = res.data.existingUser
+        ? "Existing user added as org admin; ask them to sign in with the same email."
+        : res.data.emailSent ? "Invite email sent." : "Org created; invite email may be delayed.";
+      setNotice(`Approved ${r.firmName}. ${delivery}`);
+    } else setError(res.error);
     await reload(); setBusy(null);
   };
   const doReject = async (r: SignupRequestRow) => {
