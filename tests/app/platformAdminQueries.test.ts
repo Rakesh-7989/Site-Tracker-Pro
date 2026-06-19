@@ -53,12 +53,12 @@ describe("setOrgPlan + plan helpers", () => {
     const r = await setOrgPlan(rpcClient({ data: null, error: { message: "only a superadmin can change an organization plan" } }), "o1", "pro");
     expect(r.ok).toBe(false);
   });
-  it("planUnlocksCustomRoles is true only for enterprise + custom", () => {
+  it("planUnlocksCustomRoles starts at business and includes enterprise + custom", () => {
+    expect(planUnlocksCustomRoles("business")).toBe(true);
     expect(planUnlocksCustomRoles("enterprise")).toBe(true);
     expect(planUnlocksCustomRoles("custom")).toBe(true);
     expect(planUnlocksCustomRoles("basic")).toBe(false);
     expect(planUnlocksCustomRoles("pro")).toBe(false);
-    expect(planUnlocksCustomRoles("business")).toBe(false);
   });
   it("ASSIGNABLE_PLANS includes enterprise", () => {
     expect(ASSIGNABLE_PLANS).toContain("enterprise");

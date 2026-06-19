@@ -142,5 +142,26 @@ export {
   hasPlanCap, planLimit, FEATURE_MIN_PLAN, PLAN_FEATURE_LABEL, PLAN_RANK,
   type PlanFeature, type PlanLimit, type PlanCaps,
 } from "./planCaps";
+export {
+  CORE_PLAN_FEATURE_LABELS,
+  ORG_TIER_LABEL,
+  PLAN_LABEL as PLAN_ROLE_LABEL,
+  displayPlanLabel,
+  identityRoleLabel,
+  identityRolesForPlan,
+  normalizePlanId,
+  orgTierRoleLabel,
+  orgTierRoleOptionsForPlan,
+  orgTierRolesForPlan,
+  planAtLeast,
+  planFeatureLabelsFor,
+  planFeaturesFor,
+  planSupportsCustomRoles,
+  projectTierRoleLabel,
+  projectTierRolesForPlan,
+  roleAllowedForPlan,
+  type PlanId,
+  type RoleTier,
+} from "./planRoleMatrix";
 export { usePlanCaps, useCanByPlan, type UsePlanCapsReturn } from "./usePlanCaps";
 export { PlanGate } from "./PlanGate";

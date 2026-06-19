@@ -1,9 +1,10 @@
 -- SiteTrack Pro — Phase 3: self-service custom roles for Enterprise orgs (2026-06-06).
 --
 -- Until now, custom org roles (migration 70) were DEFINE-able by superadmin only;
--- org admins could only ASSIGN them. This lets org ADMINS of an ENTERPRISE-plan
+-- org admins could only ASSIGN them. This lets org ADMINS of a plan that
+-- unlocks custom_roles (Business/Enterprise/Custom in the canonical seed)
 -- org define their own roles + capabilities — gated two ways:
---   1. plan must unlock custom_roles (enterprise / custom tiers, feature_caps).
+--   1. plan must unlock custom_roles (feature_caps.custom_roles = true).
 --   2. capability allowlist: org admins may NOT grant platform:* caps to a custom
 --      role (privilege-escalation guard). Superadmin is unrestricted.
 --

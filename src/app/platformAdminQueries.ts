@@ -1,6 +1,8 @@
 // SiteTrack Pro — platform (superadmin) queries. Cross-tenant reads via the
 // migration 80 RPCs (platform_orgs / platform_users), both gated is_superadmin.
 
+import { planSupportsCustomRoles } from "@/auth/planRoleMatrix";
+
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface PlatformOrg { id: string; name: string; slug: string; plan: string; memberCount: number; projectCount: number; createdAt: string; }
@@ -17,8 +19,8 @@ export const ADMIN_PAGE_SIZE = 50;
 export const ASSIGNABLE_PLANS = ["basic", "pro", "business", "enterprise", "custom"] as const;
 export type AssignablePlan = (typeof ASSIGNABLE_PLANS)[number];
 /** Plans that unlock per-org role + capability customization (mirrors plans.feature_caps.custom_roles). */
-export const CUSTOM_ROLE_PLANS = new Set<string>(["enterprise", "custom"]);
-export const planUnlocksCustomRoles = (plan: string): boolean => CUSTOM_ROLE_PLANS.has(plan);
+export const CUSTOM_ROLE_PLANS = new Set<string>(["business", "enterprise", "custom"]);
+export const planUnlocksCustomRoles = (plan: string): boolean => planSupportsCustomRoles(plan);
 
 /** Superadmin-only: change an org's plan (incl. granting Enterprise). RPC set_org_plan (migration 95). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

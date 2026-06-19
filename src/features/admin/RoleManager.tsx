@@ -141,8 +141,8 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
         <Alert variant={orgUnlocksCustom ? "success" : "info"}>
           {selectedOrg.name} is on the <b>{PLAN_LABEL[selectedOrg.plan] ?? selectedOrg.plan}</b> plan.{" "}
           {orgUnlocksCustom
-            ? "Per-org custom roles + feature overrides are unlocked (Enterprise feature)."
-            : "Custom roles are an Enterprise feature for self-service — set this org to Enterprise on /admin/orgs to surface it to its admins. (You, as superadmin, can still configure overrides below.)"}
+            ? "Per-org custom roles + feature overrides are unlocked (Business/Enterprise feature)."
+            : "Custom roles are a Business/Enterprise feature for self-service - set this org to Business or Enterprise on /admin/orgs to surface it to its admins. (You, as superadmin, can still configure overrides below.)"}
         </Alert>
       )}
 

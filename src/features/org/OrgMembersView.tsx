@@ -7,8 +7,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-  useAuth, useCan, useOrgSwitcher,
-  ORG_TIER_ROLES, ROLE_LABEL,
+  useAuth, useCan, useOrgSwitcher, usePlanCaps,
+  ROLE_LABEL,
+  displayPlanLabel, orgTierRoleLabel, orgTierRolesForPlan,
+  isOrgTierRole,
   type OrgTierRole, type OrgCustomRole,
 } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
@@ -20,10 +22,6 @@ import {
   inviteNewOrgMember,
   type OrgMemberRow, type InviteCandidate,
 } from "@/app/orgMemberQueries";
-
-const ORG_TIER_LABEL: Record<OrgTierRole, string> = {
-  admin: "Admin", pm: "PM", architect: "Architect", contractor: "Contractor", client: "Client", vendor: "Vendor",
-};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> {
@@ -37,16 +35,17 @@ const idLabel = (role: string): string => (role in ROLE_LABEL ? ROLE_LABEL[role 
 export function OrgMembersView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
+  const { plan, loading: planLoading } = usePlanCaps();
   const canManage = useCan("org:members:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!canManage) return <AccessDenied message="Only an org admin can manage people." />;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
 
-  return <OrgMembersInner orgId={activeOrg.orgId} orgName={activeOrg.orgName} createdBy={session.user.id} />;
+  return <OrgMembersInner orgId={activeOrg.orgId} orgName={activeOrg.orgName} createdBy={session.user.id} plan={plan} planLoading={planLoading} />;
 }
 
-function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName: string; createdBy: string }): JSX.Element {
+function OrgMembersInner({ orgId, orgName, createdBy, plan, planLoading }: { orgId: string; orgName: string; createdBy: string; plan: string | null; planLoading: boolean }): JSX.Element {
   const [members, setMembers] = useState<OrgMemberRow[]>([]);
   const [customRoles, setCustomRoles] = useState<OrgCustomRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +74,18 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
   useEffect(() => { void reload(); }, [reload]);
 
   const roleById = useMemo(() => new Map(customRoles.map(r => [r.id, r])), [customRoles]);
+  const effectivePlan = plan ?? "enterprise";
+  const availableOrgRoles = useMemo(() => orgTierRolesForPlan(effectivePlan), [effectivePlan]);
+  const roleOptions = useCallback((current?: string) => {
+    const roles = isOrgTierRole(current) && !availableOrgRoles.includes(current) ? [...availableOrgRoles, current] : availableOrgRoles;
+    return roles.map(r => ({ value: r, label: orgTierRoleLabel(r) }));
+  }, [availableOrgRoles]);
+
+  useEffect(() => {
+    if (!availableOrgRoles.includes(inviteRole)) {
+      setInviteRole(availableOrgRoles[0] ?? "client");
+    }
+  }, [availableOrgRoles, inviteRole]);
 
   const run = useCallback(async (key: string, fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>) => {
     setBusy(key); setError(null);
@@ -132,6 +143,9 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
       {/* Add member */}
       <Card className="p-4 space-y-3">
         <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">Add a member</h3>
+        <Alert variant="info">
+          {planLoading ? "Checking plan role defaults..." : `${plan ? displayPlanLabel(plan) : "Plan unavailable"} role defaults: ${availableOrgRoles.map(orgTierRoleLabel).join(", ")}.`}
+        </Alert>
         <div className="flex gap-2">
           <Input className="flex-1" type="email" placeholder="their@email.com" value={email}
                  onChange={e => { setEmail(e.target.value); setCandidate(undefined); setNotice(null); }} />
@@ -145,7 +159,7 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
             <div className="flex items-center gap-2 flex-wrap">
               <Input className="w-40" placeholder="Name (optional)" value={inviteName} onChange={e => setInviteName(e.target.value)} />
               <Select className="w-auto" value={inviteRole} onChange={e => setInviteRole(e.target.value as OrgTierRole)}
-                      options={ORG_TIER_ROLES.map(r => ({ value: r, label: ORG_TIER_LABEL[r] }))} />
+                      options={roleOptions()} />
               <Button size="sm" onClick={() => void sendInvite()} disabled={inviting}>{inviting ? <Spinner size={14} /> : "Send invite"}</Button>
             </div>
           </div>
@@ -154,7 +168,7 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-ink-800">{candidate.name} <span className="text-ink-400">({idLabel(candidate.identityRole)})</span></span>
             <Select className="w-auto" value={inviteRole} onChange={e => setInviteRole(e.target.value as OrgTierRole)}
-                    options={ORG_TIER_ROLES.map(r => ({ value: r, label: ORG_TIER_LABEL[r] }))} />
+                    options={roleOptions()} />
             <Button size="sm" onClick={() => void add()} disabled={busy === `add-${candidate.profileId}`}>Add to {orgName}</Button>
           </div>
         )}
@@ -164,9 +178,9 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
         <div className="grid place-items-center py-10"><Spinner size={22} /></div>
       ) : (
         <>
-          <MemberList title="Active" rows={active} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} run={run} />
+          <MemberList title="Active" rows={active} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} roleOptions={roleOptions} run={run} />
           {inactive.length > 0 && (
-            <MemberList title="Inactive" rows={inactive} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} run={run} dim />
+            <MemberList title="Inactive" rows={inactive} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} roleOptions={roleOptions} run={run} dim />
           )}
         </>
       )}
@@ -177,10 +191,11 @@ function OrgMembersInner({ orgId, orgName, createdBy }: { orgId: string; orgName
 interface ListProps {
   title: string; rows: OrgMemberRow[]; customRoles: OrgCustomRole[];
   roleById: Map<string, OrgCustomRole>; busy: string | null; orgId: string; createdBy: string; dim?: boolean;
+  roleOptions: (current?: string) => Array<{ value: OrgTierRole; label: string }>;
   run: (key: string, fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>) => Promise<void>;
 }
 
-function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy, run, dim }: ListProps): JSX.Element {
+function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy, roleOptions, run, dim }: ListProps): JSX.Element {
   if (rows.length === 0) return <></>;
   return (
     <div>
@@ -203,7 +218,7 @@ function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy
                     value={m.orgRole}
                     disabled={busy === `tier-${m.profileId}`}
                     onChange={e => void run(`tier-${m.profileId}`, c => setOrgTierRole(c, { orgId, profileId: m.profileId, orgRole: e.target.value as OrgTierRole }))}
-                    options={ORG_TIER_ROLES.map(r => ({ value: r, label: ORG_TIER_LABEL[r] }))}
+                    options={roleOptions(m.orgRole)}
                   />
                   {m.active
                     ? <Button size="sm" variant="ghost" onClick={() => void run(`deact-${m.profileId}`, c => deactivateMember(c, orgId, m.profileId))}>Deactivate</Button>

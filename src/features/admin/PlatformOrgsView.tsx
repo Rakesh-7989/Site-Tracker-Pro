@@ -59,8 +59,8 @@ function Inner(): JSX.Element {
 
   const onChangePlan = useCallback(async (o: PlatformOrg, plan: string) => {
     if (plan === o.plan) return;
-    const enterprise = planUnlocksCustomRoles(plan);
-    const note = enterprise ? "\n\nThis plan UNLOCKS per-org role + feature customization (custom roles)." : "";
+    const unlocksCustomRoles = planUnlocksCustomRoles(plan);
+    const note = unlocksCustomRoles ? "\n\nThis plan UNLOCKS per-org role + feature customization (custom roles)." : "";
     if (!window.confirm(`Change "${o.name}" plan from ${PLAN_LABEL[o.plan] ?? o.plan} → ${PLAN_LABEL[plan] ?? plan}?${note}`)) return;
     setPlanBusyId(o.id); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setPlanBusyId(null); return; }
