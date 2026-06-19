@@ -9,6 +9,7 @@
 // @ts-ignore - Deno URL import; resolved at runtime.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticate } from "../_shared/auth.ts";
+import { canApproveSignupRequest } from "../_shared/signupApproval.ts";
 
 // @ts-ignore - Deno global.
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
@@ -139,6 +140,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq("id", requestId);
     if (error) return json({ ok: false, error: "update-failed", detail: error.message }, 500);
     return json({ ok: true, action: "rejected" }, 200);
+  }
+
+  const paidBy = reqRow.paid_by == null ? null : String(reqRow.paid_by);
+  let ownerConfirmedPaymentByIds = new Set<string>();
+  if (String(reqRow.payment_status ?? "unpaid") === "paid" && paidBy) {
+    const { data: paidByProfile, error: paidByErr } = await admin
+      .from("profiles")
+      .select("staff_tier")
+      .eq("id", paidBy)
+      .maybeSingle();
+    if (paidByErr) return json({ ok: false, error: "payment-review-lookup-failed", detail: paidByErr.message }, 500);
+    if (paidByProfile?.staff_tier === "owner") ownerConfirmedPaymentByIds = new Set([paidBy]);
+  }
+
+  const approvalGate = canApproveSignupRequest(auth.user, reqRow, ownerConfirmedPaymentByIds);
+  if (!approvalGate.ok) {
+    return json({
+      ok: false,
+      error: "owner-payment-required",
+      message: "Only the owner can approve without payment. Other staff can approve only after the owner confirms payment as received.",
+    }, 403);
   }
 
   const firm = String(reqRow.firm_name);

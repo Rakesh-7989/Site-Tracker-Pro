@@ -34,7 +34,7 @@ Public reference checks:
 
 | Flow | Required behavior | Current implementation | Status |
 | --- | --- | --- | --- |
-| Signup access | Public visitor requests org/plan, platform staff approves/rejects, applicant becomes org admin. | `/signup`, `submit_signup_request`, `/admin/signups`, `review_signup_request`, `signup_requests`, org insert + invite. | Ready; repaired in previous pass. |
+| Signup access | Public visitor requests org/plan, platform staff approves/rejects, applicant becomes org admin. Owner can bypass payment; non-owner staff need owner-confirmed paid status. | `/signup`, `submit_signup_request`, `/admin/signups`, `review_signup_request`, `signup_requests`, org insert + invite. | Ready; owner/payment-gated. |
 | Org onboarding | Approved org owner/admin manages members, roles, billing, integrations, templates, approvals, notifications. | `/org/*` views, `org_members`, custom roles, org integrations, approval chains. | Ready. |
 | Auth/session | Login, MFA, active org, capability composition from identity/org/project tiers. | Supabase auth, `RoleResolver`, MFA screen, org switcher. | Ready. |
 | Project setup | Create project, choose type, assign project members. | `/projects/new`, project type and member role validation. | Ready. |
@@ -83,6 +83,10 @@ The corrected approval contract is:
 - Added migration `110_approval_status_guards.sql` to enforce status-transition
   approval at DB level.
 - Added regression tests for approval tab visibility and kind-to-cap mapping.
+- Added migration `111_owner_only_signup_provisioning.sql` so old self-serve
+  auth signup no longer creates orgs, direct org insert is owner-only, direct
+  signup approval is blocked, and manual signup payment confirmation is
+  owner-only.
 
 ## Remaining Gaps
 

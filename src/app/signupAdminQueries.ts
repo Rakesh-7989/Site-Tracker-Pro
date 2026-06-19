@@ -20,6 +20,7 @@ export interface SignupRequestRow {
   paymentStatus: "unpaid" | "paid" | "waived";
   paymentRef: string | null;
   paidAt: string | null;
+  paidBy: string | null;
   createdAt: string;
 }
 
@@ -28,7 +29,7 @@ const asStatus = (v: unknown): SignupStatus => (["pending", "approved", "rejecte
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listSignupRequests(client: any, status?: SignupStatus): Promise<SAResult<SignupRequestRow[]>> {
   try {
-    let q = client.from("signup_requests").select("id, firm_name, contact_name, email, phone, plan, message, status, review_notes, reviewed_at, created_org_id, assigned_staff_id, payment_status, payment_ref, paid_at, created_at").order("created_at", { ascending: false });
+    let q = client.from("signup_requests").select("id, firm_name, contact_name, email, phone, plan, message, status, review_notes, reviewed_at, created_org_id, assigned_staff_id, payment_status, payment_ref, paid_at, paid_by, created_at").order("created_at", { ascending: false });
     if (status) q = q.eq("status", status);
     // Scale guard: never pull an unbounded set into the admin table (mig 107 audit).
     q = q.limit(300);
@@ -45,6 +46,7 @@ export async function listSignupRequests(client: any, status?: SignupStatus): Pr
       paymentStatus: (["unpaid", "paid", "waived"].includes(String(r.payment_status)) ? String(r.payment_status) : "unpaid") as "unpaid" | "paid" | "waived",
       paymentRef: r.payment_ref == null ? null : String(r.payment_ref),
       paidAt: r.paid_at == null ? null : String(r.paid_at),
+      paidBy: r.paid_by == null ? null : String(r.paid_by),
       createdAt: String(r.created_at ?? ""),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
@@ -91,7 +93,7 @@ export async function createCheckoutLink(client: any, requestId: string, period:
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-/** Staff confirms (manual) payment for a paid-plan signup. RPC mark_signup_paid (mig 104). */
+/** Owner confirms (manual) payment for a paid-plan signup. RPC mark_signup_paid (mig 104/111). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function markSignupPaid(client: any, requestId: string, status: "unpaid" | "paid" | "waived", ref?: string): Promise<SAResult<true>> {
   try {

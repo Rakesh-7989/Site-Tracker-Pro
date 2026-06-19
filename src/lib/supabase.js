@@ -142,6 +142,16 @@ export async function verifyEmailOtp(email, token) {
  * @param {string} args.plan       — 'basic' | 'pro' | 'business' (NOT 'custom')
  */
 export async function signUp({ email, password, firmName, userName, plan = "basic" }) {
+  // New firms must use /signup request access; direct password self-signup is
+  // disabled so it cannot bypass owner/payment approval.
+  const selfServeSignupAllowed = ENV.VITE_ALLOW_SELF_SERVE_SIGNUP === "true";
+  if (!selfServeSignupAllowed) {
+    return {
+      ok: false,
+      error: "signups not allowed",
+      detail: "New workspaces require request access and owner/payment approval.",
+    };
+  }
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
   if (plan === "custom") return { ok: false, error: "Custom plan requires sales contact." };

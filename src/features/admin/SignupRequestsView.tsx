@@ -40,6 +40,7 @@ function Inner(): JSX.Element {
   const [rejectNote, setRejectNote] = useState("");
   // Staff routing (owner/head only): load the roster + assign requests to a staff.
   const { session } = useAuth();
+  const isOwner = session?.user.staffTier === "owner";
   const canAssign = session?.user.staffTier === "owner" || session?.user.staffTier === "head";
   const [staff, setStaff] = useState<StaffMember[]>([]);
 
@@ -100,6 +101,11 @@ function Inner(): JSX.Element {
     } else setError(res.error);
     await reload(); setBusy(null);
   };
+
+  const canApprove = (r: SignupRequestRow): boolean => isOwner || r.paymentStatus === "paid";
+  const approveTitle = (r: SignupRequestRow): string | undefined =>
+    canApprove(r) ? undefined : "Owner must confirm payment before non-owner staff can approve.";
+
   const doReject = async (r: SignupRequestRow) => {
     setBusy(r.id); setError(null); setNotice(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
@@ -138,7 +144,7 @@ function Inner(): JSX.Element {
               {r.status === "pending" && (
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button size="sm" variant="secondary" onClick={() => { setRejecting(rejecting === r.id ? null : r.id); setRejectNote(""); }} disabled={busy === r.id}>Reject</Button>
-                  <Button size="sm" onClick={() => void approve(r)} disabled={busy === r.id}>{busy === r.id ? <Spinner size={14} /> : "Approve"}</Button>
+                  <Button size="sm" onClick={() => void approve(r)} disabled={busy === r.id || !canApprove(r)} title={approveTitle(r)}>{busy === r.id ? <Spinner size={14} /> : "Approve"}</Button>
                 </div>
               )}
             </div>
@@ -156,12 +162,14 @@ function Inner(): JSX.Element {
                 {r.paymentStatus === "unpaid" ? (<>
                   <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied — share it with ${r.email}.`); }}>Copy UPI link</Button>
                   <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void sendPayLink(r)}>Cashfree link</Button>
-                  <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
-                  <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "waived")}>Waive</Button>
+                  {isOwner ? (<>
+                    <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
+                    <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "waived")}>Waive</Button>
+                  </>) : <span className="text-ink-500">Owner must confirm payment.</span>}
                   {r.paymentRef && <span className="text-ink-500">claim UTR: {r.paymentRef}</span>}
                 </>) : (<>
                   <span className="text-ink-700">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
-                  <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>
+                  {isOwner && <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>}
                 </>)}
               </div>
             )}
