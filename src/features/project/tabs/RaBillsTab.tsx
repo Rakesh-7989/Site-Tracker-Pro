@@ -12,7 +12,9 @@ const STT = [{ value: "submitted", label: "Submitted" }, { value: "approved", la
 
 export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
-  const canEdit = useCan("rabill:create", { orgId: activeOrg?.orgId, projectId });
+  const ctx = { orgId: activeOrg?.orgId, projectId };
+  const canCreate = useCan("rabill:create", ctx);
+  const canApprove = useCan("rabill:approve", ctx);
   const [rows, setRows] = useState<RaBill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-ink-900">RA Bills</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      {canEdit && (
+      {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Bill No</span><Input className="mt-1 w-24" placeholder="RA-1" value={no} onChange={e => setNo(e.target.value)} /></div>
           <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Subcontractor</span><Input className="mt-1" value={sub} onChange={e => setSub(e.target.value)} /></div>
@@ -51,9 +53,9 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
                 <div className="text-[11px] text-ink-400 truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, e.target.value as RaBillStatus, e.target.value === "paid" ? raNetPayable(r) : undefined))} options={STT} />
+                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, e.target.value as RaBillStatus, e.target.value === "paid" ? raNetPayable(r) : undefined))} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRaBill(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRaBill(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

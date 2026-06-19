@@ -14,7 +14,9 @@ const STT = [{ value: "submitted", label: "Submitted" }, { value: "approved", la
 export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const canEdit = useCan("changeorder:create", { orgId: activeOrg?.orgId, projectId });
+  const ctx = { orgId: activeOrg?.orgId, projectId };
+  const canCreate = useCan("changeorder:create", ctx);
+  const canApprove = useCan("changeorder:approve", ctx);
   const [rows, setRows] = useState<ChangeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-ink-900">Change orders</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      {canEdit && (
+      {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Description</span><Input className="mt-1" placeholder="e.g. Add basement parking" value={desc} onChange={e => setDesc(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Cost ₹ ±</span><Input className="mt-1 w-28" type="number" value={cost} onChange={e => setCost(e.target.value)} /></div>
@@ -52,9 +54,9 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.no} · {r.description}</div>
                 <div className="text-[11px] text-ink-400">{[r.costImpact != null && `${r.costImpact >= 0 ? "+" : ""}${fmtRupees(r.costImpact)}`, r.scheduleImpact != null && `${r.scheduleImpact >= 0 ? "+" : ""}${r.scheduleImpact}d`].filter(Boolean).join(" · ") || "no impact set"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setCoStatus(c, r.id, e.target.value as CoStatus))} options={STT} />
+                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setCoStatus(c, r.id, e.target.value as CoStatus))} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteChangeOrder(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteChangeOrder(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

@@ -3,6 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { raNetPayable, stockBalance, listRaBills, type LedgerTxn } from "@/app/financeQueries";
 import { listDrawings, listRfis } from "@/app/designQueries";
+import { approvalCapabilityForKind } from "@/app/approvalsQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};
@@ -54,5 +55,13 @@ describe("listRfis", () => {
     expect(r.ok && r.data[0]).toMatchObject({ no: "RFI-1", subject: "Beam", status: "open" });
     const e = await listRfis(mockClient({ data: null, error: { message: "denied" } }), "p");
     expect(e).toEqual({ ok: false, error: "denied" });
+  });
+});
+
+describe("approvalCapabilityForKind", () => {
+  it("maps each approval queue kind to its exact approve capability", () => {
+    expect(approvalCapabilityForKind("changeorder")).toBe("changeorder:approve");
+    expect(approvalCapabilityForKind("rabill")).toBe("rabill:approve");
+    expect(approvalCapabilityForKind("po")).toBe("po:approve");
   });
 });

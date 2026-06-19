@@ -13,7 +13,9 @@ const tone = (s: InvoiceStatus): "info" | "success" | "danger" | "neutral" => (s
 
 export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
-  const canEdit = useCan("invoice:create", { orgId: activeOrg?.orgId, projectId });
+  const ctx = { orgId: activeOrg?.orgId, projectId };
+  const canCreate = useCan("invoice:create", ctx);
+  const canApprove = useCan("invoice:approve", ctx);
   const [rows, setRows] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-ink-900">Invoices</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      {canEdit && (
+      {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Invoice No</span><Input className="mt-1 w-32" placeholder="INV-001" value={no} onChange={e => setNo(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Amount ₹</span><Input className="mt-1 w-32" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
@@ -51,9 +53,9 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.no} · {fmtRupees(r.amount)}</div>
                 <div className="text-[11px] text-ink-400">{r.issuedDate ? `Issued ${r.issuedDate}` : ""} · GST {r.gst}% · TDS {r.tds}%</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setInvoiceStatus(c, r.id, e.target.value as InvoiceStatus))} options={STT} />
+                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setInvoiceStatus(c, r.id, e.target.value as InvoiceStatus))} options={STT} />
                   : <Badge tone={tone(r.status)}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteInvoice(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteInvoice(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

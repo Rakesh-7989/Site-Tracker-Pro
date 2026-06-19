@@ -12,7 +12,9 @@ const STT = [{ value: "pending", label: "Pending" }, { value: "approved", label:
 
 export function POsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
-  const canEdit = useCan("po:create", { orgId: activeOrg?.orgId, projectId });
+  const ctx = { orgId: activeOrg?.orgId, projectId };
+  const canCreate = useCan("po:create", ctx);
+  const canApprove = useCan("po:approve", ctx);
   const [rows, setRows] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-ink-900">Purchase orders</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      {canEdit && (
+      {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">PO No</span><Input className="mt-1 w-28" placeholder="PO-001" value={poNo} onChange={e => setPoNo(e.target.value)} /></div>
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Items</span><Input className="mt-1" placeholder="e.g. 100 bags cement" value={items} onChange={e => setItems(e.target.value)} /></div>
@@ -51,9 +53,9 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.poNo} · {fmtRupees(r.amount)}</div>
                 <div className="text-[11px] text-ink-400 truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" · ") || "—"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setPOStatus(c, r.id, e.target.value as POStatus))} options={STT} />
+                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setPOStatus(c, r.id, e.target.value as POStatus))} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePO(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePO(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

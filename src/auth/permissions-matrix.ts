@@ -48,6 +48,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "org:branding:manage", "org:features:configure",
     "vendor:manage", "vendor:select",      // Org admins curate the vendor directory + pick vendors anywhere.
     "compliance:view", "ledger:view", "budget:view",
+    "changeorder:approve", "po:approve", "invoice:approve", "rabill:approve", "expense:approve",
     "export:pdf", "export:csv",
   ),
   promoter: arr(
@@ -63,6 +64,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
     "invoice:create", "invoice:approve",
     "rabill:create", "rabill:approve",
+    "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Pick vendors when creating invoices / RA bills.
     "export:pdf", "export:csv",
@@ -261,6 +263,7 @@ const ORG_TIER_CAPS: Record<OrgTierRole, Capability[]> = {
     "team:manage",
     "compliance:view",
     "budget:view", "budget:edit", "ledger:view",
+    "changeorder:approve", "po:approve", "invoice:approve", "rabill:approve", "expense:approve",
     "audit:read",
     "export:pdf", "export:csv",
     "share:project:public",
@@ -422,6 +425,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
     "invoice:create", "invoice:approve",
     "rabill:create", "rabill:approve",
+    "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Picks vendors when creating invoices / RA bills.
     "export:pdf", "export:csv",

@@ -64,6 +64,15 @@ describe("visibleTabs — capability gating", () => {
     expect(ids).toContain("approvals");
   });
 
+  it("project_admin sees approvals via RA/PO approval even without change-order approval", () => {
+    const caps = capsFor(baseSession("project_admin"));
+    expect(caps.has("changeorder:approve")).toBe(false);
+    expect(caps.has("rabill:approve")).toBe(true);
+    expect(caps.has("po:approve")).toBe(true);
+    const ids = visibleTabs(caps, "construction").map(t => t.id);
+    expect(ids).toContain("approvals");
+  });
+
   it("site_engineer sees field/site tabs but not finance", () => {
     const caps = capsFor(baseSession("site_engineer"));
     const ids = visibleTabs(caps, "construction").map(t => t.id);

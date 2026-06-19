@@ -120,7 +120,7 @@ Source: `src/features/project/tabs-config.ts` + 28 real `tabs/*.tsx` (no placeho
 | `po` | POs | Purchase orders per project. Table `purchase_orders`. | `po:create` → pm, vendor, org-tier admin | – |
 | `invoices` | Invoices | Project invoices. Table `invoices`. | `invoice:create` → vendor, project_admin | – |
 | `rabills` | RA Bills | Running Account bills (+ Measurement Book linkage via mig 32). Table `ra_bills`. | `rabill:create` → pm, project_admin, contractor | – |
-| `approvals` | Approvals | Cross-entity pending sign-off queue: change orders, RA bills, POs awaiting approval. | `changeorder:approve` → pm, senior_architect, design_head, consultant_head, org-tier admin | – |
+| `approvals` | Approvals | Cross-entity pending sign-off queue: change orders, RA bills, POs awaiting approval. Row actions require the matching approver capability. | any of `changeorder:approve`, `rabill:approve`, `po:approve` | – |
 | `compliance` | Compliance | Project-level RERA / GST / EPFO / PAN filings. Table `compliance`. | `compliance:view` → superadmin, orgadmin, promoter, project_admin, client, site_inspector | – |
 | `map` | Map | Display-only: site location + Google Maps deep-link. | All members | – |
 | `gantt` | Gantt | Display-only lightweight timeline derived from milestones. | All members | – |

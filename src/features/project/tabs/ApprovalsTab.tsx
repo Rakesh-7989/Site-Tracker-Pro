@@ -1,6 +1,6 @@
 // SiteTrack Pro — project Approvals tab (v3 port). A cross-entity "pending
-// sign-off" queue: change orders, RA bills and POs awaiting approval. Gated on
-// changeorder:approve (the approver capability).
+// sign-off" queue: change orders, RA bills and POs awaiting approval. Each row
+// is decided only by the matching approver capability.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
@@ -15,7 +15,10 @@ const KIND_TONE: Record<ApprovalKind, "info" | "warning" | "neutral"> = { change
 
 export function ApprovalsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
-  const canApprove = useCan("changeorder:approve", { orgId: activeOrg?.orgId, projectId });
+  const ctx = { orgId: activeOrg?.orgId, projectId };
+  const canApproveCo = useCan("changeorder:approve", ctx);
+  const canApproveRa = useCan("rabill:approve", ctx);
+  const canApprovePo = useCan("po:approve", ctx);
   const [rows, setRows] = useState<PendingApproval[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +43,7 @@ export function ApprovalsTab({ projectId }: { projectId: string }): JSX.Element 
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
         : rows.length === 0 ? (
           <Card className="p-6 text-center text-sm text-ink-500"><Icon name="check" size={22} className="mx-auto text-emerald-500 mb-2" />Nothing awaiting sign-off. 🎉</Card>
-        ) : <div className="space-y-2">{rows.map(r => { const k = `${r.kind}-${r.id}`; return (
+        ) : <div className="space-y-2">{rows.map(r => { const k = `${r.kind}-${r.id}`; const canApprove = r.kind === "changeorder" ? canApproveCo : r.kind === "rabill" ? canApproveRa : canApprovePo; return (
             <Card key={k} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2">
                 <Badge tone={KIND_TONE[r.kind]}>{KIND_LABEL[r.kind]}</Badge>

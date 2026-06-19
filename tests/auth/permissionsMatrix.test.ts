@@ -72,8 +72,17 @@ describe("Identity-tier coverage", () => {
     const caps = identityCapabilities("contractor");
     expect(caps).toContain("update:add" as never);
     expect(caps).toContain("rabill:create" as never);
+    expect(caps).not.toContain("rabill:approve" as never);
     expect(caps).not.toContain("team:manage" as never);
     expect(caps).not.toContain("expense:approve" as never);
+  });
+
+  it("project_admin can approve RA bills, invoices and POs without change-order authority", () => {
+    const caps = identityCapabilities("project_admin");
+    expect(caps).toContain("rabill:approve" as never);
+    expect(caps).toContain("invoice:approve" as never);
+    expect(caps).toContain("po:approve" as never);
+    expect(caps).not.toContain("changeorder:approve" as never);
   });
 });
 
@@ -88,6 +97,10 @@ describe("Org-tier coverage", () => {
     expect(caps).toContain("org:members:manage" as never);
     expect(caps).toContain("org:billing:manage" as never);
     expect(caps).toContain("project:create" as never);
+    expect(caps).toContain("changeorder:approve" as never);
+    expect(caps).toContain("po:approve" as never);
+    expect(caps).toContain("invoice:approve" as never);
+    expect(caps).toContain("rabill:approve" as never);
   });
   it("client tier is intentionally minimal", () => {
     const caps = orgTierCapabilities("client");

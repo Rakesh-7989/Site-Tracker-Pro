@@ -2,7 +2,10 @@
 // "pending sign-off" view: aggregates change orders, RA bills and POs awaiting
 // approval. Reads/writes only already-bridged tables (no new migration).
 
+import type { Capability } from "@/auth";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
+
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
 
@@ -21,6 +24,16 @@ const KIND_META: Record<ApprovalKind, { table: string; rejectStatus: string }> =
   rabill: { table: "ra_bills", rejectStatus: "rejected" },
   po: { table: "purchase_orders", rejectStatus: "cancelled" }, // POs have no 'rejected'
 };
+
+export const APPROVAL_CAP_BY_KIND: Record<ApprovalKind, Capability> = {
+  changeorder: "changeorder:approve",
+  rabill: "rabill:approve",
+  po: "po:approve",
+};
+
+export function approvalCapabilityForKind(kind: ApprovalKind): Capability {
+  return APPROVAL_CAP_BY_KIND[kind];
+}
 
 const n = (v: unknown): number | null => (v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 

@@ -19,6 +19,7 @@ export interface TabDef {
   label: string;
   icon: IconName;
   requires?: Capability;
+  requiresAny?: ReadonlyArray<Capability>;
   projectTypes?: ReadonlyArray<ProjectType>;
   /** Plan feature that must be unlocked for this tab (omit = all plans). */
   planFeature?: PlanFeature;
@@ -63,7 +64,13 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "rabills",      label: "RA Bills",      icon: "wallet",    requires: "rabill:create",   planFeature: "finance" },
 
   // Approvals + compliance (Pro+)
-  { id: "approvals",    label: "Approvals",     icon: "check",     requires: "changeorder:approve", planFeature: "approvals" },
+  {
+    id: "approvals",
+    label: "Approvals",
+    icon: "check",
+    requiresAny: ["changeorder:approve", "rabill:approve", "po:approve"],
+    planFeature: "approvals",
+  },
   { id: "compliance",   label: "Compliance",    icon: "shield",    requires: "compliance:view", planFeature: "compliance_read" },
 
   // Always-on viewers
@@ -93,6 +100,7 @@ export function visibleTabs(
   return TAB_CATALOG.filter(tab => {
     if (tab.projectTypes && !tab.projectTypes.includes(projectType)) return false;
     if (tab.requires && !caps.has(tab.requires)) return false;
+    if (tab.requiresAny && !tab.requiresAny.some(cap => caps.has(cap))) return false;
     // Plan gate: when a predicate is supplied, hide tabs the plan doesn't unlock.
     if (tab.planFeature && planCan && !planCan(tab.planFeature)) return false;
     return true;
