@@ -7,6 +7,7 @@ export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface PlatformOrg { id: string; name: string; slug: string; plan: string; memberCount: number; projectCount: number; createdAt: string; }
 export interface PlatformUser { id: string; name: string; email: string | null; role: string; isStaff: boolean; orgCount: number; createdAt: string; }
+export interface CreatePlatformOrgInput { name: string; plan: AssignablePlan; }
 
 const num = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
@@ -21,6 +22,30 @@ export type AssignablePlan = (typeof ASSIGNABLE_PLANS)[number];
 /** Plans that unlock per-org role + capability customization (mirrors plans.feature_caps.custom_roles). */
 export const CUSTOM_ROLE_PLANS = new Set<string>(["business", "enterprise", "custom"]);
 export const planUnlocksCustomRoles = (plan: string): boolean => planSupportsCustomRoles(plan);
+
+/** Owner-only: create a customer organization directly from the platform console. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createPlatformOrg(client: any, input: CreatePlatformOrgInput): Promise<PResult<PlatformOrg>> {
+  try {
+    const name = input.name.trim();
+    if (!name) return { ok: false, error: "Organization name is required." };
+    const { data, error } = await client.rpc("create_platform_org", { p_name: name, p_plan: input.plan });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (!data?.ok) return { ok: false, error: String(data?.error ?? "Organization create failed.") };
+    return {
+      ok: true,
+      data: {
+        id: String(data.id),
+        name: String(data.name ?? name),
+        slug: String(data.slug ?? ""),
+        plan: String(data.plan ?? input.plan),
+        memberCount: 0,
+        projectCount: 0,
+        createdAt: String(data.created_at ?? new Date().toISOString()),
+      },
+    };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
 
 /** Superadmin-only: change an org's plan (incl. granting Enterprise). RPC set_org_plan (migration 95). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

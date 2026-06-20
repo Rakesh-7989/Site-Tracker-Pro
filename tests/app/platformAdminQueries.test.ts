@@ -1,10 +1,15 @@
 // SiteTrack Pro — platform (superadmin) query tests.
 
 import { describe, it, expect } from "vitest";
-import { listPlatformOrgs, listPlatformUsers, getPlatformStats, setOrgPlan, planUnlocksCustomRoles, ASSIGNABLE_PLANS } from "@/app/platformAdminQueries";
+import { createPlatformOrg, listPlatformOrgs, listPlatformUsers, getPlatformStats, setOrgPlan, planUnlocksCustomRoles, ASSIGNABLE_PLANS } from "@/app/platformAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({ rpc: async () => result });
+const rpcClient = (result: { data?: unknown; error?: unknown }, capture?: Array<{ name: string; args: unknown }>): any => ({
+  rpc: async (name: string, args: unknown) => {
+    capture?.push({ name, args });
+    return result;
+  },
+});
 
 describe("listPlatformOrgs", () => {
   it("maps counts + surfaces error", async () => {
@@ -14,6 +19,24 @@ describe("listPlatformOrgs", () => {
     expect(r.ok && r.data[0]).toMatchObject({ name: "ABC", plan: "pro", memberCount: 7, projectCount: 3 });
     const e = await listPlatformOrgs(rpcClient({ data: null, error: { message: "denied" } }));
     expect(e).toEqual({ ok: false, error: "denied" });
+  });
+});
+
+describe("createPlatformOrg", () => {
+  it("calls the owner-only RPC and maps the returned organization", async () => {
+    const calls: Array<{ name: string; args: unknown }> = [];
+    const r = await createPlatformOrg(rpcClient({
+      data: { ok: true, id: "o1", name: "G Architects", slug: "g-architects-ab12cd", plan: "pro", created_at: "2026-06-20" },
+      error: null,
+    }, calls), { name: " G Architects ", plan: "pro" });
+
+    expect(r.ok && r.data).toMatchObject({ id: "o1", name: "G Architects", plan: "pro", memberCount: 0, projectCount: 0 });
+    expect(calls[0]).toEqual({ name: "create_platform_org", args: { p_name: "G Architects", p_plan: "pro" } });
+  });
+
+  it("requires an organization name", async () => {
+    const r = await createPlatformOrg(rpcClient({ data: null, error: null }), { name: " ", plan: "basic" });
+    expect(r).toEqual({ ok: false, error: "Organization name is required." });
   });
 });
 

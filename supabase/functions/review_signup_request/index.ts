@@ -54,6 +54,13 @@ async function createOrganization(admin, firm: string, plan: string, staffId: st
     .single();
 }
 
+async function ensureApplicantProfile(admin, userId: string, contact: string, email: string) {
+  const name = contact.trim() || email.split("@")[0] || "SiteTrack user";
+  return await admin
+    .from("profiles")
+    .upsert({ id: userId, name, role: "client" }, { onConflict: "id", ignoreDuplicates: true });
+}
+
 async function sendBrandedInvite(
   to: string,
   firm: string,
@@ -252,6 +259,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
       userId = inviteData.user.id;
       emailSent = true;
     }
+  }
+
+  if (!userId) {
+    await rollbackOrg();
+    return json({ ok: false, error: "auth-user-missing" }, 502);
+  }
+
+  const { error: profileErr } = await ensureApplicantProfile(admin, userId, contact, email);
+  if (profileErr) {
+    await rollbackOrg();
+    return json({ ok: false, error: "profile-repair-failed", detail: profileErr.message }, 500);
   }
 
   const { error: omErr } = await admin

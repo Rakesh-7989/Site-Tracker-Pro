@@ -1,11 +1,11 @@
 // SiteTrack Pro — platform Organizations (/admin/orgs, superadmin). Cross-tenant
-// list of every org with member + project counts. Read-only.
+// list of every org with member + project counts. Owner can also create orgs.
 
 import { useCallback, useEffect, useState } from "react";
-import { useCan } from "@/auth";
+import { useAuth, useCan } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
-import { Input, Select } from "@/components/ui/forms";
-import { listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, type PlatformOrg } from "@/app/platformAdminQueries";
+import { FormField, Input, Select } from "@/components/ui/forms";
+import { createPlatformOrg, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, type AssignablePlan, type PlatformOrg } from "@/app/platformAdminQueries";
 import { deleteOrganization } from "@/app/orgAdminQueries";
 import { Pager } from "@/components/ui/Pager";
 
@@ -23,14 +23,21 @@ export function PlatformOrgsView(): JSX.Element {
 }
 
 function Inner(): JSX.Element {
+  const { session } = useAuth();
+  const isOwner = session?.user.staffTier === "owner";
   const [rows, setRows] = useState<PlatformOrg[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");   // debounced, server-side
   const [page, setPage] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [planBusyId, setPlanBusyId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgPlan, setNewOrgPlan] = useState<AssignablePlan>("basic");
 
   // Debounce the search box → server-side query, reset to first page.
   useEffect(() => { const t = setTimeout(() => { setSearch(q.trim()); setPage(0); }, 350); return () => clearTimeout(t); }, [q]);
@@ -70,15 +77,70 @@ function Inner(): JSX.Element {
     else setError(res.error);
   }, []);
 
+  const onCreateOrg = useCallback(async () => {
+    const name = newOrgName.trim();
+    if (!name) { setError("Organization name is required."); return; }
+    setCreating(true); setError(null); setNotice(null);
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setCreating(false); return; }
+    const res = await createPlatformOrg(client, { name, plan: newOrgPlan });
+    setCreating(false);
+    if (res.ok) {
+      setNotice(`Created ${res.data.name} on ${PLAN_LABEL[res.data.plan] ?? res.data.plan}.`);
+      setNewOrgName("");
+      setNewOrgPlan("basic");
+      setShowCreate(false);
+      if (page === 0 && !search) setRows(prev => [res.data, ...prev].slice(0, ADMIN_PAGE_SIZE));
+      else { setPage(0); setSearch(""); setQ(""); void reload(); }
+    } else setError(res.error);
+  }, [newOrgName, newOrgPlan, page, reload, search]);
+
   const hasNext = rows.length === ADMIN_PAGE_SIZE;
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="font-display text-2xl font-bold text-ink-900">Organizations</h1>
-        <span className="text-sm text-ink-500">{search ? "filtered" : `page ${page + 1}`}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-ink-500">{search ? "filtered" : `page ${page + 1}`}</span>
+          {isOwner && (
+            <Button size="sm" onClick={() => setShowCreate(v => !v)} leftIcon={<Icon name="plus" size={14} />}>
+              New organization
+            </Button>
+          )}
+        </div>
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
+      {notice && <Alert variant="success">{notice}</Alert>}
+      {showCreate && (
+        <Card className="p-4">
+          <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
+            <FormField label="Organization name" htmlFor="platform-new-org-name">
+              <Input
+                id="platform-new-org-name"
+                value={newOrgName}
+                onChange={e => setNewOrgName(e.target.value)}
+                placeholder="e.g. G Architects"
+                disabled={creating}
+              />
+            </FormField>
+            <FormField label="Plan" htmlFor="platform-new-org-plan">
+              <Select
+                id="platform-new-org-plan"
+                value={newOrgPlan}
+                onChange={e => setNewOrgPlan(e.target.value as AssignablePlan)}
+                options={PLAN_OPTIONS}
+                disabled={creating}
+              />
+            </FormField>
+            <div className="flex gap-2">
+              <Button size="md" onClick={() => void onCreateOrg()} disabled={creating || !newOrgName.trim()}>
+                {creating ? <Spinner size={14} /> : "Create"}
+              </Button>
+              <Button size="md" variant="ghost" onClick={() => setShowCreate(false)} disabled={creating}>Cancel</Button>
+            </div>
+          </div>
+        </Card>
+      )}
       <Input placeholder="Search by name or slug…" value={q} onChange={e => setQ(e.target.value)} />
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : rows.length === 0 ? <Card className="p-8 text-center text-sm text-ink-500"><Icon name="building" size={24} className="mx-auto text-ink-300 mb-2" />No organizations{search ? " match your search." : " yet."}</Card>

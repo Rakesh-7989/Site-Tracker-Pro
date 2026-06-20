@@ -75,3 +75,12 @@ describe("cashfree-subscription retains its orgadmin gate", () => {
     expect(code).toMatch(/superadmin|orgadmin/);
   });
 });
+
+describe("review_signup_request repairs applicant profiles before membership", () => {
+  it("ensures old auth users without profiles can still be approved", () => {
+    const code = src("review_signup_request");
+    expect(code).toMatch(/ensureApplicantProfile/);
+    expect(code).toMatch(/profile-repair-failed/);
+    expect(code.indexOf("ensureApplicantProfile")).toBeLessThan(code.indexOf(".from(\"org_members\")"));
+  });
+});
