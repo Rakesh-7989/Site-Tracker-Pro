@@ -32,7 +32,7 @@ export interface UseAuthUserReturn {
   status: AuthStatus;
   error: string | null;
   /** Re-fetch from Supabase (e.g. after creating a new org). */
-  refresh: () => Promise<void>;
+  refresh: () => Promise<AuthSession | null>;
   /** Switch the active org for the rest of the session. */
   setActiveOrgId: (orgId: string | null) => void;
 }
@@ -83,7 +83,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     return await (mod as any).getSupabaseClient();
   }, []);
 
-  const hydrate = useCallback(async (silent = false): Promise<void> => {
+  const hydrate = useCallback(async (silent = false): Promise<AuthSession | null> => {
     // `silent` re-hydrations (triggered by background auth events such as a
     // token refresh) must NOT flip status back to "loading" — otherwise the
     // shell flashes the full-screen spinner on every refresh. Only the first
@@ -101,13 +101,13 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       setSession(null);
       setStatus("signed-out");
       setError(e instanceof Error ? e.message : String(e));
-      return;
+      return null;
     }
     if (!client) {
       // Backend disabled — local mode. Treat as signed-out cleanly.
       setSession(null);
       setStatus("signed-out");
-      return;
+      return null;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = client as any;
@@ -126,7 +126,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       if (!authUser) {
         setSession(null);
         setStatus("signed-out");
-        return;
+        return null;
       }
       const preferredOrgId = readActiveOrgId(storageRef.current);
       const outcome: FetchOutcome = await withTimeout(
@@ -141,7 +141,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
         setSession(null);
         setStatus("error");
         setError(`${outcome.code}: ${outcome.error}`);
-        return;
+        return null;
       }
       setSession(outcome.session);
       setStatus("ready");
@@ -149,11 +149,13 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       if (outcome.session.activeOrgId !== preferredOrgId) {
         writeActiveOrgId(outcome.session.activeOrgId, storageRef.current);
       }
+      return outcome.session;
     } catch (e) {
       // Network hang / timeout / unexpected throw → don't freeze the app.
       setSession(null);
       setStatus("signed-out");
       setError(e instanceof Error ? e.message : String(e));
+      return null;
     }
   }, [getClient]);
 

@@ -104,6 +104,17 @@ export {
 } from "./activeOrgStore";
 
 export {
+  LOGIN_LANE_STORAGE_KEY,
+  isLoginLane,
+  postLoginFallbackPath,
+  postLoginPathForSession,
+  readStoredLoginLane,
+  staffLandingPath,
+  writeStoredLoginLane,
+  type LoginLane,
+} from "./loginRouting";
+
+export {
   useAuthUser,
   type AuthStatus,
   type UseAuthUserReturn,

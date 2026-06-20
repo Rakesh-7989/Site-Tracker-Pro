@@ -132,13 +132,13 @@ These cannot be changed from this machine without Supabase/Vercel tokens:
    - Disable/remove duplicate protected hostname/project if it still appears.
    - Keep Git production deployment attached to `sitetrack-rakesh`.
 
-## Open Product Decision
+## Implemented Decision
 
-Before making a larger UI rewrite, confirm whether the desired surface is:
+The app now uses one `/login` screen with two lanes:
 
-- one `/login` screen with two lanes: "SiteTrack staff" and "Org users"; or
-- separate public routes: `/staff/login` and `/login`, both using the same
-  Supabase backend.
+- **Org users** -> customer organization and project workspace.
+- **SiteTrack staff** -> platform owner/head/member admin areas.
 
-Recommendation: one `/login` screen with two lanes. It avoids duplicate auth
-logic and still routes users cleanly after login.
+The selected lane is stored in `localStorage` so magic-link users keep the same
+intent after the email round trip. The hydrated session still decides the final
+route, and capability/RLS guards remain the real authorization boundary.

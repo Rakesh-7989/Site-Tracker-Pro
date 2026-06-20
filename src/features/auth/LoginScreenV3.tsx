@@ -5,10 +5,17 @@
 // On success it triggers the AuthProvider to re-hydrate + navigates to the
 // dashboard. Password + magic-link tabs; OTP fallback for the magic link.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 
-import { useAuth } from "@/auth";
+import {
+  postLoginFallbackPath,
+  postLoginPathForSession,
+  readStoredLoginLane,
+  useAuth,
+  writeStoredLoginLane,
+  type LoginLane,
+} from "@/auth";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
@@ -21,6 +28,23 @@ type Status =
   | { kind: "sent"; msg: string }
   | { kind: "error"; msg: string };
 
+const LOGIN_LANES = [
+  {
+    id: "org",
+    icon: "building",
+    titleKey: "auth.laneOrgTitle",
+    bodyKey: "auth.laneOrgBody",
+    badgeKey: "auth.laneOrgBadge",
+  },
+  {
+    id: "staff",
+    icon: "shield",
+    titleKey: "auth.laneStaffTitle",
+    bodyKey: "auth.laneStaffBody",
+    badgeKey: "auth.laneStaffBadge",
+  },
+] as const;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authLib(): Promise<any> {
   return await import("../../lib/supabase.js");
@@ -32,6 +56,7 @@ export function LoginScreenV3(): JSX.Element {
   const navigate = useNavigate();
   const t = useT();
   const { refresh, session, status: authStatus } = useAuth();
+  const [lane, setLane] = useState<LoginLane>(() => readStoredLoginLane());
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,9 +67,18 @@ export function LoginScreenV3(): JSX.Element {
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
 
+  useEffect(() => {
+    writeStoredLoginLane(lane);
+  }, [lane]);
+
   const afterAuth = async () => {
-    await refresh();
-    navigate("/dashboard");
+    const refreshed = await refresh();
+    navigate(refreshed ? postLoginPathForSession(refreshed, lane) : postLoginFallbackPath(lane));
+  };
+
+  const selectLane = (next: LoginLane) => {
+    setLane(next);
+    setStatus({ kind: "idle" });
   };
 
   // After a successful sign-in, gate on MFA: if the user has a verified factor
@@ -115,10 +149,11 @@ export function LoginScreenV3(): JSX.Element {
   // Already signed in (e.g. arriving via an invite / magic-link redirect) →
   // go straight to the app instead of showing the form.
   if (authStatus !== "loading" && authStatus !== "idle" && session) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={postLoginPathForSession(session, lane)} replace />;
   }
 
   const busy = status.kind === "busy";
+  const activeLane = LOGIN_LANES.find(l => l.id === lane) ?? LOGIN_LANES[0];
 
   return (
     <div className="relative min-h-screen grid lg:grid-cols-2 bg-ink-900">
@@ -173,6 +208,45 @@ export function LoginScreenV3(): JSX.Element {
               </Button>
             </div>
           ) : (<>
+          {/* Access lane */}
+          <div className="mb-4">
+            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-400 mb-2">{t("auth.laneSwitchLabel")}</div>
+            <div className="grid grid-cols-2 gap-2" role="tablist" aria-label={t("auth.laneSwitchLabel")}>
+              {LOGIN_LANES.map(l => {
+                const selected = lane === l.id;
+                return (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => selectLane(l.id)}
+                    aria-pressed={selected}
+                    className={`min-h-[116px] text-left rounded-lg border p-3 transition ${
+                      selected
+                        ? "border-safety-500 bg-safety-50 shadow-sm"
+                        : "border-cream-200 bg-white hover:border-cream-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`w-8 h-8 rounded-lg grid place-items-center ${selected ? "bg-safety-500 text-white" : "bg-cream-100 text-ink-500"}`}>
+                        <Icon name={l.icon} size={16} />
+                      </span>
+                      <span className="text-sm font-semibold text-ink-900 leading-tight">{t(l.titleKey)}</span>
+                    </div>
+                    <p className="mt-2 text-[11px] leading-snug text-ink-500">{t(l.bodyKey)}</p>
+                    <span className={`mt-2 inline-flex text-[10px] font-semibold rounded-full px-2 py-0.5 ${selected ? "bg-white text-safety-700" : "bg-cream-100 text-ink-500"}`}>
+                      {t(l.badgeKey)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-lg border border-cream-200 bg-cream-50 px-3 py-2 text-[12px] text-ink-600 flex items-start gap-2">
+            <Icon name={activeLane.icon} size={15} className="text-safety-600 mt-0.5 flex-shrink-0" />
+            <span>{lane === "staff" ? t("auth.laneStaffNotice") : t("auth.laneOrgNotice")}</span>
+          </div>
+
           {/* Method tabs */}
           <div className="flex items-center gap-4 mb-4 border-b border-cream-200">
             {(["password", "magic"] as Method[]).map(m => (

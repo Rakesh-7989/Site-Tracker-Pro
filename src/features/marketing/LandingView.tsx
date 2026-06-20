@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { useAuth } from "@/auth";
+import { postLoginPathForSession, readStoredLoginLane, useAuth } from "@/auth";
 import { Card, Icon, Badge } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "./plans";
@@ -76,7 +76,7 @@ export function LandingView(): JSX.Element {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   // Render INSTANTLY — never gate on auth loading. Redirect only once a
   // logged-in session is confirmed.
-  if (status === "ready" && session) return <Navigate to="/dashboard" replace />;
+  if (status === "ready" && session) return <Navigate to={postLoginPathForSession(session, readStoredLoginLane())} replace />;
 
   return (
     <div className="min-h-screen bg-cream-50 text-ink-900">

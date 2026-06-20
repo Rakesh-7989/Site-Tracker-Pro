@@ -18,7 +18,7 @@ export interface AuthContextValue {
   session: AuthSession | null;
   status: AuthStatus;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<AuthSession | null>;
   setActiveOrgId: (orgId: string | null) => void;
 }
 
