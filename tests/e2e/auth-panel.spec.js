@@ -19,6 +19,8 @@ test.describe("Login screen", () => {
     await expect(page.locator("#email")).toBeVisible();
     await expect(page.locator("#pw")).toBeVisible();
     await expect(page.getByRole("button", { name: /^Sign in$/i })).toBeVisible();
+    await expect(page.getByText("Access lane")).toHaveCount(0);
+    await expect(page.getByText("Workspace access")).toBeVisible();
   });
 
   test("invalid email and missing password surface friendly errors", async ({ page }) => {
@@ -52,6 +54,18 @@ test.describe("Login screen", () => {
   test("forgot password asks for an email first", async ({ page }) => {
     await page.getByRole("button", { name: /Forgot password/i }).click();
     await expect(page.getByText("Enter your email above first, then tap Forgot password.")).toBeVisible();
+  });
+});
+
+test.describe("Staff login screen", () => {
+  test("renders a separate staff-only sign-in page", async ({ page }) => {
+    await page.goto("/staff/login");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.getByText("SiteTrack staff console sign-in")).toBeVisible();
+    await expect(page.getByText("Staff console")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Password", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Magic link", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Use org login" })).toHaveAttribute("href", "/login");
   });
 });
 

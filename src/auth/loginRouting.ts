@@ -44,12 +44,20 @@ export function staffLandingPath(session: AuthSession): string {
   return "/admin";
 }
 
+export function isStaffSession(session: AuthSession): boolean {
+  return Boolean(
+    session.user.isStaff
+      || session.user.staffTier
+      || session.user.identityRole === "superadmin",
+  );
+}
+
 export function postLoginFallbackPath(lane: LoginLane): string {
   return lane === "staff" ? "/admin" : "/dashboard";
 }
 
 export function postLoginPathForSession(session: AuthSession, preferredLane: LoginLane | null = null): string {
-  const isStaff = Boolean(session.user.isStaff || session.user.staffTier);
+  const isStaff = isStaffSession(session);
   const lane = preferredLane ?? (isStaff ? "staff" : "org");
   if (lane === "staff" && isStaff) return staffLandingPath(session);
   if (!session.activeOrgId && isStaff) return staffLandingPath(session);

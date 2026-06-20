@@ -106,6 +106,7 @@ export {
 export {
   LOGIN_LANE_STORAGE_KEY,
   isLoginLane,
+  isStaffSession,
   postLoginFallbackPath,
   postLoginPathForSession,
   readStoredLoginLane,

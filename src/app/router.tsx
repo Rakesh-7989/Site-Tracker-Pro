@@ -19,7 +19,7 @@ import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
 import { PayView } from "@/features/marketing/PayView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
-import { LoginScreenV3 } from "@/features/auth/LoginScreenV3";
+import { LoginScreenV3, StaffLoginScreen } from "@/features/auth/LoginScreenV3";
 import { ResetPasswordView } from "@/features/auth/ResetPasswordView";
 import { StaffJoinView } from "@/features/auth/StaffJoinView";
 import { ProfileCompleteView } from "@/features/account/ProfileCompleteView";
@@ -63,6 +63,8 @@ export const router = createBrowserRouter([
   { path: "/privacy", element: <PrivacyView /> },
   { path: "/terms", element: <TermsView /> },
   { path: "/login", element: <LoginScreenV3 /> },
+  { path: "/staff/login", element: <StaffLoginScreen /> },
+  { path: "/admin/login", element: <Navigate to="/staff/login" replace /> },
   { path: "/auth/reset", element: <ResetPasswordView /> },
   { path: "/staff/join", element: <StaffJoinView /> },
   { path: "/profile/complete", element: <ProfileCompleteView /> },

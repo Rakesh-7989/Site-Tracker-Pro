@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   LOGIN_LANE_STORAGE_KEY,
+  isStaffSession,
   postLoginFallbackPath,
   postLoginPathForSession,
   readStoredLoginLane,
@@ -53,6 +54,12 @@ describe("login lane routing", () => {
   it("routes platform staff to the platform area", () => {
     const owner = session({ isStaff: true, staffTier: "owner" }, null);
     expect(postLoginPathForSession(owner, "staff")).toBe("/admin");
+  });
+
+  it("treats legacy superadmin profiles as staff even if staff flags are stale", () => {
+    const legacy = session({ identityRole: "superadmin", isStaff: false, staffTier: null }, null);
+    expect(isStaffSession(legacy)).toBe(true);
+    expect(postLoginPathForSession(legacy, "staff")).toBe("/admin");
   });
 
   it("routes scoped staff members to their first granted area", () => {

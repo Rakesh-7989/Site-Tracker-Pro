@@ -4,7 +4,7 @@
 // states via RequireSession, then the chrome + <Outlet/> for child routes.
 
 import { Suspense } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 
 import { RequireSession, useAuth } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
@@ -23,11 +23,13 @@ function FullScreenSpinner(): JSX.Element {
 }
 
 export function ShellLayout(): JSX.Element {
+  const location = useLocation();
+  const loginPath = location.pathname.startsWith("/admin") ? "/staff/login" : "/login";
   return (
     <RequireSession
       loading={<FullScreenSpinner />}
-      signedOut={<Navigate to="/login" replace />}
-      errorView={<Navigate to="/login?error=session" replace />}
+      signedOut={<Navigate to={loginPath} replace />}
+      errorView={<Navigate to={`${loginPath}?error=session`} replace />}
     >
       <GatedShell />
     </RequireSession>

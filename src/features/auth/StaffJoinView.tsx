@@ -38,7 +38,7 @@ export function StaffJoinView(): JSX.Element {
           <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 grid place-items-center mx-auto mb-3"><Icon name="alert" size={24} /></div>
           <h1 className="font-display text-lg font-bold">Invalid invite link</h1>
           <p className="text-sm text-ink-600 mt-2">This page needs a valid staff-invite link. Ask the person who invited you to resend it.</p>
-          <Link to="/login" className="inline-block mt-4 text-sm font-semibold text-safety-600 hover:text-safety-700">← Go to sign in</Link>
+          <Link to="/staff/login" className="inline-block mt-4 text-sm font-semibold text-safety-600 hover:text-safety-700">Back to staff sign in</Link>
         </Card>
       </div>
     );
@@ -57,9 +57,9 @@ export function StaffJoinView(): JSX.Element {
     // Account created + promoted → sign in and enter.
     const signin = await lib.signInWithPassword(res.email ?? email.trim().toLowerCase(), password);
     setBusy(false);
-    if (signin.ok) { navigate("/dashboard"); return; }
+    if (signin.ok) { navigate("/admin"); return; }
     // Created but auto sign-in hiccup → send them to login with their new password.
-    navigate("/login");
+    navigate("/staff/login");
   };
 
   return (
@@ -112,7 +112,7 @@ export function StaffJoinView(): JSX.Element {
         <Button fullWidth size="lg" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={16} /> : null}>
           {busy ? "Creating your account…" : "Join & continue"}
         </Button>
-        <p className="text-[11px] text-ink-400 text-center mt-3">Already have an account? <Link to="/login" className="text-safety-600 font-semibold">Sign in</Link></p>
+        <p className="text-[11px] text-ink-400 text-center mt-3">Already have an account? <Link to="/staff/login" className="text-safety-600 font-semibold">Staff sign in</Link></p>
       </Card>
     </div>
   );

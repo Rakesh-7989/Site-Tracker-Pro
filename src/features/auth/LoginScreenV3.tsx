@@ -3,15 +3,16 @@
 // Reuses the EXISTING auth helpers in src/lib/supabase.js (signInWithPassword,
 // signInWithMagicLink, verifyEmailOtp) so the auth backend is untouched.
 // On success it triggers the AuthProvider to re-hydrate + navigates to the
-// dashboard. Password + magic-link tabs; OTP fallback for the magic link.
+// dashboard/admin console. Password + magic-link tabs; OTP fallback for the
+// magic link. /login is org-only; /staff/login is platform-staff-only.
 
 import { useEffect, useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 
 import {
+  isStaffSession,
   postLoginFallbackPath,
   postLoginPathForSession,
-  readStoredLoginLane,
   useAuth,
   writeStoredLoginLane,
   type LoginLane,
@@ -28,22 +29,26 @@ type Status =
   | { kind: "sent"; msg: string }
   | { kind: "error"; msg: string };
 
-const LOGIN_LANES = [
-  {
-    id: "org",
+const LOGIN_META = {
+  org: {
     icon: "building",
-    titleKey: "auth.laneOrgTitle",
-    bodyKey: "auth.laneOrgBody",
-    badgeKey: "auth.laneOrgBadge",
+    subKey: "auth.orgSignInSub",
+    eyebrowKey: "auth.orgLoginEyebrow",
+    noticeKey: "auth.orgLoginNotice",
+    wrongLaneKey: "auth.errStaffUseStaffLogin",
   },
-  {
-    id: "staff",
+  staff: {
     icon: "shield",
-    titleKey: "auth.laneStaffTitle",
-    bodyKey: "auth.laneStaffBody",
-    badgeKey: "auth.laneStaffBadge",
+    subKey: "auth.staffSignInSub",
+    eyebrowKey: "auth.staffLoginEyebrow",
+    noticeKey: "auth.staffLoginNotice",
+    wrongLaneKey: "auth.errOrgUseOrgLogin",
   },
-] as const;
+} as const;
+
+interface LoginScreenV3Props {
+  lane?: LoginLane;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authLib(): Promise<any> {
@@ -52,11 +57,10 @@ async function authLib(): Promise<any> {
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-export function LoginScreenV3(): JSX.Element {
+export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.Element {
   const navigate = useNavigate();
   const t = useT();
   const { refresh, session, status: authStatus } = useAuth();
-  const [lane, setLane] = useState<LoginLane>(() => readStoredLoginLane());
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,12 +77,19 @@ export function LoginScreenV3(): JSX.Element {
 
   const afterAuth = async () => {
     const refreshed = await refresh();
-    navigate(refreshed ? postLoginPathForSession(refreshed, lane) : postLoginFallbackPath(lane));
-  };
-
-  const selectLane = (next: LoginLane) => {
-    setLane(next);
-    setStatus({ kind: "idle" });
+    if (!refreshed) {
+      navigate(postLoginFallbackPath(lane));
+      return;
+    }
+    const staff = isStaffSession(refreshed);
+    if ((lane === "org" && staff) || (lane === "staff" && !staff)) {
+      const lib = await authLib();
+      await lib.signOut?.();
+      await refresh();
+      setStatus({ kind: "error", msg: t(LOGIN_META[lane].wrongLaneKey) });
+      return;
+    }
+    navigate(postLoginPathForSession(refreshed, lane));
   };
 
   // After a successful sign-in, gate on MFA: if the user has a verified factor
@@ -149,11 +160,14 @@ export function LoginScreenV3(): JSX.Element {
   // Already signed in (e.g. arriving via an invite / magic-link redirect) →
   // go straight to the app instead of showing the form.
   if (authStatus !== "loading" && authStatus !== "idle" && session) {
+    const staff = isStaffSession(session);
+    if (lane === "org" && staff) return <Navigate to="/staff/login" replace />;
+    if (lane === "staff" && !staff) return <Navigate to="/login" replace />;
     return <Navigate to={postLoginPathForSession(session, lane)} replace />;
   }
 
   const busy = status.kind === "busy";
-  const activeLane = LOGIN_LANES.find(l => l.id === lane) ?? LOGIN_LANES[0];
+  const meta = LOGIN_META[lane];
 
   return (
     <div className="relative min-h-screen grid lg:grid-cols-2 bg-ink-900">
@@ -182,7 +196,7 @@ export function LoginScreenV3(): JSX.Element {
             <div className="w-9 h-9 rounded-lg bg-safety-500 text-white grid place-items-center font-bold">S</div>
             <div>
               <div className="font-display font-bold text-ink-900">SiteTrack Pro</div>
-              <div className="text-[11px] text-ink-500">{t("auth.signInSub")}</div>
+              <div className="text-[11px] text-ink-500">{t(meta.subKey)}</div>
             </div>
           </div>
 
@@ -208,43 +222,12 @@ export function LoginScreenV3(): JSX.Element {
               </Button>
             </div>
           ) : (<>
-          {/* Access lane */}
-          <div className="mb-4">
-            <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-400 mb-2">{t("auth.laneSwitchLabel")}</div>
-            <div className="grid grid-cols-2 gap-2" role="tablist" aria-label={t("auth.laneSwitchLabel")}>
-              {LOGIN_LANES.map(l => {
-                const selected = lane === l.id;
-                return (
-                  <button
-                    key={l.id}
-                    type="button"
-                    onClick={() => selectLane(l.id)}
-                    aria-pressed={selected}
-                    className={`min-h-[116px] text-left rounded-lg border p-3 transition ${
-                      selected
-                        ? "border-safety-500 bg-safety-50 shadow-sm"
-                        : "border-cream-200 bg-white hover:border-cream-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className={`w-8 h-8 rounded-lg grid place-items-center ${selected ? "bg-safety-500 text-white" : "bg-cream-100 text-ink-500"}`}>
-                        <Icon name={l.icon} size={16} />
-                      </span>
-                      <span className="text-sm font-semibold text-ink-900 leading-tight">{t(l.titleKey)}</span>
-                    </div>
-                    <p className="mt-2 text-[11px] leading-snug text-ink-500">{t(l.bodyKey)}</p>
-                    <span className={`mt-2 inline-flex text-[10px] font-semibold rounded-full px-2 py-0.5 ${selected ? "bg-white text-safety-700" : "bg-cream-100 text-ink-500"}`}>
-                      {t(l.badgeKey)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           <div className="mb-4 rounded-lg border border-cream-200 bg-cream-50 px-3 py-2 text-[12px] text-ink-600 flex items-start gap-2">
-            <Icon name={activeLane.icon} size={15} className="text-safety-600 mt-0.5 flex-shrink-0" />
-            <span>{lane === "staff" ? t("auth.laneStaffNotice") : t("auth.laneOrgNotice")}</span>
+            <Icon name={meta.icon} size={15} className="text-safety-600 mt-0.5 flex-shrink-0" />
+            <span>
+              <span className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-400 mb-0.5">{t(meta.eyebrowKey)}</span>
+              {t(meta.noticeKey)}
+            </span>
           </div>
 
           {/* Method tabs */}
@@ -339,9 +322,18 @@ export function LoginScreenV3(): JSX.Element {
               </div>
             </div>
           )}
+          {lane === "staff" && (
+            <p className="mt-4 text-center text-[11px] text-ink-400">
+              {t("auth.customerLoginPrompt")} <Link to="/login" className="font-semibold text-safety-600 hover:text-safety-700">{t("auth.customerLoginLink")}</Link>
+            </p>
+          )}
           </>)}
         </Card>
       </div>
     </div>
   );
+}
+
+export function StaffLoginScreen(): JSX.Element {
+  return <LoginScreenV3 lane="staff" />;
 }
