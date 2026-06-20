@@ -20,6 +20,30 @@ const ENV = typeof import.meta !== "undefined" ? import.meta.env : {};
 // RLS-protected + ships in every browser bundle anyway, so this is safe.
 const SUPABASE_URL = ENV.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = ENV.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_ANON_KEY;
+export const CANONICAL_APP_URL = "https://sitetrack-rakesh.vercel.app";
+
+const BLOCKED_APP_HOSTS = new Set([
+  "app.sitetrack.in",
+  "sitetrack-rakesh-rakesh15.vercel.app",
+]);
+
+function isLocalAppHost(hostname) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
+}
+
+function trustedAppOrigin(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  try {
+    const url = new URL(rawUrl.trim().replace(/\/+$/, ""));
+    const hostname = url.hostname.toLowerCase();
+    if (url.protocol !== "https:" && !(url.protocol === "http:" && isLocalAppHost(hostname))) return null;
+    if (BLOCKED_APP_HOSTS.has(hostname)) return null;
+    if (hostname.endsWith(".vercel.app") && url.origin !== CANONICAL_APP_URL) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
 
 // Default to the Supabase backend whenever we have a URL + anon key (we always
 // do, via the fallback). An explicit VITE_BACKEND still overrides (e.g. "local").
@@ -31,12 +55,12 @@ let _clientPromise = null;
  * Returns the canonical app URL the Supabase Auth emails should redirect to.
  *
  * Priority:
- *   1. VITE_APP_URL env var, if set AND not the stale `app.sitetrack.in`
- *      placeholder. We deliberately reject the placeholder because pasting
- *      a non-existent domain into Supabase Redirect URLs would silently
- *      send users to a NXDOMAIN page.
+ *   1. VITE_APP_URL env var, if set AND trusted. Stale placeholders and
+ *      duplicate/protected Vercel hosts are rejected because Supabase emails
+ *      bake the redirect URL when the email is sent.
  *   2. window.location.origin (works in dev: localhost:5173, AND in prod
- *      when the user hits the live site directly).
+ *      when the user hits the live site directly). Preview/duplicate Vercel
+ *      origins fall back to the canonical production app.
  *   3. Hardcoded prod fallback (sitetrack-rakesh.vercel.app) — ONLY used
  *      for SSR / tests; the browser path always uses #2.
  *
@@ -48,14 +72,13 @@ let _clientPromise = null;
  * fix per docs/SIGNUP_TROUBLESHOOTING.md.
  */
 export function getCanonicalAppUrl() {
-  const envUrl = ENV.VITE_APP_URL;
-  if (envUrl && typeof envUrl === "string" && !/app\.sitetrack\.in/.test(envUrl)) {
-    return envUrl.replace(/\/+$/, "");
-  }
+  const envUrl = trustedAppOrigin(ENV.VITE_APP_URL);
+  if (envUrl) return envUrl;
   if (typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin.replace(/\/+$/, "");
+    const windowUrl = trustedAppOrigin(window.location.origin);
+    if (windowUrl) return windowUrl;
   }
-  return "https://sitetrack-rakesh.vercel.app";
+  return CANONICAL_APP_URL;
 }
 
 export function isSupabaseEnabled() {

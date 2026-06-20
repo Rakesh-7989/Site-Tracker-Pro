@@ -1,95 +1,88 @@
-# Fix: Password reset email → localhost redirect
+# Fix: Auth Email Opens Localhost Or Duplicate Vercel URL
 
 ## Symptom
 
-Founder clicks "Forgot password" on https://sitetrack-rakesh.vercel.app,
-receives the reset email, clicks the link inside the email — but the
-link opens `http://localhost:5173/...` instead of the production app.
-Result: dead-end (localhost only runs on the dev machine).
+Founder clicks "Forgot password" or a magic-link email from
+https://sitetrack-rakesh.vercel.app, but the link opens either:
 
-## Root cause
+- `http://localhost:5173/...`
+- `https://sitetrack-rakesh-rakesh15.vercel.app/...`
 
-Supabase Auth has TWO URL settings that decide where a confirmation /
+Result: dead-end. Localhost only runs on the dev machine, and the duplicate
+Vercel hostname is protected before SiteTrack can load.
+
+## Root Cause
+
+Supabase Auth has two URL settings that decide where a confirmation, invite, or
 reset email link points:
 
-1. **`redirectTo` param** — what our code passes when calling
-   `resetPasswordForEmail()`. We now centralize this through
-   `getCanonicalAppUrl()` in `src/lib/supabase.js` so it returns
-   `https://sitetrack-rakesh.vercel.app` in production.
+1. `redirectTo` / `emailRedirectTo` - what our code passes when calling
+   Supabase Auth. We centralize this through `getCanonicalAppUrl()` in
+   `src/lib/supabase.js` so it returns `https://sitetrack-rakesh.vercel.app`
+   in production.
+2. Dashboard "Site URL" + "Redirect URLs" allow-list - Supabase's URL guard.
+   If the redirect we pass is not in the allow-list, Supabase can fall back to
+   the configured Site URL.
 
-2. **Dashboard "Site URL" + "Redirect URLs" allow-list** — Supabase's
-   URL guard. If the `redirectTo` we pass is NOT in the allow-list,
-   Supabase **silently overrides** our value and falls back to the
-   "Site URL" instead.
+If Site URL or the email template points at localhost or a duplicate Vercel
+host, every email generated during that period can send users to the wrong
+place.
 
-The founder's project's Site URL is currently set to
-`http://localhost:5173` (Vite dev default — probably never updated
-after first `supabase start`). So every email link goes to localhost
-regardless of what we pass.
+## Fix In Supabase Dashboard
 
-## Fix — 2 clicks in the Supabase Dashboard
-
-1. Open https://supabase.com/dashboard/project/nntkxojdeyziemdhyjvg/auth/url-configuration
-2. **Site URL**: change from `http://localhost:5173` →
-   `https://sitetrack-rakesh.vercel.app`
-3. **Redirect URLs** — add (one per line):
-   ```
-   https://sitetrack-rakesh.vercel.app/**
+1. Open:
+   https://supabase.com/dashboard/project/nntkxojdeyziemdhyjvg/auth/url-configuration
+2. Set **Site URL** to:
+   ```text
    https://sitetrack-rakesh.vercel.app
-   http://localhost:5173/**
-   http://localhost:5173
    ```
-   (Keep localhost entries so local `npm run dev` still works for you.)
-4. Click **Save**.
+3. Set **Redirect URLs** to include:
+   ```text
+   https://sitetrack-rakesh.vercel.app
+   https://sitetrack-rakesh.vercel.app/**
+   http://localhost:5173
+   http://localhost:5173/**
+   ```
+4. Remove `https://sitetrack-rakesh-rakesh15.vercel.app` if it appears there.
+5. Save.
 
-That's it. Effect is immediate — new emails from this point onward
-will redirect to the production app.
+Effect is immediate for newly generated emails. Existing emails keep their old
+baked URL.
 
-## Re-request the password reset email
+## What To Do When You See The Vercel Access Page
 
-The link in your current email is **already burned** to localhost (URL
-was baked when the email was generated). You need a fresh email:
+1. Do not click "Request Access" in Vercel. That is Vercel deployment
+   protection, not SiteTrack login.
+2. Open the canonical app directly:
+   https://sitetrack-rakesh.vercel.app/login
+3. Request a fresh magic link from there, or use password login.
+4. If the email contains a 6-digit OTP, enter that OTP on the login screen
+   instead of using the broken link.
 
-1. Hard reload (Ctrl+Shift+R) https://sitetrack-rakesh.vercel.app
-2. Sign in tab → enter `boyapatirakesh7989@gmail.com` → click **Forgot
-   password?**
-3. New reset email arrives within ~30 sec (or check spam).
-4. Click the link in THIS new email — it will land you on the
-   production app, not localhost.
+## Verify It Stuck
 
-## Verify it stuck
+Trigger one more auth email and inspect the email link. The `redirect_to=`
+parameter should contain:
 
-```bash
-# From your machine, with the new code deployed:
-curl https://sitetrack-rakesh.vercel.app/
-# Should return the SiteTrack app HTML, status 200.
+```text
+https://sitetrack-rakesh.vercel.app
 ```
 
-Then trigger one more reset email + inspect the URL in the email body.
-The `redirect_to=` query parameter on the link should be
-`https://sitetrack-rakesh.vercel.app`, not `http://localhost:5173`.
+It should not contain:
 
-## Future-proofing — when you add a real domain
+```text
+http://localhost:5173
+https://sitetrack-rakesh-rakesh15.vercel.app
+```
 
-When you eventually own `sitetrack.in` and want to point the app at
-`https://app.sitetrack.in`:
+## Future Domain Change
 
-1. Add the new domain to Vercel (Settings → Domains).
+When `https://app.sitetrack.in` is actually live and owned:
+
+1. Add it to Vercel.
 2. Update Vercel env `VITE_APP_URL=https://app.sitetrack.in`.
-3. Re-run the 2-click Supabase fix above with the new URL in BOTH
-   Site URL + Redirect URLs allow-list.
-4. Keep `sitetrack-rakesh.vercel.app/**` in the allow-list for
-   ~30 days as a fallback while DNS propagates + people update bookmarks.
+3. Update Supabase Site URL and Redirect URLs to include the new domain.
+4. Keep `https://sitetrack-rakesh.vercel.app/**` for a transition window.
 
-## Why not fix this remotely
-
-This config lives in the Supabase Auth service config, which is only
-mutable via:
-- The Dashboard (you, 2 clicks), OR
-- The Supabase Management API with a Personal Access Token.
-
-We don't have a Management API PAT in scope today. If you want this
-automated for future founders, generate one at
-https://supabase.com/dashboard/account/tokens, paste it into
-`.env.local` as `SUPABASE_ACCESS_TOKEN`, and the code-side helper
-can flip the Dashboard config without you opening the UI.
+Until then, `https://sitetrack-rakesh.vercel.app` is the only production app
+URL.

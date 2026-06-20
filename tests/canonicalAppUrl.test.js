@@ -50,6 +50,22 @@ describe("getCanonicalAppUrl()", () => {
     expect(getCanonicalAppUrl()).toBe("http://localhost:5173");
   });
 
+  it("rejects the protected duplicate Vercel host from VITE_APP_URL", () => {
+    import.meta.env.VITE_APP_URL = "https://sitetrack-rakesh-rakesh15.vercel.app";
+    globalThis.window = { location: { origin: "https://sitetrack-rakesh.vercel.app" } };
+    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+  });
+
+  it("rejects the protected duplicate Vercel host from window.location", () => {
+    globalThis.window = { location: { origin: "https://sitetrack-rakesh-rakesh15.vercel.app" } };
+    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+  });
+
+  it("rejects Vercel preview origins for auth email redirects", () => {
+    globalThis.window = { location: { origin: "https://sitetrack-rakesh-git-feature-rakesh15.vercel.app" } };
+    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+  });
+
   it("falls back to window.location.origin when VITE_APP_URL missing", () => {
     globalThis.window = { location: { origin: "https://sitetrack-rakesh.vercel.app" } };
     expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
