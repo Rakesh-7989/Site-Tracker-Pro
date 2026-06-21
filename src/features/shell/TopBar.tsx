@@ -8,7 +8,7 @@ import { Icon, Button, Avatar } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 
-export function TopBar(): JSX.Element {
+export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Element {
   const { session } = useAuth();
   const { orgs, activeOrg, switchOrg } = useOrgSwitcher();
   const t = useT();
@@ -26,6 +26,9 @@ export function TopBar(): JSX.Element {
   return (
     <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-cream-200 bg-white z-20">
       <div className="flex items-center gap-3">
+        <button onClick={onMenuToggle} className="lg:hidden p-1.5 -ml-1 rounded-lg text-ink-600 hover:bg-cream-100 transition" aria-label="Toggle navigation menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div className="w-8 h-8 rounded-lg bg-safety-500 text-white grid place-items-center font-bold text-sm">S</div>
         <span className="font-display font-bold text-ink-900 text-sm tracking-tight">SiteTrack Pro</span>
         <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 bg-safety-50 px-1.5 py-0.5 rounded">v3</span>

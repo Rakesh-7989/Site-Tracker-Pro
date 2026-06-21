@@ -31,7 +31,7 @@ const NAV_KEY: Record<string, string> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 
-export function Sidebar(): JSX.Element {
+export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }): JSX.Element {
   const { session } = useAuth();
   const t = useT();
   const groups = groupNav(buildNav(session));
@@ -50,43 +50,66 @@ export function Sidebar(): JSX.Element {
   }, [isSuper]);
 
   return (
-    <nav className="w-56 shrink-0 border-r border-cream-200 bg-white overflow-y-auto hidden lg:block">
-      <div className="p-3 space-y-5">
-        {groups.map(({ group, items }) => (
-          <div key={group}>
-            {group && (
-              <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">
-                {t(`navGroup.${group}`)}
+    <>
+      {/* Backdrop overlay — visible only on mobile when sidebar is open */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm lg:hidden" onClick={onClose} />
+      )}
+
+      {/* Sidebar: persistent on desktop (lg:), slide-in drawer on mobile */}
+      <nav className={`
+        w-56 shrink-0 border-r border-cream-200 bg-white overflow-y-auto
+        fixed lg:relative z-40 inset-y-0 left-0
+        transform transition-transform duration-200 ease-in-out
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+        lg:translate-x-0 lg:block
+      `}>
+        {/* Close button — mobile only */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-3 py-2 border-b border-cream-200 lg:hidden">
+          <span className="text-xs font-semibold tracking-wider uppercase text-ink-400">Menu</span>
+          <button onClick={onClose} className="p-1 rounded-lg text-ink-500 hover:bg-cream-100 transition" aria-label="Close navigation menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div className="p-3 space-y-5">
+          {groups.map(({ group, items }) => (
+            <div key={group}>
+              {group && (
+                <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">
+                  {t(`navGroup.${group}`)}
+                </div>
+              )}
+              <div className="space-y-0.5">
+                {items.map(item => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/dashboard" || item.to === "/admin"}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
+                        isActive
+                          ? "bg-safety-50 text-safety-700 font-semibold"
+                          : "text-ink-600 hover:bg-cream-100"
+                      }`
+                    }
+                  >
+                    <Icon name={item.icon} size={16} />
+                    <span className="flex-1">{NAV_KEY[item.to] ? t(NAV_KEY[item.to]) : item.label}</span>
+                    {item.to === "/admin/signups" && pending > 0 && (
+                      <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pending}</span>
+                    )}
+                    {item.to === "/notifications" && unread > 0 && (
+                      <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unread}</span>
+                    )}
+                  </NavLink>
+                ))}
               </div>
-            )}
-            <div className="space-y-0.5">
-              {items.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === "/dashboard" || item.to === "/admin"}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
-                      isActive
-                        ? "bg-safety-50 text-safety-700 font-semibold"
-                        : "text-ink-600 hover:bg-cream-100"
-                    }`
-                  }
-                >
-                  <Icon name={item.icon} size={16} />
-                  <span className="flex-1">{NAV_KEY[item.to] ? t(NAV_KEY[item.to]) : item.label}</span>
-                  {item.to === "/admin/signups" && pending > 0 && (
-                    <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pending}</span>
-                  )}
-                  {item.to === "/notifications" && unread > 0 && (
-                    <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unread}</span>
-                  )}
-                </NavLink>
-              ))}
             </div>
-          </div>
-        ))}
-      </div>
-    </nav>
+          ))}
+        </div>
+      </nav>
+    </>
   );
 }

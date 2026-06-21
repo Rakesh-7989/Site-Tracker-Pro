@@ -3,7 +3,7 @@
 // Wraps the authenticated area. Renders the loading / signed-out / error
 // states via RequireSession, then the chrome + <Outlet/> for child routes.
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 
 import { RequireSession, useAuth } from "@/auth";
@@ -42,6 +42,7 @@ export function ShellLayout(): JSX.Element {
  */
 function GatedShell(): JSX.Element {
   const { session } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
   if (session && session.user.profileCompleted === false) {
     return <Navigate to="/profile/complete" replace />;
   }
@@ -50,9 +51,9 @@ function GatedShell(): JSX.Element {
          main content each scroll on their own (min-h-0 lets the flex children
          actually shrink so their overflow-y-auto kicks in). */
       <div className="h-screen flex flex-col bg-cream-50 overflow-hidden">
-        <TopBar />
+        <TopBar onMenuToggle={() => setMobileOpen(v => !v)} />
         <div className="flex-1 flex min-h-0 overflow-hidden">
-          <Sidebar />
+          <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
           <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">
             <Suspense fallback={<div className="grid place-items-center py-20 text-safety-500"><Spinner size={24} /></div>}>
               <Outlet />
