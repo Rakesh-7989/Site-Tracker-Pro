@@ -47,6 +47,45 @@ export async function createPlatformOrg(client: any, input: CreatePlatformOrgInp
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
+/** Result from the create_org_with_admin Edge Function. */
+export interface CreateOrgWithAdminResult {
+  org: { id: string; name: string; slug: string; plan: string; createdAt: string };
+  user: { id: string; email: string };
+  tempPassword: string;
+  emailSent: boolean;
+  userAlreadyExisted: boolean;
+}
+
+/** Input for create_org_with_admin EF. */
+export interface CreateOrgWithAdminInput {
+  orgName: string;
+  adminEmail: string;
+  adminPhone: string;
+  plan: AssignablePlan;
+  adminName?: string;
+}
+
+/**
+ * Owner creates a new org with an admin via Edge Function.
+ * Generates temp password, creates auth user, org, profile, org_member,
+ * and sends a welcome email with credentials.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createOrgWithAdmin(client: any, input: CreateOrgWithAdminInput): Promise<PResult<CreateOrgWithAdminResult>> {
+  try {
+    const { data, error } = await client.functions.invoke("create_org_with_admin", { body: input });
+    if (error) {
+      let msg = error.message ?? "Could not create organization.";
+      try { const b = await error.context?.json?.(); if (b?.message) msg = b.message; } catch { /* ignore */ }
+      return { ok: false, error: msg };
+    }
+    if (data && data.ok === false) return { ok: false, error: String(data.message ?? data.error ?? "Create failed.") };
+    return { ok: true, data: data as CreateOrgWithAdminResult };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /** Superadmin-only: change an org's plan (incl. granting Enterprise). RPC set_org_plan (migration 95). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function setOrgPlan(client: any, orgId: string, plan: string): Promise<PResult<{ org: string; from: string; to: string }>> {

@@ -52,12 +52,15 @@ export async function listOrgMembers(client: any, orgId: string): Promise<MResul
  * invite_org_member Edge Function (server-side, service role): creates the
  * auth user + sends a set-password email + adds them to the org. For EXISTING
  * accounts use lookupUserForInvite + addOrgMember instead.
+ *
+ * When sendCredentials is true (default), the EF generates a temp password
+ * and sends a branded email with credentials + role info.
  */
 export async function inviteNewOrgMember(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
-  input: { orgId: string; email: string; orgRole: OrgTierRole; name?: string },
-): Promise<MResult<{ invited: true }>> {
+  input: { orgId: string; email: string; orgRole: OrgTierRole; name?: string; sendCredentials?: boolean },
+): Promise<MResult<{ invited: true; tempPassword?: string; emailSent?: boolean }>> {
   try {
     const { data, error } = await client.functions.invoke("invite_org_member", { body: input });
     if (error) {
@@ -66,7 +69,7 @@ export async function inviteNewOrgMember(
       return { ok: false, error: msg };
     }
     if (data && data.ok === false) return { ok: false, error: String(data.message ?? data.error ?? "Invite failed.") };
-    return { ok: true, data: { invited: true } };
+    return { ok: true, data: { invited: true, tempPassword: data.tempPassword, emailSent: data.emailSent } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }

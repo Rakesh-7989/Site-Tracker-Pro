@@ -2,14 +2,13 @@
 //
 // Org admin enters an email that has no SiteTrack account yet. This function:
 //   1. verifies the caller is an admin of the target org (or superadmin)
-//   2. invites the email via Supabase Auth (creates the auth user + sends a
-//      set-password email through the project SMTP — Resend, free tier)
-//      WITHOUT firm_name, so the migration-34 trigger creates a profile-only
-//      row (role='client'), NOT a new org
-//   3. adds the new user to the org at the chosen tier (org_members)
+//   2. creates the auth user (with temp password if sendCredentials=true)
+//   3. ensures a profile row exists
+//   4. adds the new user to the org at the chosen tier (org_members)
+//   5. sends a branded email with credentials + role info (if sendCredentials=true)
 //
 // Existing accounts are handled by the in-app "Find" flow (lookup_user_for_
-// invite RPC) — this EF is only for new emails. Zero new spend.
+// invite RPC) — this EF is only for new emails.
 //
 // Deploy: `node scripts/deploy-edge-functions.mjs` (needs `supabase login`).
 
@@ -30,6 +29,78 @@ const json = (data: unknown, status: number): Response =>
 
 const ORG_TIER_ROLES = ["admin", "pm", "architect", "contractor", "client", "vendor"];
 
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Admin", pm: "Project Manager", architect: "Architect",
+  contractor: "Contractor", client: "Client", vendor: "Vendor",
+};
+
+const esc = (s: string): string => s.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] || c));
+
+function generateTempPassword(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const all = upper + lower + digits;
+  let pw = "";
+  pw += upper[crypto.getRandomValues(new Uint8Array(1))[0] % upper.length];
+  pw += lower[crypto.getRandomValues(new Uint8Array(1))[0] % lower.length];
+  pw += digits[crypto.getRandomValues(new Uint8Array(1))[0] % digits.length];
+  for (let i = 0; i < 9; i++) {
+    pw += all[crypto.getRandomValues(new Uint8Array(1))[0] % all.length];
+  }
+  return pw.split("").sort(() => crypto.getRandomValues(new Uint8Array(1))[0] - 128).join("");
+}
+
+async function sendRoleWelcomeEmail(
+  to: string,
+  orgName: string,
+  role: string,
+  tempPassword: string,
+  loginUrl: string,
+): Promise<boolean> {
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) return false;
+
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const roleLabel = ROLE_LABEL[role] || role;
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="width:48px;height:48px;border-radius:12px;background:#ea580c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">S</div>
+      </div>
+      <h2 style="color:#1c1917;text-align:center">You've been added to SiteTrack Pro</h2>
+      <p style="color:#57534e">Hi there,</p>
+      <p style="color:#57534e">You have been added to <b>${esc(orgName)}</b> as <b>${esc(roleLabel)}</b>.</p>
+      <p style="color:#57534e">Use the credentials below to sign in:</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#fafaf9;border-radius:8px;font-size:14px">
+        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Organization</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(orgName)}</td></tr>
+        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Role</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(roleLabel)}</td></tr>
+        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Email</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(to)}</td></tr>
+        <tr><td style="padding:10px 16px;color:#78716c">Temporary password</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;font-family:monospace;letter-spacing:1px">${esc(tempPassword)}</td></tr>
+      </table>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13px;color:#991b1b">
+        <strong>Important:</strong> Please change your password after first login.
+      </div>
+      <p style="text-align:center;margin:28px 0">
+        <a href="${esc(loginUrl)}" style="background:#ea580c;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">
+          Sign in to SiteTrack Pro
+        </a>
+      </p>
+      <p style="color:#78716c;font-size:13px;text-align:center">- Team SiteTrack Pro</p>
+    </div>`;
+
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ from, to, subject: `You've been added to ${orgName} on SiteTrack Pro`, html }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "method-not-allowed" }, 405);
@@ -41,6 +112,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const email = String(body.email ?? "").trim().toLowerCase();
   const orgRole = String(body.orgRole ?? "architect");
   const name = body.name ? String(body.name) : undefined;
+  const sendCredentials = body.sendCredentials !== false;
 
   if (!orgId || !email || !email.includes("@")) return json({ ok: false, error: "missing-fields" }, 400);
   if (!ORG_TIER_ROLES.includes(orgRole)) return json({ ok: false, error: "bad-role" }, 400);
@@ -58,28 +130,65 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
   const siteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app";
+  const loginUrl = `${siteUrl}/login`;
 
-  // ── 1. Invite (creates auth user + profile via the mig-34 trigger) ──
-  // No firm_name → trigger takes the invited-member path (profile only).
-  const { data: inv, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: name ? { name } : {},
-    redirectTo: `${siteUrl}/?shell=v3`,
-  });
+  // ── 1. Create auth user (with temp password or invite) ──
+  let newUserId: string | null = null;
+  let tempPassword: string | undefined;
+  let emailSent = false;
 
-  if (invErr || !inv?.user) {
-    const msg = (invErr?.message || "").toLowerCase();
-    if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
-      return json({ ok: false, error: "already-exists", message: "This email already has an account — use Find to add them." }, 409);
+  if (sendCredentials) {
+    tempPassword = generateTempPassword();
+    const { data: createData, error: createErr } = await admin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: name ? { name } : {},
+    });
+
+    if (createErr) {
+      const msg = (createErr.message || "").toLowerCase();
+      if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+        return json({ ok: false, error: "already-exists", message: "This email already has an account — use Find to add them." }, 409);
+      }
+      if (msg.includes("invalid") && msg.includes("email")) {
+        return json({ ok: false, error: "invalid-email", message: "That email address looks invalid — please check it." }, 400);
+      }
+      return json({ ok: false, error: "create-failed", message: "Could not create the user.", detail: createErr.message }, 502);
     }
-    if (msg.includes("invalid") && msg.includes("email")) {
-      return json({ ok: false, error: "invalid-email", message: "That email address looks invalid — please check it." }, 400);
+
+    newUserId = createData?.user?.id || null;
+  } else {
+    const { data: inv, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
+      data: name ? { name } : {},
+      redirectTo: `${siteUrl}/?shell=v3`,
+    });
+
+    if (invErr || !inv?.user) {
+      const msg = (invErr?.message || "").toLowerCase();
+      if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+        return json({ ok: false, error: "already-exists", message: "This email already has an account — use Find to add them." }, 409);
+      }
+      if (msg.includes("invalid") && msg.includes("email")) {
+        return json({ ok: false, error: "invalid-email", message: "That email address looks invalid — please check it." }, 400);
+      }
+      return json({ ok: false, error: "invite-failed", message: "Could not send the invite. Try again, or check the email.", detail: invErr?.message }, 502);
     }
-    return json({ ok: false, error: "invite-failed", message: "Could not send the invite. Try again, or check the email.", detail: invErr?.message }, 502);
+
+    newUserId = inv.user.id;
   }
 
-  const newUserId = inv.user.id;
+  if (!newUserId) return json({ ok: false, error: "user-id-missing" }, 502);
 
-  // ── 2. Add them to the org at the chosen tier ──
+  // ── 2. Ensure profile row ──
+  const { error: profileErr } = await admin
+    .from("profiles")
+    .upsert({ id: newUserId, name: name || email.split("@")[0] || "Member", role: "client" }, { onConflict: "id", ignoreDuplicates: true });
+  if (profileErr) {
+    return json({ ok: false, error: "profile-upsert-failed", detail: profileErr.message }, 500);
+  }
+
+  // ── 3. Add them to the org at the chosen tier ──
   const { error: omErr } = await admin
     .from("org_members")
     .upsert({ org_id: orgId, profile_id: newUserId, role: orgRole, removed_at: null }, { onConflict: "org_id,profile_id" });
@@ -87,5 +196,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, error: "org-member-insert-failed", detail: omErr.message }, 500);
   }
 
-  return json({ ok: true, invited: true, userId: newUserId, email }, 200);
+  // ── 4. Send branded email with credentials + role info ──
+  if (sendCredentials && tempPassword) {
+    const { data: orgRow, error: orgNameErr } = await admin
+      .from("organizations")
+      .select("name")
+      .eq("id", orgId)
+      .maybeSingle();
+    const orgName = orgRow?.name || "SiteTrack";
+    emailSent = await sendRoleWelcomeEmail(email, orgName, orgRole, tempPassword, loginUrl);
+  }
+
+  return json({
+    ok: true,
+    invited: true,
+    userId: newUserId,
+    email,
+    ...(sendCredentials && tempPassword ? { tempPassword, emailSent } : { invitedViaEmail: true }),
+  }, 200);
 });

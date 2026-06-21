@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { FormField, Input, Select } from "@/components/ui/forms";
-import { createPlatformOrg, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, type AssignablePlan, type PlatformOrg } from "@/app/platformAdminQueries";
+import { createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, type AssignablePlan, type PlatformOrg } from "@/app/platformAdminQueries";
 import { deleteOrganization } from "@/app/orgAdminQueries";
 import { Pager } from "@/components/ui/Pager";
 
@@ -36,8 +36,12 @@ function Inner(): JSX.Element {
   const [planBusyId, setPlanBusyId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newOrgName, setNewOrgName] = useState("");
-  const [newOrgPlan, setNewOrgPlan] = useState<AssignablePlan>("basic");
+  const [createOrgName, setCreateOrgName] = useState("");
+  const [createAdminEmail, setCreateAdminEmail] = useState("");
+  const [createAdminPhone, setCreateAdminPhone] = useState("");
+  const [createAdminName, setCreateAdminName] = useState("");
+  const [createPlan, setCreatePlan] = useState<AssignablePlan>("basic");
+  const [createResult, setCreateResult] = useState<{ tempPassword: string; emailSent: boolean; email: string; userAlreadyExisted: boolean } | null>(null);
 
   // Debounce the search box → server-side query, reset to first page.
   useEffect(() => { const t = setTimeout(() => { setSearch(q.trim()); setPage(0); }, 350); return () => clearTimeout(t); }, [q]);
@@ -78,21 +82,40 @@ function Inner(): JSX.Element {
   }, []);
 
   const onCreateOrg = useCallback(async () => {
-    const name = newOrgName.trim();
+    const name = createOrgName.trim();
+    const email = createAdminEmail.trim().toLowerCase();
+    const phone = createAdminPhone.trim();
     if (!name) { setError("Organization name is required."); return; }
-    setCreating(true); setError(null); setNotice(null);
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Valid admin email is required."); return; }
+    if (!phone || !/^[\d\s+\-()]{7,20}$/.test(phone)) { setError("Valid admin phone number is required."); return; }
+    setCreating(true); setError(null); setNotice(null); setCreateResult(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setCreating(false); return; }
-    const res = await createPlatformOrg(client, { name, plan: newOrgPlan });
+    const res = await createOrgWithAdmin(client, {
+      orgName: name,
+      adminEmail: email,
+      adminPhone: phone,
+      plan: createPlan,
+      adminName: createAdminName.trim() || undefined,
+    });
     setCreating(false);
     if (res.ok) {
-      setNotice(`Created ${res.data.name} on ${PLAN_LABEL[res.data.plan] ?? res.data.plan}.`);
-      setNewOrgName("");
-      setNewOrgPlan("basic");
-      setShowCreate(false);
-      if (page === 0 && !search) setRows(prev => [res.data, ...prev].slice(0, ADMIN_PAGE_SIZE));
+      setCreateResult({
+        tempPassword: res.data.tempPassword,
+        emailSent: res.data.emailSent,
+        email: res.data.user.email,
+        userAlreadyExisted: res.data.userAlreadyExisted,
+      });
+      setNotice(
+        `Created "${res.data.org.name}" on ${PLAN_LABEL[res.data.org.plan] ?? res.data.org.plan}. ` +
+        (res.data.emailSent ? "Welcome email sent." : res.data.userAlreadyExisted ? "User already existed (password unchanged)." : "Email not sent — check RESEND_API_KEY.")
+      );
+      if (page === 0 && !search) setRows(prev => [{
+        id: res.data.org.id, name: res.data.org.name, slug: res.data.org.slug,
+        plan: res.data.org.plan, memberCount: 0, projectCount: 0, createdAt: res.data.org.createdAt,
+      }, ...prev].slice(0, ADMIN_PAGE_SIZE));
       else { setPage(0); setSearch(""); setQ(""); void reload(); }
     } else setError(res.error);
-  }, [newOrgName, newOrgPlan, page, reload, search]);
+  }, [createOrgName, createAdminEmail, createAdminPhone, createAdminName, createPlan, page, reload, search]);
 
   const hasNext = rows.length === ADMIN_PAGE_SIZE;
 
@@ -112,33 +135,53 @@ function Inner(): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {notice && <Alert variant="success">{notice}</Alert>}
       {showCreate && (
-        <Card className="p-4">
-          <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
-            <FormField label="Organization name" htmlFor="platform-new-org-name">
-              <Input
-                id="platform-new-org-name"
-                value={newOrgName}
-                onChange={e => setNewOrgName(e.target.value)}
-                placeholder="e.g. G Architects"
-                disabled={creating}
-              />
-            </FormField>
-            <FormField label="Plan" htmlFor="platform-new-org-plan">
-              <Select
-                id="platform-new-org-plan"
-                value={newOrgPlan}
-                onChange={e => setNewOrgPlan(e.target.value as AssignablePlan)}
-                options={PLAN_OPTIONS}
-                disabled={creating}
-              />
-            </FormField>
-            <div className="flex gap-2">
-              <Button size="md" onClick={() => void onCreateOrg()} disabled={creating || !newOrgName.trim()}>
-                {creating ? <Spinner size={14} /> : "Create"}
+        <Card className="p-4 space-y-4">
+          {createResult ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg text-sm font-semibold">
+                <Icon name="check" size={16} /> Organization created successfully
+              </div>
+              <div className="text-sm bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1.5">
+                <p className="font-semibold text-amber-900">Admin login credentials</p>
+                <p className="text-amber-800">Email: <span className="font-mono font-bold">{createResult.email}</span></p>
+                <p className="text-amber-800">Temporary password: <span className="font-mono font-bold text-base bg-amber-100 px-2 py-0.5 rounded select-all">{createResult.tempPassword}</span></p>
+                <p className="text-[11px] text-amber-600 mt-1">Save this password — it will only be shown once.</p>
+              </div>
+              <p className="text-xs text-ink-500">
+                {createResult.emailSent ? "Welcome email sent with credentials." : createResult.userAlreadyExisted ? "User already existed (original password unchanged)." : "Email not sent — configure RESEND_API_KEY."}
+              </p>
+              <Button size="sm" onClick={() => { setShowCreate(false); setCreateResult(null); setCreateOrgName(""); setCreateAdminEmail(""); setCreateAdminPhone(""); setCreateAdminName(""); }}>
+                Done
               </Button>
-              <Button size="md" variant="ghost" onClick={() => setShowCreate(false)} disabled={creating}>Cancel</Button>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-ink-700">Create a new organization with admin user</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FormField label="Organization name *" htmlFor="create-org-name">
+                  <Input id="create-org-name" value={createOrgName} onChange={e => setCreateOrgName(e.target.value)} placeholder="e.g. G Architects" disabled={creating} />
+                </FormField>
+                <FormField label="Plan *" htmlFor="create-org-plan">
+                  <Select id="create-org-plan" value={createPlan} onChange={e => setCreatePlan(e.target.value as AssignablePlan)} options={PLAN_OPTIONS} disabled={creating} />
+                </FormField>
+                <FormField label="Admin email *" htmlFor="create-admin-email">
+                  <Input id="create-admin-email" type="email" value={createAdminEmail} onChange={e => setCreateAdminEmail(e.target.value)} placeholder="admin@example.com" disabled={creating} />
+                </FormField>
+                <FormField label="Admin phone *" htmlFor="create-admin-phone">
+                  <Input id="create-admin-phone" value={createAdminPhone} onChange={e => setCreateAdminPhone(e.target.value)} placeholder="+91 98765 43210" disabled={creating} />
+                </FormField>
+                <FormField label="Admin name (optional)" htmlFor="create-admin-name">
+                  <Input id="create-admin-name" value={createAdminName} onChange={e => setCreateAdminName(e.target.value)} placeholder="e.g. Rakesh" disabled={creating} />
+                </FormField>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button size="md" onClick={() => void onCreateOrg()} disabled={creating || !createOrgName.trim() || !createAdminEmail.trim() || !createAdminPhone.trim()}>
+                  {creating ? <Spinner size={14} /> : "Create organization & admin"}
+                </Button>
+                <Button size="md" variant="ghost" onClick={() => setShowCreate(false)} disabled={creating}>Cancel</Button>
+              </div>
+            </div>
+          )}
         </Card>
       )}
       <Input placeholder="Search by name or slug…" value={q} onChange={e => setQ(e.target.value)} />
