@@ -49,6 +49,8 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "vendor:manage", "vendor:select",      // Org admins curate the vendor directory + pick vendors anywhere.
     "compliance:view", "ledger:view", "budget:view",
     "changeorder:approve", "po:approve", "invoice:approve", "rabill:approve", "expense:approve",
+    "material:price:view", "material:delete",  // Full material oversight.
+    "update:delete",                          // Remove inappropriate site updates.
     "export:pdf", "export:csv",
   ),
   promoter: arr(
@@ -59,11 +61,14 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "handover:view", "handover:sign",
     "export:pdf", "export:csv",
   ),
+  // Separation of Duties: Project Admin creates invoices/RA bills but
+  // does NOT approve them — orgadmin or higher approves. PO: approve only
+  // (PM creates, Project Admin approves).
   project_admin: arr(
     "activity:view", "audit:read",
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
-    "invoice:create", "invoice:approve",
-    "rabill:create", "rabill:approve",
+    "invoice:create",
+    "rabill:create",
     "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Pick vendors when creating invoices / RA bills.
@@ -71,26 +76,33 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
   ),
   prospector: arr(
     // Sales / BD — reads only the prospects they own.
+    // Gains export for sharing prospect proposals with clients.
     "activity:view",
     "project:create",                 // Can create draft projects for prospects
     "vendor:manage", "vendor:select", // Curates + picks vendor leads during prospecting.
+    "export:pdf", "export:csv",
   ),
   // pm absorbs the former project_head role (founder consolidation
-  // 2026-06-04): gains rabill:approve + export:csv on top of its own set.
+  // 2026-06-04): gains export:csv on top of its own set.
+  // Separation of Duties: PM can CREATE financial docs but must NOT approve
+  // their own requests — approval requires a different role (orgadmin or
+  // project_admin). This prevents fraud (same person creating + approving POs,
+  // change orders, RA bills, or expenses).
   pm: arr(
     "activity:view",
     "project:create", "project:settings:edit",
     "progress:edit",
     "milestone:add", "milestone:edit", "milestone:delete",
-    "update:add", "update:edit",
+    "update:add", "update:edit", "update:delete",
     "issue:add", "issue:resolve",
     "team:manage", "attendance:view", "attendance:mark",
-    "material:add", "material:edit",
+    "material:add", "material:edit", "material:delete",
+    "material:price:view",
     "po:create", "vendor:select",   // PMs raise POs and pick vendors in the form.
     "rfi:respond", "rfi:close",
-    "changeorder:create", "changeorder:approve",
-    "expense:add", "expense:approve",
-    "rabill:create", "rabill:approve",
+    "changeorder:create",
+    "expense:add",
+    "rabill:create",
     "budget:view", "ledger:view",
     "dpr:view", "dpr:approve",
     "drawings:upload",
@@ -107,7 +119,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "issue:add",
     "boq:edit", "estimate:edit",
     "update:add",
-    "export:pdf",
+    "export:pdf", "export:csv",
   ),
   senior_architect: arr(
     "activity:view",
@@ -117,8 +129,8 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "issue:add", "issue:resolve",
     "boq:edit", "estimate:edit",
     "team:manage",
-    "update:add", "update:edit",
-    "export:pdf",
+    "update:add", "update:edit", "update:delete",
+    "export:pdf", "export:csv",
   ),
   junior_architect: arr(
     "activity:view",
@@ -257,7 +269,7 @@ const ORG_TIER_CAPS: Record<OrgTierRole, Capability[]> = {
     // Full org control. Maps to orgadmin identity + a bit more.
     "org:members:manage", "org:billing:manage", "org:integrations:manage",
     "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
-    "org:branding:manage", "org:features:configure",
+    "org:branding:manage", "org:features:configure", "notification:configure",
     "vendor:manage", "vendor:select",      // Org admins manage the directory + pick vendors.
     "project:create", "project:archive", "project:restore", "project:settings:edit",
     "team:manage",
@@ -400,21 +412,22 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "rera:file",
   ),
   // pm absorbs the former project_head role (founder consolidation
-  // 2026-06-04): gains project:settings:edit, rabill:approve, budget:view,
+  // 2026-06-04): gains project:settings:edit, budget:view,
   // ledger:view, export:csv on top of its own project-tier set.
+  // Separation of Duties: PM creates but does NOT approve financial docs.
   pm: arr(
     "project:settings:edit",
     "progress:edit",
     "milestone:add", "milestone:edit", "milestone:delete",
-    "update:add", "update:edit",
+    "update:add", "update:edit", "update:delete",
     "issue:add", "issue:resolve",
     "team:manage", "attendance:view", "attendance:mark",
     "material:add", "material:edit",
     "po:create", "vendor:select",   // PMs raise POs and pick vendors in the form.
     "rfi:respond", "rfi:close",
-    "changeorder:create", "changeorder:approve",
-    "expense:add", "expense:approve",
-    "rabill:create", "rabill:approve",
+    "changeorder:create",
+    "expense:add",
+    "rabill:create",
     "budget:view", "ledger:view",
     "dpr:view", "dpr:approve",
     "drawings:upload",
@@ -423,8 +436,8 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
   ),
   project_admin: arr(
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
-    "invoice:create", "invoice:approve",
-    "rabill:create", "rabill:approve",
+    "invoice:create",
+    "rabill:create",
     "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Picks vendors when creating invoices / RA bills.

@@ -30,10 +30,12 @@ describe("Identity-tier coverage", () => {
     expect(caps.length).toBeGreaterThan(50);   // sanity: matrix grew past 50
   });
 
-  it("prospector cannot resolve issues / edit progress (sales-only)", () => {
+  it("prospector cannot resolve issues / edit progress (sales-only); has export", () => {
     const caps = identityCapabilities("prospector");
     expect(caps).not.toContain("issue:resolve" as never);
     expect(caps).not.toContain("progress:edit" as never);
+    expect(caps).toContain("export:pdf" as never);
+    expect(caps).toContain("export:csv" as never);
   });
 
   it("client is read-mostly (no progress edit, no issue resolve)", () => {
@@ -77,11 +79,13 @@ describe("Identity-tier coverage", () => {
     expect(caps).not.toContain("expense:approve" as never);
   });
 
-  it("project_admin can approve RA bills, invoices and POs without change-order authority", () => {
+  it("project_admin can approve POs but not self-approved invoices/RA bills (SoD)", () => {
     const caps = identityCapabilities("project_admin");
-    expect(caps).toContain("rabill:approve" as never);
-    expect(caps).toContain("invoice:approve" as never);
     expect(caps).toContain("po:approve" as never);
+    expect(caps).toContain("invoice:create" as never);
+    expect(caps).not.toContain("invoice:approve" as never); // SoD: create != approve
+    expect(caps).toContain("rabill:create" as never);
+    expect(caps).not.toContain("rabill:approve" as never);  // SoD: create != approve
     expect(caps).not.toContain("changeorder:approve" as never);
   });
 });
@@ -101,6 +105,7 @@ describe("Org-tier coverage", () => {
     expect(caps).toContain("po:approve" as never);
     expect(caps).toContain("invoice:approve" as never);
     expect(caps).toContain("rabill:approve" as never);
+    expect(caps).toContain("notification:configure" as never);
   });
   it("client tier is intentionally minimal", () => {
     const caps = orgTierCapabilities("client");

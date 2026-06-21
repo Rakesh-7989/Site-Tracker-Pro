@@ -56,18 +56,18 @@ describe("visibleTabs — capability gating", () => {
     expect(ids).not.toContain("rabills");
   });
 
-  it("pm sees finance + milestones + approvals", () => {
+  it("pm sees finance + milestones but not approvals (SoD — no self-approval)", () => {
     const caps = capsFor(baseSession("pm"));
     const ids = visibleTabs(caps, "construction").map(t => t.id);
     expect(ids).toContain("milestones");
     expect(ids).toContain("budget");
-    expect(ids).toContain("approvals");
+    expect(ids).not.toContain("approvals");
   });
 
-  it("project_admin sees approvals via RA/PO approval even without change-order approval", () => {
+  it("project_admin sees approvals via PO approval even without change-order / RA approval (SoD)", () => {
     const caps = capsFor(baseSession("project_admin"));
     expect(caps.has("changeorder:approve")).toBe(false);
-    expect(caps.has("rabill:approve")).toBe(true);
+    expect(caps.has("rabill:approve")).toBe(false);
     expect(caps.has("po:approve")).toBe(true);
     const ids = visibleTabs(caps, "construction").map(t => t.id);
     expect(ids).toContain("approvals");
@@ -130,7 +130,8 @@ describe("visibleTabs — plan gating", () => {
     const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
     expect(ids).toContain("budget");
     expect(ids).toContain("rabills");
-    expect(ids).toContain("approvals");
+    // PM does NOT see approvals (SoD — no *:approve cap)
+    expect(ids).not.toContain("approvals");
   });
 
   it("no plan predicate = role-only gating (backward compatible)", () => {
