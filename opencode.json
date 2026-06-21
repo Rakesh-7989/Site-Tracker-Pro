@@ -1,0 +1,66 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "ollama/deepseek-coder:latest",
+  "instructions": ["docs/AGENTS.md", "docs/WORKFLOW.md", ".agents/sitetrack-pro/README.md"],
+  "agent": {
+    "team-lead": {
+      "description": "Coordinate the SiteTrack Pro AI team. Break requests into work items, assign specialist agents, track status.",
+      "mode": "subagent"
+    },
+    "product-manager": {
+      "description": "Shape SiteTrack Pro roadmap. Write user stories, acceptance criteria, priority, competitor gap summaries.",
+      "mode": "subagent"
+    },
+    "construction-analyst": {
+      "description": "Validate construction workflows: drawings, RFI, BOQ, permits, RA bills, field logs, handover.",
+      "mode": "subagent"
+    },
+    "ux-designer": {
+      "description": "Design mobile-first flows for site teams. Role-wise screens, Telugu/Hindi/English labels, accessibility.",
+      "mode": "subagent"
+    },
+    "frontend-engineer": {
+      "description": "Implement React/Vite UI changes, dashboards, forms, uploads, PWA-facing flows.",
+      "mode": "subagent"
+    },
+    "backend-engineer": {
+      "description": "Design API, database schema, auth, roles, storage, notifications, audit-log architecture.",
+      "mode": "subagent"
+    },
+    "qa-test": {
+      "description": "Find bugs and regressions. Role-based test matrix, upload/browser/mobile checks, bug reports.",
+      "mode": "subagent"
+    },
+    "security-permissions": {
+      "description": "Protect role boundaries, file visibility, client data. Review Architect/PM/Contractor/Client access.",
+      "mode": "subagent"
+    },
+    "devops-release": {
+      "description": "Prepare build, CI/CD, deployment, environment setup, monitoring, rollback steps.",
+      "mode": "subagent"
+    },
+    "documentation": {
+      "description": "Keep docs accurate: feature docs, workflow docs, agent handoffs, release notes, decision log.",
+      "mode": "subagent"
+    },
+    "data-ai-insights": {
+      "description": "Draft AI-style project health insights, risk scoring, delay signals, cost summaries.",
+      "mode": "subagent"
+    },
+    "sprint-coach": {
+      "description": "Guide founder through field work: interviews, outreach, meetings, pilot pursuit, Telugu phrases.",
+      "mode": "subagent"
+    }
+  },
+  "command": {
+    "handoff": {
+      "description": "Create an agent handoff using the SiteTrack template. Usage: /handoff <work-item> <assigned-agent> <summary>"
+    },
+    "board": {
+      "description": "Show current work board status from .agents/sitetrack-pro/work-board.md"
+    },
+    "sprint": {
+      "description": "Start a sprint coaching session with the sprint-coach agent"
+    }
+  }
+}
