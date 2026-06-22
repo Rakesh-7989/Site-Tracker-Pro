@@ -3,10 +3,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan } from "@/auth";
-import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied, type IconName } from "@/components/ui/atoms";
 import { FormField, Input, Select } from "@/components/ui/forms";
-import { createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, type AssignablePlan, type PlatformOrg } from "@/app/platformAdminQueries";
-import { deleteOrganization } from "@/app/orgAdminQueries";
+import { createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, adminDeleteOrg, adminSetSubscriptionStatus, getOrgSubscription, type AssignablePlan, type PlatformOrg, type OrgSubscriptionInfo } from "@/app/platformAdminQueries";
 import { Pager } from "@/components/ui/Pager";
 
 const PLAN_OPTIONS = ASSIGNABLE_PLANS.map(p => ({ value: p, label: PLAN_LABEL[p] ?? p }));
@@ -14,6 +13,9 @@ const PLAN_OPTIONS = ASSIGNABLE_PLANS.map(p => ({ value: p, label: PLAN_LABEL[p]
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 const planTone = (p: string): "neutral" | "info" | "success" | "warning" => (p === "business" ? "success" : p === "pro" ? "info" : (p === "custom" || p === "enterprise") ? "warning" : "neutral");
+const subTone = (s: string | null | undefined): "neutral" | "success" | "warning" | "danger" | "info" => (
+  s === "active" ? "success" : s === "trial" ? "info" : s === "paused" ? "warning" : s === "past_due" ? "danger" : s === "cancelled" ? "danger" : "neutral"
+);
 const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
 
 export function PlatformOrgsView(): JSX.Element {
@@ -32,8 +34,14 @@ function Inner(): JSX.Element {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");   // debounced, server-side
   const [page, setPage] = useState(0);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [planBusyId, setPlanBusyId] = useState<string | null>(null);
+  const [manageOrg, setManageOrg] = useState<PlatformOrg | null>(null);
+  const [manageSub, setManageSub] = useState<OrgSubscriptionInfo | null>(null);
+  const [manageSubLoading, setManageSubLoading] = useState(false);
+  const [manageAction, setManageAction] = useState<string | null>(null);
+  const [manageReason, setManageReason] = useState("");
+  const [manageBusy, setManageBusy] = useState(false);
+  const [manageResult, setManageResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createOrgName, setCreateOrgName] = useState("");
@@ -55,18 +63,51 @@ function Inner(): JSX.Element {
   }, [page, search]);
   useEffect(() => { void reload(); }, [reload]);
 
-  const onDelete = useCallback(async (o: PlatformOrg) => {
-    // Two-step confirm: must retype the org name. DPDP erasure — irreversible.
-    const typed = window.prompt(`Permanently delete "${o.name}" and ALL its data?\n\nThis cannot be undone. Type the org name to confirm:`);
-    if (typed == null) return; // cancelled
-    if (typed.trim() !== o.name) { window.alert("Name did not match — deletion cancelled."); return; }
-    setDeletingId(o.id); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setDeletingId(null); return; }
-    const res = await deleteOrganization(client, o.id);
-    setDeletingId(null);
-    if (res.ok) { setRows(prev => prev.filter(r => r.id !== o.id)); }
-    else setError(res.error);
+  const onOpenManage = useCallback(async (o: PlatformOrg) => {
+    setManageOrg(o); setManageAction(null); setManageReason(""); setManageResult(null); setManageBusy(false);
+    setManageSubLoading(true); setManageSub(null);
+    const client = await getClient();
+    if (client) {
+      const res = await getOrgSubscription(client, o.id);
+      if (res.ok) setManageSub(res.data);
+    }
+    setManageSubLoading(false);
   }, []);
+
+  const onCloseManage = useCallback(() => {
+    setManageOrg(null); setManageSub(null); setManageAction(null); setManageReason(""); setManageResult(null); setManageBusy(false);
+  }, []);
+
+  const onConfirmManage = useCallback(async () => {
+    if (!manageOrg || !manageAction) return;
+    const reason = manageReason.trim() || "no reason given";
+    setManageBusy(true); setManageResult(null);
+    const client = await getClient();
+    if (!client) { setManageResult({ ok: false, message: "Backend not configured." }); setManageBusy(false); return; }
+
+    if (manageAction === "delete") {
+      const res = await adminDeleteOrg(client, manageOrg.id, reason);
+      if (res.ok) {
+        setRows(prev => prev.filter(r => r.id !== manageOrg.id));
+        setManageResult({ ok: true, message: `"${res.data.deleted}" deleted permanently.` });
+      } else {
+        setManageResult({ ok: false, message: res.error });
+      }
+    } else {
+      const statusMap: Record<string, string> = {
+        pause: "paused", cancel: "cancelled", hold: "past_due", reactivate: "active",
+      };
+      const targetStatus = statusMap[manageAction] || manageAction;
+      const res = await adminSetSubscriptionStatus(client, manageOrg.id, targetStatus, reason);
+      if (res.ok) {
+        setManageSub(prev => prev ? { ...prev, status: targetStatus } : { status: targetStatus, plan: null, provider: null, currentPeriodEnd: null, trialEndsAt: null });
+        setManageResult({ ok: true, message: `Subscription for "${res.data.org}" changed: ${res.data.from ?? "(none)"} → ${res.data.to}.` });
+      } else {
+        setManageResult({ ok: false, message: res.error });
+      }
+    }
+    setManageBusy(false);
+  }, [manageOrg, manageAction, manageReason]);
 
   const onChangePlan = useCallback(async (o: PlatformOrg, plan: string) => {
     if (plan === o.plan) return;
@@ -205,15 +246,107 @@ function Inner(): JSX.Element {
                     ? <div className="grid place-items-center h-9"><Spinner size={16} /></div>
                     : <Select aria-label="Change plan" options={PLAN_OPTIONS} value={o.plan} onChange={e => void onChangePlan(o, e.target.value)} />}
                 </div>
-                <Button size="sm" variant="ghost" disabled={deletingId === o.id} onClick={() => void onDelete(o)}
-                  className="!text-rose-600 hover:!bg-rose-50" title="Delete organization">
-                  {deletingId === o.id ? <Spinner size={14} /> : <Icon name="trash" size={16} />}
+                <Button size="sm" variant="ghost" disabled={manageOrg?.id === o.id} onClick={() => void onOpenManage(o)}
+                  className="!text-safety-500 hover:!bg-orange-50" title="Manage organization">
+                  {manageOrg?.id === o.id ? <Spinner size={14} /> : <Icon name="sliders" size={16} />}
                 </Button>
               </div>
             </Card>
           ))}</div>
           <Pager page={page} hasNext={hasNext} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />
           </>}
+      {/* ── Org management modal ── */}
+      {manageOrg && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-24 bg-black/30" onClick={onCloseManage}>
+          <div className="w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}><Card className="p-5 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display font-bold text-ink-900 truncate">{manageOrg.name}</h2>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Badge tone={planTone(manageOrg.plan)}>{PLAN_LABEL[manageOrg.plan] ?? manageOrg.plan}</Badge>
+                {manageSubLoading ? <Spinner size={12} /> : manageSub?.status ? (
+                  <Badge tone={subTone(manageSub.status)}>{manageSub.status}</Badge>
+                ) : <Badge tone="neutral">no subscription</Badge>}
+              </div>
+              <button onClick={onCloseManage} className="text-ink-400 hover:text-ink-700 p-1" aria-label="Close">
+                <Icon name="x" size={18} />
+              </button>
+            </div>
+
+            {manageSub && !manageSubLoading && (
+              <div className="text-[11px] text-ink-500 flex gap-4">
+                {manageSub.provider && <span>Provider: {manageSub.provider}</span>}
+                {manageSub.currentPeriodEnd && <span>Period end: {fmtDate(manageSub.currentPeriodEnd)}</span>}
+              </div>
+            )}
+
+            {manageAction === null ? (
+              /* ── Action picker ── */
+              <div className="grid grid-cols-2 gap-2">
+                <ActionTile icon="trash" label="Delete org" desc="Permanently delete all data" tone="danger" onClick={() => setManageAction("delete")} />
+                <ActionTile icon="pause" label="Pause subscription" desc="Admin-initiated pause" onClick={() => setManageAction("pause")} />
+                <ActionTile icon="x" label="Cancel subscription" desc="Permanently cancel" onClick={() => setManageAction("cancel")} />
+                <ActionTile icon="alert" label="Hold for payment" desc="Mark as past-due" onClick={() => setManageAction("hold")} />
+                {manageSub?.status && manageSub.status !== "active" && (
+                  <ActionTile icon="play" label="Reactivate" desc="Resume subscription" onClick={() => setManageAction("reactivate")} className="col-span-2" />
+                )}
+              </div>
+            ) : (
+              /* ── Action confirmation ── */
+              <div className="space-y-3">
+                <div className="text-sm text-ink-700 font-medium">
+                  {manageAction === "delete" ? `Delete "${manageOrg.name}" and ALL its data?` :
+                   manageAction === "pause" ? `Pause subscription for "${manageOrg.name}"?` :
+                   manageAction === "cancel" ? `Cancel subscription for "${manageOrg.name}"?` :
+                   manageAction === "hold" ? `Mark "${manageOrg.name}" as past-due for payment?` :
+                   manageAction === "reactivate" ? `Reactivate subscription for "${manageOrg.name}"?` : ""}
+                </div>
+                <FormField label="Reason *" htmlFor="manage-reason">
+                  <textarea id="manage-reason" value={manageReason} onChange={e => setManageReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-cream-200 rounded-lg text-sm bg-white min-h-[80px] resize-y"
+                    placeholder="Explain why this action is being taken…" disabled={manageBusy} />
+                </FormField>
+                {manageResult && (
+                  <Alert variant={manageResult.ok ? "success" : "danger"}>{manageResult.message}</Alert>
+                )}
+                <div className="flex gap-2">
+                  {manageResult?.ok ? (
+                    <Button size="sm" onClick={onCloseManage}>Done</Button>
+                  ) : (
+                    <>
+                      <Button size="sm" variant={manageAction === "delete" ? "danger" : "primary"}
+                        disabled={manageBusy || !manageReason.trim()}
+                        leftIcon={manageBusy ? <Spinner size={14} /> : undefined}
+                        onClick={() => void onConfirmManage()}>
+                        {manageBusy ? "Processing…" : "Confirm"}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setManageAction(null); setManageResult(null); setManageReason(""); }} disabled={manageBusy}>Back</Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </Card>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** Small action tile button used inside the management modal. */
+function ActionTile({ icon, label, desc, tone = "neutral", onClick, className = "" }: {
+  icon: IconName; label: string; desc: string; tone?: "neutral" | "danger"; onClick: () => void; className?: string;
+}): JSX.Element {
+  const c = tone === "danger"
+    ? "border-red-200 hover:bg-red-50 text-red-700"
+    : "border-cream-200 hover:bg-cream-100 text-ink-700";
+  return (
+    <button onClick={onClick} className={`flex items-center gap-3 p-3 rounded-xl border bg-white text-left transition-all ${c} ${className}`}>
+      <Icon name={icon} size={18} />
+      <div>
+        <div className="font-semibold text-sm leading-tight">{label}</div>
+        <div className="text-[10px] text-ink-400 mt-0.5">{desc}</div>
+      </div>
+    </button>
   );
 }

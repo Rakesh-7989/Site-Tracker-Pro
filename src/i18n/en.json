@@ -244,6 +244,8 @@
     "sending": "Sending…",
     "cancel": "Cancel",
     "errPickPlan": "Pick a plan you'd like to move to.",
+    "billingHistory": "Billing history",
+    "noHistory": "No billing history yet.",
     "backendError": "Backend not configured."
   },
   "projTab": {

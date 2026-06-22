@@ -24,6 +24,8 @@
     "test:unit:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
+    "test:ef": "node scripts/test-ef-harness.mjs",
+    "test:rls": "node scripts/test-self-service-rls.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit"
   },

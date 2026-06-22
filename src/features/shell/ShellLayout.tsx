@@ -10,6 +10,7 @@ import { RequireSession, useAuth } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
+import { SubscriptionBanner } from "@/features/org/SubscriptionBanner";
 
 function FullScreenSpinner(): JSX.Element {
   return (
@@ -52,6 +53,7 @@ function GatedShell(): JSX.Element {
          actually shrink so their overflow-y-auto kicks in). */
       <div className="h-screen flex flex-col bg-cream-50 overflow-hidden">
         <TopBar onMenuToggle={() => setMobileOpen(v => !v)} />
+        <SubscriptionBanner />
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
           <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">

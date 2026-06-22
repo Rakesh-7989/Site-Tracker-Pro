@@ -64,7 +64,8 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
       if (!client) { setError("Backend not configured."); setLoading(false); return; }
       const res = await listOrgsForOverrides(client);
       if (cancelled) return;
-      if (res.ok) setOrgs(res.data);
+      if (res.ok) setOrgs(res.data); else setError(res.error);
+      setLoading(false);
     })();
     return () => { cancelled = true; };
   }, []);

@@ -54,6 +54,7 @@ export const PLAN_META = {
   basic:{label:"Basic",price:999,color:"slate"},
   pro:{label:"Pro",price:2999,color:"blue"},
   business:{label:"Business",price:7999,color:"orange"},
+  enterprise:{label:"Enterprise",price:0,color:"purple"},
   custom:{label:"Custom",price:0,color:"violet"},
 };
 

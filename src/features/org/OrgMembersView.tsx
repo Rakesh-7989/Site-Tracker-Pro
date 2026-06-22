@@ -35,17 +35,17 @@ const idLabel = (role: string): string => (role in ROLE_LABEL ? ROLE_LABEL[role 
 export function OrgMembersView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const { plan, loading: planLoading } = usePlanCaps();
+  const { plan } = usePlanCaps();
   const canManage = useCan("org:members:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
-  if (!canManage) return <AccessDenied message="Only an org admin can manage people." />;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
+  if (!canManage) return <AccessDenied message="Only an org admin can manage people." />;
 
-  return <OrgMembersInner orgId={activeOrg.orgId} orgName={activeOrg.orgName} createdBy={session.user.id} plan={plan} planLoading={planLoading} />;
+  return <OrgMembersInner orgId={activeOrg.orgId} orgName={activeOrg.orgName} createdBy={session.user.id} plan={plan} />;
 }
 
-function OrgMembersInner({ orgId, orgName, createdBy, plan, planLoading }: { orgId: string; orgName: string; createdBy: string; plan: string | null; planLoading: boolean }): JSX.Element {
+function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; orgName: string; createdBy: string; plan: string | null }): JSX.Element {
   const [members, setMembers] = useState<OrgMemberRow[]>([]);
   const [customRoles, setCustomRoles] = useState<OrgCustomRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +144,7 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan, planLoading }: { org
       <Card className="p-4 space-y-3">
         <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">Add a member</h3>
         <Alert variant="info">
-          {planLoading ? "Checking plan role defaults..." : `${plan ? displayPlanLabel(plan) : "Plan unavailable"} role defaults: ${availableOrgRoles.map(orgTierRoleLabel).join(", ")}.`}
+          {plan ? `${displayPlanLabel(plan)} role defaults: ${availableOrgRoles.map(orgTierRoleLabel).join(", ")}.` : "Loading plan role defaults..."}
         </Alert>
         <div className="flex gap-2">
           <Input className="flex-1" type="email" placeholder="their@email.com" value={email}

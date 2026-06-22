@@ -392,7 +392,7 @@ export function BillingAdminView({orgs}){
   const suspended=orgs.filter(o=>o.status==="suspended");
   const totalMRR=activeOrgs.reduce((s,o)=>s+o.mrr,0);
   const arr=totalMRR*12;
-  const byPlan=["basic","pro","business","custom"].map(plan=>({
+  const byPlan=["basic","pro","business","enterprise","custom"].map(plan=>({
     plan,
     orgs:activeOrgs.filter(o=>o.plan===plan),
     mrr:activeOrgs.filter(o=>o.plan===plan).reduce((s,o)=>s+o.mrr,0),

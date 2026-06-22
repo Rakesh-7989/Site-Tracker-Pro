@@ -183,7 +183,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // ── 2. Ensure profile row ──
   const { error: profileErr } = await admin
     .from("profiles")
-    .upsert({ id: newUserId, name: name || email.split("@")[0] || "Member", role: "client" }, { onConflict: "id", ignoreDuplicates: true });
+    .upsert({ id: newUserId, name: name || email.split("@")[0] || "Member", role: "orgadmin" }, { onConflict: "id", ignoreDuplicates: false });
   if (profileErr) {
     return json({ ok: false, error: "profile-upsert-failed", detail: profileErr.message }, 500);
   }

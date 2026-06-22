@@ -70,10 +70,12 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await supa.auth.getUser(userJwt);
   if (authErr || !user) return respond({ error: "invalid token" }, 401);
 
-  // Look up the caller's org + role from profiles + org_members
+  // Authorise: superadmin OR any org admin of this org (checks org_members,
+  // not just profile role — invited admins have profiles.role="client" but
+  // org_members.role="admin").
   const { data: profile } = await supa.from("profiles").select("role").eq("id", user.id).single();
-  const { data: membership } = await supa.from("org_members").select("org_id").eq("profile_id", user.id).eq("org_id", org_id).maybeSingle();
-  const isAuthorised = profile?.role === "superadmin" || (profile?.role === "orgadmin" && membership);
+  const { data: membership } = await supa.from("org_members").select("role").eq("profile_id", user.id).eq("org_id", org_id).maybeSingle();
+  const isAuthorised = profile?.role === "superadmin" || (membership?.role === "admin");
   if (!isAuthorised) return respond({ error: "only orgadmin or superadmin can manage subscriptions" }, 403);
 
   // Plan gate: programmatic payments are a Business+ feature.
@@ -92,8 +94,10 @@ Deno.serve(async (req) => {
   if (!org) return respond({ error: "org not found" }, 404);
 
   // 4. Build the request
+  const VALID_PLANS = ["basic", "pro", "business"];
+  if (!VALID_PLANS.includes(plan)) return respond({ error: `unsupported plan: ${plan}` }, 400);
   let req2;
-  try { req2 = buildSubscriptionRequest(org, plan as never, return_url || ""); }
+  try { req2 = buildSubscriptionRequest(org, plan as "basic" | "pro" | "business", return_url || ""); }
   catch (e) { return respond({ error: String((e as Error).message) }, 400); }
 
   // 5. Forward to Cashfree
@@ -114,14 +118,16 @@ Deno.serve(async (req) => {
   }
 
   // 6. Record the pending subscription locally
+  const now = new Date().toISOString();
   await supa.from("subscriptions").upsert({
     org_id,
     provider: "cashfree",
     external_id: req2.subscription_id,
     plan,
     status: "pending",
-    updated_at: new Date().toISOString(),
-  });
+    created_at: now,
+    updated_at: now,
+  }, { onConflict: "external_id" });
 
   // 7. Audit
   await supa.rpc("record_audit_v2", {

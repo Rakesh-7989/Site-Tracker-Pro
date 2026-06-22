@@ -150,10 +150,16 @@ export async function authenticate(
   }
 
   // Fetch all org memberships.
-  const { data: orgRows } = await sb
+  const { data: orgRows, error: orgRowsErr } = await sb
     .from("org_members")
     .select("org_id, role")
     .eq("profile_id", authUser.id);
+  if (orgRowsErr) {
+    return {
+      ok: false,
+      response: json({ ok: false, error: "org-memberships-lookup-failed", detail: orgRowsErr.message }, 500),
+    };
+  }
   const orgMemberships = (orgRows ?? []).map((r: OrgMemberRow) => ({ org_id: String(r.org_id), role: String(r.role) }));
 
   const user: AuthenticatedUser = {
@@ -208,16 +214,16 @@ export async function authenticate(
       projectMembership = { project_id: opts.requireProjectId, role: "superadmin" };
     } else {
       // First, allow orgadmin of the project's org.
-      const { data: project } = await sb
+      const { data: project, error: projectErr } = await sb
         .from("projects")
         .select("id, org_id")
         .eq("id", opts.requireProjectId)
         .maybeSingle();
+      if (projectErr) {
+        return { ok: false, response: json({ ok: false, error: "project-lookup-failed", detail: projectErr.message }, 500) };
+      }
       if (!project) {
-        return {
-          ok: false,
-          response: json({ ok: false, error: "project-not-found" }, 404),
-        };
+        return { ok: false, response: json({ ok: false, error: "project-not-found" }, 404) };
       }
       const isOrgAdmin = orgMemberships.some(
         (m: OrgMemberRow) => m.org_id === project.org_id && m.role === "admin",
@@ -226,22 +232,18 @@ export async function authenticate(
       if (isOrgAdmin) {
         projectMembership = { project_id: String(project.id), role: "admin" };
       } else {
-        const { data: pm } = await sb
+        const { data: pm, error: pmErr } = await sb
           .from("project_members")
           .select("role")
           .eq("project_id", opts.requireProjectId)
           .eq("profile_id", authUser.id)
           .is("removed_at", null)
           .maybeSingle();
+        if (pmErr) {
+          return { ok: false, response: json({ ok: false, error: "project-membership-lookup-failed", detail: pmErr.message }, 500) };
+        }
         if (!pm) {
-          return {
-            ok: false,
-            response: json({
-              ok: false,
-              error: "not-project-member",
-              required_project_id: opts.requireProjectId,
-            }, 403),
-          };
+          return { ok: false, response: json({ ok: false, error: "not-project-member", required_project_id: opts.requireProjectId }, 403) };
         }
         projectMembership = { project_id: opts.requireProjectId, role: String(pm.role) };
       }

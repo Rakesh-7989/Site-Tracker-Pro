@@ -79,6 +79,56 @@ export async function listOrgActivity(client: any, orgId: string, limit = 100): 
 export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", enterprise: "Enterprise", custom: "Custom", free: "Free" };
 export const PLAN_SEATS: Record<string, number | null> = { basic: 5, pro: 20, business: 100, enterprise: null, custom: null };
 
+// ── Billing full overview (migration 115) ─────────────────────────────────
+
+export interface BillingHistoryItem {
+  id: string;
+  amount: number;
+  currency: string;
+  gst: number | null;
+  status: string;
+  paidAt: string | null;
+  externalId: string | null;
+  invoiceUrl: string | null;
+}
+
+export interface BillingAlert {
+  severity: "info" | "warning" | "danger";
+  code: string;
+  message: string;
+  actionLabel: string | null;
+  actionRoute: string | null;
+}
+
+export interface BillingFull {
+  org: { name: string; slug: string; plan: string; createdAt: string | null };
+  subscription: OrgSubscription & {
+    cancelledAt: string | null;
+    gracePeriodEndsAt: string | null;
+  } | null;
+  billingHistory: BillingHistoryItem[];
+  alerts: BillingAlert[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getOrgBillingFull(client: any, orgId: string): Promise<OAResult<BillingFull | null>> {
+  try {
+    const { data, error } = await client.rpc("get_org_billing_full", { p_org: orgId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (!data) return { ok: true, data: null };
+    return { ok: true, data: data as unknown as BillingFull };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getOrgSubscriptionAlerts(client: any, orgId: string): Promise<OAResult<BillingAlert[]>> {
+  try {
+    const { data, error } = await client.rpc("get_org_subscription_alerts", { p_org: orgId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: (data ?? []) as BillingAlert[] };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
 /** DPDP erasure — delete an org + ALL its data (cascade). Superadmin or org admin. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deleteOrganization(client: any, orgId: string): Promise<OAResult<{ deleted: string }>> {

@@ -61,6 +61,8 @@ const PATHS = {
   info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></>,
   refresh: <><path d="M3 12a9 9 0 0 1 15-6.7l3-3v8h-8l3.5-3.5" /><path d="M21 12a9 9 0 0 1-15 6.7l-3 3v-8h8l-3.5 3.5" /></>,
   plug: <><path d="M12 22v-5" /><path d="M9 8V2" /><path d="M15 8V2" /><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" /></>,
+  pause: <><rect width="4" height="16" x="6" y="4" rx="1" /><rect width="4" height="16" x="14" y="4" rx="1" /></>,
+  play: <polygon points="6 3 20 12 6 21 6 3" />,
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -149,3 +149,45 @@ export async function getPlatformStats(client: any): Promise<PResult<PlatformSta
 }
 
 export const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", enterprise: "Enterprise", custom: "Custom", free: "Free" };
+
+/** Subscription status info from get_org_subscription RPC. */
+export interface OrgSubscriptionInfo {
+  status: string | null;
+  plan: string | null;
+  provider: string | null;
+  currentPeriodEnd: string | null;
+  trialEndsAt: string | null;
+}
+
+/** Admin: delete org with reason. Calls admin_delete_org RPC (migration 114). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function adminDeleteOrg(client: any, orgId: string, reason: string): Promise<PResult<{ deleted: string }>> {
+  try {
+    const { data, error } = await client.rpc("admin_delete_org", { p_org: orgId, p_reason: reason });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (data?.ok) return { ok: true, data: { deleted: String(data.deleted ?? "") } };
+    return { ok: false, error: String(data?.error ?? "Delete failed.") };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Admin: change subscription status with reason. Calls admin_set_subscription_status RPC (migration 114). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function adminSetSubscriptionStatus(client: any, orgId: string, status: string, reason: string): Promise<PResult<{ org: string; from: string | null; to: string }>> {
+  try {
+    const { data, error } = await client.rpc("admin_set_subscription_status", { p_org: orgId, p_status: status, p_reason: reason });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (data?.ok) return { ok: true, data: { org: String(data.org ?? ""), from: data.from ?? null, to: String(data.to ?? "") } };
+    return { ok: false, error: String(data?.error ?? "Status change failed.") };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Admin: read subscription info for an org. Calls get_org_subscription RPC (migration 114). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getOrgSubscription(client: any, orgId: string): Promise<PResult<OrgSubscriptionInfo | null>> {
+  try {
+    const { data, error } = await client.rpc("get_org_subscription", { p_org: orgId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    if (!data) return { ok: true, data: null };
+    return { ok: true, data: data as OrgSubscriptionInfo };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}

@@ -87,6 +87,26 @@ Team Lead routing decision: Address every open item from the audit, sequenced fr
 3. **Backend Engineer Agent's plan needs Tech Lead approval** before any Supabase project is provisioned.
 4. **Drawing markup (#9), Estimate (#18), Payment reconciliation (#30)** remain Missing in 50-feature matrix. Queued in BACKLOG.md.
 
+## Current Agent Run - 2026-06-22 — Testing R&D + Bug Workflow Automation
+
+User instruction: "testing evi kadhu ela applications ki ela testing tools use chestharu ani oka deep R&D chesi Testing agent lo update cheyi..."
+
+| Agent | Work Done | Gate Closed |
+| --- | --- | --- |
+| Team Lead Agent | Updated agent prompt with auto bug triage workflow; bugs.md is checked at every session start automatically. | Bug workflow automation ✅ |
+| QA/Test Agent | Rewritten with full testing R&D: frontend (Vitest/jsdom/Playwright), Edge Function (Deno/harness/browser mirror), SQL (ROLLBACK/ASSERT/DO block) patterns. Test-first rule mandated for all bugs. Bug workflow documented. | Testing agent coverage ✅ |
+| Documentation Agent | Created `docs/TESTING_STRATEGY.md` (comprehensive R&D), `docs/BUG_WORKFLOW.md` (auto lifecycle), `bugs.md` (tracking board). | Docs ✅ |
+| DevOps Agent | Added `test:ef` and `test:rls` scripts; created `scripts/test-ef-harness.mjs`; created `tests/bugs/` dir with .gitkeep; updated smoke markers. | Infrastructure ✅ |
+
+### Verification
+
+- [ ] `npm test` passes (lint + typecheck + build + smoke + unit)
+- [ ] New docs exist: TESTING_STRATEGY.md, BUG_WORKFLOW.md
+- [ ] New scripts exist: test-ef-harness.mjs
+- [ ] `test:ef` and `test:rls` in package.json scripts
+- [ ] bugs.md tracking board exists with auto-workflow instructions
+- [ ] All QA agent instructions reference the bug workflow
+
 ## Tech Lead Review - 2026-05-22 (evening)
 
 User instruction: "Tech Lead agent tho check cheppichi approve cheppichu emi ana drawback vundhi avi koda fix cheyi."
