@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { useAuth, useOrgSwitcher } from "@/auth";
-import { Spinner, Alert } from "@/components/ui/atoms";
+import { useAuth, useOrgSwitcher, useCan } from "@/auth";
+import { Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
 import {
   getOrgBranding, listProjectBrandings,
@@ -16,6 +16,8 @@ async function getClient() {
 export function PlatformBrandingView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
+  const can = useCan("platform:settings:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
   return <Inner user={session.user} orgId={activeOrg.orgId} />;

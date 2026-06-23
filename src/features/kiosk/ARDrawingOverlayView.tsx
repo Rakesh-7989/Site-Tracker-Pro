@@ -1,8 +1,10 @@
 // SiteTrack Pro — AR Drawing Overlay (/kiosk/ar).
 // Phone camera overlay for as-built verification.
 
+import { PlanGate } from "@/auth";
+
 export function ARDrawingOverlayView(): JSX.Element {
-  return (
+  return <PlanGate feature="ar_overlay">
     <div className="min-h-screen bg-ink-900 text-cream p-8 grid place-items-center">
       <div className="text-center max-w-md">
         <div className="text-6xl mb-4 opacity-30">&#9670;</div>
@@ -19,5 +21,5 @@ export function ARDrawingOverlayView(): JSX.Element {
         </div>
       </div>
     </div>
-  );
+  </PlanGate>;
 }

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
+import { PlanGate } from "@/auth";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -17,6 +18,10 @@ function fmtTime(iso: string): string {
 }
 
 export function LabourKioskView(): JSX.Element {
+  return <PlanGate feature="kiosks"><LabourKioskInner /></PlanGate>;
+}
+
+function LabourKioskInner(): JSX.Element {
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
   const [logs, setLogs] = useState<Array<{ id: string; date: string; badge: string; name: string; trade: string; in_time: string; out_time: string | null; hours: number }>>([]);

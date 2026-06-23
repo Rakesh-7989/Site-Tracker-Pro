@@ -5,22 +5,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
-
-interface ProjectBrief {
-  id: string;
-  name: string;
-  location: string | null;
-  status: string;
-  progress: number;
-  client_email: string | null;
-}
-
-interface NotificationBrief {
-  id: string;
-  title: string;
-  message: string;
-  read: boolean;
-}
+import { listClientProjects, listClientNotifications, type ProjectBrief, type NotificationBrief } from "@/app/clientPortalQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -50,18 +35,12 @@ export function ClientPortalView(): JSX.Element {
       setError(null);
       const client = await getClient();
       if (!client) { setError("Backend not configured."); setLoading(false); return; }
-      const { data: p, error: pe } = await client.from("projects")
-        .select("id, name, location, status, progress, client_email")
-        .eq("client_email", email)
-        .order("name");
-      if (pe) { setError(String(pe.message ?? pe)); } else { setProjects((p ?? []).map((r: any) => ({ id: r.id, name: r.name, location: r.location, status: r.status, progress: r.progress ?? 0, client_email: r.client_email }))); }
-
-      const { data: n, error: ne } = await client.from("notifications")
-        .select("id, title, message, read")
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (ne) { setError(String(ne.message ?? ne)); } else { setNotifs((n ?? []).map((r: any) => ({ id: r.id, title: r.title ?? "", message: r.message ?? "", read: r.read ?? false }))); }
-
+      const [pRes, nRes] = await Promise.all([
+        listClientProjects(client, email),
+        listClientNotifications(client),
+      ]);
+      if (pRes.ok) setProjects(pRes.data); else setError(pRes.error);
+      if (nRes.ok) setNotifs(nRes.data); else setError(nRes.error);
       setLoading(false);
     })();
   }, [email]);

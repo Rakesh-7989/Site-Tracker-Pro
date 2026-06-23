@@ -1,9 +1,9 @@
 // SiteTrack Pro — Platform Audit Log admin view.
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, Spinner } from "@/components/ui/atoms";
-
-interface AuditEvent { id: string; time: string; type: string; by: string; role: string; action: string; detail?: string; org_id?: string; project_id?: string; }
+import { useCan } from "@/auth";
+import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
+import { listAuditEvents, type AuditEvent } from "@/app/platformAuditQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -17,15 +17,19 @@ function fmtTime(iso: string): string {
 }
 
 export function PlatformAuditView(): JSX.Element {
+  const can = useCan("platform:audit:read:cross-org");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [filterType, setFilterType] = useState("all");
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     const client = await getClient();
     if (!client) { setLoading(false); return; }
-    const evRes = await client.from("activity_log").select("*").order("time", { ascending: false }).limit(200);
-    setEvents(evRes.data ?? []);
+    const res = await listAuditEvents(client);
+    if (res.ok) setEvents(res.data);
     setLoading(false);
   }, []);
 

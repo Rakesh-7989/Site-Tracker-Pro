@@ -1,9 +1,9 @@
 // SiteTrack Pro — Platform Billing & MRR admin view.
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, Spinner } from "@/components/ui/atoms";
-
-interface OrgRow { id: string; name: string; plan: string; status: string; mrr: number; }
+import { useCan } from "@/auth";
+import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
+import { listOrgBillingRows, type OrgBillingRow } from "@/app/platformBillingQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -11,14 +11,18 @@ async function getClient() {
 }
 
 export function PlatformBillingView(): JSX.Element {
-  const [orgs, setOrgs] = useState<OrgRow[]>([]);
+  const can = useCan("platform:billing:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+
+  const [orgs, setOrgs] = useState<OrgBillingRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     const client = await getClient();
     if (!client) { setLoading(false); return; }
-    const { data } = await client.from("orgs").select("id, name, plan, status, mrr").order("mrr", { ascending: false });
-    setOrgs(data ?? []);
+    const res = await listOrgBillingRows(client);
+    if (res.ok) setOrgs(res.data);
     setLoading(false);
   }, []);
 

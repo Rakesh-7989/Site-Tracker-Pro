@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Button, Spinner } from "@/components/ui/atoms";
+import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -40,13 +41,10 @@ export function OnboardingView(): JSX.Element {
   const load = useCallback(async () => {
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const uid = (await client.auth.getUser())?.data?.user?.id;
-    if (!uid) { setError("Not authenticated."); setLoading(false); return; }
-    const { data: om } = await client.from("org_members").select("org_id").eq("profile_id", uid).limit(1).maybeSingle();
-    if (!om?.org_id) { setError("No org membership."); setLoading(false); return; }
-    setOrgId(om.org_id);
-    const { data: org } = await client.from("orgs").select("name, contact_email").eq("id", om.org_id).maybeSingle();
-    if (org) { setOrgName(org.name ?? ""); setContactEmail(org.contact_email ?? ""); }
+    const res = await getMyOrg(client);
+    if (!res.ok) { setError(res.error); setLoading(false); return; }
+    setOrgId(res.data.orgId);
+    if (res.data.org) { setOrgName(res.data.org.name ?? ""); setContactEmail(res.data.org.contact_email ?? ""); }
     setLoading(false);
   }, []);
 
@@ -55,7 +53,7 @@ export function OnboardingView(): JSX.Element {
   const saveOrg = async () => {
     if (!orgName.trim()) { alert("Org name required"); return; }
     const client = await getClient();
-    await client.from("orgs").update({ name: orgName.trim(), contact_email: contactEmail.trim() }).eq("id", orgId);
+    await updateOrg(client, orgId, orgName, contactEmail);
     setStep(2);
   };
 
@@ -68,9 +66,7 @@ export function OnboardingView(): JSX.Element {
   const commitInvites = async () => {
     if (!pending.length) { setStep(3); return; }
     const client = await getClient();
-    for (const m of pending) {
-      await client.from("org_members").insert({ org_id: orgId, name: m.name, email: m.email, role: m.role });
-    }
+    await insertOrgMembers(client, orgId, pending);
     setPending([]);
     setStep(3);
   };
@@ -79,10 +75,7 @@ export function OnboardingView(): JSX.Element {
     if (!projName.trim()) { alert("Project name required"); return; }
     if (!clientName.trim()) { alert("Client name required"); return; }
     const client = await getClient();
-    await client.from("projects").insert({
-      org_id: orgId, name: projName.trim(), client_name: clientName.trim(),
-      start_date: startDate, status: "active", progress: 0,
-    });
+    await createProject(client, orgId, projName, clientName, startDate);
     setStep(4);
   };
 
@@ -94,15 +87,13 @@ export function OnboardingView(): JSX.Element {
     } else if (preset === "balanced") {
       toDisable.push("arOverlay", "dprAuto", "photoGeo");
     }
-    for (const key of toDisable) {
-      await client.from("org_feature_flags").upsert({ org_id: orgId, key, enabled: false }, { onConflict: "org_id, key" });
-    }
+    await disableFeatureFlags(client, orgId, toDisable);
     setStep(5);
   };
 
   const finish = async () => {
     const client = await getClient();
-    await client.from("ops_toggles").upsert({ org_id: orgId, key: "onboarding_done", value: "true" }, { onConflict: "org_id, key" });
+    await completeOnboarding(client, orgId);
     // Signal parent to redirect (SS check will catch it)
     window.location.href = "/org";
   };

@@ -1,9 +1,9 @@
 // SiteTrack Pro — Platform Support Tickets admin view.
 
 import { useCallback, useEffect, useState } from "react";
-import { Spinner } from "@/components/ui/atoms";
-
-interface Ticket { id: string; subject: string; body: string; from: string; email: string; status: string; created: string; org_id: string; messages?: Array<{ id: string; by: string; text: string; time: string }>; }
+import { useCan } from "@/auth";
+import { Spinner, AccessDenied } from "@/components/ui/atoms";
+import { listSupportTickets, listOrgsBrief, updateSupportTicket, type Ticket } from "@/app/platformSupportQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -16,6 +16,9 @@ function fmtTime(iso: string): string {
 }
 
 export function PlatformSupportView(): JSX.Element {
+  const can = useCan("platform:orgs:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [orgs, setOrgs] = useState<Record<string, string>>({});
   const [active, setActive] = useState<string | null>(null);
@@ -26,12 +29,11 @@ export function PlatformSupportView(): JSX.Element {
     const client = await getClient();
     if (!client) { setLoading(false); return; }
     const [tRes, oRes] = await Promise.all([
-      client.from("support_tickets").select("*").order("created", { ascending: false }),
-      client.from("orgs").select("id, name"),
+      listSupportTickets(client),
+      listOrgsBrief(client),
     ]);
-    setTickets(tRes.data ?? []);
-    setOrgs(Object.fromEntries((oRes.data ?? []).map((o: { id: string; name: string }) => [o.id, o.name])));
-    if (tRes.data?.length) setActive(tRes.data[0].id);
+    if (tRes.ok) { setTickets(tRes.data); if (tRes.data.length) setActive(tRes.data[0].id); }
+    if (oRes.ok) setOrgs(Object.fromEntries(oRes.data.map(o => [o.id, o.name])));
     setLoading(false);
   }, []);
 
@@ -43,7 +45,7 @@ export function PlatformSupportView(): JSX.Element {
     const msg = { id: `msg_${Date.now()}`, by: "admin", text: reply.trim(), time: new Date().toISOString() };
     const ticket = tickets.find(t => t.id === active);
     const msgs = [...(ticket?.messages ?? []), msg];
-    await client.from("support_tickets").update({ messages: msgs, status: "replied", replied_at: new Date().toISOString() }).eq("id", active);
+    await updateSupportTicket(client, active, { messages: msgs, status: "replied", replied_at: new Date().toISOString() });
     setTickets(p => p.map(t => t.id === active ? { ...t, messages: msgs, status: "replied" } : t));
     setReply("");
   };
@@ -51,7 +53,7 @@ export function PlatformSupportView(): JSX.Element {
   const close = async () => {
     if (!active) return;
     const client = await getClient();
-    await client.from("support_tickets").update({ status: "closed", closed_at: new Date().toISOString() }).eq("id", active);
+    await updateSupportTicket(client, active, { status: "closed", closed_at: new Date().toISOString() });
     setTickets(p => p.map(t => t.id === active ? { ...t, status: "closed" } : t));
   };
 

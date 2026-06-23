@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
-
-interface PO { id: string; no: string; amount: number; status: string; project_name: string; created: string; }
-interface MPrice { id: string; material: string; price: number; updated: string; }
+import { listVendorPOs, listMaterialPrices, type PO, type MPrice } from "@/app/vendorPortalQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -25,16 +23,9 @@ export function VendorPortalView(): JSX.Element {
     setError(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const { data: poData, error: poErr } = await client.from("purchase_orders")
-      .select("id, no, amount, status, project:project_id(name), created_at").order("created_at", { ascending: false }).limit(20);
-    if (poErr) { setError(String(poErr.message ?? poErr)); } else {
-      setPos((poData ?? []).map((r: any) => ({ id: r.id, no: r.no ?? "", amount: r.amount ?? 0, status: r.status ?? "", project_name: r.project?.name ?? "", created: r.created_at ?? "" })));
-    }
-    const { data: mpData, error: mpErr } = await client.from("material_prices")
-      .select("id, material, price, updated_at").order("material").limit(50);
-    if (mpErr) { setError(String(mpErr.message ?? mpErr)); } else {
-      setPrices((mpData ?? []).map((r: any) => ({ id: r.id, material: r.material ?? "", price: r.price ?? 0, updated: r.updated_at ?? "" })));
-    }
+    const [poRes, mpRes] = await Promise.all([listVendorPOs(client), listMaterialPrices(client)]);
+    if (poRes.ok) setPos(poRes.data); else setError(poRes.error);
+    if (mpRes.ok) setPrices(mpRes.data); else setError(mpRes.error);
     setLoading(false);
   }, []);
 

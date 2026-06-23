@@ -1,7 +1,9 @@
 // SiteTrack Pro — Platform System Settings admin view.
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, Spinner } from "@/components/ui/atoms";
+import { useCan } from "@/auth";
+import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
+import { listOpsToggles, upsertOpsToggle } from "@/app/platformSettingsQueries";
 
 interface ToggleRow { id: string; key: string; label: string; desc: string; enabled: boolean; }
 
@@ -18,6 +20,9 @@ const OPS_TOGGLES: ToggleRow[] = [
 ];
 
 export function PlatformSettingsView(): JSX.Element {
+  const can = useCan("platform:settings:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -25,9 +30,9 @@ export function PlatformSettingsView(): JSX.Element {
   const load = useCallback(async () => {
     const client = await getClient();
     if (!client) { setLoading(false); return; }
-    const { data } = await client.from("ops_toggles").select("key, value").eq("scope", "platform");
+    const res = await listOpsToggles(client);
     const map: Record<string, boolean> = {};
-    (data ?? []).forEach((r: { key: string; value: string }) => { map[r.key] = r.value === "true"; });
+    if (res.ok) res.data.forEach((r) => { map[r.key] = r.value === "true"; });
     setToggles(map);
     setLoading(false);
   }, []);
@@ -38,9 +43,7 @@ export function PlatformSettingsView(): JSX.Element {
     setSaving(key);
     const next = !toggles[key];
     const client = await getClient();
-    if (client) {
-      await client.from("ops_toggles").upsert({ key, value: String(next), scope: "platform" }, { onConflict: "key, scope" });
-    }
+    if (client) await upsertOpsToggle(client, key, String(next));
     setToggles(p => ({ ...p, [key]: next }));
     setSaving(null);
   };

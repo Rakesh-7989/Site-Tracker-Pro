@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { useAuth, useOrgSwitcher } from "@/auth";
-import { Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { useAuth, useOrgSwitcher, useCan } from "@/auth";
+import { Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { exportAuditCsv } from "@/lib/audit";
 import {
   listAuditLog, getAuditActors, getAuditStats,
@@ -21,6 +21,8 @@ async function getClient() {
 export function PlatformAuditLogV2View(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
+  const can = useCan("platform:audit:read:cross-org");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
   return <Inner orgId={activeOrg.orgId} />;

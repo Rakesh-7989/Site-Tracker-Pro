@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
-
-interface ProjectBrief { id: string; name: string; location: string | null; status: string; progress: number; }
-interface NotifBrief { id: string; title: string; message: string; }
+import { listPMProjects, listPMNotifications, type ProjectBrief, type NotifBrief } from "@/app/pmQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -32,10 +30,9 @@ export function PMView(): JSX.Element {
       setError(null);
       const client = await getClient();
       if (!client) { setError("Backend not configured."); setLoading(false); return; }
-      const { data: p, error: pe } = await client.from("projects").select("id, name, location, status, progress").order("name");
-      if (pe) { setError(String(pe.message ?? pe)); } else { setProjects((p ?? []).map((r: any) => ({ id: r.id, name: r.name, location: r.location, status: r.status, progress: r.progress ?? 0 }))); }
-      const { data: n, error: ne } = await client.from("notifications").select("id, title, message").order("created_at", { ascending: false }).limit(10);
-      if (ne) { setError(String(ne.message ?? ne)); } else { setNotifs((n ?? []).map((r: any) => ({ id: r.id, title: r.title ?? "", message: r.message ?? "" }))); }
+      const [pRes, nRes] = await Promise.all([listPMProjects(client), listPMNotifications(client)]);
+      if (pRes.ok) setProjects(pRes.data); else setError(pRes.error);
+      if (nRes.ok) setNotifs(nRes.data); else setError(nRes.error);
       setLoading(false);
     })();
   }, []);

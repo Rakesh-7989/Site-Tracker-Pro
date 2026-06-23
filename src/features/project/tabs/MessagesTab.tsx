@@ -1,7 +1,7 @@
 // SiteTrack Pro — project Messages tab (v3 port). Append-only project chat.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "@/auth";
+import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { listMessages, postMessage, type Message } from "@/app/messageQueries";
@@ -12,6 +12,8 @@ const fmtTs = (iso: string): string => { const d = new Date(iso); return Number.
 
 export function MessagesTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
+  const { activeOrg } = useOrgSwitcher();
+  const canSend = useCan("message:send", { orgId: activeOrg?.orgId, projectId });
   const [rows, setRows] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,11 +61,11 @@ export function MessagesTab({ projectId }: { projectId: string }): JSX.Element {
             })}
         <div ref={endRef} />
       </div>
-      <div className="flex gap-2 pt-3 border-t border-cream-200 mt-2">
+      {canSend && <div className="flex gap-2 pt-3 border-t border-cream-200 mt-2">
         <Input className="flex-1" placeholder="Write a message…" value={text} onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} />
         <Button onClick={() => void send()} disabled={busy || !text.trim()}>{busy ? <Spinner size={14} /> : <Icon name="send" size={16} />}</Button>
-      </div>
+      </div>}
     </div>
   );
 }

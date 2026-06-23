@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, useOrgSwitcher } from "@/auth";
+import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
 import {
@@ -33,7 +33,7 @@ export function HierarchyView(): JSX.Element {
   const nav = useNavigate();
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  return <Inner orgId={activeOrg.orgId} user={session.user} nav={nav} />;
+  return <PlanGate feature="hierarchy"><Inner orgId={activeOrg.orgId} user={session.user} nav={nav} /></PlanGate>;
 }
 
 function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: string) => void }): JSX.Element {

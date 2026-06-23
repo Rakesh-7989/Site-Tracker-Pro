@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/auth";
+import { PlanGate } from "@/auth";
 import { Icon } from "@/components/ui/atoms";
 import { COMMODITIES, fetchQuotes, bestQuote, savings } from "@/lib/materialPrices";
-import { canUseFeature } from "@/lib/planGating";
 
 export function MaterialPricesView(): JSX.Element {
-  const { session } = useAuth();
-  const plan = (session?.user as any)?.plan ?? "basic";
+  return <PlanGate feature="material_aggregator"><MaterialPricesInner /></PlanGate>;
+}
+
+function MaterialPricesInner(): JSX.Element {
   const [commodity, setCommodity] = useState("steel");
   const [grade, setGrade] = useState("Fe500");
   const [qty, setQty] = useState(10);
@@ -31,15 +32,7 @@ export function MaterialPricesView(): JSX.Element {
         <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Material Prices</h1>
         <p className="text-ink-500 text-sm mt-2">Live vendor comparison across 6 suppliers. Total landed cost includes GST + freight where applicable.</p>
       </div>
-      {!canUseFeature(plan, "material_aggregator") ? (
-        <div className="bg-white rounded-2xl p-6 text-center" style={{ border: "1px dashed var(--st-line)" }}>
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-50 flex items-center justify-center"><Icon name="shield" size={20} className="text-amber-700" /></div>
-          <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-1">Pro plan unlocks this</div>
-          <p className="text-ink-500 text-xs max-w-md mx-auto leading-relaxed">Material price aggregation is available on the Pro plan and above.</p>
-        </div>
-      ) : (
-        <>
-          <div className="bg-white rounded-2xl p-5 mb-5 grid sm:grid-cols-5 gap-3 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+      <div className="bg-white rounded-2xl p-5 mb-5 grid sm:grid-cols-5 gap-3 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Commodity</label><select value={commodity} onChange={e => setCommodity(e.target.value)} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{Object.entries(COMMODITIES).map(([k, v]: any) => <option key={k} value={k}>{v.label}</option>)}</select></div>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Grade</label><select value={grade} onChange={e => setGrade(e.target.value)} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{grades.map((g: string) => <option key={g} value={g}>{g}</option>)}</select></div>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Qty ({(COMMODITIES as any)[commodity]?.unit})</label><input type="number" min="1" value={qty} onChange={e => setQty(Number(e.target.value))} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" /></div>
@@ -63,8 +56,6 @@ export function MaterialPricesView(): JSX.Element {
             </div>
           </>}
           {quotes.length === 0 && !loading && <div className="bg-white rounded-2xl p-12 text-center" style={{ border: "1px dashed var(--st-line)" }}><div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Icon name="truck" size={24} className="text-amber-700" /></div><div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-2">Pick commodity + grade + qty to fetch live quotes</div><p className="text-ink-500 text-sm max-w-md mx-auto">Steel: JSW · Tata · Essar. Cement: UltraTech · ACC · Ambuja. More vendors via API on request.</p></div>}
-        </>
-      )}
     </div>
   );
 }

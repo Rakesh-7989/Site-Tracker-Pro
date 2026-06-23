@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
+import { PlanGate } from "@/auth";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -10,6 +11,10 @@ async function getClient() {
 }
 
 export function SiteWallKioskView(): JSX.Element {
+  return <PlanGate feature="kiosks"><SiteWallKioskInner /></PlanGate>;
+}
+
+function SiteWallKioskInner(): JSX.Element {
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
   const [updates, setUpdates] = useState<Array<{ id: string; update_date: string; text: string }>>([]);

@@ -1,7 +1,9 @@
 // SiteTrack Pro — Platform Usage Analytics admin view.
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, Spinner } from "@/components/ui/atoms";
+import { useCan } from "@/auth";
+import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
+import { getUsageStats, type UsageStats } from "@/app/platformUsageQueries";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -9,23 +11,18 @@ async function getClient() {
 }
 
 export function PlatformUsageView(): JSX.Element {
-  const [stats, setStats] = useState<{ orgs: number; users: number; projects: number; dau: number; wau: number; mau: number } | null>(null);
+  const can = useCan("platform:orgs:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+
+  const [stats, setStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     const client = await getClient();
     if (!client) { setLoading(false); return; }
-    const [orgRes, userRes, projRes] = await Promise.all([
-      client.from("orgs").select("id", { count: "exact", head: true }),
-      client.from("org_members").select("id", { count: "exact", head: true }),
-      client.from("projects").select("id", { count: "exact", head: true }),
-    ]);
-    setStats({
-      orgs: orgRes.count ?? 0,
-      users: userRes.count ?? 0,
-      projects: projRes.count ?? 0,
-      dau: 0, wau: 0, mau: 0,
-    });
+    const res = await getUsageStats(client);
+    if (res.ok) setStats(res.data);
     setLoading(false);
   }, []);
 

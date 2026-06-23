@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth, useOrgSwitcher } from "@/auth";
-import { Alert, Icon } from "@/components/ui/atoms";
+import { useAuth, useOrgSwitcher, useCan } from "@/auth";
+import { Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { delegationStatus } from "@/lib/delegations";
 import {
   listDelegations, listOrgMembers,
@@ -16,6 +16,8 @@ async function getClient() {
 export function DelegationsView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
+  const can = useCan("org:members:manage", { orgId: activeOrg?.orgId });
+  if (!can) return <AccessDenied message="You don't have permission to manage delegations." />;
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
   return <Inner user={session.user} orgId={activeOrg.orgId} />;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth, useOrgSwitcher } from "@/auth";
+import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
 import {
@@ -10,7 +10,7 @@ import {
 import { forecastWithLlm } from "@/lib/aiForecast";
 import { getProviderConfig } from "@/lib/ai";
 import { fmtCur } from "@/components/ui";
-import { canUseFeature } from "@/lib/planGating";
+
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -28,10 +28,10 @@ export function ForecastView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  return <Inner orgId={activeOrg.orgId} plan={(session.user as any)?.plan ?? "basic"} />;
+  return <PlanGate feature="ai_forecast"><Inner orgId={activeOrg.orgId} /></PlanGate>;
 }
 
-function Inner({ orgId, plan }: { orgId: string; plan: string }): JSX.Element {
+function Inner({ orgId }: { orgId: string }): JSX.Element {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -114,15 +114,7 @@ function Inner({ orgId, plan }: { orgId: string; plan: string }): JSX.Element {
         </div>
         <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm font-semibold outline-none focus:border-amber-600">{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
       </div>
-      {!canUseFeature(plan, "ai_forecast") ? (
-        <div className="bg-white rounded-2xl p-6 text-center" style={{ border: "1px dashed var(--st-line)" }}>
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-50 flex items-center justify-center"><Icon name="shield" size={20} className="text-amber-700" /></div>
-          <div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-1">Business plan unlocks this</div>
-          <p className="text-ink-500 text-xs max-w-md mx-auto leading-relaxed">AI-powered cost forecasting is available on the Business plan and above.</p>
-        </div>
-      ) : (
-        <>
-          <div className="mb-5 flex items-center gap-3 flex-wrap">
+      <div className="mb-5 flex items-center gap-3 flex-wrap">
             <button onClick={runForecast} disabled={busy} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep disabled:opacity-60"><Icon name="zap" size={14} />{busy ? "Forecasting…" : cached ? "Re-forecast" : "Run forecast"}</button>
             {cached && <span className="text-[11px] text-ink-500">Last run {fmtTime(cached.generated_at)}</span>}
           </div>
@@ -137,8 +129,6 @@ function Inner({ orgId, plan }: { orgId: string; plan: string }): JSX.Element {
             {cached.over_consumed_materials?.length > 0 && <div className="bg-white rounded-2xl p-5 mb-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-3">— Materials trending over plan</div><div className="space-y-2">{cached.over_consumed_materials.map((m: any) => (<div key={m.name} className="flex items-center justify-between text-sm"><span className="font-semibold text-ink-900 capitalize">{m.name}</span><span className="text-red-700 font-mono">{m.planned} → {m.consumed} (<strong>+{m.over_pct}%</strong>)</span></div>))}</div></div>}
             <div className="text-[11px] text-ink-500 text-center">Schedule slip: <strong>{cached.schedule_slip_days} days</strong> · Confidence: <strong>{cached.confidence}</strong></div>
           </>) : (<div className="bg-white rounded-2xl p-12 text-center" style={{ border: "1px dashed var(--st-line)" }}><div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Icon name="zap" size={24} className="text-amber-700" /></div><div className="font-display text-lg font-semibold text-ink-900 tracking-editorial mb-2">Forecast not yet run</div><p className="text-ink-500 text-sm max-w-md mx-auto">Click "Run forecast" to analyse BOQ + RA bills + ledger consumption + timeline. Configure an AI key in Settings for narrative enrichment.</p></div>)}
-        </>
-      )}
     </div>
   );
 }

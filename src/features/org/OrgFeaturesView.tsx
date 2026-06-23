@@ -3,8 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Spinner, Icon } from "@/components/ui/atoms";
-
-interface FeatureFlag { key: string; enabled: boolean; }
+import { getOrgIdFromMember, listFeatureFlags, upsertFeatureFlag, type FeatureFlag } from "@/app/featureFlagQueries";
 
 const FEATURE_GROUPS: Array<{ id: string; label: string; desc: string; features: Array<{ key: string; label: string; plan: string }> }> = [
   { id: "nav", label: "Sidebar nav", desc: "Top-level views in navigation.", features: [
@@ -46,15 +45,15 @@ export function OrgFeaturesView(): JSX.Element {
     setError(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const { data: om } = await client.from("org_members").select("org_id").eq("profile_id", (await client.auth.getUser())?.data?.user?.id).limit(1).maybeSingle();
-    if (!om?.org_id) { setError("No org membership found."); setLoading(false); return; }
-    setOrgId(om.org_id);
-    const { data, error: e } = await client.from("org_feature_flags").select("key, enabled").eq("org_id", om.org_id);
-    if (e) { setError(String(e.message ?? e)); } else {
+    const idRes = await getOrgIdFromMember(client);
+    if (!idRes.ok) { setError(idRes.error); setLoading(false); return; }
+    setOrgId(idRes.data);
+    const fRes = await listFeatureFlags(client, idRes.data);
+    if (fRes.ok) {
       const m = new Map<string, boolean>();
-      (data ?? []).forEach((r: FeatureFlag) => m.set(r.key, r.enabled));
+      fRes.data.forEach((r: FeatureFlag) => m.set(r.key, r.enabled));
       setFlags(m);
-    }
+    } else { setError(fRes.error); }
     setLoading(false);
   }, []);
 
@@ -66,13 +65,10 @@ export function OrgFeaturesView(): JSX.Element {
     const next = !current;
     const client = await getClient();
     if (!client) return;
-    const { error: e } = await client.from("org_feature_flags").upsert(
-      { org_id: orgId, key, enabled: next },
-      { onConflict: "org_id, key" },
-    );
-    if (e) { setError(String(e.message ?? e)); } else {
+    const res = await upsertFeatureFlag(client, orgId, key, next);
+    if (res.ok) {
       setFlags(prev => { const m = new Map(prev); m.set(key, next); return m; });
-    }
+    } else { setError(res.error); }
     setSaving(null);
   };
 
