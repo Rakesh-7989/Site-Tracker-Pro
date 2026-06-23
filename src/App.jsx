@@ -1,60 +1,22 @@
 /* eslint-disable no-unused-vars, react-hooks/exhaustive-deps */
-import { useState, useRef, useMemo, useEffect, lazy, Suspense } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { useState, useEffect, Suspense } from "react";
 import {
   PERMS,
-  can,
-  visibleProjectsForUser,
   canAccessProject,
   fallbackViewForUser,
   canOpenView,
-  canUseQuickCapture,
-  drawingKey,
   isReleasedCurrentDrawing,
 } from "./lib/permissions.js";
-import { isOnline, onConnectivityChange, queueLength, queueOpAdd, putBlob, getBlob, delBlob } from "./lib/offline.js";
-import { computeRiskScore, fetchLLMInsight, getProviderConfig, saveProviderConfig, clearProviderConfig } from "./lib/ai.js";
-import { getRazorpayConfig, saveRazorpayConfig, buildUpiDeepLink } from "./lib/razorpay.js";
+import { isOnline, onConnectivityChange, queueLength } from "./lib/offline.js";
+
 import { usePersistent as useLS } from "./lib/usePersistent.js";
-import { h, csvRow } from "./lib/escape.js";
 import { notifsForUser } from "./lib/notifications.js";
-import { fmtDate as _fmtDate, fmtTime as _fmtTime, fmtCur as _fmtCur, fileKind as _fileKind, fmtSize as _fmtSize } from "./lib/format.js";
-import { isDemoLoaded, dataSummary, loadDemoData, clearAllData } from "./lib/demoMode.js";
-// Roadmap Batch 1 foundation libs (consumed by Batch 2 views below)
-import { buildProjectTree, countHierarchy, rollUpProgress, unitCode } from "./lib/hierarchy.js";
-import { recordAudit, filterAudit, exportAuditCsv, auditStats } from "./lib/audit.js";
-import { addDelegation, revokeDelegation, delegationStatus } from "./lib/delegations.js";
-import { resolveBranding, setOrgBrand, setProjectBrand, clearProjectBrand, accentToHex } from "./lib/branding.js";
-import { COMMODITIES, fetchQuotes, bestQuote, savings } from "./lib/materialPrices.js";
-import { checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus } from "./lib/compliance.js";
-import { canUseFeature, upsellLine } from "./lib/planGating.js";
-import { forecastWithLlm } from "./lib/aiForecast.js";
-import { freezeSnapshot, snapshotSeries, snapshotDelta } from "./lib/dailySnapshot.js";
-// LOW-5 / Split-2: mock data + UI lookups extracted from App.jsx.
+import { recordAudit } from "./lib/audit.js";
 import {
-  MOCK_USERS, PLAN_META, INIT_ORGS, INIT_ADMIN_USERS, INIT_SUPPORT,
-  INIT_PROJECTS, INIT_MILESTONES, INIT_UPDATES, INIT_EXPENSES, INIT_TEAMS,
-  INIT_ATTENDANCE, INIT_ISSUES, INIT_MATERIALS, INIT_DRAWINGS, INIT_ACTIVITY,
-  INIT_NOTIFS, INIT_TASKS, INIT_PUNCH, INIT_RFI, INIT_CO, INIT_INSPECTIONS,
-  INIT_SAFETY, INIT_VENDORS, INIT_POS, INIT_INVOICES, INIT_LABOUR, INIT_RA,
-  INIT_COMMENTS, INIT_BOQ, INIT_ESTIMATE, INIT_LEDGER, INIT_EQUIPMENT,
-  INIT_DIARY, INIT_WORKLOGS, INIT_CHECKLISTS, INIT_SUBMITTALS, INIT_PERMITS,
-  INIT_MESSAGES,
-  // Roadmap Batch 1/2 shapes
-  INIT_BLOCKS, INIT_FLOORS, INIT_UNITS, INIT_BRANDING, INIT_AUDIT_LOG,
-  INIT_DELEGATIONS, INIT_DAILY_SNAPSHOTS, INIT_MATERIAL_PRICES, INIT_COMPLIANCE,
-  INIT_FORECAST,
-  // Production Phase 1 — Org Admin tier
-  INIT_APPROVAL_CHAINS, INIT_ORG_INTEGRATIONS, INIT_TEMPLATES,
-  INIT_NOTIFICATION_RULES, INIT_OPS_TOGGLES,
-  // Session 16 — feature-flag catalog overrides
-  INIT_PLATFORM_FEATURE_FLAGS, INIT_ORG_FEATURE_FLAGS,
+  INIT_PROJECTS, INIT_MILESTONES, INIT_UPDATES, INIT_ISSUES, INIT_DRAWINGS,
+  INIT_ACTIVITY, INIT_NOTIFS, INIT_MESSAGES, INIT_VENDORS,
 } from "./data/seed.js";
-import {
-  EXPENSE_CATS, VENDOR_CATS, TRADES, PUNCH_TRADES, DRAW_TYPES, ROLES_LIST,
-  SEV_COLOR, MAT_STATUS, CAT_COLORS, ATT_STATUS, ACTIVITY_ICONS, CHART_COLORS,
-  TAB_LABELS, BOQ_UNITS, LEDGER_DIRS,
-} from "./data/lookups.js";
+
 
 // ── PERSISTENCE adapter ─────────────────────────────────────────────────────
 // useLS is the import above — it auto-routes to Supabase when env is set,
@@ -66,7 +28,7 @@ const LS_KEY = "sitetrack_v2";  // referenced by docs + smoke; do not remove.
 // atoms (Ic, Av, Badge, PBar, SC, AccessDenied) all live in components/ui.jsx.
 // App.jsx imports what it needs below; no more inline duplicates.
 
-import { Ic, AccessDenied, ROLE_META, sCol, fmtDate, fmtTime, fmtCur } from "./components/ui.jsx";
+import { Ic, AccessDenied, ROLE_META } from "./components/ui.jsx";
 import { t } from "./lib/i18n.js";
 
 const isSupabaseEnabled = () => (import.meta.env.VITE_BACKEND || "supabase") === "supabase";
@@ -78,64 +40,17 @@ const fetchOrgQuotaSnapshot = async (...args) => (await supabaseLib()).fetchOrgQ
 const subscribeTable = async (...args) => (await supabaseLib()).subscribeTable(...args);
 
 
-// Attachment atoms + upload helpers extracted to components/attachments.jsx in Batch 7.
-import {
-  ATTACH_ACCEPT, DRAWING_ACCEPT,
-  AttachmentInput, AttachmentRow, AttachmentList,
-  readAttachment, resolveAttachmentUrl, attachmentIcon,
-} from "./components/attachments.jsx";
-
-// Mid-size views extracted to src/features/views/ in Batch 6.
-// (MessagesView deferred — depends on AttachmentInput atoms still in App.jsx.)
-import {
-  GanttView, AnalyticsView, ActivityView, NotifsView, PMView, ClientPortal,
-  CalendarView, VendorsView, POsView, GlobalSearch, MessagesView,
-} from "./features/views/index.jsx";
-// ── GANTT ─────────────────────────────────────────────────────────────────────
-// ── LOGIN ─────────────────────────────────────────────────────────────────────
+// Mid-size views — only GlobalSearch still used in top bar.
+import { GlobalSearch } from "./features/views/index.jsx";
 // Shell views extracted to src/features/shell/ in Batch 10.
 import {
-  LoginScreen, Sidebar, DashboardView, ProjectsView, CreateView,
+  LoginScreen, Sidebar, DashboardView,
 } from "./features/shell/index.jsx";
-// Sprint 1 (Session 30.2) — Daily Progress Report placeholder + freeze gate.
-import { DailyProgressView } from "./features/dpr/index.jsx";
+import { ClientShareView } from "./features/detail/index.jsx";
 import { isViewStubBlocked } from "./lib/featureFlags.js";
-// Admin views (Batch 5) — lazy `admin` chunk.
-import {
-  SuperAdminDashboard, OrgsAdminView, UsersAdminView, BillingAdminView,
-  SettingsAdminView, AuditAdminView, UsageAdminView, SupportAdminView,
-} from "./features/admin/index.jsx";
-// Roadmap views (Batch 2/3) — lazy `roadmap` chunk.
-import {
-  PlanGate, HierarchyView, MaterialPricesView, ComplianceView, ForecastView,
-  DelegationsView, BrandingSettingsView, AuditLogV2View,
-  LabourAttendanceKioskView, SiteWallKioskView, ARDrawingOverlayView,
-  DailySnapshotPanelView,
-} from "./features/roadmap/index.jsx";
 
-// DetailView extracted to features/detail/ in Batch 11 (the final refactor).
-// Production Phase 1 (Q5d): the detail chunk pulls in Recharts (~600 kB) via
-// GanttView. Lazy-load it so the dashboard cold path doesn't pay that cost —
-// it only loads when a user opens a project. Smoke + sub-tab markers still
-// resolve because Vite chunks the whole file together.
-const DetailView = lazy(() => import("./features/detail/index.jsx").then(m => ({ default: m.DetailView })));
 
-// Org Admin tier (Production Phase 1) — 8 panels for the orgadmin role.
-// Lazy because most users (architect/pm/contractor/client/superadmin) never open these.
-const OrgAdminDashboard = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgAdminDashboard })));
-const OrgMembersView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgMembersView })));
-const OrgBillingView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgBillingView })));
-const OrgIntegrationsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgIntegrationsView })));
-const OrgActivityView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgActivityView })));
-const OrgTemplatesView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgTemplatesView })));
-const OrgApprovalChainsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgApprovalChainsView })));
-const OrgNotificationRulesView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgNotificationRulesView })));
-const OrgFeatureSettingsView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OrgFeatureSettingsView })));
-const OnboardingWizardView = lazy(() => import("./features/org/index.jsx").then(m => ({ default: m.OnboardingWizardView })));
-// Session 28: Vendor portal (closes the v2 "role exists, view doesn't" gap).
-const VendorPortal = lazy(() => import("./features/vendor/index.jsx").then(m => ({ default: m.VendorPortal })));
-// Session 28.5: In-app Help — renders docs/USER_GUIDE.md from public/.
-const HelpView = lazy(() => import("./features/help/index.jsx").then(m => ({ default: m.HelpView })));
+
 
 
 // ── OTHER VIEWS ───────────────────────────────────────────────────────────────
@@ -154,85 +69,22 @@ export default function App(){
     return ()=>{cancelled=true;};
   },[]);
   const[impersonating,setImpersonating]=useState(null);   // {realUser, asUser}
-  const startImpersonate=(targetUser)=>{
-    if(!user||user.role!=="superadmin"){alert("Only super admin can impersonate.");return;}
-    if(!window.confirm(`Impersonate ${targetUser.name} (${targetUser.role})?\n\nA banner stays visible the whole time. Click "Stop" to return to your super admin session.`))return;
-    // Audit BEFORE switching identity — recorded as the real super-admin user.
-    setAuditLog(p=>recordAudit(p,{actor:user,action:"IMPERSONATE",resource:"user",resource_id:targetUser.id,message:`Started impersonating ${targetUser.name} (${targetUser.role})`}));
-    setImpersonating({realUser:user,asUser:targetUser});
-    setUser({...targetUser,avatar:(targetUser.name||"U").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase()});
-    setViewRaw(targetUser.role==="client"?"client":"dashboard");
-  };
   const stopImpersonate=()=>{
     if(!impersonating)return;
-    setAuditLog(p=>recordAudit(p,{actor:impersonating.realUser,action:"IMPERSONATE",resource:"user",resource_id:impersonating.asUser.id,message:`Stopped impersonating ${impersonating.asUser.name}`}));
     setUser(impersonating.realUser);
-    setViewRaw("admin-dashboard");
+    setViewRaw("dashboard");
     setImpersonating(null);
   };
   const[projects,setProjects]=useLS("projects",INIT_PROJECTS);
   const[milestones,setMilestones]=useLS("milestones",INIT_MILESTONES);
   const[updates,setUpdates]=useLS("updates",INIT_UPDATES);
-  const[expenses,setExpenses]=useLS("expenses",INIT_EXPENSES);
   const[notifs,setNotifs]=useLS("notifs",INIT_NOTIFS);
-  const[teams,setTeams]=useLS("teams",INIT_TEAMS);
-  const[attendance,setAttendance]=useLS("attendance",INIT_ATTENDANCE);
   const[issues,setIssues]=useLS("issues",INIT_ISSUES);
-  const[materials,setMaterials]=useLS("materials",INIT_MATERIALS);
   const[drawings,setDrawings]=useLS("drawings",INIT_DRAWINGS);
   const[activity,setActivity]=useLS("activity",INIT_ACTIVITY);
-  // New feature state
-  const[tasks,setTasks]=useLS("tasks",INIT_TASKS);
-  const[punch,setPunch]=useLS("punch",INIT_PUNCH);
-  const[rfi,setRfi]=useLS("rfi",INIT_RFI);
-  const[co,setCo]=useLS("co",INIT_CO);
-  const[inspections,setInspections]=useLS("inspections",INIT_INSPECTIONS);
-  const[safety,setSafety]=useLS("safety",INIT_SAFETY);
-  const[vendors,setVendors]=useLS("vendors",INIT_VENDORS);
-  const[pos,setPos]=useLS("pos",INIT_POS);
-  const[invoices,setInvoices]=useLS("invoices",INIT_INVOICES);
-  const[labour,setLabour]=useLS("labour",INIT_LABOUR);
-  const[ra,setRa]=useLS("ra",INIT_RA);
-  const[comments,setComments]=useLS("comments",INIT_COMMENTS);
-  const[equipment,setEquipment]=useLS("equipment",INIT_EQUIPMENT);
-  const[diary,setDiary]=useLS("diary",INIT_DIARY);
-  const[worklogs,setWorklogs]=useLS("worklogs",INIT_WORKLOGS);
-  const[checklists,setChecklists]=useLS("checklists",INIT_CHECKLISTS);
-  const[submittals,setSubmittals]=useLS("submittals",INIT_SUBMITTALS);
-  const[permits,setPermits]=useLS("permits",INIT_PERMITS);
   const[messages,setMessages]=useLS("messages",INIT_MESSAGES);
-  const[boq,setBoq]=useLS("boq",INIT_BOQ);
-  const[ledger,setLedger]=useLS("ledger",INIT_LEDGER);
-  const[estimate,setEstimate]=useLS("estimate",INIT_ESTIMATE);
-  const[orgs,setOrgs]=useLS("orgs",INIT_ORGS);
-  const[adminUsers,setAdminUsers]=useLS("admin_users",INIT_ADMIN_USERS);
-  const[adminFlags,setAdminFlags]=useLS("admin_flags",{drawing_markup:true,ai_insights:true,dpr_auto:false,whatsapp_share:true,e_signature:true,offline_queue:true});
-  const[supportTickets,setSupportTickets]=useLS("support_tickets",INIT_SUPPORT);
-  // ── Roadmap Batch 1/2 state ───────────────────────────────────────────────
-  const[blocks,setBlocks]=useLS("blocks",INIT_BLOCKS);
-  const[floors,setFloors]=useLS("floors",INIT_FLOORS);
-  const[units,setUnits]=useLS("units",INIT_UNITS);
-  const[branding,setBranding]=useLS("branding",INIT_BRANDING);
-  const[auditLog,setAuditLog]=useLS("audit_log",INIT_AUDIT_LOG);
-  const[delegations,setDelegations]=useLS("delegations",INIT_DELEGATIONS);
-  const[dailySnapshots,setDailySnapshots]=useLS("daily_snapshots",INIT_DAILY_SNAPSHOTS);
-  const[materialPrices,setMaterialPrices]=useLS("material_prices",INIT_MATERIAL_PRICES);
-  const[compliance,setCompliance]=useLS("compliance",INIT_COMPLIANCE);
-  const[forecast,setForecast]=useLS("forecast",INIT_FORECAST);
-  // ── Production Phase 1 — Org Admin tier state ────────────────────────────
-  const[approvalChains,setApprovalChains]=useLS("approval_chains",INIT_APPROVAL_CHAINS);
-  const[orgIntegrations,setOrgIntegrations]=useLS("org_integrations",INIT_ORG_INTEGRATIONS);
-  const[templates,setTemplates]=useLS("templates",INIT_TEMPLATES);
-  const[notifRules,setNotifRules]=useLS("notif_rules",INIT_NOTIFICATION_RULES);
-  const[opsToggles,setOpsToggles]=useLS("ops_toggles",INIT_OPS_TOGGLES);
-  // Session 16 — feature flags. Two stores: platform (superadmin) + per-org.
-  const[platformFlags,setPlatformFlags]=useLS("platform_feature_flags",INIT_PLATFORM_FEATURE_FLAGS);
-  const[orgFlags,setOrgFlags]=useLS("org_feature_flags",INIT_ORG_FEATURE_FLAGS);
-  // Plan for the current user's org — falls back to "basic" if not set.
-  const currentOrg=orgs.find(o=>o.id===user?.org_id);
-  const activePlan=currentOrg?.plan||"basic";
-  // setMaterialPrices is used by future cache flow; setDailySnapshots used by panel.
-  void setMaterialPrices;
+  const[vendors,setVendors]=useLS("vendors",INIT_VENDORS);
+
   const[lang,setLang]=useLS("lang","en");
   // Offline-first state — surfaced as a pill in the top bar
   const[online,setOnline]=useState(isOnline());
@@ -311,30 +163,13 @@ export default function App(){
     })();
     return ()=>{unsubs.forEach(u=>u&&u());};
   },[user?.id]);
-  // Session 18 (Session 21 fix v2): auto-route first-time orgadmins to the
-  // onboarding wizard. MUST sit with the other useEffects ABOVE every early
-  // return in this component (there are two: `if(shareId&&!user) return …`
-  // at the share-link path, and `if(!user) return <LoginScreen…>` further
-  // down). Violating that ordering throws "Rendered more hooks than during
-  // the previous render."
-  useEffect(()=>{
-    if(user?.role!=="orgadmin"||!user.org_id)return;
-    if(opsToggles?.[`onboarding_done_${user.org_id}`])return;
-    if(view==="org-onboarding")return;
-    setViewRaw("org-onboarding");
-  },[user?.id]);
+
   const[dark,setDark]=useLS("dark",false);
   const[mobileOpen,setMobileOpen]=useState(false);
 
   // Share view
   const urlParams=new URLSearchParams(window.location.search);const shareId=urlParams.get("share");
   if(shareId&&!user) return <LoginScreen onLogin={u=>{setUser(u);setViewRaw("dashboard");}} dark={dark} toggleDark={()=>setDark(p=>!p)}/>;
-
-  // Activity logger - all PM/client actions visible to architect
-  const addActivity=(pid,pname,type,action,detail,byName,byRole)=>{
-    if(byRole==="architect") return; // architect actions don't log to feed
-    setActivity(p=>[{id:"ac_"+Date.now(),pid,pname,type,by:byName,role:byRole,action,detail,time:new Date().toISOString(),read:false},...p]);
-  };
 
   const setView=v=>{if(v==="logout"){setUser(null);return;}setViewRaw(user&&v!=="detail"&&!canOpenView(user,v)?fallbackViewForUser(user):v);setMobileOpen(false);};
   if(!user) return <LoginScreen onLogin={u=>{const next=initialView();setUser(u);const navList=PERMS[u.role]?.nav||PERMS.client?.nav||["dashboard","logout"];setViewRaw(navList.includes(next)?next:"dashboard");}} dark={dark} toggleDark={()=>setDark(p=>!p)}/>;
@@ -355,63 +190,9 @@ export default function App(){
   // from non-staff users. See docs/FEATURE_FREEZE.md.
   const stubBlocked=isViewStubBlocked(user,view);
   const effectiveView=(canOpenView(user,view) && !stubBlocked && (view!=="detail" || !selectedProject || canAccessProject(user,selectedProject))) ? view : fallbackViewForUser(user);
-  const dp={projects,setProjects,milestones,setMilestones,updates,setUpdates,expenses,setExpenses,teams,setTeams,attendance,setAttendance,issues,setIssues,materials,setMaterials,drawings,setDrawings,addActivity,
-    tasks,setTasks,punch,setPunch,rfi,setRfi,co,setCo,inspections,setInspections,safety,setSafety,vendors,pos,setPos,invoices,setInvoices,labour,setLabour,ra,setRa,comments,setComments,equipment,setEquipment,diary,setDiary,worklogs,setWorklogs,checklists,setChecklists,submittals,setSubmittals,permits,setPermits,messages,setMessages,boq,setBoq,ledger,setLedger,estimate,setEstimate,lang,
-    // Production Phase 1: audit log + approval chains threaded into detail tabs
-    setAuditLog,approvalChains};
 
   const renderView=()=>{
     switch(effectiveView){
-      case"dashboard": return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP} orgQuota={orgQuota}/>;
-      case"dpr": return <DailyProgressView user={user}/>;
-      case"projects": return <ProjectsView user={user} projects={projects} setProjects={setProjects} setView={setView} setSP={setSP} setAuditLog={setAuditLog}/>;
-      case"analytics": return <AnalyticsView user={user} projects={projects} expenses={expenses} updates={updates} teams={teams}/>;
-      case"activity": return <ActivityView user={user} activity={activity} setActivity={setActivity} projects={projects}/>;
-      case"detail": return <DetailView pid={sp} user={user} setView={setView} {...dp}/>;
-      case"create": return <CreateView user={user} setView={setView} setProjects={setProjects} setAuditLog={setAuditLog}/>;
-      case"notifications": return <NotifsView notifs={notifs} setNotifs={setNotifs} user={user} projects={projects}/>;
-      case"messages": return <MessagesView user={user} projects={projects} messages={messages} setMessages={setMessages}/>;
-      case"pm": return <PMView user={user} projects={projects} setView={setView} setSP={setSP} notifs={notifs}/>;
-      case"client": return <ClientPortal user={user} projects={projects} notifs={notifs} setView={setView} setSP={setSP}/>;
-      case"calendar": return <CalendarView user={user} projects={projects} milestones={milestones} tasks={tasks} invoices={invoices}/>;
-      case"vendors": return <VendorsView user={user} vendors={vendors} setVendors={setVendors}/>;
-      case"po": return <POsView user={user} projects={projects} pos={pos} vendors={vendors} setView={setView} setSP={setSP}/>;
-      case"admin-dashboard": return <SuperAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView}/>;
-      case"admin-orgs": return <OrgsAdminView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects} setAuditLog={setAuditLog}/>;
-      case"admin-users": return <UsersAdminView user={user} adminUsers={adminUsers} setAdminUsers={setAdminUsers} orgs={orgs} onImpersonate={startImpersonate} setAuditLog={setAuditLog}/>;
-      case"admin-billing": return <BillingAdminView user={user} orgs={orgs} setOrgs={setOrgs}/>;
-      case"admin-audit": return <AuditAdminView user={user} activity={activity} orgs={orgs} adminUsers={adminUsers} projects={projects}/>;
-      case"admin-usage": return <UsageAdminView user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} updates={updates} issues={issues} boq={boq} ra={ra} invoices={invoices} activity={activity} drawings={drawings}/>;
-      case"admin-support": return <SupportAdminView user={user} supportTickets={supportTickets} setSupportTickets={setSupportTickets} orgs={orgs} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
-      case"admin-settings": return <SettingsAdminView user={user} flags={adminFlags} setFlags={setAdminFlags} opsToggles={opsToggles} setOpsToggles={setOpsToggles} platformFlags={platformFlags} setPlatformFlags={setPlatformFlags} setAuditLog={setAuditLog}/>;
-      // ── Roadmap Batch 2 views ──────────────────────────────────────────────
-      case"hierarchy": return <HierarchyView user={user} projects={projects} blocks={blocks} setBlocks={setBlocks} floors={floors} setFloors={setFloors} units={units} setUnits={setUnits} setView={setView} setSP={setSP}/>;
-      case"material-prices": return <MaterialPricesView user={user} plan={activePlan}/>;
-      case"compliance": return <ComplianceView user={user} projects={projects} compliance={compliance} setCompliance={setCompliance}/>;
-      case"forecast": return <ForecastView user={user} projects={projects} boq={boq} ra={ra} ledger={ledger} updates={updates} forecast={forecast} setForecast={setForecast} plan={activePlan}/>;
-      case"delegations": return <DelegationsView user={user} adminUsers={adminUsers} delegations={delegations} setDelegations={setDelegations} setAuditLog={setAuditLog}/>;
-      case"admin-branding": return <BrandingSettingsView user={user} projects={projects} orgs={orgs} branding={branding} setBranding={setBranding} setAuditLog={setAuditLog}/>;
-      case"admin-audit-log": return <AuditLogV2View user={user} auditLog={auditLog} projects={projects} adminUsers={adminUsers}/>;
-      // ── Roadmap Batch 3 views ──────────────────────────────────────────────
-      case"kiosk-labour": return <LabourAttendanceKioskView user={user} projects={projects} labour={labour} setLabour={setLabour} auditLog={auditLog} setAuditLog={setAuditLog}/>;
-      case"kiosk-site": return <SiteWallKioskView user={user} projects={projects} updates={updates} issues={issues} labour={labour} milestones={milestones} setView={setView}/>;
-      case"ar-overlay": return <ARDrawingOverlayView user={user} projects={projects} drawings={drawings} plan={activePlan}/>;
-      case"snapshot": return <DailySnapshotPanelView user={user} projects={projects} boq={boq} ra={ra} ledger={ledger} updates={updates} labour={labour} issues={issues} dailySnapshots={dailySnapshots} setDailySnapshots={setDailySnapshots} setAuditLog={setAuditLog}/>;
-      // ── Session 28: Vendor portal (vendor role → 4-tab self-serve) ────────
-      case"vendor-dashboard": return <VendorPortal user={user} pos={Object.values(pos || {}).flat()} materialPrices={Object.values(materialPrices || {}).flat()} messages={Object.values(messages || {}).flat()} fmtCur={fmtCur} onAccept={(po)=>recordAudit(p=>p,{actor:user,action:"APPROVE",resource:"po",resource_id:po.id,message:`vendor accepted ${po.po_no}`})} onDecline={(po,reason)=>recordAudit(p=>p,{actor:user,action:"REJECT",resource:"po",resource_id:po.id,message:`vendor declined ${po.po_no}: ${reason}`})} onSendReply={(msg)=>recordAudit(p=>p,{actor:user,action:"CREATE",resource:"message",message:`vendor sent reply`})} />;
-      // Session 28.5: in-app User Guide — renders public/USER_GUIDE.md with TOC + search.
-      case"help": return <HelpView/>;
-      // ── Production Phase 1: Org Admin tier ────────────────────────────────
-      case"org-dashboard": return <OrgAdminDashboard user={user} orgs={orgs} adminUsers={adminUsers} projects={projects} issues={issues} activity={activity} setView={setView} orgIntegrations={orgIntegrations} templates={templates} approvalChains={approvalChains}/>;
-      case"org-members": return <OrgMembersView user={user} orgs={orgs} adminUsers={adminUsers} setAdminUsers={setAdminUsers} setAuditLog={setAuditLog}/>;
-      case"org-billing": return <OrgBillingView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} projects={projects} orgIntegrations={orgIntegrations} setAuditLog={setAuditLog}/>;
-      case"org-integrations": return <OrgIntegrationsView user={user} orgs={orgs} orgIntegrations={orgIntegrations} setOrgIntegrations={setOrgIntegrations} setAuditLog={setAuditLog}/>;
-      case"org-activity": return <OrgActivityView user={user} orgs={orgs} auditLog={auditLog} projects={projects} adminUsers={adminUsers}/>;
-      case"org-templates": return <OrgTemplatesView user={user} orgs={orgs} templates={templates} setTemplates={setTemplates} projects={projects} milestones={milestones} checklists={checklists} setAuditLog={setAuditLog}/>;
-      case"org-approvals": return <OrgApprovalChainsView user={user} orgs={orgs} approvalChains={approvalChains} setApprovalChains={setApprovalChains} setAuditLog={setAuditLog}/>;
-      case"org-notifications": return <OrgNotificationRulesView user={user} orgs={orgs} notifRules={notifRules} setNotifRules={setNotifRules} adminUsers={adminUsers} setAuditLog={setAuditLog}/>;
-      case"org-features": return <OrgFeatureSettingsView user={user} orgs={orgs} orgFlags={orgFlags} setOrgFlags={setOrgFlags} platformFlags={platformFlags} setAuditLog={setAuditLog}/>;
-      case"org-onboarding": return <OnboardingWizardView user={user} orgs={orgs} setOrgs={setOrgs} adminUsers={adminUsers} setAdminUsers={setAdminUsers} projects={projects} setProjects={setProjects} orgFlags={orgFlags} setOrgFlags={setOrgFlags} orgIntegrations={orgIntegrations} setOrgIntegrations={setOrgIntegrations} opsToggles={opsToggles} setOpsToggles={setOpsToggles} setView={setView} setSP={setSP} setAuditLog={setAuditLog}/>;
       default: return <DashboardView user={user} projects={projects} updates={updates} issues={issues} activity={activity} setView={setView} setSP={setSP} orgQuota={orgQuota}/>;
     }
   };

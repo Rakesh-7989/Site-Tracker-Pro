@@ -559,8 +559,7 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     {id:"admin-billing",icon:"wallet",label:"Billing & MRR",group:"admin"},
     {id:"admin-usage",icon:"barChart",label:"Usage Analytics",group:"admin"},
     {id:"admin-audit",icon:"activity",label:"Audit Log",group:"admin"},
-    {id:"admin-audit-log",icon:"shield",label:"Audit v2 (immutable)",group:"admin"},
-    {id:"admin-branding",icon:"sliders",label:"Branding",group:"admin"},
+
     {id:"admin-support",icon:"msgcircle",label:"Support Inbox",group:"admin"},
     {id:"admin-settings",icon:"sliders",label:"System Settings",group:"admin"},
     // Org Admin tier — visible only to role=orgadmin per PERMS
@@ -580,14 +579,10 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
     // Placeholder until Sprint 2 ships the real implementation.
     {id:"dpr",icon:"send",label:"Daily Progress"},
     {id:"projects",icon:"folder",label:"Projects"},
-    {id:"hierarchy",icon:"building",label:"Hierarchy"},
     {id:"calendar",icon:"calendar",label:"Calendar"},
     {id:"vendors",icon:"truck",label:"Vendors"},
     {id:"po",icon:"clipboard",label:"Purchase Orders"},
-    {id:"material-prices",icon:"truck",label:"Material Prices"},
     {id:"compliance",icon:"shield",label:"Compliance"},
-    {id:"forecast",icon:"zap",label:"Cost Forecast"},
-    {id:"delegations",icon:"users",label:"Delegations"},
     {id:"snapshot",icon:"calendar",label:"Daily Snapshot"},
     {id:"kiosk-labour",icon:"users",label:"Labour Kiosk"},
     {id:"kiosk-site",icon:"dashboard",label:"Site Wall Kiosk"},
@@ -614,9 +609,8 @@ export function Sidebar({user,active,setView,uc,ac,mobileOpen,setMobileOpen}){
   const orgs=store.orgs||[];
   const plan=(orgs.find(o=>o.id===user?.org_id)?.plan)||"basic";
   const NAV_FEATURE_ID={
-    "hierarchy":"hierarchy","calendar":"calendar","vendors":"vendors","po":"po",
-    "material-prices":"materialPrices","compliance":"compliance","forecast":"forecast",
-    "delegations":"delegations","snapshot":"snapshot",
+    "calendar":"calendar","vendors":"vendors","po":"po",
+    "compliance":"compliance","snapshot":"snapshot",
     "kiosk-labour":"kioskLabour","kiosk-site":"kioskSite","ar-overlay":"arOverlay",
     "analytics":"analytics","activity":"activity","messages":"messages",
     "org-templates":"orgAdminTemplates","org-approvals":"orgAdminApprovalChains",

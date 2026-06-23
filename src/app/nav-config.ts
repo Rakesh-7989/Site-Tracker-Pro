@@ -47,12 +47,20 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/calendar", label: "Calendar", icon: "calendar", group: "Workspace" },
   { to: "/search", label: "Search", icon: "search", group: "Workspace" },
   { to: "/notifications", label: "Notifications", icon: "bell", group: "Workspace" },
+  { to: "/messages", label: "Messages", icon: "msgcircle", group: "Workspace" },
+  { to: "/client", label: "Client Portal", icon: "shield", requires: "share:client:portal", group: "Workspace" },
+  { to: "/pm", label: "PM Dashboard", icon: "hardhat", requires: "project:create", group: "Workspace" },
+  { to: "/vendor", label: "Vendor Portal", icon: "truck", requires: "po:create", group: "Workspace" },
   { to: "/projects/new", label: "New Project", icon: "plus", requires: "project:create", group: "Workspace" },
 
   { to: "/dpr", label: "Daily Reports", icon: "clipboard", requires: "dpr:view", group: "Field" },
 
   { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement" },
   { to: "/pos", label: "Purchase Orders", icon: "doc", requires: "po:create", group: "Procurement" },
+  { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "vendor:manage", group: "Procurement" },
+  { to: "/hierarchy", label: "Hierarchy", icon: "building", requires: "project:create", group: "Planning" },
+  { to: "/forecast", label: "Cost Forecast", icon: "barChart", requires: "budget:view", group: "Insights" },
+  { to: "/delegations", label: "Delegations", icon: "users", requires: "org:approvals:manage", group: "Org Admin" },
 
   { to: "/analytics", label: "Analytics", icon: "barChart", requires: "budget:view", group: "Insights" },
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },
@@ -66,6 +74,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/org/approvals", label: "Approvals", icon: "check", requires: "org:approvals:manage", group: "Org Admin" },
   { to: "/org/notifications", label: "Notifications", icon: "bell", requires: "org:notifications:manage", group: "Org Admin" },
   { to: "/org/integrations", label: "Integrations", icon: "plug", requires: "org:integrations:manage", group: "Org Admin" },
+  { to: "/org/features", label: "Features", icon: "sliders", requires: "org:features:configure", group: "Org Admin" },
 
   { to: "/admin", label: "Platform", icon: "dashboard", requires: "platform:orgs:manage", group: "Platform" },
   { to: "/admin/signups", label: "Signups", icon: "mail", requires: "platform:orgs:manage", area: "signups", group: "Platform" },
@@ -74,9 +83,22 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/admin/roles", label: "Role Permissions", icon: "lock", requires: "platform:roles:configure", area: "roles", group: "Platform" },
   { to: "/admin/staff", label: "Staff", icon: "users", requiresStaffTier: ["owner", "head"], group: "Platform" },
   { to: "/admin/upgrades", label: "Upgrade requests", icon: "trend", requiresStaffTier: ["owner", "head", "member"], area: "upgrades", group: "Platform" },
+  { to: "/admin/billing", label: "Billing", icon: "credit-card", requires: "platform:billing:manage", area: "orgs", group: "Platform" },
+  { to: "/admin/audit", label: "Audit Log", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform" },
+  { to: "/admin/usage", label: "Usage", icon: "barChart", requires: "platform:orgs:manage", area: "orgs", group: "Platform" },
+  { to: "/admin/support", label: "Support", icon: "mail", requires: "platform:orgs:manage", group: "Platform" },
+  { to: "/admin/settings", label: "Settings", icon: "sliders", requires: "platform:settings:manage", area: "orgs", group: "Platform" },
+  { to: "/admin/branding", label: "Branding", icon: "sliders", requires: "platform:orgs:manage", group: "Platform" },
+  { to: "/admin/audit-v2", label: "Audit v2 (immutable)", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform" },
 
   // Always visible — every signed-in user can manage their own account security (2FA).
   { to: "/settings/security", label: "Security", icon: "lock", group: "Account" },
+  { to: "/help", label: "Help Guide", icon: "info", group: "Account" },
+
+  { to: "/kiosk/labour", label: "Labour Kiosk", icon: "users", group: "Kiosks" },
+  { to: "/kiosk/site", label: "Site Wall", icon: "dashboard", group: "Kiosks" },
+  { to: "/kiosk/ar", label: "AR Overlay", icon: "camera", group: "Kiosks" },
+  { to: "/kiosk/snapshot", label: "Daily Snapshot", icon: "barChart", group: "Kiosks" },
 ];
 
 /**
