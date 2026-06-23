@@ -109,6 +109,24 @@ export async function addOrgMember(
   }
 }
 
+/** Change a member's identity role (profiles.role). */
+export async function setIdentityRole(
+  client: any,
+  profileId: string,
+  identityRole: string,
+): Promise<MResult<{ ok: true }>> {
+  try {
+    const { error } = await client
+      .from("profiles")
+      .update({ role: identityRole })
+      .eq("id", profileId);
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { ok: true } };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /** Change a member's org-tier role. */
 export async function setOrgTierRole(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

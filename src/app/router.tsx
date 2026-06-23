@@ -17,11 +17,13 @@ import { RequireStaffArea } from "@/auth";
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
+import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
 import { PayView } from "@/features/marketing/PayView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
 import { LoginScreenV3, StaffLoginScreen } from "@/features/auth/LoginScreenV3";
 import { ResetPasswordView } from "@/features/auth/ResetPasswordView";
 import { StaffJoinView } from "@/features/auth/StaffJoinView";
+import { AcceptInviteView } from "@/features/auth/AcceptInviteView";
 import { ProfileCompleteView } from "@/features/account/ProfileCompleteView";
 import { NotFoundView } from "@/features/shell/PlaceholderView";
 import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
@@ -83,6 +85,8 @@ export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
   { path: "/", element: <LandingView /> },
   { path: "/signup", element: <SignupView /> },
+  { path: "/register", element: <OrgRegisterView /> },
+  { path: "/accept-invite", element: <AcceptInviteView /> },
   { path: "/privacy", element: <PrivacyView /> },
   { path: "/terms", element: <TermsView /> },
   { path: "/login", element: <LoginScreenV3 /> },

@@ -116,6 +116,10 @@ function Inner(): JSX.Element {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
+      <Alert variant="info">
+        Self-service registration is live at <b>/register</b>. Firms can now create their own workspace
+        directly. This queue is for legacy/paid-plan requests only.
+      </Alert>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="font-display text-2xl font-bold text-ink-900">Signup requests</h1>
         <Select className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />

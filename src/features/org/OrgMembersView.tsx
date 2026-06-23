@@ -9,7 +9,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   useAuth, useCan, useOrgSwitcher, usePlanCaps,
   ROLE_LABEL,
-  displayPlanLabel, orgTierRoleLabel, orgTierRolesForPlan,
+  displayPlanLabel, identityRoleLabel, identityRolesForPlan,
+  orgTierRoleLabel, orgTierRolesForPlan,
   isOrgTierRole,
   type OrgTierRole, type OrgCustomRole,
 } from "@/auth";
@@ -17,7 +18,7 @@ import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/u
 import { Input, Select } from "@/components/ui/forms";
 import { listOrgRoles } from "@/app/customRoleQueries";
 import {
-  listOrgMembers, lookupUserForInvite, addOrgMember, setOrgTierRole,
+  listOrgMembers, lookupUserForInvite, addOrgMember, setOrgTierRole, setIdentityRole,
   deactivateMember, reactivateMember, assignCustomRole, unassignCustomRole,
   inviteNewOrgMember,
   type OrgMemberRow, type InviteCandidate,
@@ -75,7 +76,11 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
 
   const roleById = useMemo(() => new Map(customRoles.map(r => [r.id, r])), [customRoles]);
   const effectivePlan = plan ?? "enterprise";
+  const availableIdentityRoles = useMemo(() => identityRolesForPlan(effectivePlan), [effectivePlan]);
   const availableOrgRoles = useMemo(() => orgTierRolesForPlan(effectivePlan), [effectivePlan]);
+  const identityRoleOptions = useMemo(() =>
+    availableIdentityRoles.map(r => ({ value: r, label: identityRoleLabel(r) })),
+  [availableIdentityRoles]);
   const roleOptions = useCallback((current?: string) => {
     const roles = isOrgTierRole(current) && !availableOrgRoles.includes(current) ? [...availableOrgRoles, current] : availableOrgRoles;
     return roles.map(r => ({ value: r, label: orgTierRoleLabel(r) }));
@@ -178,9 +183,9 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
         <div className="grid place-items-center py-10"><Spinner size={22} /></div>
       ) : (
         <>
-          <MemberList title="Active" rows={active} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} roleOptions={roleOptions} run={run} />
+          <MemberList title="Active" rows={active} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} identityRoleOptions={identityRoleOptions} roleOptions={roleOptions} run={run} />
           {inactive.length > 0 && (
-            <MemberList title="Inactive" rows={inactive} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} roleOptions={roleOptions} run={run} dim />
+            <MemberList title="Inactive" rows={inactive} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} identityRoleOptions={identityRoleOptions} roleOptions={roleOptions} run={run} dim />
           )}
         </>
       )}
@@ -191,11 +196,12 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
 interface ListProps {
   title: string; rows: OrgMemberRow[]; customRoles: OrgCustomRole[];
   roleById: Map<string, OrgCustomRole>; busy: string | null; orgId: string; createdBy: string; dim?: boolean;
+  identityRoleOptions: Array<{ value: string; label: string }>;
   roleOptions: (current?: string) => Array<{ value: OrgTierRole; label: string }>;
   run: (key: string, fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>) => Promise<void>;
 }
 
-function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy, roleOptions, run, dim }: ListProps): JSX.Element {
+function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy, identityRoleOptions, roleOptions, run, dim }: ListProps): JSX.Element {
   if (rows.length === 0) return <></>;
   return (
     <div>
@@ -212,6 +218,14 @@ function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy
                   <div className="text-[11px] text-ink-400">{idLabel(m.identityRole)}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Identity role */}
+                  <Select
+                    className="w-auto text-xs"
+                    value={m.identityRole}
+                    disabled={busy === `identity-${m.profileId}`}
+                    onChange={e => void run(`identity-${m.profileId}`, c => setIdentityRole(c, m.profileId, e.target.value))}
+                    options={identityRoleOptions}
+                  />
                   {/* Org tier role */}
                   <Select
                     className="w-auto text-xs"

@@ -111,11 +111,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const orgId = String(body.orgId ?? "");
   const email = String(body.email ?? "").trim().toLowerCase();
   const orgRole = String(body.orgRole ?? "architect");
+  const identityRole = String(body.identityRole ?? "orgadmin");
   const name = body.name ? String(body.name) : undefined;
   const sendCredentials = body.sendCredentials !== false;
 
   if (!orgId || !email || !email.includes("@")) return json({ ok: false, error: "missing-fields" }, 400);
-  if (!ORG_TIER_ROLES.includes(orgRole)) return json({ ok: false, error: "bad-role" }, 400);
+  if (!ORG_TIER_ROLES.includes(orgRole)) return json({ ok: false, error: "bad-org-role" }, 400);
 
   // ── Authorize: caller must be an admin of this org (or superadmin) ──
   const auth = await authenticate(req, { requireOrgId: orgId });
@@ -130,7 +131,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
   const siteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app";
-  const loginUrl = `${siteUrl}/login`;
+  const loginUrl = `${siteUrl}/accept-invite?email=${encodeURIComponent(email)}`;
 
   // ── 1. Create auth user (with temp password or invite) ──
   let newUserId: string | null = null;
@@ -183,7 +184,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // ── 2. Ensure profile row ──
   const { error: profileErr } = await admin
     .from("profiles")
-    .upsert({ id: newUserId, name: name || email.split("@")[0] || "Member", role: "orgadmin" }, { onConflict: "id", ignoreDuplicates: false });
+    .upsert({ id: newUserId, name: name || email.split("@")[0] || "Member", role: identityRole }, { onConflict: "id", ignoreDuplicates: false });
   if (profileErr) {
     return json({ ok: false, error: "profile-upsert-failed", detail: profileErr.message }, 500);
   }
