@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
-import { Alert, Spinner, Icon } from "@/components/ui/atoms";
+import { Alert, Spinner } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
 import {
   checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus,
@@ -16,10 +16,10 @@ export function ComplianceView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  return <Inner user={session.user} orgId={activeOrg.orgId} />;
+  return <Inner orgId={activeOrg.orgId} />;
 }
 
-function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
+function Inner({ orgId }: { orgId: string }): JSX.Element {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState("");
   const [loading, setLoading] = useState(true);

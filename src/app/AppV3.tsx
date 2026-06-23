@@ -4,6 +4,7 @@
 // layer (Phases 1-1.5). Mounted only when ?shell=v3 is present.
 
 import { RouterProvider } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 
 import { AuthProvider } from "@/auth";
 import { I18nProvider } from "@/i18n/I18nProvider";
@@ -16,6 +17,7 @@ export function AppV3(): JSX.Element {
       <AuthProvider>
         <QueryProvider>
           <RouterProvider router={router} />
+          <Analytics />
         </QueryProvider>
       </AuthProvider>
     </I18nProvider>

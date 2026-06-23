@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Spinner, Alert } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
 import {
-  getOrgBranding, getProjectBranding, listProjectBrandings,
+  getOrgBranding, listProjectBrandings,
   upsertOrgBranding, upsertProjectBranding, deleteProjectBranding,
 } from "@/app/brandingQueries";
 import { resolveBranding, accentToHex } from "@/lib/branding";

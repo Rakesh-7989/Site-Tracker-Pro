@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Alert, Icon } from "@/components/ui/atoms";
 import { delegationStatus } from "@/lib/delegations";
 import {
   listDelegations, listOrgMembers,

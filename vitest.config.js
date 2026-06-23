@@ -8,12 +8,14 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      environment: 'node',
+      globals: true,
+      environment: 'jsdom',
       include: ['tests/**/*.test.{js,jsx,ts,tsx}'],
       // tests/_gen/** are doc codegen scripts (e.g. roleFeatures.gen) — they
       // WRITE files as a side effect, so they only run when targeted explicitly.
       exclude: ['tests/e2e/**', 'tests/_gen/**', 'node_modules/**'],
       reporters: 'default',
+      setupFiles: ['./tests/setup.ts'],
     },
   }),
 )

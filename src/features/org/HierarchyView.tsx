@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { useAuth, useOrgSwitcher } from "@/auth";
+import { Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
 import {
   listBlocks, listFloors, listUnits,
@@ -99,7 +99,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
   const proj = projects.find(p => p.id === selProject);
   const tree = proj ? buildProjectTree(proj.id, blocks, floors, units) : [];
   const counts = proj ? countHierarchy(proj.id, blocks, floors, units) : { blocks: 0, floors: 0, units: 0 };
-  const progress = proj ? rollUpProgress(proj.id, blocks, floors, units) : { project: 0, blocks: {}, floors: {} };
+  const progress = proj ? rollUpProgress(proj.id, blocks, floors, units) : { project: 0, blocks: {} as Record<string, number>, floors: {} as Record<string, number> };
 
   const addBlock = async () => {
     const name = window.prompt("Block name (e.g. Block A, Tower 1):"); if (!name) return;
@@ -184,7 +184,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
                 <button onClick={() => toggleNode(b.id)} className="text-ink-500 w-5 text-center">{bExp ? "▾" : "▸"}</button>
                 <div className="flex-1">
                   <div className="font-display font-semibold text-ink-900 tracking-editorial">{b.name} <span className="text-[10px] font-mono text-amber-700 ml-1">{b.code}</span></div>
-                  <div className="text-[11px] text-ink-500">{(floors[b.id] || []).length} floors · {progress.blocks[b.id] || 0}% complete</div>
+                  <div className="text-[11px] text-ink-500">{(floors[b.id] || []).length} floors · {(progress.blocks as Record<string, number>)[b.id] || 0}% complete</div>
                 </div>
                 {can(user, "createProject") && <>
                   <button onClick={() => addFloor(b.id)} className="text-[11px] font-bold text-amber-700 hover:text-amber-900">+ Floor</button>
@@ -196,7 +196,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
                 return (<div key={f.id} className="ml-6 rounded-lg" style={{ border: "1px solid var(--st-line)" }}>
                   <div className="flex items-center gap-3 p-2 bg-white">
                     <button onClick={() => toggleNode(f.id)} className="text-ink-500 w-5 text-center">{fExp ? "▾" : "▸"}</button>
-                    <div className="flex-1"><div className="text-sm font-semibold text-ink-800">Floor {f.number}</div><div className="text-[10px] text-ink-500">{(units[f.id] || []).length} units · {progress.floors[f.id] || 0}% complete</div></div>
+                    <div className="flex-1"><div className="text-sm font-semibold text-ink-800">Floor {f.number}</div><div className="text-[10px] text-ink-500">{(units[f.id] || []).length} units · {(progress.floors as Record<string, number>)[f.id] || 0}% complete</div></div>
                     {can(user, "createProject") && <>
                       <button onClick={() => addUnit(f.id, b.id)} className="text-[10px] font-bold text-amber-700 hover:text-amber-900">+ Unit</button>
                       <button onClick={() => del("floor", f.id)} className="text-ink-400 hover:text-red-500"><Icon name="trash" size={12} /></button>

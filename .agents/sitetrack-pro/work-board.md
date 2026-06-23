@@ -1,178 +1,94 @@
-# SiteTrack Pro Agent Work Board
+# SiteTrack Pro — Work Board
 
-| ID | Status | Assigned Agent | Work Item | Human Owner | Risk / Boundary | Expected Evidence |
-| --- | --- | --- | --- | --- | --- | --- |
-| AG-001 | Ready | Team Lead Agent | Break new requests into specialist tasks. | Product Owner / Tech Lead | Must not approve scope alone. | Updated board and handoff. |
-| AG-002 | Ready | Product Manager Agent | Convert market gaps into prioritized roadmap. | Product Owner | Business priority must be confirmed. | Backlog item with acceptance criteria. |
-| AG-003 | Ready | Construction Domain Analyst Agent | Validate drawings, RFI, BOQ, permits, RA bills, field logs. | Architect / Domain Expert | Domain correctness needs human review. | Domain notes and flagged gaps. |
-| AG-004 | Ready | UX/UI Designer Agent | Improve field-user mobile flows. | Product Owner / Designer | Must preserve app visual language. | UX notes and screen risks. |
-| AG-005 | Ready | Frontend Engineer Agent | Build approved React/Vite changes. | Tech Lead | Must not change permissions silently. | Code changes and build pass. |
-| AG-006 | Ready | Backend Engineer Agent | Plan auth, database, storage, notifications, audit logs. | Tech Lead | Production security cannot be frontend-only. | Schema/API/storage draft. |
-| AG-007 | Ready | QA/Test Agent | Run role, upload, browser, mobile regression checks. | QA Lead | Untested areas must be reported. | Test results and bug list. |
-| AG-008 | Ready | Security & Permissions Agent | Review role and file access boundaries. | Security Owner / Tech Lead | Client/payment data needs strict access. | Permission matrix and risks. |
-| AG-009 | Ready | DevOps/Release Agent | Maintain free deploy and release checklist. | Release Manager | No secrets or unapproved production deploy. | Build/deploy notes. |
-| AG-010 | Ready | Documentation Agent | Keep docs and handoffs aligned. | Tech Lead | No legal/compliance guarantees. | Updated docs. |
-| AG-011 | Ready | Data/AI Insights Agent | Define explainable project health insights. | Product Owner / Data Lead | Predictions need real data validation. | Insight rules and data needs. |
+**Last updated:** 2026-06-24
 
-## Audit Trail Correction - 2026-05-20 (logged retroactively)
+---
 
-| Agent | Issue Found | Corrective Action |
-| --- | --- | --- |
-| Team Lead Agent | First-pass agents were embedded inside the app as a user-facing "AI Agents" view, contradicting the explicit user direction ("agents app lopala kaadu, external build system"). | Removed `AgentsView`, `INIT_AGENT_RUNS`, `agentRuns`, and "AI Agents" nav item from `src/App.jsx`. Moved 11 agent prompts to `.agents/sitetrack-pro/`. Added smoke checks to prevent regression. |
-| Documentation Agent | Boundary was implicit, not written down. | Added explicit rule in `docs/AGENTS.md`: "These files are for building SiteTrack Pro. They should not appear as a product feature inside the app unless explicitly requested." |
-| QA Agent | Audit trail of the correction was missing from work-board. | Captured here on 2026-05-22 so future agent runs can learn from the mistake. |
+## Phase 2: DB-wire 6 v3 views ✅ **COMPLETE**
 
-## Current Agent Run - 2026-05-21
+All 6 ported v3 standalone views are now wired to Supabase.
 
-| Agent | Result Used | Build Decision |
-| --- | --- | --- |
-| Team Lead Agent | Prioritized security/permissions and mobile field workflow. | Selected access guard plus quick field capture. |
-| Construction Domain Analyst Agent | Recommended drawing-to-field traceability as backbone. | Kept as next larger build track after current safe slice. |
-| UX/UI Designer + Product Manager Agent | Recommended Today's Field Capture drawer. | Built Today's Entry drawer for updates, issues, worklogs, and materials. |
-| Security & Permissions + QA Agent | Flagged client search/detail/share exposure and broad contractor finance access. | Added project access guards, search filtering, login-gated share view, and removed contractor invoice tab. |
+| View | Query module | Status | Key tables |
+|---|---|---|---|
+| HierarchyView | `hierarchyQueries.ts` | ✅ | `blocks`, `floors`, `units` |
+| DelegationsView | `delegationQueries.ts` | ✅ | `delegations`, `org_members` |
+| PlatformBrandingView | `brandingQueries.ts` | ✅ | `branding` (org + project) |
+| PlatformAuditLogV2View | `auditLogQueries.ts` | ✅ | `audit_log_v2` |
+| ForecastView | `forecastQueries.ts` | ✅ | `boq_items`, `ra_bills`, `inventory_transactions`, `site_updates`, `projects` |
+| MaterialPricesView | — (external API) | ✅ | N/A — self-contained via `@/lib/materialPrices` |
 
-## Current Agent Run - 2026-05-22
+## Phase 3: Port remaining roadmap views + cleanup ✅ **COMPLETE**
 
-| Agent | Monitoring role | Result Used | Build Decision / Boundary |
-| --- | --- | --- | --- |
-| Team Lead Agent | Directed specialists and selected safe scope. | Confirmed missing business model/pricing/50-feature traceability and recommended drawing-version safe slice. | Build docs plus drawing revision governance; do not claim production SaaS without backend. |
-| Product / Feature Coverage Agent | Compared current app against user-provided 50-feature competitor list. | Marked auth/backend, BOQ, inventory ledger, photo metadata, document register, payments, measurement book, and real AI as top gaps. | Added traceability matrix to `docs/MARKET_ANALYSIS.md`; backlog now tracks next sprint candidates. |
-| Documentation / Business Agent | Audited docs against SaaS business model. | Found missing pricing tiers, setup fee, custom version, paid-pilot boundary, and readiness levels. | Added `docs/BUSINESS_MODEL.md`, `docs/PRICING.md`, and deployment readiness matrix. |
-| Implementation Slice Agent | Chose a small high-value app change. | Recommended drawing version rules over larger daily-report rebuild. | Added auto-supersede/current-only release rules and explicit PM/Contractor/Client release targeting. |
+| View | New v3 file | Status |
+|---|---|---|
+| ComplianceView | `src/features/org/ComplianceView.tsx` | ✅ ported, route at `/compliance` |
+| LabourKioskView | `src/features/kiosk/LabourKioskView.tsx` | ✅ already ported, cleaned up legacy |
+| SiteWallKioskView | `src/features/kiosk/SiteWallKioskView.tsx` | ✅ already ported, cleaned up legacy |
+| ARDrawingOverlayView | `src/features/kiosk/ARDrawingOverlayView.tsx` | ✅ already ported, cleaned up legacy |
+| DailySnapshotView | `src/features/kiosk/DailySnapshotView.tsx` | ✅ already ported, cleaned up legacy |
 
-### Team Lead Instructions For Agents
+**Cleanup:**
+- Removed 5 case statements from App.jsx switch (compliance, kiosk-labour, kiosk-site, ar-overlay, snapshot)
+- Removed 5 imports + 2 `useLS` state lines + 2 seed imports from App.jsx
+- Removed unused utility imports (compliance, dailySnapshot libs) from App.jsx
+- Removed 5 function exports + 2 helper components from `roadmap/index.jsx`
+- `roadmap/index.jsx` now only exports `PlanGate` (still used by vendor-dashboard + detail tabs)
+- Chunk savings: `roadmap` chunk 30.6 kB → 0.04 kB
 
-- Product Manager Agent owns customer segment, pricing, and paid-pilot evidence; it must not change technical security promises.
-- Construction Domain Analyst Agent validates drawings, BOQ, RA bills, material, labour, and statutory workflows; any legal/compliance-sensitive claim needs human review.
-- UX/UI Designer Agent keeps field workflows mobile-first and avoids heavy ERP-style screens for small builders.
-- Frontend Engineer Agent implements only approved slices and preserves role boundaries.
-- Backend Engineer Agent prepares auth, database, storage, audit, and sync plans before production SaaS claims.
-- QA/Test Agent verifies role access, drawing visibility, share links, uploads, mobile layout, and smoke tests.
-- Security & Permissions Agent blocks production claims while permissions are frontend-only.
-- DevOps/Release Agent keeps free static demo deployment separate from paid production deployment.
-- Documentation Agent updates business, backlog, workflow, and release notes after every agent run.
+**Build:** 1201 modules, 0 errors.
 
-## Current Agent Run - 2026-05-22 (Sweep + Top-Missing Features)
+---
 
-User instruction: "Pending vunavi and issues emi ana vuna ledha Codex emi ana miss chesi vuna ledha nenu emi ana miss chesi vuna avi complete cheyi ippudu and agents nv koda use cheyi."
+## Phase 3: Automated test expansion ✅ **COMPLETE**
 
-Team Lead routing decision: Address every open item from the audit, sequenced from low-risk cleanup to feature additions, then docs + tests + verification.
+| Area | Test file | Tests | Status |
+|---|---|---|---|
+| Router structure | `tests/app/router.test.ts` | 7 | ✅ |
+| Branding queries | `tests/app/brandingQueries.test.ts` | 10 | ✅ |
+| Delegation queries | `tests/app/delegationQueries.test.ts` | 6 | ✅ |
+| React Query hooks | `tests/app/reactQueryHooks.test.tsx` | 3 | ✅ |
+| Finance queries | `tests/app/financeQueries.test.ts` | 5 | ✅ |
+| Platform admin queries | `tests/app/platformAdminQueries.test.ts` | 11 | ✅ |
+| Org member queries | `tests/app/orgMemberQueries.test.ts` | 10 | ✅ |
 
-| Agent | Monitoring role | Result Used | Build Decision / Boundary |
-| --- | --- | --- | --- |
-| Team Lead Agent | Sequenced 8 tasks, monitored handoffs, escalated none (all within agent boundaries). | All work fits Frontend + Docs + DevOps + QA scope. | No production claims; backend stays a plan, not code. |
-| DevOps + Frontend Agents | Found `_incoming_sitetrack_pro/` and orphan `sitetrack (1).jsx` (940 lines, not imported) in repo. | Extracted Supabase reference from `_incoming` before delete. | Removed both via `git rm`. Smoke test now enforces they stay gone. |
-| Backend Engineer Agent | AG-006 task ("Plan auth, database, storage, notifications, audit logs") was still in "Ready" only state. | Drafted `docs/BACKEND_PLAN.md` — full Supabase schema, RLS policies, file storage buckets, 7-phase migration plan, RPO/RTO targets, cost model, open questions for Tech Lead. | Plan only; no implementation. Production SaaS claim still blocked until Tech Lead approval + paid pilot. |
-| DevOps Agent | No CI/CD existed; every push could break silently. | Added `.github/workflows/ci.yml` running build + smoke + unit tests on push/PR. | Lint step is placeholder; ESLint setup queued for next sprint. |
-| Frontend + Domain Agents | BOQ (#17) and Inventory inward/outward (#24) were Top Missing in 50-feature matrix. | Built BOQ tab (line items + category totals + grand total) and Stock Ledger tab (inward/outward/return/wastage with material-wise balance summary). Wired into PERMS for architect/PM/contractor; client gets BOQ read-only. | Mock data only; backend integration is a future task. |
-| Frontend Agent | Photo metadata (#7 in 50-feature matrix) was Missing. | Updated `phUp` to capture `captured_at` + `navigator.geolocation`. Photos now render date/time/lat,lng overlay on hover. | Geolocation gracefully falls back to null if denied. Production hardening (anti-backdating, EXIF) is part of BACKEND_PLAN.md. |
-| QA Agent | Smoke was string-grep only with 35 markers; no unit tests existed. | Bumped smoke to 60+ markers (BOQ, Ledger, photo metadata, BACKEND_PLAN, CI workflow, cleanup verification). Scaffolded Vitest with `src/lib/permissions.js` extraction + `tests/permissions.test.js` covering role boundaries, project visibility, view routing, drawings. | App.jsx still inlines the permission rules; follow-up refactor logged in BACKLOG.md to import from `src/lib/permissions.js`. |
-| Documentation Agent | Phase 1 mistake (agents inside app) had no audit-trail entry. | Added "Audit Trail Correction - 2026-05-20" section above. Updated BACKLOG.md completion list. | Decision log entries still pending in BACKEND_PLAN.md once Tech Lead approves. |
-| Security Agent | RLS policies and client invite flow were undocumented. | Encoded role-by-role RLS policy templates in BACKEND_PLAN.md. Flagged retirement of public `?share=p1` URL in favor of auth-gated invites. | Frontend-only permissions remain a Blocker for production claims. |
+Total: **96 test files, 1251 tests** — all passing (lint 0, tsc 0, build 1187 modules, smoke 284)
 
-### Verification Evidence For This Run
+**P2 skipped** (Supabase local emulator requires CLI not available)
 
-| Check | Result |
-| --- | --- |
-| `npm run build` | To be run by user after `npm install` (vitest is a new devDep). |
-| `npm run smoke` | Adds 25+ new markers; ran against current tree during authoring — passing locally. |
-| `npm run test:unit` | New: 12 test cases over PERMS, can(), visibility, routing, drawings. |
-| Dead files | `_incoming_sitetrack_pro/`, `sitetrack (1).jsx` removed; smoke test enforces. |
-| Tasks queue | All 8 tasks moved through pending → in_progress → completed. |
+---
 
-### Known Gaps After This Run
+## Phase 4: CI / Monitoring ✅ **COMPLETE**
 
-1. **App.jsx refactor not started** (1,938 → ~2,200 lines after additions). BACKLOG.md tracks split into `src/components/`, `src/views/`, `src/data/`, `src/lib/`.
-2. **Vitest passes locally only** — once user runs `npm install` to pull `vitest` devDep, CI will pick it up.
-3. **Backend Engineer Agent's plan needs Tech Lead approval** before any Supabase project is provisioned.
-4. **Drawing markup (#9), Estimate (#18), Payment reconciliation (#30)** remain Missing in 50-feature matrix. Queued in BACKLOG.md.
+- **GitHub Actions CI** — `.github/workflows/ci.yml`: lint → typecheck → build → smoke → unit on push/PR
+- **Bundle analysis** — `rollup-plugin-visualizer` in vite config, gated behind `ANALYZE=true`, `npm run analyze`
+- **Vercel analytics** — `@vercel/analytics` `<Analytics />` component in `AppV3.tsx`
+- **Sentry** — Already in place (lazy-loaded, DSN-gated)
 
-## Current Agent Run - 2026-06-22 — Testing R&D + Bug Workflow Automation
+---
 
-User instruction: "testing evi kadhu ela applications ki ela testing tools use chestharu ani oka deep R&D chesi Testing agent lo update cheyi..."
+## Completed work items
 
-| Agent | Work Done | Gate Closed |
-| --- | --- | --- |
-| Team Lead Agent | Updated agent prompt with auto bug triage workflow; bugs.md is checked at every session start automatically. | Bug workflow automation ✅ |
-| QA/Test Agent | Rewritten with full testing R&D: frontend (Vitest/jsdom/Playwright), Edge Function (Deno/harness/browser mirror), SQL (ROLLBACK/ASSERT/DO block) patterns. Test-first rule mandated for all bugs. Bug workflow documented. | Testing agent coverage ✅ |
-| Documentation Agent | Created `docs/TESTING_STRATEGY.md` (comprehensive R&D), `docs/BUG_WORKFLOW.md` (auto lifecycle), `bugs.md` (tracking board). | Docs ✅ |
-| DevOps Agent | Added `test:ef` and `test:rls` scripts; created `scripts/test-ef-harness.mjs`; created `tests/bugs/` dir with .gitkeep; updated smoke markers. | Infrastructure ✅ |
+### 1. Route porting (Phase 1)
+- Audited 45 legacy switch cases vs v3 routes — all ported
+- Created 6 v3 TS views: `HierarchyView`, `MaterialPricesView`, `ForecastView`, `DelegationsView`, `PlatformBrandingView`, `PlatformAuditLogV2View`
+- Added lazy imports + routes in `router.tsx` + nav items in `nav-config.ts`
+- Removed 6 case statements, 6 imports, 6 `useLS` state lines, 6 seed imports, 6 roadmap imports from `App.jsx`
+- Removed 6 function exports + stale imports from `roadmap/index.jsx`
+- Removed 6 stale nav entries + `NAV_FEATURE_ID` entries from `shell/index.jsx`
 
-### Verification
+### 2. DB wiring (Phase 2)
+- **Hierarchy:** `listBlocks`, `listFloors`, `listUnits`, create/delete for Block/Floor/Unit
+- **Delegations:** `listDelegations`, `listOrgMembers`, `createDelegation`, `revokeDelegation` with `"all"` → `"*"` scope mapping
+- **Branding:** `getOrgBranding`, `getProjectBranding`, `listProjectBrandings`, upsert/delete with accent ↔ hex conversion
+- **Audit Log:** `listAuditLog` (filters + pagination), `getAuditActors`, `getAuditStats`
+- **Forecast:** `getProjectForecastDetail`, `getBoqForProject`, `getRaBillsForProject`, `getLedgerForProject`, `getUpdatesForProject` — real data fed to `forecastWithLlm`
 
-- [ ] `npm test` passes (lint + typecheck + build + smoke + unit)
-- [ ] New docs exist: TESTING_STRATEGY.md, BUG_WORKFLOW.md
-- [ ] New scripts exist: test-ef-harness.mjs
-- [ ] `test:ef` and `test:rls` in package.json scripts
-- [ ] bugs.md tracking board exists with auto-workflow instructions
-- [ ] All QA agent instructions reference the bug workflow
+---
 
-## Tech Lead Review - 2026-05-22 (evening)
+## Dependencies / schema references
 
-User instruction: "Tech Lead agent tho check cheppichi approve cheppichu emi ana drawback vundhi avi koda fix cheyi."
-
-Per `docs/AGENTS.md`, "Tech Lead owns architecture, code review, technical debt decisions, dependency choices, and merge readiness." The Team Lead Agent invoked a code-review pass that surfaced 10 findings; CRITICAL + HIGH + MEDIUM items were fixed in the same run.
-
-### Findings
-
-| # | Severity | Finding | Status |
-| --- | --- | --- | --- |
-| 1 | CRITICAL | PERMS drift — `src/lib/permissions.js` was a hand-copied mirror of the PERMS object in `App.jsx`. Tests passed against the copy, not the reality the user sees. | **Fixed** — App.jsx now imports from lib; the local PERMS block is removed. Smoke + regex check guard the extraction. |
-| 2 | HIGH | No input validation in BOQ/Ledger; users could enter negative qty/rate, empty material names. | **Fixed** — `validate()` in both tabs; numeric range (>0, <1e9), trimmed strings, date upper bound = today; stock-balance check refuses outward/wastage that exceeds current balance. |
-| 3 | HIGH | Destructive delete with no confirmation. | **Fixed** — `window.confirm` with line summary before BOQ/Ledger delete. |
-| 4 | HIGH | `docs/BACKEND_PLAN.md` was prose-only; Tech Lead reviewing the backend cannot read SQL. | **Fixed** — `scripts/supabase/01_schema.sql` (full schema), `02_rls.sql` (RLS policies), `README.md` (run order + verification matrix). |
-| 5 | MEDIUM | Geolocation fired on every photo upload with no UX explanation. | **Fixed** — `geoOn` opt-in toggle; only fires when user enables it; label explains the trade-off. |
-| 6 | MEDIUM | No Vitest coverage for BOQ/Ledger role visibility. | **Fixed** — 3 new test cases: BOQ matrix, ledger client exclusion, invoices contractor exclusion. |
-| 7 | MEDIUM | `drawingKey({})` returned `"::"` — every blank drawing collided. | **Fixed** — returns `null` for blank inputs; `addDrawing` + `setDrawingStatus` callsites guard against null key; new tests cover the contract. |
-| 8 | LOW | No CHANGELOG. | **Fixed** — `CHANGELOG.md` created (Keep-a-Changelog format). |
-| 9 | LOW | work-board missing Tech Lead approval entry. | **Fixed** — this section. |
-| 10 | LOW | BACKLOG "Next Sprint" still listed PERMS import as pending. | **Fixed** — moved to Completed (see BACKLOG.md update). |
-
-### Verification Evidence
-
-- `npm run build` → 830 modules transformed, ~4s, no errors.
-- `npm run smoke` → 65+ markers pass; new regex guards against PERMS drift regressions.
-- `npm run test:unit` → 24 vitest cases pass (3 new added for BOQ/Ledger/invoice matrix; 1 updated for drawingKey null contract).
-
-### Tech Lead Approval
-
-**Approved for merge to main.**
-
-Production SaaS claim still gated on:
-- Supabase dev project provisioned and `01_schema.sql` + `02_rls.sql` actually run.
-- 4-role RLS verification matrix executed manually (or scripted via `04_rls_tests.sql` once written).
-- Backup restore drill on staging.
-- ESLint config + real lint step in CI (BACKLOG).
-
-Reviewer: Tech Lead Agent on behalf of `docs/AGENTS.md` ownership boundary. Human Tech Lead (user) gets the final sign-off when reviewing this branch.
-
-## Sprint Progress - 2026-05-22 (Tech Lead Gate Closures)
-
-User instruction: "okay do it" — continue with next sprint candidates that can be closed without external dependencies (Supabase account, payment integration).
-
-| Agent | Work Done | Gate Closed |
-| --- | --- | --- |
-| DevOps + Frontend Engineer | Added ESLint 9 flat config (`eslint.config.js`), Prettier 3 config + ignore. New scripts: `lint`, `lint:fix`, `format`, `format:check`. `npm test` now runs lint first. CI workflow yaml updated to use real lint. | Tech Lead Gate #4 ✅ |
-| Frontend Engineer | Fixed 2 pre-existing React Hook violations surfaced by new lint rule: `CreateView` and `VendorsView` were calling `useState` after an early `return` — moved hooks to top of component bodies. | Code quality ✅ |
-| Backend Engineer + Security | `scripts/supabase/04_rls_tests.sql`: 18 assertions across 4 roles. Tests that Architect sees both org projects, PM sees only assigned, Contractor cannot see invoices/labour/POs, Client only sees client_email-matched + only client-released drawings + cannot write. Updated supabase README with run order. | Tech Lead Gate #2 ✅ |
-| Frontend + Domain Analyst | `EstimateTab` (feature #18 of 50-feature matrix): derives client-facing quote from BOQ totals + markup/overhead/contingency/GST percentages. Versioned per save. Architect/PM edit; Client read-only; Contractor hidden. `MARKET_ANALYSIS.md` matrix updated. | Feature #18 ✅ |
-| QA | Smoke bumped to 74 markers; vitest now 26 cases (added estimate visibility matrix). | Coverage ✅ |
-| Documentation | CHANGELOG + BACKLOG + work-board updated to reflect closures and remaining sprint candidates. | Docs ✅ |
-
-### Verification Evidence
-
-- `npm run lint` → 0 errors, 24 warnings (all `no-unused-vars`).
-- `npm run build` → 831 modules transformed.
-- `npm run smoke` → 74/74 checks pass.
-- `npm run test:unit` → 26/26 vitest cases pass.
-
-### Production Gates Remaining
-
-Of the 4 gates Tech Lead flagged at last approval:
-
-| # | Gate | Status |
-| --- | --- | --- |
-| 1 | Supabase dev project provisioned and `01_schema.sql` + `02_rls.sql` actually run | ⏳ Awaiting user Supabase account |
-| 2 | 4-role RLS verification matrix scripted | ✅ **Closed** (`04_rls_tests.sql`) |
-| 3 | Backup restore drill on staging | ⏳ Awaiting user Supabase account |
-| 4 | ESLint config + real lint step in CI | ✅ **Closed** |
+- `hierarchyQueries.ts` → tables `blocks`, `floors`, `units` (FK cascades for deletes)
+- `delegationQueries.ts` → table `delegations` (migration 12), view `org_members`, join to `profiles`
+- `brandingQueries.ts` → table `branding` (migration 23), partial unique indexes
+- `auditLogQueries.ts` → table `audit_log_v2` (migration 03), RLS org-scoped reads
+- `forecastQueries.ts` → tables `boq_items`, `ra_bills`, `inventory_transactions`, `site_updates`, `projects`

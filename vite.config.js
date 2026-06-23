@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 import { fileURLToPath, URL } from 'node:url'
 
 // Path aliases mirrored from tsconfig.json. Vite + Vitest read these so that
@@ -7,8 +8,13 @@ import { fileURLToPath, URL } from 'node:url'
 // existing relative-path JS imports.
 const r = (p) => fileURLToPath(new URL(p, import.meta.url))
 
+const isAnalyze = process.env.ANALYZE === 'true'
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    ...(isAnalyze ? [visualizer({ open: true, gzipSize: true, brotliSize: true })] : []),
+  ],
   resolve: {
     alias: {
       '@/auth':       r('./src/auth'),

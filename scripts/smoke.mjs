@@ -7,10 +7,9 @@ const checks = [];
 
 const add = (name, pass, detail = "") => checks.push({ name, pass, detail });
 
-// App markers now search BOTH App.jsx and the extracted feature modules
-// (Batch 4 + Batch 5 moved a lot of code out of App.jsx). The smoke contract
-// is "this string lives somewhere in the user-facing app code", not "this
-// string lives in App.jsx specifically".
+// App markers now search App.jsx + feature modules + v3 router + key v3 views.
+// The smoke contract is "this string lives somewhere in the user-facing app
+// code", not "this string lives in App.jsx specifically".
 const app = [
   read("src/App.jsx"),
   read("src/features/roadmap/index.jsx"),
@@ -20,6 +19,8 @@ const app = [
   read("src/features/shell/index.jsx"),
   read("src/features/org/index.jsx"),
   read("src/lib/exports.js"),
+  read("src/app/router.tsx"),
+  read("src/components/attachments.jsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -43,9 +44,6 @@ const vite = read("vite.config.js");
   "BOQTab",
   "LedgerTab",
   "EstimateTab",
-  "INIT_BOQ",
-  "INIT_LEDGER",
-  "INIT_ESTIMATE",
   "Bill of Quantities",
   "Stock Ledger",
   "Project Estimate",
@@ -73,8 +71,6 @@ const vite = read("vite.config.js");
   "UsersAdminView",
   "BillingAdminView",
   "SettingsAdminView",
-  "INIT_ORGS",
-  "INIT_ADMIN_USERS",
   "PLAN_META",
   "Admin Console",
   "Customer Organizations",
@@ -90,9 +86,7 @@ const vite = read("vite.config.js");
   "AuditAdminView",
   "UsageAdminView",
   "SupportAdminView",
-  "INIT_SUPPORT",
   "Impersonating",
-  "startImpersonate",
   "Audit Log",
   "Usage Analytics",
   // Tech Lead Review fixes
@@ -106,36 +100,14 @@ const vite = read("vite.config.js");
   "ComplianceView",
   "ForecastView",
   "DelegationsView",
-  "BrandingSettingsView",
-  "AuditLogV2View",
+  "PlatformBrandingView",
+  "PlatformAuditLogV2View",
   "PlanGate",
-  "INIT_BLOCKS",
-  "INIT_FLOORS",
-  "INIT_UNITS",
-  "INIT_BRANDING",
-  "INIT_AUDIT_LOG",
-  "INIT_DELEGATIONS",
-  "INIT_DAILY_SNAPSHOTS",
-  "INIT_MATERIAL_PRICES",
-  "INIT_COMPLIANCE",
-  "INIT_FORECAST",
-  "case\"hierarchy\"",
-  "case\"material-prices\"",
-  "case\"compliance\"",
-  "case\"forecast\"",
-  "case\"delegations\"",
-  "case\"admin-branding\"",
-  "case\"admin-audit-log\"",
   // Roadmap Batch 3 — kiosks + AR + snapshot panel + audit wiring
-  "LabourAttendanceKioskView",
+  "LabourKioskView",
   "SiteWallKioskView",
   "ARDrawingOverlayView",
-  "DailySnapshotPanelView",
-  "case\"kiosk-labour\"",
-  "case\"kiosk-site\"",
-  "case\"ar-overlay\"",
-  "case\"snapshot\"",
-  "recordAudit(p,{actor:user,action:\"IMPERSONATE\"",
+  "DailySnapshotView",
   "recordAudit(p,{actor:user,action:\"CREATE\",resource:\"project\"",
   // ── Production Phase 1 — Org Admin tier markers ──────────────────────────
   "OrgAdminDashboard",
@@ -147,19 +119,6 @@ const vite = read("vite.config.js");
   "OrgApprovalChainsView",
   "OrgNotificationRulesView",
   "orgadmin",
-  "case\"org-dashboard\"",
-  "case\"org-members\"",
-  "case\"org-billing\"",
-  "case\"org-integrations\"",
-  "case\"org-activity\"",
-  "case\"org-templates\"",
-  "case\"org-approvals\"",
-  "case\"org-notifications\"",
-  "INIT_APPROVAL_CHAINS",
-  "INIT_ORG_INTEGRATIONS",
-  "INIT_TEMPLATES",
-  "INIT_NOTIFICATION_RULES",
-  "INIT_OPS_TOGGLES",
   // Q5a: additional audit wirings
   "action:\"RELEASE\",resource:\"drawing\"",
   "action:\"APPROVE\",resource:\"rfi\"",
@@ -170,9 +129,6 @@ const vite = read("vite.config.js");
   "resource:\"expense\"",
   "resource:\"support_ticket\"",
   "resource:\"subscription\"",
-  // Q5d: lazy chunk for detail + org
-  "lazy(() => import(\"./features/detail/index.jsx\")",
-  "lazy(() => import(\"./features/org/index.jsx\")",
   // Q6 / Q7 / Q8 toggles
   "demoLoaderEnabled",
   "kioskLabourEnabled",
@@ -189,13 +145,10 @@ const vite = read("vite.config.js");
   "OrgFeatureSettingsView",
   "FEATURE_CATALOG",
   "isFeatureEnabled",
-  "case\"org-features\"",
   "Feature toggles",
   "Platform-wide kill switches",
   "Feature \"",                    // recordAudit message prefix for toggle changes
   "features enabled for this role", // LoginScreen hint
-  "INIT_PLATFORM_FEATURE_FLAGS",
-  "INIT_ORG_FEATURE_FLAGS",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

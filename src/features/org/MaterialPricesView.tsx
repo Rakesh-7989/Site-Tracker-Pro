@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/auth";
-import { Alert, Icon } from "@/components/ui/atoms";
+import { Icon } from "@/components/ui/atoms";
 import { COMMODITIES, fetchQuotes, bestQuote, savings } from "@/lib/materialPrices";
 import { canUseFeature } from "@/lib/planGating";
 
@@ -13,12 +13,12 @@ export function MaterialPricesView(): JSX.Element {
   const [location, setLocation] = useState("");
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const grades = (COMMODITIES[commodity] as any)?.grades || [];
+  const grades = (COMMODITIES as any)[commodity]?.grades || [];
   useEffect(() => { setGrade(grades[0] || ""); }, [commodity]);
 
   const fetch = async () => {
     setLoading(true);
-    const q = await fetchQuotes({ commodity, grade, qty: Number(qty) || 1, location });
+    const q = await fetchQuotes({ commodity, grade, qty: Number(qty) || 1, location } as any);
     setQuotes(q); setLoading(false);
   };
   const best = bestQuote(quotes);
@@ -42,7 +42,7 @@ export function MaterialPricesView(): JSX.Element {
           <div className="bg-white rounded-2xl p-5 mb-5 grid sm:grid-cols-5 gap-3 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Commodity</label><select value={commodity} onChange={e => setCommodity(e.target.value)} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{Object.entries(COMMODITIES).map(([k, v]: any) => <option key={k} value={k}>{v.label}</option>)}</select></div>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Grade</label><select value={grade} onChange={e => setGrade(e.target.value)} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600">{grades.map((g: string) => <option key={g} value={g}>{g}</option>)}</select></div>
-            <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Qty ({(COMMODITIES[commodity] as any)?.unit})</label><input type="number" min="1" value={qty} onChange={e => setQty(Number(e.target.value))} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" /></div>
+            <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Qty ({(COMMODITIES as any)[commodity]?.unit})</label><input type="number" min="1" value={qty} onChange={e => setQty(Number(e.target.value))} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" /></div>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500 mb-1.5 block">Location hint</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="South India / Pune…" className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" /></div>
             <div className="flex items-end"><button onClick={fetch} disabled={loading} className="w-full px-4 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{loading ? "Fetching…" : "Compare prices"}</button></div>
           </div>

@@ -21,3 +21,7 @@ TEST_USERS_CREDENTIALS.md
 supabase/.temp/
 
 backups/
+
+# Bundle visualizer output
+stats.html
+stats.json

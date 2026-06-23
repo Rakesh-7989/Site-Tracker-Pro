@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
 import {
   getProjectForecastDetail, getBoqForProject, getRaBillsForProject,
@@ -28,10 +28,10 @@ export function ForecastView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  return <Inner orgId={activeOrg.orgId} user={session.user} plan={(session.user as any)?.plan ?? "basic"} />;
+  return <Inner orgId={activeOrg.orgId} plan={(session.user as any)?.plan ?? "basic"} />;
 }
 
-function Inner({ orgId, user, plan }: { orgId: string; user: any; plan: string }): JSX.Element {
+function Inner({ orgId, plan }: { orgId: string; plan: string }): JSX.Element {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState<string>("");
   const [busy, setBusy] = useState(false);
