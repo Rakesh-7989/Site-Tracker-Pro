@@ -1,1022 +1,1019 @@
-# SiteTrack Pro — User Guide
+# SiteTrack Pro — User Study Guide
 
-> Indian builders ki construction management software. Site nundi office daaka — every drawing, every measurement, every rupee tracked in one place.
->
-> **Live at**: [https://sitetrack-rakesh.vercel.app](https://sitetrack-rakesh.vercel.app) (will move to `app.sitetrack.in` soon).
+> Step-by-step guide to understand how roles, features, and workflows work.
+> Each section ends with **test scenarios** — use these to verify you've learned correctly.
 
----
-
-## 📖 Table of Contents
-
-1. [Quick Start (5 min)](#1-quick-start-5-min)
-2. [Core Concepts — antha first ardham chesko](#2-core-concepts)
-3. [Sign In — 3 ways](#3-sign-in--3-ways)
-4. [Choose Your Project Type](#4-choose-your-project-type)
-5. [Your First Project — Step-by-Step](#5-your-first-project)
-6. [Daily Workflows by Role](#6-daily-workflows-by-role)
-7. [The 17 Project Sub-tabs — Deep-dive](#7-the-17-project-sub-tabs)
-8. [9 Org Admin Panels](#8-9-org-admin-panels)
-9. [Mobile Field Worker Mode](#9-mobile-field-worker-mode)
-10. [Kiosk Modes — Labour Gate + Site Wall](#10-kiosk-modes)
-11. [Integrations](#11-integrations)
-12. [Settings & Preferences](#12-settings--preferences)
-13. [Troubleshooting](#13-troubleshooting)
-14. [Telugu / Hindi UI](#14-telugu--hindi-ui)
-15. [Glossary](#15-glossary)
-16. [FAQs](#16-faqs)
+**Live at**: [https://sitetrack-rakesh.vercel.app](https://sitetrack-rakesh.vercel.app)
 
 ---
 
-## 1. Quick Start (5 min)
+## Table of Contents
 
-### What you'll do
-- Sign up
-- Pick your role
-- See your dashboard
-- (Optional) load demo data to explore
-
-### Steps
-
-1. Open: **https://sitetrack-rakesh.vercel.app** in any browser (Chrome / Safari / Edge — works on phone too)
-2. You'll see the **Welcome back** login screen
-3. **Pick one of 3 paths**:
-
-   **Path A — Magic link (real production sign-up)**:
-   - Type your work email in the box
-   - Click **"Send sign-in link"**
-   - Check your inbox (also Spam folder)
-   - **If you use Gmail**: copy the 6-digit code from the email + paste into the OTP box (Gmail prefetch sometimes "burns" the link)
-   - You're logged in as a new user with read-only `client` role
-
-   **Path B — Demo mode (5 orgs, 4 projects pre-loaded)**:
-   - Click **"Load demo data"** button at the bottom
-   - Wait ~2 sec
-   - Click any role card (Architect / PM / Contractor / etc.)
-   - Click **"Continue as..."** orange button
-   - You're inside the demo workspace with rich data to explore
-
-   **Path C — Demo role only (no real data)**:
-   - Click any role card
-   - Click **"Continue as..."**
-   - You're in an empty workspace as that role
-
-### What you should see
-- **Sidebar on left** (desktop) or **bottom tab bar** (mobile) with: Dashboard / Projects / Calendar / Messages / Notifications
-- **Greeting top-right**: "Good morning, [name]"
-- **4 stat tiles**: Projects Open / Issues Open / RA Bills Pending / Labour Active
-- **Quick-action buttons**: New project / Mark attendance / Daily update / Send DPR
-- **Recent updates feed** below
-
-✅ You're now using SiteTrack Pro. Read on for deep details.
+1. [Welcome & Platform Overview](#1-welcome--platform-overview)
+2. [Quick Start (5 min)](#2-quick-start-5-min)
+3. [Role-by-Role Study](#3-role-by-role-study)
+   - 3.1 Platform Admin
+   - 3.2 Org Leadership
+   - 3.3 Project Execution
+   - 3.4 Design & Engineering
+   - 3.5 Supply Chain
+   - 3.6 External
+4. [Feature Walkthroughs](#4-feature-walkthroughs)
+   - 4.1 Creating a Project
+   - 4.2 Uploading & Releasing Drawings
+   - 4.3 Submitting DPR
+   - 4.4 Managing RA Bills
+   - 4.5 Purchase Orders
+   - 4.6 Running Labour Kiosk
+   - 4.7 Managing Org Settings
+   - 4.8 Running a Project — Full Lifecycle
+   - 4.9 Handover & Compliance
+   - 4.10 Analytics & Reports
+5. [Kiosk Mode Guide](#5-kiosk-mode-guide)
+6. [Admin Console Guide](#6-admin-console-guide)
+7. [Troubleshooting](#7-troubleshooting)
+8. [Quick Reference](#8-quick-reference)
+9. [Test Your Knowledge](#9-test-your-knowledge)
 
 ---
 
-## 2. Core Concepts
+## 1. Welcome & Platform Overview
 
-Mundu ee 6 concepts ardham chesko. Without these, the rest of the app feels random.
+### What is SiteTrack Pro?
 
-### 2.1 Org (Organization)
+Construction site management software built for Indian builders. Tracks every drawing, measurement, and rupee from site to office.
 
-**What**: Your builder firm (e.g. "Greenfield Developers", "ABC Constructions Pvt Ltd").
+**4 project types** — determined at project creation, controls which tabs are visible:
 
-**Why it exists**: SiteTrack is multi-tenant — your firm's data is completely isolated from other firms. Even SiteTrack support staff can't see your data without explicit permission.
+| Type | Tabs | Best for |
+|------|------|----------|
+| Construction | 17 tabs (all) | High-rise, commercial, villa work |
+| Interior | 12 tabs (no MB, Labour, Safety) | Fit-out, renovation firms |
+| Design | 8 tabs (Drawings + Submittals + Quality) | Architecture-only firms |
+| Consultant | 6 tabs (Inspections + Submittals + Audit) | PMC, QS firms |
 
-**Who creates it**: The first person who signs up from your firm becomes the Org Owner. They invite everyone else.
+**3 access modes:**
+- **Browser** — full app at app.sitetrack.in
+- **Mobile** — same app, responsive layout, bottom tab bar
+- **Kiosk** — single-purpose screens for site gate / site office TV
 
-### 2.2 Project
+**22 roles** across 3 tiers (identity, org, project) — a user inherits capabilities from all tiers they belong to.
 
-**What**: One construction site (e.g. "Green Valley Phase II", "Skyline Tower").
+### How this guide works
 
-**Inside a project**: 17 sub-tabs of data — BOQ, RA Bills, Drawings, Labour, etc.
-
-**Project Type** (you choose at creation):
-- **Construction** — high-rise / commercial / villa work · all 17 tabs visible
-- **Interior** — fit-out / renovation · 12 tabs (no MB, no Labour, no Safety)
-- **Design** — architecture-only firm · 8 tabs (Drawings + Submittals + Quality + …)
-- **Consultant** — audit / PMC / QS · 6 tabs (cross-project, no team management)
-
-### 2.3 Role
-
-**What**: Your job inside SiteTrack. Determines what you see + what you can change.
-
-**19 roles**:
-- **Platform**: `superadmin` (us), `support` (us)
-- **Org owners**: `org_owner`, `org_admin`, `org_finance`, `project_admin`
-- **Field**: `pm`, `site_engineer`, `civil_engineer`, `mep_consultant`, `site_inspector`, `project_head`
-- **Architect**: `architect` (junior/senior/principal seniority), `design_architect_interior`
-- **Designer**: `interior_designer`, `designer`, `consultant`, `principal_consultant`
-- **Contractor**: `contractor`, `sub_contractor`
-- **External**: `client`, `vendor`
-
-### 2.4 BOQ (Bill of Quantities)
-
-**What**: Itemised budget. Line by line: "RCC slab — 12.5 cum @ ₹5,200 = ₹65,000".
-
-**Why**: Without BOQ, you can't bill, can't track material, can't compute progress.
-
-**In SiteTrack**: Excel file paste cheyochu (we parse it), or add items manually. BOQ saved per project.
-
-### 2.5 MB → RA Bill cycle
-
-**MB (Measurement Book)**: Statutory append-only register. "On 15-Apr, measured slab at Tower A Floor 7 = 4.2m × 3.1m × 0.15m = 1.95 cum". Linked to BOQ items.
-
-**RA Bill (Running Account)**: Sub-contractor invoice = sum of MB entries × BOQ rate − retention.
-
-**Cycle**:
-1. Site engineer enters MB row (drag photo, GPS auto-tagged)
-2. PM verifies + signs
-3. MB entries flagged for RA bill
-4. Contractor submits RA bill (auto-totaled from MB)
-5. PM approves
-6. Finance pays
-7. Audit log records every step (immutable)
-
-**Why this matters**: PWD spec + RERA + court disputes all need this exact paper trail. Procore + Powerplay don't have this.
-
-### 2.6 Audit log v2
-
-**What**: Every change (create/update/delete/approve/release/payment) is logged with:
-- Who (actor + role)
-- When (timestamp)
-- What (resource + before + after)
-- Why (optional message)
-
-**Append-only**: Cannot be edited or deleted, even by the superadmin. Hashed daily into a Merkle tree → optionally anchored to Polygon blockchain → court-admissible per IT Act 2000 s.65B.
+Each section follows the same pattern:
+1. **Concept** — What is this? Why does it exist?
+2. **Walkthrough** — Numbered steps to perform the task
+3. **Test scenario** — QA checklist to verify understanding
 
 ---
 
-## 3. Sign In — 3 Ways
+## 2. Quick Start (5 min)
 
-### 3.1 Magic Link (production users)
+### Goal: Sign up, pick a role, see your dashboard
 
-1. Enter your work email
-2. Click "Send sign-in link"
-3. Check inbox → click the button OR copy the 6-digit code → paste in OTP field
-4. You're in
+1. Open **app.sitetrack.in** in Chrome / Safari / Edge
+2. You see the **Welcome back** login screen
+3. Choose a sign-in path:
 
-**Gmail issue**: Gmail's malware scanner prefetches every URL in every email. This sometimes "uses up" the link before you click. Workaround: use the 6-digit code in the email body instead — Gmail can't auto-use those.
+   **Path A — Magic link (production)**
+   - Type your work email → Click "Send sign-in link"
+   - Check inbox (and Spam) for the email
+   - Click the link OR copy the 6-digit code → paste in OTP field
+   - You're logged in as `client` role (read-only)
 
-### 3.2 OTP Code (Gmail-safe fallback)
+   **Path B — Demo mode (instant)**
+   - Click "Load demo data" at the bottom
+   - Wait ~2 sec → Click any role card → "Continue as..."
+   - You're inside with pre-loaded data
 
-After sending magic link → scroll to bottom of email → find 6-digit code → enter in the OTP input → click "Sign in".
+   **Path C — Demo role only**
+   - Click any role card → "Continue as..."
+   - Empty workspace with that role's permissions
 
-### 3.3 Demo Role (instant, no email)
+4. **What you see:**
+   - Sidebar (desktop) or bottom tabs (mobile): Dashboard / Projects / Calendar / Search / Notifications
+   - Greeting top-right: "Good morning, [name]"
+   - 4 stat tiles: Projects Open / Issues / RA Bills Pending / Labour Active
 
-Click any role card on login screen → "Continue as [role]" → you're inside with mock data. Used for demos, training, testing UI.
-
-⚠️ Demo data lives in browser localStorage. Closing the browser may lose it (depending on Org's `demoModePermanent` setting).
-
----
-
-## 4. Choose Your Project Type
-
-Project creation lo first decision. Determines what tabs you see.
+### Test scenario
 
 ```
-┌─────────────────┬──────────────────────────────────────────────────┐
-│ CONSTRUCTION    │ Residential / commercial / villa building work   │
-│                 │ 17 tabs · BOQ + MB + RA Bills + Labour visible   │
-│                 │ Best for: Apartment builder, commercial developer│
-├─────────────────┼──────────────────────────────────────────────────┤
-│ INTERIOR        │ Fit-out / renovation                              │
-│                 │ 12 tabs · No MB, no Labour, no Safety            │
-│                 │ Best for: Designer firms, renovation contractors │
-├─────────────────┼──────────────────────────────────────────────────┤
-│ DESIGN          │ Pure design (no construction execution)         │
-│                 │ 8 tabs · Drawings + Submittals + Quality only   │
-│                 │ Best for: Architecture-only firms                │
-├─────────────────┼──────────────────────────────────────────────────┤
-│ CONSULTANT      │ Audit / PMC / QS (cross-project oversight)       │
-│                 │ 6 tabs · Inspections + Submittals + Audit only  │
-│                 │ Best for: Independent PMC, QS firms              │
-└─────────────────┴──────────────────────────────────────────────────┘
+✅ As a new user with Client role:
+  Step 1: Open app → see login screen
+  Step 2: Click "Load demo data"
+  Step 3: Click "Client" role card → "Continue as..."
+  Expected: See read-only dashboard. No "New Project" button. No edit icons.
+  Verify: Can you click into a project and see its tabs? Can you edit anything?
 ```
 
-You can change project type later (Settings → Project → Type), but tabs will hide/show accordingly.
+---
+
+## 3. Role-by-Role Study
+
+Each role family below includes: who they are → what they see → daily workflow → test scenario.
+
+### 3.1 Platform Admin (Superadmin)
+
+**Who**: SaaS operator (1-3 people). Manages all orgs, users, billing, and system-wide settings.
+
+**What they see** (gated by `platform:orgs:manage`):
+- `/admin` — Platform Dashboard (MRR, active orgs, signups)
+- `/admin/orgs` — Org CRUD, plan changes, status toggle
+- `/admin/users` — Cross-tenant user management, impersonation
+- `/admin/roles` — Role permission configuration
+- `/admin/signups` — Approve/reject signup requests
+- `/admin/upgrades` — Process upgrade requests
+- `/admin/staff` — Manage staff tiers (owner/head/member)
+- `/admin/branding` — Platform-wide branding settings
+- Settings: global feature flags, demo loader, kiosk toggles
+
+**Daily workflow:**
+
+1. **Morning**: Open `/admin` → Check MRR trend, new signups, churn alerts
+2. **Mid-day**: Open `/admin/signups` → Review pending signups → Approve or reject
+3. **Support**: Open `/admin/users` → Search for user → Click "Impersonate" → Debug issue → Stop impersonation
+4. **EOD**: Open `/admin/orgs` → Check suspended orgs / plan downgrades → Export activity report
+
+#### Test scenario
+
+```
+✅ As superadmin, manage an org:
+  Step 1: Navigate to /admin/orgs
+  Step 2: Click an org name → see org details
+  Step 3: Change plan from Pro to Business
+  Step 4: Navigate to /admin/users → find a user → click Impersonate
+  Expected: You see the app as that user. Top bar shows IMPERSONATING badge.
+  Step 5: Click "Stop impersonation" → return to your admin view
+  Verify: Audit log recorded the impersonation session.
+
+✅ Approve a signup:
+  Step 1: /admin/signups → see pending request
+  Step 2: Click Approve → user gets notified
+  Expected: Org created. User can now log in.
+  Verify: Can you reject a request? Does the user get notified?
+```
+
+### 3.2 Org Leadership
+
+**Roles**: Orgadmin (Firm Owner), Promoter, Project Admin, Prospector (Sales/BD)
+
+**Who**: People who run the construction firm. Manage team, billing, branding, and org-wide settings.
+
+**What they see** (gated by `org:members:manage`):
+- `/org` — Org Dashboard (plan info, members count, active projects)
+- `/org/members` — Invite/edit/remove team members, bulk CSV import
+- `/org/billing` — Subscription plan, Cashfree status, invoice history
+- `/org/integrations` — Connect Cashfree, Razorpay, WhatsApp, AI provider
+- `/org/templates` — Save project/BOQ templates for reuse
+- `/org/approvals` — Configure approval chains per resource + threshold
+- `/org/notifications` — Set auto-alert rules (in-app / email / WhatsApp)
+- `/org/features` — Toggle 37 feature flags ON/OFF per org
+
+**Daily workflow (Orgadmin):**
+
+1. **Monday morning**: `/org/members` → Review who joined/left → Invite new architect
+2. **Mid-week**: `/org/billing` → Check subscription is active → Download invoice
+3. **Friday EOD**: `/org/approvals` → Adjust RA bill approval threshold → `/org/features` → Toggle ON drawing-diff for all projects
+
+#### Test scenario
+
+```
+✅ As orgadmin, invite a new team member:
+  Step 1: /org/members → Click "Add Member"
+  Step 2: Enter email: newarchitect@firm.com → Role: Architect → Send invite
+  Expected: Member appears with "Invited" status. They receive magic-link email.
+  Step 3: Have the new user accept the invite and log in
+  Verify: They see Architect-level nav. Can they see org admin panels? (No)
+
+✅ Set up an approval chain:
+  Step 1: /org/approvals → Select "RA Bill"
+  Step 2: Threshold: ₹0-1L auto, ₹1L-5L PM, >₹5L Org Owner
+  Step 3: Save
+  Expected: When contractor creates RA bill, approval routing follows this chain.
+  Verify: Create a test RA bill under ₹1L. Does it auto-approve?
+```
+
+### 3.3 Project Execution
+
+**Roles**: PM (Project Manager), Architect (senior/junior), Site Engineer, Site Inspector
+
+**Who**: People who execute construction work on the ground. Manage drawings, DPR, RFIs, attendance, and measurements.
+
+**What they see**:
+- `/dashboard` — Role-specific dashboard with relevant stats
+- `/projects` — Project list with status
+- `/dpr` — Daily Progress Report composer
+- Project tabs (up to 17): Overview, Tasks, Updates, Materials, Vendors, POs, Invoices, BOQ, RA Bills, MB, Labour, Ledger, Drawings, Quality, Safety, Permits, Submittals, Equipment, Diary
+- `/vendors` — Vendor directory
+- `/calendar` — Project calendar
+- `/activity` — Activity feed
+
+**Daily workflow (PM):**
+
+1. **8 AM on site**: Open mobile app → Quick capture → 5 photos of progress
+2. **9 AM**: Mark attendance (47 workers present) → Log material receipt (80 bags cement)
+3. **1 PM**: Open MB tab → Verify 6 entries from Site Engineer → Sign with finger
+4. **4 PM**: Open RA Bills → Contractor submitted ₹3.2L → Verify → Approve
+5. **6 PM**: Write daily diary → "Send to client via WhatsApp" → AI summary auto-generated → Sent
+
+**Daily workflow (Architect):**
+
+1. **10 AM**: Dashboard shows 3 pending RFIs → Open Drawings tab → Upload Rev B → Release to PM + Contractor
+2. **12 PM**: Open RFIs tab → Respond to 3 pending → Attach reference drawing → Resolve
+3. **3 PM onsite**: Open phone → Quick capture → 4 photos of slab finish → Voice note: "Tower B Floor 5 pour 80% done"
+
+**Daily workflow (Site Engineer):**
+
+1. **6 AM**: Open app offline → Review yesterday's MB rows
+2. **10 AM**: Take measurements (slab thickness, column dimensions) → Enter in MB tab → Photos auto-attach GPS + timestamp
+3. **2 PM**: Log issue → "Scaffolding damaged at Tower B" → Photo → Assign to safety officer
+4. **5 PM**: Log labour worklog: 25 helpers × 8 hr × ₹600 = ₹1.2L
+5. **6 PM**: Sync (auto when WiFi connects)
+
+#### Test scenario
+
+```
+✅ As PM, create and approve a DPR:
+  Step 1: Navigate to /dpr
+  Step 2: Select project → Fill daily notes → Attach 3 photos
+  Step 3: Click "Submit DPR"
+  Expected: DPR saved. Status = Pending (if approval required) or Submitted.
+  Step 4: As PM, verify DPR appears in your approval queue
+  Step 5: Click Approve → DPR status = Approved
+  Verify: Can the assigned Site Engineer see the approval status?
+
+✅ As Architect, upload and release a drawing:
+  Step 1: Open project → Drawings tab → Upload PDF
+  Step 2: Auto-detects title and type from filename
+  Step 3: Click "Release to: PM, Contractor, Client"
+  Expected: Released drawing visible to selected roles. Old Rev A auto-superseded.
+  Verify: Log in as Contractor. Can you see the released drawing? Can you see unreleased ones? (No)
+```
+
+### 3.4 Design & Engineering
+
+**Roles**: Design Head, Consultant Head, Designer, Consultant, MEP Consultant, Structural Consultant
+
+**Who**: Specialised design and engineering professionals. Manage drawings, specifications, inspections, and BOQ for their discipline.
+
+**What they see** (subset of project tabs relevant to their discipline):
+- Drawings tab — upload/edit/release/markup
+- Submittals tab — drawings/material samples awaiting approval
+- Inspections tab — schedule and run quality inspections
+- BOQ tab — view/edit quantities for their discipline
+- RFIs tab — respond to technical queries
+
+**Daily workflow (MEP Consultant):**
+
+1. **Morning**: Check RFIs → Respond to contractor queries on plumbing layout
+2. **Mid-day**: Upload MEP drawings Rev C → Release to PM + contractor
+3. **Afternoon**: Schedule inspection → Structural/MEP checklist → Fill results → Pass/Fail per item
+
+#### Test scenario
+
+```
+✅ As MEP Consultant, respond to an RFI:
+  Step 1: Open project → RFIs tab → See "What's the ducting spec for Floor 12?"
+  Step 2: Type response: "800×400 mm G.I. ducting per DWG-MEP-012 Rev B"
+  Step 3: Attach reference drawing → Click "Resolve"
+  Expected: RFI status = Resolved. Contractor notified.
+  Verify: Can you see RFIs from all disciplines or only MEP-related ones?
+```
+
+### 3.5 Supply Chain
+
+**Roles**: Contractor, Sub-contractor, Vendor
+
+**Who**: External firms executing work or supplying materials. Have limited write access to their own data.
+
+**What they see**:
+- **Contractor**: RA Bills tab (create), MB tab (view verified measurements), POs tab (accept/reject), Labour tab (mark attendance)
+- **Sub-contractor**: Updates tab (log work), Attendance tab (mark), RFIs tab (create)
+- **Vendor**: POs tab (view/accept/decline), Invoices tab (create), Materials tab (price view)
+
+**Daily workflow (Contractor):**
+
+1. **9 AM**: Worklogs → Log yesterday: "20 masons × 8 hr at Tower A"
+2. **10 AM**: POs → New PO from PM for 200 bricks @ ₹8 → Accept
+3. **3 PM**: MB tab → See PM verified 4 measurements worth ₹85,000
+4. **4 PM**: RA Bills → "New RA bill" → Auto-filled from MB: ₹85,000 - 5% retention = ₹80,750 → Submit
+5. **Friday**: Ledger tab → Check cumulative: ₹4.2L billed, ₹3.8L paid
+
+**Daily workflow (Vendor):**
+
+1. **Morning**: Open Vendor Portal (4 tabs: Dashboard / POs / Materials / Messages)
+2. **Check POs**: New PO #42 from Greenfield Developers for cement → Accept
+3. **Create Invoice**: Against delivered PO → Amount + GST auto-computed → Submit
+4. **Messages**: Reply to PM's query on delivery timeline
+
+#### Test scenario
+
+```
+✅ As Contractor, create an RA Bill:
+  Step 1: Open project → MB tab → Verify your measurements are marked "Verified"
+  Step 2: Open RA Bills tab → Click "New RA Bill"
+  Step 3: App auto-fills: linked MB rows → amount = ₹85,000 → retention 5% = ₹4,250 → payable = ₹80,750
+  Step 4: Add scope notes → Submit
+  Expected: RA Bill status = Pending. PM gets notified.
+  Verify: Log in as PM. Can you see the RA Bill in your approval queue?
+
+✅ As Vendor, accept a PO and create invoice:
+  Step 1: Open Vendor Portal → POs tab → See pending PO #42
+  Step 2: Click Accept → Status = Accepted
+  Step 3: Deliver materials → Open Invoices tab → Create invoice against PO #42
+  Expected: Invoice created with auto-computed GST. PM notified of delivery.
+  Verify: Can Vendor see other org's POs? (No — vendor scope is per-org)
+```
+
+### 3.6 External
+
+**Roles**: Client / Unit Buyer, Site Inspector (RERA)
+
+**Who**: End customers and statutory inspectors. Read-only access to specific data.
+
+**What they see (Client):**
+- `/dashboard` — Their projects only (filtered by `client_email`)
+- Project Overview — Progress %, budget vs spent, milestone timeline
+- Updates tab — Daily progress reports with photos (read-only)
+- Drawings tab — Only released drawings (no WIP)
+- Activity tab — Audit log filtered to released info
+- Compliance tab — RERA filing status, permits, certificates
+
+**What they see (Site Inspector):**
+- Drawings tab — Markup only (cannot upload/release)
+- Compliance tab — View RERA filings, permits
+- Inspections tab — View scheduled inspections
+
+**Client daily use:**
+
+1. Check WhatsApp daily summary from builder (if enabled) — rarely needs to log in
+2. When logged in: Dashboard → Progress % → Recent photos → Compliance docs
+3. At handover: View handover packet → Sign digitally
+
+#### Test scenario
+
+```
+✅ As Client, verify read-only access:
+  Step 1: Log in as client@example.com
+  Step 2: You see only projects where you are listed as client_email
+  Step 3: Open a project → Click Updates tab → Scroll photos
+  Step 4: Try to edit anything (click an edit button, try to delete a photo)
+  Expected: No edit/delete buttons visible. Read-only everywhere.
+  Verify: Can you see unreleased drawings? (No — only released ones)
+
+✅ As Client, view compliance documents:
+  Step 1: Open project → Compliance tab
+  Step 2: See RERA filing status, permits, certificates
+  Expected: All documents visible in read-only mode.
+  Verify: Can you download PDFs? (Yes — export is allowed for client)
+```
 
 ---
 
-## 5. Your First Project — Step-by-Step
+## 4. Feature Walkthroughs
 
-### 5.1 As Org Owner (first sign-in)
+### 4.1 Creating a Project
 
-After magic-link login, you'll see an **Onboarding Wizard** (5 steps):
+**Goal**: Set up a new construction project with type, team, and budget.
 
-**Step 1: Tell us about your firm**
-- Firm name (e.g. "Greenfield Developers Pvt Ltd")
-- GSTIN (we verify against GSTN portal)
-- PAN
-- Registered address
-- Logo upload (optional — sets your white-label PDF letterhead)
+**Pre-requisites**: You have `project:create` capability (PM, Orgadmin, Prospector).
 
-**Step 2: Invite your team**
-- Add by email
-- Assign role (we suggest based on email domain)
-- They get a magic-link invite
-- OR bulk CSV upload (50 members in 5 sec)
+1. Navigate to **Sidebar → Projects → "New Project"** button
+2. Fill project details:
+   - Name: "Green Valley Phase II"
+   - Site address: Auto-geocoded for map view
+   - Start date + Expected end date
+   - Budget: ₹5,00,00,000
+   - Client name + email (they get read-only access)
+3. Pick **Project Type**: Construction / Interior / Design / Consultant
+4. Choose **Feature preset**: Lite / Standard / Full
+5. Click **Save**
 
-**Step 3: Create your first project**
-- Project name
-- Site address (we auto-geocode for the map view)
-- Start date + expected end date
-- Budget (₹ — used as the BOQ baseline)
-- Client name + email (they get read-only access automatically)
-- **Project type** (the 2×2 picker from §4)
+**Result**: Project appears in project list. You land on Overview tab.
 
-**Step 4: Feature preset**
-- Lite (just essentials — Overview / Tasks / Updates / Drawings / BOQ)
-- Standard (recommended — all the above + RA Bills + Labour + Vendors)
-- Full (all 37 features — only if your firm uses everything)
+#### Test scenario
 
-**Step 5: Connect integrations** (optional)
-- Cashfree (for billing)
-- WhatsApp Business (for daily progress reports to client)
-- AI provider (OpenAI / Anthropic — for forecasting + Telugu/Hindi DPR summaries)
+```
+✅ Create a construction project:
+  Step 1: /projects/new
+  Step 2: Fill name, address, dates, budget
+  Step 3: Select type = Construction
+  Step 4: Feature preset = Standard
+  Step 5: Save
+  Expected: New project created. All 17 tabs visible.
+  Verify: Can you see the BOQ tab? Labour tab? RERA compliance?
+  Change type to Interior → verify MB, Labour, Safety tabs disappear.
+```
 
-Done. You land at the Dashboard with your project visible.
+### 4.2 Uploading & Releasing Drawings
 
-### 5.2 Quick "skip the wizard" path
+**Goal**: Upload a drawing revision, release it to specific roles, old revision auto-supersedes.
 
-If you want to jump in: **Sidebar → Projects → New project** → fill 5 fields → Save.
+**Pre-requisites**: `drawings:upload` + `drawings:release` (Architect, Senior Architect, PM, Site Engineer).
+
+1. Open project → **Drawings tab**
+2. Click **Upload** → Select PDF/DWG/DXF/JPG
+3. System auto-detects: title, type from filename
+4. Choose **Revision**: Auto-increments (Rev A → Rev B)
+5. Click **Upload** → Drawing appears in list
+6. Select the drawing → Click **Release**
+7. Pick recipients: ☑ PM ☑ Contractor ☐ Client
+8. Click **Confirm Release**
+9. Old Rev A auto-flips to "Superseded" (history retained)
+
+**Result**: Selected recipients see the drawing in their Drawings tab. PM gets push notification.
+
+#### Test scenario
+
+```
+✅ Upload and release a drawing:
+  Step 1: Drawings tab → Upload → Select "Slab-Plan-Floor7-RevB.pdf"
+  Step 2: System shows: Title = "Slab Plan Floor 7", Rev = B, Type = Structural
+  Step 3: Upload → Click drawing row → Release → Select PM + Contractor
+  Step 4: Confirm
+  Expected: Drawing shows "Released" status. Rev A shows "Superseded".
+  Verify: Log in as Contractor. Can you see the drawing? Can you see Rev A? (Yes, View-only)
+  Verify: Log in as Client. Can you see it? (Only if Client was selected as recipient)
+```
+
+### 4.3 Submitting DPR (Daily Progress Report)
+
+**Goal**: Create and submit a daily progress report with photos, weather, worker count.
+
+**Pre-requisites**: `dpr:submit` (Site Engineer, PM).
+
+1. Open **Sidebar → DPR**
+2. Select project from dropdown
+3. Fill daily entry:
+   - **Notes**: Free text — what was done today
+   - **Weather**: Auto-filled from API (override if needed)
+   - **Worker count**: Carried from attendance
+   - **Photos**: Tap to capture or upload from gallery (auto-GPS-tagged)
+4. Click **Save Draft** (or **Submit DPR**)
+5. If approval required: DPR goes to PM's approval queue
+6. PM opens DPR → Verify → **Approve** or **Request changes**
+
+**Result**: DPR status = Submitted (or Approved). History retained in project Timeline.
+
+#### Test scenario
+
+```
+✅ Submit a DPR:
+  Step 1: Open Sidebar → DPR → Select project
+  Step 2: Write notes: "Tower B slab pour completed. Curing started."
+  Step 3: Attach 3 photos → Click Submit
+  Expected: DPR saved. Status = Submitted (or Pending if approval chain enabled).
+  Step 4: As PM, open DPR queue → See the DPR → Click Approve
+  Expected: Status = Approved. Site Engineer gets notification.
+  Verify: Open Activity tab. Can you see the DPR submission in the audit log?
+```
+
+### 4.4 Managing RA Bills
+
+**Goal**: Create a Running Account Bill from verified MB measurements, route through approval chain.
+
+**Pre-requisites**: `rabill:create` (Contractor, PM). `rabill:approve` (PM, Project Admin).
+
+1. **Contractor creates:**
+   - Open project → **RA Bills tab** → "New RA Bill"
+   - System auto-fills: linked MB rows (verified by PM) → total = sum(MB qty × BOQ rate)
+   - Auto-computes: retention (5%), previously paid, payable amount
+   - Add scope description → Upload signed paper invoice (optional)
+   - Click **Submit**
+2. **PM verifies:**
+   - Opens RA Bill → Reviews linked MB rows → **Approve** or **Send back**
+   - If approval chain configured: routes to next approver (e.g. Org Owner for >₹5L)
+3. **Final approval:**
+   - Status = Approved → Finance notified
+   - PDF export with org letterhead
+
+**Result**: RA Bill moves through: Draft → Submitted → Approved → Paid.
+
+#### Test scenario
+
+```
+✅ Full RA Bill cycle:
+  Step 1: As Contractor, open RA Bills tab → "New RA Bill"
+  Expected: Auto-populated from verified MB rows
+  Step 2: Submit → Status = Submitted
+  Step 3: As PM, open RA Bills → See pending → Click Approve
+  Expected: Status = Approved. Contractor notified.
+  Verify: Print the RA Bill PDF. Does it show org letterhead? MB references? Retention?
+  Verify: Check Ledger tab. Is the amount reflected in cumulative paid?
+```
+
+### 4.5 Purchase Orders
+
+**Goal**: Create a PO, route through approval, vendor accepts, materials delivered, invoice raised.
+
+**Pre-requisites**: `po:create` (PM, Vendor).
+
+1. **PM creates PO:**
+   - Open project → **POs tab** → "New PO"
+   - Pick vendor from directory
+   - Add line items from BOQ (or manual): "Cement — 200 bags @ ₹380/bag"
+   - Expected delivery date
+   - Click **Submit** → Routes through approval chain
+2. **Approval:**
+   - Small PO (<₹1L): Auto-approved
+   - Medium (₹1L-5L): PM approves
+   - Large (>₹5L): PM → Org Owner
+3. **Vendor accepts:**
+   - Vendor Portal → POs tab → See PO → **Accept** or **Decline**
+4. **Delivery & Invoice:**
+   - PM marks "Received" with qty + photo of bill
+   - Vendor creates invoice → GST auto-computed → IRN generated
+   - Invoice linked to PO + materials ledger
+
+#### Test scenario
+
+```
+✅ Create and fulfill a PO:
+  Step 1: As PM, POs tab → "New PO" → Select Vendor "Acme Cement"
+  Step 2: Add line: "OPC 53 Grade Cement — 200 bags @ ₹380/bag"
+  Step 3: Submit → Check if approval needed
+  Step 4: As Vendor (log in as vendor@acme.com), open Vendor Portal → POs → Accept
+  Step 5: Deliver → PM marks "Received" with photo
+  Step 6: Vendor creates invoice → Status = Sent
+  Expected: Materials ledger updates. PO status = Completed.
+  Verify: Does the Ledger tab reflect +200 bags cement?
+```
+
+### 4.6 Running Labour Kiosk
+
+**Goal**: Set up a tablet at site gate for one-tap attendance.
+
+**Pre-requisites**: Kiosk feature enabled in Org Feature Settings.
+
+1. **Setup:**
+   - Org Admin → Features → Enable "Labour Kiosk"
+   - Set tablet URL to: `https://app.sitetrack.in/kiosk/labour`
+2. **Daily use:**
+   - Tablet displays worker grid with photos
+   - Worker walks in → Supervisor taps **Present** next to name
+   - Optional: Worker scans QR code on ID card for fast attendance
+3. **Reports:**
+   - Labour tab → Attendance report → Export to PDF/CSV
+   - Auto-calculates: man-hours, wages due, EPF/ESI deductions
+
+#### Test scenario
+
+```
+✅ Run labour kiosk:
+  Step 1: Open the kiosk URL on a tablet
+  Step 2: See worker list with photos → Tap "Present" for 3 workers
+  Step 3: Open main app → Project → Labour tab
+  Expected: Today's attendance shows 3 workers marked present.
+  Verify: Export attendance CSV. Does it show name, time, project?
+```
+
+### 4.7 Managing Org Settings
+
+**Goal**: Configure all 10 org admin panels for your firm.
+
+**Pre-requisites**: `org:members:manage` capability (Orgadmin).
+
+1. **Members panel:**
+   - `/org/members` → See all team members
+   - "Add Member" → Email + Role → They get magic-link invite
+   - Bulk CSV import: 50 members in 5 sec
+   - Edit role / Deactivate (soft-delete, keeps audit history)
+2. **Billing panel:**
+   - `/org/billing` → Current plan info
+   - "Upgrade" → Opens Cashfree UPI mandate → Approve in UPI app
+   - View invoice history → Download receipts
+3. **Integrations panel:**
+   - `/org/integrations` → Connect external services
+   - Cashfree (App ID + Secret) → Razorpay → WhatsApp Business → AI Provider
+   - Each integration verified before "Active" badge
+4. **Templates panel:**
+   - `/org/templates` → Save current BOQ as template
+   - Project template: pre-filled BOQ + team + drawings
+   - New project → Pick template → 80% pre-filled
+5. **Approval chains panel:**
+   - `/org/approvals` → Per-resource (Expense/PO/RA Bill/Change Order/Invoice/Drawing Release)
+   - Per threshold + multi-rung approval
+6. **Notifications panel:**
+   - `/org/notifications` → Auto-alert rules
+   - Trigger: any event in audit_log_v2 → Channel: In-app/Email/WhatsApp
+7. **Feature settings panel:**
+   - `/org/features` → 37 toggle catalog
+   - Group: Sidebar nav / Project tabs / Workflow features / Org Admin panels
+   - Plan-locked features show as disabled
+
+#### Test scenario
+
+```
+✅ Configure org settings end-to-end:
+  Step 1: /org/members → Invite 1 PM, 1 Architect, 1 Contractor
+  Step 2: /org/billing → Verify plan details
+  Step 3: /org/approvals → Set RA Bill chain: <₹1L auto, ₹1L-5L PM, >₹5L Org Owner
+  Step 4: /org/notifications → Create rule: "When RA Bill approved, notify all PMs via In-app"
+  Step 5: /org/features → Toggle ON "Drawing Diff" → Toggle OFF "Labour Kiosk"
+  Step 6: /org/templates → Save current project BOQ as template "Standard 4-floor residential"
+  Expected: All settings save. Members get invites. New project can pick template.
+  Verify: Log in as a new PM. Can they see the notification rule in action?
+```
+
+### 4.8 Running a Project — Full Lifecycle
+
+**Goal**: Understand the complete project lifecycle from initiation to handover.
+
+**Phase 1 — Initiation (Week 1)**
+1. PM creates project → Selects type = Construction → Feature preset = Full
+2. PM invites team: Architect, Site Engineer, Contractor, Client
+3. Org admin sets approval chains for POs and RA Bills
+4. Architect uploads tender drawings → Releases to PM + Contractor
+
+**Phase 2 — BOQ & Budgeting (Week 2)**
+1. PM or QS pastes BOQ from Excel: 50+ line items with rates
+2. System computes: total budget = ₹5Cr
+3. BOQ items categorised: Civil / MEP / Finishing / External
+4. Org admin verifies budget → Locks BOQ (edits require approval)
+
+**Phase 3 — Execution (Week 3-48)**
+1. Site Engineer starts daily: MB measurements → Photos → DPR
+2. Contractor marks labour attendance → Submits RA bills monthly
+3. PM reviews MB → Verifies RA bills → Approves payments
+4. Architect releases drawing revisions as work progresses
+5. Materials delivered: POs → Vendor delivers → Inventory updated
+6. Issues logged and resolved: Safety incidents, quality defects, RFIs
+
+**Phase 4 — Handover (Week 49-52)**
+1. Punch list created: 15 defects found → Assigned to contractor
+2. Compliance docs filed: RERA stage filings, permits renewed
+3. Handover packet prepared: As-built drawings, warranties, O&M manuals
+4. Client reviews → Digital sign-off → Project status = Completed
+
+#### Test scenario
+
+```
+✅ Simulate full lifecycle:
+  Step 1: Create project → Set type = Construction
+  Step 2: Add BOQ (paste 10 items from Excel)
+  Step 3: Upload 1 drawing → Release to PM + Contractor
+  Step 4: Add 3 MB measurements → Submit RA Bill → Approve
+  Step 5: Add 1 issue → Assign to contractor → Resolve
+  Step 6: Mark project status = Completed
+  Expected: Every step recorded in audit log. Full paper trail.
+  Verify: Open Activity tab. Can you see all 6 events? Export to CSV.
+```
+
+### 4.9 Handover & Compliance
+
+**Goal**: Prepare project handover packet, file RERA compliance, get client sign-off.
+
+**Pre-requisites**: `handover:view`, `handover:sign` (PM, Client, Project Admin).
+
+1. **Compliance filings:**
+   - Open project → **Compliance tab**
+   - RERA: Click "File stage" → Select stage (Foundation/Plinth/...) → Auto-fills from BOQ progress → Submit to state RERA portal
+   - Permits: Upload permit docs → Set expiry → Auto-reminder 30 days before
+   - GSTN: Auto-generate IRN for B2B invoices
+2. **Handover packet:**
+   - Open **Handover tab**
+   - System collects: As-built drawings, material warranties, O&M manuals, test certificates
+   - Generate ZIP: All docs in one downloadable packet
+3. **Client sign-off:**
+   - Client logs in → Opens Handover tab → Reviews all docs
+   - Clicks **"Approve Handover"** → Digital signature
+   - Project status auto-updates to "Completed"
+
+#### Test scenario
+
+```
+✅ Complete handover:
+  Step 1: Compliance tab → Upload RERA stage filing → Submit
+  Step 2: Permits → Upload Occupancy Certificate → Set expiry
+  Step 3: Handover tab → Generate packet → Download ZIP
+  Step 4: As Client, log in → Open project → Handover tab → Review → Sign off
+  Expected: Project status = Completed. Client signature stored in audit log.
+  Verify: Open audit log. Can you see: RERA filing, permit upload, handover approval?
+```
+
+### 4.10 Analytics & Reports
+
+**Goal**: View cross-project analytics, budget tracking, export reports.
+
+**Pre-requisites**: `budget:view` (PM, Orgadmin, Project Admin, Promoter).
+
+1. **Analytics dashboard:**
+   - Open **Sidebar → Analytics**
+   - Cross-project charts: Budget vs spent per project, RA Bill trend, Labour count by month
+   - Filter by date range, project, status
+2. **Activity log:**
+   - `/activity` → Full audit log across all projects
+   - Filter by: Actor, Action, Resource, Date range
+   - Export to CSV → Export to PDF (with org letterhead)
+3. **Budget reports:**
+   - Project → Overview tab → Budget vs Spent bar
+   - Overrun alert if >5% above BOQ
+   - Export BOQ to PDF/Excel for client sign-off
+4. **Export options everywhere:**
+   - Every tab has Export button: CSV (data) or PDF (formatted with letterhead)
+
+#### Test scenario
+
+```
+✅ Run analytics:
+  Step 1: /analytics → View budget vs spent chart → Apply date filter
+  Step 2: Click Export → CSV downloads
+  Step 3: /activity → Filter by "RA Bill approved" → Click Export PDF
+  Expected: PDF generated with org letterhead, shows all RA Bill approvals this month.
+  Verify: Open the PDF. Does it show: date, actor, amount, project name?
+```
 
 ---
 
-## 6. Daily Workflows by Role
+## 5. Kiosk Mode Guide
 
-### 6.1 Architect (typical day)
+SiteTrack offers 4 kiosk modes for single-purpose screens at site.
 
-**Morning** (10 AM, office):
-1. Open SiteTrack → Dashboard shows: 3 RFIs pending you, 1 drawing requested by PM, 2 issues @ Site B
-2. Click **Drawings** tab on Project Skyline Tower
-3. Upload Rev B of "Slab Plan — Tower A Floor 7" (drag PDF + auto-extracts metadata)
-4. Click **"Release to: PM, Contractor, Client"**
-5. Old Rev A auto-flips to "Superseded" + history retained
-6. PM gets push notification within 2 sec
-7. Client gets WhatsApp message (if WhatsApp integration on)
-8. Audit log records the release with your signature
+### 5.1 Labour Attendance Kiosk
 
-**Mid-day** (12 PM, between meetings):
-1. Open **RFIs** tab → 3 RFIs waiting your reply
-2. Click first: "What's the structural rebar spec for 12th floor?"
-3. Type response + upload reference drawing
-4. Click "Resolve" → contractor gets notified
-5. Repeat for next 2
+**Purpose**: Tablet at site gate for one-tap clock-in/out.
 
-**Afternoon** (3 PM, site visit):
-1. Open SiteTrack on phone
-2. Bottom tab → **Updates**
-3. Tap **"Quick capture"** → camera opens
-4. Snap 4 photos of slab finish at Tower B
-5. App auto-tags: GPS, time, project, your name
-6. Type: "Tower B Floor 5 — slab pour 80% done. Curing started 3 PM."
-7. Save → uploads when 4G connects again (offline-first)
+**Setup:**
+1. Org Admin → Features → Enable "Labour Kiosk"
+2. Set tablet URL: `https://app.sitetrack.in/kiosk/labour`
+3. PIN-locked: Can't exit without 4-digit PIN
 
-**End of day** (6 PM, office):
-1. Open **Activity** feed → see all changes today
-2. Click **"Export PDF"** for client weekly report
-3. Letterhead auto-applied (org branding)
-4. PDF emailed to client
+**Daily use:**
+- Worker grid with photos shown
+- Supervisor taps "Present" / "Absent"
+- Optional: QR scan on ID card for fast attendance
+- Real-time sync: PM can see who's on site right now
 
-### 6.2 Project Manager (PM) — typical day
+**Test scenario:**
+```
+✅ Kiosk attendance:
+  Step 1: Open kiosk URL on tablet → PIN screen appears
+  Step 2: Enter PIN → See worker grid
+  Step 3: Mark 5 workers Present → Exit kiosk
+  Step 4: Main app → Labour tab → Today's attendance shows 5 present
+  Verify: Can you export today's attendance as CSV?
+```
 
-**Morning** (8 AM, site):
-1. Open SiteTrack on phone
-2. **Quick capture** → take 5 photos of work-in-progress
-3. **Attendance** → mark 47 workers present
-4. **Materials** → 80 bags cement received from Acme Vendor → check delivery photo
+### 5.2 Site Wall Kiosk
 
-**Mid-day** (1 PM):
-1. **MB tab** → site engineer added 6 entries
-2. Tap each → verify with photo from yesterday
-3. Sign with finger on phone (digital signature) → MB rows now "Verified"
-4. PM dashboard shows: ₹4.8 L worth of work measured this week
+**Purpose**: Wall-mounted TV in site office showing live project status.
 
-**Afternoon** (4 PM, office):
-1. **RA Bills** tab → contractor submitted RA Bill #7 for ₹3.2 L
-2. SiteTrack auto-shows: linked MB rows + retention deduction + cumulative
-3. Click "Approve" → contractor + finance both notified
-4. Audit log records approval with your sign
-
-**End of day** (6 PM):
-1. **Updates** → write today's daily diary (auto-fills weather from API)
-2. **Send to client via WhatsApp** → button click → 4-paragraph Telugu summary auto-generated by AI → previewed → sent
-
-### 6.3 Site Engineer — typical day
-
-**Whole day on site** (tablet / phone):
-
-1. 6 AM — open SiteTrack offline → review yesterday's MB rows
-2. 10 AM — take measurements: slab thickness, column dimensions, plaster area
-3. Enter in MB tab — photos auto-attach with GPS + timestamp
-4. 12 PM — log materials inward (cement received from Acme: 80 bags)
-5. 2 PM — issue popup: scaffolding damaged at Tower B → tap "Report Issue" → photo → high severity → assign to safety officer
-6. 4 PM — check punch list (defects near handover) → tap to add 3 items
-7. 5 PM — log labour worklog: 25 helpers × 8 hr × ₹600 = ₹1.2 L
-8. 6 PM — sync (auto when WiFi connects)
-
-All works **offline-first**. Everything queues locally, syncs when network available.
-
-### 6.4 Contractor — typical day
-
-**Morning** (9 AM):
-1. **Worklogs** tab → log yesterday's work: "20 masons × 8 hr at Tower A Plinth"
-2. **POs** tab → see new PO from PM for 200 bricks @ ₹8 each
-3. Tap "Accept" → confirmed → vendor gets notified
-
-**Afternoon** (3 PM):
-1. **MB tab** → see PM verified your measurements: 4 rows worth ₹85,000
-2. Go to **RA Bills** tab → "New RA bill"
-3. SiteTrack pre-fills: linked MB rows = ₹85,000, retention 5% = ₹4,250, payable = ₹80,750
-4. Add scope description, upload signed paper invoice (if needed)
-5. Submit → PM notified
-
-**End of week**:
-1. Check **Ledger** tab → see cumulative this month: ₹4.2 L billed, ₹3.8 L paid
-2. **Activity** tab → see PM's approval comments
-
-### 6.5 Client — typical day
-
-**Read-only access**:
-1. Login → see "Your projects" (only ones with your email as client_email)
-2. **Dashboard** → progress %, money spent vs budget, milestones hit
-3. **Updates** tab → scroll daily updates with photos
-4. **Drawings** → see only released drawings (no work-in-progress)
-5. **Activity** → audit log filtered to released info
-
-Get **daily WhatsApp summary** from your builder (if they enabled WhatsApp). No need to log in often.
-
-### 6.6 Org Admin (firm owner) — weekly cadence
-
-**Monday morning**:
-1. **Sidebar → Org Admin (gear icon)**
-2. **Members** panel → review who joined / left this week
-3. **Billing** → check Cashfree subscription status, MRR
-4. **Activity** → full org audit (every action across all projects)
-5. **PDF export** of weekly audit → letterhead applied → board email
-
-**Friday end-of-day**:
-1. **Feature Settings** → toggle ON/OFF features per team feedback
-2. **Approval Chains** → adjust who can approve RA bills > ₹10 L
-3. **Templates** → save current BOQ as a template for next project
-
----
-
-## 7. The 17 Project Sub-tabs
-
-Each project has up to 17 tabs. Visibility depends on:
-1. Your **role** (PERMS)
-2. Org's **feature flags** (37-toggle catalog)
-3. Project **type** (Construction sees all, Design sees 8)
-
-### 7.1 Overview tab
-
-**Always first**. Shows:
-- Big project name + status pill (Active / On Hold / Completed)
-- Progress % bar (computed from BOQ + MB measurements)
-- Budget vs Spent (with overrun alert if >5%)
-- Milestone timeline (Gantt strip)
-- Recent activity (last 10 events)
-- Quick actions: New update / New issue / New material entry
-
-### 7.2 Tasks tab
-
-To-do management per project.
-
-- Add task → title + assignee + due date + priority
-- Group by milestone OR by trade
-- Bulk import from Excel
-- Recurring tasks (daily standup, weekly review)
-- Filter: assigned to me / overdue / due today
-
-### 7.3 Updates tab (DPR — Daily Progress Report)
-
-Heart of the app for field workers.
-
-- Add update → 4 fields: notes + weather + worker count + photos
-- Photos auto-tag: GPS coords + capture timestamp + uploader
-- 📸 Tip: take photos through SiteTrack camera (not Gallery) for cleaner metadata
-- WhatsApp button: send today's summary to client phone with 1 click
-- Filter by date range, author, or tag (#scaffolding, #electrical)
-- Daily Progress Report (DPR) generator: AI summarises today's photos+notes in 4 paragraphs (Telugu/Hindi/English)
-
-### 7.4 Materials tab
-
-Material delivery + tracking.
-
-- Add material → expected delivery from Vendor → date
-- When received: mark "Received" + qty + photo of bill
-- "Rejected" status if quality bad → vendor notified
-- Stock ledger view: live count of cement/steel/aggregate on site
-- Tip: link to BOQ — auto-flag when consumption exceeds BOQ estimate
-
-### 7.5 Vendors tab
-
-Vendor master + ratings.
-
-- Add vendor → name + GSTIN + phone + category (steel / cement / labour contractor)
-- GSTN check auto-verifies the GSTIN
-- 5-star rating after each delivery → average shown on card
-- Past contracts history → quick reference
-- **Org-level** — shared across all projects in your org
-
-### 7.6 POs (Purchase Orders) tab
-
-PO lifecycle.
-
-- Create PO → pick vendor + line items from BOQ + qty + delivery date
-- Approval chain (per Org Admin config) — small PO auto-approved, big PO needs PM + Finance
-- Vendor portal sees the PO → accepts / declines
-- On delivery: link to inventory ledger
-- Print PO with org letterhead
-
-### 7.7 Invoices tab
-
-Vendor invoices (incoming).
-
-- Track invoice received from vendor
-- GST + TDS auto-computed
-- Payment status: Sent / Paid / Overdue
-- Link to PO + Materials
-- Export to Excel for accountant
-
-### 7.8 BOQ (Bill of Quantities) tab
-
-The line-item budget.
-
-- Paste-from-Excel → we parse: code + description + unit + qty + rate → bulk import
-- Manual add row by row
-- Category: Civil / MEP / Finishing / External / Other
-- Auto-total per category + grand total
-- Edit history per row (audit log)
-- Export to PDF/Excel for client signoff
-
-### 7.9 RA Bills (Running Account Bills) tab
-
-Contractor running invoices.
-
-- Create RA bill → auto-link to MB measurements + BOQ rates
-- Auto-compute: bill amount = sum(MB qty × BOQ rate) − retention − previously paid
-- Approval workflow → PM signs → Finance pays
-- Audit log records every transition
-- Print RA bill with org letterhead
-- Cumulative tracker shown on card (₹X.X L of ₹Y.Y L paid)
-
-### 7.10 Measurement Book (MB) tab
-
-Statutory append-only ledger of site measurements.
-
-- Add row → description + location + qty (with L × B × D fields if cuboid)
-- Link to BOQ item (one click, dropdown)
-- Photos auto-attached
-- PM verifies + digital signature
-- Cannot edit/delete after RA bill linked (drift trigger fires → audit log)
-- MB number serialisation (statutory format MB-2026-007)
-- Export to PDF (for PWD audit)
-
-### 7.11 Labour tab
-
-Statutory labour register (statutory PWD format).
-
-- Add labour entry → name + Aadhaar (masked in UI) + EPF / ESI numbers + trade + wage + date joined
-- Bulk import from CSV
-- Aadhaar shown as `XXXX XXXX 1234` (last 4 digits only)
-- EPF/ESI auto-format verified
-- Reports: per trade, per pay-period, monthly PF filing prep
-- Export EPFO-compatible XML (in development)
-
-### 7.12 Ledger tab
-
-Live inventory ledger (cement, steel, aggregate, etc.).
-
-- Auto-populated from Materials tab "received" events
-- Auto-decreases when "issued to work" entries logged
-- Reconciliation view: physical count vs system count
-- Wastage tracking — flag > 5% wastage rate
-- Material price master from Vendors / market scrapes
-
-### 7.13 Drawings tab
-
-CAD + PDF drawing management with revision chain.
-
-- Upload PDF / DWG / DXF / JPG
-- Auto-detect title + type from filename
-- Revision auto-increments (Rev A → Rev B → ...)
-- Release flow: pick recipients (PM / Contractor / Client) → they see only released revisions
-- **Drawing-diff viewer** (just shipped): pick Rev A + Rev B → overlay with opacity slider → see what changed
-- Markup canvas: draw on top with red pen → save as new version
-- Storage path immutable → drawings never lost
-- Past revisions retained forever (legal requirement)
-
-### 7.14 Quality tab
-
-Inspections + checklists.
-
-- Schedule inspection → type (structural / MEP / safety / handover) + date + inspector
-- Run inspection → checklist items: Pass / Fail / NA
-- Photos per item
-- Outcome: Pass / Fail / Conditional
-- Follow-up items auto-created as Tasks
-- Inspection report PDF generator
-
-### 7.15 Safety tab
-
-Site safety incidents + reports.
-
-- Log incident → severity (Near-miss / First-aid / Minor / Major / Fatal) + photo + description
-- Action taken + follow-ups
-- Monthly safety report (counts by severity)
-- LTIFR (Lost-Time Injury Frequency Rate) calculated
-- Escalation: Major+ incidents auto-notify Org Owner
-
-### 7.16 Permits tab
-
-Government permits + statutory clearances.
-
-- Add permit → kind (Environment / Commencement / Occupancy / Fire / Electrical / RERA stage) + ref no + issuing authority + valid till
-- Document upload (scan of original)
-- Auto-reminder 30 days before expiry
-- RERA filings: per-stage progress filed to Telangana / Karnataka / Maharashtra portals (where enabled)
-
-### 7.17 Submittals tab
-
-Drawings + specs awaiting client/consultant approval.
-
-- Submit → type (shop drawing / material sample / method statement) + drawing reference + reviewer role
-- Reviewer sees in their queue
-- Status: Pending / Approved / Approved with comments / Rejected / Resubmit
-- Audit log all reviews
-
-### 7.18 Equipment tab
-
-Heavy machinery + tools.
-
-- Add equipment → name + asset # + type + ownership (Owned / Rental / Hire)
-- Rate per day for cost computation
-- On-site from/to dates
-- Maintenance schedule (last serviced + next due)
-- Operator name
-- Meter reading (hours/km)
-
-### 7.19 Diary tab
-
-Site diary — one entry per (project, date).
-
-- Auto-fills weather from API
-- Worker count carried from Attendance tab
-- Free text for events of the day
-- Visitor log
-- Safety notes
-- Tomorrow's plan
-- Photos attached
-
-Daily routine for site engineers — replaces the paper site diary mandated by some specs.
-
----
-
-## 8. 9 Org Admin Panels
-
-Behind the gear icon (top-right of sidebar). Only org_admin + org_owner + superadmin see these.
-
-### 8.1 Members
-
-- See all team members
-- Add member: email + role
-- Edit role
-- Deactivate (soft-delete; keeps audit history)
-- Bulk CSV import — 50 members in 5 sec
-- Search + filter by role
-
-### 8.2 Approval Chains
-
-Configure who approves what.
-
-- Per resource (Expense / PO / RA Bill / Change Order / Invoice / Drawing Release)
-- Per threshold (e.g. PO < ₹1L → auto, ₹1L-5L → PM, > ₹5L → Org Owner)
-- Add rungs (multiple approvers in series)
-- Per rung: require signature? Require comment?
-
-### 8.3 Templates
-
-Reusable templates for new projects.
-
-- **Project template**: pre-filled BOQ + team + drawings
-- **BOQ template**: full BOQ for a class of project (e.g. "Standard 4-floor residential")
-- **Checklist template**: inspection checklists
-
-When creating new project, pick a template → 80% pre-filled.
-
-### 8.4 Integrations
-
-Connect external services.
-
-- **Cashfree** (UPI AutoPay billing) — paste App ID + Secret
-- **Razorpay** (alternative payment gateway)
-- **WhatsApp Business** (Meta Cloud API for client DPRs)
-- **OpenAI / Anthropic** (for AI forecasting + DPR summaries)
-- **Slack / Teams** (notifications, planned)
-
-Each integration verified before "Active" badge appears.
-
-### 8.5 Billing
-
-Subscription management.
-
-- Current plan: Free / Pro (₹999/mo) / Business (₹2,999/mo) / Enterprise (₹7,999/mo)
-- **Cashfree pill**: Live / Pending / Past due
-- Upgrade button → opens UPI mandate flow
-- Invoice history (all past charges)
-- Receipt download per invoice
-
-### 8.6 Notifications
-
-Per-event notification rules.
-
-- Trigger: any event in audit_log_v2 (e.g. "RA bill approved", "Drawing released")
-- Channel: In-app / Email / WhatsApp
-- Recipients: role-based (all PMs) or specific people
-- Enable / disable per rule
-
-### 8.7 Branding
-
-White-label your firm.
-
-- Logo upload (used in PDF letterhead)
-- Accent color (hex)
-- Theme: Editorial / Classic / Modern / Dark
-- Letterhead PDF template
-- Per-project override (for high-net-worth client work)
-
-### 8.8 Activity
-
-Org-wide audit log.
-
-- Every action by every user across every project
-- Filter: actor / action / resource / date range / project
-- Export to CSV
-- Export to PDF (formatted with letterhead — for legal disputes)
-
-### 8.9 Feature Settings
-
-37-feature toggle catalog.
-
-- Group by category: nav / tabs / workflow / orgadmin
-- Toggle ON/OFF per feature
-- Some features plan-gated (e.g. RERA filing only on Business plan)
-- Audit log records every toggle change
-
----
-
-## 9. Mobile Field Worker Mode
-
-SiteTrack on phone/tablet has the SAME app — just rendered for small screens.
-
-### Differences vs desktop
-
-| Desktop | Mobile |
-|---|---|
-| Sidebar always visible | Bottom tab bar (5 icons) |
-| Hover tooltips | Long-press tooltips |
-| Multi-column dashboard | Single-column scroll |
-| Mouse + keyboard | Touch + 56px buttons |
-| File drag-drop | Tap "+" → file picker |
-
-### Bottom tab bar (mobile)
-
-5 icons across the bottom (always reachable with thumb):
-- **Dashboard** (home)
-- **Projects** (list)
-- **Activity** (feed of recent events)
-- **Messages** (DMs scoped to projects)
-- **Profile** (your settings, logout)
-
-### Field-worker optimised flows
-
-- **Quick capture** button: floating action button (FAB) — 1 tap to camera + voice note
-- **Offline-first**: every entry queues locally → syncs when WiFi/4G connects
-- **Big buttons** — 56px minimum (works with gloves)
-- **High contrast** — readable in direct sunlight
-- **Material photo upload** — auto-resize on capture to save bandwidth
-
----
-
-## 10. Kiosk Modes
-
-For sites where you want a single-purpose screen (not a full app).
-
-### 10.1 Labour Attendance Kiosk
-
-Single-tap attendance for site gate tablets.
-
-- Set tablet to URL: `https://sitetrack-rakesh.vercel.app/?mode=labour-kiosk`
-- Sidebar hidden, only attendance grid visible
-- Worker walks in → site supervisor taps "Present" next to name → done
-- Optional QR code scan for fast attendance (worker shows ID card with QR)
-- PIN-locked: can't exit kiosk without 4-digit PIN
-
-### 10.2 Site Wall Display
-
-For the TV in your site office.
-
-- URL: `?mode=site-wall`
-- Rotates 4 dashboards every 30 sec: Progress / Safety / Weather / Today's DPR
+**Setup:**
+- URL: `https://app.sitetrack.in/kiosk/site-wall`
 - No interaction needed — passive display
-- Great for visitor walkthroughs ("Here's what we've done this week")
 
-### 10.3 AR Drawing Overlay (preview)
+**Display:**
+- Rotates 4 dashboards every 30 sec:
+  1. Progress (BOQ completion %)
+  2. Safety (days since last incident)
+  3. Weather (auto-fetched)
+  4. Today's DPR (latest update)
 
-Hold phone at site → overlay current drawing on camera view → see real-world alignment.
+### 5.3 Daily Snapshot
 
-- Currently scaffolded (not production ready)
-- Watch this space
+**Purpose**: Single-page project status summary.
 
----
+**URL**: `https://app.sitetrack.in/kiosk/snapshot`
 
-## 11. Integrations
+**Shows:**
+- Labour count today
+- Updates count today
+- Open issues count
+- Material received today
 
-### 11.1 Cashfree (UPI billing)
+### 5.4 AR Drawing Overlay
 
-Pay for your subscription via UPI AutoPay.
+**Purpose**: Preview — Hold phone at site, overlay drawing on camera view.
 
-- Setup: Org Admin → Billing → click "Subscribe" → opens Cashfree UPI mandate
-- Approve in your UPI app (PhonePe / GPay / Paytm)
-- Auto-charged monthly
-- View invoices in Billing tab
-
-### 11.2 WhatsApp Business
-
-Send daily DPRs to client via WhatsApp.
-
-- Setup: Integrations → WhatsApp → enter Phone Number ID + Permanent Token
-- 4-6 week Meta verification before production use
-- Per-project: enable WhatsApp for this project's client
-- Daily auto-DPR: AI summary in Telugu/Hindi/English → sent at 7 PM
-
-### 11.3 Telangana RERA (TG RERA portal)
-
-Auto-file stage filings to rera.telangana.gov.in.
-
-- Setup: Integrations → TG RERA → enter portal credentials + RERA number
-- Per project → Compliance tab → "File stage" button
-- Stage code (Foundation / Plinth / 7th floor / ...) → auto-fills from BOQ progress
-- Submits + tracks ack number
-
-### 11.4 Karnataka RERA / Maharashtra RERA
-
-Same flow as TG RERA but routed to state-specific portals. Just shipped — KA-RERA + MH-RERA stubs ready.
-
-### 11.5 GSTN e-invoicing
-
-Auto-generate IRN for B2B invoices > ₹5cr turnover.
-
-- Setup: Integrations → GSTN → GSP API key (from NIC / ClearTax / TaxPro)
-- Auto on invoice raise → IRN appended + QR code embedded in invoice PDF
-
-### 11.6 OpenAI / Anthropic (AI)
-
-For forecasting + multi-language DPR summaries.
-
-- Setup: Integrations → AI Provider → paste API key
-- Used by: Forecast tab, Daily DPR auto-summary, AI Feature Recommender
+**Status**: Scaffolded (not production ready). Requires WebXR.
 
 ---
 
-## 12. Settings & Preferences
+## 6. Admin Console Guide
 
-### 12.1 Per-user preferences
+Platform admin (superadmin) views for managing the entire SaaS.
 
-- Language: English / Telugu / Hindi (UI translates)
-- Dark mode toggle (top-right moon icon)
-- Notifications: in-app + email + WhatsApp per kind
-- Display density: comfortable / compact
+### 6.1 Platform Dashboard (`/admin`)
 
-### 12.2 Per-project settings
+- Multi-tenant MRR chart
+- Active orgs/users count
+- Plan distribution pie chart
+- Recent signups list
+- Churn risk alerts
+- Cross-tenant activity feed
 
-- Project name / address / budget edit
-- Add/remove team members
-- Change project type (revisits tab visibility)
-- Archive project (90-day restore window)
-- Delete project (super_admin only)
+### 6.2 Organizations (`/admin/orgs`)
 
-### 12.3 Per-org settings (Org Admin only)
+- All customer orgs with status (active/suspended/trial)
+- Add org → Name + admin email + plan
+- Click org → see: member count, project count, subscription status, last activity
+- Change plan / Suspend / Delete
 
-- All 9 panels in §8 above
+### 6.3 Users (`/admin/users`)
 
----
+- Cross-tenant user list
+- Search by name/email/org
+- Invite user to any org
+- Impersonate: Click user → See their view → Debug → Stop
+- Status toggle per user
 
-## 13. Troubleshooting
+### 6.4 Roles (`/admin/roles`)
 
-### 13.1 "Magic link is invalid or has expired"
+- View all 22 roles and their capabilities
+- Configure role permissions
+- Custom roles panel: Create org-specific role variants
 
-**Cause**: Gmail's link scanner prefetched and consumed the token.
+### 6.5 Signups (`/admin/signups`)
 
-**Fix**: Use the 6-digit code from the email body instead of clicking the button. Or switch to non-Gmail email.
+- Pending signup requests
+- Approve → Org created, user notified
+- Reject → Reason sent to applicant
 
-### 13.2 "Something broke" error screen
+### 6.6 Staff (`/admin/staff`)
 
-**Cause**: Rare app crash (caught by ErrorBoundary).
+- Staff tier management: Owner / Head / Member
+- Staff area grants: signups, orgs, users, roles, upgrades
+- View staff activity log
 
-**Fix**: Click "Reload" — usually fixes it. If recurring, click "Reload and clear data" (wipes browser cache; your data on server is safe).
+### 6.7 Upgrades (`/admin/upgrades`)
 
-### 13.3 Demo data not loading
+- Upgrade requests from orgs
+- Process: verify payment → plan changed → org notified
 
-**Cause**: localStorage quota exceeded (browser per-domain limit ~10 MB).
+### 6.8 Branding (`/admin/branding`)
 
-**Fix**: Clear browser localStorage (Settings → Privacy → Clear browsing data → Cookies and site data) → reload → click "Load demo data" again.
-
-### 13.4 Sign-in works but I see "Local mode"
-
-**Cause**: VITE_BACKEND env var not `supabase` in production build.
-
-**Fix**: For deployers — check Vercel env vars are set + redeploy. For users — you're on a dev URL maybe; switch to production URL.
-
-### 13.5 Photo upload fails
-
-**Cause**: Large file (>10MB) or weak network.
-
-**Fix**: SiteTrack auto-resizes images. If still failing, try smaller batch (5 photos at a time).
-
-### 13.6 Can't see Org Admin gear icon
-
-**Cause**: You're not an `org_admin` or `org_owner` role.
-
-**Fix**: Ask your Org Owner to promote you (Org Admin → Members → edit your row → role).
-
-### 13.7 Offline changes not syncing
-
-**Cause**: App stuck thinking it's offline.
-
-**Fix**: Pull-to-refresh on mobile OR reload page on desktop. Check connectivity pill in top bar (green = live, red = offline).
+- Platform-wide branding settings
+- Logo, accent color, theme
+- White-label options for Business plan orgs
 
 ---
 
-## 14. Telugu / Hindi UI
+## 7. Troubleshooting
 
-SiteTrack supports 3 languages.
+### 7.1 Login Issues
 
-### Switch language
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Magic link invalid | Gmail prefetched the URL | Use 6-digit code from email body instead |
+| OTP not received | Email in spam, or wrong email | Check spam, retry with correct email |
+| "Local mode" shown | VITE_BACKEND not set to supabase | Deployer: check Vercel env vars |
 
-- Profile → Settings → Language → Telugu / Hindi / English
-- Or login: top-right has language picker
+### 7.2 Permission Issues
 
-### Coverage
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Can't see Org Admin gear | You're not org_admin/org_owner | Ask Org Owner to promote you |
+| Can't see a project | You're not a member of that project | Ask PM to add you via Project Settings → Members |
+| Button greyed out | Feature disabled in Org settings, or plan limit reached | Check Org Features panel / Upgrade plan |
+| "Access denied" toast | Your role lacks this capability | Refer to §8 Quick Reference for your role |
 
-- All UI labels translated (buttons, menus, tooltips, error messages)
-- AI features (DPR summary, Forecast rationale) respond in chosen language
-- WhatsApp template messages: 3 templates per language
+### 7.3 Data Issues
 
-### Field workers
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Photos not uploading | File >10MB or weak network | App auto-resizes. Try smaller batch (5 at a time) |
+| Offline changes not syncing | App thinks it's offline | Pull-to-refresh on mobile, reload on desktop. Check green connectivity pill |
+| Demo data missing | localStorage quota exceeded | Clear browser data → Reload → "Load demo data" again |
 
-- Site engineers: use Telugu in Hyderabad / Vizag / Vijayawada
-- Use Hindi for North India sites
-- Use English for client-facing reports
+### 7.4 App Crashes
 
-### Notes
-
-- Aadhaar / PAN / GSTIN — kept in English (statutory format)
-- Numbers always in Western digits (not Telugu/Devanagari)
-- Currency: ₹ symbol + Indian comma format (12,50,000)
-
----
-
-## 15. Glossary
-
-| Term | Full form | Meaning |
-|---|---|---|
-| **Aadhaar** | — | 12-digit ID issued by UIDAI to Indian residents |
-| **AAB** | Android App Bundle | Format for Google Play uploads |
-| **API** | Application Programming Interface | How software talks to other software |
-| **BOQ** | Bill of Quantities | Itemised budget with quantity + rate per line |
-| **CGST** | Central GST | Central govt share of GST tax |
-| **CREDAI** | — | Confederation of Real Estate Developers' Associations of India |
-| **CSV** | Comma-Separated Values | Spreadsheet file format |
-| **DPR** | Daily Progress Report | What we did today, sent to client |
-| **EPF** | Employees' Provident Fund | Statutory retirement savings |
-| **ESI** | Employees' State Insurance | Statutory health insurance |
-| **GSTIN** | GST Identification Number | 15-char registration ID |
-| **GSTN** | GST Network | Government tax-filing portal |
-| **GSP** | GST Suvidha Provider | Licensed intermediary for GSTN API access |
-| **HSN** | Harmonized System of Nomenclature | Product classification code for GST |
-| **IRN** | Invoice Reference Number | 64-char unique ID for e-invoice |
-| **MB** | Measurement Book | PWD-spec append-only ledger of site measurements |
-| **MEP** | Mechanical, Electrical, Plumbing | Building services discipline |
-| **MRR** | Monthly Recurring Revenue | SaaS metric |
-| **PAN** | Permanent Account Number | 10-char tax ID for individuals + entities |
-| **PMC** | Project Management Consultant | Independent professional managing a project |
-| **PO** | Purchase Order | Formal request to a vendor for goods |
-| **PWD** | Public Works Department | Government infrastructure agency |
-| **QR Code** | Quick Response Code | 2D barcode |
-| **QS** | Quantity Surveyor | Professional who prices + measures construction |
-| **RA Bill** | Running Account Bill | Sub-contractor invoice tied to MB |
-| **RCC** | Reinforced Cement Concrete | Common construction material |
-| **RERA** | Real Estate (Regulation and Development) Act | 2016 law mandating real estate filings |
-| **RFI** | Request For Information | Question from contractor → architect |
-| **RFP** | Request For Proposal | Bid invitation |
-| **RLS** | Row Level Security | Postgres feature isolating tenant data |
-| **SaaS** | Software as a Service | Cloud-hosted subscription software |
-| **SGST** | State GST | State govt share of GST tax |
-| **SPA** | Single Page Application | App where pages don't reload |
-| **TDS** | Tax Deducted at Source | Pre-paid income tax on payments |
-| **TG RERA** | Telangana RERA | State-level RERA portal |
-| **UPI** | Unified Payments Interface | Indian instant-payment system |
+| Problem | Fix |
+|---------|-----|
+| "Something broke" error screen | Click "Reload" — usually fixes it |
+| Recurring crash | Click "Reload and clear data" (wipes cache, server data safe) |
+| Report a bug | Profile → Help → Report, or email hello@sitetrack.in |
 
 ---
 
-## 16. FAQs
+## 8. Quick Reference
 
-### 🟧 Pricing
+### 8.1 Role → Capability Summary
 
-**Q: Is there a free plan?**
-A: Yes — 14-day free trial (1 project, 5 users, 1GB storage). After 14 days, choose Pro / Business / Enterprise or downgrade to read-only.
+| Role | Capabilities | Key access |
+|------|-------------|------------|
+| superadmin | All 90 | Everything, including impersonation |
+| orgadmin | ~23 | Org panels: members, billing, integrations, templates, approvals, features |
+| promoter | ~28 | DPR view, digest, budget/ledger view, compliance view, handover, export |
+| project_admin | ~32 | Compliance, RERA/GSTN/EPFO filing, invoice/rabill, milestone, vendor |
+| prospector | ~2 | Project create, vendor manage |
+| pm | ~36 | Project CRUD, progress, milestones, DPR, team, attendance, materials, POs, RFI, BOQ, rabills, drawings, messages, export |
+| architect | ~13 | Drawings upload/release/markup, RFI, change orders, BOQ edit, updates |
+| senior_architect | ~18 | Same as architect + team manage, RFI close, change orders approve |
+| junior_architect | ~6 | Drawings upload/edit/markup, RFI create, updates |
+| design_architect_int | ~12 | Drawings, materials, RFI, BOQ |
+| design_head | ~14 | Same + team manage, RFI close, change order approve, estimate edit |
+| consultant_head | ~8 | Drawings edit/markup, RFI respond/close, change order approve |
+| designer | ~4 | Drawings upload/markup, updates |
+| mep_consultant | ~11 | Drawings, RFI, change orders, inspections |
+| structural_consultant | ~11 | Same as MEP |
+| consultant | ~5 | Drawings markup, RFI, updates |
+| site_engineer | ~23 | Progress, updates, issues, punchlist, safety, attendance, labour, materials, DPR, drawings markup |
+| contractor | ~8 | Updates, attendance, materials, RFI, RA bills |
+| sub_contractor | ~5 | Updates, attendance, RFI |
+| vendor | ~4 | POs, invoices, material prices |
+| client | ~7 | DPR view, compliance view, handover, share portal, export |
+| site_inspector | ~6 | Compliance view, audit read, drawings markup, RERA file, export |
 
-**Q: What's the cheapest paid plan?**
-A: **Pro at ₹999/month** — 5 projects, 25 users, 20GB storage. Per-org pricing (not per-user) — disruptive vs Procore's $400/user/year.
+### 8.2 Route Map
 
-**Q: Can I cancel anytime?**
-A: Yes. UPI mandate cancel via Org Admin → Billing → Cancel. No prorated refund, but no further charges.
+| Path | Component | Feature |
+|------|-----------|---------|
+| `/` | LandingView | Public landing page |
+| `/login` | LoginScreenV3 | Sign in |
+| `/signup` | SignupView | Register |
+| `/dashboard` | RoleDashboard | User's home |
+| `/projects` | ProjectsListView | All projects |
+| `/projects/new` | CreateProjectView | New project form |
+| `/projects/:id` | DetailView | Project detail (17 tabs) |
+| `/dpr` | DPRComposer | Daily Progress Report |
+| `/vendors` | VendorsView | Vendor directory |
+| `/calendar` | CalendarView | Project calendar |
+| `/analytics` | AnalyticsView | Cross-project charts |
+| `/search` | GlobalSearchView | Global search |
+| `/pos` | CrossProjectPOsView | All purchase orders |
+| `/notifications` | NotificationsView | Notification inbox |
+| `/activity` | OrgActivityView | Audit log |
+| `/org` | OrgDashboardView | Org admin home |
+| `/org/members` | OrgMembersView | Team management |
+| `/org/billing` | OrgBillingView | Subscription |
+| `/org/templates` | OrgTemplatesView | Reusable templates |
+| `/org/integrations` | OrgIntegrationsView | External services |
+| `/org/approvals` | OrgApprovalsView | Approval chains |
+| `/org/notifications` | OrgNotificationsView | Alert rules |
+| `/org/features` | OrgFeatureSettingsView | Feature toggles |
+| `/admin` | PlatformDashboardView | Superadmin home |
+| `/admin/orgs` | PlatformOrgsView | Manage orgs |
+| `/admin/users` | PlatformUsersView | Manage users |
+| `/admin/roles` | RoleManager | Role permissions |
+| `/admin/signups` | SignupRequestsView | Approve signups |
+| `/admin/upgrades` | UpgradeRequestsView | Plan upgrades |
+| `/admin/staff` | StaffAdminView | Staff management |
+| `/settings/security` | SecurityView | Password, MFA |
+| `/settings/profile` | ProfileView | User profile |
 
-**Q: Do you take a cut from my vendor purchases?**
-A: No. Unlike BuildSupply, we don't take procurement margin. Your vendors are yours.
+### 8.3 Plan Limits
 
-### 🟦 Data & Privacy
-
-**Q: Where is my data stored?**
-A: Supabase Mumbai region (`ap-south-1`). Indian soil. Within ap-south-1 RTO + RPO < 5 min.
-
-**Q: Can SiteTrack staff see my data?**
-A: No. Row-Level Security (RLS) at the database layer prevents even our staff from reading your rows without your explicit consent (super_admin Impersonate flow — fully audited).
-
-**Q: Can I export my data if I cancel?**
-A: Yes. Org Admin → Settings → Export workspace → ZIP of all projects, BOQ, RA bills, photos, audit log → email link.
-
-**Q: Is my data backed up?**
-A: Yes. Supabase backs up Postgres hourly. We add a separate daily snapshot to S3. Storage replicates to 3 zones. Worst-case RPO ≈ 1 hour.
-
-### 🟩 Features
-
-**Q: Does it work offline?**
-A: Yes — IndexedDB queue + sync. Field workers go offline for 2-3 days, sync when back at office WiFi. Conflict-free.
-
-**Q: Can I use it on iPad?**
-A: Yes — responsive design. Native iPad app coming Q4 (Capacitor wrap).
-
-**Q: How is this different from Procore / Powerplay?**
-A: Three big things:
-1. **Pricing** — per-org (₹999), not per-user (₹31k/year). 30× cheaper for typical 20-person firm.
-2. **Indian builder depth** — BOQ paste, MB-RA cycle, RERA filing, Telugu/Hindi DPR. Procore doesn't have any of these.
-3. **Court-admissible audit** — Polygon-anchored audit log per IT Act 2000 s.65B. Unique vs everyone.
-
-**Q: Do you support iOS app?**
-A: Coming Q4 2026 (Capacitor wrap of the same React code). Android first (Play Store closed track now).
-
-**Q: Telugu UI — really or just labels?**
-A: Real. UI fully translated. AI features respond in Telugu (forecast rationale, DPR summary). WhatsApp templates in Telugu approved by Meta.
-
-### 🟨 Compliance
-
-**Q: Is the audit log court-admissible?**
-A: Yes, with Polygon anchoring (Business plan+). Cryptographic proof of when each row existed = IT Act 2000 s.65B admissible. Lawyer-reviewed.
-
-**Q: Does it handle RERA filings?**
-A: Telangana RERA: yes (Business plan). Karnataka + Maharashtra: just shipped (in beta). Other states: roadmap.
-
-**Q: Can I file GSTN e-invoices?**
-A: Yes — bring your own GSP credentials. We build the IRP payload + send to your GSP (NIC / ClearTax / TaxPro). IRN appended to invoice PDF automatically.
-
-### 🟥 Support
-
-**Q: How do I contact support?**
-A: hello@sitetrack.in or in-app: Profile → Help → Email support.
-
-**Q: What's the response time?**
-A: Pro plan: 24 hours. Business plan: 8 hours. Enterprise: 1 hour, with named CSM.
-
-**Q: Do you offer training for my team?**
-A: Yes. Business+ plan includes 2-hour Zoom onboarding for up to 10 attendees. Enterprise: in-person training in Hyderabad / Bangalore / Mumbai.
-
-**Q: Can I request a feature?**
-A: Yes — Profile → Feedback → Submit. Top votes → roadmap. We ship ~2 customer-requested features per month.
-
----
-
-## 🎯 Where to go from here
-
-- **First-time user?** Re-read §5 ("Your First Project") then click around in demo mode (§3.3).
-- **Org Owner setting up?** §8 ("9 Org Admin Panels") is your bible.
-- **Site engineer?** §6.3 ("Site Engineer typical day") + §9 ("Mobile Field Worker Mode").
-- **Architect?** §6.1 + §7.13 (Drawings tab) + §7.6 (POs).
-- **Contractor?** §6.4 + §7.9 (RA Bills) + §7.12 (Ledger).
-- **Client?** §6.5 — short read. The app is read-only for you.
+| Feature | Free (14d trial) | Pro (₹999/mo) | Business (₹2,999/mo) |
+|---------|-----------------|---------------|----------------------|
+| Projects | 1 | 5 | 50 |
+| Users | 5 | 25 | 100 |
+| Storage | 1 GB | 20 GB | 100 GB |
+| RERA filing | No | No | Yes (state portals) |
+| WhatsApp DPR | No | Yes | Yes |
+| Audit blockchain anchor | No | No | Yes |
+| Support | Email | 24 hr | 8 hr + named CSM |
+| Team training | No | No | 2-hr Zoom onboarding |
 
 ---
 
-## 📞 Need help
+## 9. Test Your Knowledge
 
-- **In-app**: Profile → Help → Search docs or contact support
-- **Email**: hello@sitetrack.in
-- **WhatsApp business**: +91 78989 71337
-- **GitHub issues** (technical): github.com/Rakesh-7989/Site-Tracker-Pro/issues
+Scenario-based questions. Try to answer without looking at the guide.
+
+### Role questions
+
+**Q1**: You log in and see the Org Admin gear icon. What role are you?
+- A) superadmin or orgadmin (only these see Org Admin)
+
+**Q2**: A Contractor says they can't create an RA Bill. What could be wrong?
+- A) No MB entries verified by PM yet, or their role doesn't have `rabill:create` (but contractor does have this — check if they're actually assigned as Contractor in org_members)
+
+**Q3**: A Client reports they can see a project but all tabs are empty. Why?
+- A) Client only sees released drawings and submitted DPRs. If nothing has been released/submitted, tabs are empty.
+
+**Q4**: As PM, you uploaded a drawing but the Contractor can't see it. Why?
+- A) Did you click "Release" and select Contractor as recipient? Unreleased drawings are invisible to non-uploaders.
+
+**Q5**: You're orgadmin but the "RERA Filing" button is greyed out. What's wrong?
+- A) Your org is on Pro plan. RERA filing requires Business plan. Or the feature is toggled OFF in Org Features.
+
+### Feature questions
+
+**Q6**: An RA Bill shows amount = ₹85,000 but payable = ₹80,750. Where did ₹4,250 go?
+- A) 5% retention. Auto-computed by the system.
+
+**Q7**: A Site Engineer entered measurements in MB but the Contractor says MB shows "Unverified". What step is missing?
+- A) PM needs to verify and digitally sign the MB entries before they link to RA Bills.
+
+**Q8**: You want to be notified when a drawing is released. How do you set this up?
+- A) Org Admin → Notifications → Create rule: Trigger "Drawing released" → Channel: In-app → Recipients: Role = PM
+
+**Q9**: A Vendor portal user says they can see POs from two different companies. Is this a bug?
+- A) Yes — vendors should only see POs from their own org. Check RLS policies.
+
+### Debug questions
+
+**Q10**: An orgadmin reports that the "New Project" button is missing. They are orgadmin which has `project:create` = false. True or false?
+- A) True. Orgadmin does NOT have `project:create`. PM, Prospector, and Project Admin do. The orgadmin needs to either assign themselves PM role in a project or ask a PM to create projects.
+
+**Q11**: After inviting a new user with magic link, they say "Link expired". What happened and what's the fix?
+- A) Gmail prefetched the URL. Fix: Use the 6-digit OTP code from the email body instead.
+
+**Q12**: A PM created a PO for ₹12L but it was auto-approved instantly even though the org has approval chains configured. Why?
+- A) Check if approval chains are configured for "PO" resource specifically, and whether the threshold rules cover ₹12L. If no rule matches, it may fall through to auto-approve.
 
 ---
 
-*SiteTrack Pro · Made in Hyderabad for Indian builders · 2026*  
-*Last updated: Session 28.5 (June 2026) · Maintainer: Mohan Boyapati*
+*SiteTrack Pro · Made in Hyderabad for Indian builders · 2026*
+*Last updated: June 2026 · Maintainer: Mohan Boyapati*
