@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "ollama/deepseek-coder:latest",
+  "model": "ollama/qwen2.5-coder:1.5b",
   "instructions": ["docs/AGENTS.md", "docs/WORKFLOW.md", ".agents/sitetrack-pro/README.md"],
   "agent": {
     "team-lead": {
@@ -52,15 +52,35 @@
       "mode": "subagent"
     }
   },
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama",
+      "options": {
+        "baseURL": "http://127.0.0.1:11500/v1"
+      },
+      "models": {
+        "deepseek-coder:1.3b": {
+          "name": "DeepSeek Coder 1.3B"
+        },
+        "qwen2.5-coder:1.5b": {
+          "name": "Qwen 2.5 Coder 1.5B"
+        }
+      }
+    }
+  },
   "command": {
     "handoff": {
-      "description": "Create an agent handoff using the SiteTrack template. Usage: /handoff <work-item> <assigned-agent> <summary>"
+      "description": "Create an agent handoff using the SiteTrack template. Usage: /handoff <work-item> <assigned-agent> <summary>",
+      "template": "Create a handoff for {{context}} using the handoff template from .agents/sitetrack-pro/team-lead.md"
     },
     "board": {
-      "description": "Show current work board status from .agents/sitetrack-pro/work-board.md"
+      "description": "Show current work board status from .agents/sitetrack-pro/work-board.md",
+      "template": "Read and display the current status from .agents/sitetrack-pro/work-board.md"
     },
     "sprint": {
-      "description": "Start a sprint coaching session with the sprint-coach agent"
+      "description": "Start a sprint coaching session with the sprint-coach agent",
+      "template": "Start a sprint coaching session. Analyzes current project state and provides coaching for the sprint-coach agent."
     }
   }
 }
