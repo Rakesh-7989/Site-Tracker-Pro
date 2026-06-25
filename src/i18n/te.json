@@ -176,6 +176,8 @@
     "errCouldNotSendLink": "లింక్ పంపలేకపోయాం.",
     "errEnterEmailFirst": "ముందుగా పైన మీ ఇమెయిల్ నమోదు చేసి, ఆపై 'పాస్‌వర్డ్ మర్చిపోయారా' నొక్కండి.",
     "errCouldNotSendReset": "రీసెట్ లింక్ పంపలేకపోయాం.",
+    "orgCreatePrompt": "వర్క్‌స్పేస్ లేదా?",
+    "orgCreateLink": "కొత్తది సృష్టించండి",
     "errEnter6": "6-అంకెల కోడ్‌ను నమోదు చేయండి.",
     "errInvalidCode": "చెల్లని కోడ్."
   },

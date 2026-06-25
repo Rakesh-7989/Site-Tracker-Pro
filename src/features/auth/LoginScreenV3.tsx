@@ -322,9 +322,13 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
               </div>
             </div>
           )}
-          {lane === "staff" && (
+          {lane === "staff" ? (
             <p className="mt-4 text-center text-[11px] text-ink-400">
               {t("auth.customerLoginPrompt")} <Link to="/login" className="font-semibold text-safety-600 hover:text-safety-700">{t("auth.customerLoginLink")}</Link>
+            </p>
+          ) : (
+            <p className="mt-4 text-center text-[11px] text-ink-400">
+              {t("auth.orgCreatePrompt")} <Link to="/register" className="font-semibold text-safety-600 hover:text-safety-700">{t("auth.orgCreateLink")}</Link>
             </p>
           )}
           </>)}

@@ -176,7 +176,9 @@
     "errCouldNotSendLink": "लिंक नहीं भेज सके।",
     "errEnterEmailFirst": "पहले ऊपर अपना ईमेल दर्ज करें, फिर 'पासवर्ड भूल गए' टैप करें।",
     "errCouldNotSendReset": "रीसेट लिंक नहीं भेज सके।",
-    "errEnter6": "6-अंकीय कोड दर्ज करें।",
+    "orgCreatePrompt": "वर्कस्पेस नहीं है?",
+    "orgCreateLink": "नया बनाएं",
+    "errEnter6": "6 अंकों का कोड दर्ज करें।",
     "errInvalidCode": "अमान्य कोड।"
   },
   "signup": {

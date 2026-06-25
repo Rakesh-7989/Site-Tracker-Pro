@@ -9,6 +9,7 @@
 // compose surface (site_engineer, pm via project ctx).
 
 import { useReducer, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Button, Icon, Spinner, Alert, Badge } from "@/components/ui/atoms";
@@ -20,6 +21,7 @@ import {
   type DprLanguage,
 } from "./dprDraft";
 import { previewDigest } from "./digestPreview";
+import { VoiceNoteRecorder, type VoiceRecordingResult } from "./VoiceNoteRecorder";
 
 const LANG_OPTIONS = [
   { value: "te", label: "Telugu" },
@@ -45,17 +47,21 @@ export function DPRComposer(): JSX.Element {
   const [draft, dispatch] = useReducer(dprReducer, EMPTY_DRAFT);
   const [submitted, setSubmitted] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
 
-  // ── Voice: transcribe via the real lib in mock mode ──
+  // ── Voice: transcribe via the real lib ──
+  const onRecorded = useCallback((result: VoiceRecordingResult) => {
+    setRecordedBlob(result.blob);
+  }, []);
+
   const onTranscribe = useCallback(async () => {
+    if (!recordedBlob) return;
     dispatch({ type: "voice-start" });
+    setTranscribing(true);
     try {
       const mod = await import("../../lib/voiceTranscribe.js");
-      // A tiny dummy clip — mock provider only needs bytes to seed the hash.
-      const bytes = new Uint8Array(16);
-      for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 37 + draft.language.charCodeAt(0)) % 256;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await (mod as any).transcribe(bytes, { lang: draft.language, provider: "mock", transport: "mock" });
+      const res = await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "mock", transport: "mock" });
       if (res?.ok) {
         dispatch({ type: "voice-done", transcript: res.text, confidence: res.confidence ?? 0, provider: res.provider ?? "mock" });
       } else {
@@ -64,7 +70,8 @@ export function DPRComposer(): JSX.Element {
     } catch (e) {
       dispatch({ type: "voice-error", error: e instanceof Error ? e.message : String(e) });
     }
-  }, [draft.language]);
+    setTranscribing(false);
+  }, [draft.language, recordedBlob]);
 
   // ── Photo: pick a file, then verify location via device GPS ──
   const onPhoto = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,9 +141,12 @@ export function DPRComposer(): JSX.Element {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <div>
-        <h1 className="font-display text-xl font-bold text-ink-900">Daily Progress Report</h1>
-        <p className="text-sm text-ink-500 mt-0.5">Speak your update, add a site photo, send to the promoter.</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-xl font-bold text-ink-900">Daily Progress Report</h1>
+          <p className="text-sm text-ink-500 mt-0.5">Speak your update, add a site photo, send to the promoter.</p>
+        </div>
+        <Link to="/dpr/history" className="text-xs font-semibold text-safety-600 hover:text-safety-700 whitespace-nowrap">View history</Link>
       </div>
 
       {/* Language */}
@@ -158,7 +168,11 @@ export function DPRComposer(): JSX.Element {
           )}
         </div>
         {draft.voice.status === "idle" && (
-          <Button size="lg" onClick={onTranscribe} leftIcon={<Icon name="phone" size={16} />}>Record + transcribe</Button>
+          <VoiceNoteRecorder
+            onRecorded={onRecorded}
+            onTranscribe={onTranscribe}
+            transcribing={transcribing}
+          />
         )}
         {draft.voice.status === "transcribing" && (
           <div className="flex items-center gap-2 text-sm text-ink-500"><Spinner size={16} /> Transcribing…</div>

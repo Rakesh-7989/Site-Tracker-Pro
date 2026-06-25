@@ -33,6 +33,7 @@ import { CreateProjectView } from "@/features/shell/CreateProjectView";
 // ── Lazy: loaded on navigation (keeps the initial bundle lean) ──────────────
 const DetailView = lazy(() => import("@/features/project/DetailView").then(m => ({ default: m.DetailView })));
 const DPRComposer = lazy(() => import("@/features/dpr/DPRComposer").then(m => ({ default: m.DPRComposer })));
+const DPRHistoryView = lazy(() => import("@/features/dpr/DPRHistoryView").then(m => ({ default: m.DPRHistoryView })));
 const VendorsView = lazy(() => import("@/features/org/VendorsView").then(m => ({ default: m.VendorsView })));
 const CalendarView = lazy(() => import("@/features/org/CalendarView").then(m => ({ default: m.CalendarView })));
 const AnalyticsView = lazy(() => import("@/features/org/AnalyticsView").then(m => ({ default: m.AnalyticsView })));
@@ -106,6 +107,7 @@ export const router = createBrowserRouter([
       { path: "projects/:id", element: <DetailView /> },
       { path: "projects/:id/:tab", element: <DetailView /> },
       { path: "dpr", element: <DPRComposer /> },
+      { path: "dpr/history", element: <DPRHistoryView /> },
       { path: "vendors", element: <VendorsView /> },
       { path: "calendar", element: <CalendarView /> },
       { path: "analytics", element: <AnalyticsView /> },
