@@ -96,7 +96,7 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
   try {
     const { data, error } = await client
       .from("projects")
-      .select("id, name, type, status, location, org_id, started_at, completed_at")
+      .select("id, name, type, status, location, org_id, start_date")
       .eq("id", projectId)
       .maybeSingle();
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -111,8 +111,8 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
         status: r.status == null ? null : String(r.status),
         location: r.location == null ? null : String(r.location),
         orgId: String(r.org_id),
-        startedAt: r.started_at == null ? null : String(r.started_at),
-        completedAt: r.completed_at == null ? null : String(r.completed_at),
+        startedAt: r.start_date == null ? null : String(r.start_date),
+        completedAt: null,
       },
     };
   } catch (e) {
