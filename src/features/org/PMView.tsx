@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { listPMProjects, listPMNotifications, type ProjectBrief, type NotifBrief } from "@/app/pmQueries";
+import { useSession } from "@/auth/OrganizationContext";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -20,6 +21,7 @@ function PBar({ v }: { v: number }) {
 
 export function PMView(): JSX.Element {
   const navigate = useNavigate();
+  const session = useSession();
   const [projects, setProjects] = useState<ProjectBrief[]>([]);
   const [notifs, setNotifs] = useState<NotifBrief[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,15 +29,17 @@ export function PMView(): JSX.Element {
 
   useEffect(() => {
     (async () => {
+      const orgId = session.activeOrgId;
+      if (!orgId) { setLoading(false); return; }
       setError(null);
       const client = await getClient();
       if (!client) { setError("Backend not configured."); setLoading(false); return; }
-      const [pRes, nRes] = await Promise.all([listPMProjects(client), listPMNotifications(client)]);
+      const [pRes, nRes] = await Promise.all([listPMProjects(client, orgId), listPMNotifications(client)]);
       if (pRes.ok) setProjects(pRes.data); else setError(pRes.error);
       if (nRes.ok) setNotifs(nRes.data); else setError(nRes.error);
       setLoading(false);
     })();
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
   if (error) return <div className="p-8"><Alert variant="danger">{error}</Alert></div>;

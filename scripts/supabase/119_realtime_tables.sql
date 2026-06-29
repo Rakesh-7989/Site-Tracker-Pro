@@ -1,0 +1,1 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE activity_log, messages, issues, notifications, signup_requests, subscriptions;

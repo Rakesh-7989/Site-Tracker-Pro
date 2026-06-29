@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthSession } from "./types";
 import { fetchAuthSession, type FetchOutcome } from "./fetchAuthSession";
 import { defaultStorage, readActiveOrgId, writeActiveOrgId, type StorageLike } from "./activeOrgStore";
+import { setTenantContext } from "../lib/tenantContext";
 
 export type AuthStatus = "idle" | "loading" | "ready" | "signed-out" | "error";
 
@@ -149,6 +150,8 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       if (outcome.session.activeOrgId !== preferredOrgId) {
         writeActiveOrgId(outcome.session.activeOrgId, storageRef.current);
       }
+      // Set tenant context so RLS has the org_id for defense-in-depth.
+      void setTenantContext(sb, outcome.session.activeOrgId);
       return outcome.session;
     } catch (e) {
       // Network hang / timeout / unexpected throw → don't freeze the app.
@@ -190,7 +193,15 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
   const setActiveOrgId = useCallback((orgId: string | null) => {
     setSession((prev) => prev ? { ...prev, activeOrgId: orgId } : prev);
     writeActiveOrgId(orgId, storageRef.current);
-  }, []);
+    if (orgId) {
+      void (async () => {
+        try {
+          const client = await getClient();
+          if (client) await setTenantContext(client, orgId);
+        } catch { /* non-critical */ }
+      })();
+    }
+  }, [getClient]);
 
   return { session, status, error, refresh: hydrate, setActiveOrgId };
 }

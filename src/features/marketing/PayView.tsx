@@ -40,7 +40,7 @@ export function PayView(): JSX.Element {
       if (reqRes.ok) {
         setFirm(reqRes.data.firmName); setPlan(reqRes.data.plan); setPaid(reqRes.data.paymentStatus === "paid");
         const tier = PLAN_TIERS.find(t => t.id === reqRes.data.plan);
-        if (tier) setAmountInr(Math.round(gstInclusive(tier.annual) / 100)); // annual incl. 18% GST, in ₹
+        if (tier) setAmountInr(gstInclusive(tier.annual));
       } else setError(reqRes.error);
       if (setRes.ok) { setUpiId(setRes.data.upiId); setPayee(setRes.data.payeeName); }
       setLoading(false);
@@ -83,7 +83,7 @@ export function PayView(): JSX.Element {
 
       <div className="mt-4 grid place-items-center">
         <UpiQr uri={uri} size={220} />
-        <div className="text-2xl font-bold mt-3">{formatINR(amountInr * 100)}</div>
+        <div className="text-2xl font-bold mt-3">{formatINR(amountInr)}</div>
         <div className="text-[12px] text-ink-500">to {upiId}{payee ? ` (${payee})` : ""} · incl. 18% GST</div>
         <a href={uri} className="mt-3 text-sm font-semibold text-white bg-safety-500 hover:bg-safety-600 px-5 py-2.5 rounded-lg">Open UPI app to pay</a>
         <div className="text-[11px] text-ink-400 mt-1">Scan with any UPI app (GPay, PhonePe, Paytm…) or tap above on mobile.</div>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { listVendorPOs, listMaterialPrices, type PO, type MPrice } from "@/app/vendorPortalQueries";
+import { useSession } from "@/auth/OrganizationContext";
 
 async function getClient() {
   const mod = await import("../../lib/supabase.js");
@@ -13,6 +14,7 @@ const fmtCur = (n: number) => `₹${(n ?? 0).toLocaleString("en-IN")}`;
 const fmtDate = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }); };
 
 export function VendorPortalView(): JSX.Element {
+  const session = useSession();
   const [tab, setTab] = useState("dashboard");
   const [pos, setPos] = useState<PO[]>([]);
   const [prices, setPrices] = useState<MPrice[]>([]);
@@ -20,14 +22,16 @@ export function VendorPortalView(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    const orgId = session.activeOrgId;
+    if (!orgId) { setLoading(false); return; }
     setError(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const [poRes, mpRes] = await Promise.all([listVendorPOs(client), listMaterialPrices(client)]);
+    const [poRes, mpRes] = await Promise.all([listVendorPOs(client), listMaterialPrices(client, orgId)]);
     if (poRes.ok) setPos(poRes.data); else setError(poRes.error);
     if (mpRes.ok) setPrices(mpRes.data); else setError(mpRes.error);
     setLoading(false);
-  }, []);
+  }, [session]);
 
   useEffect(() => { void load(); }, [load]);
 

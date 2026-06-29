@@ -14,10 +14,10 @@ export async function listVendorPOs(client: any): Promise<PResult<PO[]>> {
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listMaterialPrices(client: any): Promise<PResult<MPrice[]>> {
+export async function listMaterialPrices(client: any, orgId: string): Promise<PResult<MPrice[]>> {
   try {
     const { data, error } = await client.from("material_prices")
-      .select("id, material, price, updated_at").order("material").limit(50);
+      .select("id, material, price, updated_at").eq("org_id", orgId).order("material").limit(50);
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: (data ?? []).map((r: any) => ({ id: r.id, material: r.material ?? "", price: r.price ?? 0, updated: r.updated_at ?? "" })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }

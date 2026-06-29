@@ -35,6 +35,11 @@ export interface NavItem {
    * area is in their granted set; owner/head always see it.
    */
   area?: "signups" | "orgs" | "users" | "roles" | "upgrades";
+  /**
+   * Sprint 1 feature freeze: when set, the item is hidden from non-staff users.
+   * The value is the STUB_VIEWS id from src/lib/featureFlags.js.
+   */
+  stubId?: string;
 }
 
 /**
@@ -57,10 +62,10 @@ export const NAV_CATALOG: NavItem[] = [
 
   { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement" },
   { to: "/pos", label: "Purchase Orders", icon: "doc", requires: "po:create", group: "Procurement" },
-  { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "vendor:manage", group: "Procurement" },
+  { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "vendor:manage", group: "Procurement", stubId: "material-prices" },
   { to: "/hierarchy", label: "Hierarchy", icon: "building", requires: "project:create", group: "Planning" },
-  { to: "/forecast", label: "Cost Forecast", icon: "barChart", requires: "budget:view", group: "Insights" },
-  { to: "/delegations", label: "Delegations", icon: "users", requires: "org:approvals:manage", group: "Org Admin" },
+  { to: "/forecast", label: "Cost Forecast", icon: "barChart", requires: "budget:view", group: "Insights", stubId: "forecast" },
+  { to: "/delegations", label: "Delegations", icon: "users", requires: "org:approvals:manage", group: "Org Admin", stubId: "delegations" },
 
   { to: "/analytics", label: "Analytics", icon: "barChart", requires: "budget:view", group: "Insights" },
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },
@@ -70,11 +75,11 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/org/members", label: "Members", icon: "users", requires: "org:members:manage", group: "Org Admin" },
   { to: "/org/roles", label: "Custom Roles", icon: "lock", requires: "org:members:manage", group: "Org Admin" },
   { to: "/org/billing", label: "Billing", icon: "credit-card", requires: "org:billing:manage", group: "Org Admin" },
-  { to: "/org/templates", label: "Templates", icon: "doc", requires: "org:templates:manage", group: "Org Admin" },
-  { to: "/org/approvals", label: "Approvals", icon: "check", requires: "org:approvals:manage", group: "Org Admin" },
-  { to: "/org/notifications", label: "Notifications", icon: "bell", requires: "org:notifications:manage", group: "Org Admin" },
-  { to: "/org/integrations", label: "Integrations", icon: "plug", requires: "org:integrations:manage", group: "Org Admin" },
-  { to: "/org/features", label: "Features", icon: "sliders", requires: "org:features:configure", group: "Org Admin" },
+  { to: "/org/templates", label: "Templates", icon: "doc", requires: "org:templates:manage", group: "Org Admin", stubId: "org-templates" },
+  { to: "/org/approvals", label: "Approvals", icon: "check", requires: "org:approvals:manage", group: "Org Admin", stubId: "org-approvals" },
+  { to: "/org/notifications", label: "Notifications", icon: "bell", requires: "org:notifications:manage", group: "Org Admin", stubId: "org-notifications" },
+  { to: "/org/integrations", label: "Integrations", icon: "plug", requires: "org:integrations:manage", group: "Org Admin", stubId: "org-integrations" },
+  { to: "/org/features", label: "Features", icon: "sliders", requires: "org:features:configure", group: "Org Admin", stubId: "org-features" },
 
   { to: "/admin", label: "Platform", icon: "dashboard", requires: "platform:orgs:manage", group: "Platform" },
   { to: "/admin/signups", label: "Signups", icon: "mail", requires: "platform:orgs:manage", area: "signups", group: "Platform" },
@@ -84,21 +89,21 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/admin/staff", label: "Staff", icon: "users", requiresStaffTier: ["owner", "head"], group: "Platform" },
   { to: "/admin/upgrades", label: "Upgrade requests", icon: "trend", requiresStaffTier: ["owner", "head", "member"], area: "upgrades", group: "Platform" },
   { to: "/admin/billing", label: "Billing", icon: "credit-card", requires: "platform:billing:manage", area: "orgs", group: "Platform" },
-  { to: "/admin/audit", label: "Audit Log", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform" },
+  { to: "/admin/audit", label: "Audit Log", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform", stubId: "admin-audit-log" },
   { to: "/admin/usage", label: "Usage", icon: "barChart", requires: "platform:orgs:manage", area: "orgs", group: "Platform" },
   { to: "/admin/support", label: "Support", icon: "mail", requires: "platform:orgs:manage", group: "Platform" },
   { to: "/admin/settings", label: "Settings", icon: "sliders", requires: "platform:settings:manage", area: "orgs", group: "Platform" },
-  { to: "/admin/branding", label: "Branding", icon: "sliders", requires: "platform:orgs:manage", group: "Platform" },
+  { to: "/admin/branding", label: "Branding", icon: "sliders", requires: "platform:orgs:manage", group: "Platform", stubId: "admin-branding" },
   { to: "/admin/audit-v2", label: "Audit v2 (immutable)", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform" },
 
   // Always visible — every signed-in user can manage their own account security (2FA).
   { to: "/settings/security", label: "Security", icon: "lock", group: "Account" },
   { to: "/help", label: "Help Guide", icon: "info", group: "Account" },
 
-  { to: "/kiosk/labour", label: "Labour Kiosk", icon: "users", group: "Kiosks" },
-  { to: "/kiosk/site", label: "Site Wall", icon: "dashboard", group: "Kiosks" },
-  { to: "/kiosk/ar", label: "AR Overlay", icon: "camera", group: "Kiosks" },
-  { to: "/kiosk/snapshot", label: "Daily Snapshot", icon: "barChart", group: "Kiosks" },
+  { to: "/kiosk/labour", label: "Labour Kiosk", icon: "users", group: "Kiosks", stubId: "kiosk-labour" },
+  { to: "/kiosk/site", label: "Site Wall", icon: "dashboard", group: "Kiosks", stubId: "kiosk-site" },
+  { to: "/kiosk/ar", label: "AR Overlay", icon: "camera", group: "Kiosks", stubId: "ar-overlay" },
+  { to: "/kiosk/snapshot", label: "Daily Snapshot", icon: "barChart", group: "Kiosks", stubId: "snapshot" },
 ];
 
 /**
@@ -115,13 +120,35 @@ export function buildNav(session: AuthSession | null): NavItem[] {
   const tier = session.user.staffTier ?? null;
   const isMember = tier === "member";
   const areas = session.user.staffAreas ?? [];
+
+  // Staff check for Sprint 1 stub gating: staff can see frozen stubs,
+  // non-staff cannot. Three ways in:
+  //   1. isStaff flag (DB profiles.is_staff)
+  //   2. superadmin identity role
+  //   3. email on VITE_STAFF_EMAILS allowlist (local dev + founder)
+  const user = session.user;
+  const isStaff = user.isStaff ||
+    user.identityRole === "superadmin" ||
+    (() => {
+      try {
+        const env = (typeof import.meta !== "undefined" ? import.meta.env as Record<string, string> : {}) || {};
+        const allow = env.VITE_STAFF_EMAILS || "";
+        if (!allow) return false;
+        const list = String(allow).split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+        const email = String(user.email || "").trim().toLowerCase();
+        return email && list.includes(email);
+      } catch { return false; }
+    })();
+
   return NAV_CATALOG.filter(item =>
     (!item.requires || caps.has(item.requires)) &&
     (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))) &&
     // A staff MEMBER only sees admin items for areas they're granted (owner/head
     // are not members, so they see everything). Empty grants = full access (the
     // default), matching useHasStaffArea + the set_staff_areas RPC semantics.
-    (!item.area || !isMember || areas.length === 0 || areas.includes(item.area)),
+    (!item.area || !isMember || areas.length === 0 || areas.includes(item.area)) &&
+    // Sprint 1 freeze: hide stub views from non-staff users
+    (!item.stubId || isStaff),
   );
 }
 
