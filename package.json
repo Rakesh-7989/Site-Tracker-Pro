@@ -22,7 +22,7 @@
     "format:check": "prettier --check .",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "npx playwright test",
     "test:e2e:install": "playwright install chromium",
     "test:ef": "node scripts/test-ef-harness.mjs",
     "test:rls": "node scripts/test-self-service-rls.mjs",
@@ -69,5 +69,14 @@
     "typescript": "^5.9.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.9"
-  }
+  },
+  "description": "Construction site management web app — role-based access (Architect / PM / Contractor / Client), 20+ modules, India-ready (GST/TDS, EPF/ESI, Telugu/Hindi), offline-capable PWA.",
+  "main": "eslint.config.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
