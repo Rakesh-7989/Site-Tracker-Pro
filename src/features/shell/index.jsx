@@ -189,7 +189,7 @@ export function LoginScreen({onLogin,dark,toggleDark}){
   // backend is NOT configured — i.e. someone running the build without
   // VITE_SUPABASE_URL set. Production users never see them.
   const opsToggles=(()=>{try{return JSON.parse(localStorage.getItem("sitetrack_v2")||"{}").ops_toggles||{};}catch{return{};}})();
-  const demoLoaderEnabled=opsToggles.demoLoaderEnabled!==false;
+  const demoLoaderEnabled=!isSupabaseEnabled() && opsToggles.demoLoaderEnabled!==false;
   const demoPersists=opsToggles.demoModePermanent!==false;
   const[dataInfo]=useState(()=>({summary:dataSummary(),isDemo:isDemoLoaded()}));
   const handleLoadDemo=()=>{

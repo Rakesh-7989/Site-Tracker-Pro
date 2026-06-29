@@ -31,7 +31,7 @@ export default defineConfig({
     // The legacy detail shell remains available only through ?shell=legacy and
     // still carries several old tab implementations. Keep the warning budget
     // aligned with that temporary fallback while v3 uses smaller route chunks.
-    chunkSizeWarningLimit: 700,
+    chunkSizeWarningLimit: 750,
     rollupOptions: {
       output: {
         manualChunks(id) {

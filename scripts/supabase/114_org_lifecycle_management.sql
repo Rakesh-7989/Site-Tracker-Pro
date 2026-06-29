@@ -38,7 +38,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
         OR staff_tier IN ('owner', 'head')
         OR (staff_tier = 'member' AND EXISTS (
           SELECT 1 FROM public.staff_area_grants
-          WHERE profile_id = auth.uid() AND area = 'orgs'
+          WHERE staff_id = auth.uid() AND area = 'orgs'
         ))
       )
   );

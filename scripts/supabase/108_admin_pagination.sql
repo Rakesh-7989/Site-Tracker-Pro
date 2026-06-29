@@ -14,6 +14,7 @@ BEGIN;
 
 -- ── platform_orgs(limit, offset, search) ─────────────────────────────────────
 DROP FUNCTION IF EXISTS public.platform_orgs();
+DROP FUNCTION IF EXISTS public.platform_orgs(int, int, text);
 CREATE FUNCTION public.platform_orgs(p_limit int DEFAULT 50, p_offset int DEFAULT 0, p_search text DEFAULT NULL)
 RETURNS TABLE (id uuid, name text, slug text, plan text, member_count int, project_count int, created_at timestamptz)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -40,6 +41,7 @@ COMMENT ON FUNCTION public.platform_orgs(int, int, text) IS 'Superadmin: paged +
 
 -- ── platform_users(limit, offset, search) ────────────────────────────────────
 DROP FUNCTION IF EXISTS public.platform_users(int);
+DROP FUNCTION IF EXISTS public.platform_users(int, int, text);
 CREATE FUNCTION public.platform_users(p_limit int DEFAULT 50, p_offset int DEFAULT 0, p_search text DEFAULT NULL)
 RETURNS TABLE (id uuid, name text, email text, role text, is_staff boolean, org_count int, created_at timestamptz)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -60,6 +62,7 @@ COMMENT ON FUNCTION public.platform_users(int, int, text) IS 'Superadmin: paged 
 
 -- ── list_upgrade_requests(limit, offset) ─────────────────────────────────────
 DROP FUNCTION IF EXISTS public.list_upgrade_requests();
+DROP FUNCTION IF EXISTS public.list_upgrade_requests(int, int);
 CREATE FUNCTION public.list_upgrade_requests(p_limit int DEFAULT 100, p_offset int DEFAULT 0)
 RETURNS TABLE (
   id uuid, org_id uuid, org_name text, requester_email text, current_plan text,

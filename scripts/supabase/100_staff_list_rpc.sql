@@ -2,7 +2,8 @@
 -- SECURITY DEFINER so it can read auth.users for the email; gated INSIDE to
 -- owner+head (a non-head caller gets zero rows).
 
-create or replace function public.list_platform_staff()
+drop function if exists public.list_platform_staff();
+create function public.list_platform_staff()
   returns table (
     id uuid,
     email text,

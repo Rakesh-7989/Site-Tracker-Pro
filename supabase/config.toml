@@ -1,5 +1,4 @@
-[project]
-ref = "nntkxojdeyziemdhyjvg"
+project_id = "nntkxojdeyziemdhyjvg"
 
 [api]
 enabled = true
@@ -7,21 +6,13 @@ port = 54321
 schemas = ["public", "storage", "graphql_public"]
 
 [db]
-migrations_path = "../scripts/supabase"
-seed = false
-model = "postgres"
+port = 54322
+major_version = 15
 
 [auth]
 enabled = true
 site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://localhost:3000"]
 
-[edge_functions]
-enabled = true
-include = ["*"]
-
 [storage]
 enabled = true
-
-[analytics]
-enabled = false
