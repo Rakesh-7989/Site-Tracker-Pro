@@ -5,6 +5,7 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](package.json)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)](package.json)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss)](package.json)
+[![CI](https://github.com/Rakesh-7989/Site-Tracker-Pro/actions/workflows/ci.yml/badge.svg)](https://github.com/Rakesh-7989/Site-Tracker-Pro/actions/workflows/ci.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CONTRIBUTING.md)
 
 Construction site management web app with role-based access (Architect / PM / Contractor / Client), 20+ modules, India-ready compliance (GST/TDS, EPF/ESI, RERA), multilingual UI (Telugu / Hindi / English), and offline-capable PWA.
@@ -153,6 +154,7 @@ All project documentation lives in `docs/`:
 - [Backend plan](docs/BACKEND_PLAN.md)
 - [Market analysis](docs/MARKET_ANALYSIS.md)
 - [Roadmap](docs/SITETRACK_V3_PLAN.md)
+- [Signup & login guide](docs/SIGNUP_LOGIN_GUIDE.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
