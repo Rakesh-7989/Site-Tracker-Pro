@@ -8,13 +8,8 @@ production. Retire the duplicate `site-tracker-pro-smoky`.
 ## Current canonical rule (2026-06-20)
 
 - Canonical production URL: `https://sitetrack-rakesh.vercel.app`.
-- Do not publish or test against `https://sitetrack-rakesh-rakesh15.vercel.app`.
-- Root `vercel.json` permanently redirects requests for
-  `sitetrack-rakesh-rakesh15.vercel.app` to the same path on
-  `sitetrack-rakesh.vercel.app`, before the SPA fallback rewrite runs.
 - If the duplicate hostname appears in the Vercel dashboard, remove or disable
-  that domain/project there too. The repo-level redirect protects every future
-  build, but dashboard cleanup is still the true domain removal step.
+  that domain/project there too.
 
 ## The problem (2026-06-06 diagnosis)
 

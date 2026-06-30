@@ -3,19 +3,6 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "sitetrack-rakesh-rakesh15.vercel.app"
-        }
-      ],
-      "destination": "https://sitetrack-rakesh.vercel.app/:path*",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],

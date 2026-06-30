@@ -6,7 +6,6 @@ Founder clicks "Forgot password" or a magic-link email from
 https://sitetrack-rakesh.vercel.app, but the link opens either:
 
 - `http://localhost:5173/...`
-- `https://sitetrack-rakesh-rakesh15.vercel.app/...`
 
 Result: dead-end. Localhost only runs on the dev machine, and the duplicate
 Vercel hostname is protected before SiteTrack can load.
@@ -43,8 +42,7 @@ place.
    http://localhost:5173
    http://localhost:5173/**
    ```
-4. Remove `https://sitetrack-rakesh-rakesh15.vercel.app` if it appears there.
-5. Save.
+4. Save.
 
 Effect is immediate for newly generated emails. Existing emails keep their old
 baked URL.
@@ -72,7 +70,6 @@ It should not contain:
 
 ```text
 http://localhost:5173
-https://sitetrack-rakesh-rakesh15.vercel.app
 ```
 
 ## Future Domain Change

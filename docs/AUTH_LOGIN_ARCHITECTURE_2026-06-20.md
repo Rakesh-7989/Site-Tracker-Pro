@@ -2,8 +2,7 @@
 
 ## Why the Vercel access page appeared
 
-The clicked email link redirected to `sitetrack-rakesh-rakesh15.vercel.app`.
-That hostname is a protected duplicate Vercel deployment, so Vercel stopped the
+The clicked email link redirected to a protected duplicate Vercel deployment, so Vercel stopped the
 request before the SiteTrack app could run and showed "You Need Access".
 
 Canonical app URL:
@@ -104,8 +103,7 @@ not different auth systems.
 
 `getCanonicalAppUrl()` now rejects:
 
-- `https://sitetrack-rakesh-rakesh15.vercel.app`
-- any other non-canonical `*.vercel.app` preview/duplicate host
+- any non-canonical `*.vercel.app` preview/duplicate host
 - stale placeholder `https://app.sitetrack.in`
 
 Local dev `http://localhost:5173` still works. Production auth emails should
@@ -122,7 +120,6 @@ These cannot be changed from this machine without Supabase/Vercel tokens:
      - `https://sitetrack-rakesh.vercel.app/**`
      - `http://localhost:5173`
      - `http://localhost:5173/**`
-   - Remove `sitetrack-rakesh-rakesh15.vercel.app` if present.
 2. Supabase Auth -> Email Templates:
    - Prefer `{{ .ConfirmationURL }}` plus visible `{{ .Token }}`.
    - Do not build links from `{{ .SiteURL }}` if Site URL might drift.

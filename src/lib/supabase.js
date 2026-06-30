@@ -24,7 +24,6 @@ export const CANONICAL_APP_URL = "https://sitetrack-rakesh.vercel.app";
 
 const BLOCKED_APP_HOSTS = new Set([
   "app.sitetrack.in",
-  "sitetrack-rakesh-rakesh15.vercel.app",
 ]);
 
 function isLocalAppHost(hostname) {
