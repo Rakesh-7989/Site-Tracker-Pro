@@ -25,3 +25,8 @@ backups/
 # Bundle visualizer output
 stats.html
 stats.json
+
+# Debug artifacts
+debug*.png
+debug*.spec.ts
+e2e/debug*.spec.ts

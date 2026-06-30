@@ -1,39 +1,58 @@
 # SiteTrack Pro
 
-Construction site management web app — role-based access (Architect / PM / Contractor / Client), 20+ modules, India-ready (GST/TDS, EPF/ESI, Telugu/Hindi), offline-capable PWA.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](tsconfig.json)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](package.json)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)](package.json)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss)](package.json)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CONTRIBUTING.md)
+
+Construction site management web app with role-based access (Architect / PM / Contractor / Client), 20+ modules, India-ready compliance (GST/TDS, EPF/ESI, RERA), multilingual UI (Telugu / Hindi / English), and offline-capable PWA.
+
+---
 
 ## Features
 
-**Core (existing)**: Projects · Milestones · Site updates · Issues · Materials · Drawings (revision + release control) · Team · Attendance · Budget · Gantt · Analytics · Activity feed · Notifications · Client share link · PDF/CSV export · Dark mode
+### Core modules
+| Module | Description |
+|--------|-------------|
+| **Projects** | Multi-project dashboard with milestones, Gantt, budget tracking |
+| **Drawings** | Revision-controlled drawing release with role-based visibility |
+| **Issues & Punch List** | Track site issues, punch list items with threaded comments |
+| **RFI** | Request for Information workflow (PM raises, Architect answers) |
+| **Change Orders** | Scope/cost/time impact tracking with client approval |
+| **Inspections & QC** | Custom checklists (pre-pour, MEP, safety, closeout) |
+| **Materials** | Stock ledger with inward/outward/return/wastage, GRN/DC references |
+| **Vendors DB** | Global supplier directory with GSTIN, ratings, purchase orders |
+| **BOQ** | Bill of Quantities with line items, category totals, client read-only |
+| **RA Bills** | Subcontractor running account bills with retention |
+| **Invoices** | Milestone-based billing with GST + TDS |
+| **Labour Register** | Statutory worker register (Aadhaar, EPF, ESI, daily wage) |
+| **Budget** | Project budgeting with expense tracking |
+| **Safety Incidents** | OSHA-style reporting (near miss, first aid, injury, fatal) |
+| **DPR** | Daily Progress Reports with photo metadata (GPS + timestamp) |
 
-**New additions**:
-- **Tasks** — granular to-dos under each milestone, assignee + priority
-- **Punch List** — close-out items with trade + assignee
-- **RFI** — Request for Information workflow (PM raises → Architect answers)
-- **Change Orders** — scope/cost/time impact with client approval flow
-- **Inspections & QC** — custom checklists, pre-pour / MEP / safety / closeout
-- **Safety Incidents** — separate from issues, OSHA-style (near miss / first aid / injury / fatal)
-- **Vendors DB** — global supplier database with GSTIN, ratings
-- **Purchase Orders** — per-project + cross-project view with GST calc + vendor link
-- **Invoices** — milestone-based billing with GST + TDS
-- **Labour Register** — statutory worker register (Aadhaar, EPF, ESI, daily wage)
-- **RA Bills** — subcontractor running account bills with retention
-- **BOQ (Bill of Quantities)** — line items per project with code/category/unit/qty/rate; category totals + grand total; client read-only
-- **Stock Ledger** — inward/outward/return/wastage transactions with GRN/DC ref no and material-wise balance summary
-- **Calendar** — cross-project deadlines (milestones + tasks + invoices)
+### Cross-cutting features
 - **Global Search** — across projects, milestones, issues, vendors
-- **Today's Entry** — quick field capture for updates, issues, worklogs, and materials
-- **Role-safe access guards** — client search/detail/share links stay scoped to assigned projects
-- **Drawing revision governance** - same title/type new release auto-supersedes older current revision; PM/contractor/client/share views show only current drawings explicitly released to that role
-- **Photo metadata** — date/time + GPS location captured on site-update photos; visible on hover overlay
-- **Comments** — threaded discussion on issues
-- **WhatsApp Share** — share project status directly
-- **GST/TDS** — built-in calculation on expenses & invoices
-- **Telugu / Hindi / English** — UI language toggle
+- **Calendar** — cross-project deadlines (milestones, tasks, invoices)
+- **Today's Entry** — quick field capture for updates, issues, worklogs
+- **Comments** — threaded discussion on issues and RFIs
+- **WhatsApp Share** — share project status directly via WhatsApp
+- **Analytics** — Recharts-based dashboards with project health insights
+- **Dark mode** — full dark theme support
 - **PWA** — installable, works offline (cached shell)
-- **localStorage persistence** — data survives refresh/close
+- **i18n** — Telugu, Hindi, English UI toggle
+- **PDF/CSV Export** — export reports and data
 
-## Run locally
+### Access control
+- **Role-based access** — Architect, PM, Contractor, Client, Super Admin, Staff
+- **Plan-based gating** — feature visibility by subscription plan
+- **Capability-based permissions** — fine-grained action-level guards
+- **Role-safe share links** — client search/detail/share scoped to assigned projects
+
+---
+
+## Quick start
 
 ```sh
 npm install
@@ -42,94 +61,106 @@ npm run dev
 
 Open http://localhost:5173
 
-## Build
+Demo login: 4 roles available on the login screen — no password required.
 
-```sh
-npm run build
+| Role | Description |
+|------|-------------|
+| Architect | Full access, releases drawings |
+| PM (Priya Sharma) | Site ops, attendance, issues, materials |
+| Contractor (Karthik Builders) | Field uploads, RFIs, worklogs, RA bills |
+| Client (Vikram Nair) | Read-only progress, drawings, invoices |
+
+---
+
+## Screenshots
+
+_Coming soon. Run the app and explore the demo data to see all features._
+
+---
+
+## Project structure
+
+```
+site-tracker-pro/
+  src/
+    app/            Query modules, router, navigation config
+    auth/           Auth system (capabilities, roles, PlanGate, guards)
+    components/     Shared UI components
+    features/       15 feature modules (admin, auth, project, org, dpr, vendor, ...)
+    i18n/           Translations (en, te, hi)
+    lib/            Utilities (permissions, supabase, export, format, ...)
+  supabase/
+    functions/      22 Edge Functions
+  docs/             60+ documents (architecture, sales, research, setup)
+  tests/            Unit tests (Vitest) + E2E (Playwright)
+  contracts/        Smart contract (AuditAnchor.sol)
 ```
 
-Output goes to `dist/`.
+---
 
-## Free deployment options
+## Scripts
 
-### Option 1: Vercel (recommended — easiest)
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build → `dist/` |
+| `npm test` | Full pipeline: lint + typecheck + build + smoke + unit tests |
+| `npm run test:unit` | Run Vitest unit tests |
+| `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run lint` | ESLint check |
+| `npm run typecheck` | TypeScript check |
+| `npm run format` | Prettier format |
 
-1. Push project to GitHub:
-   ```sh
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/<your-username>/sitetrack.git
-   git push -u origin main
-   ```
-2. Go to https://vercel.com → Sign in with GitHub → "New Project"
-3. Import your repo → Vercel auto-detects Vite → click **Deploy**
-4. Live in ~30 seconds at `https://<project>.vercel.app`
+---
 
-`vercel.json` is already configured (SPA rewrites + SW headers).
+## Deployment
 
-### Option 2: Netlify (drag-and-drop, no GitHub needed)
+The app can be deployed to any static host:
 
-1. Run `npm run build`
-2. Go to https://app.netlify.com/drop
-3. Drag the **`dist/`** folder into the drop zone
-4. Live instantly at `https://<random-name>.netlify.app`
+| Platform | Config |
+|----------|--------|
+| **Vercel** | Auto-detected (`vercel.json`) |
+| **Netlify** | `netlify.toml` configured |
+| **Cloudflare Pages** | Build: `npm run build`, output: `dist` |
+| **GitHub Pages** | Set `base` in `vite.config.js` |
 
-For continuous deploy: connect GitHub repo — `netlify.toml` handles config.
-
-### Option 3: Cloudflare Pages
-
-1. Push to GitHub
-2. Cloudflare Dashboard → Pages → "Connect to Git"
-3. Build command: `npm run build` · Output dir: `dist`
-4. Deploy
-
-### Option 4: GitHub Pages
-
-```sh
-npm run build
-# In repo settings, enable Pages → branch: gh-pages
-# Push dist/ contents to gh-pages branch
-```
-
-Note: GitHub Pages serves from a subpath — set `base: '/<repo-name>/'` in `vite.config.js` first.
-
-## Demo Login
-
-4 roles available on the login screen — click any to enter (no password needed for demo):
-- **Architect** — full access, releases drawings, sees activity feed
-- **PM (Priya Sharma)** — site ops, attendance, issues, materials
-- **Contractor (Karthik Builders)** — field uploads, RFIs, worklogs, RA bills
-- **Client (Vikram Nair)** — read-only progress, drawings, invoices
-
-## Data persistence
-
-All data is stored in **browser `localStorage`** (key `sitetrack_v2`). Clear browser data to reset to demo state.
-
-For production multi-user use, replace `useLS` hook with a real backend (Supabase / Firebase / your API).
-
-## Business and product docs
-
-- `docs/BUSINESS_MODEL.md` - SaaS positioning, target customers, pilot plan, revenue model.
-- `docs/PRICING.md` - starter plan tiers, setup fees, custom/private deployment notes.
-- `docs/MARKET_ANALYSIS.md` - top competitors, India-local competitors, 50-feature traceability matrix.
-- `docs/DEPLOYMENT.md` - free static deployment and demo vs paid-pilot vs production boundaries.
-- `docs/BACKEND_PLAN.md` - Supabase schema, RLS policies, file storage, 7-phase migration plan, cost model (drafted by Backend Engineer Agent, awaiting Tech Lead approval).
-- `docs/AGENTS.md`, `docs/WORKFLOW.md`, `docs/BACKLOG.md`, `docs/QUALITY.md` - agent operating guide, workflow, backlog, QA.
-
-## Tests
-
-```sh
-npm test        # build + smoke + vitest
-npm run test:unit       # vitest only
-npm run smoke   # string-marker smoke check
-```
-
-CI runs all of the above on every push and PR (`.github/workflows/ci.yml`).
+---
 
 ## Tech stack
 
-- React 18 + Vite
-- Tailwind CSS 3
-- Recharts (analytics)
-- No backend — pure SPA + localStorage
+| Layer | Technology |
+|-------|------------|
+| Framework | React 18 |
+| Build | Vite 8 |
+| Styling | Tailwind CSS 3 |
+| Charts | Recharts |
+| Storage | Browser localStorage (demo), Supabase (production) |
+| Mobile | Capacitor (Android/iOS wrapper) |
+| Auth | Supabase Auth + RBAC |
+| i18n | Custom (en/te/hi) |
+| CI | GitHub Actions |
+| Monitoring | Sentry + Vercel Analytics |
+
+---
+
+## Documentation
+
+All project documentation lives in `docs/`:
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Business model](docs/BUSINESS_MODEL.md)
+- [Pricing](docs/PRICING.md)
+- [Backend plan](docs/BACKEND_PLAN.md)
+- [Market analysis](docs/MARKET_ANALYSIS.md)
+- [Roadmap](docs/SITETRACK_V3_PLAN.md)
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+
+---
+
+## License
+
+[MIT](LICENSE)
+
+Copyright (c) 2026 SiteTrack Pro

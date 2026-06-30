@@ -4,7 +4,7 @@
 > documenting **what's known broken** rather than claiming "production ready"
 > while shipping demo-blocker fixes the same day.
 
-Last reviewed: **2026-05-25**.
+Last reviewed: **2026-06-30**.
 
 ---
 

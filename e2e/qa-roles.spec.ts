@@ -280,8 +280,8 @@ test.describe("Phase 4 — CRUD operations", () => {
     // READ
     await expect(page.locator("body")).toContainText(matName, { timeout: 5000 });
 
-    // UPDATE status
-    const statusSelect = page.locator("select").first();
+    // UPDATE status — scope to the Materials tab content (avoid the language selector)
+    const statusSelect = page.locator("h2:has-text('Materials')").locator("..").locator("select").first();
     if (await statusSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await statusSelect.selectOption("received");
       await page.waitForTimeout(1000);

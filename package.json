@@ -3,6 +3,26 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "description": "Construction site management PWA with role-based access, India-ready compliance (GST/TDS, RERA), and offline support.",
+  "homepage": "https://github.com/Rakesh-7989/site-tracker-pro#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rakesh-7989/site-tracker-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Rakesh-7989/site-tracker-pro/issues"
+  },
+  "keywords": [
+    "construction",
+    "site-management",
+    "pwa",
+    "react",
+    "gst",
+    "rera",
+    "india"
+  ],
+  "author": "Rakesh-7989",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -70,13 +90,4 @@
     "vite": "^8.0.16",
     "vitest": "^4.1.9"
   },
-  "description": "Construction site management web app — role-based access (Architect / PM / Contractor / Client), 20+ modules, India-ready (GST/TDS, EPF/ESI, Telugu/Hindi), offline-capable PWA.",
-  "main": "eslint.config.js",
-  "directories": {
-    "doc": "docs",
-    "test": "tests"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
 }
