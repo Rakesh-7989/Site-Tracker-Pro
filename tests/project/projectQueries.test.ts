@@ -28,7 +28,7 @@ function mockClient(opts: {
 describe("getProject", () => {
   it("maps a project row to ProjectDetail", async () => {
     const c = mockClient({
-      single: { data: { id: "p-1", name: "Vasavi", type: "construction", status: "active", location: "Hyderabad", org_id: "o-1", started_at: "2024-01-15", completed_at: null }, error: null },
+      single: { data: { id: "p-1", name: "Vasavi", type: "construction", status: "active", location: "Hyderabad", org_id: "o-1", start_date: "2024-01-15", completed_at: null }, error: null },
     });
     const r = await getProject(c, "p-1");
     expect(r.ok).toBe(true);
