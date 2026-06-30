@@ -68,5 +68,8 @@ export default [
       "*.config.mjs",
     ],
     languageOptions: { globals: { ...globals.node } },
+    rules: {
+      "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
   },
 ];
