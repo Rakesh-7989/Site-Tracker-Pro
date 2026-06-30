@@ -27,14 +27,18 @@ export const HYDERABAD_BBOX = {
   lonMax: 78.70,  // Pocharam area, east
 };
 
-/** Maximum allowed photo size (bytes). Rs 8,000 Androids commonly produce
- *  8-12 MB JPEGs which is fine; we cap at 15 MB to catch users uploading
- *  drone footage by mistake. */
-export const MAX_PHOTO_BYTES = 15 * 1024 * 1024;
+/** Maximum allowed photo size (bytes) BEFORE compression. Rs 8,000 Androids
+ *  commonly produce 8-12 MB JPEGs; we cap at 5 MB and then compress to
+ *  WebP before upload, reducing storage to ~1-2 MB per photo. */
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+/** Target compressed photo quality (0-1). WebP at 0.80 gives ~80% size
+ *  reduction vs original JPEG with negligible visual loss. */
+export const COMPRESS_QUALITY = 0.80;
 
 /** Default thumbnail max dimension — fits inside a WhatsApp message
  *  thumbnail without re-encoding loss. */
-export const DEFAULT_THUMB_MAX_DIM = 800;
+export const DEFAULT_THUMB_MAX_DIM = 640;
 
 // ── EXIF extraction ─────────────────────────────────────────────────────────
 
@@ -196,6 +200,35 @@ export function validateGeotag(gps) {
   return { ok: true };
 }
 
+// ── Photo compression (JPEG → WebP) ──────────────────────────────────────────
+
+/**
+ * Compress a photo to a smaller WebP blob. This is the PRIMARY storage saver:
+ * an 8-12 MB phone JPEG typically compresses to 1-2 MB WebP with negligible
+ * visual loss, cutting storage consumption by ~80%.
+ *
+ * Falls back to the original blob when OffscreenCanvas is unavailable (Node/Deno).
+ *
+ * @param {Blob} blob       Original photo blob (JPEG preferred)
+ * @param {number} [quality=COMPRESS_QUALITY]  WebP quality 0-1
+ * @returns {Promise<Blob>} Compressed WebP blob (or original passthrough)
+ */
+export async function compressPhoto(blob, quality = COMPRESS_QUALITY) {
+  if (typeof OffscreenCanvas === "undefined" || typeof createImageBitmap === "undefined") {
+    return blob;
+  }
+  try {
+    const src = await createImageBitmap(blob);
+    const canvas = new OffscreenCanvas(src.width, src.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(src, 0, 0);
+    const out = await canvas.convertToBlob({ type: "image/webp", quality });
+    return out.size < blob.size ? out : blob;
+  } catch {
+    return blob;
+  }
+}
+
 // ── Thumbnail generation ────────────────────────────────────────────────────
 
 /**
@@ -220,7 +253,7 @@ export async function generateThumbnail(blob, maxDim = DEFAULT_THUMB_MAX_DIM) {
     const canvas = new OffscreenCanvas(w, h);
     const ctx = canvas.getContext("2d");
     ctx.drawImage(src, 0, 0, w, h);
-    const out = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.82 });
+    const out = await canvas.convertToBlob({ type: "image/webp", quality: 0.70 });
     return { blob: out, width: w, height: h };
   } catch {
     return { blob, width: 0, height: 0 };
@@ -311,26 +344,30 @@ export async function uploadPhoto(photo, opts) {
     return { ok: false, error: `Photo too large: ${sizeBytes} bytes > ${MAX_PHOTO_BYTES} cap`, sizeBytes };
   }
 
-  const sha256 = await computePhotoSha256(photo);
   const exif = await extractExif(photo);
   const geotag = exif?.gps ? validateGeotag(exif.gps) : { ok: false, reason: "No GPS in EXIF" };
   if (opts.requireGeotag !== false && !geotag.ok) {
-    return { ok: false, error: `Geotag rejected: ${geotag.reason}`, geotag, sha256, exif, sizeBytes };
+    return { ok: false, error: `Geotag rejected: ${geotag.reason}`, geotag, exif, sizeBytes };
   }
 
-  const datePath = (exif?.dateTaken || "").slice(0, 10).replace(/:/g, "-") || new Date().toISOString().slice(0, 10);
-  const objPath = `${opts.orgId}/${datePath}/${sha256}.jpg`;
-  const thumbPath = `${opts.orgId}/${datePath}/${sha256}_thumb.jpg`;
+  // Compress original JPEG → WebP (~80% size reduction)
+  const compressed = await compressPhoto(photo, opts.compressQuality ?? COMPRESS_QUALITY);
+  const compressedSize = compressed.size || sizeBytes;
+  const sha256 = await computePhotoSha256(compressed);
 
-  const uploadRes = await opts.adapter.put(opts.bucket, objPath, photo);
+  const datePath = (exif?.dateTaken || "").slice(0, 10).replace(/:/g, "-") || new Date().toISOString().slice(0, 10);
+  const objPath = `${opts.orgId}/${datePath}/${sha256}.webp`;
+  const thumbPath = `${opts.orgId}/${datePath}/${sha256}_thumb.webp`;
+
+  const uploadRes = await opts.adapter.put(opts.bucket, objPath, compressed);
   if (!uploadRes.ok) {
-    return { ok: false, error: `Original upload failed: ${uploadRes.error || "unknown"}`, sha256, exif, geotag };
+    return { ok: false, error: `Upload failed: ${uploadRes.error || "unknown"}`, sha256, exif, geotag };
   }
 
   let thumbUrl;
   try {
-    const thumb = await generateThumbnail(photo);
-    if (thumb.blob && thumb.blob !== photo) {
+    const thumb = await generateThumbnail(compressed);
+    if (thumb.blob && thumb.blob !== compressed) {
       const thumbRes = await opts.adapter.put(opts.bucket, thumbPath, thumb.blob);
       if (thumbRes.ok) thumbUrl = thumbRes.url;
     }
@@ -345,6 +382,7 @@ export async function uploadPhoto(photo, opts) {
     thumbUrl,
     exif,
     geotag,
-    sizeBytes,
+    sizeBytes: compressedSize,
+    originalSizeBytes: sizeBytes,
   };
 }

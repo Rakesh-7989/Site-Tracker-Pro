@@ -72,7 +72,7 @@ export async function resolveAttachmentUrl(att) {
 }
 
 // Drag-and-drop / click upload. Calls onChange with full updated files[].
-export function AttachmentInput({ files = [], onChange, label = "Upload files", accept = ATTACH_ACCEPT, maxMb = 20 }) {
+export function AttachmentInput({ files = [], onChange, label = "Upload files", accept = ATTACH_ACCEPT, maxMb = 10 }) {
   const inputRef = useRef(null);
   const [drag, setDrag] = useState(false);
   const addFiles = async list => {

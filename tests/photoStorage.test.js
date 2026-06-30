@@ -26,12 +26,12 @@ describe("constants", () => {
     expect(HYDERABAD_BBOX.lonMax).toBeGreaterThan(78.4);
   });
 
-  it("MAX_PHOTO_BYTES = 15 MB", () => {
-    expect(MAX_PHOTO_BYTES).toBe(15 * 1024 * 1024);
+  it("MAX_PHOTO_BYTES = 5 MB (pre-compression input cap)", () => {
+    expect(MAX_PHOTO_BYTES).toBe(5 * 1024 * 1024);
   });
 
-  it("DEFAULT_THUMB_MAX_DIM = 800", () => {
-    expect(DEFAULT_THUMB_MAX_DIM).toBe(800);
+  it("DEFAULT_THUMB_MAX_DIM = 640", () => {
+    expect(DEFAULT_THUMB_MAX_DIM).toBe(640);
   });
 });
 
@@ -168,7 +168,8 @@ describe("uploadPhoto()", () => {
     const result = await uploadPhoto(blob, { bucket: "dpr", orgId: "org1", adapter });
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/Geotag rejected/);
-    expect(result.sha256).toMatch(/^[0-9a-f]{64}$/);
+    // sha256 is computed after geotag check, so it won't be present on rejection
+    expect(result.sha256).toBeUndefined();
   });
 
   it("accepts photos without geotag when requireGeotag=false", async () => {
@@ -181,7 +182,7 @@ describe("uploadPhoto()", () => {
       requireGeotag: false,
     });
     expect(result.ok).toBe(true);
-    expect(result.url).toMatch(/^mock:\/\/dpr\/org1\/\d{4}-\d{2}-\d{2}\/[0-9a-f]{64}\.jpg$/);
+    expect(result.url).toMatch(/^mock:\/\/dpr\/org1\/\d{4}-\d{2}-\d{2}\/[0-9a-f]{64}\.webp$/);
   });
 
   it("returns sha256 + path keyed by orgId + date + hash", async () => {
@@ -209,6 +210,6 @@ describe("uploadPhoto()", () => {
       requireGeotag: false,
     });
     expect(result.ok).toBe(false);
-    expect(result.error).toMatch(/Original upload failed/);
+    expect(result.error).toMatch(/Upload failed/);
   });
 });
