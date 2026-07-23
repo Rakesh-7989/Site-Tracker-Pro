@@ -65,6 +65,7 @@ const StaffAdminView = lazy(() => import("@/features/admin/StaffAdminView").then
 const UpgradeRequestsView = lazy(() => import("@/features/admin/UpgradeRequestsView").then(m => ({ default: m.UpgradeRequestsView })));
 const SecurityView = lazy(() => import("@/features/account/SecurityView").then(m => ({ default: m.SecurityView })));
 const ProfileView = lazy(() => import("@/features/account/ProfileView").then(m => ({ default: m.ProfileView })));
+const ClientShareView = lazy(() => import("@/features/share/ClientShareView").then(m => ({ default: m.ClientShareView })));
 const PlatformBillingView = lazy(() => import("@/features/admin/PlatformBillingView").then(m => ({ default: m.PlatformBillingView })));
 const PlatformAuditView = lazy(() => import("@/features/admin/PlatformAuditView").then(m => ({ default: m.PlatformAuditView })));
 const PlatformUsageView = lazy(() => import("@/features/admin/PlatformUsageView").then(m => ({ default: m.PlatformUsageView })));
@@ -97,6 +98,7 @@ export const router = createBrowserRouter([
   { path: "/staff/join", element: <StaffJoinView /> },
   { path: "/profile/complete", element: <ProfileCompleteView /> },
   { path: "/pay/:requestId", element: <PayView /> },
+  { path: "/share/:id", element: <ClientShareView /> },
   // ── Authenticated app (pathless layout route wraps RequireSession + Suspense) ──
   {
     element: <ShellLayout />,

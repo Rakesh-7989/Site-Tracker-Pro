@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Tasks tab (v3 port, Batch 1, DB-wired to `tasks`).
+﻿// SiteTrack Pro â€” project Tasks tab (v3 port, Batch 1, DB-wired to `tasks`).
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -6,17 +6,13 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
+import { getClient } from "@/lib/supabase";
 import {
   listTasks, createTask, setTaskStatus, deleteTask, nextTaskStatus,
   type Task, type TaskStatus, type TaskPriority,
 } from "@/app/taskQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
 const ST_TONE: Record<TaskStatus, "neutral" | "info" | "success"> = { pending: "neutral", in_progress: "info", completed: "success" };
 const ST_KEY: Record<TaskStatus, string> = { pending: "pending", in_progress: "inProgress", completed: "done" };
@@ -91,7 +87,7 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
               <Card key={tk.id} className="p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-ink-800 truncate">{tk.title}</div>
-                  <div className="text-[11px] text-ink-400">{tk.assigneeName ?? t("tasksTab.unassigned")}{tk.dueDate ? ` · ${t("tasksTab.dueLabel")} ${tk.dueDate}` : ""}</div>
+                  <div className="text-[11px] text-ink-400">{tk.assigneeName ?? t("tasksTab.unassigned")}{tk.dueDate ? ` Â· ${t("tasksTab.dueLabel")} ${tk.dueDate}` : ""}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Badge tone={PR_TONE[tk.priority]}>{t(`tasksTab.${tk.priority}`)}</Badge>

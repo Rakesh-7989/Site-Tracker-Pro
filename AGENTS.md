@@ -44,3 +44,31 @@ Implement the structured UI update plan across the full application: auth gap cl
 - `src/auth/capabilities.ts`: all capabilities.
 - `src/auth/planCaps.ts`: all 22 `PlanFeature` values.
 - `src/features/project/tabs-config.ts`: tab catalog.
+
+---
+
+## JS→TS Migration (post-redesign cleanup)
+
+### Done
+- **12 dead .jsx files deleted** (vendor, views, detail, shell, org, admin, help, roadmap, dpr/index, attachments, VoiceConfidenceBar, main)
+- **4 dead .js files deleted** (exports, dailySnapshot, demoMode, usePersistent)
+- **Dead code comments removed** from 6 files
+- **`@tanstack/react-query` removed** (dep + 5 wrapper files + tests)
+- **5 `.jsx`→`.tsx` migrated**: DPRStatusBadge, BuildNowBadge, main, errorBoundary, VoiceConfidenceBar
+- **P1 fixed**: `CONTACT_EMAIL` in `legalContent.ts`
+- **Batch 1 (8 `.js`→`.ts`)**: branding, delegations, hierarchy, materialPrices, sentry, notifications, projectArchive, projectTypes — all 44 tests pass
+- **Batch 2 (6 `.js`→`.ts`)**: ai, aiForecast, audit, compliance, buildnowAnchor, i18nDpr — `tsc --noEmit` (0 errors), `vite build` (3.7s, 1161 modules)
+- **Imports updated**: 3 DPR components (BuildNowBadge, VoiceConfidenceBar, DPRStatusBadge) — `.js` extension stripped from imports
+- **Index signatures added**: 6 interfaces across `forecastQueries.ts`, `auditLogQueries.ts`, `audit.ts`
+- **Consumer types aligned**: `ProjectState`, `ProviderConfig`, `LLMOpts` exports/imports fixed
+- **`buildnowAnchor.ts`**: `Metadata.approval_status` made optional, `Partial<DprPayload>` assignment fixed
+- **`compliance.ts`**: `check*Status` return types include `ok`/`format_ok`
+
+### Remaining (38 `.js` files in `src/lib/` + 2 in `src/data/`)
+- Batch 3: blockchainAnchor, cache, config, deviceOrientation, dprExport, escape (already .ts), i18n
+- Batch 4: localSync, offlineSync, platform, projectDefaults, slug, syncManager, telemetry, templateService
+- Batch 5: transactionManager, unitConverter, aiFeatureRecommender, assetUtils, barcodeScanner, chartUtils, colorUtils
+- Batch 6: dateUtils, docx, drawUtils, fileUtils, formattingUtils, formUtils, geo
+- Batch 7: graphUtils, imageUtils, leaflet, logger, measureUtils, mobile, numberUtils
+- Batch 8: pdf, permissionGroups, permissions, sentry, supabase, urlUtils
+- Batch 9: seed.js, seed.demo.js (in `src/data/`)

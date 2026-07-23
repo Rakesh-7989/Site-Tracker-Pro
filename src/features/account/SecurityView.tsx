@@ -1,4 +1,5 @@
-// SiteTrack Pro — Account → Security (/settings/security).
+﻿// SiteTrack Pro â€” Account â†’ Security (/settings/security).
+import { getClient } from "@/lib/supabase";
 //
 // Self-service two-factor auth (TOTP). Any signed-in user can enable 2FA with
 // an authenticator app; admins are nudged to. Uses the free Supabase MFA API
@@ -11,7 +12,6 @@ import { Input } from "@/components/ui/forms";
 import { listMfaFactors, enrollMfa, verifyMfa, unenrollMfa, type MfaFactor } from "@/auth/mfa";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 
 const ADMIN_ROLES = new Set(["superadmin", "orgadmin", "promoter", "project_admin"]);
 
@@ -81,7 +81,7 @@ export function SecurityView(): JSX.Element {
 
       {error && <Alert variant="danger">{error}</Alert>}
       {isAdmin && !isOn && (
-        <Alert variant="warning">You have an admin role — turning on two-factor authentication is strongly recommended.</Alert>
+        <Alert variant="warning">You have an admin role â€” turning on two-factor authentication is strongly recommended.</Alert>
       )}
 
       <Card className="p-5">
@@ -114,7 +114,7 @@ export function SecurityView(): JSX.Element {
             <div className="text-sm text-ink-700">1. Scan this QR code in Google Authenticator / Authy / 1Password:</div>
             {enroll.qrCode
               ? <img src={enroll.qrCode} alt="2FA QR code" className="w-44 h-44 border border-cream-200 rounded-lg bg-white p-2" />
-              : <div className="text-xs text-ink-400">QR unavailable — use the key below.</div>}
+              : <div className="text-xs text-ink-400">QR unavailable â€” use the key below.</div>}
             <div className="text-xs text-ink-500">Or enter this key manually: <code className="font-mono bg-cream-100 px-1.5 py-0.5 rounded text-ink-800 break-all">{enroll.secret}</code></div>
             <div className="text-sm text-ink-700">2. Enter the 6-digit code it shows:</div>
             <Input value={code} onChange={e => setCode(e.target.value)} inputMode="numeric" maxLength={7} placeholder="123456" autoComplete="one-time-code" className="max-w-[180px] tracking-[0.3em] text-center font-mono" />

@@ -7,11 +7,14 @@ import { ROLE_LABEL } from "@/auth";
 import { Icon, Button, Avatar } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
+import { GlobalSearch } from "./GlobalSearch";
+import { useConnectionStatus } from "@/lib/useConnectionStatus";
 
 export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Element {
   const { session } = useAuth();
   const { orgs, activeOrg, switchOrg } = useOrgSwitcher();
   const t = useT();
+  const { online, pendingOps, conn } = useConnectionStatus();
 
   const onSignOut = async () => {
     try {
@@ -32,6 +35,47 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         <div className="w-8 h-8 rounded-lg bg-safety-500 text-white grid place-items-center font-bold text-sm">S</div>
         <span className="font-display font-bold text-ink-900 text-sm tracking-tight">SiteTrack Pro</span>
         <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-safety-600 bg-safety-50 px-1.5 py-0.5 rounded">v3</span>
+
+        {/* Offline / queue pill */}
+        {!online && (
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-red-50 text-red-700" title={`${pendingOps} ops queued`}>
+            ● Offline {pendingOps > 0 && `(${pendingOps})`}
+          </div>
+        )}
+        {online && pendingOps > 0 && (
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-amber-50 text-amber-800" title="Backend not connected; ops stay queued locally">
+            ↻ {pendingOps} queued
+          </div>
+        )}
+
+        {/* Backend connection pill */}
+        {conn.state !== "unknown" && (
+          <button
+            onClick={() => alert(`Connection state: ${conn.state}\n\n${conn.detail || "No additional details."}`)}
+            className={`flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 cursor-pointer ${
+              conn.state === "live" ? "bg-emerald-50 text-emerald-700" :
+              conn.state === "off" ? "bg-cream-200 text-ink-700" :
+              conn.state === "degraded" ? "bg-amber-50 text-amber-800" :
+              "bg-red-50 text-red-700"
+            }`}
+            title={`Backend: ${conn.state} — ${conn.detail || "OK"}`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              conn.state === "live" ? "bg-emerald-500" :
+              conn.state === "off" ? "bg-ink-500" :
+              conn.state === "degraded" ? "bg-amber-500" :
+              "bg-red-500"
+            }`} />
+            {conn.state === "live" ? "DB Live" :
+             conn.state === "off" ? "Local mode" :
+             conn.state === "degraded" ? "DB degraded" :
+             "DB offline"}
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 flex justify-center px-4">
+        <GlobalSearch />
       </div>
 
       <div className="flex items-center gap-3">

@@ -10,6 +10,7 @@ export interface ProjectForecastDetail {
   progress: number;
   start_date: string | null;
   expected_end_date: string | null;
+  [key: string]: unknown;
 }
 
 export interface BoqItem {
@@ -21,6 +22,7 @@ export interface BoqItem {
   rate: number | null;
   amount: number | null;
   category: string | null;
+  [key: string]: unknown;
 }
 
 export interface RaBill {
@@ -32,6 +34,7 @@ export interface RaBill {
   cumulative: number | null;
   status: string;
   bill_date: string | null;
+  [key: string]: unknown;
 }
 
 export interface LedgerEntry {
@@ -41,6 +44,7 @@ export interface LedgerEntry {
   qty: number;
   direction: string;
   txn_date: string | null;
+  [key: string]: unknown;
 }
 
 export interface SiteUpdate {
@@ -49,6 +53,7 @@ export interface SiteUpdate {
   weather: string | null;
   workers_count: number | null;
   update_date: string | null;
+  [key: string]: unknown;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

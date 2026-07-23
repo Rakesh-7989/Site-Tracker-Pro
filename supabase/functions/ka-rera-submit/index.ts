@@ -6,9 +6,10 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticate } from "../_shared/auth.ts";
+import { corsHeaders, corsResponse } from "../_shared/cors.ts";
 
-const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
+const json = (data: unknown, status = 200, headers?: Record<string, string>) =>
+  new Response(JSON.stringify(data), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
 const url = new URL("/", "http://x");
 void url;
@@ -26,39 +27,37 @@ const KA_STAGE_CODES: Record<string, { code: string; label: string }> = {
 };
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return corsResponse(req);
+  const ch = corsHeaders(req);
   // ── Security gate (Phase 0.5 hardening) ──
-  if (req.method !== "OPTIONS") {
-    const auth = await authenticate(req, {
-      requireRole: ["orgadmin", "project_admin", "site_inspector", "consultant", "superadmin", "admin"],
-    });
-    if (!auth.ok) return auth.response;
-  }
+  const auth = await authenticate(req, {
+    requireRole: ["orgadmin", "project_admin", "site_inspector", "consultant", "superadmin", "admin"],
+  });
+  if (!auth.ok) return auth.response;
   const u = new URL(req.url);
   if (req.method === "GET" && u.pathname.endsWith("/status")) {
     return json({
       enabled: Deno.env.get("KA_RERA_SCRAPER_ENABLED") === "true",
       stages: Object.keys(KA_STAGE_CODES),
       portal: "rera.karnataka.gov.in",
-    });
+    }, 200, ch);
   }
 
-  if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405);
+  if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405, ch);
 
   const enabled = Deno.env.get("KA_RERA_SCRAPER_ENABLED") === "true";
   if (!enabled) return json({
     error: "scraper-disabled",
     hint: "Set KA_RERA_SCRAPER_ENABLED=true after wiring credentials.",
-  }, 503);
+  }, 503, ch);
 
   let body: Record<string, unknown> = {};
-  try { body = await req.json(); } catch { return json({ error: "invalid-json" }, 400); }
+  try { body = await req.json(); } catch { return json({ error: "invalid-json" }, 400, ch); }
 
   const { rera_no, project_name, stage_key, project_id } = body as Record<string, string>;
-  if (!rera_no) return json({ error: "rera_no-required" }, 400);
-  if (!stage_key || !KA_STAGE_CODES[stage_key]) return json({ error: "stage-required" }, 400);
+  if (!rera_no) return json({ error: "rera_no-required" }, 400, ch);
+  if (!stage_key || !KA_STAGE_CODES[stage_key]) return json({ error: "stage-required" }, 400, ch);
 
-  // Real implementation: Playwright scraper or, ideally, the KA RERA REST API
-  // once they expose one. We stub with a delayed mock response.
   const ackNo = `KA-${Date.now()}-${Math.floor(Math.random() * 10000).toString().padStart(4, "0")}`;
 
   const supa = createClient(
@@ -78,5 +77,5 @@ Deno.serve(async (req) => {
     payload: { state: "KA", ack_no: ackNo, project_name, stage_code: KA_STAGE_CODES[stage_key].code },
   });
 
-  return json({ ok: true, ack_no: ackNo, state: "KA", stage_code: KA_STAGE_CODES[stage_key].code });
+  return json({ ok: true, ack_no: ackNo, state: "KA", stage_code: KA_STAGE_CODES[stage_key].code }, 200, ch);
 });

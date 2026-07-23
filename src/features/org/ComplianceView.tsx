@@ -1,15 +1,12 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { Alert, Spinner } from "@/components/ui/atoms";
 import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
+import { getClient } from "@/lib/supabase";
 import {
   checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus,
 } from "@/lib/compliance";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
 export function ComplianceView(): JSX.Element {
   const { session } = useAuth();
@@ -76,9 +73,9 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     <div className="p-4 md:p-10 max-w-5xl">
       <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{ borderBottom: "1px solid var(--st-line)" }}>
         <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Compliance</div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">â€” Compliance</div>
           <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Statutory Checks</h1>
-          <p className="text-ink-500 text-sm mt-2">RERA · GSTIN · EPFO — format validation + async portal verification.</p>
+          <p className="text-ink-500 text-sm mt-2">RERA Â· GSTIN Â· EPFO â€” format validation + async portal verification.</p>
         </div>
         <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm font-semibold outline-none focus:border-amber-600">{visible.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
       </div>
@@ -95,16 +92,16 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           const ok = verified && (row.result.status === "REGISTERED_ACTIVE" || row.result.status === "ACTIVE" || row.result.status === "COMPLIANT");
           return (<div key={row.key} className="bg-white rounded-2xl p-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
             <div className="flex items-end justify-between mb-3 flex-wrap gap-2">
-              <div><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">{row.label}</div>{row.result && <div className={`mt-1 text-[11px] font-bold ${ok ? "text-emerald-700" : verified ? "text-amber-700" : "text-red-700"}`}>{ok ? `✓ ${row.result.status}` : verified ? `⚠ ${row.result.status}` : `✗ ${row.result.reason || "Verification failed"}`}{row.extra && ` — ${row.extra}`}</div>}</div>
+              <div><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">{row.label}</div>{row.result && <div className={`mt-1 text-[11px] font-bold ${ok ? "text-emerald-700" : verified ? "text-amber-700" : "text-red-700"}`}>{ok ? `âœ“ ${row.result.status}` : verified ? `âš  ${row.result.status}` : `âœ— ${row.result.reason || "Verification failed"}`}{row.extra && ` â€” ${row.extra}`}</div>}</div>
             </div>
             <div className="flex gap-2">
               <input value={row.val} onChange={e => row.setVal(e.target.value)} placeholder={row.placeholder} className="flex-1 p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" />
-              <button onClick={() => runCheck(row.key)} disabled={busy || !row.val.trim()} className="px-4 py-3 bg-ink-900 text-cream font-bold rounded-xl text-sm tracking-wide disabled:opacity-50">{busy ? "Checking…" : "Verify"}</button>
+              <button onClick={() => runCheck(row.key)} disabled={busy || !row.val.trim()} className="px-4 py-3 bg-ink-900 text-cream font-bold rounded-xl text-sm tracking-wide disabled:opacity-50">{busy ? "Checkingâ€¦" : "Verify"}</button>
             </div>
           </div>);
         })}
       </div>
-      <p className="text-[11px] text-ink-500 mt-6 leading-relaxed">External checks are mocked in this build. Production wires Department of Stamps / GST portal / EPFO portal — see <span className="font-semibold">docs/GOLIVE.md</span>.</p>
+      <p className="text-[11px] text-ink-500 mt-6 leading-relaxed">External checks are mocked in this build. Production wires Department of Stamps / GST portal / EPFO portal â€” see <span className="font-semibold">docs/GOLIVE.md</span>.</p>
     </div>
   );
 }

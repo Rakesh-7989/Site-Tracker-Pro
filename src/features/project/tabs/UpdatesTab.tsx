@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Updates / daily diary tab (v3 port, Batch 1,
+﻿// SiteTrack Pro â€” project Updates / daily diary tab (v3 port, Batch 1,
 // DB-wired to `site_updates`).
 
 import { useCallback, useEffect, useState } from "react";
@@ -9,12 +9,8 @@ import { Input, Textarea } from "@/components/ui/forms";
 import { listUpdates, createUpdate, deleteUpdate, type SiteUpdate } from "@/app/updateQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
@@ -61,7 +57,7 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
 
       {canEdit && (
         <Card className="p-3 space-y-2">
-          <Textarea placeholder="Today's site notes…" value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
+          <Textarea placeholder="Today's site notesâ€¦" value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
           <div className="flex gap-2 flex-wrap items-center">
             <Input className="w-32" placeholder="Weather" value={weather} onChange={e => setWeather(e.target.value)} />
             <Input className="w-28" type="number" placeholder="Workers" value={workers} onChange={e => setWorkers(e.target.value)} />
@@ -79,8 +75,8 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
                   <div className="min-w-0">
                     <div className="text-sm text-ink-800 whitespace-pre-wrap">{u.notes}</div>
                     <div className="text-[11px] text-ink-400 mt-1">
-                      {u.updateDate}{u.authorName ? ` · ${u.authorName}` : ""}
-                      {u.weather ? ` · ${u.weather}` : ""}{u.workersCount != null ? ` · ${u.workersCount} workers` : ""}
+                      {u.updateDate}{u.authorName ? ` Â· ${u.authorName}` : ""}
+                      {u.weather ? ` Â· ${u.weather}` : ""}{u.workersCount != null ? ` Â· ${u.workersCount} workers` : ""}
                     </div>
                   </div>
                   {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${u.id}`, c => deleteUpdate(c, u.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}

@@ -1,4 +1,4 @@
-// SiteTrack Pro — Org Activity / Audit (/audit). Read-only audit trail scoped
+﻿// SiteTrack Pro â€” Org Activity / Audit (/audit). Read-only audit trail scoped
 // to the active org (list_org_activity RPC, migration 77).
 
 import { useCallback, useEffect, useState } from "react";
@@ -7,7 +7,7 @@ import { Card, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui
 import { listOrgActivity, type OrgActivityRow } from "@/app/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const fmtTs = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 const ACTION_TONE: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {
   CREATE: "success", APPROVE: "success", RELEASE: "success",
@@ -48,7 +48,7 @@ function OrgActivityInner({ orgId }: { orgId: string }): JSX.Element {
           <Card className="divide-y divide-cream-100">
             {rows.map(r => (
               <div key={r.id} className="p-3 flex items-start gap-3">
-                <Badge tone={ACTION_TONE[r.action] ?? "neutral"}>{r.action || "·"}</Badge>
+                <Badge tone={ACTION_TONE[r.action] ?? "neutral"}>{r.action || "Â·"}</Badge>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm text-ink-800">
                     <span className="font-semibold">{r.actorName}</span>

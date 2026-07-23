@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Inspections tab (v3 port, Batch 2, DB-wired).
+﻿// SiteTrack Pro â€” project Inspections tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listInspections, createInspection, setInspectionResult, deleteInspection, type Inspection, type InspectionResult } from "@/app/siteOpsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const RES = [{ value: "pending", label: "Pending" }, { value: "pass", label: "Pass" }, { value: "fail", label: "Fail" }, { value: "conditional", label: "Conditional" }];
 const resTone = (r: InspectionResult): "neutral" | "success" | "danger" | "warning" => (r === "pass" ? "success" : r === "fail" ? "danger" : r === "conditional" ? "warning" : "neutral");
 
@@ -50,8 +50,8 @@ export function InspectionsTab({ projectId }: { projectId: string }): JSX.Elemen
         : rows.length === 0 ? <div className="text-sm text-ink-500">No inspections scheduled.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate capitalize">{r.type}{r.scope ? ` — ${r.scope}` : ""}</div>
-                <div className="text-[11px] text-ink-400">{r.scheduledDate ? `Scheduled ${r.scheduledDate}` : "Unscheduled"}{r.inspectorName ? ` · ${r.inspectorName}` : ""}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate capitalize">{r.type}{r.scope ? ` â€” ${r.scope}` : ""}</div>
+                <div className="text-[11px] text-ink-400">{r.scheduledDate ? `Scheduled ${r.scheduledDate}` : "Unscheduled"}{r.inspectorName ? ` Â· ${r.inspectorName}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.result} onChange={e => void run(`s-${r.id}`, c => setInspectionResult(c, r.id, e.target.value as InspectionResult))} options={RES} />
                   : <Badge tone={resTone(r.result)}>{r.result}</Badge>}

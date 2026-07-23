@@ -1,15 +1,12 @@
-// SiteTrack Pro — Labour Attendance Kiosk (/kiosk/labour).
+﻿// SiteTrack Pro â€” Labour Attendance Kiosk (/kiosk/labour).
 // Tablet-optimised clock-in/out for site entry.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
 import { PlanGate } from "@/auth";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -65,7 +62,7 @@ function LabourKioskInner(): JSX.Element {
     const client = await getClient();
     if (client) await client.from("labour").insert(row);
     setLogs(p => [row, ...p]);
-    setBadge(""); setName(""); setTrade(""); showToast(`✓ ${row.name} clocked in`);
+    setBadge(""); setName(""); setTrade(""); showToast(`âœ“ ${row.name} clocked in`);
   };
 
   const clockOut = async (rowId: string) => {
@@ -76,7 +73,7 @@ function LabourKioskInner(): JSX.Element {
     const client = await getClient();
     if (client) await client.from("labour").update({ out_time: out.toISOString(), hours }).eq("id", rowId);
     setLogs(p => p.map(r => r.id === rowId ? { ...r, out_time: out.toISOString(), hours } : r));
-    showToast("✓ Clocked out");
+    showToast("âœ“ Clocked out");
   };
 
   if (loading) return <div className="grid place-items-center p-12 bg-ink-900 min-h-screen"><Spinner size={24} /></div>;
@@ -86,7 +83,7 @@ function LabourKioskInner(): JSX.Element {
     <div className="min-h-screen bg-ink-900 text-cream p-4 md:p-8 flex flex-col">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <div className="text-[10px] font-bold tracking-widest uppercase text-amber-500">Labour kiosk · {fmtDate(todayISO)}</div>
+          <div className="text-[10px] font-bold tracking-widest uppercase text-amber-500">Labour kiosk Â· {fmtDate(todayISO)}</div>
           <h1 className="text-3xl font-light tracking-tight">Site attendance</h1>
         </div>
         <div className="flex items-center gap-3">
@@ -118,7 +115,7 @@ function LabourKioskInner(): JSX.Element {
               <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl bg-ink-900/60 border border-amber-600/12">
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate">{r.name} <span className="text-cream/40 font-mono text-[10px] ml-1">{r.badge}</span></div>
-                  <div className="text-[11px] text-cream/50">{r.trade} · in {fmtTime(r.in_time)}{r.out_time ? ` · out ${fmtTime(r.out_time)} · ${r.hours}h` : ""}</div>
+                  <div className="text-[11px] text-cream/50">{r.trade} Â· in {fmtTime(r.in_time)}{r.out_time ? ` Â· out ${fmtTime(r.out_time)} Â· ${r.hours}h` : ""}</div>
                 </div>
                 {!r.out_time && <button onClick={() => clockOut(r.id)} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 hover:bg-amber-500/25">Clock out</button>}
               </div>

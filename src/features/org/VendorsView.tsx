@@ -1,25 +1,16 @@
-// SiteTrack Pro — org Vendor directory (/vendors). Material suppliers /
-// subcontractors shared across the org's projects. DB-wired (migration 84).
-
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
+import { DataTable } from "@/components/ui/DataTable";
 import { listVendors, createVendor, setVendorRating, deleteVendor, type Vendor } from "@/app/vendorQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
-const Stars = ({ n }: { n: number | null }): JSX.Element => (
-  <span className="text-amber-500 text-sm">{n == null ? <span className="text-ink-300">—</span> : "★".repeat(Math.round(n)) + "☆".repeat(Math.max(0, 5 - Math.round(n)))}</span>
-);
+import { getClient } from "@/lib/supabase";
 
 export function VendorsView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("vendor:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  // Vendor details are restricted: only org admins (orgadmin / org-tier admin)
-  // and the Prospector identity role can view them. Others see AccessDenied
-  // even on a direct URL hit, not just a hidden nav item.
   if (!canManage) return <AccessDenied message="Vendor directory is restricted to org admins and prospectors." />;
   return <Inner orgId={activeOrg.orgId} canManage={canManage} />;
 }
@@ -47,6 +38,27 @@ function Inner({ orgId, canManage }: { orgId: string; canManage: boolean }): JSX
   const term = q.trim().toLowerCase();
   const shown = term ? rows.filter(r => r.name.toLowerCase().includes(term) || (r.category ?? "").toLowerCase().includes(term)) : rows;
 
+  const columns = [
+    { key: "name", header: "Vendor", render: (v: Vendor) => (
+      <div>
+        <div className="flex items-center gap-2"><span className="font-semibold text-ink-800 truncate">{v.name}</span>{v.category && <Badge tone="neutral">{v.category}</Badge>}</div>
+        <div className="text-[11px] text-ink-400">{[v.phone, v.gst && `GST ${v.gst}`].filter(Boolean).join(" \u00b7 ") || "\u2014"}</div>
+      </div>
+    )},
+    { key: "rating", header: "Rating", render: (v: Vendor) => (
+      canManage ? (
+        <select className="text-xs bg-transparent text-amber-600" value={v.rating ?? 0} onChange={e => void run(`r-${v.id}`, c => setVendorRating(c, v.id, Number(e.target.value)))}>
+          <option value={0}>Rate\u2026</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} \u2605</option>)}
+        </select>
+      ) : (
+        <span className="text-amber-500 text-sm">{v.rating == null ? <span className="text-ink-300">\u2014</span> : "\u2605".repeat(Math.round(v.rating)) + "\u2606".repeat(Math.max(0, 5 - Math.round(v.rating)))}</span>
+      )
+    )},
+    ...(canManage ? [{ key: "actions", header: "", render: (v: Vendor) => (
+      <Button size="sm" variant="ghost" onClick={() => void run(`d-${v.id}`, c => deleteVendor(c, v.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+    )}] : []),
+  ];
+
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -64,25 +76,16 @@ function Inner({ orgId, canManage }: { orgId: string; canManage: boolean }): JSX
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      {!loading && rows.length > 0 && <Input placeholder="Search vendors…" value={q} onChange={e => setQ(e.target.value)} />}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : shown.length === 0 ? <Card className="p-8 text-center text-sm text-ink-500"><Icon name="truck" size={24} className="mx-auto text-ink-300 mb-2" />No vendors{term ? " match your search." : " yet."}</Card>
-        : <div className="space-y-2">{shown.map(v => (
-            <Card key={v.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2"><span className="font-semibold text-ink-800 truncate">{v.name}</span>{v.category && <Badge tone="neutral">{v.category}</Badge>}</div>
-                <div className="text-[11px] text-ink-400">{[v.phone, v.gst && `GST ${v.gst}`].filter(Boolean).join(" · ") || "—"}</div>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                {canManage ? (
-                  <select className="text-xs bg-transparent text-amber-600" value={v.rating ?? 0} onChange={e => void run(`r-${v.id}`, c => setVendorRating(c, v.id, Number(e.target.value)))}>
-                    <option value={0}>Rate…</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} ★</option>)}
-                  </select>
-                ) : <Stars n={v.rating} />}
-                {canManage && <Button size="sm" variant="ghost" onClick={() => void run(`d-${v.id}`, c => deleteVendor(c, v.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
-              </div>
-            </Card>
-          ))}</div>}
+      {!loading && rows.length > 0 && <Input placeholder="Search vendors\u2026" value={q} onChange={e => setQ(e.target.value)} />}
+      <DataTable
+        columns={columns}
+        rows={shown}
+        rowKey={v => v.id}
+        loading={loading}
+        error={error}
+        emptyMessage={term ? `No vendors match "${term}".` : "No vendors yet."}
+        variant="card"
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// SiteTrack Pro — Subscription alert banner. Renders below TopBar when the
+﻿// SiteTrack Pro â€” Subscription alert banner. Renders below TopBar when the
 // active org has an active subscription alert (past_due, cancelled, paused,
 // trial ending). Dismissible for non-danger alerts.
 
@@ -9,8 +9,8 @@ import { getOrgSubscriptionAlerts, type BillingAlert } from "@/app/orgAdminQueri
 import { Link } from "react-router-dom";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 
+import { getClient } from "@/lib/supabase";
 const bg: Record<string, string> = {
   danger: "bg-red-600 text-white",
   warning: "bg-amber-500 text-white",

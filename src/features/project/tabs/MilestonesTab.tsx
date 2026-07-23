@@ -1,7 +1,8 @@
-// SiteTrack Pro — project Milestones tab (v3 port, Batch 1, DB-wired).
+﻿// SiteTrack Pro â€” project Milestones tab (v3 port, Batch 1, DB-wired).
+import { getClient } from "@/lib/supabase";
 //
 // Lists the project's milestones from the `milestones` table; add + status
-// cycle gated on milestone:add. First DB-wired ported tab — the pattern for
+// cycle gated on milestone:add. First DB-wired ported tab â€” the pattern for
 // the rest of Batch 1.
 
 import { useCallback, useEffect, useState } from "react";
@@ -15,11 +16,6 @@ import {
 } from "@/app/milestoneQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
 const STATUS_TONE: Record<MilestoneStatus, "neutral" | "info" | "success"> = {
   pending: "neutral", in_progress: "info", completed: "success",
@@ -103,7 +99,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
                 <div className="text-sm font-semibold text-ink-800 truncate">{m.title}</div>
                 <div className="text-[11px] text-ink-400">
                   {m.dueDate ? `Due ${m.dueDate}` : "No due date"}
-                  {m.completedDate && ` · Done ${m.completedDate}`}
+                  {m.completedDate && ` Â· Done ${m.completedDate}`}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

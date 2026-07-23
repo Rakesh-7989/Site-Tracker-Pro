@@ -1,4 +1,4 @@
-// SiteTrack Pro — Org Notification Rules (/org/notifications). "Alert <channel>
+﻿// SiteTrack Pro â€” Org Notification Rules (/org/notifications). "Alert <channel>
 // when <trigger>" rules. DB-wired (notification_rules table, migration 78).
 
 import { useCallback, useEffect, useState } from "react";
@@ -8,7 +8,7 @@ import { Select } from "@/components/ui/forms";
 import { listRules, createRule, setRuleEnabled, deleteRule, NOTIF_CHANNELS, NOTIF_TRIGGERS, TRIGGER_LABEL, CHANNEL_LABEL, type NotifRule, type NotifChannel } from "@/app/orgConfigQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const TRIGGER_OPTS = NOTIF_TRIGGERS.map(t => ({ value: t.id, label: t.label }));
 const CHANNEL_OPTS = NOTIF_CHANNELS.map(c => ({ value: c, label: CHANNEL_LABEL[c] }));
 
@@ -47,7 +47,7 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
       <p className="text-sm text-ink-500 -mt-2">Send an alert on a chosen channel whenever an event happens in your org.</p>
       {error && <Alert variant="danger">{error}</Alert>}
       <Card className="p-3 flex gap-2 flex-wrap items-end">
-        <div className="flex-1 min-w-[180px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">When…</span><Select className="mt-1" value={trigger} onChange={e => setTrigger(e.target.value)} options={TRIGGER_OPTS} /></div>
+        <div className="flex-1 min-w-[180px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Whenâ€¦</span><Select className="mt-1" value={trigger} onChange={e => setTrigger(e.target.value)} options={TRIGGER_OPTS} /></div>
         <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Notify via</span><Select className="mt-1 w-32" value={channel} onChange={e => setChannel(e.target.value as NotifChannel)} options={CHANNEL_OPTS} /></div>
         <Button onClick={() => void add()} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add rule"}</Button>
       </Card>

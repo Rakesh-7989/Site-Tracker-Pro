@@ -1,10 +1,11 @@
-// SiteTrack Pro — Org Feature Toggles view (/org/features).
+﻿// SiteTrack Pro â€” Org Feature Toggles view (/org/features).
 // Org admin panel for enabling/disabling per-org feature flags.
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Spinner, Icon } from "@/components/ui/atoms";
 import { getOrgIdFromMember, listFeatureFlags, upsertFeatureFlag, type FeatureFlag } from "@/app/featureFlagQueries";
 
+import { getClient } from "@/lib/supabase";
 const FEATURE_GROUPS: Array<{ id: string; label: string; desc: string; features: Array<{ key: string; label: string; plan: string }> }> = [
   { id: "nav", label: "Sidebar nav", desc: "Top-level views in navigation.", features: [
     { key: "hierarchy", label: "Hierarchy", plan: "basic" },
@@ -29,10 +30,6 @@ const FEATURE_GROUPS: Array<{ id: string; label: string; desc: string; features:
   ]},
 ];
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
 export function OrgFeaturesView(): JSX.Element {
   const [flags, setFlags] = useState<Map<string, boolean>>(new Map());
@@ -92,7 +89,7 @@ export function OrgFeaturesView(): JSX.Element {
         const features = g.features;
         return (
           <Card key={g.id} className="p-6 mb-5">
-            <div className="text-[10px] font-bold tracking-widest uppercase text-safety-600 mb-1">— {g.label}</div>
+            <div className="text-[10px] font-bold tracking-widest uppercase text-safety-600 mb-1">â€” {g.label}</div>
             <h2 className="font-bold text-lg text-ink-900 mb-1">{g.label}</h2>
             <p className="text-xs text-ink-500 mb-4">{g.desc}</p>
             <div className="space-y-2">
@@ -122,7 +119,7 @@ export function OrgFeaturesView(): JSX.Element {
       })}
 
       <div className="text-xs text-ink-400 mt-4">
-        {allFeatures.length} features · {Array.from(flags.values()).filter(Boolean).length} enabled
+        {allFeatures.length} features Â· {Array.from(flags.values()).filter(Boolean).length} enabled
       </div>
     </div>
   );

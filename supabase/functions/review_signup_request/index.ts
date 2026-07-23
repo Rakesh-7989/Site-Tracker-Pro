@@ -14,8 +14,10 @@ import { canApproveSignupRequest } from "../_shared/signupApproval.ts";
 // @ts-ignore - Deno global.
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
 
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,http://localhost:5173")
+  .split(",").map(s => s.trim()).filter(Boolean);
 const CORS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED[0] ?? "*",
   "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -54,11 +56,16 @@ async function createOrganization(admin, firm: string, plan: string, staffId: st
     .single();
 }
 
-async function ensureApplicantProfile(admin, userId: string, contact: string, email: string) {
+async function ensureApplicantProfile(admin, userId: string, contact: string, email: string, consentVersion?: string | null) {
   const name = contact.trim() || email.split("@")[0] || "SiteTrack user";
+  const profile: Record<string, unknown> = { id: userId, name, role: "client" };
+  if (consentVersion) {
+    profile.consent_version = consentVersion;
+    profile.consent_updated_at = new Date().toISOString();
+  }
   return await admin
     .from("profiles")
-    .upsert({ id: userId, name, role: "client" }, { onConflict: "id", ignoreDuplicates: true });
+    .upsert(profile, { onConflict: "id", ignoreDuplicates: true });
 }
 
 async function sendBrandedInvite(
@@ -266,7 +273,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, error: "auth-user-missing" }, 502);
   }
 
-  const { error: profileErr } = await ensureApplicantProfile(admin, userId, contact, email);
+  const { error: profileErr } = await ensureApplicantProfile(admin, userId, contact, email, reqRow.consent_version);
   if (profileErr) {
     await rollbackOrg();
     return json({ ok: false, error: "profile-repair-failed", detail: profileErr.message }, 500);

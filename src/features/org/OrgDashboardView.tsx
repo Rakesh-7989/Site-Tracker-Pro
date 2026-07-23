@@ -1,4 +1,4 @@
-// SiteTrack Pro — Org Admin home (/org). Single-org overview: plan, project +
+﻿// SiteTrack Pro â€” Org Admin home (/org). Single-org overview: plan, project +
 // member counts, and quick links to the other org-admin panels. Read-only
 // (org_admin_overview RPC, migration 77).
 
@@ -11,12 +11,12 @@ import type { IconName } from "@/components/ui/icons";
 import { getOrgOverview, deleteOrganization, PLAN_LABEL, type OrgOverview } from "@/app/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 
+import { getClient } from "@/lib/supabase";
 const LINKS: Array<{ to: string; label: string; icon: IconName; desc: string }> = [
   { to: "/org/members", label: "People", icon: "users", desc: "Members, roles & invites" },
   { to: "/org/billing", label: "Billing", icon: "credit-card", desc: "Plan, seats & subscription" },
-  { to: "/org/integrations", label: "Integrations", icon: "plug", desc: "WhatsApp · AI · payments" },
+  { to: "/org/integrations", label: "Integrations", icon: "plug", desc: "WhatsApp Â· AI Â· payments" },
   { to: "/audit", label: "Activity", icon: "shield", desc: "Org-wide audit trail" },
   { to: "/admin/roles", label: "Role Permissions", icon: "lock", desc: "Custom roles & capabilities" },
 ];
@@ -52,7 +52,7 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
     setDeleting(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setDeleting(false); return; }
     const res = await deleteOrganization(client, orgId);
-    if (res.ok) { window.location.href = "/dashboard"; } // org gone → fresh session
+    if (res.ok) { window.location.href = "/dashboard"; } // org gone â†’ fresh session
     else { setError(res.error); setDeleting(false); }
   };
 
@@ -88,13 +88,13 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
             </div>
           </div>
 
-          {/* Danger zone — DPDP right-to-erasure */}
+          {/* Danger zone â€” DPDP right-to-erasure */}
           <div>
             <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-rose-500 mb-2">Danger zone</h2>
             <Card className="p-4 border-rose-200">
               {!showDanger ? (
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="text-sm text-ink-600">Permanently delete this organization and <b>all</b> its data (projects, finance, members…). This cannot be undone.</div>
+                  <div className="text-sm text-ink-600">Permanently delete this organization and <b>all</b> its data (projects, finance, membersâ€¦). This cannot be undone.</div>
                   <Button size="sm" variant="secondary" onClick={() => setShowDanger(true)}>Delete organization</Button>
                 </div>
               ) : (

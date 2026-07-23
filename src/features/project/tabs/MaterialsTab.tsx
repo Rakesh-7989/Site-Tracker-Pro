@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Materials tab (v3 port, Batch 2, DB-wired).
+﻿// SiteTrack Pro â€” project Materials tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listMaterials, createMaterial, setMaterialStatus, deleteMaterial, type Material, type MaterialStatus } from "@/app/siteOpsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const ST = [{ value: "expected", label: "Expected" }, { value: "received", label: "Received" }, { value: "rejected", label: "Rejected" }];
 
 export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element {
@@ -50,7 +50,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.material}</div>
-                <div className="text-[11px] text-ink-400">{[r.quantity, r.supplier, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" · ") || "—"}</div></div>
+                <div className="text-[11px] text-ink-400">{[r.quantity, r.supplier, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setMaterialStatus(c, r.id, e.target.value as MaterialStatus))} options={ST} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}

@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Safety tab (v3 port, Batch 2, DB-wired).
+﻿// SiteTrack Pro â€” project Safety tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listSafety, createSafety, setSafetyStatus, deleteSafety, type SafetyIncident, type SafetySeverity, type SafetyStatus } from "@/app/siteOpsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const SEV = [{ value: "near_miss", label: "Near miss" }, { value: "first_aid", label: "First aid" }, { value: "minor", label: "Minor" }, { value: "major", label: "Major" }, { value: "fatal", label: "Fatal" }];
 const STT = [{ value: "open", label: "Open" }, { value: "resolved", label: "Resolved" }, { value: "escalated", label: "Escalated" }];
 const sevTone = (s: SafetySeverity): "danger" | "warning" | "neutral" => (s === "fatal" || s === "major" ? "danger" : s === "minor" || s === "first_aid" ? "warning" : "neutral");
@@ -50,11 +50,11 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No incidents reported. 🦺</div>
+        : rows.length === 0 ? <div className="text-sm text-ink-500">No incidents reported. ðŸ¦º</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-start justify-between gap-3">
               <div className="min-w-0"><div className="text-sm text-ink-800 flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity.replace("_", " ")}</Badge>{r.description}</div>
-                <div className="text-[11px] text-ink-400 mt-0.5">{[r.incidentDate, r.category, r.location].filter(Boolean).join(" · ")}</div></div>
+                <div className="text-[11px] text-ink-400 mt-0.5">{[r.incidentDate, r.category, r.location].filter(Boolean).join(" Â· ")}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setSafetyStatus(c, r.id, e.target.value as SafetyStatus))} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}

@@ -1,4 +1,5 @@
-// SiteTrack Pro — Role Permissions manager (superadmin, migration 69).
+﻿// SiteTrack Pro â€” Role Permissions manager (superadmin, migration 69).
+import { getClient } from "@/lib/supabase";
 //
 // Lets the founder (superadmin) grant/revoke capabilities to any identity
 // role, scoped Global or to one org. Writes role_capability_overrides rows
@@ -25,11 +26,6 @@ import { CustomRolesPanel } from "./CustomRolesPanel";
 type CellState = "inherit" | "grant" | "revoke";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
 export function RoleManager(): JSX.Element {
   const { session } = useAuth();
@@ -123,7 +119,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
             className="mt-1"
             value={scope}
             onChange={e => setScope(e.target.value)}
-            options={[{ value: "", label: "🌐 Global (all orgs)" }, ...orgs.map(o => ({ value: o.id, label: o.name }))]}
+            options={[{ value: "", label: "ðŸŒ Global (all orgs)" }, ...orgs.map(o => ({ value: o.id, label: o.name }))]}
           />
         </label>
         <label className="block">
@@ -137,7 +133,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
         </label>
       </Card>
 
-      {/* Plan context for the selected org (soft gate — superadmin can always configure) */}
+      {/* Plan context for the selected org (soft gate â€” superadmin can always configure) */}
       {selectedOrg && (
         <Alert variant={orgUnlocksCustom ? "success" : "info"}>
           {selectedOrg.name} is on the <b>{PLAN_LABEL[selectedOrg.plan] ?? selectedOrg.plan}</b> plan.{" "}
@@ -152,12 +148,12 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
 
       <div className="pt-1">
         <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">
-          Standard role overrides — {ROLE_LABEL[role]}
+          Standard role overrides â€” {ROLE_LABEL[role]}
         </h2>
       </div>
 
       {role === "superadmin" && (
-        <Alert variant="info">Superadmin always holds every capability — overrides don't apply to it.</Alert>
+        <Alert variant="info">Superadmin always holds every capability â€” overrides don't apply to it.</Alert>
       )}
       {error && <Alert variant="danger">{error}</Alert>}
 
@@ -165,7 +161,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
         <div className="text-sm text-ink-500">
           {overrideCount > 0
             ? <span><Badge tone="warning">{overrideCount} override{overrideCount > 1 ? "s" : ""}</Badge> on <b>{ROLE_LABEL[role]}</b> in {orgId ? "this org" : "Global"}</span>
-            : <span>No overrides — <b>{ROLE_LABEL[role]}</b> uses the built-in defaults.</span>}
+            : <span>No overrides â€” <b>{ROLE_LABEL[role]}</b> uses the built-in defaults.</span>}
         </div>
         {loading && <Spinner size={16} />}
       </div>
@@ -189,7 +185,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
                     </div>
                     <div className="text-[11px] text-ink-400">
                       Default: {baseHas ? "on" : "off"}
-                      {cur !== "inherit" && <span className={effective ? "text-emerald-600" : "text-rose-600"}> → {effective ? "on" : "off"}</span>}
+                      {cur !== "inherit" && <span className={effective ? "text-emerald-600" : "text-rose-600"}> â†’ {effective ? "on" : "off"}</span>}
                     </div>
                   </div>
                   <TriToggle value={cur} disabled={role === "superadmin" || busy} onChange={next => void apply(cap, next)} />
@@ -219,7 +215,7 @@ function TriToggle({ value, disabled, onChange }: { value: CellState; disabled?:
             type="button"
             disabled={disabled}
             onClick={() => !active && onChange(o.v)}
-            className={`px-2.5 py-1 text-xs font-semibold transition ${active ? o.tone : "bg-white text-ink-400 hover:bg-cream-100"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`px-3 py-2 text-xs font-semibold transition ${active ? o.tone : "bg-white text-ink-400 hover:bg-cream-100"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {o.label}
           </button>

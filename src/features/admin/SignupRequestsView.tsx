@@ -1,4 +1,4 @@
-// SiteTrack Pro — superadmin signup queue (/admin/signups). Review pending
+﻿// SiteTrack Pro â€” superadmin signup queue (/admin/signups). Review pending
 // signup requests: approve (creates org + invites the applicant) or reject.
 
 import { useCallback, useEffect, useState } from "react";
@@ -9,14 +9,14 @@ import { listSignupRequests, reviewSignupRequest, markSignupPaid, createCheckout
 import { listStaff, assignSignupRequest, type StaffMember } from "@/app/staffQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const FILTERS = [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "all", label: "All" }];
 const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
 const statusTone = (s: SignupStatus): "neutral" | "warning" | "success" | "danger" => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");
 const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 const PAY_TONE: Record<string, "warning" | "success" | "neutral"> = { unpaid: "warning", paid: "success", waived: "neutral" };
 const PAY_LABEL: Record<string, string> = { unpaid: "Payment due", paid: "Paid", waived: "Waived" };
-// 24h provisioning SLA — clock starts at payment confirmation.
+// 24h provisioning SLA â€” clock starts at payment confirmation.
 function slaText(r: SignupRequestRow): { text: string; over: boolean } | null {
   if (r.status !== "pending" || r.paymentStatus === "unpaid" || !r.paidAt) return null;
   const hrs = Math.round((new Date(r.paidAt).getTime() + 24 * 3600 * 1000 - Date.now()) / 3600000);
@@ -57,8 +57,8 @@ function Inner(): JSX.Element {
     setBusy(r.id); setError(null); setNotice(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
     const res = await createCheckoutLink(client, r.id, "annual");
-    if (res.ok) setNotice(`Cashfree payment link (₹${res.data.amount}) emailed to ${r.email}. Marks paid automatically once they pay.`);
-    else setError(res.error.includes("not-configured") ? "Cashfree keys not set yet — add CASHFREE_APP_ID + CASHFREE_SECRET (sandbox) first." : res.error);
+    if (res.ok) setNotice(`Cashfree payment link (â‚¹${res.data.amount}) emailed to ${r.email}. Marks paid automatically once they pay.`);
+    else setError(res.error.includes("not-configured") ? "Cashfree keys not set yet â€” add CASHFREE_APP_ID + CASHFREE_SECRET (sandbox) first." : res.error);
     setBusy(null);
   };
 
@@ -66,7 +66,7 @@ function Inner(): JSX.Element {
     setBusy(r.id); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
     const res = await markSignupPaid(client, r.id, status);
-    if (res.ok) { setNotice(status === "paid" ? `Payment confirmed for ${r.firmName} — provision within 24h.` : `Payment ${status} for ${r.firmName}.`); await reload(); }
+    if (res.ok) { setNotice(status === "paid" ? `Payment confirmed for ${r.firmName} â€” provision within 24h.` : `Payment ${status} for ${r.firmName}.`); await reload(); }
     else setError(res.error);
     setBusy(null);
   };
@@ -139,11 +139,11 @@ function Inner(): JSX.Element {
                   <Badge tone="info">{PLAN_LABEL[r.plan] ?? r.plan}</Badge>
                   <Badge tone={statusTone(r.status)}>{r.status}</Badge>
                   {r.status === "pending" && <Badge tone={PAY_TONE[r.paymentStatus]}>{PAY_LABEL[r.paymentStatus]}</Badge>}
-                  {(() => { const s = slaText(r); return s ? <span className={`text-[11px] font-semibold ${s.over ? "text-rose-600" : "text-amber-600"}`}>⏱ {s.text}</span> : null; })()}
+                  {(() => { const s = slaText(r); return s ? <span className={`text-[11px] font-semibold ${s.over ? "text-rose-600" : "text-amber-600"}`}>â± {s.text}</span> : null; })()}
                 </div>
-                <div className="text-sm text-ink-600 mt-0.5">{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ""}</div>
-                {r.message && <div className="text-[12px] text-ink-500 mt-1 italic">“{r.message}”</div>}
-                <div className="text-[11px] text-ink-400 mt-1">{fmtDate(r.createdAt)}{r.reviewNotes ? ` · note: ${r.reviewNotes}` : ""}</div>
+                <div className="text-sm text-ink-600 mt-0.5">{r.contactName} Â· {r.email}{r.phone ? ` Â· ${r.phone}` : ""}</div>
+                {r.message && <div className="text-[12px] text-ink-500 mt-1 italic">â€œ{r.message}â€</div>}
+                <div className="text-[11px] text-ink-400 mt-1">{fmtDate(r.createdAt)}{r.reviewNotes ? ` Â· note: ${r.reviewNotes}` : ""}</div>
               </div>
               {r.status === "pending" && (
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -157,14 +157,14 @@ function Inner(): JSX.Element {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Handled by</span>
                 <Select className="w-56" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
                   onChange={e => void assign(r, e.target.value)}
-                  options={[{ value: "", label: "— Unassigned —" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
+                  options={[{ value: "", label: "â€” Unassigned â€”" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
               </div>
             )}
             {r.status === "pending" && (
               <div className="mt-2 flex items-center gap-2 flex-wrap text-[12px]">
                 <span className="text-ink-400 font-semibold">Payment:</span>
                 {r.paymentStatus === "unpaid" ? (<>
-                  <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied — share it with ${r.email}.`); }}>Copy UPI link</Button>
+                  <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied â€” share it with ${r.email}.`); }}>Copy UPI link</Button>
                   <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void sendPayLink(r)}>Cashfree link</Button>
                   {isOwner ? (<>
                     <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
@@ -172,7 +172,7 @@ function Inner(): JSX.Element {
                   </>) : <span className="text-ink-500">Owner must confirm payment.</span>}
                   {r.paymentRef && <span className="text-ink-500">claim UTR: {r.paymentRef}</span>}
                 </>) : (<>
-                  <span className="text-ink-700">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
+                  <span className="text-ink-700">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` Â· ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` Â· ref ${r.paymentRef}` : ""}</span>
                   {isOwner && <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>}
                 </>)}
               </div>

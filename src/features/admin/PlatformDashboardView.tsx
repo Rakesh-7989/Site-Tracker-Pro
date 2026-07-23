@@ -1,4 +1,4 @@
-// SiteTrack Pro — platform home (/admin, superadmin). Cross-tenant overview:
+﻿// SiteTrack Pro â€” platform home (/admin, superadmin). Cross-tenant overview:
 // org / user / project counts, plan mix, signup pipeline + quick links.
 
 import { useCallback, useEffect, useState } from "react";
@@ -9,8 +9,8 @@ import type { IconName } from "@/components/ui/icons";
 import { getPlatformStats, PLAN_LABEL, type PlatformStats } from "@/app/platformAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 
+import { getClient } from "@/lib/supabase";
 const LINKS: Array<{ to: string; label: string; icon: IconName; desc: string }> = [
   { to: "/admin/signups", label: "Signup requests", icon: "mail", desc: "Approve / reject new firms" },
   { to: "/admin/orgs", label: "Organizations", icon: "building", desc: "Every tenant + counts" },

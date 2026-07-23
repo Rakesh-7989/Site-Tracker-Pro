@@ -8,6 +8,7 @@ import { Card, Button, Icon, Badge, Spinner, Alert } from "@/components/ui/atoms
 import { Input } from "@/components/ui/forms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
+import { CONSENT_VERSION } from "@/features/marketing/legalContent";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
 import { registerOrg, type RegisterPlan } from "@/app/orgRegisterQueries";
 
@@ -60,6 +61,7 @@ export function OrgRegisterView(): JSX.Element {
       contactName: contactName.trim(),
       phone: phone.trim() || undefined,
       plan,
+      consentVersion: CONSENT_VERSION,
     });
     setBusy(false);
     if (res.ok) setDone(true);

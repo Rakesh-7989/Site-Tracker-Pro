@@ -1,4 +1,4 @@
-// SiteTrack Pro — PM Dashboard view (/pm). Project Manager landing.
+﻿// SiteTrack Pro â€” PM Dashboard view (/pm). Project Manager landing.
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -6,11 +6,8 @@ import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { listPMProjects, listPMNotifications, type ProjectBrief, type NotifBrief } from "@/app/pmQueries";
 import { useSession } from "@/auth/OrganizationContext";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 function PBar({ v }: { v: number }) {
   return (
     <div className="w-full h-2 bg-cream-200 rounded-full overflow-hidden">

@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Estimate tab (v3 port, Batch 4, DB-wired).
+﻿// SiteTrack Pro â€” project Estimate tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -8,7 +8,7 @@ import { fmtRupees } from "@/app/financeQueries";
 import { listEstimates, createEstimate, setEstimateStatus, deleteEstimate, type Estimate, type EstimateStatus } from "@/app/designQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const NEXT: Record<EstimateStatus, EstimateStatus> = { draft: "submitted", submitted: "approved", approved: "superseded", superseded: "draft", rejected: "draft" };
 const tone = (s: EstimateStatus): "neutral" | "info" | "success" | "danger" => (s === "approved" ? "success" : s === "submitted" ? "info" : s === "rejected" ? "danger" : "neutral");
 
@@ -41,7 +41,7 @@ export function EstimateTab({ projectId }: { projectId: string }): JSX.Element {
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Name</span><Input className="mt-1" placeholder="e.g. Client quote v1" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Total ₹</span><Input className="mt-1 w-32" type="number" value={total} onChange={e => setTotal(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Total â‚¹</span><Input className="mt-1 w-32" type="number" value={total} onChange={e => setTotal(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim() || !total}>{busy === "add" ? <Spinner size={14} /> : "Create"}</Button>
         </Card>
       )}

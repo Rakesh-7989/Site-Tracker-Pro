@@ -1,17 +1,13 @@
-// SiteTrack Pro — platform Organizations (/admin/orgs, superadmin). Cross-tenant
-// list of every org with member + project counts. Owner can also create orgs.
-
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied, type IconName } from "@/components/ui/atoms";
 import { FormField, Input, Select } from "@/components/ui/forms";
+import { DataTable } from "@/components/ui/DataTable";
 import { createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, adminDeleteOrg, adminSetSubscriptionStatus, getOrgSubscription, type AssignablePlan, type PlatformOrg, type OrgSubscriptionInfo } from "@/app/platformAdminQueries";
-import { Pager } from "@/components/ui/Pager";
 
+import { getClient } from "@/lib/supabase";
 const PLAN_OPTIONS = ASSIGNABLE_PLANS.map(p => ({ value: p, label: PLAN_LABEL[p] ?? p }));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 const planTone = (p: string): "neutral" | "info" | "success" | "warning" => (p === "business" ? "success" : p === "pro" ? "info" : (p === "custom" || p === "enterprise") ? "warning" : "neutral");
 const subTone = (s: string | null | undefined): "neutral" | "success" | "warning" | "danger" | "info" => (
   s === "active" ? "success" : s === "trial" ? "info" : s === "paused" ? "warning" : s === "past_due" ? "danger" : s === "cancelled" ? "danger" : "neutral"
@@ -32,7 +28,7 @@ function Inner(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");   // debounced, server-side
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [planBusyId, setPlanBusyId] = useState<string | null>(null);
   const [manageOrg, setManageOrg] = useState<PlatformOrg | null>(null);
@@ -51,7 +47,6 @@ function Inner(): JSX.Element {
   const [createPlan, setCreatePlan] = useState<AssignablePlan>("basic");
   const [createResult, setCreateResult] = useState<{ tempPassword: string; emailSent: boolean; email: string; userAlreadyExisted: boolean } | null>(null);
 
-  // Debounce the search box → server-side query, reset to first page.
   useEffect(() => { const t = setTimeout(() => { setSearch(q.trim()); setPage(0); }, 350); return () => clearTimeout(t); }, [q]);
 
   const reload = useCallback(async () => {
@@ -101,7 +96,7 @@ function Inner(): JSX.Element {
       const res = await adminSetSubscriptionStatus(client, manageOrg.id, targetStatus, reason);
       if (res.ok) {
         setManageSub(prev => prev ? { ...prev, status: targetStatus } : { status: targetStatus, plan: null, provider: null, currentPeriodEnd: null, trialEndsAt: null });
-        setManageResult({ ok: true, message: `Subscription for "${res.data.org}" changed: ${res.data.from ?? "(none)"} → ${res.data.to}.` });
+        setManageResult({ ok: true, message: `Subscription for "${res.data.org}" changed: ${res.data.from ?? "(none)"} \u2192 ${res.data.to}.` });
       } else {
         setManageResult({ ok: false, message: res.error });
       }
@@ -113,7 +108,7 @@ function Inner(): JSX.Element {
     if (plan === o.plan) return;
     const unlocksCustomRoles = planUnlocksCustomRoles(plan);
     const note = unlocksCustomRoles ? "\n\nThis plan UNLOCKS per-org role + feature customization (custom roles)." : "";
-    if (!window.confirm(`Change "${o.name}" plan from ${PLAN_LABEL[o.plan] ?? o.plan} → ${PLAN_LABEL[plan] ?? plan}?${note}`)) return;
+    if (!window.confirm(`Change "${o.name}" plan from ${PLAN_LABEL[o.plan] ?? o.plan} \u2192 ${PLAN_LABEL[plan] ?? plan}?${note}`)) return;
     setPlanBusyId(o.id); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setPlanBusyId(null); return; }
     const res = await setOrgPlan(client, o.id, plan);
@@ -148,7 +143,7 @@ function Inner(): JSX.Element {
       });
       setNotice(
         `Created "${res.data.org.name}" on ${PLAN_LABEL[res.data.org.plan] ?? res.data.org.plan}. ` +
-        (res.data.emailSent ? "Welcome email sent." : res.data.userAlreadyExisted ? "User already existed (password unchanged)." : "Email not sent — check RESEND_API_KEY.")
+        (res.data.emailSent ? "Welcome email sent." : res.data.userAlreadyExisted ? "User already existed (password unchanged)." : "Email not sent \u2014 check RESEND_API_KEY.")
       );
       if (page === 0 && !search) setRows(prev => [{
         id: res.data.org.id, name: res.data.org.name, slug: res.data.org.slug,
@@ -159,6 +154,36 @@ function Inner(): JSX.Element {
   }, [createOrgName, createAdminEmail, createAdminPhone, createAdminName, createPlan, page, reload, search]);
 
   const hasNext = rows.length === ADMIN_PAGE_SIZE;
+
+  const columns = [
+    { key: "org", header: "Organization", render: (o: PlatformOrg) => (
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-ink-900 truncate">{o.name}</span>
+          <Badge tone={planTone(o.plan)}>{PLAN_LABEL[o.plan] ?? o.plan}</Badge>
+          {planUnlocksCustomRoles(o.plan) && <span title="Per-org custom roles unlocked"><Badge tone="warning"><Icon name="lock" size={11} /> custom roles</Badge></span>}
+        </div>
+        <div className="text-[11px] text-ink-400">{o.slug} \u00b7 created {fmtDate(o.createdAt)}</div>
+      </div>
+    )},
+    { key: "members", header: "Members", render: (o: PlatformOrg) => (
+      <div className="text-center"><div className="text-lg font-bold text-ink-900 leading-none">{o.memberCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">members</div></div>
+    )},
+    { key: "projects", header: "Projects", render: (o: PlatformOrg) => (
+      <div className="text-center"><div className="text-lg font-bold text-ink-900 leading-none">{o.projectCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">projects</div></div>
+    )},
+    { key: "plan", header: "Plan", render: (o: PlatformOrg) => (
+      planBusyId === o.id
+        ? <div className="grid place-items-center h-9"><Spinner size={16} /></div>
+        : <Select aria-label="Change plan" options={PLAN_OPTIONS} value={o.plan} onChange={e => void onChangePlan(o, e.target.value)} />
+    )},
+    { key: "actions", header: "", render: (o: PlatformOrg) => (
+      <Button size="sm" variant="ghost" disabled={manageOrg?.id === o.id} onClick={() => void onOpenManage(o)}
+        className="!text-safety-500 hover:!bg-orange-50" title="Manage organization">
+        {manageOrg?.id === o.id ? <Spinner size={14} /> : <Icon name="sliders" size={16} />}
+      </Button>
+    )},
+  ];
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -186,10 +211,10 @@ function Inner(): JSX.Element {
                 <p className="font-semibold text-amber-900">Admin login credentials</p>
                 <p className="text-amber-800">Email: <span className="font-mono font-bold">{createResult.email}</span></p>
                 <p className="text-amber-800">Temporary password: <span className="font-mono font-bold text-base bg-amber-100 px-2 py-0.5 rounded select-all">{createResult.tempPassword}</span></p>
-                <p className="text-[11px] text-amber-600 mt-1">Save this password — it will only be shown once.</p>
+                <p className="text-[11px] text-amber-600 mt-1">Save this password \u2014 it will only be shown once.</p>
               </div>
               <p className="text-xs text-ink-500">
-                {createResult.emailSent ? "Welcome email sent with credentials." : createResult.userAlreadyExisted ? "User already existed (original password unchanged)." : "Email not sent — configure RESEND_API_KEY."}
+                {createResult.emailSent ? "Welcome email sent with credentials." : createResult.userAlreadyExisted ? "User already existed (original password unchanged)." : "Email not sent \u2014 configure RESEND_API_KEY."}
               </p>
               <Button size="sm" onClick={() => { setShowCreate(false); setCreateResult(null); setCreateOrgName(""); setCreateAdminEmail(""); setCreateAdminPhone(""); setCreateAdminName(""); }}>
                 Done
@@ -225,37 +250,17 @@ function Inner(): JSX.Element {
           )}
         </Card>
       )}
-      <Input placeholder="Search by name or slug…" value={q} onChange={e => setQ(e.target.value)} />
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
-        : rows.length === 0 ? <Card className="p-8 text-center text-sm text-ink-500"><Icon name="building" size={24} className="mx-auto text-ink-300 mb-2" />No organizations{search ? " match your search." : " yet."}</Card>
-        : <><div className="space-y-2">{rows.map(o => (
-            <Card key={o.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-ink-900 truncate">{o.name}</span>
-                  <Badge tone={planTone(o.plan)}>{PLAN_LABEL[o.plan] ?? o.plan}</Badge>
-                  {planUnlocksCustomRoles(o.plan) && <span title="Per-org custom roles unlocked"><Badge tone="warning"><Icon name="lock" size={11} /> custom roles</Badge></span>}
-                </div>
-                <div className="text-[11px] text-ink-400">{o.slug} · created {fmtDate(o.createdAt)}</div>
-              </div>
-              <div className="flex items-center gap-4 flex-shrink-0 text-center">
-                <div><div className="text-lg font-bold text-ink-900 leading-none">{o.memberCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">members</div></div>
-                <div><div className="text-lg font-bold text-ink-900 leading-none">{o.projectCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">projects</div></div>
-                <div className="w-28">
-                  {planBusyId === o.id
-                    ? <div className="grid place-items-center h-9"><Spinner size={16} /></div>
-                    : <Select aria-label="Change plan" options={PLAN_OPTIONS} value={o.plan} onChange={e => void onChangePlan(o, e.target.value)} />}
-                </div>
-                <Button size="sm" variant="ghost" disabled={manageOrg?.id === o.id} onClick={() => void onOpenManage(o)}
-                  className="!text-safety-500 hover:!bg-orange-50" title="Manage organization">
-                  {manageOrg?.id === o.id ? <Spinner size={14} /> : <Icon name="sliders" size={16} />}
-                </Button>
-              </div>
-            </Card>
-          ))}</div>
-          <Pager page={page} hasNext={hasNext} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />
-          </>}
-      {/* ── Org management modal ── */}
+      <Input placeholder="Search by name or slug\u2026" value={q} onChange={e => setQ(e.target.value)} />
+      <DataTable
+        columns={columns}
+        rows={rows}
+        rowKey={o => o.id}
+        loading={loading}
+        error={error}
+        emptyMessage={search ? `No organizations match "${search}".` : "No organizations yet."}
+        variant="card"
+        pagination={{ page, hasNext, busy: loading, onPrev: () => setPage(p => Math.max(0, p - 1)), onNext: () => setPage(p => p + 1) }}
+      />
       {manageOrg && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-24 bg-black/30" onClick={onCloseManage}>
           <div className="w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}><Card className="p-5 space-y-4">
@@ -280,7 +285,6 @@ function Inner(): JSX.Element {
             )}
 
             {manageAction === null ? (
-              /* ── Action picker ── */
               <div className="grid grid-cols-2 gap-2">
                 <ActionTile icon="trash" label="Delete org" desc="Permanently delete all data" tone="danger" onClick={() => setManageAction("delete")} />
                 <ActionTile icon="pause" label="Pause subscription" desc="Admin-initiated pause" onClick={() => setManageAction("pause")} />
@@ -291,7 +295,6 @@ function Inner(): JSX.Element {
                 )}
               </div>
             ) : (
-              /* ── Action confirmation ── */
               <div className="space-y-3">
                 <div className="text-sm text-ink-700 font-medium">
                   {manageAction === "delete" ? `Delete "${manageOrg.name}" and ALL its data?` :
@@ -303,7 +306,7 @@ function Inner(): JSX.Element {
                 <FormField label="Reason *" htmlFor="manage-reason">
                   <textarea id="manage-reason" value={manageReason} onChange={e => setManageReason(e.target.value)}
                     className="w-full px-3 py-2 border border-cream-200 rounded-lg text-sm bg-white min-h-[80px] resize-y"
-                    placeholder="Explain why this action is being taken…" disabled={manageBusy} />
+                    placeholder="Explain why this action is being taken\u2026" disabled={manageBusy} />
                 </FormField>
                 {manageResult && (
                   <Alert variant={manageResult.ok ? "success" : "danger"}>{manageResult.message}</Alert>
@@ -317,7 +320,7 @@ function Inner(): JSX.Element {
                         disabled={manageBusy || !manageReason.trim()}
                         leftIcon={manageBusy ? <Spinner size={14} /> : undefined}
                         onClick={() => void onConfirmManage()}>
-                        {manageBusy ? "Processing…" : "Confirm"}
+                        {manageBusy ? "Processing\u2026" : "Confirm"}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => { setManageAction(null); setManageResult(null); setManageReason(""); }} disabled={manageBusy}>Back</Button>
                     </>
@@ -333,7 +336,6 @@ function Inner(): JSX.Element {
   );
 }
 
-/** Small action tile button used inside the management modal. */
 function ActionTile({ icon, label, desc, tone = "neutral", onClick, className = "" }: {
   icon: IconName; label: string; desc: string; tone?: "neutral" | "danger"; onClick: () => void; className?: string;
 }): JSX.Element {

@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Attendance tab (v3 port, Batch 2, DB-wired).
+﻿// SiteTrack Pro â€” project Attendance tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listAttendance, createAttendance, setAttendanceStatus, deleteAttendance, type AttendanceRow, type AttendanceStatus, type AttendeeKind } from "@/app/attendanceQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const STT = [{ value: "present", label: "Present" }, { value: "absent", label: "Absent" }, { value: "half_day", label: "Half day" }, { value: "leave", label: "Leave" }, { value: "on_site_late", label: "Late" }, { value: "off_site", label: "Off-site" }];
 const KIND = [{ value: "labour", label: "Labour" }, { value: "staff", label: "Staff" }, { value: "visitor", label: "Visitor" }];
 
@@ -51,8 +51,8 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
         : rows.length === 0 ? <div className="text-sm text-ink-500">No attendance marked.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.attendeeName} <span className="text-[11px] text-ink-400 font-normal">· {r.kind}</span></div>
-                <div className="text-[11px] text-ink-400">{r.date}{r.hours != null ? ` · ${r.hours}h` : ""}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.attendeeName} <span className="text-[11px] text-ink-400 font-normal">Â· {r.kind}</span></div>
+                <div className="text-[11px] text-ink-400">{r.date}{r.hours != null ? ` Â· ${r.hours}h` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setAttendanceStatus(c, r.id, e.target.value as AttendanceStatus))} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status.replace("_", " ")}</span>}

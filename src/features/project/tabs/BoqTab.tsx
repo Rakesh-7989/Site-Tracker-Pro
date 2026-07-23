@@ -1,4 +1,4 @@
-// SiteTrack Pro — project BOQ (Bill of Quantities) tab (v3 port, DB-wired).
+﻿// SiteTrack Pro â€” project BOQ (Bill of Quantities) tab (v3 port, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
@@ -8,7 +8,7 @@ import { fmtRupees } from "@/app/financeQueries";
 import { listBoq, createBoq, deleteBoq, type BoqItem, type BoqCategory } from "@/app/siteAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const CATS: BoqCategory[] = ["Civil", "MEP", "Finishing", "External", "Other"];
 const CAT_OPTS = CATS.map(c => ({ value: c, label: c }));
 
@@ -47,7 +47,7 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Item description</span><Input className="mt-1" placeholder="e.g. M25 RCC for columns" value={desc} onChange={e => setDesc(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Unit</span><Input className="mt-1 w-20" placeholder="cum" value={unit} onChange={e => setUnit(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Qty</span><Input className="mt-1 w-20" type="number" value={qty} onChange={e => setQty(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Rate ₹</span><Input className="mt-1 w-24" type="number" value={rate} onChange={e => setRate(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Rate â‚¹</span><Input className="mt-1 w-24" type="number" value={rate} onChange={e => setRate(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Category</span><Select className="mt-1 w-28" value={cat} onChange={e => setCat(e.target.value as BoqCategory)} options={CAT_OPTS} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !desc.trim() || !qty || !rate}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
@@ -56,11 +56,11 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
         : rows.length === 0 ? <div className="text-sm text-ink-500">No BOQ items yet.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.code ? `${r.code} · ` : ""}{r.description}</div>
-                <div className="text-[11px] text-ink-400">{[r.qty != null && `${r.qty}${r.unit ? " " + r.unit : ""}`, r.rate != null && `@ ${fmtRupees(r.rate)}`].filter(Boolean).join(" · ")}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.code ? `${r.code} Â· ` : ""}{r.description}</div>
+                <div className="text-[11px] text-ink-400">{[r.qty != null && `${r.qty}${r.unit ? " " + r.unit : ""}`, r.rate != null && `@ ${fmtRupees(r.rate)}`].filter(Boolean).join(" Â· ")}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Badge tone="neutral">{r.category}</Badge>
-                <span className="text-sm font-semibold text-ink-900 w-24 text-right">{r.amount != null ? fmtRupees(r.amount) : "—"}</span>
+                <span className="text-sm font-semibold text-ink-900 w-24 text-right">{r.amount != null ? fmtRupees(r.amount) : "â€”"}</span>
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteBoq(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}

@@ -1,4 +1,4 @@
-// SiteTrack Pro — Org Templates (/org/templates). Org-shared project / BOQ /
+﻿// SiteTrack Pro â€” Org Templates (/org/templates). Org-shared project / BOQ /
 // checklist templates. DB-wired (templates table, migration 78 bridge).
 
 import { useCallback, useEffect, useState } from "react";
@@ -8,7 +8,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listTemplates, createTemplate, deleteTemplate, TEMPLATE_KINDS, type Template, type TemplateKind } from "@/app/orgConfigQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const KIND_OPTS = TEMPLATE_KINDS.map(k => ({ value: k, label: k[0].toUpperCase() + k.slice(1) }));
 const kindTone = (k: TemplateKind): "info" | "success" | "warning" => (k === "project" ? "info" : k === "boq" ? "success" : "warning");
 

@@ -15,7 +15,7 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Button, Icon, Spinner, Alert, Badge } from "@/components/ui/atoms";
 import { FormField, Select, Textarea } from "@/components/ui/forms";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { HYDERABAD_BBOX } from "../../lib/photoStorage.js";
+import { HYDERABAD_BBOX } from "../../lib/photoStorage";
 import {
   dprReducer, EMPTY_DRAFT, canSubmit, meetsQualityBar, draftChecklist,
   type DprLanguage,

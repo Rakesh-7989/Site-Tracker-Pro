@@ -1,15 +1,12 @@
-// SiteTrack Pro — Daily Snapshot (/kiosk/snapshot).
+﻿// SiteTrack Pro â€” Daily Snapshot (/kiosk/snapshot).
 // Single-page project status summary.
 
 import { useCallback, useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
 import { PlanGate } from "@/auth";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 export function DailySnapshotView(): JSX.Element {
   return <PlanGate feature="kiosks"><DailySnapshotInner /></PlanGate>;
 }

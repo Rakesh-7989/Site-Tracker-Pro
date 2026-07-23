@@ -1,17 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { delegationStatus } from "@/lib/delegations";
+import { getClient } from "@/lib/supabase";
 import {
   listDelegations, listOrgMembers,
   createDelegation, revokeDelegation as revokeDelegationQuery,
   type DelegationRow, type OrgMemberRow,
 } from "@/app/delegationQueries";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
 export function DelegationsView(): JSX.Element {
   const { session } = useAuth();
@@ -84,7 +81,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
     <div className="p-4 md:p-10 max-w-4xl">
       <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{ borderBottom: "1px solid var(--st-line)" }}>
         <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Workflow</div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">â€” Workflow</div>
           <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Approval Delegation</h1>
           <p className="text-ink-500 text-sm mt-2">Site visit lo unnappudu approvals ni another person ki auto-route cheyandi. Audit trail keeps both original + delegate names.</p>
         </div>
@@ -93,7 +90,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
       {show && <div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
         <div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">New delegation</h3><button onClick={() => setShow(false)}><Icon name="x" size={18} /></button></div>
         <div className="grid grid-cols-2 gap-3 mb-3">
-          <select value={nd.to_user_id} onChange={e => setNd(p => ({ ...p, to_user_id: e.target.value }))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="">— Delegate to —</option>{otherUsers.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}</select>
+          <select value={nd.to_user_id} onChange={e => setNd(p => ({ ...p, to_user_id: e.target.value }))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="">â€” Delegate to â€”</option>{otherUsers.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}</select>
           <select value={nd.scope} onChange={e => setNd(p => ({ ...p, scope: e.target.value }))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="all">All approvals</option><option value="ra_bills">RA Bills only</option><option value="drawings">Drawings only</option><option value="change_orders">Change Orders only</option><option value="expenses">Expenses only</option></select>
           <input type="date" value={nd.start} onChange={e => setNd(p => ({ ...p, start: e.target.value }))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" />
           <input type="date" value={nd.end} onChange={e => setNd(p => ({ ...p, end: e.target.value }))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" />
@@ -108,7 +105,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
           const c = color[st] || "stone";
           return (<div key={d.id} className="p-4 flex items-center gap-3 flex-wrap" style={{ borderBottom: "1px solid var(--st-line)" }}>
             <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-${c}-50 text-${c}-700`}>{st}</span>
-            <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-ink-900">→ {d.toUserName} <span className="text-[10px] font-mono text-ink-500">({d.scope})</span></div><div className="text-[11px] text-ink-500">{fmtDate(d.start)} → {fmtDate(d.end)}{d.reason && ` · ${d.reason}`}</div></div>
+            <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-ink-900">â†’ {d.toUserName} <span className="text-[10px] font-mono text-ink-500">({d.scope})</span></div><div className="text-[11px] text-ink-500">{fmtDate(d.start)} â†’ {fmtDate(d.end)}{d.reason && ` Â· ${d.reason}`}</div></div>
             {d.active !== false && st !== "expired" && <button onClick={() => revoke(d.id)} className="text-[11px] font-bold text-ink-500 hover:text-red-600">Revoke</button>}
           </div>);
         })}

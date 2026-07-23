@@ -1,6 +1,6 @@
-// SiteTrack Pro — Org Integrations (/org/integrations). An org admin connects
+﻿// SiteTrack Pro â€” Org Integrations (/org/integrations). An org admin connects
 // their OWN 3rd-party provider accounts. Secrets are write-only from the UI
-// (never read back — status is booleans only). DB-wired (migration 83).
+// (never read back â€” status is booleans only). DB-wired (migration 83).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -10,8 +10,8 @@ import type { IconName } from "@/components/ui/icons";
 import { getIntegrationStatus, saveProvider, clearProvider, PROVIDERS, SECRET_FIELDS, type IntegrationStatus, type ProviderId, type ProviderMeta } from "@/app/orgIntegrationsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
 
+import { getClient } from "@/lib/supabase";
 export function OrgIntegrationsView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
@@ -81,7 +81,7 @@ function Inner({ orgId, userId }: { orgId: string; userId: string }): JSX.Elemen
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <h1 className="font-display text-2xl font-bold text-ink-900">Integrations</h1>
-      <p className="text-sm text-ink-500 -mt-2">Connect your own provider accounts. Keys are stored encrypted-at-RLS and never shown again after saving — re-enter to change.</p>
+      <p className="text-sm text-ink-500 -mt-2">Connect your own provider accounts. Keys are stored encrypted-at-RLS and never shown again after saving â€” re-enter to change.</p>
       {error && <Alert variant="danger">{error}</Alert>}
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : <div className="grid sm:grid-cols-2 gap-3">{PROVIDERS.map(p => (

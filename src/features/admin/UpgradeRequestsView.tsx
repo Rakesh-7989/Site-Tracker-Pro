@@ -1,7 +1,8 @@
-// SiteTrack Pro — plan-upgrade requests (/admin/upgrades). Platform staff.
+﻿// SiteTrack Pro â€” plan-upgrade requests (/admin/upgrades). Platform staff.
+import { getClient } from "@/lib/supabase";
 //
 // Owner/Head see all requests (and can assign them to a staff); an assigned
-// staff member sees + works their own. Status: open → in_progress → closed.
+// staff member sees + works their own. Status: open â†’ in_progress â†’ closed.
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -14,11 +15,6 @@ import { Pager } from "@/components/ui/Pager";
 const UPGRADE_PAGE_SIZE = 100;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any> {
-  const mod = await import("../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
 const STATUS_TONE: Record<UpgradeStatus, "warning" | "info" | "success"> = { open: "warning", in_progress: "info", closed: "success" };
 const STATUS_LABEL: Record<UpgradeStatus, string> = { open: "Open", in_progress: "In progress", closed: "Closed" };
@@ -100,18 +96,18 @@ export function UpgradeRequestsView(): JSX.Element {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-ink-900">{r.orgName}</span>
-                  <Badge tone="neutral">{r.currentPlan ?? "?"} → {r.desiredPlan ?? "?"}</Badge>
+                  <Badge tone="neutral">{r.currentPlan ?? "?"} â†’ {r.desiredPlan ?? "?"}</Badge>
                   <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                 </div>
-                <div className="text-[12px] text-ink-500 mt-0.5">by {r.requesterEmail ?? "—"} · {r.createdAt.slice(0, 10)}{r.assignedEmail ? ` · handled by ${r.assignedEmail}` : ""}</div>
-                {r.note && <div className="text-[12px] text-ink-600 mt-1 italic">“{r.note}”</div>}
+                <div className="text-[12px] text-ink-500 mt-0.5">by {r.requesterEmail ?? "â€”"} Â· {r.createdAt.slice(0, 10)}{r.assignedEmail ? ` Â· handled by ${r.assignedEmail}` : ""}</div>
+                {r.note && <div className="text-[12px] text-ink-600 mt-1 italic">â€œ{r.note}â€</div>}
               </div>
             </div>
             <div className="mt-3 flex items-center gap-2 border-t border-cream-100 pt-3 flex-wrap">
               {canAssign && (
                 <select className="text-sm border border-cream-200 rounded-lg px-2.5 py-2 bg-white" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
                   onChange={e => void doAssign(r, e.target.value)}>
-                  <option value="">— Assign to —</option>
+                  <option value="">â€” Assign to â€”</option>
                   {staff.map(s => <option key={s.id} value={s.id}>{s.email || s.name}</option>)}
                 </select>
               )}

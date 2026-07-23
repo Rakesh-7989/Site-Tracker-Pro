@@ -1,4 +1,4 @@
-// SiteTrack Pro — Accept invite landing page (/accept-invite).
+﻿// SiteTrack Pro â€” Accept invite landing page (/accept-invite).
 // After the org admin sends an invite, the user receives an email with a
 // login link. This page greets them, shows the org + role they're joining,
 // and prompts them to sign in or set a password.
@@ -8,11 +8,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Spinner, Icon } from "@/components/ui/atoms";
 
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 export function AcceptInviteView(): JSX.Element {
   const { session, status } = useAuth();
   const [params] = useSearchParams();

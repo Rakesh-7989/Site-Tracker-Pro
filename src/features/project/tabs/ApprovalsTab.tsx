@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Approvals tab (v3 port). A cross-entity "pending
+﻿// SiteTrack Pro â€” project Approvals tab (v3 port). A cross-entity "pending
 // sign-off" queue: change orders, RA bills and POs awaiting approval. Each row
 // is decided only by the matching approver capability.
 
@@ -9,7 +9,7 @@ import { fmtRupees } from "@/app/financeQueries";
 import { listPendingApprovals, decideApproval, type PendingApproval, type ApprovalKind } from "@/app/approvalsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const KIND_LABEL: Record<ApprovalKind, string> = { changeorder: "Change order", rabill: "RA bill", po: "Purchase order" };
 const KIND_TONE: Record<ApprovalKind, "info" | "warning" | "neutral"> = { changeorder: "info", rabill: "warning", po: "neutral" };
 
@@ -42,12 +42,12 @@ export function ApprovalsTab({ projectId }: { projectId: string }): JSX.Element 
       {error && <Alert variant="danger">{error}</Alert>}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
         : rows.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-ink-500"><Icon name="check" size={22} className="mx-auto text-emerald-500 mb-2" />Nothing awaiting sign-off. 🎉</Card>
+          <Card className="p-6 text-center text-sm text-ink-500"><Icon name="check" size={22} className="mx-auto text-emerald-500 mb-2" />Nothing awaiting sign-off. ðŸŽ‰</Card>
         ) : <div className="space-y-2">{rows.map(r => { const k = `${r.kind}-${r.id}`; const canApprove = r.kind === "changeorder" ? canApproveCo : r.kind === "rabill" ? canApproveRa : canApprovePo; return (
             <Card key={k} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2">
                 <Badge tone={KIND_TONE[r.kind]}>{KIND_LABEL[r.kind]}</Badge>
-                <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.ref} · {r.title}</div>
+                <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.ref} Â· {r.title}</div>
                   {r.amount != null && <div className="text-[11px] text-ink-500">{fmtRupees(r.amount)}</div>}</div>
               </div>
               {canApprove ? (

@@ -24,6 +24,7 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticate } from "../_shared/auth.ts";
 import { requirePlanFeature } from "../_shared/planCheck.ts";
+import { corsResponse } from "../_shared/cors.ts";
 
 const META_API_BASE = "https://graph.facebook.com/v18.0";
 
@@ -121,17 +122,7 @@ async function rateLimitCheck(
 // ── HTTP entry ──────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
-  // CORS
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": Deno.env.get("WHATSAPP_ALLOWED_ORIGIN") || "*",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-        "Access-Control-Allow-Headers": "authorization,content-type,apikey",
-      },
-    });
-  }
+  if (req.method === "OPTIONS") return corsResponse(req);
   if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405);
 
   let body: SendRequest;

@@ -1,4 +1,5 @@
-// SiteTrack Pro — Custom Roles panel (superadmin, migration 70).
+﻿// SiteTrack Pro â€” Custom Roles panel (superadmin, migration 70).
+import { getClient } from "@/lib/supabase";
 //
 // Shown inside RoleManager when a specific org is selected. Lets the founder
 // create org-specific roles ("Site Lead", "Billing Head"), pick their feature
@@ -19,11 +20,6 @@ import {
 } from "@/app/customRoleQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
 interface Draft {
   id: string | null;       // null = creating
@@ -38,7 +34,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
-  // Org admins (self-service, Enterprise) cannot grant platform:* caps — the DB
+  // Org admins (self-service, Enterprise) cannot grant platform:* caps â€” the DB
   // RLS rejects them (migration 98); we also hide them from the picker.
   const groups = useMemo(() => {
     const all = capabilityGroups();
@@ -126,7 +122,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
                 className="mt-1"
                 value={draft.basedOn}
                 onChange={e => applyTemplate(e.target.value)}
-                options={[{ value: "", label: "— blank —" }, ...IDENTITY_ROLES.filter(r => r !== "superadmin").map(r => ({ value: r, label: ROLE_LABEL[r] }))]}
+                options={[{ value: "", label: "â€” blank â€”" }, ...IDENTITY_ROLES.filter(r => r !== "superadmin").map(r => ({ value: r, label: ROLE_LABEL[r] }))]}
               />
             </label>
           </div>
@@ -143,7 +139,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
                         key={cap}
                         type="button"
                         onClick={() => toggleCap(cap)}
-                        className={`px-2 py-0.5 rounded-full text-[11px] border transition ${on ? "bg-safety-500 text-white border-safety-500" : "bg-white text-ink-500 border-stone-200 hover:bg-cream-100"}`}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition ${on ? "bg-safety-500 text-white border-safety-500" : "bg-white text-ink-500 border-stone-200 hover:bg-cream-100"}`}
                       >
                         {capabilityLabel(cap)}
                       </button>

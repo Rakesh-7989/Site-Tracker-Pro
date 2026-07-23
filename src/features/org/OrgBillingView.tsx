@@ -1,4 +1,4 @@
-// SiteTrack Pro — Org Billing (/org/billing). Plan, seat usage, subscription
+﻿// SiteTrack Pro â€” Org Billing (/org/billing). Plan, seat usage, subscription
 // lifecycle management (view, cancel, reactivate), billing history, alerts.
 
 import { useCallback, useEffect, useState } from "react";
@@ -9,9 +9,9 @@ import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, PLAN_SEATS, type OrgOver
 import { useT } from "@/i18n/I18nProvider";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
-const fmtDate = (iso: string | null): string => { if (!iso) return "—"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
-const fmtMoney = (n: number, cur: string): string => `${cur === "INR" ? "₹" : ""}${(n / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+import { getClient } from "@/lib/supabase";
+const fmtDate = (iso: string | null): string => { if (!iso) return "â€”"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "â€”" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
+const fmtMoney = (n: number, cur: string): string => `${cur === "INR" ? "â‚¹" : ""}${(n / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const subTone = (s: string): "neutral" | "success" | "warning" | "danger" | "info" => (
   s === "active" ? "success" : s === "trial" ? "info" : s === "paused" ? "warning" : s === "past_due" ? "danger" : s === "cancelled" ? "danger" : "neutral"
 );
@@ -78,7 +78,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !overview ? <div className="text-sm text-ink-500">{t("billing.noData")}</div> : (
         <>
-          {/* ── Plan card ── */}
+          {/* â”€â”€ Plan card â”€â”€ */}
           <Card className="p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -103,7 +103,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
             )}
           </Card>
 
-          {/* ── Seat usage ── */}
+          {/* â”€â”€ Seat usage â”€â”€ */}
           <Card className="p-5 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-semibold text-ink-800">{t("billing.seats")}</span>
@@ -117,7 +117,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
             {over && <div className="text-[11px] text-rose-600">{t("billing.overLimit")}</div>}
           </Card>
 
-          {/* ── Subscription details ── */}
+          {/* â”€â”€ Subscription details â”€â”€ */}
           <Card className="p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
               <div className="text-xs text-ink-400 uppercase tracking-wider">{t("billing.subscription")}</div>
@@ -139,7 +139,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
               <dl className="grid grid-cols-2 gap-y-2 text-sm">
                 <dt className="text-ink-500">{t("billing.status")}</dt>
                 <dd className="text-ink-800 text-right font-medium"><Badge tone={subTone(sub.status)}>{sub.status}</Badge></dd>
-                <dt className="text-ink-500">{t("billing.provider")}</dt><dd className="text-ink-800 text-right capitalize">{sub.provider || "—"}</dd>
+                <dt className="text-ink-500">{t("billing.provider")}</dt><dd className="text-ink-800 text-right capitalize">{sub.provider || "â€”"}</dd>
                 <dt className="text-ink-500">{t("billing.renewsEnds")}</dt><dd className="text-ink-800 text-right">{fmtDate(sub.currentPeriodEnd)}</dd>
                 <dt className="text-ink-500">{t("billing.trialEnds")}</dt><dd className="text-ink-800 text-right">{fmtDate(sub.trialEndsAt)}</dd>
                 {sub.cancelledAt ? (
@@ -152,7 +152,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
             ) : <div className="text-sm text-ink-500">{t("billing.noSub", { plan: PLAN_LABEL[overview.plan] ?? overview.plan })}</div>}
           </Card>
 
-          {/* ── Cancel confirmation modal ── */}
+          {/* â”€â”€ Cancel confirmation modal â”€â”€ */}
           {action && (
             <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/30" onClick={() => { setAction(null); setActionResult(null); }}>
               <div className="w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}><Card className="p-5 space-y-4">
@@ -171,7 +171,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
                     <>
                       <Button size="sm" variant="danger" disabled={actionBusy} leftIcon={actionBusy ? <Spinner size={14} /> : undefined}
                         onClick={() => void performAction("cancel")}>
-                        {actionBusy ? "Cancelling…" : "Yes, cancel subscription"}
+                        {actionBusy ? "Cancellingâ€¦" : "Yes, cancel subscription"}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => { setAction(null); setActionResult(null); }} disabled={actionBusy}>Keep active</Button>
                     </>
@@ -182,7 +182,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
             </div>
           )}
 
-          {/* ── Billing history ── */}
+          {/* â”€â”€ Billing history â”€â”€ */}
           <Card className="p-5">
             <div className="text-xs text-ink-400 uppercase tracking-wider mb-3">{t("billing.billingHistory")}</div>
             {(!billing?.billingHistory || billing.billingHistory.length === 0) ? (
@@ -206,7 +206,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
                       <td className="py-2 text-right">
                         {bh.invoiceUrl ? (
                           <a href={bh.invoiceUrl} target="_blank" rel="noreferrer" className="text-safety-500 hover:text-safety-600 text-[11px] underline">Invoice</a>
-                        ) : "—"}
+                        ) : "â€”"}
                       </td>
                     </tr>
                   ))}
@@ -215,7 +215,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
             )}
           </Card>
 
-          {/* ── Request upgrade card ── */}
+          {/* â”€â”€ Request upgrade card â”€â”€ */}
           <RequestUpgradeCard orgId={orgId} currentPlan={overview.plan} />
         </>
       )}

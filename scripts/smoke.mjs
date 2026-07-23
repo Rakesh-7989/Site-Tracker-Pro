@@ -7,20 +7,19 @@ const checks = [];
 
 const add = (name, pass, detail = "") => checks.push({ name, pass, detail });
 
-// App markers now search App.jsx + feature modules + v3 router + key v3 views.
-// The smoke contract is "this string lives somewhere in the user-facing app
-// code", not "this string lives in App.jsx specifically".
+// App markers now search v3 app + feature modules + key views.
 const app = [
-  read("src/App.jsx"),
-  read("src/features/roadmap/index.jsx"),
-  read("src/features/admin/index.jsx"),
-  read("src/features/views/index.jsx"),
-  read("src/features/detail/index.jsx"),
-  read("src/features/shell/index.jsx"),
-  read("src/features/org/index.jsx"),
-  read("src/lib/exports.js"),
+  read("src/app/AppV3.tsx"),
   read("src/app/router.tsx"),
-  read("src/components/attachments.jsx"),
+  read("src/features/shell/ShellLayout.tsx"),
+  read("src/features/shell/TopBar.tsx"),
+  read("src/features/shell/Sidebar.tsx"),
+  read("src/features/shell/GlobalSearch.tsx"),
+  read("src/features/admin/ImpersonationBanner.tsx"),
+  read("src/features/admin/ImpersonationContext.tsx"),
+  read("src/lib/useConnectionStatus.ts"),
+  read("src/features/project/DetailView.tsx"),
+  read("src/lib/supabase.js"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -158,9 +157,8 @@ const vite = read("vite.config.js");
   "AI Agents",
 ].forEach(marker => add(`No in-app agent marker: ${marker}`, !app.includes(marker)));
 
-// PERMS source-of-truth check: App.jsx must NOT redefine PERMS (drift risk)
-add("App.jsx imports PERMS from lib", app.includes('from "./lib/permissions.js"'));
-add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
+// PERMS is now fully replaced by the @/auth capabilities system (deleted).
+add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.includes("from \"./lib/permissions.js\""));
 
 [
   "docs/AGENTS.md",
@@ -195,7 +193,7 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "scripts/test-ef-harness.mjs",
   "docs/CI_WORKFLOW.yml",
   // Tech Lead review additions (2026-05-22 evening)
-  "src/lib/permissions.js",
+  "src/auth/capabilities.ts",
   "tests/permissions.test.js",
   "vitest.config.js",
   "scripts/supabase/01_schema.sql",
@@ -216,21 +214,20 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "docs/MOBILE_BUILD.md",
   ".env.example",
   // Live activation
-  "src/lib/usePersistent.js",
   "docs/GOLIVE.md",
   "scripts/provision.sh",
   // System design doc
   "docs/SYSTEM_DESIGN.md",
   // Tech Lead Review fixes (HIGH-1, HIGH-2, MED-3, MED-4, LOW-5)
-  "src/lib/escape.js",
+  "src/lib/escape.ts",
   "src/lib/notifications.js",
-  "src/lib/format.js",
+  "src/lib/format.ts",
   "tests/escape.test.js",
   "tests/notifications.test.js",
   "tests/format.test.js",
   // Deep review pack
   "src/data/seed.js",
-  "src/data/lookups.js",
+  "src/data/lookups.ts",
   "playwright.config.js",
   "tests/e2e/roles.spec.js",
   // Roadmap Batch 1 — foundation libs + tests
@@ -241,7 +238,6 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "src/lib/materialPrices.js",
   "src/lib/compliance.js",
   "src/lib/planGating.js",
-  "src/lib/dailySnapshot.js",
   "src/lib/aiForecast.js",
   "tests/hierarchy.test.js",
   "tests/audit.test.js",
@@ -252,23 +248,15 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   // Roadmap Batch 3 — new lib + docs
   "src/lib/whatsapp.js",
   // Roadmap Batch 4 — App.jsx split (ui atoms + features/)
-  "src/components/ui.jsx",
-  "src/features/roadmap/index.jsx",
+  "src/components/ui/atoms.tsx",
   // Roadmap Batch 5 — admin cluster extracted
-  "src/features/admin/index.jsx",
   // Roadmap Batch 6 — mid-size views extracted + i18n helper module
-  "src/features/views/index.jsx",
-  "src/lib/i18n.js",
+  "src/lib/i18n.ts",
   "tests/whatsapp.test.js",
   // Roadmap Batch 7 — attachment atoms + detail satellites extracted
-  "src/components/attachments.jsx",
-  "src/features/detail/index.jsx",
   // Roadmap Batch 8 — export helpers extracted
-  "src/lib/exports.js",
   // Roadmap Batch 10 — shell cluster extracted
-  "src/features/shell/index.jsx",
   // Production Phase 1 — Org Admin tier
-  "src/features/org/index.jsx",
   "src/lib/approvalChains.js",
   "src/lib/orgIntegrations.js",
   "src/lib/templates.js",
@@ -304,13 +292,13 @@ add("App.jsx has no local PERMS definition", !/^const PERMS = \{/m.test(app));
   "scripts/setup.mjs",
   // Session 21 — bug hunt: top-level ErrorBoundary so a single bad chunk
   // can no longer render the whole app as a white screen.
-  "src/components/errorBoundary.jsx",
+  "src/components/errorBoundary.tsx",
   // Session 22 — major changes pack
   "supabase/functions/_shared/cashfree.ts",
   "supabase/functions/cashfree-subscription/index.ts",
   "supabase/functions/cashfree-webhook/index.ts",
   "supabase/functions/README.md",
-  "src/lib/blockchainAnchor.js",
+  "src/lib/blockchainAnchor.ts",
   "tests/blockchainAnchor.test.js",
   "src/lib/reraTelangana.js",
   "tests/reraTelangana.test.js",

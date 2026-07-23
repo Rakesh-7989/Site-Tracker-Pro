@@ -9,7 +9,7 @@ export const CONSENT_VERSION = "2026-06-06";
 export const LAST_UPDATED = "6 June 2026";
 export const COMPANY = "Rakesh Boyapati";
 export const PRODUCT = "SiteTrack Pro";
-export const CONTACT_EMAIL = "support@sitetrack.in"; // TODO: confirm a real inbox
+export const CONTACT_EMAIL = "boyapatirakesh7777@gmail.com";
 export const JURISDICTION = "Hyderabad, Telangana, India";
 
 export interface LegalSection { heading: string; body: string[]; }

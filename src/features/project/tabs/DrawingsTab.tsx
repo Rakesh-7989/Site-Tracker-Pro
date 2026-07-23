@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Drawings tab (v3 port, Batch 4, DB-wired).
+﻿// SiteTrack Pro â€” project Drawings tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listDrawings, createDrawing, setDrawingStatus, deleteDrawing, type Drawing, type DrawingStatus } from "@/app/designQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const STT = [{ value: "current", label: "Current" }, { value: "superseded", label: "Superseded" }];
 
 export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
@@ -49,7 +49,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className={`p-3 flex items-center justify-between gap-3 ${r.status === "superseded" ? "opacity-60" : ""}`}>
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
-                <div className="text-[11px] text-ink-400 capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}</div></div>
+                <div className="text-[11px] text-ink-400 capitalize">{r.type}{r.releaseDate ? ` Â· ${r.releaseDate}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, e.target.value as DrawingStatus))} options={STT} />
                   : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}

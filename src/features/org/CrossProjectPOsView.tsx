@@ -1,17 +1,13 @@
-// SiteTrack Pro — Cross-project Purchase Orders (/pos). Every PO across the
-// org's projects in one place, filterable by status. Read-only roll-up
-// (org_purchase_orders RPC, migration 88).
-
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useOrgSwitcher } from "@/auth";
-import { Card, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Badge, Alert } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
+import { DataTable } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
 import { getOrgPurchaseOrders, poTotals, type CrossPO, type POStatus } from "@/app/crossPoQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const FILTERS = [{ value: "all", label: "All" }, { value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "delivered", label: "Delivered" }, { value: "cancelled", label: "Cancelled" }];
 const tone = (s: POStatus): "neutral" | "warning" | "info" | "success" | "danger" => (s === "delivered" ? "success" : s === "approved" ? "info" : s === "cancelled" ? "danger" : "warning");
 
@@ -22,6 +18,7 @@ export function CrossProjectPOsView(): JSX.Element {
 }
 
 function Inner({ orgId }: { orgId: string }): JSX.Element {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<CrossPO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +34,21 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   const totals = useMemo(() => poTotals(rows), [rows]);
   const shown = filter === "all" ? rows : rows.filter(r => r.status === filter);
 
+  const columns = [
+    { key: "po", header: "PO", render: (po: CrossPO) => (
+      <div>
+        <div className="text-sm font-semibold text-ink-800 truncate">{po.poNo}{po.vendorName ? ` \u00b7 ${po.vendorName}` : ""}</div>
+        <div className="text-[11px] text-ink-400 truncate">{po.projectName}{po.items ? ` \u00b7 ${po.items}` : ""}{po.deliveryDate ? ` \u00b7 due ${po.deliveryDate}` : ""}</div>
+      </div>
+    )},
+    { key: "amount", header: "Amount", render: (po: CrossPO) => (
+      <span className="text-sm font-semibold text-ink-900">{fmtRupees(po.amount)}</span>
+    )},
+    { key: "status", header: "Status", render: (po: CrossPO) => (
+      <Badge tone={tone(po.status)}>{po.status}</Badge>
+    )},
+  ];
+
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -51,22 +63,16 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           <Card className="p-3"><div className="text-lg font-bold text-amber-600">{fmtRupees(totals.byStatus.pending)}</div><div className="text-[11px] text-ink-500">Pending approval</div></Card>
         </div>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : shown.length === 0 ? <Card className="p-8 text-center text-sm text-ink-500"><Icon name="truck" size={24} className="mx-auto text-ink-300 mb-2" />No {filter === "all" ? "" : filter} purchase orders.</Card>
-        : <div className="space-y-2">{shown.map(po => (
-            <Link key={po.id} to={`/projects/${po.projectId}/po`}>
-              <Card className="p-3 flex items-center justify-between gap-3 hover:border-safety-300 transition">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-ink-800 truncate">{po.poNo}{po.vendorName ? ` · ${po.vendorName}` : ""}</div>
-                  <div className="text-[11px] text-ink-400 truncate">{po.projectName}{po.items ? ` · ${po.items}` : ""}{po.deliveryDate ? ` · due ${po.deliveryDate}` : ""}</div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-ink-900">{fmtRupees(po.amount)}</span>
-                  <Badge tone={tone(po.status)}>{po.status}</Badge>
-                </div>
-              </Card>
-            </Link>
-          ))}</div>}
+      <DataTable
+        columns={columns}
+        rows={shown}
+        rowKey={po => po.id}
+        loading={loading}
+        error={error}
+        emptyMessage={filter === "all" ? "No purchase orders." : `No ${filter} purchase orders.`}
+        variant="card"
+        onRowClick={po => navigate(`/projects/${po.projectId}/po`)}
+      />
     </div>
   );
 }

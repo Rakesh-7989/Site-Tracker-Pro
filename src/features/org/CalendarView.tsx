@@ -1,4 +1,4 @@
-// SiteTrack Pro — org Calendar (/calendar). An agenda of every dated milestone
+﻿// SiteTrack Pro â€” org Calendar (/calendar). An agenda of every dated milestone
 // + task across the org's projects, bucketed Overdue / Today / Upcoming.
 
 import { useCallback, useEffect, useState } from "react";
@@ -8,7 +8,7 @@ import { Card, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/calendarQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const todayISO = (): string => new Date().toISOString().slice(0, 10);
 const fmtDay = (iso: string): string => { const d = new Date(iso + "T00:00:00"); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); };
 const tabUrl = (it: CalItem): string => `/projects/${it.projectId}/${it.kind === "milestone" ? "milestones" : "tasks"}`;
@@ -83,7 +83,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
               </section>
             )}
             {overdue.length === 0 && today.length === 0 && upcomingDays.length === 0 && (
-              <Card className="p-8 text-center text-sm text-ink-500">Nothing scheduled. 🎉</Card>
+              <Card className="p-8 text-center text-sm text-ink-500">Nothing scheduled. ðŸŽ‰</Card>
             )}
           </>
         )}

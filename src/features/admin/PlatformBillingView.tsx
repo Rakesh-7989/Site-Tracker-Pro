@@ -1,15 +1,12 @@
-// SiteTrack Pro — Platform Billing & MRR admin view.
+﻿// SiteTrack Pro â€” Platform Billing & MRR admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
 import { listOrgBillingRows, type OrgBillingRow } from "@/app/platformBillingQueries";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 export function PlatformBillingView(): JSX.Element {
   const can = useCan("platform:billing:manage");
   if (!can) return <AccessDenied message="Platform superadmin access required." />;
@@ -48,12 +45,12 @@ export function PlatformBillingView(): JSX.Element {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card className="p-5">
           <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">MRR</div>
-          <div className="text-3xl font-light text-ink-900">₹{totalMRR.toLocaleString("en-IN")}</div>
+          <div className="text-3xl font-light text-ink-900">â‚¹{totalMRR.toLocaleString("en-IN")}</div>
           <div className="text-xs text-ink-400 mt-1">{active.length} active subs</div>
         </Card>
         <Card className="p-5">
           <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">ARR</div>
-          <div className="text-3xl font-light text-ink-900">₹{(totalMRR * 12).toLocaleString("en-IN")}</div>
+          <div className="text-3xl font-light text-ink-900">â‚¹{(totalMRR * 12).toLocaleString("en-IN")}</div>
         </Card>
         <Card className="p-5">
           <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">Active</div>
@@ -73,7 +70,7 @@ export function PlatformBillingView(): JSX.Element {
               <div key={p.plan}>
                 <div className="flex justify-between mb-1 text-sm">
                   <span className="font-semibold capitalize">{p.plan}</span>
-                  <span>₹{p.mrr.toLocaleString("en-IN")} ({share}%)</span>
+                  <span>â‚¹{p.mrr.toLocaleString("en-IN")} ({share}%)</span>
                 </div>
                 <div className="w-full bg-stone-200 rounded-full h-2">
                   <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${share}%` }} />

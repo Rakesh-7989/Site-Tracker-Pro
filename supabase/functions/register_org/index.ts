@@ -10,8 +10,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
 
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,http://localhost:5173")
+  .split(",").map(s => s.trim()).filter(Boolean);
 const CORS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED[0] ?? "*",
   "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -97,6 +99,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const contactName = String(body.contactName ?? "").trim();
   const phone = body.phone ? String(body.phone).trim() : null;
   const plan = String(body.plan ?? "basic");
+  const consentVersion = body.consentVersion ? String(body.consentVersion).trim() : null;
 
   if (!email || !email.includes("@")) return json({ ok: false, error: "invalid-email" }, 400);
   if (password.length < 8) return json({ ok: false, error: "password-too-short" }, 400);
@@ -152,6 +155,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       name: contactName || email.split("@")[0] || "Org Owner",
       role: "orgadmin",
       phone,
+      consent_version: consentVersion,
+      consent_updated_at: consentVersion ? new Date().toISOString() : null,
     }, { onConflict: "id", ignoreDuplicates: false });
 
   if (profileErr) {

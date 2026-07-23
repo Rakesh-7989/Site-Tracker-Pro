@@ -1,15 +1,12 @@
-// SiteTrack Pro — Platform Usage Analytics admin view.
+﻿// SiteTrack Pro â€” Platform Usage Analytics admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
 import { getUsageStats, type UsageStats } from "@/app/platformUsageQueries";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 export function PlatformUsageView(): JSX.Element {
   const can = useCan("platform:orgs:manage");
   if (!can) return <AccessDenied message="Platform superadmin access required." />;

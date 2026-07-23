@@ -1,16 +1,13 @@
-// SiteTrack Pro — Platform System Settings admin view.
+﻿// SiteTrack Pro â€” Platform System Settings admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
 import { listOpsToggles, upsertOpsToggle } from "@/app/platformSettingsQueries";
 
+import { getClient } from "@/lib/supabase";
 interface ToggleRow { id: string; key: string; label: string; desc: string; enabled: boolean; }
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
 const OPS_TOGGLES: ToggleRow[] = [
   { id: "demoLoaderEnabled", key: "demoLoaderEnabled", label: "Demo data loader", desc: "Show demo data button on login.", enabled: false },

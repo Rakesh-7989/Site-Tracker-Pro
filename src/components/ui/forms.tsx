@@ -1,4 +1,4 @@
-// SiteTrack Pro — form atoms (Phase 4).
+// SiteTrack Pro — form atoms (Phase 4, revised).
 //
 // Strictly-typed inputs the rebuild's forms (login, create, Phase 6
 // detail editing) share. Each wraps a native element so accessibility +
@@ -6,6 +6,7 @@
 // styling.
 
 import { useState, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
 import { Icon } from "./icons";
 
@@ -23,11 +24,12 @@ export interface FormFieldProps {
   hint?: string;
   optional?: boolean;
   children: ReactNode;
+  className?: string;
 }
 
-export function FormField({ label, htmlFor, error, hint, optional, children }: FormFieldProps): JSX.Element {
+export function FormField({ label, htmlFor, error, hint, optional, children, className }: FormFieldProps): JSX.Element {
   return (
-    <div>
+    <div className={className}>
       <label htmlFor={htmlFor} className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">
         {label}
         {optional && <span className="text-ink-400 normal-case tracking-normal"> (optional)</span>}
@@ -49,25 +51,25 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: ReactNode;
 }
 
-export function Input({ invalid = false, leftIcon, className = "", ...rest }: InputProps): JSX.Element {
+export function Input({ invalid = false, leftIcon, className, ...rest }: InputProps): JSX.Element {
   if (leftIcon) {
     return (
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none">{leftIcon}</span>
-        <input className={`${FIELD_BASE} ${invalid ? FIELD_ERR : FIELD_OK} pl-10 ${className}`} {...rest} />
+        <input className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "pl-10", className)} {...rest} />
       </div>
     );
   }
-  return <input className={`${FIELD_BASE} ${invalid ? FIELD_ERR : FIELD_OK} ${className}`} {...rest} />;
+  return <input className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, className)} {...rest} />;
 }
 
 // ── PasswordInput (with show/hide toggle) ───────────────────────────────────
-export function PasswordInput({ invalid = false, className = "", ...rest }: Omit<InputProps, "type" | "leftIcon">): JSX.Element {
+export function PasswordInput({ invalid = false, className, ...rest }: Omit<InputProps, "type" | "leftIcon">): JSX.Element {
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
-      <input type={show ? "text" : "password"} className={`${FIELD_BASE} ${invalid ? FIELD_ERR : FIELD_OK} pl-10 pr-10 ${className}`} {...rest} />
+      <input type={show ? "text" : "password"} className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "pl-10 pr-10", className)} {...rest} />
       <button
         type="button"
         onClick={() => setShow(s => !s)}
@@ -86,9 +88,9 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: ReadonlyArray<{ value: string; label: string }>;
 }
 
-export function Select({ invalid = false, options, className = "", ...rest }: SelectProps): JSX.Element {
+export function Select({ invalid = false, options, className, ...rest }: SelectProps): JSX.Element {
   return (
-    <select className={`${FIELD_BASE} ${invalid ? FIELD_ERR : FIELD_OK} ${className}`} {...rest}>
+    <select className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, className)} {...rest}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
@@ -99,6 +101,6 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   invalid?: boolean;
 }
 
-export function Textarea({ invalid = false, className = "", rows = 4, ...rest }: TextareaProps): JSX.Element {
-  return <textarea rows={rows} className={`${FIELD_BASE} ${invalid ? FIELD_ERR : FIELD_OK} resize-y ${className}`} {...rest} />;
+export function Textarea({ invalid = false, className, rows = 4, ...rest }: TextareaProps): JSX.Element {
+  return <textarea rows={rows} className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "resize-y", className)} {...rest} />;
 }

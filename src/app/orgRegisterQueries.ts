@@ -8,6 +8,7 @@ export interface RegisterInput {
   contactName: string;
   phone?: string;
   plan: RegisterPlan;
+  consentVersion?: string;
 }
 export type RegisterResult = { ok: true; orgId: string; emailSent: boolean } | { ok: false; error: string };
 

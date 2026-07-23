@@ -1,4 +1,4 @@
-// SiteTrack Pro — org Analytics (/analytics). Cross-project rollups + charts
+﻿// SiteTrack Pro â€” org Analytics (/analytics). Cross-project rollups + charts
 // from the org_analytics RPC (migration 86).
 
 import { useCallback, useEffect, useState } from "react";
@@ -9,7 +9,7 @@ import { fmtRupees } from "@/app/financeQueries";
 import { getOrgAnalytics, toBars, type OrgAnalytics } from "@/app/analyticsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const PIE_COLORS = ["#34d399", "#f59e0b", "#60a5fa", "#f87171"];
 const STATUS_ORDER = ["active", "completed", "on_hold", "cancelled"];
 const PROG_ORDER = ["pending", "in_progress", "completed"];

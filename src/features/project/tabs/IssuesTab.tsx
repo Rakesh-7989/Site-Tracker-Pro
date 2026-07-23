@@ -1,21 +1,17 @@
-// SiteTrack Pro — project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
+﻿// SiteTrack Pro â€” project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
 
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { getClient } from "@/lib/supabase";
 import {
   listIssues, createIssue, setIssueResolved, deleteIssue,
   type Issue, type IssueSeverity,
 } from "@/app/issueQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
 const SEV_TONE: Record<IssueSeverity, "danger" | "warning" | "neutral"> = { high: "danger", medium: "warning", low: "neutral" };
 
@@ -95,7 +91,7 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
                     </div>
                     {i.description && <div className="text-[12px] text-ink-500 mt-0.5">{i.description}</div>}
                     <div className="text-[11px] text-ink-400 mt-0.5">
-                      {i.reportedDate ? `Raised ${i.reportedDate}` : ""}{i.resolvedDate ? ` · Resolved ${i.resolvedDate}` : ""}
+                      {i.reportedDate ? `Raised ${i.reportedDate}` : ""}{i.resolvedDate ? ` Â· Resolved ${i.resolvedDate}` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">

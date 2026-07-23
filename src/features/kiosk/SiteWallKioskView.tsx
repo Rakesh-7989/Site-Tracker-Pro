@@ -1,15 +1,12 @@
-// SiteTrack Pro — Site Wall Kiosk (/kiosk/site).
+﻿// SiteTrack Pro â€” Site Wall Kiosk (/kiosk/site).
 // Wall-mounted situational awareness display.
 
 import { useCallback, useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
 import { PlanGate } from "@/auth";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 export function SiteWallKioskView(): JSX.Element {
   return <PlanGate feature="kiosks"><SiteWallKioskInner /></PlanGate>;
 }
@@ -68,7 +65,7 @@ function SiteWallKioskInner(): JSX.Element {
         <div className="bg-ink-700/40 rounded-3xl p-6 border border-amber-600/25 col-span-2 flex items-center justify-center text-cream/40">
           <div className="text-center">
             <div className="text-6xl mb-4 opacity-30">&#9670;</div>
-            <p className="text-sm">Site wall dashboard — safety notices, milestones, weather, and live feeds appear here in production.</p>
+            <p className="text-sm">Site wall dashboard â€” safety notices, milestones, weather, and live feeds appear here in production.</p>
           </div>
         </div>
       </div>

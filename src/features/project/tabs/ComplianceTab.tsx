@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Compliance tab (v3 port, DB-wired). Project-level
+﻿// SiteTrack Pro â€” project Compliance tab (v3 port, DB-wired). Project-level
 // RERA / GST / EPFO / PAN filings. Visible to compliance:view; editing needs a
 // filing capability (rera/gstn/epfo).
 
@@ -9,7 +9,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listCompliance, createCompliance, setComplianceStatus, deleteCompliance, type ComplianceItem, type ComplianceKind, type ComplianceStatus } from "@/app/siteAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const KIND_OPTS = [{ value: "rera", label: "RERA" }, { value: "gst", label: "GST" }, { value: "epfo", label: "EPFO" }, { value: "pan", label: "PAN" }, { value: "other", label: "Other" }];
 const STATUS_OPTS = [{ value: "pending", label: "Pending" }, { value: "filed", label: "Filed" }, { value: "accepted", label: "Accepted" }, { value: "rejected", label: "Rejected" }, { value: "expired", label: "Expired" }, { value: "renewal_due", label: "Renewal due" }];
 const tone = (s: ComplianceStatus): "neutral" | "info" | "success" | "danger" | "warning" => (s === "accepted" ? "success" : s === "filed" ? "info" : s === "rejected" || s === "expired" ? "danger" : s === "renewal_due" ? "warning" : "neutral");
@@ -53,8 +53,8 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
         : rows.length === 0 ? <div className="text-sm text-ink-500">No filings tracked.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate uppercase">{r.kind}{r.refNo ? <span className="text-ink-500 font-normal normal-case"> · {r.refNo}</span> : null}</div>
-                <div className="text-[11px] text-ink-400">{[r.stage, r.expiresAt && `expires ${r.expiresAt.slice(0, 10)}`].filter(Boolean).join(" · ") || "—"}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate uppercase">{r.kind}{r.refNo ? <span className="text-ink-500 font-normal normal-case"> Â· {r.refNo}</span> : null}</div>
+                <div className="text-[11px] text-ink-400">{[r.stage, r.expiresAt && `expires ${r.expiresAt.slice(0, 10)}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setComplianceStatus(c, r.id, e.target.value as ComplianceStatus))} options={STATUS_OPTS} />
                   : <Badge tone={tone(r.status)}>{r.status}</Badge>}

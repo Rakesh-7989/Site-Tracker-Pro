@@ -47,6 +47,64 @@
   --st-shadow-hover:  0 4px 12px rgba(15,17,21,.08);
   --st-shadow-cta:    0 4px 14px rgba(255,107,26,.25);
   --st-shadow-deep:   0 8px 24px rgba(15,17,21,.10);
+
+  /* Spacing tokens */
+  --spacing-xs:   4px;
+  --spacing-sm:   8px;
+  --spacing-md:   16px;
+  --spacing-lg:   24px;
+  --spacing-xl:   32px;
+  --spacing-2xl:  48px;
+  --spacing-3xl:  64px;
+  --spacing-4xl:  96px;
+
+  /* Border radius tokens */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────────────── */
+/* Since every surface/text/border references var(--st-*), one block
+   redefines the entire colour system. Dark mode is activated by adding
+   class="dark" to <html> (see tailwind.config.js darkMode: "class"). */
+
+.dark {
+  --st-bg-primary:   #181A1E;
+  --st-bg-panel:     #212327;
+  --st-bg-elevated:  #282B30;
+  --st-border:       #33363C;
+  --st-border-strong:#D4D4D4;
+  --st-saffron-tint: #3A2A1A;
+
+  --st-text-primary:   #EDEDEF;
+  --st-text-secondary: #A0A2A8;
+  --st-text-tertiary:  #6B6E76;
+
+  --st-accent:        #FF8A3D;
+  --st-accent-2:      #FF6B1A;
+  --st-accent-light:  #FFAA5E;
+  --st-accent-tint:   #3A2A1A;
+  --st-indigo:        #60A5FA;
+  --st-success:       #34D399;
+  --st-warning:       #FBBF24;
+  --st-error:         #F87171;
+
+  --st-cream:    #212327;
+  --st-cream-2:  #282B30;
+  --st-paper:    #212327;
+  --st-ink:      #EDEDEF;
+  --st-ink-2:    #D4D4D4;
+  --st-mute:     #A0A2A8;
+  --st-line:     #33363C;
+  --st-line-2:   #404348;
+
+  --st-shadow:       0 1px 3px rgba(0,0,0,.30), 0 1px 2px rgba(0,0,0,.20);
+  --st-shadow-hover: 0 4px 12px rgba(0,0,0,.40);
+  --st-shadow-cta:   0 4px 14px rgba(255,138,61,.25);
+  --st-shadow-deep:  0 8px 24px rgba(0,0,0,.50);
 }
 
 /* ── Global ───────────────────────────────────────────────────────────────── */
@@ -99,6 +157,24 @@ body {
 .text-slate-800 { color: var(--st-text-primary) !important; }
 .divide-slate-50 > * + * { border-color: var(--st-border) !important; }
 .divide-slate-100 > * + * { border-color: var(--st-border) !important; }
+
+/* Stone palette overrides — same token mapping as slate */
+.bg-stone-50  { background-color: var(--st-bg-elevated) !important; }
+.bg-stone-100 { background-color: var(--st-bg-elevated) !important; }
+.bg-stone-200 { background-color: var(--st-bg-elevated) !important; }
+.border-stone-100 { border-color: var(--st-border) !important; }
+.border-stone-200 { border-color: var(--st-border) !important; }
+.border-stone-300 { border-color: var(--st-line-2) !important; }
+.text-stone-400 { color: var(--st-text-tertiary) !important; }
+.text-stone-500 { color: var(--st-text-tertiary) !important; }
+.text-stone-600 { color: var(--st-text-secondary) !important; }
+.text-stone-700 { color: var(--st-text-secondary) !important; }
+.text-stone-800 { color: var(--st-text-primary) !important; }
+.text-stone-900 { color: var(--st-text-primary) !important; }
+.hover\:bg-stone-50:hover  { background-color: var(--st-bg-elevated) !important; }
+.hover\:bg-stone-100:hover { background-color: var(--st-bg-elevated) !important; }
+.hover\:text-stone-600:hover { color: var(--st-text-secondary) !important; }
+.divide-stone-100 > * + * { border-color: var(--st-border) !important; }
 
 /* Orange utilities → safety-orange accent */
 .bg-orange-500, .hover\:bg-orange-500:hover { background-color: var(--st-accent) !important; }
@@ -168,12 +244,45 @@ button.bg-orange-500, button.bg-orange-400 {
 /* Saffron-tint helper class — direct token access for flat status banners */
 .bg-saffron-tint { background-color: var(--st-saffron-tint) !important; }
 
+/* Typography utility classes */
+.text-h1 { font-size: 2.5rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; }
+.text-h2 { font-size: 2rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.015em; }
+.text-h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+.text-h4 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.005em; }
+.text-h5 { font-size: 1.125rem; font-weight: 600; line-height: 1.35; }
+.text-h6 { font-size: 1rem; font-weight: 600; line-height: 1.4; }
+.text-body { font-size: 0.9375rem; line-height: 1.6; }
+.text-body-sm { font-size: 0.875rem; line-height: 1.5; }
+.text-body-xs { font-size: 0.8125rem; line-height: 1.4; }
+
+/* Spacing utility classes */
+.stack-xs > * + * { margin-top: var(--spacing-xs); }
+.stack-sm > * + * { margin-top: var(--spacing-sm); }
+.stack-md > * + * { margin-top: var(--spacing-md); }
+.stack-lg > * + * { margin-top: var(--spacing-lg); }
+.stack-xl > * + * { margin-top: var(--spacing-xl); }
+.inline-xs > * + * { margin-left: var(--spacing-xs); }
+.inline-sm > * + * { margin-left: var(--spacing-sm); }
+.inline-md > * + * { margin-left: var(--spacing-md); }
+.inline-lg > * + * { margin-left: var(--spacing-lg); }
+.inline-xl > * + * { margin-left: var(--spacing-xl); }
+
+/* Safe-area bottom for mobile insets (BottomNav, sticky footers) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Smooth all transitions */
 button, a, input, select, textarea { transition: all .15s ease; }
 
-/* Touch-friendly button minimum heights (mobile-first) */
+/* Touch-friendly minimum heights (mobile-first) —
+   ensures ≥44px tap targets per WCAG 2.2 / Android Material guidelines. */
 @media (max-width: 768px) {
-  button, [role="button"] {
+  button, [role="button"], a, select {
     min-height: 44px;
+  }
+  /* Inputs need enough height too but we preserve their natural padding */
+  input, textarea {
+    min-height: 40px;
   }
 }

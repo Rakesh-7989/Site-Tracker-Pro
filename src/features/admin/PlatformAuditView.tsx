@@ -1,15 +1,12 @@
-// SiteTrack Pro — Platform Audit Log admin view.
+﻿// SiteTrack Pro â€” Platform Audit Log admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
 import { listAuditEvents, type AuditEvent } from "@/app/platformAuditQueries";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 function fmtTime(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -53,22 +50,24 @@ export function PlatformAuditView(): JSX.Element {
         </select>
       </div>
       <Card className="overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-stone-100 text-xs font-bold uppercase tracking-wider text-ink-500 border-b border-stone-200">
-          <div className="col-span-2">Time</div>
-          <div className="col-span-2">User</div>
-          <div className="col-span-2">Type</div>
-          <div className="col-span-6">Action</div>
-        </div>
-        <div className="divide-y divide-stone-100 max-h-[60vh] overflow-y-auto">
-          {filtered.map(e => (
-            <div key={e.id} className="grid grid-cols-12 gap-3 px-5 py-3 text-sm hover:bg-stone-50">
-              <div className="col-span-2 text-xs text-ink-500 font-mono">{fmtTime(e.time)}</div>
-              <div className="col-span-2 text-xs font-semibold">{e.by}<span className="text-ink-400 font-normal ml-1">· {e.role}</span></div>
-              <div className="col-span-2"><span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-stone-100 text-ink-600">{e.type}</span></div>
-              <div className="col-span-6 text-xs text-ink-700 truncate"><strong>{e.action}</strong>{e.detail ? ` — ${e.detail}` : ""}</div>
-            </div>
-          ))}
-          {filtered.length === 0 && <div className="p-8 text-center text-ink-500 italic">No events.</div>}
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-stone-100 text-xs font-bold uppercase tracking-wider text-ink-500 border-b border-stone-200">
+            <div className="col-span-2">Time</div>
+            <div className="col-span-2">User</div>
+            <div className="col-span-2">Type</div>
+            <div className="col-span-6">Action</div>
+          </div>
+          <div className="divide-y divide-stone-100 max-h-[60vh] overflow-y-auto">
+            {filtered.map(e => (
+              <div key={e.id} className="grid grid-cols-12 gap-3 px-5 py-3 text-sm hover:bg-stone-50">
+                <div className="col-span-2 text-xs text-ink-500 font-mono">{fmtTime(e.time)}</div>
+                <div className="col-span-2 text-xs font-semibold">{e.by}<span className="text-ink-400 font-normal ml-1">Â· {e.role}</span></div>
+                <div className="col-span-2"><span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-stone-100 text-ink-600">{e.type}</span></div>
+                <div className="col-span-6 text-xs text-ink-700 truncate"><strong>{e.action}</strong>{e.detail ? ` â€” ${e.detail}` : ""}</div>
+              </div>
+            ))}
+            {filtered.length === 0 && <div className="p-8 text-center text-ink-500 italic">No events.</div>}
+          </div>
         </div>
       </Card>
     </div>

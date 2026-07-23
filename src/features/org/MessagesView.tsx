@@ -1,4 +1,4 @@
-// SiteTrack Pro — cross-project Messages inbox (/messages).
+﻿// SiteTrack Pro â€” cross-project Messages inbox (/messages).
 // Lists messages per-project with a project selector (mirrors legacy MessagesView).
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -7,15 +7,12 @@ import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { listMessages, postMessage, type Message } from "@/app/messageQueries";
 
+import { getClient } from "@/lib/supabase";
 interface ProjectBrief {
   id: string;
   name: string;
 }
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
 const fmtTs = (iso: string): string => {
   const d = new Date(iso);

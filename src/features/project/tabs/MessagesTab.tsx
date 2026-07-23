@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Messages tab (v3 port). Append-only project chat.
+﻿// SiteTrack Pro â€” project Messages tab (v3 port). Append-only project chat.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/forms";
 import { listMessages, postMessage, type Message } from "@/app/messageQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const fmtTs = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 
 export function MessagesTab({ projectId }: { projectId: string }): JSX.Element {
@@ -62,7 +62,7 @@ export function MessagesTab({ projectId }: { projectId: string }): JSX.Element {
         <div ref={endRef} />
       </div>
       {canSend && <div className="flex gap-2 pt-3 border-t border-cream-200 mt-2">
-        <Input className="flex-1" placeholder="Write a message…" value={text} onChange={e => setText(e.target.value)}
+        <Input className="flex-1" placeholder="Write a messageâ€¦" value={text} onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} />
         <Button onClick={() => void send()} disabled={busy || !text.trim()}>{busy ? <Spinner size={14} /> : <Icon name="send" size={16} />}</Button>
       </div>}

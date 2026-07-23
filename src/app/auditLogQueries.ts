@@ -15,6 +15,7 @@ export interface AuditLogRow {
   resourceId: string | null;
   message: string | null;
   ts: string;
+  [key: string]: unknown;
 }
 
 export interface AuditStats {

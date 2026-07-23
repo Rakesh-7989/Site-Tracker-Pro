@@ -1,7 +1,8 @@
-// SiteTrack Pro — platform Staff admin (/admin/staff). Owner + Head only.
+﻿// SiteTrack Pro â€” platform Staff admin (/admin/staff). Owner + Head only.
+import { getClient } from "@/lib/supabase";
 //
-// Generate single-use staff invite links, see the staff hierarchy (Owner → Head
-// → Members), and revoke pending invites. The "block-by-default" signup control:
+// Generate single-use staff invite links, see the staff hierarchy (Owner â†’ Head
+// â†’ Members), and revoke pending invites. The "block-by-default" signup control:
 // a member can only join through a fresh single-use invite minted here.
 
 import { useCallback, useEffect, useState } from "react";
@@ -19,7 +20,7 @@ import { isValidVpa } from "@/lib/upi";
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 // `initial` = the member's currently-granted areas (batch-loaded once by the
-// parent via list_all_staff_areas — no per-row query). Empty = full access.
+// parent via list_all_staff_areas â€” no per-row query). Empty = full access.
 function MemberAreas({ staffId, initial }: { staffId: string; initial: string[] }): JSX.Element {
   const full = [...STAFF_AREAS] as string[];
   const [committed, setCommitted] = useState<string[]>(initial.length ? initial : full);
@@ -38,7 +39,7 @@ function MemberAreas({ staffId, initial }: { staffId: string; initial: string[] 
   if (!open) {
     return (
       <button type="button" onClick={openEditor} className="mt-1 text-[11px] font-semibold text-safety-600 hover:text-safety-700">
-        Access: {isAll ? "all areas" : committed.map(a => STAFF_AREA_LABEL[a]).join(", ")} ▾
+        Access: {isAll ? "all areas" : committed.map(a => STAFF_AREA_LABEL[a]).join(", ")} â–¾
       </button>
     );
   }
@@ -53,7 +54,7 @@ function MemberAreas({ staffId, initial }: { staffId: string; initial: string[] 
         ))}
       </div>
       <div className="flex gap-2 mt-2">
-        <Button size="sm" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save access"}</Button>
+        <Button size="sm" disabled={busy} onClick={save}>{busy ? "Savingâ€¦" : "Save access"}</Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
     </div>
@@ -82,26 +83,21 @@ function UpiSettingsCard(): JSX.Element {
       <div className="font-semibold text-ink-800">Payment UPI</div>
       <div className="text-[13px] text-ink-500 mt-0.5 mb-3">The UPI ID customers pay to (used for the QR on payment pages). Zero gateway fees.</div>
       {err && <div className="mb-2 text-[12px] text-red-600">{err}</div>}
-      {saved && <div className="mb-2 text-[12px] text-emerald-700">✅ Saved.</div>}
+      {saved && <div className="mb-2 text-[12px] text-emerald-700">âœ… Saved.</div>}
       <div className="grid sm:grid-cols-2 gap-2">
         <input value={upi} onChange={e => setUpi(e.target.value)} placeholder="yourname@okhdfcbank" className="px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white" />
         <input value={payee} onChange={e => setPayee(e.target.value)} placeholder="Payee name (e.g. Rakesh Boyapati)" className="px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white" />
       </div>
-      <Button className="mt-3" disabled={busy} onClick={save} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? "Saving…" : "Save UPI"}</Button>
+      <Button className="mt-3" disabled={busy} onClick={save} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? "Savingâ€¦" : "Save UPI"}</Button>
     </Card>
   );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any> {
-  const mod = await import("../../lib/supabase.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await (mod as any).getSupabaseClient();
-}
 
 const TIER_BADGE: Record<string, { label: string; tone: "warning" | "info" | "neutral" }> = {
-  owner: { label: "👑 Owner", tone: "warning" },
-  head: { label: "🎖️ Head", tone: "info" },
+  owner: { label: "ðŸ‘‘ Owner", tone: "warning" },
+  head: { label: "ðŸŽ–ï¸ Head", tone: "info" },
   member: { label: "Member", tone: "neutral" },
 };
 
@@ -153,8 +149,8 @@ export function StaffAdminView(): JSX.Element {
     setBusy(false);
     if (!res.ok) return setError(res.error);
     setEmailNote(res.data.emailSent
-      ? `✅ Invite emailed to ${inviteEmail}.`
-      : `Invite created, but the email didn't send — copy the link below and share it manually.`);
+      ? `âœ… Invite emailed to ${inviteEmail}.`
+      : `Invite created, but the email didn't send â€” copy the link below and share it manually.`);
     setJustCreated({ id: "", token: res.data.token, email: inviteEmail, tier: inviteTier, usedAt: null, revokedAt: null, expiresAt: "", createdAt: "" });
     setInviteEmail("");
     void load();
@@ -223,7 +219,7 @@ export function StaffAdminView(): JSX.Element {
 
         {justCreated && (
           <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-            <div className="text-[12px] font-semibold text-emerald-700 mb-1.5">✅ Invite link ready — share it with the new staff member (expires in 7 days):</div>
+            <div className="text-[12px] font-semibold text-emerald-700 mb-1.5">âœ… Invite link ready â€” share it with the new staff member (expires in 7 days):</div>
             <div className="flex items-center gap-2">
               <input readOnly value={staffJoinUrl(justCreated.token)}
                 className="flex-1 text-[12px] font-mono px-3 py-2 border border-emerald-200 rounded-lg bg-white text-ink-700 truncate" />
@@ -246,7 +242,7 @@ export function StaffAdminView(): JSX.Element {
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-ink-800 truncate">{m.name || m.email}</div>
-                      <div className="text-[12px] text-ink-500 truncate">{m.email}{m.managerEmail ? ` · reports to ${m.managerEmail}` : ""} · {m.managedOrgs} org{m.managedOrgs === 1 ? "" : "s"}</div>
+                      <div className="text-[12px] text-ink-500 truncate">{m.email}{m.managerEmail ? ` Â· reports to ${m.managerEmail}` : ""} Â· {m.managedOrgs} org{m.managedOrgs === 1 ? "" : "s"}</div>
                     </div>
                     <Badge tone={TIER_BADGE[m.tier]?.tone ?? "neutral"}>{TIER_BADGE[m.tier]?.label ?? m.tier}</Badge>
                   </div>
@@ -267,8 +263,8 @@ export function StaffAdminView(): JSX.Element {
                 return (
                   <div key={inv.id} className="flex items-center justify-between py-2 border-b border-cream-100 last:border-0 gap-3">
                     <div className="min-w-0">
-                      <div className="text-[13px] text-ink-700 truncate">{inv.email || "(open link)"} · <span className="uppercase text-[11px] text-ink-400">{inv.tier}</span></div>
-                      <div className="text-[11px] text-ink-400">created {inv.createdAt.slice(0, 10)} · expires {inv.expiresAt.slice(0, 10)}</div>
+                      <div className="text-[13px] text-ink-700 truncate">{inv.email || "(open link)"} Â· <span className="uppercase text-[11px] text-ink-400">{inv.tier}</span></div>
+                      <div className="text-[11px] text-ink-400">created {inv.createdAt.slice(0, 10)} Â· expires {inv.expiresAt.slice(0, 10)}</div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge tone={tone as "info" | "success" | "neutral"}>{st}</Badge>

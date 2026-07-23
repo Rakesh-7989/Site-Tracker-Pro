@@ -1,4 +1,4 @@
-// SiteTrack Pro — Client Portal view (/client). Shows the client's projects,
+﻿// SiteTrack Pro â€” Client Portal view (/client). Shows the client's projects,
 // progress, and unread notifications. Mirrors legacy ClientPortal.
 
 import { useEffect, useState } from "react";
@@ -7,11 +7,8 @@ import { useAuth } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { listClientProjects, listClientNotifications, type ProjectBrief, type NotificationBrief } from "@/app/clientPortalQueries";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 function PBar({ v }: { v: number }) {
   return (
     <div className="w-full h-2 bg-cream-200 rounded-full overflow-hidden">

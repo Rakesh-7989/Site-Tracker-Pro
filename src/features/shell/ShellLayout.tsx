@@ -10,7 +10,9 @@ import { RequireSession, useAuth } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
+import { BottomNav } from "./BottomNav";
 import { SubscriptionBanner } from "@/features/org/SubscriptionBanner";
+import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 
 function FullScreenSpinner(): JSX.Element {
   return (
@@ -52,16 +54,18 @@ function GatedShell(): JSX.Element {
          main content each scroll on their own (min-h-0 lets the flex children
          actually shrink so their overflow-y-auto kicks in). */
       <div className="h-screen flex flex-col bg-cream-50 overflow-hidden">
+        <ImpersonationBanner />
         <TopBar onMenuToggle={() => setMobileOpen(v => !v)} />
         <SubscriptionBanner />
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-          <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">
+          <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 pb-16 lg:pb-6 xl:mx-auto xl:w-full xl:max-w-7xl">
             <Suspense fallback={<div className="grid place-items-center py-20 text-safety-500"><Spinner size={24} /></div>}>
               <Outlet />
             </Suspense>
           </main>
         </div>
+        <BottomNav />
       </div>
   );
 }

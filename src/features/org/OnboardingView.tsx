@@ -1,15 +1,12 @@
-// SiteTrack Pro — Org Onboarding wizard (/org/onboarding).
+﻿// SiteTrack Pro â€” Org Onboarding wizard (/org/onboarding).
 // 5-step first-time setup for new orgs. Persists to Supabase.
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Button, Spinner } from "@/components/ui/atoms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
 
-async function getClient() {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 const STEPS = ["Org details", "Invite team", "First project", "Feature presets", "Integrations"];
 
 export function OnboardingView(): JSX.Element {

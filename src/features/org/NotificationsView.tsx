@@ -1,4 +1,4 @@
-// SiteTrack Pro — Notifications inbox (/notifications). The current user's
+﻿// SiteTrack Pro â€” Notifications inbox (/notifications). The current user's
 // in-app notifications (RLS-scoped). Mark read + deep-link navigation.
 
 import { useCallback, useEffect, useState } from "react";
@@ -7,7 +7,7 @@ import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { listNotifications, markRead, markAllRead, type Notification } from "@/app/notificationQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const fmtTs = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 
 export function NotificationsView(): JSX.Element {
@@ -51,7 +51,7 @@ export function NotificationsView(): JSX.Element {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-ink-800 flex items-center gap-2">{n.title}{!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-safety-500 inline-block" />}</div>
                 {n.body && <div className="text-[12px] text-ink-500">{n.body}</div>}
-                <div className="text-[11px] text-ink-400 mt-0.5">{fmtTs(n.createdAt)}{n.link ? " · tap to open" : ""}</div>
+                <div className="text-[11px] text-ink-400 mt-0.5">{fmtTs(n.createdAt)}{n.link ? " Â· tap to open" : ""}</div>
               </div>
             </Card></button>
           ))}</div>}

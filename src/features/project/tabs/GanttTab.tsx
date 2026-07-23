@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Gantt / schedule tab (v3 port, display-only). Derives
+﻿// SiteTrack Pro â€” project Gantt / schedule tab (v3 port, display-only). Derives
 // a lightweight timeline from the milestones table (no separate schedule table).
 
 import { useCallback, useEffect, useState } from "react";
@@ -6,7 +6,7 @@ import { Card, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { listMilestones, type Milestone, type MilestoneStatus } from "@/app/milestoneQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getClient(): Promise<any | null> { const mod = await import("../../../lib/supabase.js"); /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ return await (mod as any).getSupabaseClient(); }
+import { getClient } from "@/lib/supabase";
 const BAR: Record<MilestoneStatus, { w: string; cls: string; label: string }> = {
   completed: { w: "100%", cls: "bg-emerald-400", label: "Completed" },
   in_progress: { w: "55%", cls: "bg-amber-400", label: "In progress" },

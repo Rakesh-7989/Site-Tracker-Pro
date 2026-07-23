@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
@@ -6,11 +6,8 @@ import { listDprMessages, type DprMessageRow, type DprStatus } from "@/app/dprQu
 import { DPRStatusBadge } from "./DPRStatusBadge";
 import { BuildNowBadge } from "./BuildNowBadge";
 
-async function getClient(): Promise<any | null> {
-  const mod = await import("../../lib/supabase.js");
-  return await (mod as any).getSupabaseClient();
-}
 
+import { getClient } from "@/lib/supabase";
 const fmtDate = (iso: string): string => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -60,7 +57,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold text-ink-900">DPR History</h1>
-          <p className="text-sm text-ink-500 mt-0.5">{rows.length} total · {sentCount} sent · {deliveredCount} delivered · {failedCount} failed</p>
+          <p className="text-sm text-ink-500 mt-0.5">{rows.length} total Â· {sentCount} sent Â· {deliveredCount} delivered Â· {failedCount} failed</p>
         </div>
         <div className="flex items-center gap-2">
           <select className="text-xs border border-cream-200 rounded-lg px-2 py-1.5 bg-white"
