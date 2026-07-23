@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { fmtDate, fmtTime, fmtCur, fileKind, fmtSize } from "../src/lib/format.js";
+﻿import { describe, it, expect } from "vitest";
+import { fmtDate, fmtTime, fmtCur, fileKind, fmtSize } from "../src/lib/format";
 
 describe("fmtDate", () => {
   it("returns em-dash for empty input", () => {

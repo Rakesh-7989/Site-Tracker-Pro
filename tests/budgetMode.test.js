@@ -1,4 +1,4 @@
-// SiteTrack Pro — zero-spend budget guard tests.
+﻿// SiteTrack Pro — zero-spend budget guard tests.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -15,7 +15,7 @@ import {
   isProviderAllowed,
   filterAllowedProviders,
   blockedResponse,
-} from "../src/lib/budgetMode.js";
+} from "../src/lib/budgetMode";
 
 describe("BUDGET_MODES + DEFAULT_BUDGET_MODE", () => {
   it("exposes both modes", () => {

@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   FEATURE_CATALOG, FEATURE_GROUPS,
   isFeatureEnabled, setOrgFeature, setPlatformFeature, resetOrgFeatures,
   featureStats, catalogByGroup, featuresForRole,
   INIT_ORG_FEATURE_FLAGS,
-} from "../src/lib/orgFeatureFlags.js";
+} from "../src/lib/orgFeatureFlags";
 
 describe("orgFeatureFlags — catalog integrity", () => {
   it("every entry has id matching its key", () => {

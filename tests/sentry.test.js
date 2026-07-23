@@ -1,11 +1,11 @@
-// SiteTrack Pro — Sentry lib unit tests.
+﻿// SiteTrack Pro — Sentry lib unit tests.
 //
 // We test only the pure-function PII scrubber + user redaction here. The
 // initSentry() lazy-load + Sentry SDK integration is exercised by an
 // E2E test that sets a fake DSN.
 
 import { describe, it, expect } from "vitest";
-import { _internal } from "../src/lib/sentry.js";
+import { _internal } from "../src/lib/sentry";
 
 const { scrubPII, redactUser } = _internal;
 

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { activeDelegationsFor, resolveApprover, addDelegation, revokeDelegation, delegationStatus } from "../src/lib/delegations.js";
+﻿import { describe, it, expect } from "vitest";
+import { activeDelegationsFor, resolveApprover, addDelegation, revokeDelegation, delegationStatus } from "../src/lib/delegations";
 
 const archUser = { id: "u_arch", name: "Ramesh", role: "architect" };
 // pmUser kept as documentation of the canonical delegation target shape — used

@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sprint 4 (Session 30.10) handover packet tests.
+﻿// SiteTrack Pro — Sprint 4 (Session 30.10) handover packet tests.
 
 import { describe, it, expect } from "vitest";
 
@@ -10,7 +10,7 @@ import {
   verifyUrl,
   summarizeHandover,
   serializeManifest,
-} from "../src/lib/handoverPacket.js";
+} from "../src/lib/handoverPacket";
 
 const baseInput = {
   project: {

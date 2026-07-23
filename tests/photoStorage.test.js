@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sprint 2 (Session 30.9) photoStorage tests.
+﻿// SiteTrack Pro — Sprint 2 (Session 30.9) photoStorage tests.
 //
 // Pure-function tests for the photo pipeline. EXIF parsing tested with a
 // crafted minimal JPEG; rest uses the mock storage adapter so no Supabase
@@ -16,7 +16,7 @@ import {
   uploadPhoto,
   makeMockStorageAdapter,
   generateThumbnail,
-} from "../src/lib/photoStorage.js";
+} from "../src/lib/photoStorage";
 
 describe("constants", () => {
   it("HYDERABAD_BBOX covers GHMC + outer ring", () => {

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getWhatsAppConfig, saveWhatsAppConfig, clearWhatsAppConfig, isWhatsAppApiEnabled, sendWhatsApp, sendWhatsAppBulk } from "../src/lib/whatsapp.js";
+﻿import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { getWhatsAppConfig, saveWhatsAppConfig, clearWhatsAppConfig, isWhatsAppApiEnabled, sendWhatsApp, sendWhatsAppBulk } from "../src/lib/whatsapp";
 
 // Provide a minimal localStorage shim for the JSDOM-free vitest env.
 beforeEach(() => {

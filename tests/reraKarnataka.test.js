@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   KA_STAGE_CODES, inferKaReraStage, validateKaRera,
   buildKaFilingPayload, mockKaAdapter, kaReraAdapter,
-} from "../src/lib/reraKarnataka.js";
+} from "../src/lib/reraKarnataka";
 
 describe("reraKarnataka — stage codes", () => {
   it("exposes 9 KA stages", () => {

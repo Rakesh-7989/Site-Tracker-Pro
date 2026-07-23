@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sprint 2 (Session 30.3): buildnowAnchor tests.
+﻿// SiteTrack Pro — Sprint 2 (Session 30.3): buildnowAnchor tests.
 
 import { describe, it, expect } from "vitest";
 
@@ -12,7 +12,7 @@ import {
   mockFetchProjectMetadata,
   fetchProjectMetadata,
   badgeStateFor,
-} from "../src/lib/buildnowAnchor.js";
+} from "../src/lib/buildnowAnchor";
 
 describe("constants", () => {
   it("approval statuses match SQL CHECK constraints", () => {

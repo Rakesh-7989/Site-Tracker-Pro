@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   listTemplates, upsertTemplate, removeTemplate, getTemplate,
   templateFromProject, applyProjectTemplate, applyBoqTemplate,
   INIT_TEMPLATES, TEMPLATE_KINDS,
-} from "../src/lib/templates.js";
+} from "../src/lib/templates";
 
 describe("templates — CRUD", () => {
   it("listTemplates returns empty for unknown org/kind", () => {

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { recordAudit, filterAudit, exportAuditCsv, auditSummary, auditStats } from "../src/lib/audit.js";
+﻿import { describe, it, expect } from "vitest";
+import { recordAudit, filterAudit, exportAuditCsv, auditSummary, auditStats } from "../src/lib/audit";
 
 const actor = { id: "u1", name: "Ramesh", role: "architect", org_id: "org1" };
 

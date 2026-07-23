@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   defaultChain, getChain, resolveRung, resolveApprovers,
   upsertChain, removeChain, validateChain,
   APPROVAL_RESOURCES, APPROVAL_ROLES, INIT_APPROVAL_CHAINS,
-} from "../src/lib/approvalChains.js";
+} from "../src/lib/approvalChains";
 
 describe("approvalChains — defaults", () => {
   it("provides a default chain for every supported resource", () => {

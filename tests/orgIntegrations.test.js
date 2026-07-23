@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   getOrgIntegrations, getProviderForOrg, setProviderForOrg,
   clearProviderForOrg, isProviderConfigured, migrateLegacyToOrg,
   maskSecret, integrationsSummary, INIT_ORG_INTEGRATIONS,
   EMPTY_INTEGRATION, PROVIDERS,
-} from "../src/lib/orgIntegrations.js";
+} from "../src/lib/orgIntegrations";
 
 describe("orgIntegrations — reads", () => {
   it("returns empty integration for unknown org", () => {

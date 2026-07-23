@@ -85,8 +85,8 @@ export async function addBreadcrumb(crumb: Record<string, unknown>): Promise<voi
   s.addBreadcrumb(crumb);
 }
 
-function redactUser(u: Record<string, unknown>): Record<string, unknown> {
-  if (!u) return {};
+function redactUser(u: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!u) return null;
   const email = String(u.email || "");
   const at = email.indexOf("@");
   const redactedEmail = at > 0

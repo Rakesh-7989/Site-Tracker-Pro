@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sprint 2 (Session 30.3): offlineQueue tests.
+﻿// SiteTrack Pro — Sprint 2 (Session 30.3): offlineQueue tests.
 //
 // Uses the in-memory adapter (makeMemoryAdapter) so tests don't need a
 // real IndexedDB. Exercises enqueue/drain/retry/GC/queueDepth.
@@ -14,7 +14,7 @@ import {
   drain,
   queueDepth,
   clearAll,
-} from "../src/lib/offlineQueue.js";
+} from "../src/lib/offlineQueue";
 
 describe("offlineQueue — constants + pure helpers", () => {
   it("supports 3 kinds: dpr / voice / photo", () => {

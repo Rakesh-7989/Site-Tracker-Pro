@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   archiveProject, restoreProject, isArchived,
   daysSinceArchive, daysUntilPurge, isPurgeable,
   partitionByArchive, listPurgeCandidates, PURGE_AFTER_DAYS,
-} from "../src/lib/projectArchive.js";
+} from "../src/lib/projectArchive";
 
 const projects = [
   { id: "p1", name: "Alpha", status: "active" },

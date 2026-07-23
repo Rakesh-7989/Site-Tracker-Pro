@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   TYPE_TABS, TYPE_TEAM_TEMPLATES,
   projectTypeOf, isTabApplicableToProjectType, recommendedTeam,
   boqPresets, isTabVisible, tabHiddenByType, typeChip,
-} from "../src/lib/projectTypes.js";
+} from "../src/lib/projectTypes";
 
 describe("projectTypes — TYPE_TABS shape", () => {
   it("defines tabs for all 4 types", () => {

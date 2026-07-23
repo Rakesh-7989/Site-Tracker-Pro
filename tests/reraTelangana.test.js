@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   SUPPORTED_STATES, STAGE_CODES,
   inferReraStage, buildFilingPayload, validateFilingPayload,
   mockAdapter, tgReraAdapter, pickAdapter,
-} from "../src/lib/reraTelangana.js";
+} from "../src/lib/reraTelangana";
 
 describe("reraTelangana — vocab", () => {
   it("SUPPORTED_STATES has TG + KA + MH", () => {

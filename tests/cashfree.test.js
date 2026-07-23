@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   cashfreeBaseUrl, isCashfreeConfigured,
   buildSubscriptionRequest, buildCancellationRequest, buildUpgradeOperations,
   verifyWebhookSignature, verifyWebhookSignatureSync,
   applyWebhookEvent, mapCashfreeStatus,
-} from "../src/lib/cashfree.js";
+} from "../src/lib/cashfree";
 
 const org = { id: "org_12345678_abcd", name: "BuildCo India", contact_email: "owner@buildco.in" };
 

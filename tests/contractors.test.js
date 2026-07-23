@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   INIT_SUB_CONTRACTORS, INIT_CONTRACTOR_VENDOR_LINKS,
   INIT_CONTRACTOR_PAST_CONTRACTS, CLOSEOUT_STATUSES,
   listSubContractors, addSubContractor, deactivateSubContractor, removeSubContractor,
   vendorsForContractor, contractorsForVendor, linkVendor, unlinkVendor,
   archivePastContract, pastContractsForContractor, contractorReputation,
-} from "../src/lib/contractors.js";
+} from "../src/lib/contractors";
 
 describe("contractors — initial seeds + vocab", () => {
   it("CLOSEOUT_STATUSES has the 4 known values", () => {

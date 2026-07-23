@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   buildProjectTree,
   flattenUnits,
@@ -6,7 +6,7 @@ import {
   unitCode,
   countHierarchy,
   findChain,
-} from "../src/lib/hierarchy.js";
+} from "../src/lib/hierarchy";
 
 const sample = () => {
   const blocks = {

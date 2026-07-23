@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { detectVendor, parseCsv, toCanonicalBatches } from "../src/lib/contractorMigration.js";
+﻿import { describe, it, expect } from "vitest";
+import { detectVendor, parseCsv, toCanonicalBatches } from "../src/lib/contractorMigration";
 
 describe("contractorMigration — detectVendor", () => {
   it("detects Powerplay projects export", () => {

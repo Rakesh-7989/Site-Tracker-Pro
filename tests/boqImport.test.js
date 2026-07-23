@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   detectSeparator, splitLine, looksLikeHeader, buildColumnMap,
   parseBoq, applyBoqImport,
-} from "../src/lib/boqImport.js";
+} from "../src/lib/boqImport";
 
 describe("boqImport — separator detection", () => {
   it("prefers TAB when more tabs than commas", () => {

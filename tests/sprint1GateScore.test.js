@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sprint 1 → 2 gate scorecard tests.
+﻿// SiteTrack Pro — Sprint 1 → 2 gate scorecard tests.
 //
 // Pure parser + scorer tests. No disk I/O.
 
@@ -13,7 +13,7 @@ import {
   detectPricingLocked,
   scoreGate,
   renderScorecard,
-} from "../src/lib/sprint1GateScore.js";
+} from "../src/lib/sprint1GateScore";
 
 describe("GATE_CRITERIA", () => {
   it("exposes the 5 Sprint 1 → 2 unlock criteria", () => {

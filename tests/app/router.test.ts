@@ -1,4 +1,4 @@
-// SiteTrack Pro — v3 router structural tests.
+﻿// SiteTrack Pro — v3 router structural tests.
 //
 // Import-parity test: each lazy() import path in router.tsx must point to
 // an existing file.  The route tree must have the expected sections.
@@ -28,7 +28,7 @@ for (const m of routerSrc.matchAll(/^import\s.*\sfrom\s["']([^"']+)["']/gm)) {
 function resolveAlias(path: string): string {
   const resolved = path.replace(/^@\//, SRC_DIR + "/");
   // Try .tsx, .ts, .jsx, .js
-  for (const ext of ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts", "/index.jsx", "/index.js"]) {
+  for (const ext of ["", ".tsx", ".ts", ".jsx", "", "/index.tsx", "/index.ts", "/index.jsx", "/index"]) {
     const candidate = resolved + ext;
     if (existsSync(candidate)) return candidate;
   }

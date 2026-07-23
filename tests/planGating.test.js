@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { canUseFeature, withinProjectQuota, requiredPlanFor, upsellLine, planFeatureRow, getFeatureMatrix } from "../src/lib/planGating.js";
+﻿import { describe, it, expect } from "vitest";
+import { canUseFeature, withinProjectQuota, requiredPlanFor, upsellLine, planFeatureRow, getFeatureMatrix } from "../src/lib/planGating";
 
 describe("planGating.canUseFeature", () => {
   it("basic plan cannot white-label", () => {

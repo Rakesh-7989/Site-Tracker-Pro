@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   clamp, composeZoom, zoomFromWheel, fitToViewport,
   screenToDrawing, drawingToScreen, zoomAbout,
   buildLayer, canDiff, blendOpacities, pixelDiffers, newViewportState,
-} from "../src/lib/drawingDiff.js";
+} from "../src/lib/drawingDiff";
 
 describe("drawingDiff — geometry primitives", () => {
   it("clamp respects bounds", () => {

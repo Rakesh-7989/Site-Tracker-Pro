@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { escapeHtml, h, escapeCsv, csvRow } from "../src/lib/escape.js";
+﻿import { describe, it, expect } from "vitest";
+import { escapeHtml, h, escapeCsv, csvRow } from "../src/lib/escape";
 
 describe("escapeHtml / h", () => {
   it("escapes the 5 HTML-significant characters", () => {

@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   validateGstin, validateHsn, buildEInvoicePayload,
   mockGstnAdapter, gstnAdapter, SUPPLY_TYPES,
-} from "../src/lib/gstn.js";
+} from "../src/lib/gstn";
 
 describe("gstn — validateGstin", () => {
   it("accepts a canonical GSTIN", () => {

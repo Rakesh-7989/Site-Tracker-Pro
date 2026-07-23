@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sprint 2 (Session 30.3): voiceTranscribe unit tests.
+﻿// SiteTrack Pro — Sprint 2 (Session 30.3): voiceTranscribe unit tests.
 //
 // Covers pure logic: provider selection, hash computation, mock branch,
 // confidence-bar check. Real Bhashini/AWS calls are NOT tested (they're
@@ -15,7 +15,7 @@ import {
   mockTranscribe,
   transcribe,
   meetsAccuracyBar,
-} from "../src/lib/voiceTranscribe.js";
+} from "../src/lib/voiceTranscribe";
 
 describe("voiceTranscribe — constants", () => {
   it("exposes 3 supported languages", () => {

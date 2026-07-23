@@ -2,7 +2,15 @@ import { h, csvRow } from "./escape";
 
 const MAX_AUDIT_ROWS = 5000;
 
+interface AuditActor {
+  id?: string;
+  name?: string;
+  role?: string;
+  org_id?: string | null;
+}
+
 interface AuditEntry {
+  actor?: AuditActor;
   actor_id?: string;
   actor_name?: string;
   actor_role?: string;
@@ -49,9 +57,9 @@ export function recordAudit(currentLog: Record<string, unknown>[], entry: AuditE
   const row: AuditRow = {
     id: "a_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
     ts: new Date().toISOString(),
-    actor_id: entry.actor_id || "system",
-    actor_name: entry.actor_name || "System",
-    actor_role: entry.actor_role || "system",
+    actor_id: entry.actor_id || entry.actor?.id || "system",
+    actor_name: entry.actor_name || entry.actor?.name || "System",
+    actor_role: entry.actor_role || entry.actor?.role || "system",
     org_id: entry.org_id ?? null,
     action: entry.action || "UPDATE",
     resource: entry.resource || "unknown",

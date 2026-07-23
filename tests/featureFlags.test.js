@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sprint 1 (Session 30.2) Feature Freeze tests.
+﻿// SiteTrack Pro — Sprint 1 (Session 30.2) Feature Freeze tests.
 //
 // Verifies the freeze gate is bulletproof — non-staff users must not be
 // able to see or navigate to any of the 16 frozen views, and the three
@@ -16,7 +16,7 @@ import {
   isStaffUser,
   isViewStubBlocked,
   isTabStubBlocked,
-} from "../src/lib/featureFlags.js";
+} from "../src/lib/featureFlags";
 
 describe("STUB_VIEWS source-of-truth", () => {
   it("is a Set with exactly 16 frozen views", () => {

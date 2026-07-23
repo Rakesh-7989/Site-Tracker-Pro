@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   MH_QUARTERLY_PERIODS, MH_STAGE_KEYS, validateMaharera,
   inferMhQuarter, buildMhFilingPayload, mockMhAdapter, mhReraAdapter,
-} from "../src/lib/reraMaharashtra.js";
+} from "../src/lib/reraMaharashtra";
 
 describe("reraMaharashtra — constants", () => {
   it("exposes 4 quarterly periods", () => {

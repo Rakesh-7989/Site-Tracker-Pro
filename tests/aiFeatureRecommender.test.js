@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   buildUsage, suggestForOrg, groupSuggestions, narrate,
-} from "../src/lib/aiFeatureRecommender.js";
+} from "../src/lib/aiFeatureRecommender";
 
 const CATALOG = [
   { key: "tab_bo", label: "BOQ", group: "tabs" },

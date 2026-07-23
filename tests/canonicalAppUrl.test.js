@@ -1,4 +1,4 @@
-// SiteTrack Pro — getCanonicalAppUrl() tests.
+﻿// SiteTrack Pro — getCanonicalAppUrl() tests.
 //
 // Verifies the redirect URL helper picks the right URL across dev / prod /
 // missing-env / stale-placeholder scenarios. This is the source of truth
@@ -15,7 +15,7 @@ import.meta.env.VITE_BACKEND = "supabase";
 import.meta.env.VITE_SUPABASE_URL = "https://fake.supabase.co";
 import.meta.env.VITE_SUPABASE_ANON_KEY = "fake-anon-key";
 
-const { getCanonicalAppUrl } = await import("../src/lib/supabase.js");
+const { getCanonicalAppUrl } = await import("../src/lib/supabase");
 
 describe("getCanonicalAppUrl()", () => {
   const originalEnv = { ...import.meta.env };

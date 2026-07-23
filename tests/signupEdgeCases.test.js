@@ -1,4 +1,4 @@
-// SiteTrack Pro -- legacy signUp() guard tests.
+﻿// SiteTrack Pro -- legacy signUp() guard tests.
 //
 // Customer org creation now goes through /signup -> signup_requests ->
 // owner/payment approval. The old password self-signup helper must not create
@@ -21,7 +21,7 @@ import.meta.env.VITE_SUPABASE_URL = "https://fake.supabase.co";
 import.meta.env.VITE_SUPABASE_ANON_KEY = "fake-anon-key";
 delete import.meta.env.VITE_ALLOW_SELF_SERVE_SIGNUP;
 
-const { signUp } = await import("../src/lib/supabase.js");
+const { signUp } = await import("../src/lib/supabase");
 
 const baseArgs = {
   email: "test@example.com",

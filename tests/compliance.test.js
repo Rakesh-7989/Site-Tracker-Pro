@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   validateRera, validateGstin, validatePan, validateEpfo,
   checkReraStatus, checkGstinStatus, checkEpfoStatus,
   projectComplianceStatus,
-} from "../src/lib/compliance.js";
+} from "../src/lib/compliance";
 
 describe("compliance.validateRera", () => {
   it("accepts well-formed RERA numbers", () => {

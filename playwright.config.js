@@ -2,25 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 const e2ePort = process.env.E2E_PORT || "5174";
 
-/**
- * SiteTrack Pro — Playwright E2E config.
- *
- * Runs in DEMO mode (no Supabase) so tests are deterministic and don't need
- * a backend. The dev server is started fresh per run, against the same
- * localStorage seed data.
- *
- * Usage:
- *   npm run dev          # in one terminal
- *   npm run test:e2e     # in another terminal
- *
- * Or use webServer (below) for one-shot CI runs.
- */
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: false,           // role tests share localStorage state
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 1,                     // sequential — same domain, same storage
+  workers: 1,
   reporter: "list",
   use: {
     baseURL: `http://127.0.0.1:${e2ePort}`,
@@ -29,6 +16,10 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit", use: { ...devices["Desktop Safari"] } },
+    { name: "Mobile Chrome", use: { ...devices["Pixel 7"] } },
+    { name: "Mobile Safari", use: { ...devices["iPhone 14"] } },
   ],
   webServer: {
     command: "node scripts/e2e-dev-server.mjs",
