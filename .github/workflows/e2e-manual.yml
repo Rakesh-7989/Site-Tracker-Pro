@@ -33,13 +33,9 @@ jobs:
       - name: Run E2E tests (production)
         if: inputs.target == 'production'
         run: npx playwright test --config=playwright.config.ts ${{ inputs.browsers != '' && format('--project={0}', inputs.browsers) || '' }}
-        env:
-          HOME: /root
       - name: Run E2E tests (local dev server)
         if: inputs.target == 'local'
         run: npx playwright test --config=playwright.config.js ${{ inputs.browsers != '' && format('--project={0}', inputs.browsers) || '' }}
-        env:
-          HOME: /root
       - uses: actions/upload-artifact@v4
         if: always()
         with:
