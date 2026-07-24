@@ -12,7 +12,7 @@ on:
           - production
           - local
       browsers:
-        description: "Browser filter (empty = all)"
+        description: "Browser filter (empty = desktop + Mobile Safari)"
         required: false
         default: ""
         type: string
@@ -29,13 +29,17 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install Playwright browsers (CI needs headless shell separately)
-        run: npx playwright install chromium chromium-headless-shell 2>&1
+        run: npx playwright install chromium chromium-headless-shell firefox webkit 2>&1
       - name: Run E2E tests (production)
         if: inputs.target == 'production'
-        run: npx playwright test --config=playwright.config.ts ${{ inputs.browsers != '' && format('--project={0}', inputs.browsers) || '' }}
+        run: >
+          npx playwright test --config=playwright.config.ts
+          ${{ inputs.browsers != '' && format('--project={0}', inputs.browsers) || '--project=chromium --project=firefox --project=webkit --project="Mobile Safari"' }}
       - name: Run E2E tests (local dev server)
         if: inputs.target == 'local'
-        run: npx playwright test --config=playwright.config.js ${{ inputs.browsers != '' && format('--project={0}', inputs.browsers) || '' }}
+        run: >
+          npx playwright test --config=playwright.config.js
+          ${{ inputs.browsers != '' && format('--project={0}', inputs.browsers) || '--project=chromium --project=firefox --project=webkit --project="Mobile Safari"' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
