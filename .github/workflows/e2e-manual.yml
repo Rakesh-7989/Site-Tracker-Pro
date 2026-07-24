@@ -29,11 +29,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install Playwright browsers (CI needs headless shell)
-        run: |
-          npx playwright install --with-deps chromium 2>&1
-          npx playwright install --with-deps chromium-headless-shell 2>&1
-          npx playwright install --with-deps firefox 2>&1
-          npx playwright install --with-deps webkit 2>&1
+        run: npx playwright install --with-deps chromium chromium-headless-shell firefox webkit 2>&1
       - name: Run E2E tests (production)
         if: inputs.target == 'production'
         run: npx playwright test --config=playwright.config.ts ${{ inputs.browsers != '' && format('--project={0}', inputs.browsers) || '' }}
