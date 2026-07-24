@@ -28,9 +28,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Install Playwright browsers
+      - name: Install Playwright browsers (CI needs headless shell)
         run: |
           npx playwright install --with-deps chromium 2>&1
+          npx playwright install --with-deps chromium-headless-shell 2>&1
           npx playwright install --with-deps firefox 2>&1
           npx playwright install --with-deps webkit 2>&1
       - name: Run E2E tests (production)
