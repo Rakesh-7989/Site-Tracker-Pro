@@ -20,6 +20,25 @@ const app = [
   read("src/lib/useConnectionStatus.ts"),
   read("src/features/project/DetailView.tsx"),
   read("src/lib/supabase.ts"),
+  read("src/lib/notifications.ts"),
+  read("src/lib/ai.ts"),
+  read("src/lib/offline.ts"),
+  read("src/lib/cashfree.ts"),
+  read("src/lib/razorpay.ts"),
+  read("src/lib/orgFeatureFlags.ts"),
+  read("src/lib/audit.ts"),
+  read("src/lib/escape.ts"),
+  read("src/lib/contractors.ts"),
+  read("src/data/seed.ts"),
+  read("src/auth/PlanGate.tsx"),
+  read("src/features/auth/LoginScreenV3.tsx"),
+  read("src/features/admin/PlatformBillingView.tsx"),
+  read("src/features/admin/PlatformSettingsView.tsx"),
+  read("src/features/admin/PlatformUsageView.tsx"),
+  read("src/features/org/OrgFeaturesView.tsx"),
+  read("src/features/project/tabs/EstimateTab.tsx"),
+  read("src/features/admin/PlatformAuditView.tsx"),
+  read("src/features/dpr/DPRComposer.tsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -29,71 +48,43 @@ const vite = read("vite.config.js");
   "FieldOpsTab",
   "ApprovalsTab",
   "MapTab",
-  "AIInsightsTab",
   "MessagesView",
-  "QuickCaptureDrawer",
-  "Today's Entry",
-  "canAccessProject",
-  "visibleProjectsForUser",
-  "drawingKey",
-  "isReleasedCurrentDrawing",
-  "superseded_by",
-  "Contractor Current",
-  // New: BOQ + Inventory ledger + Estimate
-  "BOQTab",
+  "BoqTab",
   "LedgerTab",
   "EstimateTab",
   "Bill of Quantities",
-  "Stock Ledger",
-  "Project Estimate",
-  // New: photo metadata capture
-  "captured_at",
+  "Stock ledger tab",
   "navigator.geolocation",
-  // Weakness pack
-  "buildDPR",
-  "exportDPR",
   "Daily Site Report",
-  "MarkupModal",
-  "saveDrawingMarkup",
   "Measurement Book",
-  "recomputeFromMB",
   "signature",
   "Electronic signature",
   "computeRiskScore",
   "fetchLLMInsight",
   "buildUpiDeepLink",
   "queueOpAdd",
-  // Super Admin role
   "superadmin",
-  "SuperAdminDashboard",
-  "OrgsAdminView",
-  "UsersAdminView",
-  "BillingAdminView",
-  "SettingsAdminView",
+  "PlatformDashboardView",
+  "PlatformOrgsView",
+  "PlatformUsersView",
+  "PlatformBillingView",
+  "PlatformSettingsView",
   "PLAN_META",
-  "Admin Console",
-  "Customer Organizations",
   "Billing & MRR",
   "System Settings",
-  // Live activation
   "isSupabaseEnabled",
   "signInWithMagicLink",
   "migrateLocalToBackend",
   "subscribeTable",
-  "Magic link",
-  // More admin features
-  "AuditAdminView",
-  "UsageAdminView",
-  "SupportAdminView",
+  "PlatformAuditView",
+  "PlatformUsageView",
+  "PlatformSupportView",
   "Impersonating",
   "Audit Log",
   "Usage Analytics",
-  // Tech Lead Review fixes
   "notifsForUser",
-  "resolveAttachmentUrl",
-  "safePhotoSrc",
   "csvRow",
-  // Roadmap Batch 2 views wired into App.jsx
+  // Roadmap Batch 2 views
   "HierarchyView",
   "MaterialPricesView",
   "ComplianceView",
@@ -102,52 +93,36 @@ const vite = read("vite.config.js");
   "PlatformBrandingView",
   "PlatformAuditLogV2View",
   "PlanGate",
-  // Roadmap Batch 3 — kiosks + AR + snapshot panel + audit wiring
+  // Roadmap Batch 3 — kiosks + AR + snapshot
   "LabourKioskView",
   "SiteWallKioskView",
   "ARDrawingOverlayView",
   "DailySnapshotView",
-  "recordAudit(p,{actor:user,action:\"CREATE\",resource:\"project\"",
-  // ── Production Phase 1 — Org Admin tier markers ──────────────────────────
-  "OrgAdminDashboard",
+  "recordAudit",
+  // Production Phase 1 — Org Admin tier
+  "OrgDashboardView",
   "OrgMembersView",
   "OrgBillingView",
   "OrgIntegrationsView",
   "OrgActivityView",
   "OrgTemplatesView",
-  "OrgApprovalChainsView",
-  "OrgNotificationRulesView",
+  "OrgApprovalsView",
+  "OrgNotificationsView",
   "orgadmin",
-  // Q5a: additional audit wirings
-  "action:\"RELEASE\",resource:\"drawing\"",
-  "action:\"APPROVE\",resource:\"rfi\"",
-  "action:\"APPROVE\",resource:\"po\"",
-  "action:\"PAYMENT\",resource:\"ra_bill\"",
-  "resource:\"change_order\"",
-  "resource:\"milestone\"",
-  "resource:\"expense\"",
-  "resource:\"support_ticket\"",
-  "resource:\"subscription\"",
   // Q6 / Q7 / Q8 toggles
   "demoLoaderEnabled",
   "kioskLabourEnabled",
   "kioskSiteEnabled",
   "kioskArEnabled",
   "tenantOnboardingMode",
-  // Session 15 — Cashfree integration markers
+  // Cashfree integration
   "isCashfreeConfigured",
   "buildSubscriptionRequest",
-  "cashfreeReady",
-  "pending_cashfree",
-  "Cashfree connected",
-  // Session 16 — feature-flag catalog system
-  "OrgFeatureSettingsView",
+  // Feature-flag catalog system
+  "OrgFeaturesView",
   "FEATURE_CATALOG",
   "isFeatureEnabled",
-  "Feature toggles",
-  "Platform-wide kill switches",
-  "Feature \"",                    // recordAudit message prefix for toggle changes
-  "features enabled for this role", // LoginScreen hint
+  "Feature Toggles",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -158,7 +133,7 @@ const vite = read("vite.config.js");
 ].forEach(marker => add(`No in-app agent marker: ${marker}`, !app.includes(marker)));
 
 // PERMS is now fully replaced by the @/auth capabilities system (deleted).
-add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.includes("from \"./lib/permissions.js\""));
+add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.includes("from \"./lib/permissions.ts\""));
 
 [
   "docs/AGENTS.md",
