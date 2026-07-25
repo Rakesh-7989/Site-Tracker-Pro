@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Org Billing (/org/billing). Plan, seat usage, subscription
+﻿// SiteTrack Pro — Org Billing (/org/billing). Plan, seat usage, subscription
 // lifecycle management (view, cancel, reactivate), billing history, alerts.
 
 import { useCallback, useEffect, useState } from "react";
@@ -10,8 +10,8 @@ import { useT } from "@/i18n/I18nProvider";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
-const fmtDate = (iso: string | null): string => { if (!iso) return "â€”"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "â€”" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
-const fmtMoney = (n: number, cur: string): string => `${cur === "INR" ? "â‚¹" : ""}${(n / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtDate = (iso: string | null): string => { if (!iso) return "—"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
+const fmtMoney = (n: number, cur: string): string => `${cur === "INR" ? "₹" : ""}${(n / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const subTone = (s: string): "neutral" | "success" | "warning" | "danger" | "info" => (
   s === "active" ? "success" : s === "trial" ? "info" : s === "paused" ? "warning" : s === "past_due" ? "danger" : s === "cancelled" ? "danger" : "neutral"
 );
@@ -139,7 +139,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
               <dl className="grid grid-cols-2 gap-y-2 text-sm">
                 <dt className="text-ink-500">{t("billing.status")}</dt>
                 <dd className="text-ink-800 text-right font-medium"><Badge tone={subTone(sub.status)}>{sub.status}</Badge></dd>
-                <dt className="text-ink-500">{t("billing.provider")}</dt><dd className="text-ink-800 text-right capitalize">{sub.provider || "â€”"}</dd>
+                <dt className="text-ink-500">{t("billing.provider")}</dt><dd className="text-ink-800 text-right capitalize">{sub.provider || "—"}</dd>
                 <dt className="text-ink-500">{t("billing.renewsEnds")}</dt><dd className="text-ink-800 text-right">{fmtDate(sub.currentPeriodEnd)}</dd>
                 <dt className="text-ink-500">{t("billing.trialEnds")}</dt><dd className="text-ink-800 text-right">{fmtDate(sub.trialEndsAt)}</dd>
                 {sub.cancelledAt ? (
@@ -171,7 +171,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
                     <>
                       <Button size="sm" variant="danger" disabled={actionBusy} leftIcon={actionBusy ? <Spinner size={14} /> : undefined}
                         onClick={() => void performAction("cancel")}>
-                        {actionBusy ? "Cancellingâ€¦" : "Yes, cancel subscription"}
+                        {actionBusy ? "Cancelling..." : "Yes, cancel subscription"}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => { setAction(null); setActionResult(null); }} disabled={actionBusy}>Keep active</Button>
                     </>
@@ -206,7 +206,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
                       <td className="py-2 text-right">
                         {bh.invoiceUrl ? (
                           <a href={bh.invoiceUrl} target="_blank" rel="noreferrer" className="text-safety-500 hover:text-safety-600 text-[11px] underline">Invoice</a>
-                        ) : "â€”"}
+                        ) : "—"}
                       </td>
                     </tr>
                   ))}

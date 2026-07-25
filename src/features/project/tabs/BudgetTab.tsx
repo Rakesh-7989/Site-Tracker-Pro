@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Budget / Expenses tab (v3 port, Batch 3, DB-wired).
+﻿// SiteTrack Pro — project Budget / Expenses tab (v3 port, Batch 3, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -51,7 +51,7 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Category</span><Select className="mt-1 w-auto" value={cat} onChange={e => setCat(e.target.value)} options={CAT} /></div>
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Description</span><Input className="mt-1" placeholder="e.g. Excavator rent" value={desc} onChange={e => setDesc(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Amount â‚¹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Paid to</span><Input className="mt-1 w-28" value={paidTo} onChange={e => setPaidTo(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !desc.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
@@ -60,8 +60,8 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
         : rows.length === 0 ? <div className="text-sm text-ink-500">No expenses recorded.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{fmtRupees(r.amount)} Â· <span className="font-normal capitalize">{r.category}</span></div>
-                <div className="text-[11px] text-ink-400 truncate">{r.description}{r.paidTo ? ` â†’ ${r.paidTo}` : ""}{r.expenseDate ? ` Â· ${r.expenseDate}` : ""}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{fmtRupees(r.amount)} · <span className="font-normal capitalize">{r.category}</span></div>
+                <div className="text-[11px] text-ink-400 truncate">{r.description}{r.paidTo ? ` → ${r.paidTo}` : ""}{r.expenseDate ? ` · ${r.expenseDate}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as ExpenseStatus; void run(`s-${r.id}`, c => setExpenseStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}

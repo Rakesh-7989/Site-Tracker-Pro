@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project RA Bills tab (v3 port, Batch 3, DB-wired).
+﻿// SiteTrack Pro — project RA Bills tab (v3 port, Batch 3, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
@@ -47,7 +47,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Bill No</span><Input className="mt-1 w-24" placeholder="RA-1" value={no} onChange={e => setNo(e.target.value)} /></div>
           <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Subcontractor</span><Input className="mt-1" value={sub} onChange={e => setSub(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Amount â‚¹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Retention %</span><Input className="mt-1 w-20" type="number" value={ret} onChange={e => setRet(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
@@ -56,8 +56,8 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
         : rows.length === 0 ? <div className="text-sm text-ink-500">No RA bills.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.no} Â· {fmtRupees(r.billAmount)}</div>
-                <div className="text-[11px] text-ink-400 truncate">{r.subcontractor ?? "â€”"} Â· net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
+                <div className="text-[11px] text-ink-400 truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as RaBillStatus; void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, v, v === "paid" ? raNetPayable(r) : undefined), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}

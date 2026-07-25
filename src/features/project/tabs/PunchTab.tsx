@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Punch list tab (v3 port, Batch 2, DB-wired).
+﻿// SiteTrack Pro — project Punch list tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -58,8 +58,8 @@ export function PunchTab({ projectId }: { projectId: string }): JSX.Element {
         : rows.length === 0 ? <div className="text-sm text-ink-500">No punch items.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className={`p-3 flex items-center justify-between gap-3 ${r.status === "resolved" || r.status === "verified" ? "opacity-60" : ""}`}>
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} â€” {r.defect}</div>
-                <div className="text-[11px] text-ink-400">{r.trade ?? "â€”"}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} — {r.defect}</div>
+                <div className="text-[11px] text-ink-400">{r.trade ?? "—"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status.replace("_", " ")}</span>}

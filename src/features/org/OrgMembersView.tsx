@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Org People module (HRMS Phase B, /org/members).
+﻿// SiteTrack Pro — Org People module (HRMS Phase B, /org/members).
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 //
@@ -127,7 +127,7 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
         <h1 className="font-display text-2xl font-bold text-ink-900">People</h1>
-        <p className="text-sm text-ink-500 mt-1">{orgName} Â· {active.length} active member{active.length === 1 ? "" : "s"}</p>
+        <p className="text-sm text-ink-500 mt-1">{orgName} · {active.length} active member{active.length === 1 ? "" : "s"}</p>
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -148,7 +148,7 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
         </div>
         {candidate === null && (
           <div className="space-y-2">
-            <Alert variant="info">No account yet â€” email them an invite to join {orgName}.</Alert>
+            <Alert variant="info">No account yet — email them an invite to join {orgName}.</Alert>
             <div className="flex items-center gap-2 flex-wrap">
               <Input className="w-40" placeholder="Name (optional)" value={inviteName} onChange={e => setInviteName(e.target.value)} />
               <Select className="w-auto" value={inviteRole} onChange={e => setInviteRole(e.target.value as OrgTierRole)}

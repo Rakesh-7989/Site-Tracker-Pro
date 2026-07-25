@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
+﻿// SiteTrack Pro — project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -88,7 +88,7 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
                     </div>
                     {i.description && <div className="text-[12px] text-ink-500 mt-0.5">{i.description}</div>}
                     <div className="text-[11px] text-ink-400 mt-0.5">
-                      {i.reportedDate ? `Raised ${i.reportedDate}` : ""}{i.resolvedDate ? ` Â· Resolved ${i.resolvedDate}` : ""}
+                      {i.reportedDate ? `Raised ${i.reportedDate}` : ""}{i.resolvedDate ? ` · Resolved ${i.resolvedDate}` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">

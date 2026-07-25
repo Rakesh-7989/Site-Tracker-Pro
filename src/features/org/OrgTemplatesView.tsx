@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Org Templates (/org/templates). Org-shared project / BOQ /
+﻿// SiteTrack Pro — Org Templates (/org/templates). Org-shared project / BOQ /
 // checklist templates. DB-wired (templates table, migration 78 bridge).
 
 import { useCallback, useEffect, useState } from "react";

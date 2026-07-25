@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Tasks tab (v3 port, Batch 1, DB-wired to `tasks`).
+﻿// SiteTrack Pro — project Tasks tab (v3 port, Batch 1, DB-wired to `tasks`).
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -87,7 +87,7 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
               <Card key={tk.id} className="p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-ink-800 truncate">{tk.title}</div>
-                  <div className="text-[11px] text-ink-400">{tk.assigneeName ?? t("tasksTab.unassigned")}{tk.dueDate ? ` Â· ${t("tasksTab.dueLabel")} ${tk.dueDate}` : ""}</div>
+                  <div className="text-[11px] text-ink-400">{tk.assigneeName ?? t("tasksTab.unassigned")}{tk.dueDate ? ` · ${t("tasksTab.dueLabel")} ${tk.dueDate}` : ""}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Badge tone={PR_TONE[tk.priority]}>{t(`tasksTab.${tk.priority}`)}</Badge>

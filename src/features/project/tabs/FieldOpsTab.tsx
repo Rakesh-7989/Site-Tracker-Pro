@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Field Ops tab (v3 port, DB-wired). A site diary of
+﻿// SiteTrack Pro — project Field Ops tab (v3 port, DB-wired). A site diary of
 // daily worklogs (activity + hours + notes), backed by the worklogs table.
 
 import { useCallback, useEffect, useState } from "react";
@@ -44,11 +44,11 @@ export function FieldOpsTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-ink-900">Field ops Â· site diary</h2>
+      <h2 className="font-display text-lg font-bold text-ink-900">Field ops · site diary</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Activity done today</span><Input className="mt-1" placeholder="e.g. Slab shuttering â€” 2nd floor" value={activity} onChange={e => setActivity(e.target.value)} /></div>
+          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Activity done today</span><Input className="mt-1" placeholder="e.g. Slab shuttering — 2nd floor" value={activity} onChange={e => setActivity(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Hours</span><Input className="mt-1 w-20" type="number" value={hours} onChange={e => setHours(e.target.value)} /></div>
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Notes</span><Input className="mt-1" placeholder="optional" value={notes} onChange={e => setNotes(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !activity.trim() || !hours}>{busy === "add" ? <Spinner size={14} /> : "Log"}</Button>

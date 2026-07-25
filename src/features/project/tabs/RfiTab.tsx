@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project RFIs tab (v3 port, Batch 4, DB-wired).
+﻿// SiteTrack Pro — project RFIs tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -58,7 +58,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
         <Card className="p-3 space-y-2">
           <Input placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)} />
           <div className="flex gap-2 items-end">
-            <Textarea className="flex-1" placeholder="Your questionâ€¦" rows={2} value={question} onChange={e => setQuestion(e.target.value)} />
+            <Textarea className="flex-1" placeholder="Your question..." rows={2} value={question} onChange={e => setQuestion(e.target.value)} />
             <Button onClick={() => void add()} disabled={busy === "add" || !subject.trim() || !question.trim()}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
           </div>
         </Card>
@@ -68,7 +68,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 flex items-center gap-2"><Badge tone={tone(r.status)}>{r.status}</Badge>{r.no} Â· {r.subject}</div>
+                <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 flex items-center gap-2"><Badge tone={tone(r.status)}>{r.status}</Badge>{r.no} · {r.subject}</div>
                   <div className="text-[12px] text-ink-500 mt-0.5">{r.question}</div>
                   {r.response && <div className="text-[12px] text-emerald-700 mt-1 pl-2 border-l-2 border-emerald-300">â†³ {r.response}</div>}</div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -78,7 +78,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
               </div>
               {replyFor === r.id && (
                 <div className="flex gap-2 mt-2 items-end">
-                  <Textarea className="flex-1" rows={2} placeholder="Responseâ€¦" value={reply} onChange={e => setReply(e.target.value)} />
+                  <Textarea className="flex-1" rows={2} placeholder="Response..." value={reply} onChange={e => setReply(e.target.value)} />
                   <Button size="sm" onClick={() => void sendReply(r.id)} disabled={busy === `r-${r.id}` || !reply.trim()}>Send</Button>
                 </div>
               )}

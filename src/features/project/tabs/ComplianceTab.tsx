@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Compliance tab (v3 port, DB-wired). Project-level
+﻿// SiteTrack Pro — project Compliance tab (v3 port, DB-wired). Project-level
 // RERA / GST / EPFO / PAN filings. Visible to compliance:view; editing needs a
 // filing capability (rera/gstn/epfo).
 
@@ -58,8 +58,8 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
         : rows.length === 0 ? <div className="text-sm text-ink-500">No filings tracked.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate uppercase">{r.kind}{r.refNo ? <span className="text-ink-500 font-normal normal-case"> Â· {r.refNo}</span> : null}</div>
-                <div className="text-[11px] text-ink-400">{[r.stage, r.expiresAt && `expires ${r.expiresAt.slice(0, 10)}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate uppercase">{r.kind}{r.refNo ? <span className="text-ink-500 font-normal normal-case"> · {r.refNo}</span> : null}</div>
+                <div className="text-[11px] text-ink-400">{[r.stage, r.expiresAt && `expires ${r.expiresAt.slice(0, 10)}`].filter(Boolean).join(" · ") || "—"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as ComplianceStatus; void run(`s-${r.id}`, c => setComplianceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
                   : <Badge tone={tone(r.status)}>{r.status}</Badge>}

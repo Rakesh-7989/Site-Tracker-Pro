@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” cross-project Messages inbox (/messages).
+﻿// SiteTrack Pro — cross-project Messages inbox (/messages).
 // Lists messages per-project with a project selector (mirrors legacy MessagesView).
 
 import { useCallback, useEffect, useRef, useState } from "react";

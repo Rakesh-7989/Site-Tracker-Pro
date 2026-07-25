@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Platform Usage Analytics admin view.
+﻿// SiteTrack Pro — Platform Usage Analytics admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";

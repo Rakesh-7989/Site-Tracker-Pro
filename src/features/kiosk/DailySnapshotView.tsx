@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Daily Snapshot (/kiosk/snapshot).
+﻿// SiteTrack Pro — Daily Snapshot (/kiosk/snapshot).
 // Single-page project status summary.
 
 import { useCallback, useEffect, useState } from "react";

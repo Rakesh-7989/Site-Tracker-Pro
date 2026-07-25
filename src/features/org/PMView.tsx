@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” PM Dashboard view (/pm). Project Manager landing.
+﻿// SiteTrack Pro — PM Dashboard view (/pm). Project Manager landing.
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";

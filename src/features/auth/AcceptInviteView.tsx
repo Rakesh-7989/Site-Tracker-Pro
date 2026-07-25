@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Accept invite landing page (/accept-invite).
+﻿// SiteTrack Pro — Accept invite landing page (/accept-invite).
 // After the org admin sends an invite, the user receives an email with a
 // login link. This page greets them, shows the org + role they're joining,
 // and prompts them to sign in or set a password.

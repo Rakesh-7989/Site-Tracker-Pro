@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Platform Audit Log admin view.
+﻿// SiteTrack Pro — Platform Audit Log admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
@@ -61,9 +61,9 @@ export function PlatformAuditView(): JSX.Element {
             {filtered.map(e => (
               <div key={e.id} className="grid grid-cols-12 gap-3 px-5 py-3 text-sm hover:bg-stone-50">
                 <div className="col-span-2 text-xs text-ink-500 font-mono">{fmtTime(e.time)}</div>
-                <div className="col-span-2 text-xs font-semibold">{e.by}<span className="text-ink-400 font-normal ml-1">Â· {e.role}</span></div>
+                <div className="col-span-2 text-xs font-semibold">{e.by}<span className="text-ink-400 font-normal ml-1">· {e.role}</span></div>
                 <div className="col-span-2"><span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-stone-100 text-ink-600">{e.type}</span></div>
-                <div className="col-span-6 text-xs text-ink-700 truncate"><strong>{e.action}</strong>{e.detail ? ` â€” ${e.detail}` : ""}</div>
+                <div className="col-span-6 text-xs text-ink-700 truncate"><strong>{e.action}</strong>{e.detail ? ` — ${e.detail}` : ""}</div>
               </div>
             ))}
             {filtered.length === 0 && <div className="p-8 text-center text-ink-500 italic">No events.</div>}

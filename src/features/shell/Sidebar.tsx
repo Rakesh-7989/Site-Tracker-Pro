@@ -51,7 +51,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarRef }: { mobileOpen: boole
 
   return (
     <>
-      {/* Backdrop overlay � fades in/out on mobile */}
+      {/* Backdrop overlay   fades in/out on mobile */}
       <div className={`fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm lg:hidden transition-opacity duration-200 ease-in-out ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={onClose} />
 
       {/* Sidebar: persistent on desktop (lg:), slide-in drawer on mobile */}

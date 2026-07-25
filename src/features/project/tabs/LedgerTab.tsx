@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Inventory Ledger tab (v3 port, Batch 3, DB-wired).
+﻿// SiteTrack Pro — project Inventory Ledger tab (v3 port, Batch 3, DB-wired).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -64,8 +64,8 @@ export function LedgerTab({ projectId }: { projectId: string }): JSX.Element {
         : rows.length === 0 ? <div className="text-sm text-ink-500">No transactions.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={dirTone(r.direction)}>{r.direction}</Badge>{r.material} Â· {r.qty}{r.unit ? ` ${r.unit}` : ""}</div>
-                <div className="text-[11px] text-ink-400">{r.txnDate}{r.refNo ? ` Â· ${r.refNo}` : ""}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={dirTone(r.direction)}>{r.direction}</Badge>{r.material} · {r.qty}{r.unit ? ` ${r.unit}` : ""}</div>
+                <div className="text-[11px] text-ink-400">{r.txnDate}{r.refNo ? ` · ${r.refNo}` : ""}</div></div>
               {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLedgerTxn(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
             </Card>))}</div>}
     </div>

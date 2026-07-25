@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” platform home (/admin, superadmin). Cross-tenant overview:
+﻿// SiteTrack Pro — platform home (/admin, superadmin). Cross-tenant overview:
 // org / user / project counts, plan mix, signup pipeline + quick links.
 
 import { useCallback, useEffect, useState } from "react";

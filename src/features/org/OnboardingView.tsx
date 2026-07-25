@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Org Onboarding wizard (/org/onboarding).
+﻿// SiteTrack Pro — Org Onboarding wizard (/org/onboarding).
 // 5-step first-time setup for new orgs. Persists to Supabase.
 
 import { useCallback, useEffect, useState } from "react";

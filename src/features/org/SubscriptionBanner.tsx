@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Subscription alert banner. Renders below TopBar when the
+﻿// SiteTrack Pro — Subscription alert banner. Renders below TopBar when the
 // active org has an active subscription alert (past_due, cancelled, paused,
 // trial ending). Dismissible for non-danger alerts.
 

@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Platform System Settings admin view.
+﻿// SiteTrack Pro — Platform System Settings admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";

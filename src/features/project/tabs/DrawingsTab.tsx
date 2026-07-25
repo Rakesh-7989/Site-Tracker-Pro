@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Drawings tab (v3 port, Batch 4, DB-wired).
+﻿// SiteTrack Pro — project Drawings tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -54,7 +54,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className={`p-3 flex items-center justify-between gap-3 ${r.status === "superseded" ? "opacity-60" : ""}`}>
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
-                <div className="text-[11px] text-ink-400 capitalize">{r.type}{r.releaseDate ? ` Â· ${r.releaseDate}` : ""}</div></div>
+                <div className="text-[11px] text-ink-400 capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}

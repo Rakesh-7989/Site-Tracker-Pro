@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Vendor Portal view (/vendor). Tabbed vendor dashboard.
+﻿// SiteTrack Pro — Vendor Portal view (/vendor). Tabbed vendor dashboard.
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
@@ -7,7 +7,7 @@ import { useSession } from "@/auth/OrganizationContext";
 
 
 import { getClient } from "@/lib/supabase";
-const fmtCur = (n: number) => `â‚¹${(n ?? 0).toLocaleString("en-IN")}`;
+const fmtCur = (n: number) => `₹${(n ?? 0).toLocaleString("en-IN")}`;
 const fmtDate = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }); };
 
 export function VendorPortalView(): JSX.Element {

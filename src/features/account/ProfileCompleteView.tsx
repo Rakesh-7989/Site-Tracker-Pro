@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” mandatory profile completion (route "/profile/complete").
+﻿// SiteTrack Pro — mandatory profile completion (route "/profile/complete").
 import { getClient } from "@/lib/supabase";
 //
 // Every user must finish their profile once after sign-in before they can use
@@ -42,7 +42,7 @@ export function ProfileCompleteView(): JSX.Element {
     return <div className="min-h-screen grid place-items-center bg-cream-50"><Spinner size={26} /></div>;
   }
   if (status === "signed-out" || !session) return <Navigate to="/login" replace />;
-  // Already done â†’ no reason to be here.
+  // Already done → no reason to be here.
   if (session.user.profileCompleted === true) return <Navigate to="/dashboard" replace />;
 
   const inputCls = "w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white";
@@ -56,7 +56,7 @@ export function ProfileCompleteView(): JSX.Element {
     const client = await getClient();
     const res = await completeMyProfile(client, { name, phone, company, jobTitle, city, language });
     if (!res.ok) { setBusy(false); return setError(res.error); }
-    await refresh();               // re-hydrate â†’ profileCompleted now true
+    await refresh();               // re-hydrate → profileCompleted now true
     setBusy(false);
     navigate("/dashboard", { replace: true });
   };
@@ -110,7 +110,7 @@ export function ProfileCompleteView(): JSX.Element {
         </div>
 
         <Button fullWidth size="lg" className="mt-5" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={16} /> : null}>
-          {busy ? "Savingâ€¦" : "Save & enter workspace"}
+          {busy ? "Saving..." : "Save & enter workspace"}
         </Button>
       </Card>
     </div>

@@ -154,9 +154,9 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
     <div className="p-4 md:p-10 max-w-7xl">
       <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{ borderBottom: "1px solid var(--st-line)" }}>
         <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">â€” Structure</div>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Structure</div>
           <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Project Hierarchy</h1>
-          <p className="text-ink-500 text-sm mt-2">Block â†’ Floor â†’ Unit â€” useful for residential towers, townships, gated communities.</p>
+          <p className="text-ink-500 text-sm mt-2">Block → Floor → Unit — useful for residential towers, townships, gated communities.</p>
         </div>
         <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm font-semibold outline-none focus:border-amber-600">
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -170,7 +170,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
       </div>}
       <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">{proj?.name || "â€”"} structure</h2>
+          <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">{proj?.name || "—"} structure</h2>
           {canCreate && <button onClick={addBlock} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-xs tracking-wide"><Icon name="plus" size={12} />Add block</button>}
         </div>
         {tree.length === 0 && <div className="text-center py-10 text-ink-500"><Icon name="building" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No blocks yet. Add the first one to start.</p></div>}
@@ -182,7 +182,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
                 <button onClick={() => toggleNode(b.id)} className="text-ink-500 w-5 text-center">{bExp ? "â–¾" : "â–¸"}</button>
                 <div className="flex-1">
                   <div className="font-display font-semibold text-ink-900 tracking-editorial">{b.name} <span className="text-[10px] font-mono text-amber-700 ml-1">{b.code}</span></div>
-                  <div className="text-[11px] text-ink-500">{(floors[b.id] || []).length} floors Â· {(progress.blocks as Record<string, number>)[b.id] || 0}% complete</div>
+                  <div className="text-[11px] text-ink-500">{(floors[b.id] || []).length} floors · {(progress.blocks as Record<string, number>)[b.id] || 0}% complete</div>
                 </div>
                 {canCreate && <>
                   <button onClick={() => addFloor(b.id)} className="text-[11px] font-bold text-amber-700 hover:text-amber-900">+ Floor</button>
@@ -194,7 +194,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
                 return (<div key={f.id} className="ml-6 rounded-lg" style={{ border: "1px solid var(--st-line)" }}>
                   <div className="flex items-center gap-3 p-2 bg-white">
                     <button onClick={() => toggleNode(f.id)} className="text-ink-500 w-5 text-center">{fExp ? "â–¾" : "â–¸"}</button>
-                    <div className="flex-1"><div className="text-sm font-semibold text-ink-800">Floor {f.number}</div><div className="text-[10px] text-ink-500">{(units[f.id] || []).length} units Â· {(progress.floors as Record<string, number>)[f.id] || 0}% complete</div></div>
+                    <div className="flex-1"><div className="text-sm font-semibold text-ink-800">Floor {f.number}</div><div className="text-[10px] text-ink-500">{(units[f.id] || []).length} units · {(progress.floors as Record<string, number>)[f.id] || 0}% complete</div></div>
                     {canCreate && <>
                       <button onClick={() => addUnit(f.id, b.id)} className="text-[10px] font-bold text-amber-700 hover:text-amber-900">+ Unit</button>
                       <button onClick={() => del("floor", f.id)} className="text-ink-400 hover:text-red-500"><Icon name="trash" size={12} /></button>

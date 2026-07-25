@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Platform Support Tickets admin view.
+﻿// SiteTrack Pro — Platform Support Tickets admin view.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
@@ -63,7 +63,7 @@ export function PlatformSupportView(): JSX.Element {
     <div className="p-4 md:p-8 max-w-6xl mx-auto h-[calc(100vh-100px)]">
       <div className="mb-4">
         <h1 className="text-2xl font-black text-ink-900">Support Inbox</h1>
-        <p className="text-ink-400 text-sm mt-1">{openCount} open Â· {tickets.length} total</p>
+        <p className="text-ink-400 text-sm mt-1">{openCount} open · {tickets.length} total</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
         <div className="lg:col-span-4 bg-white rounded-2xl overflow-hidden border border-stone-200 flex flex-col max-h-[40vh] lg:max-h-none">
@@ -75,7 +75,7 @@ export function PlatformSupportView(): JSX.Element {
                   <span className="font-semibold text-sm truncate flex-1">{t.subject}</span>
                   <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ml-2 ${t.status === "open" ? "bg-red-100 text-red-700" : t.status === "replied" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>{t.status}</span>
                 </div>
-                <div className="text-xs text-ink-400">{orgs[t.org_id] || "â€”"} Â· {t.from}</div>
+                <div className="text-xs text-ink-400">{orgs[t.org_id] || "—"} · {t.from}</div>
                 <div className="text-xs text-ink-400 mt-0.5">{fmtTime(t.created)}</div>
               </button>
             ))}
@@ -88,7 +88,7 @@ export function PlatformSupportView(): JSX.Element {
               <div className="px-5 py-4 border-b border-stone-200 flex items-center justify-between">
                 <div>
                   <div className="font-bold text-lg">{ticket.subject}</div>
-                  <div className="text-xs text-ink-400">{orgs[ticket.org_id] || "â€”"} Â· {ticket.from} Â· {fmtTime(ticket.created)}</div>
+                  <div className="text-xs text-ink-400">{orgs[ticket.org_id] || "—"} · {ticket.from} · {fmtTime(ticket.created)}</div>
                 </div>
                 {ticket.status !== "closed" && <button onClick={close} className="px-3 py-1.5 bg-stone-100 text-xs font-bold rounded-lg hover:bg-stone-200">Close</button>}
               </div>
@@ -99,7 +99,7 @@ export function PlatformSupportView(): JSX.Element {
                 </div>
                 {(ticket.messages ?? []).map(m => (
                   <div key={m.id} className="bg-amber-50 rounded-xl p-4">
-                    <div className="text-xs font-bold tracking-wider text-amber-700 uppercase mb-2">{m.by} Â· {fmtTime(m.time)}</div>
+                    <div className="text-xs font-bold tracking-wider text-amber-700 uppercase mb-2">{m.by} · {fmtTime(m.time)}</div>
                     <p className="text-sm whitespace-pre-line">{m.text}</p>
                   </div>
                 ))}

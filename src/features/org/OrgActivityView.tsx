@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Org Activity / Audit (/audit). Read-only audit trail scoped
+﻿// SiteTrack Pro — Org Activity / Audit (/audit). Read-only audit trail scoped
 // to the active org (list_org_activity RPC, migration 77).
 
 import { useCallback, useEffect, useState } from "react";
@@ -48,7 +48,7 @@ function OrgActivityInner({ orgId }: { orgId: string }): JSX.Element {
           <Card className="divide-y divide-cream-100">
             {rows.map(r => (
               <div key={r.id} className="p-3 flex items-start gap-3">
-                <Badge tone={ACTION_TONE[r.action] ?? "neutral"}>{r.action || "Â·"}</Badge>
+                <Badge tone={ACTION_TONE[r.action] ?? "neutral"}>{r.action || "·"}</Badge>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm text-ink-800">
                     <span className="font-semibold">{r.actorName}</span>

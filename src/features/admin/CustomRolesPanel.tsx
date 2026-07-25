@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Custom Roles panel (superadmin, migration 70).
+﻿// SiteTrack Pro — Custom Roles panel (superadmin, migration 70).
 import { getClient } from "@/lib/supabase";
 //
 // Shown inside RoleManager when a specific org is selected. Lets the founder
@@ -34,7 +34,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
-  // Org admins (self-service, Enterprise) cannot grant platform:* caps â€” the DB
+  // Org admins (self-service, Enterprise) cannot grant platform:* caps — the DB
   // RLS rejects them (migration 98); we also hide them from the picker.
   const groups = useMemo(() => {
     const all = capabilityGroups();
@@ -122,7 +122,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
                 className="mt-1"
                 value={draft.basedOn}
                 onChange={e => applyTemplate(e.target.value)}
-                options={[{ value: "", label: "â€” blank â€”" }, ...IDENTITY_ROLES.filter(r => r !== "superadmin").map(r => ({ value: r, label: ROLE_LABEL[r] }))]}
+                options={[{ value: "", label: "— blank —" }, ...IDENTITY_ROLES.filter(r => r !== "superadmin").map(r => ({ value: r, label: ROLE_LABEL[r] }))]}
               />
             </label>
           </div>

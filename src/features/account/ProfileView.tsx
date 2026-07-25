@@ -1,6 +1,6 @@
-﻿// SiteTrack Pro â€” my profile (route "/settings/profile"). View + edit your own
+﻿// SiteTrack Pro — my profile (route "/settings/profile"). View + edit your own
 // details. Email is the primary identity and is NOT editable. Mobile shows a
-// verification status (SMS OTP verification is gated behind an SMS provider â€”
+// verification status (SMS OTP verification is gated behind an SMS provider —
 // see the note; until then it stays "unverified").
 
 import { useEffect, useState } from "react";
@@ -70,7 +70,7 @@ export function ProfileView(): JSX.Element {
   const Row = ({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) => (
     <div className="py-2.5 border-b border-cream-100 last:border-0">
       <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">{label}</div>
-      {children ?? <div className="text-sm text-ink-800 mt-0.5">{value || <span className="text-ink-300">â€”</span>}</div>}
+      {children ?? <div className="text-sm text-ink-800 mt-0.5">{value || <span className="text-ink-300">—</span>}</div>}
     </div>
   );
 
@@ -89,7 +89,7 @@ export function ProfileView(): JSX.Element {
       {error && <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[13px] text-red-700 flex items-start gap-2"><Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}</div>}
       {saved && (
         <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700 flex items-center justify-between gap-3 flex-wrap">
-          <span>âœ… {t("profile.updated")}</span>
+          <span>✅ {t("profile.updated")}</span>
           <Button size="sm" variant="secondary" onClick={() => navigate("/dashboard")}>{t("profile.goToDashboard")}</Button>
         </div>
       )}
@@ -109,7 +109,7 @@ export function ProfileView(): JSX.Element {
             <Row label={t("profile.fullName")} value={name} />
             <Row label={t("profile.mobile")}>
               <div className="text-sm text-ink-800 mt-0.5 flex items-center gap-2">
-                {phone || <span className="text-ink-300">â€”</span>}
+                {phone || <span className="text-ink-300">—</span>}
                 {phone && <Badge tone="warning">{t("profile.unverified")}</Badge>}
               </div>
             </Row>

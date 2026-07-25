@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” org Analytics (/analytics). Cross-project rollups + charts
+﻿// SiteTrack Pro — org Analytics (/analytics). Cross-project rollups + charts
 // from the org_analytics RPC (migration 86).
 
 import { useCallback, useEffect, useState } from "react";

@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Gantt / schedule tab (v3 port, display-only). Derives
+﻿// SiteTrack Pro — project Gantt / schedule tab (v3 port, display-only). Derives
 // a lightweight timeline from the milestones table (no separate schedule table).
 
 import { useCallback, useEffect, useState } from "react";

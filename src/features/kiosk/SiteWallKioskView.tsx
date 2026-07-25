@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Site Wall Kiosk (/kiosk/site).
+﻿// SiteTrack Pro — Site Wall Kiosk (/kiosk/site).
 // Wall-mounted situational awareness display.
 
 import { useCallback, useEffect, useState } from "react";
@@ -65,7 +65,7 @@ function SiteWallKioskInner(): JSX.Element {
         <div className="bg-ink-700/40 rounded-3xl p-6 border border-amber-600/25 col-span-2 flex items-center justify-center text-cream/40">
           <div className="text-center">
             <div className="text-6xl mb-4 opacity-30">&#9670;</div>
-            <p className="text-sm">Site wall dashboard â€” safety notices, milestones, weather, and live feeds appear here in production.</p>
+            <p className="text-sm">Site wall dashboard — safety notices, milestones, weather, and live feeds appear here in production.</p>
           </div>
         </div>
       </div>

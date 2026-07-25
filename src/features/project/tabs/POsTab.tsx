@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” project Purchase Orders tab (v3 port, Batch 3, DB-wired).
+﻿// SiteTrack Pro — project Purchase Orders tab (v3 port, Batch 3, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
@@ -47,7 +47,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">PO No</span><Input className="mt-1 w-28" placeholder="PO-001" value={poNo} onChange={e => setPoNo(e.target.value)} /></div>
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Items</span><Input className="mt-1" placeholder="e.g. 100 bags cement" value={items} onChange={e => setItems(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Amount â‚¹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Delivery</span><Input className="mt-1" type="date" value={dd} onChange={e => setDd(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !poNo.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Create"}</Button>
         </Card>
@@ -56,8 +56,8 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
         : rows.length === 0 ? <div className="text-sm text-ink-500">No purchase orders.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.poNo} Â· {fmtRupees(r.amount)}</div>
-                <div className="text-[11px] text-ink-400 truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.poNo} · {fmtRupees(r.amount)}</div>
+                <div className="text-[11px] text-ink-400 truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" · ") || "—"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as POStatus; void run(`s-${r.id}`, c => setPOStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}

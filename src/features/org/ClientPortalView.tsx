@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” Client Portal view (/client). Shows the client's projects,
+﻿// SiteTrack Pro — Client Portal view (/client). Shows the client's projects,
 // progress, and unread notifications. Mirrors legacy ClientPortal.
 
 import { useEffect, useState } from "react";

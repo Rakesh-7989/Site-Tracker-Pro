@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro â€” org Calendar (/calendar). An agenda of every dated milestone
+﻿// SiteTrack Pro — org Calendar (/calendar). An agenda of every dated milestone
 // + task across the org's projects, bucketed Overdue / Today / Upcoming.
 
 import { useCallback, useEffect, useState } from "react";
@@ -83,7 +83,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
               </section>
             )}
             {overdue.length === 0 && today.length === 0 && upcomingDays.length === 0 && (
-              <Card className="p-8 text-center text-sm text-ink-500">Nothing scheduled. ðŸŽ‰</Card>
+              <Card className="p-8 text-center text-sm text-ink-500">Nothing scheduled. 🎉</Card>
             )}
           </>
         )}

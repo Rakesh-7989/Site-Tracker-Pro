@@ -1,9 +1,9 @@
-﻿// SiteTrack Pro â€” project Milestones tab (v3 port, Batch 1, DB-wired).
+﻿// SiteTrack Pro — project Milestones tab (v3 port, Batch 1, DB-wired).
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 //
 // Lists the project's milestones from the `milestones` table; add + status
-// cycle gated on milestone:add. First DB-wired ported tab â€” the pattern for
+// cycle gated on milestone:add. First DB-wired ported tab — the pattern for
 // the rest of Batch 1.
 
 import { useCallback, useEffect, useState } from "react";
@@ -95,7 +95,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
                 <div className="text-sm font-semibold text-ink-800 truncate">{m.title}</div>
                 <div className="text-[11px] text-ink-400">
                   {m.dueDate ? `Due ${m.dueDate}` : "No due date"}
-                  {m.completedDate && ` Â· Done ${m.completedDate}`}
+                  {m.completedDate && ` · Done ${m.completedDate}`}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

@@ -57,7 +57,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-display text-2xl font-bold text-ink-900">DPR History</h1>
-          <p className="text-sm text-ink-500 mt-0.5">{rows.length} total Â· {sentCount} sent Â· {deliveredCount} delivered Â· {failedCount} failed</p>
+          <p className="text-sm text-ink-500 mt-0.5">{rows.length} total · {sentCount} sent · {deliveredCount} delivered · {failedCount} failed</p>
         </div>
         <div className="flex items-center gap-2">
           <select className="text-xs border border-cream-200 rounded-lg px-2 py-1.5 bg-white"
