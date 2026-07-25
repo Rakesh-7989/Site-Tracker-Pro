@@ -19,7 +19,7 @@ const app = [
   read("src/features/admin/ImpersonationContext.tsx"),
   read("src/lib/useConnectionStatus.ts"),
   read("src/features/project/DetailView.tsx"),
-  read("src/lib/supabase.js"),
+  read("src/lib/supabase.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -194,7 +194,6 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "docs/CI_WORKFLOW.yml",
   // Tech Lead review additions (2026-05-22 evening)
   "src/auth/capabilities.ts",
-  "tests/permissions.test.js",
   "vitest.config.js",
   "scripts/supabase/01_schema.sql",
   "scripts/supabase/02_rls.sql",
@@ -206,10 +205,10 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   ".prettierrc.json",
   ".prettierignore",
   // Weakness pack
-  "src/lib/offline.js",
-  "src/lib/ai.js",
-  "src/lib/razorpay.js",
-  "src/lib/supabase.js",
+  "src/lib/offline.ts",
+  "src/lib/ai.ts",
+  "src/lib/razorpay.ts",
+  "src/lib/supabase.ts",
   "capacitor.config.json",
   "docs/MOBILE_BUILD.md",
   ".env.example",
@@ -220,25 +219,25 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "docs/SYSTEM_DESIGN.md",
   // Tech Lead Review fixes (HIGH-1, HIGH-2, MED-3, MED-4, LOW-5)
   "src/lib/escape.ts",
-  "src/lib/notifications.js",
+  "src/lib/notifications.ts",
   "src/lib/format.ts",
   "tests/escape.test.js",
   "tests/notifications.test.js",
   "tests/format.test.js",
   // Deep review pack
-  "src/data/seed.js",
+  "src/data/seed.ts",
   "src/data/lookups.ts",
   "playwright.config.js",
   "tests/e2e/roles.spec.js",
   // Roadmap Batch 1 — foundation libs + tests
-  "src/lib/hierarchy.js",
-  "src/lib/audit.js",
-  "src/lib/delegations.js",
-  "src/lib/branding.js",
-  "src/lib/materialPrices.js",
-  "src/lib/compliance.js",
-  "src/lib/planGating.js",
-  "src/lib/aiForecast.js",
+  "src/lib/hierarchy.ts",
+  "src/lib/audit.ts",
+  "src/lib/delegations.ts",
+  "src/lib/branding.ts",
+  "src/lib/materialPrices.ts",
+  "src/lib/compliance.ts",
+  "src/lib/planGating.ts",
+  "src/lib/aiForecast.ts",
   "tests/hierarchy.test.js",
   "tests/audit.test.js",
   "tests/delegations.test.js",
@@ -246,7 +245,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "tests/planGating.test.js",
   "tests/compliance.test.js",
   // Roadmap Batch 3 — new lib + docs
-  "src/lib/whatsapp.js",
+  "src/lib/whatsapp.ts",
   // Roadmap Batch 4 — App.jsx split (ui atoms + features/)
   "src/components/ui/atoms.tsx",
   // Roadmap Batch 5 — admin cluster extracted
@@ -257,21 +256,21 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   // Roadmap Batch 8 — export helpers extracted
   // Roadmap Batch 10 — shell cluster extracted
   // Production Phase 1 — Org Admin tier
-  "src/lib/approvalChains.js",
-  "src/lib/orgIntegrations.js",
-  "src/lib/templates.js",
+  "src/lib/approvalChains.ts",
+  "src/lib/orgIntegrations.ts",
+  "src/lib/templates.ts",
   "tests/approvalChains.test.js",
   "tests/orgIntegrations.test.js",
   "tests/templates.test.js",
   // Session 15 — Production gate (RLS + Cashfree)
-  "src/lib/cashfree.js",
+  "src/lib/cashfree.ts",
   "tests/cashfree.test.js",
   "scripts/supabase/03_rls_phase1.sql",
   "scripts/supabase/05_rls_phase1_tests.sql",
   "docs/PRODUCTION_RLS.md",
   "docs/CASHFREE_ONBOARDING.md",
   // Session 16 — Feature-flag catalog system
-  "src/lib/orgFeatureFlags.js",
+  "src/lib/orgFeatureFlags.ts",
   "tests/orgFeatureFlags.test.js",
   // Session 17 — Live database connection runbook + check script
   "scripts/check-supabase-connection.mjs",
@@ -300,23 +299,23 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "supabase/functions/README.md",
   "src/lib/blockchainAnchor.ts",
   "tests/blockchainAnchor.test.js",
-  "src/lib/reraTelangana.js",
+  "src/lib/reraTelangana.ts",
   "tests/reraTelangana.test.js",
   "docs/PLAY_STORE_PREP.md",
   // Session 23 — v2 role model implementation (Phases A-E)
   "docs/ROLE_MODEL_V2.md",
   "scripts/supabase/06_project_types.sql",
   "scripts/supabase/07_role_expansion.sql",
-  "src/lib/projectTypes.js",
+  "src/lib/projectTypes.ts",
   "tests/projectTypes.test.js",
-  "src/lib/contractors.js",
+  "src/lib/contractors.ts",
   "tests/contractors.test.js",
   // Session 24 — comparison + adversarial fixes
   "docs/COMPETITOR_COMPARISON_V2.md",
   // Session 25 — sales-blocking miss fixes (BOQ import + bulk member + PDF audit + archive)
-  "src/lib/boqImport.js",
+  "src/lib/boqImport.ts",
   "tests/boqImport.test.js",
-  "src/lib/projectArchive.js",
+  "src/lib/projectArchive.ts",
   "tests/projectArchive.test.js",
   "scripts/supabase/08_project_archive.sql",
   // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
@@ -363,7 +362,7 @@ add("Vite manual chunks configured", vite.includes("manualChunks") && vite.inclu
 // a view is frozen when the runtime still serves it (or vice versa). Lint-
 // level parity check below catches the drift before deploy.
 {
-  const flagsJs = read("src/lib/featureFlags.js");
+  const flagsJs = read("src/lib/featureFlags.ts");
   const freezeSql = read("scripts/supabase/49_feature_flags_freeze.sql");
 
   // Extract STUB_VIEWS literal entries: matches the strings inside the Set
