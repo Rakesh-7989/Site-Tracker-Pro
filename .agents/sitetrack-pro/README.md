@@ -12,7 +12,8 @@ These agents are for building and improving SiteTrack Pro. They are not user-fac
 | UX/UI Designer Agent | Mobile-first flows, user-friendly screens, client/contractor experience. | Product Owner / Designer |
 | Frontend Engineer Agent | React/Vite implementation, dashboards, forms, uploads, PWA UI. | Tech Lead |
 | Backend Engineer Agent | API, database, auth, file storage, notifications, audit logs. | Tech Lead |
-| QA/Test Agent | Role checks, regression, upload testing, mobile/browser testing. | QA Lead |
+| QA/Test Agent | Automated tests: role checks, regression, upload testing, mobile/browser. Writes Playwright tests. | QA Lead |
+| QA Test Conductor | Manual test driver: walks human testers through M-01 to M-15 scripts, records results, files bugs with regression tests. | QA Lead / Human Tester |
 | Security & Permissions Agent | Role boundaries, file visibility, privacy, payment data, audit policy. | Security Owner / Tech Lead |
 | DevOps/Release Agent | Free deployment, CI/CD, environment setup, monitoring, rollback. | Release Manager |
 | Documentation Agent | User docs, technical docs, decisions, handoffs, release notes. | Tech Lead |

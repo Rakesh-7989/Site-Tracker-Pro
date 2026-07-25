@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@/components/ui/atoms";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface SearchResult {
   type: "project" | "milestone" | "issue" | "vendor";
@@ -18,6 +19,7 @@ export function GlobalSearch(): JSX.Element {
   const [results, setResults] = useState<SearchResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 1023px)");
 
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) { setResults([]); return; }
@@ -67,7 +69,7 @@ export function GlobalSearch(): JSX.Element {
   const typeColor: Record<string, string> = {
     project: "bg-blue-50 text-blue-600",
     milestone: "bg-orange-50 text-orange-600",
-    issue: "bg-red-50 text-red-600",
+    issue: "bg-rose-50 text-rose-600",
     vendor: "bg-emerald-50 text-emerald-600",
   };
 
@@ -84,22 +86,43 @@ export function GlobalSearch(): JSX.Element {
         className="w-full pl-9 pr-3 py-2 bg-cream-100 border border-cream-200 rounded-lg text-xs outline-none focus:border-safety-500 focus:bg-white text-ink-800 placeholder:text-ink-400"
       />
       {show && q && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-cream-200 rounded-xl shadow-xl max-h-96 overflow-y-auto z-50">
-          {results.length === 0 ? (
-            <div className="p-4 text-xs text-ink-500 text-center">No results</div>
-          ) : results.map((r, i) => (
-            <button
-              key={i}
-              onMouseDown={() => select(r)}
-              className="w-full text-left px-4 py-2.5 hover:bg-cream-50 border-b border-cream-100 last:border-0 flex items-center gap-3"
-            >
-              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${typeColor[r.type]}`}>{r.type}</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-ink-800 truncate">{r.title}</div>
-                <div className="text-[10px] text-ink-500 truncate">{r.sub}</div>
-              </div>
-            </button>
-          ))}
+        <div className={`bg-white border border-cream-200 overflow-y-auto z-50 ${
+          isMobile
+            ? "fixed inset-x-0 top-0 bottom-0 mt-0 rounded-none border-0 shadow-none"
+            : "absolute top-full left-0 right-0 mt-1 rounded-xl shadow-xl max-h-96"
+        }`}>
+          {/* Mobile close header */}
+          {isMobile && (
+            <div className="sticky top-0 bg-white border-b border-cream-200 flex items-center gap-2 px-4 py-3">
+              <Icon name="search" size={16} className="text-ink-400 flex-shrink-0" />
+              <input
+                ref={inputRef}
+                value={q}
+                onChange={e => { setQ(e.target.value); setShow(true); }}
+                placeholder="Search projects, milestones, issues..."
+                className="flex-1 outline-none text-sm text-ink-800 placeholder:text-ink-400"
+                autoFocus
+              />
+              <button onClick={() => { setShow(false); setQ(""); }} className="text-sm font-semibold text-safety-600 hover:text-safety-700">Cancel</button>
+            </div>
+          )}
+          <div className={isMobile ? "flex-1 overflow-y-auto" : ""}>
+            {results.length === 0 ? (
+              <div className="p-4 text-xs text-ink-500 text-center">No results</div>
+            ) : results.map((r, i) => (
+              <button
+                key={i}
+                onMouseDown={() => select(r)}
+                className="w-full text-left px-4 py-2.5 hover:bg-cream-50 border-b border-cream-100 last:border-0 flex items-center gap-3"
+              >
+                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${typeColor[r.type]}`}>{r.type}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-ink-800 truncate">{r.title}</div>
+                  <div className="text-[10px] text-ink-500 truncate">{r.sub}</div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

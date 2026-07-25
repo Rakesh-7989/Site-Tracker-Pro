@@ -8,6 +8,7 @@ import { listRfis, createRfi, respondRfi, deleteRfi, type Rfi, type RfiStatus } 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const tone = (s: RfiStatus): "info" | "success" | "neutral" | "danger" => (s === "open" ? "info" : s === "answered" ? "success" : s === "overdue" ? "danger" : "neutral");
 
 export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
@@ -19,7 +20,6 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Rfi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [subject, setSubject] = useState(""); const [question, setQuestion] = useState("");
   const [replyFor, setReplyFor] = useState<string | null>(null); const [reply, setReply] = useState("");
 
@@ -29,12 +29,26 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listRfis(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!subject.trim() || !question.trim() || !session) return; const no = `RFI-${String(rows.length + 1).padStart(3, "0")}`; await run("add", c => createRfi(c, { projectId, no, subject: subject.trim(), question: question.trim(), askedBy: session.user.id })); setSubject(""); setQuestion(""); };
-  const sendReply = async (id: string) => { if (!reply.trim()) return; await run(`r-${id}`, c => respondRfi(c, id, reply.trim())); setReplyFor(null); setReply(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!subject.trim() || !question.trim() || !session) return;
+    const no = `RFI-${String(rows.length + 1).padStart(3, "0")}`;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createRfi(c, { projectId, no, subject: subject.trim(), question: question.trim(), askedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, no, subject: subject.trim(), question: question.trim(), category: null, status: "open" as RfiStatus, response: null, askedAt: null }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setSubject(""); setQuestion("");
+  };
+  const sendReply = async (id: string) => {
+    if (!reply.trim()) return;
+    const prevRows = rows;
+    await run(`r-${id}`, c => respondRfi(c, id, reply.trim()), {
+      apply: () => setRows(prev => prev.map(x => x.id === id ? { ...x, status: "answered" as RfiStatus, response: reply.trim() } : x)),
+      rollback: () => setRows(prevRows),
+    });
+    setReplyFor(null); setReply("");
+  };
 
   return (
     <div className="space-y-4">
@@ -59,7 +73,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
                   {r.response && <div className="text-[12px] text-emerald-700 mt-1 pl-2 border-l-2 border-emerald-300">â†³ {r.response}</div>}</div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {canRespond && r.status !== "answered" && r.status !== "closed" && <Button size="sm" variant="secondary" onClick={() => { setReplyFor(replyFor === r.id ? null : r.id); setReply(""); }}>Reply</Button>}
-                  {canAsk && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRfi(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  {canAsk && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRfi(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
                 </div>
               </div>
               {replyFor === r.id && (

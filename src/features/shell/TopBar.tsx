@@ -27,7 +27,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
   };
 
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-cream-200 bg-white z-20">
+    <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-cream-200 bg-white z-20 safe-area-top">
       <div className="flex items-center gap-3">
         <button onClick={onMenuToggle} className="lg:hidden p-1.5 -ml-1 rounded-lg text-ink-600 hover:bg-cream-100 transition" aria-label="Toggle navigation menu">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -38,7 +38,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
 
         {/* Offline / queue pill */}
         {!online && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-red-50 text-red-700" title={`${pendingOps} ops queued`}>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-rose-50 text-rose-700" title={`${pendingOps} ops queued`}>
             ● Offline {pendingOps > 0 && `(${pendingOps})`}
           </div>
         )}
@@ -56,7 +56,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
               conn.state === "live" ? "bg-emerald-50 text-emerald-700" :
               conn.state === "off" ? "bg-cream-200 text-ink-700" :
               conn.state === "degraded" ? "bg-amber-50 text-amber-800" :
-              "bg-red-50 text-red-700"
+              "bg-rose-50 text-rose-700"
             }`}
             title={`Backend: ${conn.state} — ${conn.detail || "OK"}`}
           >
@@ -64,7 +64,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
               conn.state === "live" ? "bg-emerald-500" :
               conn.state === "off" ? "bg-ink-500" :
               conn.state === "degraded" ? "bg-amber-500" :
-              "bg-red-500"
+              "bg-rose-500"
             }`} />
             {conn.state === "live" ? "DB Live" :
              conn.state === "off" ? "Local mode" :

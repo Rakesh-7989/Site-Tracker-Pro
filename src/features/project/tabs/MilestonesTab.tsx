@@ -1,5 +1,6 @@
 ﻿// SiteTrack Pro â€” project Milestones tab (v3 port, Batch 1, DB-wired).
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 //
 // Lists the project's milestones from the `milestones` table; add + status
 // cycle gated on milestone:add. First DB-wired ported tab â€” the pattern for
@@ -33,7 +34,6 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [due, setDue] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -46,19 +46,15 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
 
   useEffect(() => { void reload(); }, [reload]);
 
-  const run = useCallback(async (key: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(key); setError(null);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client);
-    if (!res.ok) setError(res.error ?? "Action failed.");
-    await reload();
-    setBusy(null);
-  }, [reload]);
+  const { busy, run } = useAction(reload, setError);
 
   const add = async () => {
     if (!title.trim()) return;
-    await run("add", c => createMilestone(c, { projectId, title: title.trim(), dueDate: due || null, sortOrder: rows.length }));
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createMilestone(c, { projectId, title: title.trim(), dueDate: due || null, sortOrder: rows.length }), {
+      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), dueDate: due || null, sortOrder: rows.length, status: "pending" as MilestoneStatus, completedDate: null }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
     setTitle(""); setDue("");
   };
 
@@ -107,7 +103,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
                   <button
                     type="button"
                     disabled={busy === `s-${m.id}`}
-                    onClick={() => void run(`s-${m.id}`, c => setMilestoneStatus(c, m.id, nextStatus(m.status)))}
+                    onClick={() => { const ns = nextStatus(m.status); void run(`s-${m.id}`, c => setMilestoneStatus(c, m.id, ns), { apply: () => setRows(prev => prev.map(x => x.id === m.id ? { ...x, status: ns, completedDate: ns === "completed" ? new Date().toISOString().slice(0, 10) : null } : x)), rollback: () => setRows(prev => prev.map(x => x.id === m.id ? { ...x, status: m.status, completedDate: m.completedDate } : x)) }); }}
                     title="Cycle status"
                   >
                     <Badge tone={STATUS_TONE[m.status]}>{STATUS_LABEL[m.status]}</Badge>
@@ -116,7 +112,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
                   <Badge tone={STATUS_TONE[m.status]}>{STATUS_LABEL[m.status]}</Badge>
                 )}
                 {canEdit && (
-                  <Button size="sm" variant="ghost" onClick={() => void run(`d-${m.id}`, c => deleteMilestone(c, m.id))}>
+                  <Button size="sm" variant="ghost" onClick={() => void run(`d-${m.id}`, c => deleteMilestone(c, m.id), { apply: () => setRows(prev => prev.filter(x => x.id !== m.id)), rollback: () => setRows(prev => [...prev, m]) })}>
                     <Icon name="trash" size={14} className="text-rose-500" />
                   </Button>
                 )}

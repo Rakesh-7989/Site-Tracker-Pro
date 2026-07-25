@@ -9,6 +9,7 @@ import { listChangeOrders, createChangeOrder, setCoStatus, deleteChangeOrder, ty
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "submitted", label: "Submitted" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "cancelled", label: "Cancelled" }];
 
 export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Element {
@@ -20,7 +21,6 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
   const [rows, setRows] = useState<ChangeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [desc, setDesc] = useState(""); const [cost, setCost] = useState(""); const [days, setDays] = useState("");
 
   const reload = useCallback(async () => {
@@ -29,11 +29,19 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
     const res = await listChangeOrders(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!desc.trim() || !session) return; const no = `CO-${String(rows.length + 1).padStart(3, "0")}`; const c = cost.trim() ? Number(cost) : undefined; const d = days.trim() ? Number(days) : undefined; await run("add", cl => createChangeOrder(cl, { projectId, no, description: desc.trim(), costImpact: Number.isFinite(c) ? c : undefined, scheduleImpact: Number.isFinite(d) ? d : undefined, raisedBy: session.user.id })); setDesc(""); setCost(""); setDays(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!desc.trim() || !session) return;
+    const no = `CO-${String(rows.length + 1).padStart(3, "0")}`;
+    const c = cost.trim() ? Number(cost) : null;
+    const d = days.trim() ? Number(days) : null;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", cl => createChangeOrder(cl, { projectId, no, description: desc.trim(), costImpact: c ?? undefined, scheduleImpact: d ?? undefined, raisedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, no, description: desc.trim(), costImpact: Number.isFinite(c) ? c : null, scheduleImpact: Number.isFinite(d) ? d : null, reason: null, status: "submitted" as CoStatus }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setDesc(""); setCost(""); setDays("");
+  };
 
   return (
     <div className="space-y-4">
@@ -54,9 +62,9 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.no} Â· {r.description}</div>
                 <div className="text-[11px] text-ink-400">{[r.costImpact != null && `${r.costImpact >= 0 ? "+" : ""}${fmtRupees(r.costImpact)}`, r.scheduleImpact != null && `${r.scheduleImpact >= 0 ? "+" : ""}${r.scheduleImpact}d`].filter(Boolean).join(" Â· ") || "no impact set"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setCoStatus(c, r.id, e.target.value as CoStatus))} options={STT} />
+                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as CoStatus; void run(`s-${r.id}`, c => setCoStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}
-                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteChangeOrder(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteChangeOrder(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

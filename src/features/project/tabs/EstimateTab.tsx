@@ -9,6 +9,7 @@ import { listEstimates, createEstimate, setEstimateStatus, deleteEstimate, type 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const NEXT: Record<EstimateStatus, EstimateStatus> = { draft: "submitted", submitted: "approved", approved: "superseded", superseded: "draft", rejected: "draft" };
 const tone = (s: EstimateStatus): "neutral" | "info" | "success" | "danger" => (s === "approved" ? "success" : s === "submitted" ? "info" : s === "rejected" ? "danger" : "neutral");
 
@@ -19,7 +20,6 @@ export function EstimateTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Estimate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [name, setName] = useState(""); const [total, setTotal] = useState("");
 
   const reload = useCallback(async () => {
@@ -28,11 +28,17 @@ export function EstimateTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listEstimates(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { const amt = Number(total); if (!name.trim() || !Number.isFinite(amt) || amt <= 0 || !session) return; await run("add", c => createEstimate(c, { projectId, name: name.trim(), totalAmount: amt, createdBy: session.user.id })); setName(""); setTotal(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    const amt = Number(total);
+    if (!name.trim() || !Number.isFinite(amt) || amt <= 0 || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createEstimate(c, { projectId, name: name.trim(), totalAmount: amt, createdBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, name: name.trim(), totalAmount: amt, version: 1, status: "draft" as EstimateStatus }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setName(""); setTotal("");
+  };
 
   return (
     <div className="space-y-4">
@@ -52,9 +58,9 @@ export function EstimateTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.name} <span className="text-[11px] text-ink-400 font-normal">v{r.version}</span></div>
                 <div className="text-[11px] text-ink-500">{fmtRupees(r.totalAmount)}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <button type="button" disabled={busy === `s-${r.id}`} onClick={() => void run(`s-${r.id}`, c => setEstimateStatus(c, r.id, NEXT[r.status]))}><Badge tone={tone(r.status)}>{r.status}</Badge></button>
+                {canEdit ? <button type="button" disabled={busy === `s-${r.id}`} onClick={() => { const ns = NEXT[r.status]; void run(`s-${r.id}`, c => setEstimateStatus(c, r.id, ns), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: ns } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }}><Badge tone={tone(r.status)}>{r.status}</Badge></button>
                   : <Badge tone={tone(r.status)}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEstimate(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEstimate(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

@@ -10,6 +10,7 @@ import { listChains, upsertChain, deleteChain, APPROVAL_RESOURCES, APPROVAL_RUNG
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const RES_LABEL: Record<ApprovalResource, string> = { expense: "Expense", po: "Purchase order", ra_bill: "RA bill", change_order: "Change order", invoice: "Invoice", drawing_release: "Drawing release" };
 const RES_OPTS = APPROVAL_RESOURCES.map(r => ({ value: r, label: RES_LABEL[r] }));
 const ROLE_OPTS = APPROVAL_RUNG_ROLES.map(r => ({ value: r, label: r }));
@@ -29,7 +30,6 @@ function Inner({ orgId, updatedBy }: { orgId: string; updatedBy: string }): JSX.
   const [rows, setRows] = useState<ApprovalChain[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   // Builder state
   const [resource, setResource] = useState<ApprovalResource>("expense");
   const [name, setName] = useState("");
@@ -42,15 +42,16 @@ function Inner({ orgId, updatedBy }: { orgId: string; updatedBy: string }): JSX.
     const res = await listChains(client, orgId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [orgId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
+  const { busy, run } = useAction(reload, setError);
 
   const addRung = () => { const t = Number(thr); if (!(t >= 0)) return; setRungs(rs => [...rs, { threshold: t, role }].sort((a, b) => a.threshold - b.threshold)); setThr(""); };
   const save = async () => {
     if (!name.trim() || rungs.length === 0) return;
-    await run("save", c => upsertChain(c, { orgId, resource, name: name.trim(), rungs, updatedBy }));
+    const prevRows = rows;
+    await run("save", c => upsertChain(c, { orgId, resource, name: name.trim(), rungs, updatedBy }), {
+      apply: () => setRows(prev => { const filtered = prev.filter(x => x.resource !== resource); return [...filtered, { resource, name: name.trim(), rungs }]; }),
+      rollback: () => setRows(prevRows),
+    });
     setName(""); setRungs([]);
   };
   const editExisting = (ch: ApprovalChain) => { setResource(ch.resource); setName(ch.name); setRungs(ch.rungs); };
@@ -92,7 +93,7 @@ function Inner({ orgId, updatedBy }: { orgId: string; updatedBy: string }): JSX.
                 <div className="text-[11px] text-ink-400 mt-1">{ch.rungs.map(r => `â‰¥${fmtThreshold(r.threshold)} â†’ ${r.role}`).join("  Â·  ") || "no rungs"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => editExisting(ch)}><Icon name="sliders" size={14} /></Button>
-                <Button size="sm" variant="ghost" onClick={() => void run(`d-${ch.resource}`, c => deleteChain(c, orgId, ch.resource))}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => void run(`d-${ch.resource}`, c => deleteChain(c, orgId, ch.resource), { apply: () => setRows(prev => prev.filter(x => x.resource !== ch.resource)), rollback: () => setRows(prev => [...prev, ch]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>
               </div>
             </Card>))}</div>}
     </div>

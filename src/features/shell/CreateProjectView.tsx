@@ -91,9 +91,9 @@ export function CreateProjectView(): JSX.Element {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3">
-              <Icon name="alert" size={16} className="text-red-600 mt-0.5" />
-              <span className="text-xs text-red-700">{error}</span>
+            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3">
+              <Icon name="alert" size={16} className="text-rose-600 mt-0.5" />
+              <span className="text-xs text-rose-700">{error}</span>
             </div>
           )}
 

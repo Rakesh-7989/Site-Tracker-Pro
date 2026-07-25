@@ -25,7 +25,7 @@ export function Checkbox({ checked, onChange, label, disabled, error, className,
           checked
             ? "bg-safety-500 border-safety-500"
             : "bg-white border-cream-200 hover:border-ink-400",
-          error && "border-red-400",
+          error && "border-rose-400",
         )}>
           {checked && <Icon name="check" size={11} className="text-white" />}
         </div>
@@ -39,7 +39,7 @@ export function Checkbox({ checked, onChange, label, disabled, error, className,
         />
         {label && <span className="text-sm text-ink-700">{label}</span>}
       </label>
-      {error && <p className="mt-1 text-[11px] text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-[11px] text-rose-600">{error}</p>}
     </div>
   );
 }

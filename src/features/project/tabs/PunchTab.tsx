@@ -8,6 +8,7 @@ import { listPunch, createPunch, setPunchStatus, deletePunch, type PunchItem, ty
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const SEV = [{ value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" }, { value: "critical", label: "Critical" }];
 const STT = [{ value: "open", label: "Open" }, { value: "in_progress", label: "In progress" }, { value: "resolved", label: "Resolved" }, { value: "verified", label: "Verified" }, { value: "wont_fix", label: "Won't fix" }];
 const sevTone = (s: PunchSeverity): "danger" | "warning" | "neutral" => (s === "critical" || s === "high" ? "danger" : s === "medium" ? "warning" : "neutral");
@@ -19,7 +20,6 @@ export function PunchTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<PunchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [loc, setLoc] = useState(""); const [defect, setDefect] = useState(""); const [trade, setTrade] = useState(""); const [sev, setSev] = useState<PunchSeverity>("medium");
 
   const reload = useCallback(async () => {
@@ -28,11 +28,16 @@ export function PunchTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listPunch(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!loc.trim() || !defect.trim() || !session) return; await run("add", c => createPunch(c, { projectId, location: loc.trim(), defect: defect.trim(), trade: trade.trim() || undefined, severity: sev, reportedBy: session.user.id })); setLoc(""); setDefect(""); setTrade(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!loc.trim() || !defect.trim() || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createPunch(c, { projectId, location: loc.trim(), defect: defect.trim(), trade: trade.trim() || undefined, severity: sev, reportedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, location: loc.trim(), defect: defect.trim(), trade: trade.trim() || null, severity: sev, assignedTo: null, status: "open" as PunchStatus }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setLoc(""); setDefect(""); setTrade("");
+  };
 
   const open = rows.filter(r => r.status === "open" || r.status === "in_progress").length;
 
@@ -56,9 +61,9 @@ export function PunchTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} â€” {r.defect}</div>
                 <div className="text-[11px] text-ink-400">{r.trade ?? "â€”"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setPunchStatus(c, r.id, e.target.value as PunchStatus))} options={STT} />
+                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status.replace("_", " ")}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePunch(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePunch(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

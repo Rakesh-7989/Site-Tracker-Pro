@@ -8,6 +8,7 @@ import { listExpenses, createExpense, setExpenseStatus, deleteExpense, fmtRupees
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const CAT = [{ value: "material", label: "Material" }, { value: "labour", label: "Labour" }, { value: "equipment", label: "Equipment" }, { value: "admin", label: "Admin" }, { value: "permit", label: "Permit" }, { value: "other", label: "Other" }];
 const STT = [{ value: "recorded", label: "Recorded" }, { value: "reimbursed", label: "Reimbursed" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "disputed", label: "Disputed" }];
 
@@ -19,7 +20,6 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [cat, setCat] = useState("material"); const [desc, setDesc] = useState(""); const [amount, setAmount] = useState(""); const [paidTo, setPaidTo] = useState("");
 
   const reload = useCallback(async () => {
@@ -28,11 +28,17 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listExpenses(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { const amt = Number(amount); if (!desc.trim() || !Number.isFinite(amt) || amt <= 0 || !session) return; await run("add", c => createExpense(c, { projectId, category: cat, description: desc.trim(), amount: amt, paidTo: paidTo.trim() || undefined, recordedBy: session.user.id })); setDesc(""); setAmount(""); setPaidTo(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    const amt = Number(amount);
+    if (!desc.trim() || !Number.isFinite(amt) || amt <= 0 || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createExpense(c, { projectId, category: cat, description: desc.trim(), amount: amt, paidTo: paidTo.trim() || undefined, recordedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, category: cat, description: desc.trim(), amount: amt, paidTo: paidTo.trim() || null, expenseDate: new Date().toISOString().slice(0, 10), status: "recorded" as ExpenseStatus }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setDesc(""); setAmount(""); setPaidTo("");
+  };
 
   const total = rows.reduce((s, r) => s + r.amount, 0);
 
@@ -57,9 +63,9 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{fmtRupees(r.amount)} Â· <span className="font-normal capitalize">{r.category}</span></div>
                 <div className="text-[11px] text-ink-400 truncate">{r.description}{r.paidTo ? ` â†’ ${r.paidTo}` : ""}{r.expenseDate ? ` Â· ${r.expenseDate}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setExpenseStatus(c, r.id, e.target.value as ExpenseStatus))} options={STT} />
+                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as ExpenseStatus; void run(`s-${r.id}`, c => setExpenseStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteExpense(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteExpense(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

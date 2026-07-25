@@ -1,5 +1,6 @@
 ﻿// SiteTrack Pro â€” Org People module (HRMS Phase B, /org/members).
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 //
 // Org admins manage their org's people: see the directory, add an existing
 // user by email, change org-tier role, assign/remove custom roles, and
@@ -47,7 +48,6 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
   const [customRoles, setCustomRoles] = useState<OrgCustomRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
 
   // Add-member form
   const [email, setEmail] = useState("");
@@ -88,15 +88,7 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
     }
   }, [availableOrgRoles, inviteRole]);
 
-  const run = useCallback(async (key: string, fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(key); setError(null);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client);
-    if (!res.ok) setError(res.error ?? "Action failed.");
-    await reload();
-    setBusy(null);
-  }, [reload]);
+  const { busy, run } = useAction(reload, setError);
 
   const search = async () => {
     if (!email.trim()) return;
@@ -179,9 +171,9 @@ function OrgMembersInner({ orgId, orgName, createdBy, plan }: { orgId: string; o
         <div className="grid place-items-center py-10"><Spinner size={22} /></div>
       ) : (
         <>
-          <MemberList title="Active" rows={active} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} identityRoleOptions={identityRoleOptions} roleOptions={roleOptions} run={run} />
+          <MemberList title="Active" rows={active} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} identityRoleOptions={identityRoleOptions} roleOptions={roleOptions} run={run} setMembers={setMembers} />
           {inactive.length > 0 && (
-            <MemberList title="Inactive" rows={inactive} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} identityRoleOptions={identityRoleOptions} roleOptions={roleOptions} run={run} dim />
+            <MemberList title="Inactive" rows={inactive} customRoles={customRoles} roleById={roleById} busy={busy} orgId={orgId} createdBy={createdBy} identityRoleOptions={identityRoleOptions} roleOptions={roleOptions} run={run} dim setMembers={setMembers} />
           )}
         </>
       )}
@@ -194,10 +186,11 @@ interface ListProps {
   roleById: Map<string, OrgCustomRole>; busy: string | null; orgId: string; createdBy: string; dim?: boolean;
   identityRoleOptions: Array<{ value: string; label: string }>;
   roleOptions: (current?: string) => Array<{ value: OrgTierRole; label: string }>;
-  run: (key: string, fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>) => Promise<void>;
+  run: (key: string, fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>, optimistic?: { apply: () => void; rollback?: () => void }) => Promise<void>;
+  setMembers: React.Dispatch<React.SetStateAction<OrgMemberRow[]>>;
 }
 
-function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy, identityRoleOptions, roleOptions, run, dim }: ListProps): JSX.Element {
+function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy, identityRoleOptions, roleOptions, run, dim, setMembers }: ListProps): JSX.Element {
   if (rows.length === 0) return <></>;
   return (
     <div>
@@ -219,7 +212,7 @@ function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy
                     className="w-auto text-xs"
                     value={m.identityRole}
                     disabled={busy === `identity-${m.profileId}`}
-                    onChange={e => void run(`identity-${m.profileId}`, c => setIdentityRole(c, m.profileId, e.target.value))}
+                    onChange={e => { const v = e.target.value; void run(`identity-${m.profileId}`, c => setIdentityRole(c, m.profileId, v), { apply: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, identityRole: v } : x)), rollback: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, identityRole: m.identityRole } : x)) }); }}
                     options={identityRoleOptions}
                   />
                   {/* Org tier role */}
@@ -227,12 +220,12 @@ function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy
                     className="w-auto text-xs"
                     value={m.orgRole}
                     disabled={busy === `tier-${m.profileId}`}
-                    onChange={e => void run(`tier-${m.profileId}`, c => setOrgTierRole(c, { orgId, profileId: m.profileId, orgRole: e.target.value as OrgTierRole }))}
+                    onChange={e => { const v = e.target.value as OrgTierRole; void run(`tier-${m.profileId}`, c => setOrgTierRole(c, { orgId, profileId: m.profileId, orgRole: v }), { apply: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, orgRole: v } : x)), rollback: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, orgRole: m.orgRole } : x)) }); }}
                     options={roleOptions(m.orgRole)}
                   />
                   {m.active
-                    ? <Button size="sm" variant="ghost" onClick={() => void run(`deact-${m.profileId}`, c => deactivateMember(c, orgId, m.profileId))}>Deactivate</Button>
-                    : <Button size="sm" variant="secondary" onClick={() => void run(`react-${m.profileId}`, c => reactivateMember(c, orgId, m.profileId))}>Reactivate</Button>}
+                    ? <Button size="sm" variant="ghost" onClick={() => void run(`deact-${m.profileId}`, c => deactivateMember(c, orgId, m.profileId), { apply: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, active: false } : x)), rollback: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, active: true } : x)) })}>Deactivate</Button>
+                    : <Button size="sm" variant="secondary" onClick={() => void run(`react-${m.profileId}`, c => reactivateMember(c, orgId, m.profileId), { apply: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, active: true } : x)), rollback: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, active: false } : x)) })}>Reactivate</Button>}
                 </div>
               </div>
 
@@ -244,7 +237,7 @@ function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy
                     <button type="button" className="hover:text-violet-900"
                             onClick={() => {
                               const role = customRoles.find(r => r.label === label);
-                              if (role) void run(`unassign-${m.profileId}-${role.id}`, c => unassignCustomRole(c, { orgId, profileId: m.profileId, orgRoleId: role.id }));
+                              if (role) void run(`unassign-${m.profileId}-${role.id}`, c => unassignCustomRole(c, { orgId, profileId: m.profileId, orgRoleId: role.id }), { apply: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, customRoles: x.customRoles.filter(l => l !== label) } : x)), rollback: () => setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, customRoles: [...x.customRoles, label] } : x)) });
                             }}>
                       <Icon name="x" size={11} />
                     </button>
@@ -255,7 +248,7 @@ function MemberList({ title, rows, customRoles, roleById, busy, orgId, createdBy
                     className="w-auto text-xs"
                     value=""
                     disabled={busy?.startsWith(`assign-${m.profileId}`)}
-                    onChange={e => { if (e.target.value) void run(`assign-${m.profileId}-${e.target.value}`, c => assignCustomRole(c, { orgId, profileId: m.profileId, orgRoleId: e.target.value, assignedBy: createdBy })); }}
+                    onChange={e => { const v = e.target.value; if (v) { const role = customRoles.find(r => r.id === v); void run(`assign-${m.profileId}-${v}`, c => assignCustomRole(c, { orgId, profileId: m.profileId, orgRoleId: v, assignedBy: createdBy }), { apply: () => role && setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, customRoles: [...x.customRoles, role.label] } : x)), rollback: () => role && setMembers(prev => prev.map(x => x.profileId === m.profileId ? { ...x, customRoles: x.customRoles.filter(l => l !== role.label) } : x)) }); } }}
                     options={[{ value: "", label: "+ Add custom role" }, ...assignable.map(r => ({ value: r.id, label: r.label }))]}
                   />
                 )}

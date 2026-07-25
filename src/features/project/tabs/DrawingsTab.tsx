@@ -8,6 +8,7 @@ import { listDrawings, createDrawing, setDrawingStatus, deleteDrawing, type Draw
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "current", label: "Current" }, { value: "superseded", label: "Superseded" }];
 
 export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
@@ -17,7 +18,6 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [title, setTitle] = useState(""); const [type, setType] = useState("architectural"); const [rev, setRev] = useState("Rev A");
 
   const reload = useCallback(async () => {
@@ -26,11 +26,16 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listDrawings(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!title.trim() || !session) return; await run("add", c => createDrawing(c, { projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", releasedBy: session.user.id })); setTitle(""); setRev("Rev A"); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!title.trim() || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createDrawing(c, { projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", releasedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10) }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setTitle(""); setRev("Rev A");
+  };
 
   return (
     <div className="space-y-4">
@@ -51,9 +56,9 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
                 <div className="text-[11px] text-ink-400 capitalize">{r.type}{r.releaseDate ? ` Â· ${r.releaseDate}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, e.target.value as DrawingStatus))} options={STT} />
+                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteDrawing(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteDrawing(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

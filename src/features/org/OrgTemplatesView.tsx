@@ -9,6 +9,7 @@ import { listTemplates, createTemplate, deleteTemplate, TEMPLATE_KINDS, type Tem
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const KIND_OPTS = TEMPLATE_KINDS.map(k => ({ value: k, label: k[0].toUpperCase() + k.slice(1) }));
 const kindTone = (k: TemplateKind): "info" | "success" | "warning" => (k === "project" ? "info" : k === "boq" ? "success" : "warning");
 
@@ -26,7 +27,6 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
   const [rows, setRows] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [kind, setKind] = useState<TemplateKind>("project"); const [name, setName] = useState(""); const [desc, setDesc] = useState("");
 
   const reload = useCallback(async () => {
@@ -35,11 +35,16 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
     const res = await listTemplates(client, orgId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [orgId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!name.trim()) return; await run("add", c => createTemplate(c, { orgId, kind, name: name.trim(), description: desc.trim() || undefined, createdBy })); setName(""); setDesc(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!name.trim()) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createTemplate(c, { orgId, kind, name: name.trim(), description: desc.trim() || undefined, createdBy }), {
+      apply: () => setRows(prev => [{ id: tmpId, kind, name: name.trim(), description: desc.trim() || null, createdBy }, ...prev] as Template[]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setName(""); setDesc("");
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -58,7 +63,7 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2"><Badge tone={kindTone(r.kind)}>{r.kind}</Badge>
                 <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.name}</div>{r.description && <div className="text-[11px] text-ink-400 truncate">{r.description}</div>}</div></div>
-              <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteTemplate(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+              <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteTemplate(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>
             </Card>))}</div>}
     </div>
   );

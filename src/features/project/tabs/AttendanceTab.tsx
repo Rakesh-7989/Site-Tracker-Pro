@@ -8,6 +8,7 @@ import { listAttendance, createAttendance, setAttendanceStatus, deleteAttendance
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "present", label: "Present" }, { value: "absent", label: "Absent" }, { value: "half_day", label: "Half day" }, { value: "leave", label: "Leave" }, { value: "on_site_late", label: "Late" }, { value: "off_site", label: "Off-site" }];
 const KIND = [{ value: "labour", label: "Labour" }, { value: "staff", label: "Staff" }, { value: "visitor", label: "Visitor" }];
 
@@ -18,7 +19,6 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
   const [rows, setRows] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [name, setName] = useState(""); const [kind, setKind] = useState<AttendeeKind>("labour"); const [status, setStatus] = useState<AttendanceStatus>("present"); const [hours, setHours] = useState("");
 
   const reload = useCallback(async () => {
@@ -27,10 +27,7 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
     const res = await listAttendance(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
+  const { busy, run } = useAction(reload, setError);
   const add = async () => { if (!name.trim() || !session) return; const h = hours.trim() ? Number(hours) : null; await run("add", c => createAttendance(c, { projectId, attendeeName: name.trim(), kind, status, hours: Number.isFinite(h) ? h : null, recordedBy: session.user.id })); setName(""); setHours(""); };
   const present = rows.filter(r => r.status === "present" || r.status === "on_site_late").length;
 

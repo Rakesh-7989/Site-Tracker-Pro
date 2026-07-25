@@ -3,7 +3,7 @@
 // Wraps the authenticated area. Renders the loading / signed-out / error
 // states via RequireSession, then the chrome + <Outlet/> for child routes.
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 
 import { RequireSession, useAuth } from "@/auth";
@@ -13,6 +13,8 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { SubscriptionBanner } from "@/features/org/SubscriptionBanner";
 import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useSwipe } from "@/hooks/useSwipe";
 
 function FullScreenSpinner(): JSX.Element {
   return (
@@ -46,6 +48,19 @@ export function ShellLayout(): JSX.Element {
 function GatedShell(): JSX.Element {
   const { session } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const mainRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isDesktop) setMobileOpen(false);
+  }, [isDesktop]);
+
+  const openSidebar = useCallback(() => setMobileOpen(true), []);
+  const closeSidebar = useCallback(() => setMobileOpen(false), []);
+
+  useSwipe(mainRef, { edgeSize: 40, onSwipeRight: mobileOpen ? undefined : openSidebar });
+  useSwipe(sidebarRef, { onSwipeLeft: mobileOpen ? closeSidebar : undefined });
   if (session && session.user.profileCompleted === false) {
     return <Navigate to="/profile/complete" replace />;
   }
@@ -58,8 +73,8 @@ function GatedShell(): JSX.Element {
         <TopBar onMenuToggle={() => setMobileOpen(v => !v)} />
         <SubscriptionBanner />
         <div className="flex-1 flex min-h-0 overflow-hidden">
-          <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-          <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 pb-16 lg:pb-6 xl:mx-auto xl:w-full xl:max-w-7xl">
+          <Sidebar mobileOpen={mobileOpen} onClose={closeSidebar} sidebarRef={sidebarRef} />
+          <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 pb-16 lg:pb-6 xl:mx-auto xl:w-full xl:max-w-7xl">
             <Suspense fallback={<div className="grid place-items-center py-20 text-safety-500"><Spinner size={24} /></div>}>
               <Outlet />
             </Suspense>

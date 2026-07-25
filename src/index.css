@@ -271,6 +271,9 @@ button.bg-orange-500, button.bg-orange-400 {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
 
 /* Smooth all transitions */
 button, a, input, select, textarea { transition: all .15s ease; }

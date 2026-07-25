@@ -14,7 +14,7 @@ const FIELD_BASE =
   "w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none bg-white transition " +
   "focus:ring-2 focus:ring-safety-500/15";
 const FIELD_OK = "border-cream-200 focus:border-safety-500";
-const FIELD_ERR = "border-red-400 focus:border-red-500";
+const FIELD_ERR = "border-rose-400 focus:border-rose-500";
 
 // ── FormField (label + error wrapper) ───────────────────────────────────────
 export interface FormFieldProps {
@@ -37,7 +37,7 @@ export function FormField({ label, htmlFor, error, hint, optional, children, cla
       {children}
       {hint && !error && <p className="mt-1 text-[11px] text-ink-500">{hint}</p>}
       {error && (
-        <p className="mt-1 text-[11px] text-red-600 flex items-center gap-1">
+        <p className="mt-1 text-[11px] text-rose-600 flex items-center gap-1">
           <Icon name="alert" size={11} />{error}
         </p>
       )}

@@ -12,13 +12,13 @@ import { listLabour, createLabour, deleteLabour, type LabourEntry } from "@/app/
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canEdit = useCan("labour:manage", { orgId: activeOrg?.orgId, projectId });
   const [rows, setRows] = useState<LabourEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [name, setName] = useState(""); const [trade, setTrade] = useState(""); const [wage, setWage] = useState(""); const [aadhaar, setAadhaar] = useState("");
 
   const reload = useCallback(async () => {
@@ -27,11 +27,17 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listLabour(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!name.trim()) return; const w = wage.trim() ? Number(wage) : undefined; await run("add", c => createLabour(c, { projectId, name: name.trim(), trade: trade.trim() || undefined, wage: Number.isFinite(w) ? w : undefined, aadhaar: aadhaar.trim() || undefined })); setName(""); setTrade(""); setWage(""); setAadhaar(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!name.trim()) return;
+    const w = wage.trim() ? Number(wage) : undefined;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createLabour(c, { projectId, name: name.trim(), trade: trade.trim() || undefined, wage: Number.isFinite(w) ? w : undefined, aadhaar: aadhaar.trim() || undefined }), {
+      apply: () => setRows(prev => [{ id: tmpId, name: name.trim(), trade: trade.trim() || undefined, wage: Number.isFinite(w) ? w : undefined, aadhaarMasked: aadhaar.trim() ? "****" + aadhaar.trim().slice(-4) : undefined, joined: new Date().toISOString().slice(0, 10) } as LabourEntry, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setName(""); setTrade(""); setWage(""); setAadhaar("");
+  };
 
   return (
     <div className="space-y-4">
@@ -54,7 +60,7 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
                 <div className="text-[11px] text-ink-400">{[r.aadhaarMasked, r.joined && `joined ${r.joined}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 {r.wage != null && <span className="text-sm font-semibold text-ink-900">{fmtRupees(r.wage)}<span className="text-[11px] text-ink-400 font-normal">/day</span></span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLabour(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLabour(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

@@ -22,7 +22,7 @@ let nextId = 0;
 
 const TOAST_STYLE: Record<ToastType, { bg: string; text: string; icon: IconName }> = {
   success: { bg: "bg-emerald-600", text: "text-white", icon: "check" },
-  error: { bg: "bg-red-600", text: "text-white", icon: "x" },
+  error: { bg: "bg-rose-600", text: "text-white", icon: "x" },
   warning: { bg: "bg-amber-500", text: "text-ink-900", icon: "alert" },
   info: { bg: "bg-blue-600", text: "text-white", icon: "info" },
 };

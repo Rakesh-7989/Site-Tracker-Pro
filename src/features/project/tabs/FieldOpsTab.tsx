@@ -10,6 +10,7 @@ import { listWorklogs, createWorklog, deleteWorklog, type WorkLog } from "@/app/
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 export function FieldOpsTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
@@ -17,7 +18,6 @@ export function FieldOpsTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<WorkLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [activity, setActivity] = useState(""); const [hours, setHours] = useState(""); const [notes, setNotes] = useState("");
 
   const reload = useCallback(async () => {
@@ -26,11 +26,17 @@ export function FieldOpsTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listWorklogs(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { const h = Number(hours); if (!activity.trim() || !(h > 0 && h <= 24) || !session) return; await run("add", c => createWorklog(c, { projectId, profileId: session.user.id, activity: activity.trim(), hours: h, notes: notes.trim() || undefined })); setActivity(""); setHours(""); setNotes(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    const h = Number(hours);
+    if (!activity.trim() || !(h > 0 && h <= 24) || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createWorklog(c, { projectId, profileId: session.user.id, activity: activity.trim(), hours: h, notes: notes.trim() || undefined }), {
+      apply: () => setRows(prev => [{ id: tmpId, activity: activity.trim(), hours: h, notes: notes.trim() || null, date: new Date().toISOString().slice(0, 10) }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setActivity(""); setHours(""); setNotes("");
+  };
 
   // Group logs by date for the diary layout.
   const byDate = rows.reduce<Record<string, WorkLog[]>>((acc, r) => { (acc[r.date] ??= []).push(r); return acc; }, {});
@@ -59,7 +65,7 @@ export function FieldOpsTab({ projectId }: { projectId: string }): JSX.Element {
                     {r.notes && <div className="text-[11px] text-ink-400 truncate">{r.notes}</div>}</div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {r.hours != null && <span className="text-sm font-semibold text-ink-900">{r.hours}<span className="text-[11px] text-ink-400 font-normal"> hrs</span></span>}
-                    {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteWorklog(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                    {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteWorklog(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
                   </div>
                 </Card>))}</div>
             </div>))}</div>}

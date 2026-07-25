@@ -46,7 +46,7 @@ export function ChartCard({
 
       {!loading && error && (
         <div className="flex flex-col items-center justify-center gap-2" style={{ height }}>
-          <Icon name="alert" size={20} className="text-red-500" />
+          <Icon name="alert" size={20} className="text-rose-500" />
           <span className="text-xs text-ink-500">{error}</span>
         </div>
       )}

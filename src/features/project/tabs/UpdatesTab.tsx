@@ -9,6 +9,7 @@ import { Input, Textarea } from "@/components/ui/forms";
 import { listUpdates, createUpdate, deleteUpdate, type SiteUpdate } from "@/app/updateQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { useAction } from "@/hooks/useAction";
 
 import { getClient } from "@/lib/supabase";
 export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
@@ -19,7 +20,6 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<SiteUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [weather, setWeather] = useState("");
   const [workers, setWorkers] = useState("");
@@ -34,19 +34,16 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
 
-  const run = useCallback(async (key: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(key); setError(null);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client);
-    if (!res.ok) setError(res.error ?? "Action failed.");
-    await reload(); setBusy(null);
-  }, [reload]);
+  const { busy, run } = useAction(reload, setError);
 
   const add = async () => {
     if (!notes.trim() || !session) return;
     const wc = workers.trim() ? Number(workers) : null;
-    await run("add", c => createUpdate(c, { projectId, authorId: session.user.id, notes: notes.trim(), weather: weather.trim() || undefined, workersCount: Number.isFinite(wc) ? wc : null }));
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createUpdate(c, { projectId, authorId: session.user.id, notes: notes.trim(), weather: weather.trim() || undefined, workersCount: Number.isFinite(wc) ? wc : null }), {
+      apply: () => setRows(prev => [{ id: tmpId, notes: notes.trim(), weather: weather.trim() || null, workersCount: Number.isFinite(wc) ? wc : null, authorName: null, updateDate: new Date().toISOString().slice(0, 10) }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
     setNotes(""); setWeather(""); setWorkers("");
   };
 
@@ -79,7 +76,7 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
                       {u.weather ? ` Â· ${u.weather}` : ""}{u.workersCount != null ? ` Â· ${u.workersCount} workers` : ""}
                     </div>
                   </div>
-                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${u.id}`, c => deleteUpdate(c, u.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${u.id}`, c => deleteUpdate(c, u.id), { apply: () => setRows(prev => prev.filter(x => x.id !== u.id)), rollback: () => setRows(prev => [...prev, u]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
                 </div>
               </Card>
             ))}

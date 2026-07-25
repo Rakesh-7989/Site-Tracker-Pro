@@ -12,6 +12,7 @@ import {
 } from "@/app/issueQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { useAction } from "@/hooks/useAction";
 
 const SEV_TONE: Record<IssueSeverity, "danger" | "warning" | "neutral"> = { high: "danger", medium: "warning", low: "neutral" };
 
@@ -25,7 +26,6 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [severity, setSeverity] = useState<IssueSeverity>("medium");
@@ -40,18 +40,15 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
 
-  const run = useCallback(async (key: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(key); setError(null);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client);
-    if (!res.ok) setError(res.error ?? "Action failed.");
-    await reload(); setBusy(null);
-  }, [reload]);
+  const { busy, run } = useAction(reload, setError);
 
   const add = async () => {
     if (!title.trim() || !session) return;
-    await run("add", c => createIssue(c, { projectId, title: title.trim(), description: desc.trim() || undefined, severity, reportedBy: session.user.id }));
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createIssue(c, { projectId, title: title.trim(), description: desc.trim() || undefined, severity, reportedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), description: desc.trim() || undefined, severity, status: "open", reportedDate: new Date().toISOString().slice(0, 10), resolvedDate: null } as Issue, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
     setTitle(""); setDesc("");
   };
 
@@ -97,11 +94,14 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {canResolve && (
                       <Button size="sm" variant={i.status === "open" ? "secondary" : "ghost"} disabled={busy === `r-${i.id}`}
-                        onClick={() => session && void run(`r-${i.id}`, c => setIssueResolved(c, i.id, i.status === "open", session.user.id))}>
+                        onClick={() => session && void run(`r-${i.id}`, c => setIssueResolved(c, i.id, i.status === "open", session.user.id), {
+                          apply: () => setRows(prev => prev.map(x => x.id === i.id ? { ...x, status: (i.status === "open" ? "resolved" : "open"), resolvedDate: i.status === "open" ? new Date().toISOString().slice(0, 10) : null } : x)),
+                          rollback: () => setRows(prev => prev.map(x => x.id === i.id ? { ...x, status: i.status, resolvedDate: i.resolvedDate } : x)),
+                        })}>
                         {i.status === "open" ? "Resolve" : "Reopen"}
                       </Button>
                     )}
-                    {canAdd && <Button size="sm" variant="ghost" onClick={() => void run(`d-${i.id}`, c => deleteIssue(c, i.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                    {canAdd && <Button size="sm" variant="ghost" onClick={() => void run(`d-${i.id}`, c => deleteIssue(c, i.id), { apply: () => setRows(prev => prev.filter(x => x.id !== i.id)), rollback: () => setRows(prev => [...prev, i]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
                   </div>
                 </div>
               </Card>

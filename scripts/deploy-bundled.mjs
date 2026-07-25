@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, existsSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -9,8 +9,6 @@ const REF = 'nntkxojdeyziemdhyjvg';
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN || '';
 const FUNCS = join(ROOT, 'supabase', 'functions');
 const SHARED = join(FUNCS, '_shared');
-const OUT = join(ROOT, '.deploy-bundles');
-
 if (!TOKEN) { console.error('SUPABASE_ACCESS_TOKEN not set'); process.exit(1); }
 
 const sharedFiles = {};

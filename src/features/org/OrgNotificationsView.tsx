@@ -9,6 +9,7 @@ import { listRules, createRule, setRuleEnabled, deleteRule, NOTIF_CHANNELS, NOTI
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const TRIGGER_OPTS = NOTIF_TRIGGERS.map(t => ({ value: t.id, label: t.label }));
 const CHANNEL_OPTS = NOTIF_CHANNELS.map(c => ({ value: c, label: CHANNEL_LABEL[c] }));
 
@@ -26,7 +27,6 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
   const [rows, setRows] = useState<NotifRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [trigger, setTrigger] = useState<string>(NOTIF_TRIGGERS[0].id); const [channel, setChannel] = useState<NotifChannel>("in_app");
 
   const reload = useCallback(async () => {
@@ -35,11 +35,14 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
     const res = await listRules(client, orgId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [orgId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { await run("add", c => createRule(c, { orgId, trigger, channel, createdBy })); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createRule(c, { orgId, trigger, channel, createdBy }), {
+      apply: () => setRows(prev => [{ id: tmpId, trigger, channel, createdBy, enabled: true }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -58,10 +61,10 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{TRIGGER_LABEL[r.trigger] ?? r.trigger}</div>
                 <div className="text-[11px] text-ink-400">via {CHANNEL_LABEL[r.channel]}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button type="button" disabled={busy === `t-${r.id}`} onClick={() => void run(`t-${r.id}`, c => setRuleEnabled(c, r.id, !r.enabled))}>
+                <button type="button" disabled={busy === `t-${r.id}`} onClick={() => { const next = !r.enabled; void run(`t-${r.id}`, c => setRuleEnabled(c, r.id, next), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, enabled: next } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, enabled: r.enabled } : x)) }); }}>
                   <Badge tone={r.enabled ? "success" : "neutral"}>{r.enabled ? "On" : "Off"}</Badge>
                 </button>
-                <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRule(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRule(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>
               </div>
             </Card>))}</div>}
     </div>

@@ -1,13 +1,5 @@
-import { readFileSync } from "fs";
 import pkg from "pg";
 const { Pool } = pkg;
-
-const env = Object.fromEntries(
-  readFileSync(".env.local", "utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map((l) => l.split("=").map((s) => s.trim())),
-);
 
 const ref = "nntkxojdeyziemdhyjvg";
 

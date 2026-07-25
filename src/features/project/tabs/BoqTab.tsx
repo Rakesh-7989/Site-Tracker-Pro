@@ -9,6 +9,7 @@ import { listBoq, createBoq, deleteBoq, type BoqItem, type BoqCategory } from "@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const CATS: BoqCategory[] = ["Civil", "MEP", "Finishing", "External", "Other"];
 const CAT_OPTS = CATS.map(c => ({ value: c, label: c }));
 
@@ -18,7 +19,6 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<BoqItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [desc, setDesc] = useState(""); const [unit, setUnit] = useState(""); const [qty, setQty] = useState(""); const [rate, setRate] = useState(""); const [cat, setCat] = useState<BoqCategory>("Civil");
 
   const reload = useCallback(async () => {
@@ -27,11 +27,17 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listBoq(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { const q = Number(qty); const r = Number(rate); if (!desc.trim() || !(q > 0) || !(r >= 0)) return; await run("add", c => createBoq(c, { projectId, description: desc.trim(), unit: unit.trim() || undefined, qty: q, rate: r, category: cat, sortOrder: rows.length })); setDesc(""); setUnit(""); setQty(""); setRate(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    const q = Number(qty); const r = Number(rate);
+    if (!desc.trim() || !(q > 0) || !(r >= 0)) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createBoq(c, { projectId, description: desc.trim(), unit: unit.trim() || undefined, qty: q, rate: r, category: cat, sortOrder: rows.length }), {
+      apply: () => setRows(prev => [{ id: tmpId, description: desc.trim(), unit: unit.trim() || undefined, qty: q, rate: r, amount: q * r, category: cat, code: null } as unknown as BoqItem, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setDesc(""); setUnit(""); setQty(""); setRate("");
+  };
 
   const total = rows.reduce((s, r) => s + (r.amount ?? 0), 0);
 
@@ -61,7 +67,7 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Badge tone="neutral">{r.category}</Badge>
                 <span className="text-sm font-semibold text-ink-900 w-24 text-right">{r.amount != null ? fmtRupees(r.amount) : "â€”"}</span>
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteBoq(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteBoq(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

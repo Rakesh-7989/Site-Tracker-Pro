@@ -1,11 +1,9 @@
 // Deploy edge functions via Supabase Management REST API (v2 - multipart).
 // Uses the correct /v1/projects/{ref}/functions/deploy endpoint.
 import { readFileSync, readdirSync, existsSync } from 'fs';
-import { join, dirname, relative } from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import FormData from 'form-data';
-import { request as httpsRequest } from 'https';
-import { request as httpRequest } from 'http';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -21,7 +19,6 @@ const API = `https://api.supabase.com/v1/projects/${REF}/functions/deploy`;
 function apiFetch(url, form) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
-    const mod = u.protocol === 'https:' ? httpsRequest : httpRequest;
     form.submit(
       {
         hostname: u.hostname,

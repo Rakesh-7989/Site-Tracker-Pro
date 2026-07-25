@@ -1,10 +1,10 @@
-﻿// SiteTrack Pro â€” v3 role-aware sidebar.
+// SiteTrack Pro — v3 role-aware sidebar.
 import { getClient } from "@/lib/supabase";
 //
 // Renders the nav items the current session's capabilities unlock,
 // grouped by section. The active route is highlighted via NavLink.
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import { useAuth, useCan } from "@/auth";
@@ -14,7 +14,7 @@ import { unreadCount } from "@/app/notificationQueries";
 import { Icon } from "@/components/ui/atoms";
 import { useT } from "@/i18n/I18nProvider";
 
-// Map each nav route â†’ its i18n key (migration: app-wide i18n). Labels fall
+// Map each nav route → its i18n key (migration: app-wide i18n). Labels fall
 // back to the English string baked into nav-config when a key is missing.
 const NAV_KEY: Record<string, string> = {
   "/dashboard": "nav.dashboard", "/projects": "nav.projects", "/calendar": "nav.calendar",
@@ -31,7 +31,7 @@ const NAV_KEY: Record<string, string> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
-export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }): JSX.Element {
+export function Sidebar({ mobileOpen, onClose, sidebarRef }: { mobileOpen: boolean; onClose: () => void; sidebarRef?: React.RefObject<HTMLElement | null> }): JSX.Element {
   const { session } = useAuth();
   const t = useT();
   const groups = groupNav(buildNav(session));
@@ -51,20 +51,18 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
 
   return (
     <>
-      {/* Backdrop overlay â€” visible only on mobile when sidebar is open */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm lg:hidden" onClick={onClose} />
-      )}
+      {/* Backdrop overlay � fades in/out on mobile */}
+      <div className={`fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm lg:hidden transition-opacity duration-200 ease-in-out ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={onClose} />
 
       {/* Sidebar: persistent on desktop (lg:), slide-in drawer on mobile */}
-      <nav className={`
+      <nav ref={sidebarRef as React.LegacyRef<HTMLElement>} className={`
         w-56 shrink-0 border-r border-cream-200 bg-white overflow-y-auto
         fixed lg:relative z-40 inset-y-0 left-0
         transform transition-transform duration-200 ease-in-out
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0 lg:block
       `}>
-        {/* Close button â€” mobile only */}
+        {/* Close button — mobile only */}
         <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-3 py-2 border-b border-cream-200 lg:hidden">
           <span className="text-xs font-semibold tracking-wider uppercase text-ink-400">Menu</span>
           <button onClick={onClose} className="p-1 rounded-lg text-ink-500 hover:bg-cream-100 transition" aria-label="Close navigation menu">

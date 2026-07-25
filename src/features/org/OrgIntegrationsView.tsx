@@ -7,9 +7,10 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import type { IconName } from "@/components/ui/icons";
-import { getIntegrationStatus, saveProvider, clearProvider, PROVIDERS, SECRET_FIELDS, type IntegrationStatus, type ProviderId, type ProviderMeta } from "@/app/orgIntegrationsQueries";
+import { getIntegrationStatus, saveProvider, clearProvider, PROVIDERS, SECRET_FIELDS, type IntegrationStatus, type ProviderMeta } from "@/app/orgIntegrationsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { useAction } from "@/hooks/useAction";
 
 import { getClient } from "@/lib/supabase";
 export function OrgIntegrationsView(): JSX.Element {
@@ -63,7 +64,6 @@ function Inner({ orgId, userId }: { orgId: string; userId: string }): JSX.Elemen
   const [status, setStatus] = useState<IntegrationStatus>({ whatsapp: false, ai: false, razorpay: false, cashfree: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -72,11 +72,7 @@ function Inner({ orgId, userId }: { orgId: string; userId: string }): JSX.Elemen
   }, [orgId]);
   useEffect(() => { void reload(); }, [reload]);
 
-  const run = useCallback(async (p: ProviderId, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(p); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
+  const { busy, run } = useAction(reload, setError);
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -86,8 +82,8 @@ function Inner({ orgId, userId }: { orgId: string; userId: string }): JSX.Elemen
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : <div className="grid sm:grid-cols-2 gap-3">{PROVIDERS.map(p => (
             <ProviderCard key={p.id} meta={p} configured={status[p.id]} busy={busy === p.id}
-              onSave={cfg => void run(p.id, c => saveProvider(c, orgId, p.id, cfg, userId))}
-              onClear={() => void run(p.id, c => clearProvider(c, orgId, p.id, userId))} />
+              onSave={cfg => void run(p.id, c => saveProvider(c, orgId, p.id, cfg, userId), { apply: () => setStatus(prev => ({ ...prev, [p.id]: true })), rollback: () => setStatus(prev => ({ ...prev, [p.id]: false })) })}
+              onClear={() => void run(p.id, c => clearProvider(c, orgId, p.id, userId), { apply: () => setStatus(prev => ({ ...prev, [p.id]: false })), rollback: () => setStatus(prev => ({ ...prev, [p.id]: true })) })} />
           ))}</div>}
     </div>
   );

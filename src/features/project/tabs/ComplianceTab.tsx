@@ -10,6 +10,7 @@ import { listCompliance, createCompliance, setComplianceStatus, deleteCompliance
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const KIND_OPTS = [{ value: "rera", label: "RERA" }, { value: "gst", label: "GST" }, { value: "epfo", label: "EPFO" }, { value: "pan", label: "PAN" }, { value: "other", label: "Other" }];
 const STATUS_OPTS = [{ value: "pending", label: "Pending" }, { value: "filed", label: "Filed" }, { value: "accepted", label: "Accepted" }, { value: "rejected", label: "Rejected" }, { value: "expired", label: "Expired" }, { value: "renewal_due", label: "Renewal due" }];
 const tone = (s: ComplianceStatus): "neutral" | "info" | "success" | "danger" | "warning" => (s === "accepted" ? "success" : s === "filed" ? "info" : s === "rejected" || s === "expired" ? "danger" : s === "renewal_due" ? "warning" : "neutral");
@@ -22,7 +23,6 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
   const [rows, setRows] = useState<ComplianceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [kind, setKind] = useState<ComplianceKind>("rera"); const [ref, setRef] = useState(""); const [stage, setStage] = useState("");
 
   const reload = useCallback(async () => {
@@ -31,11 +31,16 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
     const res = await listCompliance(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!session) return; await run("add", c => createCompliance(c, { orgId, projectId, kind, refNo: ref.trim() || undefined, stage: stage.trim() || undefined, filedBy: session.user.id })); setRef(""); setStage(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createCompliance(c, { orgId, projectId, kind, refNo: ref.trim() || undefined, stage: stage.trim() || undefined, filedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, kind, refNo: ref.trim() || null, stage: stage.trim() || null, status: "pending" as ComplianceStatus, expiresAt: null, notes: null }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setRef(""); setStage("");
+  };
 
   return (
     <div className="space-y-4">
@@ -56,9 +61,9 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate uppercase">{r.kind}{r.refNo ? <span className="text-ink-500 font-normal normal-case"> Â· {r.refNo}</span> : null}</div>
                 <div className="text-[11px] text-ink-400">{[r.stage, r.expiresAt && `expires ${r.expiresAt.slice(0, 10)}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setComplianceStatus(c, r.id, e.target.value as ComplianceStatus))} options={STATUS_OPTS} />
+                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as ComplianceStatus; void run(`s-${r.id}`, c => setComplianceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
                   : <Badge tone={tone(r.status)}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteCompliance(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteCompliance(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

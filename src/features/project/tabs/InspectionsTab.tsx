@@ -8,6 +8,7 @@ import { listInspections, createInspection, setInspectionResult, deleteInspectio
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const RES = [{ value: "pending", label: "Pending" }, { value: "pass", label: "Pass" }, { value: "fail", label: "Fail" }, { value: "conditional", label: "Conditional" }];
 const resTone = (r: InspectionResult): "neutral" | "success" | "danger" | "warning" => (r === "pass" ? "success" : r === "fail" ? "danger" : r === "conditional" ? "warning" : "neutral");
 
@@ -18,7 +19,6 @@ export function InspectionsTab({ projectId }: { projectId: string }): JSX.Elemen
   const [rows, setRows] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [type, setType] = useState("quality"); const [scope, setScope] = useState(""); const [sd, setSd] = useState("");
 
   const reload = useCallback(async () => {
@@ -27,11 +27,16 @@ export function InspectionsTab({ projectId }: { projectId: string }): JSX.Elemen
     const res = await listInspections(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!session) return; await run("add", c => createInspection(c, { projectId, type, scope: scope.trim() || undefined, scheduledDate: sd || null, inspectorId: session.user.id })); setScope(""); setSd(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createInspection(c, { projectId, type, scope: scope.trim() || undefined, scheduledDate: sd || null, inspectorId: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, type, scope: scope.trim() || undefined, scheduledDate: sd || null, result: "pending" as InspectionResult, inspectorName: null }, ...prev] as Inspection[]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setScope(""); setSd("");
+  };
 
   return (
     <div className="space-y-4">
@@ -53,9 +58,9 @@ export function InspectionsTab({ projectId }: { projectId: string }): JSX.Elemen
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate capitalize">{r.type}{r.scope ? ` â€” ${r.scope}` : ""}</div>
                 <div className="text-[11px] text-ink-400">{r.scheduledDate ? `Scheduled ${r.scheduledDate}` : "Unscheduled"}{r.inspectorName ? ` Â· ${r.inspectorName}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.result} onChange={e => void run(`s-${r.id}`, c => setInspectionResult(c, r.id, e.target.value as InspectionResult))} options={RES} />
+                {canEdit ? <Select className="w-auto text-xs" value={r.result} onChange={e => { const v = e.target.value as InspectionResult; void run(`s-${r.id}`, c => setInspectionResult(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, result: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, result: r.result } : x)) }); }} options={RES} />
                   : <Badge tone={resTone(r.result)}>{r.result}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteInspection(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteInspection(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

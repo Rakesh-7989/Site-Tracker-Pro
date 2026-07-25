@@ -8,6 +8,7 @@ import { listMaterials, createMaterial, setMaterialStatus, deleteMaterial, type 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const ST = [{ value: "expected", label: "Expected" }, { value: "received", label: "Received" }, { value: "rejected", label: "Rejected" }];
 
 export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element {
@@ -17,7 +18,6 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
   const [rows, setRows] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [m, setM] = useState(""); const [qty, setQty] = useState(""); const [sup, setSup] = useState(""); const [dd, setDd] = useState("");
 
   const reload = useCallback(async () => {
@@ -26,11 +26,16 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
     const res = await listMaterials(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!m.trim() || !session) return; await run("add", c => createMaterial(c, { projectId, material: m.trim(), quantity: qty.trim() || undefined, supplier: sup.trim() || undefined, deliveryDate: dd || null, loggedBy: session.user.id })); setM(""); setQty(""); setSup(""); setDd(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!m.trim() || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createMaterial(c, { projectId, material: m.trim(), quantity: qty.trim() || undefined, supplier: sup.trim() || undefined, deliveryDate: dd || null, loggedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, material: m.trim(), quantity: qty.trim() || null, supplier: sup.trim() || null, deliveryDate: dd || null, status: "expected" as MaterialStatus }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setM(""); setQty(""); setSup(""); setDd("");
+  };
 
   return (
     <div className="space-y-4">
@@ -52,9 +57,9 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.material}</div>
                 <div className="text-[11px] text-ink-400">{[r.quantity, r.supplier, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setMaterialStatus(c, r.id, e.target.value as MaterialStatus))} options={ST} />
+                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MaterialStatus; void run(`s-${r.id}`, c => setMaterialStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={ST} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteMaterial(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteMaterial(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

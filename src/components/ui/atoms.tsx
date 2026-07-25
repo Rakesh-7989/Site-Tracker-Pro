@@ -25,7 +25,7 @@ const BTN_VARIANT: Record<ButtonVariant, string> = {
   primary: "bg-safety-500 hover:bg-safety-600 text-white shadow-cta border border-transparent",
   secondary: "bg-white hover:bg-cream-200 text-ink-900 border border-cream-200 hover:border-ink-500/30",
   ghost: "bg-transparent hover:bg-cream-200 text-ink-700 border border-transparent",
-  danger: "bg-red-600 hover:bg-red-700 text-white border border-transparent",
+  danger: "bg-rose-600 hover:bg-rose-700 text-white border border-transparent",
 };
 const BTN_SIZE: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-xs gap-1.5 rounded-md",
@@ -123,7 +123,7 @@ const BADGE_TONE: Record<BadgeTone, string> = {
   success: "bg-emerald-50 text-emerald-700",
   warning: "bg-amber-50 text-amber-700",
   info: "bg-blue-50 text-blue-700",
-  danger: "bg-red-50 text-red-700",
+  danger: "bg-rose-50 text-rose-700",
 };
 
 export function Badge({ children, tone = "neutral", className }: BadgeProps): JSX.Element {
@@ -174,7 +174,7 @@ const ALERT: Record<AlertVariant, { bg: string; text: string; bar: string }> = {
   info: { bg: "bg-blue-50", text: "text-blue-700", bar: "#1E40AF" },
   success: { bg: "bg-emerald-50", text: "text-emerald-700", bar: "#047857" },
   warning: { bg: "bg-amber-50", text: "text-amber-800", bar: "#B45309" },
-  danger: { bg: "bg-red-50", text: "text-red-700", bar: "#B91C1C" },
+  danger: { bg: "bg-rose-50", text: "text-rose-700", bar: "#BE123C" },
   accent: { bg: "bg-orange-50", text: "text-orange-700", bar: "#FF6B1A" },
 };
 
@@ -233,7 +233,7 @@ export function Avatar({ initials, size = "md", accent = "orange", role, classNa
 // ── ProgressBar ─────────────────────────────────────────────────────────────
 type BarColor = "orange" | "blue" | "emerald" | "red" | "violet";
 const BAR: Record<BarColor, string> = {
-  orange: "bg-safety-500", blue: "bg-blue-500", emerald: "bg-emerald-500", red: "bg-red-500", violet: "bg-violet-500",
+  orange: "bg-safety-500", blue: "bg-blue-500", emerald: "bg-emerald-500", red: "bg-rose-500", violet: "bg-violet-500",
 };
 
 export interface ProgressBarProps {
@@ -258,7 +258,7 @@ const STAT: Record<StatAccent, { bar: string; iconBg: string; iconFg: string }> 
   blue: { bar: "bg-blue-500", iconBg: "bg-blue-50", iconFg: "text-blue-600" },
   emerald: { bar: "bg-emerald-500", iconBg: "bg-emerald-50", iconFg: "text-emerald-600" },
   violet: { bar: "bg-violet-500", iconBg: "bg-violet-50", iconFg: "text-violet-600" },
-  red: { bar: "bg-red-500", iconBg: "bg-red-50", iconFg: "text-red-600" },
+  red: { bar: "bg-rose-500", iconBg: "bg-rose-50", iconFg: "text-rose-600" },
 };
 
 export interface StatCardProps {

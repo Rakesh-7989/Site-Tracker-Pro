@@ -51,7 +51,7 @@ export function DataTable<T>({
   if (error) {
     return (
       <div className="bg-white rounded-2xl border border-cream-200 shadow-card p-4">
-        <div className="flex items-center gap-2 text-sm text-red-600">
+        <div className="flex items-center gap-2 text-sm text-rose-600">
           <span>{error}</span>
         </div>
       </div>

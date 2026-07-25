@@ -70,7 +70,7 @@ export const CAT_COLORS: Record<string, string> = {
   Materials:   "bg-blue-50 text-blue-600",
   Labour:      "bg-violet-50 text-violet-600",
   Equipment:   "bg-amber-50 text-amber-600",
-  Misc:        "bg-slate-100 text-slate-500",
+  Misc:        "bg-cream-200 text-ink-500",
   Consultancy: "bg-emerald-50 text-emerald-600",
   Permits:     "bg-orange-50 text-orange-600",
 };

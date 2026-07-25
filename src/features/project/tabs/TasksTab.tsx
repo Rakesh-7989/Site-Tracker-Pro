@@ -13,6 +13,7 @@ import {
 } from "@/app/taskQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { useAction } from "@/hooks/useAction";
 
 const ST_TONE: Record<TaskStatus, "neutral" | "info" | "success"> = { pending: "neutral", in_progress: "info", completed: "success" };
 const ST_KEY: Record<TaskStatus, string> = { pending: "pending", in_progress: "inProgress", completed: "done" };
@@ -27,7 +28,6 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [assignee, setAssignee] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
@@ -43,18 +43,18 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
   }, [projectId, t]);
   useEffect(() => { void reload(); }, [reload]);
 
-  const run = useCallback(async (key: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(key); setError(null);
-    const client = await getClient();
-    if (!client) { setError(t("tasksTab.backendError")); setBusy(null); return; }
-    const res = await fn(client);
-    if (!res.ok) setError(res.error ?? t("tasksTab.actionFailed"));
-    await reload(); setBusy(null);
-  }, [reload, t]);
+  const { busy, run } = useAction(reload, setError, {
+    backendError: t("tasksTab.backendError"),
+    actionFailed: t("tasksTab.actionFailed"),
+  });
 
   const add = async () => {
     if (!title.trim()) return;
-    await run("add", c => createTask(c, { projectId, title: title.trim(), assigneeName: assignee.trim() || undefined, priority, dueDate: due || null }));
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createTask(c, { projectId, title: title.trim(), assigneeName: assignee.trim() || undefined, priority, dueDate: due || null }), {
+      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), assigneeName: assignee.trim() || null, priority, dueDate: due || null, status: "pending" as TaskStatus }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
     setTitle(""); setAssignee(""); setDue("");
   };
 
@@ -92,11 +92,11 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Badge tone={PR_TONE[tk.priority]}>{t(`tasksTab.${tk.priority}`)}</Badge>
                   {canEdit ? (
-                    <button type="button" disabled={busy === `s-${tk.id}`} onClick={() => void run(`s-${tk.id}`, c => setTaskStatus(c, tk.id, nextTaskStatus(tk.status)))}>
+                    <button type="button" disabled={busy === `s-${tk.id}`} onClick={() => { const ns = nextTaskStatus(tk.status); void run(`s-${tk.id}`, c => setTaskStatus(c, tk.id, ns), { apply: () => setRows(prev => prev.map(x => x.id === tk.id ? { ...x, status: ns } : x)), rollback: () => setRows(prev => prev.map(x => x.id === tk.id ? { ...x, status: tk.status } : x)) }); }}>
                       <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>
                     </button>
                   ) : <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>}
-                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${tk.id}`, c => deleteTask(c, tk.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${tk.id}`, c => deleteTask(c, tk.id), { apply: () => setRows(prev => prev.filter(x => x.id !== tk.id)), rollback: () => setRows(prev => [...prev, tk]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
                 </div>
               </Card>
             ))}

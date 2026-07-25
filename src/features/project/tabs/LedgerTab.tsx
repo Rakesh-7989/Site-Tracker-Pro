@@ -8,6 +8,7 @@ import { listLedger, createLedgerTxn, deleteLedgerTxn, stockBalance, type Ledger
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const DIR = [{ value: "inward", label: "Inward" }, { value: "outward", label: "Outward" }, { value: "return", label: "Return" }, { value: "wastage", label: "Wastage" }];
 const dirTone = (d: LedgerDirection): "success" | "warning" | "danger" | "info" => (d === "inward" ? "success" : d === "outward" ? "info" : d === "return" ? "warning" : "danger");
 
@@ -18,7 +19,6 @@ export function LedgerTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<LedgerTxn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [mat, setMat] = useState(""); const [unit, setUnit] = useState(""); const [qty, setQty] = useState(""); const [dir, setDir] = useState<LedgerDirection>("inward");
 
   const reload = useCallback(async () => {
@@ -27,11 +27,17 @@ export function LedgerTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listLedger(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { const q = Number(qty); if (!mat.trim() || !Number.isFinite(q) || q <= 0 || !session) return; await run("add", c => createLedgerTxn(c, { projectId, material: mat.trim(), unit: unit.trim() || undefined, qty: q, direction: dir, recordedBy: session.user.id })); setMat(""); setUnit(""); setQty(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    const q = Number(qty);
+    if (!mat.trim() || !Number.isFinite(q) || q <= 0 || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createLedgerTxn(c, { projectId, material: mat.trim(), unit: unit.trim() || undefined, qty: q, direction: dir, recordedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, txnDate: new Date().toISOString().slice(0, 10), material: mat.trim(), unit: unit.trim() || null, qty: q, direction: dir, source: null, refNo: null }, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setMat(""); setUnit(""); setQty("");
+  };
 
   const balance = useMemo(() => [...stockBalance(rows).entries()].filter(([, v]) => v !== 0), [rows]);
 
@@ -60,7 +66,7 @@ export function LedgerTab({ projectId }: { projectId: string }): JSX.Element {
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={dirTone(r.direction)}>{r.direction}</Badge>{r.material} Â· {r.qty}{r.unit ? ` ${r.unit}` : ""}</div>
                 <div className="text-[11px] text-ink-400">{r.txnDate}{r.refNo ? ` Â· ${r.refNo}` : ""}</div></div>
-              {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLedgerTxn(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+              {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLedgerTxn(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
             </Card>))}</div>}
     </div>
   );

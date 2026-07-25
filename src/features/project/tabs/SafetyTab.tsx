@@ -8,6 +8,7 @@ import { listSafety, createSafety, setSafetyStatus, deleteSafety, type SafetyInc
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
+import { useAction } from "@/hooks/useAction";
 const SEV = [{ value: "near_miss", label: "Near miss" }, { value: "first_aid", label: "First aid" }, { value: "minor", label: "Minor" }, { value: "major", label: "Major" }, { value: "fatal", label: "Fatal" }];
 const STT = [{ value: "open", label: "Open" }, { value: "resolved", label: "Resolved" }, { value: "escalated", label: "Escalated" }];
 const sevTone = (s: SafetySeverity): "danger" | "warning" | "neutral" => (s === "fatal" || s === "major" ? "danger" : s === "minor" || s === "first_aid" ? "warning" : "neutral");
@@ -19,7 +20,6 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<SafetyIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const [desc, setDesc] = useState(""); const [sev, setSev] = useState<SafetySeverity>("near_miss"); const [cat, setCat] = useState(""); const [loc, setLoc] = useState("");
 
   const reload = useCallback(async () => {
@@ -28,11 +28,16 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await listSafety(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
-  const run = useCallback(async (k: string, fn: (c: unknown) => Promise<{ ok: boolean; error?: string }>) => {
-    setBusy(k); setError(null); const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await fn(client); if (!res.ok) setError(res.error ?? "Action failed."); await reload(); setBusy(null);
-  }, [reload]);
-  const add = async () => { if (!desc.trim() || !session) return; await run("add", c => createSafety(c, { projectId, description: desc.trim(), severity: sev, category: cat.trim() || undefined, location: loc.trim() || undefined, reportedBy: session.user.id })); setDesc(""); setCat(""); setLoc(""); };
+  const { busy, run } = useAction(reload, setError);
+  const add = async () => {
+    if (!desc.trim() || !session) return;
+    const tmpId = "tmp-" + Date.now();
+    await run("add", c => createSafety(c, { projectId, description: desc.trim(), severity: sev, category: cat.trim() || undefined, location: loc.trim() || undefined, reportedBy: session.user.id }), {
+      apply: () => setRows(prev => [{ id: tmpId, description: desc.trim(), severity: sev, category: cat.trim() || undefined, location: loc.trim() || undefined, status: "open", incidentDate: new Date().toISOString().slice(0, 10) } as SafetyIncident, ...prev]),
+      rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
+    });
+    setDesc(""); setCat(""); setLoc("");
+  };
 
   return (
     <div className="space-y-4">
@@ -56,9 +61,9 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm text-ink-800 flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity.replace("_", " ")}</Badge>{r.description}</div>
                 <div className="text-[11px] text-ink-400 mt-0.5">{[r.incidentDate, r.category, r.location].filter(Boolean).join(" Â· ")}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setSafetyStatus(c, r.id, e.target.value as SafetyStatus))} options={STT} />
+                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SafetyStatus; void run(`s-${r.id}`, c => setSafetyStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-ink-500">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSafety(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSafety(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

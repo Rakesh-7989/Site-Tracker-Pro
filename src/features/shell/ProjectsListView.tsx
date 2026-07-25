@@ -69,9 +69,9 @@ export function ProjectsListView(): JSX.Element {
       )}
 
       {state.kind === "error" && (
-        <Card className="p-6 flex items-start gap-3 border-red-200 bg-red-50">
-          <Icon name="alert" size={18} className="text-red-600 mt-0.5" />
-          <div className="text-sm text-red-700">Couldn't load projects: {state.message}</div>
+        <Card className="p-6 flex items-start gap-3 border-rose-200 bg-rose-50">
+          <Icon name="alert" size={18} className="text-rose-600 mt-0.5" />
+          <div className="text-sm text-rose-700">Couldn't load projects: {state.message}</div>
         </Card>
       )}
 

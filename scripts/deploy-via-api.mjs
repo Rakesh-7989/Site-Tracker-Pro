@@ -2,8 +2,6 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { request as httpRequest } from 'http';
-import { request as httpsRequest } from 'https';
 import FormData from 'form-data';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -19,7 +17,6 @@ if (!TOKEN) { console.error('SUPABASE_ACCESS_TOKEN not set'); process.exit(1); }
 function formFetch(url, form) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
-    const mod = u.protocol === 'https:' ? httpsRequest : httpRequest;
     form.submit(
       {
         hostname: u.hostname,
