@@ -16,7 +16,7 @@ import { Card, Icon, Spinner, Badge } from "@/components/ui/atoms";
 import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
-import { visibleTabs, DEFAULT_TAB, tabById } from "./tabs-config";
+import { visibleTabs, DEFAULT_TAB } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { MilestonesTab } from "./tabs/MilestonesTab";
@@ -45,17 +45,6 @@ import { FieldOpsTab } from "./tabs/FieldOpsTab";
 import { GanttTab } from "./tabs/GanttTab";
 import { ApprovalsTab } from "./tabs/ApprovalsTab";
 import { MessagesTab } from "./tabs/MessagesTab";
-import { TabPlaceholder } from "./tabs/TabPlaceholder";
-
-// Tabs that have a real ported implementation (others fall to the placeholder).
-const REAL_TABS = new Set([
-  "overview", "team", "milestones", "tasks", "updates", "issues",
-  "materials", "safety", "inspections", "punchlist",
-  "attendance", "po", "invoices", "budget",
-  "rabills", "ledger", "drawings", "rfi",
-  "changeorders", "estimate", "map",
-  "boq", "labour", "compliance", "fieldops", "gantt", "approvals", "messages",
-]);
 
 export function DetailView(): JSX.Element {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
@@ -96,7 +85,6 @@ export function DetailView(): JSX.Element {
   const { project, members } = state;
   // Resolve the active tab: requested → if visible use it, else default.
   const activeId = tab && tabs.some(tb => tb.id === tab) ? tab : DEFAULT_TAB;
-  const activeDef = tabById(activeId);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -161,9 +149,6 @@ export function DetailView(): JSX.Element {
         {activeId === "gantt" && <GanttTab projectId={project.id} />}
         {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
         {activeId === "messages" && <MessagesTab projectId={project.id} />}
-        {!REAL_TABS.has(activeId) && activeDef && (
-          <TabPlaceholder label={t(`projTab.${activeId}`)} icon={activeDef.icon} />
-        )}
       </div>
     </div>
   );

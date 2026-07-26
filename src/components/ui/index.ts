@@ -70,12 +70,6 @@ export {
 } from "./Modal";
 
 export {
-  ToastProvider,
-  useToast,
-  type ToastProviderProps,
-} from "./Toast";
-
-export {
   DropdownMenu,
   DropdownItem,
   type DropdownMenuProps,

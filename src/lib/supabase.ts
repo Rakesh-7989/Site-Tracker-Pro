@@ -372,18 +372,6 @@ export async function saveKey(key: string, value: any): Promise<void> {
   }
 }
 
-export async function subscribeTable(table: string, onInsert: (row: any) => void): Promise<() => void> {
-  const sb = await getSupabaseClient();
-  if (!sb) return () => {};
-  const channel = (sb as any)
-    .channel(`rt:${table}`)
-    .on("postgres_changes", { event: "INSERT", schema: "public", table }, (payload: any) => {
-      onInsert(payload.new);
-    })
-    .subscribe();
-  return () => (sb as any).removeChannel(channel);
-}
-
 interface MigrationResult {
   keys: number;
   rows: number;
