@@ -18,7 +18,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
 
   const onSignOut = async () => {
     try {
-      const mod = await import("../../lib/supabase.js");
+      const mod = await import("../../lib/supabase");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (mod as any).signOut();
     } finally {

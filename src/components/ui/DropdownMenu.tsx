@@ -31,7 +31,7 @@ export function DropdownMenu({ trigger, children, align = "end", className }: Dr
       {open && (
         <div
           className={cn(
-            "absolute z-50 mt-1 min-w-[160px] bg-white rounded-xl border border-cream-200 shadow-hover py-1",
+            "absolute z-50 mt-1 min-w-[160px] bg-white rounded-xl border border-cream-200 shadow-hover py-1 max-h-60 overflow-y-auto",
             align === "end" ? "right-0" : "left-0",
           )}
           onClick={() => setOpen(false)}

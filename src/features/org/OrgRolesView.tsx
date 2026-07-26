@@ -4,7 +4,7 @@
 // platform:* capability escalation. Lower-plan orgs see an upgrade prompt.
 
 import {
-  useAuth, useCan, useOrgSwitcher, usePlanCaps, PlanGate,
+  useAuth, useCanWithPlan, useOrgSwitcher, PlanGate,
   displayPlanLabel, identityRoleLabel, identityRolesForPlan,
   orgTierRoleLabel, orgTierRolesForPlan,
   planFeatureLabelsFor, planSupportsCustomRoles,
@@ -16,8 +16,10 @@ import { CustomRolesPanel } from "@/features/admin/CustomRolesPanel";
 export function OrgRolesView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const { plan, loading: planLoading } = usePlanCaps();
-  const canManage = useCan("org:members:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
+  const { allowed: canManage, plan, planLoading } = useCanWithPlan({
+    capability: "org:members:manage",
+    context: activeOrg ? { orgId: activeOrg.orgId } : {},
+  });
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
   if (!canManage) return <AccessDenied message="Org admin access required." />;

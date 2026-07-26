@@ -60,7 +60,7 @@ export function ClientPortalView(): JSX.Element {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <Card className="p-4"><div className="text-ink-400 text-xs font-semibold uppercase tracking-wider mb-1">Projects</div><div className="text-3xl font-black text-ink-900">{mp.length}</div></Card>
         <Card className="p-4"><div className="text-ink-400 text-xs font-semibold uppercase tracking-wider mb-1">Updates</div><div className="text-3xl font-black text-safety-600">{unread.length}</div></Card>
         <Card className="p-4"><div className="text-ink-400 text-xs font-semibold uppercase tracking-wider mb-1">Status</div><div className="text-lg font-black text-ink-900">{mp.filter(p => p.status === "active").length} active</div></Card>

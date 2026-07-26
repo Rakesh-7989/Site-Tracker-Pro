@@ -75,7 +75,6 @@ export const CAPABILITIES = [
 
   // ── BOQ + estimate ───────────────────────────────────────────────────────
   "boq:edit",
-  "boq:import",
   "estimate:edit",
 
   // ── RFI + change orders ──────────────────────────────────────────────────
@@ -88,7 +87,6 @@ export const CAPABILITIES = [
   // ── Finance + billing ────────────────────────────────────────────────────
   "expense:add",
   "expense:approve",
-  "expense:delete",
   "rabill:create",
   "rabill:approve",
   "invoice:create",

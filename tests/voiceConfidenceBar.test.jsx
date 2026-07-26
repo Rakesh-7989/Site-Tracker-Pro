@@ -6,10 +6,9 @@ import React from "react";
 
 import {
   VoiceConfidenceBar,
-  VoiceConfidenceBarGallery,
   confidenceBand,
   CONFIDENCE_THRESHOLDS,
-} from "../src/features/dpr/VoiceConfidenceBar.jsx";
+} from "../src/features/dpr/VoiceConfidenceBar";
 
 const html = (jsx) => renderToStaticMarkup(jsx);
 
@@ -141,16 +140,4 @@ describe("VoiceConfidenceBar — visual variants", () => {
   });
 });
 
-describe("VoiceConfidenceBarGallery", () => {
-  it("renders 3 bars at representative confidence levels", () => {
-    const out = html(<VoiceConfidenceBarGallery lang="en" />);
-    expect((out.match(/role="progressbar"/g) || []).length).toBe(3);
-  });
 
-  it("covers all 3 bands (low, medium, high)", () => {
-    const out = html(<VoiceConfidenceBarGallery lang="en" />);
-    expect(out).toContain('data-voice-band="low"');
-    expect(out).toContain('data-voice-band="medium"');
-    expect(out).toContain('data-voice-band="high"');
-  });
-});

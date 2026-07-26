@@ -42,7 +42,7 @@ export function CreateProjectView(): JSX.Element {
     if (!activeOrg) { setError("No active organization."); return; }
     if (name.trim().length < 2) { setError("Project name is required."); return; }
     setBusy(true); setError(null);
-    const mod = await import("../../lib/supabase.js");
+    const mod = await import("../../lib/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = await (mod as any).getSupabaseClient();
     if (!client) { setBusy(false); setError("Backend not configured."); return; }

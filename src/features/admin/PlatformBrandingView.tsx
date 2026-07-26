@@ -98,13 +98,13 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
 
   return (
     <div className="p-4 md:p-10 max-w-5xl">
-      <div className="mb-8 pb-3" style={{ borderBottom: "1px solid var(--st-line)" }}>
+      <div className="mb-8 pb-3 border-b-st-line">
         <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— White-label</div>
         <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Branding</h1>
         <p className="text-ink-500 text-sm mt-2">Org → Project → defaults cascade. Project override wins over org; org wins over system defaults.</p>
       </div>
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+        <div className="bg-white rounded-2xl p-5 shadow-editorial border-st-line">
           <div className="flex gap-2 mb-4">
             <button onClick={() => setLevel("org")} className={`px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-lg ${level === "org" ? "bg-ink-900 text-cream" : "bg-cream-200 text-ink-700"}`}>Org level</button>
             <button onClick={() => setLevel("project")} className={`px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-lg ${level === "project" ? "bg-ink-900 text-cream" : "bg-cream-200 text-ink-700"}`}>Project level</button>
@@ -123,7 +123,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
           <select value={current.theme || ""} onChange={e => update({ theme: e.target.value || null })} className="w-full p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 mb-3"><option value="">(inherit)</option><option value="editorial">Editorial — Fraunces + cream</option><option value="operational">Operational — Inter + slate (site mode)</option></select>
           {level === "project" && <button onClick={clearProject} className="text-[11px] font-bold text-red-600 hover:text-red-800">Clear project override</button>}
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+        <div className="bg-white rounded-2xl p-5 shadow-editorial border-st-line">
           <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-amber-700 mb-3">— Live preview (effective cascade)</div>
           <div className="rounded-xl p-6 flex items-center gap-4" style={{ backgroundColor: accentToHex(effective.accent) + "10", border: `1px solid ${accentToHex(effective.accent)}30` }}>
             {effective.logoUrl ? <img src={effective.logoUrl} alt="" className="w-12 h-12 rounded-lg object-cover" /> : <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: accentToHex(effective.accent) }}>SP</div>}

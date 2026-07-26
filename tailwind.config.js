@@ -44,6 +44,7 @@ export default {
         md: "8px",
         lg: "12px",
         xl: "16px",
+        "2xl": "24px",
       },
       boxShadow: {
         card:        "0 1px 3px rgba(15,17,21,.06), 0 1px 2px rgba(15,17,21,.04)",

@@ -19,7 +19,7 @@ export type SignupResult = { ok: true } | { ok: false; error: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> {
-  const mod = await import("../lib/supabase.js");
+  const mod = await import("../lib/supabase");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return await (mod as any).getSupabaseClient();
 }

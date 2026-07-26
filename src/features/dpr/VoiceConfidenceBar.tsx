@@ -119,17 +119,4 @@ export function VoiceConfidenceBar({
   );
 }
 
-interface VoiceConfidenceBarGalleryProps {
-  lang?: DprLang;
-}
 
-export function VoiceConfidenceBarGallery({ lang = "en" }: VoiceConfidenceBarGalleryProps) {
-  const samples = [0.6, 0.88, 0.96];
-  return (
-    <div className="flex flex-col gap-4 max-w-xs">
-      {samples.map((c) => (
-        <VoiceConfidenceBar key={c} confidence={c} lang={lang} />
-      ))}
-    </div>
-  );
-}

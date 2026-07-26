@@ -118,16 +118,4 @@ export function DPRStatusBadge({
   );
 }
 
-interface DPRStatusBadgeGalleryProps {
-  lang?: DprLang;
-}
 
-export function DPRStatusBadgeGallery({ lang = "en" }: DPRStatusBadgeGalleryProps) {
-  return (
-    <div className="flex flex-wrap items-center gap-3">
-      {DPR_STATUSES.map((s) => (
-        <DPRStatusBadge key={s} status={s} lang={lang} />
-      ))}
-    </div>
-  );
-}

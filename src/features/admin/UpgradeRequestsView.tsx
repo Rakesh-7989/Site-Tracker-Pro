@@ -22,8 +22,8 @@ const STATUS_LABEL: Record<UpgradeStatus, string> = { open: "Open", in_progress:
 export function UpgradeRequestsView(): JSX.Element {
   const { session } = useAuth();
   const tier = session?.user.staffTier ?? null;
-  const isStaff = tier === "owner" || tier === "head" || tier === "member";
-  const canAssign = tier === "owner" || tier === "head";
+  const isStaff = session?.user.identityRole === "superadmin" || tier === "owner" || tier === "head" || tier === "member";
+  const canAssign = session?.user.identityRole === "superadmin" || tier === "owner" || tier === "head";
 
   const [rows, setRows] = useState<UpgradeRequest[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);

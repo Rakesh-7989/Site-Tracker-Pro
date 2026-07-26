@@ -155,23 +155,6 @@ export function BuildNowBadge({
   return inner;
 }
 
-interface BuildNowBadgeGalleryProps {
-  lang?: DprLang;
-}
 
-export function BuildNowBadgeGallery({ lang = "en" }: BuildNowBadgeGalleryProps) {
-  return (
-    <div className="flex flex-wrap items-center gap-3">
-      {BUILDNOW_BADGE_STATES.map((s) => (
-        <BuildNowBadge
-          key={s}
-          state={s}
-          lang={lang}
-          showLink={false}
-        />
-      ))}
-    </div>
-  );
-}
 
 export { APPROVAL_STATUSES };

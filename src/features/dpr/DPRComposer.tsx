@@ -60,7 +60,7 @@ export function DPRComposer(): JSX.Element {
     dispatch({ type: "voice-start" });
     setTranscribing(true);
     try {
-      const mod = await import("../../lib/voiceTranscribe.js");
+      const mod = await import("../../lib/voiceTranscribe");
       const res = await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "mock", transport: "mock" });
       if (res?.ok) {
         dispatch({ type: "voice-done", transcript: res.text, confidence: res.confidence ?? 0, provider: res.provider ?? "mock" });

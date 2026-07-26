@@ -104,7 +104,7 @@ const TIER_BADGE: Record<string, { label: string; tone: "warning" | "info" | "ne
 export function StaffAdminView(): JSX.Element {
   const { session } = useAuth();
   const tier = session?.user.staffTier ?? null;
-  const canManage = tier === "owner" || tier === "head";
+  const canManage = session?.user.identityRole === "superadmin" || tier === "owner" || tier === "head";
 
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [areaMap, setAreaMap] = useState<Map<string, string[]>>(new Map());

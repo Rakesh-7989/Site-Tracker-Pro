@@ -79,7 +79,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
 
   return (
     <div className="p-4 md:p-10 max-w-4xl">
-      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{ borderBottom: "1px solid var(--st-line)" }}>
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b-st-line">
         <div>
           <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Workflow</div>
           <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Approval Delegation</h1>
@@ -87,7 +87,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
         </div>
         <button onClick={() => setShow(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide"><Icon name="plus" size={14} />Delegate</button>
       </div>
-      {show && <div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+      {show && <div className="bg-white rounded-2xl p-6 mb-5 shadow-editorial border-st-line">
         <div className="flex justify-between mb-4"><h3 className="font-display font-semibold text-ink-900 text-lg tracking-editorial">New delegation</h3><button onClick={() => setShow(false)}><Icon name="x" size={18} /></button></div>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <select value={nd.to_user_id} onChange={e => setNd(p => ({ ...p, to_user_id: e.target.value }))} className="p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="">— Delegate to —</option>{otherUsers.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}</select>
@@ -98,12 +98,12 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
         <input value={nd.reason} onChange={e => setNd(p => ({ ...p, reason: e.target.value }))} placeholder="Reason (e.g. site visit Vizag)" className="w-full p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600 mb-3" />
         <button onClick={create} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Create delegation</button>
       </div>}
-      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial border-st-line">
         {myDelegations.length === 0 ? <div className="p-12 text-center text-ink-500"><Icon name="users" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No delegations yet.</p></div> : myDelegations.map(d => {
           const st = delegationStatus(d);
           const color: Record<string, string> = { active: "emerald", scheduled: "amber", expired: "stone", revoked: "red" };
           const c = color[st] || "stone";
-          return (<div key={d.id} className="p-4 flex items-center gap-3 flex-wrap" style={{ borderBottom: "1px solid var(--st-line)" }}>
+          return (<div key={d.id} className="p-4 flex items-center gap-3 flex-wrap border-b-st-line">
             <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-${c}-50 text-${c}-700`}>{st}</span>
             <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-ink-900">→ {d.toUserName} <span className="text-[10px] font-mono text-ink-500">({d.scope})</span></div><div className="text-[11px] text-ink-500">{fmtDate(d.start)} → {fmtDate(d.end)}{d.reason && ` · ${d.reason}`}</div></div>
             {d.active !== false && st !== "expired" && <button onClick={() => revoke(d.id)} className="text-[11px] font-bold text-ink-500 hover:text-red-600">Revoke</button>}

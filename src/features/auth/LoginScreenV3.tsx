@@ -52,7 +52,7 @@ interface LoginScreenV3Props {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authLib(): Promise<any> {
-  return await import("../../lib/supabase.js");
+  return await import("../../lib/supabase");
 }
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);

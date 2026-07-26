@@ -222,7 +222,7 @@ export function Avatar({ initials, size = "md", accent = "orange", role, classNa
   return (
     <div className={cn(
       AV_SIZE[size], AV_BG[resolvedAccent],
-      "rounded-lg flex items-center justify-center text-white font-semibold flex-shrink-0 ring-1 ring-black/5",
+      "rounded-lg flex items-center justify-center text-white font-semibold flex-shrink-0 ring-1 ring-ink-900/10",
       className,
     )}>
       {initials.slice(0, 2).toUpperCase()}

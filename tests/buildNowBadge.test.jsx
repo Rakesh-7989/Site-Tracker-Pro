@@ -10,9 +10,8 @@ import React from "react";
 
 import {
   BuildNowBadge,
-  BuildNowBadgeGallery,
   BUILDNOW_BADGE_STATES,
-} from "../src/features/dpr/BuildNowBadge.jsx";
+} from "../src/features/dpr/BuildNowBadge";
 
 const html = (jsx) => renderToStaticMarkup(jsx);
 
@@ -149,20 +148,4 @@ describe("BuildNowBadge — link to portal", () => {
   });
 });
 
-describe("BuildNowBadgeGallery", () => {
-  it("renders one badge per state (5 total) with unique data attributes", () => {
-    const out = html(<BuildNowBadgeGallery lang="en" />);
-    const matches = out.match(/data-buildnow-state="([^"]+)"/g) || [];
-    expect(matches).toHaveLength(5);
-    const states = matches.map(m => m.match(/"([^"]+)"/)[1]).sort();
-    expect(states).toEqual([...BUILDNOW_BADGE_STATES].sort());
-  });
 
-  it("respects lang prop across all badges", () => {
-    const enOut = html(<BuildNowBadgeGallery lang="en" />);
-    const teOut = html(<BuildNowBadgeGallery lang="te" />);
-    // The Telugu rendering must differ from English (different strings).
-    expect(teOut).not.toBe(enOut);
-    expect(teOut).toContain("BuildNow Telangana lo verified");
-  });
-});

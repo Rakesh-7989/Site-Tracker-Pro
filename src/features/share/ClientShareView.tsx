@@ -30,7 +30,7 @@ export function ClientShareView(): JSX.Element {
       if (!id) { setState({ kind: "error", message: "No project specified." }); return; }
       setState({ kind: "loading" });
       try {
-        const mod = await import("../../lib/supabase.js");
+        const mod = await import("../../lib/supabase");
         const client = await mod.getSupabaseClient();
         if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }
         const { getShareData } = await import("@/app/shareQueries");
@@ -87,7 +87,7 @@ export function ClientShareView(): JSX.Element {
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-light leading-[1.05] tracking-editorial mb-4">{project.name}</h1>
           {project.location && <div className="flex items-center gap-2 text-cream/60 text-sm"><Icon name="map" size={14} />{project.location}</div>}
-          <div className="mt-8 grid grid-cols-3 gap-6 pt-6" style={{ borderTop: "1px solid rgba(255,251,235,.1)" }}>
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-6" style={{ borderTop: "1px solid rgba(255,251,235,.1)" }}>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cream/50 mb-1.5">Progress</div>
               <div className="font-display text-3xl font-light tracking-editorial">{project.progress ?? "—"}<span className="text-amber-500 text-xl">%</span></div>
@@ -104,7 +104,7 @@ export function ClientShareView(): JSX.Element {
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-6 md:px-10 py-10 space-y-8">
-        <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+        <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial border-st-line">
           <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Overall completion</div>
           <div className="flex items-end justify-between mb-3">
             <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">Project Progress</h2>
@@ -115,7 +115,7 @@ export function ClientShareView(): JSX.Element {
         </section>
 
         {milestones.length > 0 && (
-          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial border-st-line">
             <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Phases</div>
             <h2 className="font-display text-xl font-semibold text-ink-900 mb-6 tracking-editorial">Milestones</h2>
             <div className="space-y-4">
@@ -138,12 +138,12 @@ export function ClientShareView(): JSX.Element {
         )}
 
         {drawings.length > 0 && (
-          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial border-st-line">
             <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Documents</div>
             <h2 className="font-display text-xl font-semibold text-ink-900 mb-6 tracking-editorial">Released Drawings</h2>
             <div className="space-y-3">
               {drawings.map(d => (
-                <div key={d.id} className="p-4 bg-cream-200/50 rounded-xl" style={{ border: "1px solid var(--st-line)" }}>
+                <div key={d.id} className="p-4 bg-cream-200/50 rounded-xl border-st-line">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Icon name="image" size={18} className="text-amber-700" />
@@ -167,12 +167,12 @@ export function ClientShareView(): JSX.Element {
         )}
 
         {updates.length > 0 && (
-          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-editorial border-st-line">
             <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Field</div>
             <h2 className="font-display text-xl font-semibold text-ink-900 mb-6 tracking-editorial">Recent Updates</h2>
             <div className="space-y-5">
               {updates.slice(0, 3).map(u => (
-                <article key={u.id} className="pb-5 last:pb-0" style={{ borderBottom: "1px solid var(--st-line)" }}>
+                <article key={u.id} className="pb-5 last:pb-0 border-b-st-line">
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-[11px] font-bold tracking-[0.18em] uppercase text-amber-700">{fmtDate(u.updateDate)}</div>
                     {u.weather && <span className="text-[10px] bg-amber-50 text-amber-800 font-semibold px-2 py-1 rounded-full tracking-wider">{u.weather}</span>}

@@ -21,7 +21,7 @@ export function useProject(projectId: string | undefined): { state: ProjectLoad;
     void (async () => {
       if (!projectId) { setState({ kind: "error", message: "No project id." }); return; }
       setState({ kind: "loading" });
-      const mod = await import("../../lib/supabase.js");
+      const mod = await import("../../lib/supabase");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client = await (mod as any).getSupabaseClient();
       if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }

@@ -22,7 +22,7 @@ export function Breadcrumbs({ crumbs, className }: BreadcrumbsProps): JSX.Elemen
           <span className={cn(
             "inline-flex items-center gap-1.5",
             isLast ? "text-ink-800 font-semibold" : "text-ink-500",
-          )}>
+          )} {...(isLast ? { "aria-current": "page" as const } : {})}>
             {crumb.icon && <span className="flex-shrink-0">{crumb.icon}</span>}
             <span>{crumb.label}</span>
           </span>

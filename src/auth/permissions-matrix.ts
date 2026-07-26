@@ -63,7 +63,8 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
   ),
   // Separation of Duties: Project Admin creates invoices/RA bills but
   // does NOT approve them — orgadmin or higher approves. PO: approve only
-  // (PM creates, Project Admin approves).
+  // (PM creates, Project Admin approves). Budget + ledger + material price
+  // views provide financial context for invoice/RA bill creation.
   project_admin: arr(
     "activity:view", "audit:read",
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
@@ -72,6 +73,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Pick vendors when creating invoices / RA bills.
+    "budget:view", "ledger:view", "material:price:view",  // Financial context for invoice/RA bill creation.
     "export:pdf", "export:csv",
   ),
   prospector: arr(
@@ -80,6 +82,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "activity:view",
     "project:create",                 // Can create draft projects for prospects
     "vendor:manage", "vendor:select", // Curates + picks vendor leads during prospecting.
+    "message:send", "whatsapp:send",  // Communicate with vendor leads / stakeholders.
     "export:pdf", "export:csv",
   ),
   // pm absorbs the former project_head role (founder consolidation
@@ -95,7 +98,9 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "milestone:add", "milestone:edit", "milestone:delete",
     "update:add", "update:edit", "update:delete",
     "issue:add", "issue:resolve",
+    "safety:close",
     "team:manage", "attendance:view", "attendance:mark",
+    "compliance:view",
     "material:add", "material:edit", "material:delete",
     "material:price:view",
     "po:create", "vendor:select",   // PMs raise POs and pick vendors in the form.
@@ -116,6 +121,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
     "rfi:create", "rfi:respond",
     "changeorder:create",
+    "material:price:view",  // Cost context for change order creation.
     "issue:add",
     "boq:edit", "estimate:edit",
     "update:add",
@@ -130,12 +136,14 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "boq:edit", "estimate:edit",
     "team:manage",
     "update:add", "update:edit", "update:delete",
+    "material:price:view",  // Material cost context for change orders.
     "export:pdf", "export:csv",
   ),
   junior_architect: arr(
     "activity:view",
     "drawings:upload", "drawings:edit", "drawings:markup",
-    "rfi:create",
+    "rfi:create", "rfi:respond",
+    "issue:add",
     "update:add",
   ),
   // design_architect_interior absorbs the former interior_designer role
@@ -156,6 +164,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rfi:respond", "rfi:close",
     "changeorder:approve",
     "boq:edit", "estimate:edit",
+    "material:price:view",  // Material cost context for approving change orders.
     "update:add", "update:edit",
     "export:pdf",
   ),
@@ -164,12 +173,14 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "drawings:edit", "drawings:markup",
     "rfi:respond", "rfi:close",
     "changeorder:approve",
+    "material:price:view",  // Cost context for approving change orders.
     "update:add",
     "export:pdf",
   ),
   designer: arr(
     "activity:view",
     "drawings:upload", "drawings:markup",
+    "rfi:create",
     "update:add",
   ),
 
@@ -179,6 +190,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
     "rfi:create", "rfi:respond",
     "changeorder:create",
+    "material:price:view",  // Cost context for change order creation.
     "inspection:create", "inspection:close",
     "update:add",
   ),
@@ -187,6 +199,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
     "rfi:create", "rfi:respond",
     "changeorder:create",
+    "material:price:view",  // Cost context for change order creation.
     "inspection:create", "inspection:close",
     "update:add",
   ),
@@ -206,9 +219,9 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "update:add", "update:edit",
     "issue:add", "issue:resolve",
     "punchlist:add", "punchlist:close",
-    "safety:report",
+    "safety:report", "safety:close",
     "attendance:mark", "attendance:view", "labour:manage",
-    "material:add", "material:edit", "vendor:select",   // Logs material receipts; pick vendor.
+    "material:add", "material:edit", "material:price:view", "vendor:select",   // Logs material receipts; pick vendor.
     "rfi:create",
     "inspection:create", "inspection:close",
     "voice:record", "photo:upload",
@@ -222,6 +235,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "update:add",
     "attendance:mark", "attendance:view",
     "material:add", "vendor:select",   // Receives material from approved vendors.
+    "material:price:view",             // Cost context for RA bill creation.
     "rfi:create",
     "rabill:create",
     "photo:upload",
@@ -339,10 +353,12 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "team:manage",
     "update:add", "update:edit",
     "issue:add", "issue:resolve",
+    "material:price:view",  // Material cost context for change orders.
   ),
   junior_architect: arr(
     "drawings:upload", "drawings:edit", "drawings:markup",
-    "rfi:create",
+    "rfi:create", "rfi:respond",
+    "issue:add",
     "update:add",
   ),
   design_architect_interior: arr(
@@ -358,16 +374,19 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "rfi:respond", "rfi:close",
     "changeorder:approve",
     "boq:edit", "estimate:edit",
+    "material:price:view",  // Material cost context for approving change orders.
     "update:add", "update:edit",
   ),
   consultant_head: arr(
     "drawings:edit", "drawings:markup",
     "rfi:respond", "rfi:close",
     "changeorder:approve",
+    "material:price:view",  // Cost context for approving change orders.
     "update:add",
   ),
   designer: arr(
     "drawings:upload", "drawings:markup",
+    "rfi:create",
     "update:add",
   ),
   consultant: arr(
@@ -379,6 +398,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
     "rfi:create", "rfi:respond",
     "changeorder:create",
+    "material:price:view",  // Cost context for change order creation.
     "inspection:create", "inspection:close",
     "update:add",
   ),
@@ -386,6 +406,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
     "rfi:create", "rfi:respond",
     "changeorder:create",
+    "material:price:view",  // Cost context for change order creation.
     "inspection:create", "inspection:close",
     "update:add",
   ),
@@ -396,9 +417,9 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "update:add", "update:edit",
     "issue:add", "issue:resolve",
     "punchlist:add", "punchlist:close",
-    "safety:report",
+    "safety:report", "safety:close",
     "attendance:mark", "attendance:view", "labour:manage",
-    "material:add", "material:edit", "vendor:select",   // Logs material receipts; pick vendor.
+    "material:add", "material:edit", "material:price:view", "vendor:select",   // Logs material receipts; pick vendor.
     "rfi:create",
     "inspection:create", "inspection:close",
     "voice:record", "photo:upload",
@@ -421,7 +442,9 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "milestone:add", "milestone:edit", "milestone:delete",
     "update:add", "update:edit", "update:delete",
     "issue:add", "issue:resolve",
+    "safety:close",
     "team:manage", "attendance:view", "attendance:mark",
+    "compliance:view",
     "material:add", "material:edit",
     "po:create", "vendor:select",   // PMs raise POs and pick vendors in the form.
     "rfi:respond", "rfi:close",
@@ -441,12 +464,14 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Picks vendors when creating invoices / RA bills.
+    "budget:view", "ledger:view", "material:price:view",  // Financial context for invoice/RA bill creation.
     "export:pdf", "export:csv",
   ),
   contractor: arr(
     "update:add",
     "attendance:mark", "attendance:view",
     "material:add", "vendor:select",   // Receives material from approved vendors.
+    "material:price:view",             // Cost context for RA bill creation.
     "rfi:create",
     "rabill:create",
     "photo:upload",

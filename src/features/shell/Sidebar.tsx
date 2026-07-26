@@ -86,7 +86,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarRef }: { mobileOpen: boole
                     end={item.to === "/dashboard" || item.to === "/admin"}
                     onClick={onClose}
                     className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
+                      `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition ${
                         isActive
                           ? "bg-safety-50 text-safety-700 font-semibold"
                           : "text-ink-600 hover:bg-cream-100"

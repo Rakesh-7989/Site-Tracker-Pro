@@ -6,9 +6,8 @@ import React from "react";
 
 import {
   DPRStatusBadge,
-  DPRStatusBadgeGallery,
   DPR_STATUSES,
-} from "../src/features/dpr/DPRStatusBadge.jsx";
+} from "../src/features/dpr/DPRStatusBadge";
 
 const html = (jsx) => renderToStaticMarkup(jsx);
 
@@ -87,18 +86,4 @@ describe("DPRStatusBadge — sizes", () => {
   });
 });
 
-describe("DPRStatusBadgeGallery", () => {
-  it("renders all 6 statuses with unique data attributes", () => {
-    const out = html(<DPRStatusBadgeGallery lang="en" />);
-    const matches = out.match(/data-dpr-status="([^"]+)"/g) || [];
-    expect(matches).toHaveLength(6);
-    const states = matches.map(m => m.match(/"([^"]+)"/)[1]).sort();
-    expect(states).toEqual([...DPR_STATUSES].sort());
-  });
 
-  it("differs by lang", () => {
-    const enOut = html(<DPRStatusBadgeGallery lang="en" />);
-    const teOut = html(<DPRStatusBadgeGallery lang="te" />);
-    expect(enOut).not.toBe(teOut);
-  });
-});

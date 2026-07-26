@@ -10,7 +10,7 @@ import { getOrgAnalytics, toBars, type OrgAnalytics } from "@/app/analyticsQueri
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
-const PIE_COLORS = ["#34d399", "#f59e0b", "#60a5fa", "#f87171"];
+const PIE_COLORS = ["var(--st-success)", "var(--st-warning)", "var(--st-indigo)", "var(--st-error)"];
 const STATUS_ORDER = ["active", "completed", "on_hold", "cancelled"];
 const PROG_ORDER = ["pending", "in_progress", "completed"];
 
@@ -27,10 +27,10 @@ function ChartCard({ title, rows, color }: { title: string; rows: Array<{ name: 
         <div style={{ width: "100%", height: 160 }}>
           <ResponsiveContainer>
             <BarChart data={rows} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--st-border)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip cursor={{ fill: "#f5f5f4" }} />
+              <Tooltip cursor={{ fill: "var(--st-bg-elevated)" }} />
               <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -92,11 +92,11 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
                 {pie.map((r, i) => <span key={r.name} className="text-[11px] text-ink-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />{r.name} ({r.value})</span>)}
               </div>
             </Card>
-            <ChartCard title="Milestones by status" rows={toBars(a.milestoneStatus, PROG_ORDER)} color="#f59e0b" />
+            <ChartCard title="Milestones by status" rows={toBars(a.milestoneStatus, PROG_ORDER)} color="var(--st-warning)" />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3">
-            <ChartCard title="Tasks by status" rows={toBars(a.taskStatus, PROG_ORDER)} color="#60a5fa" />
+            <ChartCard title="Tasks by status" rows={toBars(a.taskStatus, PROG_ORDER)} color="var(--st-indigo)" />
             <Card className="p-4">
               <div className="text-xs font-semibold tracking-[0.14em] uppercase text-ink-400 mb-3">Finance</div>
               <div className="space-y-2">

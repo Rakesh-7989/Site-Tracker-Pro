@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 export interface Tab {
@@ -28,16 +28,38 @@ const TAB_INACTIVE: Record<string, string> = {
 };
 
 export function Tabs({ tabs, activeTab, onChange, variant = "underline", className }: TabsProps): JSX.Element {
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const idx = tabs.findIndex(t => t.id === activeTab);
+    let nextIdx = idx;
+    if (e.key === "ArrowRight") { nextIdx = Math.min(idx + 1, tabs.length - 1); }
+    else if (e.key === "ArrowLeft") { nextIdx = Math.max(idx - 1, 0); }
+    else if (e.key === "Home") { nextIdx = 0; }
+    else if (e.key === "End") { nextIdx = tabs.length - 1; }
+    else return;
+    e.preventDefault();
+    const next = tabs[nextIdx];
+    if (next && !next.disabled) onChange(next.id);
+  }, [tabs, activeTab, onChange]);
+
   return (
-    <div className={cn(
-      variant === "underline" ? "flex border-b border-cream-200 gap-0" : "flex gap-1",
-      className,
-    )}>
+    <div
+      role="tablist"
+      aria-orientation="horizontal"
+      onKeyDown={onKeyDown}
+      className={cn(
+        "overflow-x-auto",
+        variant === "underline" ? "flex border-b border-cream-200 gap-0" : "flex gap-1",
+        className,
+      )}
+    >
       {tabs.map(tab => {
         const isActive = tab.id === activeTab;
         return (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            aria-disabled={tab.disabled || undefined}
             onClick={() => { if (!tab.disabled) onChange(tab.id); }}
             disabled={tab.disabled}
             className={cn(

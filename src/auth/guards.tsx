@@ -13,13 +13,15 @@
 // When the session is still loading, guards render the `fallback` (default:
 // nothing) — the wrapping screen typically shows a global spinner.
 
-import { type ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 
 import type { Capability } from "./capabilities";
 import type { IdentityRole } from "./roles";
 import { can as pureCan, decide as pureDecide } from "./RoleResolver";
 import type { ResolveContext } from "./types";
 import { useAuth } from "./OrganizationContext";
+import type { PlanFeature } from "./planCaps";
+import { usePlanCaps } from "./usePlanCaps";
 
 // ── Hooks ─────────────────────────────────────────────────────────────────
 
@@ -51,6 +53,72 @@ export function useHasRole(roles: ReadonlyArray<IdentityRole>): boolean {
   const { session } = useAuth();
   if (!session) return false;
   return roles.includes(session.user.identityRole);
+}
+
+// ── Unified RBAC + plan gate ──────────────────────────────────────────────
+
+export interface UseCanWithPlanInput {
+  /** RBAC capability to check (optional — omit for plan-only gating). */
+  capability?: Capability;
+  /** Plan feature to gate (optional — omit for RBAC-only gating). */
+  planFeature?: PlanFeature;
+  /** Context for the RBAC check. */
+  context?: ResolveContext;
+}
+
+export interface UseCanWithPlanReturn {
+  /** True when both RBAC AND plan gates pass (or the respective gate is absent). */
+  allowed: boolean;
+  /** RBAC check result. */
+  can: boolean;
+  /** Plan check result (true when planFeature is omitted). */
+  planCan: boolean;
+  /** Active plan id (null = unknown / loading). */
+  plan: string | null;
+  /** True while the plan caps are being fetched. */
+  planLoading: boolean;
+  /** Human-readable reason when denied. */
+  reason: string;
+}
+
+/**
+ * Unified hook combining RBAC (useCan) + plan gating (usePlanCaps).
+ * Use this when a view needs both checks, replacing separate calls:
+ *
+ *   const { allowed, reason } = useCanWithPlan({
+ *     capability: "org:members:manage",
+ *     planFeature: "custom_roles",
+ *     context: { orgId },
+ *   });
+ */
+export function useCanWithPlan(input: UseCanWithPlanInput): UseCanWithPlanReturn {
+  const { session } = useAuth();
+  const { can: planCan, loading: planLoading, plan } = usePlanCaps();
+
+  const rbac = useMemo(() => {
+    if (!input.capability || !session) return { can: true, reason: "" };
+    const d = pureDecide(session, input.capability, input.context);
+    return { can: d.allowed, reason: d.reason };
+  }, [input.capability, input.context, session]);
+
+  const planOk = useMemo(() => {
+    if (!input.planFeature) return true;
+    if (planLoading) return true;
+    return planCan(input.planFeature);
+  }, [input.planFeature, planLoading, planCan]);
+
+  const reasons: string[] = [];
+  if (!rbac.can) reasons.push(rbac.reason);
+  if (!planOk) reasons.push(`Requires the ${input.planFeature} plan feature.`);
+
+  return {
+    allowed: rbac.can && planOk,
+    can: rbac.can,
+    planCan: planOk,
+    plan,
+    planLoading,
+    reason: reasons.join(" "),
+  };
 }
 
 // ── Components ────────────────────────────────────────────────────────────
@@ -107,6 +175,8 @@ export function useHasStaffArea(area: string): boolean {
 
 export interface RequireStaffAreaProps {
   area: string;
+  /** Optional capability check layered on top of the staff-area gate. */
+  capability?: Capability;
   children: ReactNode;
   /** Rendered when a member isn't granted this area. Default: nothing. */
   fallback?: ReactNode;
@@ -115,10 +185,17 @@ export interface RequireStaffAreaProps {
 /**
  * Route/section guard for the platform admin areas (migration 106). Use to
  * bounce a staff member who manually navigates to an area they aren't granted.
+ * When `capability` is set, also checks the user has that capability (defense-
+ * in-depth alongside the per-view `useCan` check).
  */
-export function RequireStaffArea({ area, children, fallback = null }: RequireStaffAreaProps): JSX.Element {
-  const allowed = useHasStaffArea(area);
-  return <>{allowed ? children : fallback}</>;
+export function RequireStaffArea({ area, capability, children, fallback = null }: RequireStaffAreaProps): JSX.Element {
+  const hasArea = useHasStaffArea(area);
+  const { session } = useAuth();
+  const hasCap = useMemo(() => {
+    if (!capability || !session) return true;
+    return pureCan(session, capability);
+  }, [capability, session]);
+  return <>{hasArea && hasCap ? children : fallback}</>;
 }
 
 /**

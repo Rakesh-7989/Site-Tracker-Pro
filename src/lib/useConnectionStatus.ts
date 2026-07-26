@@ -26,7 +26,7 @@ export function useConnectionStatus(): ConnectionStatus {
 
     (async () => {
       try {
-        const offMod = await import("./offline.js");
+        const offMod = await import("./offline");
         if (stopped) return;
         setOnline(offMod.isOnline());
         setPendingOps(offMod.queueLength());
@@ -37,7 +37,7 @@ export function useConnectionStatus(): ConnectionStatus {
           if (!stopped) setPendingOps(offMod.queueLength());
         }, 3000);
 
-        const supMod = await import("./supabase.js");
+        const supMod = await import("./supabase");
         const probe = async () => {
           if (stopped) return;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -9,7 +9,7 @@ import { useAction } from "@/hooks/useAction";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-  useAuth, useCan, useOrgSwitcher, usePlanCaps,
+  useAuth, useCanWithPlan, useOrgSwitcher,
   ROLE_LABEL,
   displayPlanLabel, identityRoleLabel, identityRolesForPlan,
   orgTierRoleLabel, orgTierRolesForPlan,
@@ -33,8 +33,10 @@ const idLabel = (role: string): string => (role in ROLE_LABEL ? ROLE_LABEL[role 
 export function OrgMembersView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const { plan } = usePlanCaps();
-  const canManage = useCan("org:members:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
+  const { allowed: canManage, plan } = useCanWithPlan({
+    capability: "org:members:manage",
+    context: activeOrg ? { orgId: activeOrg.orgId } : {},
+  });
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;

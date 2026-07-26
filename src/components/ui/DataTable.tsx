@@ -69,7 +69,7 @@ export function DataTable<T>({
           <thead>
             <tr className="border-b border-cream-200">
               {columns.map(col => (
-                <th key={col.key} className={cn(
+                <th key={col.key} scope="col" className={cn(
                   "text-left text-[11px] font-semibold uppercase tracking-wider text-ink-500 px-3 py-2.5",
                   col.hideOnMobile && "hidden md:table-cell",
                   col.className,
@@ -84,6 +84,9 @@ export function DataTable<T>({
               <tr
                 key={rowKey(row)}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={onRowClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(row); } } : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                role={onRowClick ? "button" : undefined}
                 className={cn(
                   "hover:bg-cream-50 transition",
                   onRowClick && "cursor-pointer",

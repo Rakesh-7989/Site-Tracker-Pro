@@ -30,6 +30,7 @@ import {
 import { normalizeOverride } from "./capabilityOverrides";
 import { customRoleGrants } from "./customRoles";
 import { isCapability, type Capability } from "./capabilities";
+import type { IdentityRole } from "./roles";
 
 // Narrow shape we expect from the Supabase client. Decoupled so we can
 // mock without pulling @supabase/supabase-js into Node tests.
@@ -181,6 +182,72 @@ export function buildAuthSession(
 }
 
 /**
+ * Fetch capability overrides (migration 69) for a given identity role,
+ * filtered to global + the given org. Best-effort: returns [] on failure.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchCapabilityOverrides(
+  client: any,
+  identityRole: IdentityRole,
+  activeOrgId: string | null,
+): Promise<CapabilityOverride[]> {
+  try {
+    const ovRes = await client
+      .from("role_capability_overrides")
+      .select("org_id, role, capability, mode")
+      .eq("role", identityRole);
+    if (!ovRes.error && Array.isArray(ovRes.data)) {
+      return (ovRes.data as Array<Record<string, unknown>>)
+        .map(normalizeOverride)
+        .filter((o): o is CapabilityOverride => o !== null)
+        .filter(o => o.orgId === null || o.orgId === activeOrgId);
+    }
+  } catch {
+    // best-effort
+  }
+  return [];
+}
+
+/**
+ * Fetch custom-role grants (migration 70) for the given user + org.
+ * Best-effort: returns [] on failure / no assignments.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchCustomRoleOverrides(
+  client: any,
+  authUserId: string,
+  identityRole: IdentityRole,
+  activeOrgId: string | null,
+): Promise<CapabilityOverride[]> {
+  if (!activeOrgId) return [];
+  try {
+    const amrRes = await client
+      .from("org_member_roles")
+      .select("org_role_id")
+      .eq("profile_id", authUserId)
+      .eq("org_id", activeOrgId)
+      .is("removed_at", null);
+    const roleIds = Array.isArray(amrRes?.data)
+      ? (amrRes.data as Array<Record<string, unknown>>).map(r => String(r.org_role_id)).filter(Boolean)
+      : [];
+    if (roleIds.length === 0) return [];
+    const capRes = await client
+      .from("org_role_capabilities")
+      .select("capability")
+      .in("org_role_id", roleIds);
+    if (Array.isArray(capRes?.data)) {
+      const caps = (capRes.data as Array<Record<string, unknown>>)
+        .map(r => r.capability)
+        .filter(isCapability) as Capability[];
+      return customRoleGrants(identityRole, activeOrgId, caps);
+    }
+  } catch {
+    // best-effort
+  }
+  return [];
+}
+
+/**
  * Top-level fetcher. The React hook calls this; tests can pass a mock
  * client that satisfies FetchClient.
  *
@@ -243,55 +310,11 @@ export async function fetchAuthSession(
 
     const session = buildAuthSession(normalized.user, orgRows, projectRows, preferredOrgId);
 
-    // 4. capability overrides (migration 69) for this user's identity role.
-    //    Best-effort: if the table is absent (pre-migration) or RLS denies,
-    //    we fall back to the base matrix. Filter to global + the active org.
-    try {
-      const ovRes = await client
-        .from("role_capability_overrides")
-        .select("org_id, role, capability, mode")
-        .eq("role", normalized.user.identityRole);
-      if (!ovRes.error && Array.isArray(ovRes.data)) {
-        const active = session.activeOrgId;
-        session.capabilityOverrides = (ovRes.data as Array<Record<string, unknown>>)
-          .map(normalizeOverride)
-          .filter((o): o is CapabilityOverride => o !== null)
-          .filter(o => o.orgId === null || o.orgId === active);
-      }
-    } catch {
-      // overrides are best-effort; absence = base matrix.
-    }
-
-    // 5. custom-role grants (migration 70) for the active org → grant overrides.
-    //    Best-effort: pre-migration / RLS-denied / no assignment → no change.
-    try {
-      if (session.activeOrgId) {
-        const amrRes = await client
-          .from("org_member_roles")
-          .select("org_role_id")
-          .eq("profile_id", input.authUserId)
-          .eq("org_id", session.activeOrgId)
-          .is("removed_at", null);
-        const roleIds = Array.isArray(amrRes?.data)
-          ? (amrRes.data as Array<Record<string, unknown>>).map(r => String(r.org_role_id)).filter(Boolean)
-          : [];
-        if (roleIds.length > 0) {
-          const capRes = await client
-            .from("org_role_capabilities")
-            .select("capability")
-            .in("org_role_id", roleIds);
-          if (Array.isArray(capRes?.data)) {
-            const caps = (capRes.data as Array<Record<string, unknown>>)
-              .map(r => r.capability)
-              .filter(isCapability) as Capability[];
-            const grants = customRoleGrants(normalized.user.identityRole, session.activeOrgId, caps);
-            session.capabilityOverrides = [...(session.capabilityOverrides ?? []), ...grants];
-          }
-        }
-      }
-    } catch {
-      // custom roles are best-effort.
-    }
+    // 4. capability overrides (migration 69) + custom-role grants (migration 70).
+    session.capabilityOverrides = [
+      ...(await fetchCapabilityOverrides(client, normalized.user.identityRole, session.activeOrgId)),
+      ...(await fetchCustomRoleOverrides(client, input.authUserId, normalized.user.identityRole, session.activeOrgId)),
+    ];
 
     return { ok: true, session };
   } catch (e) {

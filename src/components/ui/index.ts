@@ -138,6 +138,10 @@ export {
 } from "./CalendarGrid";
 
 export {
+  LanguageSwitcher,
+} from "./LanguageSwitcher";
+
+export {
   Board,
   type BoardColumn,
   type BoardItem,

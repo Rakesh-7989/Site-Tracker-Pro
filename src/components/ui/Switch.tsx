@@ -32,7 +32,7 @@ export function Switch({ checked, onChange, label, disabled, className, id }: Sw
           checked ? "bg-safety-500" : "bg-cream-200",
         )}>
           <div className={cn(
-            "w-3.5 h-3.5 bg-white rounded-full shadow-sm transition-transform absolute top-0.5",
+            "w-3.5 h-3.5 bg-white rounded-full shadow-card transition-transform absolute top-0.5",
             checked ? "translate-x-[18px]" : "translate-x-[2px]",
           )} />
         </div>

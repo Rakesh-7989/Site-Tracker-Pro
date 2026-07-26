@@ -152,7 +152,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
 
   return (
     <div className="p-4 md:p-10 max-w-7xl">
-      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{ borderBottom: "1px solid var(--st-line)" }}>
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b-st-line">
         <div>
           <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Structure</div>
           <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Project Hierarchy</h1>
@@ -163,12 +163,12 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
         </select>
       </div>
       {proj && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Project progress</div><div className="font-display text-2xl font-bold text-ink-900">{progress.project}%</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Blocks</div><div className="font-display text-2xl font-bold text-ink-900">{counts.blocks}</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Floors</div><div className="font-display text-2xl font-bold text-ink-900">{counts.floors}</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Units</div><div className="font-display text-2xl font-bold text-ink-900">{counts.units}</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Project progress</div><div className="font-display text-2xl font-bold text-ink-900">{progress.project}%</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Blocks</div><div className="font-display text-2xl font-bold text-ink-900">{counts.blocks}</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Floors</div><div className="font-display text-2xl font-bold text-ink-900">{counts.floors}</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Units</div><div className="font-display text-2xl font-bold text-ink-900">{counts.units}</div></div>
       </div>}
-      <div className="bg-white rounded-2xl p-6 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+      <div className="bg-white rounded-2xl p-6 shadow-editorial border-st-line">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">{proj?.name || "—"} structure</h2>
           {canCreate && <button onClick={addBlock} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-xs tracking-wide"><Icon name="plus" size={12} />Add block</button>}
@@ -177,7 +177,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
         <div className="space-y-2">
           {tree.map((b: any) => {
             const bExp = expanded[b.id] !== false;
-            return (<div key={b.id} className="rounded-xl" style={{ border: "1px solid var(--st-line)" }}>
+            return (<div key={b.id} className="rounded-xl border-st-line">
               <div className="flex items-center gap-3 p-3 bg-cream-200/40">
                 <button onClick={() => toggleNode(b.id)} className="text-ink-500 w-5 text-center">{bExp ? "â–¾" : "â–¸"}</button>
                 <div className="flex-1">
@@ -191,7 +191,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
               </div>
               {bExp && <div className="px-3 pb-3 space-y-1">{(b.floors || []).map((f: any) => {
                 const fExp = expanded[f.id] !== false;
-                return (<div key={f.id} className="ml-6 rounded-lg" style={{ border: "1px solid var(--st-line)" }}>
+                return (<div key={f.id} className="ml-6 rounded-lg border-st-line">
                   <div className="flex items-center gap-3 p-2 bg-white">
                     <button onClick={() => toggleNode(f.id)} className="text-ink-500 w-5 text-center">{fExp ? "â–¾" : "â–¸"}</button>
                     <div className="flex-1"><div className="text-sm font-semibold text-ink-800">Floor {f.number}</div><div className="text-[10px] text-ink-500">{(units[f.id] || []).length} units · {(progress.floors as Record<string, number>)[f.id] || 0}% complete</div></div>
@@ -200,7 +200,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
                       <button onClick={() => del("floor", f.id)} className="text-ink-400 hover:text-red-500"><Icon name="trash" size={12} /></button>
                     </>}
                   </div>
-                  {fExp && (f.units || []).length > 0 && <div className="px-2 pb-2"><div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-1">{(f.units || []).map((u: any) => (<div key={u.id} className="rounded-md px-2 py-1.5 bg-cream-200/40 flex items-center justify-between" style={{ border: "1px solid var(--st-line)" }}>
+                  {fExp && (f.units || []).length > 0 && <div className="px-2 pb-2"><div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-1">{(f.units || []).map((u: any) => (<div key={u.id} className="rounded-md px-2 py-1.5 bg-cream-200/40 flex items-center justify-between border-st-line">
                     <div className="min-w-0"><div className="text-[11px] font-bold text-ink-800 truncate">{unitCode(u, f, b)}</div><div className="text-[9px] text-ink-500 truncate">{u.type}</div></div>
                     <div className="flex items-center gap-1">
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${u.progress >= 100 ? "bg-emerald-50 text-emerald-700" : u.progress >= 50 ? "bg-amber-50 text-amber-700" : "bg-stone-100 text-ink-600"}`}>{u.progress}%</span>

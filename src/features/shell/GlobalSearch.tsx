@@ -24,7 +24,7 @@ export function GlobalSearch(): JSX.Element {
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) { setResults([]); return; }
     try {
-      const mod = await import("../../lib/supabase.js");
+      const mod = await import("../../lib/supabase");
       const client = await mod.getSupabaseClient();
       if (!client) { setResults([]); return; }
       const pat = `%${query.trim()}%`;

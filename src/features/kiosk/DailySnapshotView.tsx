@@ -57,7 +57,7 @@ function DailySnapshotInner(): JSX.Element {
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-200">
           <div className="text-xs font-bold tracking-wider text-emerald-600 uppercase mb-1">Labour today</div>
           <div className="text-4xl font-light text-emerald-800">{snap.labour}</div>

@@ -61,7 +61,7 @@ export function VendorPortalView(): JSX.Element {
 
       {tab === "dashboard" && (
         <div>
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <Card className="p-4"><div className="text-xs text-ink-400 font-semibold uppercase">Pending POs</div><div className="text-3xl font-black text-ink-900 mt-1">{pos.filter(p => p.status === "pending").length}</div></Card>
             <Card className="p-4"><div className="text-xs text-ink-400 font-semibold uppercase">Total POs</div><div className="text-3xl font-black text-ink-900 mt-1">{pos.length}</div></Card>
             <Card className="p-4"><div className="text-xs text-ink-400 font-semibold uppercase">Materials</div><div className="text-3xl font-black text-ink-900 mt-1">{prices.length}</div></Card>

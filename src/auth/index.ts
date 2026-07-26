@@ -84,6 +84,8 @@ export type {
 // ── Phase 1.5: React layer ────────────────────────────────────────────────
 export {
   fetchAuthSession,
+  fetchCapabilityOverrides,
+  fetchCustomRoleOverrides,
   buildAuthSession,
   normalizeProfile,
   normalizeOrgMembership,
@@ -136,6 +138,7 @@ export {
 
 export {
   useCan,
+  useCanWithPlan,
   useDecide,
   useHasRole,
   useHasStaffArea,
@@ -147,6 +150,8 @@ export {
   type RequireRoleProps,
   type RequireSessionProps,
   type RequireStaffAreaProps,
+  type UseCanWithPlanInput,
+  type UseCanWithPlanReturn,
 } from "./guards";
 
 // ── Plan gating (plan feature_caps, orthogonal to RBAC) ──────────────────────

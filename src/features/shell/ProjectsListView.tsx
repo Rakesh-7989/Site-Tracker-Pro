@@ -35,7 +35,7 @@ export function ProjectsListView(): JSX.Element {
     void (async () => {
       if (!activeOrg) { setState({ kind: "no-org" }); return; }
       setState({ kind: "loading" });
-      const mod = await import("../../lib/supabase.js");
+      const mod = await import("../../lib/supabase");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client = await (mod as any).getSupabaseClient();
       if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }

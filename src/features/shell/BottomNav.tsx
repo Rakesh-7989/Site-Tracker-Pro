@@ -47,7 +47,7 @@ export function BottomNav(): JSX.Element {
             to={item.to}
             end={item.to === "/dashboard"}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition min-w-0 ${
+              `flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-lg transition min-w-0 ${
                 isActive
                   ? "text-safety-600"
                   : "text-ink-400 hover:text-ink-600"

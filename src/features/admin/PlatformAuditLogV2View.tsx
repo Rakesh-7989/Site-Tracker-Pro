@@ -76,7 +76,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
 
   return (
     <div className="p-4 md:p-10 max-w-7xl">
-      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3" style={{ borderBottom: "1px solid var(--st-line)" }}>
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b-st-line">
         <div>
           <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-500 mb-2">— Compliance</div>
           <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Audit Log</h1>
@@ -85,18 +85,18 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         <button onClick={downloadCsv} disabled={filtered.length === 0} className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink-900 text-cream font-bold rounded-xl text-sm tracking-wide disabled:opacity-50"><Icon name="download" size={14} />Export CSV</button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Total</div><div className="font-display text-2xl font-bold text-ink-900">{stats.total}</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Last 7 days</div><div className="font-display text-2xl font-bold text-amber-700">{stats.recent}</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Approvals</div><div className="font-display text-2xl font-bold text-emerald-700">{stats.byAction?.APPROVE || 0}</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial" style={{ border: "1px solid var(--st-line)" }}><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Rejections</div><div className="font-display text-2xl font-bold text-red-700">{stats.byAction?.REJECT || 0}</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Total</div><div className="font-display text-2xl font-bold text-ink-900">{stats.total}</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Last 7 days</div><div className="font-display text-2xl font-bold text-amber-700">{stats.recent}</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Approvals</div><div className="font-display text-2xl font-bold text-emerald-700">{stats.byAction?.APPROVE || 0}</div></div>
+        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Rejections</div><div className="font-display text-2xl font-bold text-red-700">{stats.byAction?.REJECT || 0}</div></div>
       </div>
-      <div className="bg-white rounded-2xl p-4 mb-5 grid sm:grid-cols-4 gap-3" style={{ border: "1px solid var(--st-line)" }}>
+      <div className="bg-white rounded-2xl p-4 mb-5 grid sm:grid-cols-4 gap-3 border-st-line">
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search actor / message / id..." className="p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" />
         <select value={actorFilter} onChange={e => setActorFilter(e.target.value)} className="p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="">All actors</option>{actors.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
         <select value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="">All actions</option>{["CREATE", "UPDATE", "DELETE", "APPROVE", "REJECT", "RELEASE", "UPLOAD", "LOGIN", "IMPERSONATE", "EXPORT", "PAYMENT", "DELEGATE"].map(a => <option key={a} value={a}>{a}</option>)}</select>
         <select value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} className="p-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600"><option value="">All resources</option>{["project", "drawing", "boq", "ra_bill", "mb", "po", "invoice", "issue", "rfi", "change_order", "user", "org", "subscription", "comment", "unit", "block", "floor"].map(r => <option key={r} value={r}>{r}</option>)}</select>
       </div>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial" style={{ border: "1px solid var(--st-line)" }}>
+      <div className="bg-white rounded-2xl overflow-hidden shadow-editorial border-st-line">
         {filtered.length === 0 ? <div className="p-12 text-center text-ink-500"><Icon name="search" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">{auditLog.length === 0 ? "No audit entries yet. As users approve / reject / release, entries appear here." : "No entries match the filters."}</p></div> :
           <div className="overflow-x-auto"><div className="divide-y divide-stone-100">{filtered.slice(0, 200).map((r: AuditLogRow) => (<div key={r.id} className="px-5 py-3 grid grid-cols-12 gap-3 items-center text-xs">
             <div className="col-span-2 text-[11px] text-ink-500 font-mono">{fmtTime(r.ts)}</div>

@@ -57,7 +57,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {!loading && rows.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card className="p-3"><div className="text-lg font-bold text-ink-900">{totals.count}</div><div className="text-[11px] text-ink-500">Total POs</div></Card>
           <Card className="p-3"><div className="text-lg font-bold text-ink-900">{fmtRupees(totals.total)}</div><div className="text-[11px] text-ink-500">Value (excl. cancelled)</div></Card>
           <Card className="p-3"><div className="text-lg font-bold text-amber-600">{fmtRupees(totals.byStatus.pending)}</div><div className="text-[11px] text-ink-500">Pending approval</div></Card>

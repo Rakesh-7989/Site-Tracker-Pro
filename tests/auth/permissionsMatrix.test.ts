@@ -187,3 +187,84 @@ describe("Vendor capability split", () => {
     expect(projectTierCapabilities("client")).not.toContain("vendor:select" as never);
   });
 });
+
+describe("Session gap fixes — material:price:view on changeorder roles", () => {
+  const coRoles = [
+    "senior_architect", "architect", "design_head", "consultant_head",
+    "mep_consultant", "structural_consultant", "contractor",
+  ] as const;
+  for (const role of coRoles) {
+    it(`${role} (identity) has material:price:view for changeorder context`, () => {
+      expect(identityCapabilities(role)).toContain("material:price:view" as never);
+    });
+  }
+  const projRoles = [
+    "senior_architect", "design_head", "consultant_head",
+    "mep_consultant", "structural_consultant", "contractor",
+  ] as const;
+  for (const role of projRoles) {
+    it(`${role} (project) has material:price:view`, () => {
+      expect(projectTierCapabilities(role)).toContain("material:price:view" as never);
+    });
+  }
+  // architect has material:price:view in identity tier only (project tier lacks changeorder:create)
+  it("architect (project) does NOT get material:price:view (no changeorder:create at project tier)", () => {
+    expect(projectTierCapabilities("architect")).not.toContain("material:price:view" as never);
+  });
+});
+
+describe("Session gap fixes — pm compliance + safety", () => {
+  it("pm (identity) has compliance:view + safety:close", () => {
+    const caps = identityCapabilities("pm");
+    expect(caps).toContain("compliance:view" as never);
+    expect(caps).toContain("safety:close" as never);
+  });
+  it("pm (project) has compliance:view + safety:close", () => {
+    const caps = projectTierCapabilities("pm");
+    expect(caps).toContain("compliance:view" as never);
+    expect(caps).toContain("safety:close" as never);
+  });
+});
+
+describe("Session gap fixes — site_engineer safety:close + material:price:view", () => {
+  it("site_engineer (identity) has safety:close + material:price:view", () => {
+    const caps = identityCapabilities("site_engineer");
+    expect(caps).toContain("safety:close" as never);
+    expect(caps).toContain("material:price:view" as never);
+  });
+  it("site_engineer (project) has safety:close + material:price:view", () => {
+    const caps = projectTierCapabilities("site_engineer");
+    expect(caps).toContain("safety:close" as never);
+    expect(caps).toContain("material:price:view" as never);
+  });
+});
+
+describe("Session gap fixes — junior_architect rfi:respond + issue:add", () => {
+  it("junior_architect (identity) has rfi:respond + issue:add", () => {
+    const caps = identityCapabilities("junior_architect");
+    expect(caps).toContain("rfi:respond" as never);
+    expect(caps).toContain("issue:add" as never);
+  });
+  it("junior_architect (project) has rfi:respond + issue:add", () => {
+    const caps = projectTierCapabilities("junior_architect");
+    expect(caps).toContain("rfi:respond" as never);
+    expect(caps).toContain("issue:add" as never);
+  });
+});
+
+describe("Session gap fixes — designer rfi:create", () => {
+  it("designer (identity) has rfi:create", () => {
+    expect(identityCapabilities("designer")).toContain("rfi:create" as never);
+  });
+  it("designer (project) has rfi:create", () => {
+    expect(projectTierCapabilities("designer")).toContain("rfi:create" as never);
+  });
+});
+
+describe("Session gap fixes — prospector messaging", () => {
+  it("prospector (identity) has message:send + whatsapp:send", () => {
+    const caps = identityCapabilities("prospector");
+    expect(caps).toContain("message:send" as never);
+    expect(caps).toContain("whatsapp:send" as never);
+  });
+});

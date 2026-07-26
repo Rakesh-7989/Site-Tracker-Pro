@@ -79,7 +79,7 @@ export function CalendarGrid({ year, month, events = [], className }: CalendarGr
                       key={ei}
                       onClick={ev.onClick}
                       className={cn(
-                        "block w-full text-left truncate rounded px-1 py-0.5 text-[9px] font-semibold leading-tight",
+                        "block w-full text-left truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight",
                         ev.color ? "" : "bg-safety-500/10 text-safety-600",
                       )}
                       style={ev.color ? { backgroundColor: ev.color + "20", color: ev.color } : undefined}
@@ -89,7 +89,7 @@ export function CalendarGrid({ year, month, events = [], className }: CalendarGr
                     </button>
                   ))}
                   {dayEvents.length > 2 && (
-                    <span className="block text-[8px] text-ink-400 px-1">
+                    <span className="block text-[10px] text-ink-400 px-1">
                       +{dayEvents.length - 2} more
                     </span>
                   )}

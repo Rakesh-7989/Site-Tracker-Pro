@@ -18,10 +18,10 @@ export interface PagerProps {
 
 export function Pager({ page, hasNext, onPrev, onNext, busy = false, className }: PagerProps): JSX.Element {
   return (
-    <div className={cn("flex items-center justify-center gap-3 pt-1", className)}>
-      <Button size="sm" variant="secondary" disabled={page === 0 || busy} onClick={onPrev}>← Prev</Button>
-      <span className="text-[12px] text-ink-500 tabular-nums">Page {page + 1}</span>
-      <Button size="sm" variant="secondary" disabled={!hasNext || busy} onClick={onNext}>Next →</Button>
-    </div>
+    <nav role="navigation" aria-label="Pagination" className={cn("flex items-center justify-center gap-3 pt-1", className)}>
+      <Button size="sm" variant="secondary" disabled={page === 0 || busy} onClick={onPrev} aria-label="Previous page">← Prev</Button>
+      <span className="text-[12px] text-ink-500 tabular-nums" aria-current="page">Page {page + 1}</span>
+      <Button size="sm" variant="secondary" disabled={!hasNext || busy} onClick={onNext} aria-label="Next page">Next →</Button>
+    </nav>
   );
 }

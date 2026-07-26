@@ -13,7 +13,7 @@ export interface RegisterInput {
 export type RegisterResult = { ok: true; orgId: string; emailSent: boolean } | { ok: false; error: string };
 
 async function getClient(): Promise<any | null> {
-  const mod = await import("../lib/supabase.js");
+  const mod = await import("../lib/supabase");
   return await (mod as any).getSupabaseClient();
 }
 

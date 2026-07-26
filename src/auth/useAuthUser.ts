@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AuthSession } from "./types";
-import { fetchAuthSession, type FetchOutcome } from "./fetchAuthSession";
+import { fetchAuthSession, fetchCapabilityOverrides, fetchCustomRoleOverrides, type FetchOutcome } from "./fetchAuthSession";
 import { defaultStorage, readActiveOrgId, writeActiveOrgId, type StorageLike } from "./activeOrgStore";
 import { setTenantContext } from "../lib/tenantContext";
 
@@ -26,6 +26,35 @@ export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
     p,
     new Promise<T>((_, reject) => setTimeout(() => reject(new Error("auth-timeout")), ms)),
   ]);
+}
+
+/**
+ * Retry a factory function up to `retries` times with exponential backoff.
+ * Each attempt is bounded by `withTimeout` using a progressively shorter
+ * timeout (initial timeout shrinks by ~33% per retry, floor 4s). Re-throws
+ * the last error if all attempts fail — caller handles the timeout error.
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries: number,
+  timeoutMs: number,
+): Promise<T> {
+  let lastErr: unknown;
+  let currentTimeout = timeoutMs;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await withTimeout(fn(), currentTimeout);
+    } catch (e) {
+      lastErr = e;
+      if (i < retries) {
+        // Exponential backoff: 1s, 2s, 4s…
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+        // Shorter timeout on retries so the total wait doesn't balloon.
+        currentTimeout = Math.max(4000, Math.floor(currentTimeout / 1.5));
+      }
+    }
+  }
+  throw lastErr;
 }
 
 export interface UseAuthUserReturn {
@@ -72,6 +101,10 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
   // callbacks have empty/stable deps) breaks that loop — the effect runs once.
   const optsRef = useRef(opts);
   optsRef.current = opts;
+  // Keep latest session in a ref so async callbacks (setActiveOrgId re-fetch)
+  // can read the current user identity without stale closures.
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   // Resolve the client lazily — supabase.js getSupabaseClient is a JS
   // module; we accept either a custom getter or the default lib export.
@@ -79,7 +112,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     if (optsRef.current.getClient) return await optsRef.current.getClient();
     // Default import path — guarded so tests that pass getClient never
     // touch the lib.
-    const mod = await import("../lib/supabase.js");
+    const mod = await import("../lib/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return await (mod as any).getSupabaseClient();
   }, []);
@@ -93,11 +126,10 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     setError(null);
     let client: unknown;
     try {
-      // getClient() loads the Supabase SDK via dynamic import. Cap it with a
-      // timeout so a hung / stale chunk fetch (e.g. a bad deploy or a stale
-      // service-worker cache) can never leave the app frozen on an infinite
-      // spinner — fall back to signed-out so the public login renders.
-      client = await withTimeout(getClient(), 8000);
+      // getClient() loads the Supabase SDK via dynamic import. Retry twice
+      // (exponential backoff + shorter timeouts) so a transient network blip
+      // never force-logs the user out.
+      client = await withRetry(getClient, 2, 8000);
     } catch (e) {
       setSession(null);
       setStatus("signed-out");
@@ -122,7 +154,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       // every cold load and flashed a spinner. autoRefreshToken keeps the token
       // valid; RLS still enforces every request server-side.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = (await withTimeout(sb.auth.getSession(), 8000)) as { data: any };
+      const { data } = (await withRetry(() => sb.auth.getSession(), 2, 8000)) as { data: any };
       const authUser = data?.session?.user;
       if (!authUser) {
         setSession(null);
@@ -130,12 +162,13 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
         return null;
       }
       const preferredOrgId = readActiveOrgId(storageRef.current);
-      const outcome: FetchOutcome = await withTimeout(
-        fetchAuthSession(
+      const outcome: FetchOutcome = await withRetry(
+        () => fetchAuthSession(
           sb,
           { authUserId: authUser.id, authUserEmail: authUser.email ?? "" },
           preferredOrgId,
         ),
+        2,
         12000,
       );
       if (!outcome.ok) {
@@ -197,7 +230,18 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       void (async () => {
         try {
           const client = await getClient();
-          if (client) await setTenantContext(client, orgId);
+          if (!client) return;
+          await setTenantContext(client, orgId);
+          // Re-fetch capability overrides + custom role grants for the new org.
+          // sessionRef.current holds the latest session (user identity doesn't
+          // change during org switch, so its values are safe to read here).
+          const cur = sessionRef.current;
+          if (!cur) return;
+          const [overrides, customGrants] = await Promise.all([
+            fetchCapabilityOverrides(client, cur.user.identityRole, orgId),
+            fetchCustomRoleOverrides(client, cur.user.id, cur.user.identityRole, orgId),
+          ]);
+          setSession((prev) => prev ? { ...prev, capabilityOverrides: [...overrides, ...customGrants] } : prev);
         } catch { /* non-critical */ }
       })();
     }
