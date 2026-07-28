@@ -266,7 +266,16 @@ export async function fetchAuthSession(
     if (profileRes.error) {
       return { ok: false, error: String((profileRes.error as { message?: string }).message ?? profileRes.error), code: "db-error" };
     }
-    const normalized = normalizeProfile(profileRes.data as Record<string, unknown> | null, input.authUserEmail);
+    let normalized = normalizeProfile(profileRes.data as Record<string, unknown> | null, input.authUserEmail);
+    if (!normalized.ok && normalized.code === "no-profile") {
+      try { await client.rpc("ensure_my_profile"); } catch {}
+      const retryRes = await client
+        .from("profiles")
+        .select("id, name, avatar, role, is_staff, staff_tier, profile_completed")
+        .eq("id", input.authUserId)
+        .maybeSingle();
+      normalized = normalizeProfile(retryRes.data as Record<string, unknown> | null, input.authUserEmail);
+    }
     if (!normalized.ok) return normalized;
 
     // Staff admin-area access (migration 106): owner/head see all; a member is
