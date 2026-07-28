@@ -100,6 +100,20 @@ export async function setIdentityRole(
   }
 }
 
+export async function removeMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
+  try {
+    const { error } = await client
+      .from("org_members")
+      .delete()
+      .eq("org_id", orgId)
+      .eq("profile_id", profileId);
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { ok: true } };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export async function deactivateMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   return updateMember(client, orgId, profileId, { removed_at: new Date().toISOString() });
 }
