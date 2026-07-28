@@ -126,7 +126,11 @@ async function sendRoleWelcomeEmail(
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method === "OPTIONS") {
+    const origin = req.headers.get("origin") || "";
+    const cors = { ...CORS, "Access-Control-Allow-Origin": ALLOWED.includes(origin) ? origin : ALLOWED[0] ?? "*" };
+    return new Response("ok", { headers: cors });
+  }
   if (req.method !== "POST") return json({ ok: false, error: "method-not-allowed" }, 405);
 
   let body: Record<string, unknown>;
@@ -145,7 +149,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // ── Authorize: caller must be an admin of this org (or superadmin) ──
   const auth = await authenticate(req, { requireOrgId: orgId });
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) {
+    const body = await auth.response.text();
+    const h = new Headers(auth.response.headers);
+    for (const [k, v] of Object.entries(CORS)) h.set(k, v);
+    return new Response(body, { status: auth.response.status, statusText: auth.response.statusText, headers: h });
+  }
   const isAdmin = auth.user.identityRole === "superadmin"
     || auth.orgMemberships.some(m => m.org_id === orgId && m.role === "admin");
   if (!isAdmin) return json({ ok: false, error: "not-org-admin" }, 403);
