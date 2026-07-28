@@ -105,8 +105,13 @@ async function sendRoleWelcomeEmail(
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify({ from, to, subject: `You've been added to ${orgName} on SiteTrack Pro`, html }),
     });
+    if (!r.ok) {
+      const body = await r.text().catch(() => "(could not read body)");
+      console.error(`invite_org_member: Resend API returned ${r.status} for ${to}: ${body}`);
+    }
     return r.ok;
-  } catch {
+  } catch (e) {
+    console.error(`invite_org_member: Resend API fetch error for ${to}:`, e instanceof Error ? e.message : String(e));
     return false;
   }
 }

@@ -143,7 +143,12 @@ export function AssignMemberModal({
     }
     onAssigned();
     if (res.data?.emailSent === false) {
-      setNotice(`Invited ${inviteName || email} as ${roleLabel}. Email not sent — ask them to log in at sitetrack.in.`);
+      const pw = res.data.tempPassword;
+      setNotice(
+        pw
+          ? `Invited ${inviteName || email} as ${roleLabel}. Email failed to send. Share this temporary password: ${pw}`
+          : `Invited ${inviteName || email} as ${roleLabel}. Email not sent — ask them to use "Forgot password" at sitetrack.in.`
+      );
     } else {
       setNotice(`Invited ${inviteName || email} as ${roleLabel}.`);
       setTimeout(onClose, 1200);
