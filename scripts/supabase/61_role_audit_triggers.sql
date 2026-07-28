@@ -91,8 +91,8 @@ BEGIN
     v_after  := NULL;
   END IF;
 
-  -- Skip audit insert when the org is being cascade-deleted (org row gone)
-  IF v_org_id IS NULL OR EXISTS (SELECT 1 FROM public.organizations WHERE id = v_org_id) THEN
+  -- Skip audit insert when the org is being deleted (unified delete_org RPC sets this)
+  IF current_setting('app.allow_audit_delete', true) <> 'true' THEN
     INSERT INTO public.audit_log_v2(
       org_id, project_id, actor_id, actor_name, actor_role,
       action, resource, resource_id, before, after, message

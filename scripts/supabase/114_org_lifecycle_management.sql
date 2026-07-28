@@ -47,55 +47,24 @@ $$;
 GRANT EXECUTE ON FUNCTION public.is_staff_org_admin() TO authenticated;
 
 -- ── 4. Admin: delete org with reason + audit trail ──────────────────────────
+-- NOW A WRAPPER around delete_org(uuid, text). Canonical impl in migration 122.
 CREATE OR REPLACE FUNCTION public.admin_delete_org(p_org uuid, p_reason text)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  v_name text;
-  v_actor_name text;
-  v_actor_role text;
 BEGIN
   IF NOT public.is_staff_org_admin() THEN
     RAISE EXCEPTION 'Only platform staff can delete organizations';
   END IF;
-
-  -- Resolve org name
-  SELECT name INTO v_name FROM public.organizations WHERE id = p_org;
-  IF v_name IS NULL THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'organization not found');
-  END IF;
-
-  -- Resolve actor name (nullable)
-  SELECT name, role INTO v_actor_name, v_actor_role
-    FROM public.profiles WHERE id = auth.uid();
-
-  -- Write audit log BEFORE deletion (so org_id foreign key still resolves)
-  INSERT INTO public.audit_log_v2(
-    org_id, actor_id, actor_name, actor_role,
-    action, resource, resource_id, message, after
-  ) VALUES (
-    p_org, auth.uid(), v_actor_name, v_actor_role,
-    'DELETE', 'organization', p_org::text,
-    COALESCE(v_actor_name, 'A staff member') || ' deleted organization "' || v_name || '": ' || COALESCE(p_reason, 'no reason given'),
-    jsonb_build_object('reason', p_reason, 'deleted_name', v_name)
-  );
-
-  -- Purge audit trail for DPDP erasure before cascade delete (audit log is immutable otherwise)
-  PERFORM set_config('app.allow_audit_delete', 'true', true);
-  DELETE FROM public.audit_log_v2 WHERE org_id = p_org;
-  PERFORM set_config('app.allow_audit_delete', 'false', true);
-
-  -- Hard-delete org (cascades to remaining child data, audit_log_v2 rows already gone)
-  DELETE FROM public.organizations WHERE id = p_org;
-
-  RETURN jsonb_build_object('ok', true, 'deleted', v_name);
+  RETURN public.delete_org(p_org, p_reason);
 END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_delete_org(uuid, text) TO authenticated;
+COMMENT ON FUNCTION public.admin_delete_org(uuid, text) IS
+  'DEPRECATED — delegates to delete_org(uuid, text).';
 
 -- ── 5. Admin: update subscription status with reason + audit trail ──────────
 CREATE OR REPLACE FUNCTION public.admin_set_subscription_status(

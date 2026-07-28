@@ -122,7 +122,7 @@ create index if not exists idx_notif_rules_org on notification_rules(org_id);
 -- Immutable audit log (mirrors recordAudit() shape — append-only).
 create table if not exists audit_log_v2 (
   id uuid primary key default gen_random_uuid(),
-  org_id uuid references organizations(id) on delete set null,
+  org_id uuid references organizations(id) on delete cascade,
   project_id uuid references projects(id) on delete set null,
   actor_id uuid references profiles(id),
   actor_name text,
