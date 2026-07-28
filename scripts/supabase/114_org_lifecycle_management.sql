@@ -105,6 +105,7 @@ SET search_path = public
 AS $$
 DECLARE
   v_org_name text;
+  v_org_plan text;
   v_old_status text;
   v_actor_name text;
   v_actor_role text;
@@ -118,8 +119,8 @@ BEGIN
     RETURN jsonb_build_object('ok', false, 'error', 'invalid status: ' || p_status);
   END IF;
 
-  SELECT o.name, s.status, p.name, p.role
-    INTO v_org_name, v_old_status, v_actor_name, v_actor_role
+  SELECT o.name, o.plan, s.status, p.name, p.role
+    INTO v_org_name, v_org_plan, v_old_status, v_actor_name, v_actor_role
     FROM public.organizations o
     LEFT JOIN public.subscriptions s ON s.org_id = o.id
     LEFT JOIN public.profiles p ON p.id = auth.uid()
@@ -138,9 +139,9 @@ BEGIN
     ELSE 'UPDATE'
   END;
 
-  -- Upsert subscription row
-  INSERT INTO public.subscriptions(org_id, status, updated_at)
-    VALUES (p_org, p_status, now())
+  -- Upsert subscription row (include plan + provider for first-time insert, both NOT NULL)
+  INSERT INTO public.subscriptions(org_id, plan, provider, status, updated_at)
+    VALUES (p_org, COALESCE(v_org_plan, 'basic'), 'admin', p_status, now())
     ON CONFLICT (org_id)
     DO UPDATE SET status = p_status, updated_at = now();
 
