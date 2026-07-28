@@ -14,6 +14,8 @@
 
 // @ts-ignore — Deno URL import; resolved at runtime, not by Node tsc.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-ignore — Deno URL import.
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { authenticate } from "../_shared/auth.ts";
 
 // @ts-ignore — Deno global.
@@ -68,10 +70,13 @@ async function sendRoleWelcomeEmail(
   tempPassword: string,
   loginUrl: string,
 ): Promise<boolean> {
-  const key = Deno.env.get("RESEND_API_KEY");
-  if (!key) return false;
+  const smtpUser = Deno.env.get("GMAIL_SMTP_USER");
+  const smtpPass = Deno.env.get("GMAIL_SMTP_PASS");
+  if (!smtpUser || !smtpPass) {
+    console.error("invite_org_member: GMAIL_SMTP_USER / GMAIL_SMTP_PASS not set — cannot send email");
+    return false;
+  }
 
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
   const roleLabel = ROLE_LABEL[role] || role;
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
@@ -98,20 +103,24 @@ async function sendRoleWelcomeEmail(
       </p>
       <p style="color:#78716c;font-size:13px;text-align:center">- Team SiteTrack Pro</p>
     </div>`;
+  const text = `You've been added to ${orgName} as ${roleLabel}.\n\nEmail: ${to}\nTemporary password: ${tempPassword}\n\nSign in: ${loginUrl}\n\nPlease change your password after first login.`;
 
   try {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ from, to, subject: `You've been added to ${orgName} on SiteTrack Pro`, html }),
+    const client = new SMTPClient({
+      connection: { hostname: "smtp.gmail.com", port: 465, tls: true, auth: { username: smtpUser, password: smtpPass } },
     });
-    if (!r.ok) {
-      const body = await r.text().catch(() => "(could not read body)");
-      console.error(`invite_org_member: Resend API returned ${r.status} for ${to}: ${body}`);
-    }
-    return r.ok;
+    await client.send({
+      from: `SiteTrack Pro <${smtpUser}>`,
+      to,
+      subject: `You've been added to ${orgName} on SiteTrack Pro`,
+      content: text,
+      html,
+    });
+    await client.close();
+    console.log(`invite_org_member: email sent to ${to} via Gmail SMTP`);
+    return true;
   } catch (e) {
-    console.error(`invite_org_member: Resend API fetch error for ${to}:`, e instanceof Error ? e.message : String(e));
+    console.error(`invite_org_member: Gmail SMTP error for ${to}:`, e instanceof Error ? e.message : String(e));
     return false;
   }
 }
