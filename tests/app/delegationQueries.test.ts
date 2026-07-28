@@ -50,7 +50,7 @@ describe("listDelegations", () => {
 describe("listOrgMembers", () => {
   it("maps member rows with profile name", async () => {
     const client = clientFor([{
-      profile_id: "u1", is_admin: true, status: "active",
+      profile_id: "u1", role: "admin", status: "active",
       profiles: { name: "Alice" },
     }], null);
     const r = await listOrgMembers(client, "o-1");
