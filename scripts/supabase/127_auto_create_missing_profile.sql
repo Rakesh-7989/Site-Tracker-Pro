@@ -6,14 +6,23 @@
 -- ends up without a profile — which bricks login with a "session could not be
 -- loaded" error.
 --
--- This migration:
---   1. Creates a SECURITY DEFINER RPC that any authenticated user can call to
---      ensure their own profile row exists (creates a minimal one if missing).
---   2. Patches the fetchAuthSession client-side code to call this RPC when it
---      encounters a "no-profile" error, then retry.
+-- Also adds the missing `is_admin` boolean column to `org_members` that the
+-- codebase has been SELECTing since migration 59 but was never created.
 
 begin;
 
+-- Add the missing is_admin column that fetchAuthSession and org member queries
+-- depend on. Safe to re-run (IF NOT EXISTS).
+alter table public.org_members add column if not exists is_admin boolean not null default false;
+
+-- Backfill: anyone with org_members.role = 'admin' gets is_admin = true.
+-- Use a DO block so it's idempotent.
+do $$ begin
+  update public.org_members set is_admin = true where role = 'admin' and is_admin = false;
+end $$;
+
+-- SECURITY DEFINER RPC to create a minimal profile for any signed-in user who
+-- lacks one (e.g. post-DB-cleanup or Dashboard-created users).
 create or replace function public.ensure_my_profile()
   returns boolean
   language plpgsql security definer set search_path = public as $$

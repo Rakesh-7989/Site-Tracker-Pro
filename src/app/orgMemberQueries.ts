@@ -26,7 +26,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<MResul
       profileId: String(r.profile_id),
       name: String(r.name ?? "Member"),
       identityRole: String(r.identity_role ?? ""),
-      isAdmin: Boolean(r.is_admin),
+      isAdmin: String(r.org_role ?? "") === "admin" || Boolean(r.is_admin),
       joinedAt: String(r.joined_at ?? ""),
       active: r.removed_at == null,
       customRoles: Array.isArray(r.custom_roles) ? (r.custom_roles as unknown[]).map(String) : [],

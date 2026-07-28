@@ -102,11 +102,12 @@ export function normalizeOrgMembership(row: Record<string, unknown> | null): Org
   const orgName = String((orgNested?.name ?? row.org_name) ?? "");
   const orgSlug = String((orgNested?.slug ?? row.org_slug) ?? "");
   if (!orgId || !orgName) return null;
+  const rowRole = String(row.role ?? "");
   return {
     orgId,
     orgName,
     orgSlug,
-    isAdmin: Boolean(row.is_admin),
+    isAdmin: Boolean(row.is_admin) || rowRole === "admin",
     joinedAt: String(row.joined_at ?? new Date().toISOString()),
   };
 }
@@ -295,7 +296,7 @@ export async function fetchAuthSession(
     // 2. org_members joined with organizations
     const orgsRes = await client
       .from("org_members")
-      .select("org_id, is_admin, joined_at, organizations:org_id (id, name, slug)")
+      .select("org_id, role, joined_at, organizations:org_id (id, name, slug)")
       .eq("profile_id", input.authUserId);
     if (orgsRes.error) {
       return { ok: false, error: String((orgsRes.error as { message?: string }).message ?? orgsRes.error), code: "db-error" };
