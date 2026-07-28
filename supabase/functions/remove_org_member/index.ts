@@ -20,41 +20,56 @@ declare const Deno: {
   serve(h: (req: Request) => Promise<Response> | Response): void;
 };
 
-const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,http://localhost:5173")
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,https://sitetrack-rakesh.vercel.app,http://localhost:5173")
   .split(",").map(s => s.trim()).filter(Boolean);
-const CORS: Record<string, string> = {
-  "Access-Control-Allow-Origin": ALLOWED[0] ?? "*",
-  "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+const ALLOWED_SET = new Set(ALLOWED);
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") || "";
+  const allow = ALLOWED_SET.has(origin) ? origin : (ALLOWED[0] ?? "*");
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
+
+const json = (data: unknown, status: number, req: Request): Response => {
+  const headers = { ...corsHeaders(req), "Content-Type": "application/json" };
+  return new Response(JSON.stringify(data), { status, headers });
 };
-const json = (data: unknown, status: number): Response =>
-  new Response(JSON.stringify(data), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return json({ ok: false, error: "method-not-allowed" }, 405);
+  const cors = corsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return json({ ok: false, error: "method-not-allowed" }, 405, req);
 
   let body: Record<string, unknown>;
-  try { body = await req.json(); } catch { return json({ ok: false, error: "bad-json" }, 400); }
+  try { body = await req.json(); } catch { return json({ ok: false, error: "bad-json" }, 400, req); }
 
   const orgId = String(body.orgId ?? "");
   const profileId = String(body.profileId ?? "");
 
-  if (!orgId || !profileId) return json({ ok: false, error: "missing-fields" }, 400);
+  if (!orgId || !profileId) return json({ ok: false, error: "missing-fields" }, 400, req);
 
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) return json({ ok: false, error: "service-not-configured" }, 500);
+  if (!url || !key) return json({ ok: false, error: "service-not-configured" }, 500, req);
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
   const auth = await authenticate(req, { requireOrgId: orgId });
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) {
+    const body = await auth.response.text();
+    const h = new Headers(auth.response.headers);
+    for (const [k, v] of Object.entries(cors)) h.set(k, v);
+    return new Response(body, { status: auth.response.status, statusText: auth.response.statusText, headers: h });
+  }
 
   const isAdmin = auth.user.identityRole === "superadmin"
     || auth.orgMemberships.some(m => m.org_id === orgId && m.role === "admin");
-  if (!isAdmin) return json({ ok: false, error: "not-org-admin" }, 403);
+  if (!isAdmin) return json({ ok: false, error: "not-org-admin" }, 403, req);
 
-  if (auth.user.id === profileId) return json({ ok: false, error: "cannot-delete-self" }, 400);
+  if (auth.user.id === profileId) return json({ ok: false, error: "cannot-delete-self" }, 400, req);
 
   const { data: targetMembership, error: membershipErr } = await admin
     .from("org_members")
@@ -62,16 +77,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
     .eq("org_id", orgId)
     .eq("profile_id", profileId)
     .maybeSingle();
-  if (membershipErr) return json({ ok: false, error: "lookup-failed", detail: membershipErr.message }, 500);
-  if (!targetMembership) return json({ ok: false, error: "not-org-member" }, 404);
+  if (membershipErr) return json({ ok: false, error: "lookup-failed", detail: membershipErr.message }, 500, req);
+  if (!targetMembership) return json({ ok: false, error: "not-org-member" }, 404, req);
 
   const { error: deleteErr } = await admin.auth.admin.deleteUser(profileId);
   if (deleteErr) {
     if (deleteErr.message?.toLowerCase().includes("not found")) {
-      return json({ ok: false, error: "user-not-found" }, 404);
+      return json({ ok: false, error: "user-not-found" }, 404, req);
     }
-    return json({ ok: false, error: "delete-failed", detail: deleteErr.message }, 502);
+    return json({ ok: false, error: "delete-failed", detail: deleteErr.message }, 502, req);
   }
 
-  return json({ ok: true, profileId, removed: true }, 200);
+  return json({ ok: true, profileId, removed: true }, 200, req);
 });
