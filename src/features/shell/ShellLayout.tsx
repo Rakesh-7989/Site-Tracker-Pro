@@ -6,7 +6,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 
-import { RequireSession, useAuth } from "@/auth";
+import { RequireSession, useAuth, type AuthStatus } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
@@ -29,12 +29,14 @@ function FullScreenSpinner(): JSX.Element {
 
 export function ShellLayout(): JSX.Element {
   const location = useLocation();
+  const { error } = useAuth();
   const loginPath = location.pathname.startsWith("/admin") ? "/staff/login" : "/login";
+  const errParam = error ? `?error=session&detail=${encodeURIComponent(error.slice(0, 80))}` : "?error=session";
   return (
     <RequireSession
       loading={<FullScreenSpinner />}
       signedOut={<Navigate to={loginPath} replace />}
-      errorView={<Navigate to={`${loginPath}?error=session`} replace />}
+      errorView={<Navigate to={`${loginPath}${errParam}`} replace />}
     >
       <GatedShell />
     </RequireSession>

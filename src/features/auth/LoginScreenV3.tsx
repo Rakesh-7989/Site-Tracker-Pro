@@ -79,7 +79,8 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
   useEffect(() => {
     const p = new URLSearchParams(location.search);
     if (p.get("error") === "session" && status.kind === "idle") {
-      setStatus({ kind: "error", msg: t("auth.errSessionLoad") });
+      const detail = p.get("detail");
+      setStatus({ kind: "error", msg: detail ? `${t("auth.errSessionLoad")} (${detail})` : t("auth.errSessionLoad") });
     }
   }, [location.search]);
 
