@@ -13,9 +13,11 @@
 --      → trg_audit_org_member_role fires, sees allow_audit_delete='true', skips INSERT
 --   6. DELETE projects (CASCADE to project_members etc.)
 --      → trg_audit_project_member_role fires, sees allow_audit_delete='true', skips INSERT
---   7. DELETE organizations               ← cascade handles remaining 20+ tables
+--   7. DELETE SET NULL orphan tables      ← DPDP right-to-erasure (no orphaned rows)
+--      (whatsapp_log, cashfree_events, voice_transcripts, signup_requests)
+--   8. DELETE organizations               ← cascade handles remaining 20+ tables
 --      (audit_log_v2, org_members, projects already gone — no triggers fire)
---   8. RESET app.allow_audit_delete = 'false'
+--   9. RESET app.allow_audit_delete = 'false'
 --
 -- IDEMPOTENT.
 
@@ -67,6 +69,12 @@ BEGIN
   -- Delete member rows first so their AFTER triggers fire while org still exists
   DELETE FROM public.org_members WHERE org_id = p_org;
   DELETE FROM public.projects WHERE org_id = p_org;
+
+  -- Purge SET NULL orphan tables (DPDP right-to-erasure — no orphaned rows)
+  DELETE FROM public.whatsapp_log WHERE org_id = p_org;
+  DELETE FROM public.cashfree_events WHERE org_id = p_org;
+  DELETE FROM public.voice_transcripts WHERE org_id_first = p_org;
+  DELETE FROM public.signup_requests WHERE created_org_id = p_org;
 
   -- Cascade-delete org (remaining child tables handled by ON DELETE CASCADE)
   DELETE FROM public.organizations WHERE id = p_org;
