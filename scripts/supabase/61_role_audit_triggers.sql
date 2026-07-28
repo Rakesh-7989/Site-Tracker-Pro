@@ -91,14 +91,17 @@ BEGIN
     v_after  := NULL;
   END IF;
 
-  INSERT INTO public.audit_log_v2(
-    org_id, project_id, actor_id, actor_name, actor_role,
-    action, resource, resource_id, before, after, message
-  ) VALUES (
-    v_org_id, v_project_id, v_actor_id, v_actor_name, v_actor_role,
-    v_action, v_resource, v_resource_id, v_before, v_after,
-    format('%s %s role', v_action, v_resource)
-  );
+  -- Skip audit insert when the org is being cascade-deleted (org row gone)
+  IF v_org_id IS NULL OR EXISTS (SELECT 1 FROM public.organizations WHERE id = v_org_id) THEN
+    INSERT INTO public.audit_log_v2(
+      org_id, project_id, actor_id, actor_name, actor_role,
+      action, resource, resource_id, before, after, message
+    ) VALUES (
+      v_org_id, v_project_id, v_actor_id, v_actor_name, v_actor_role,
+      v_action, v_resource, v_resource_id, v_before, v_after,
+      format('%s %s role', v_action, v_resource)
+    );
+  END IF;
 
   IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   RETURN NEW;
