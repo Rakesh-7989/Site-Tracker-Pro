@@ -16,8 +16,8 @@
 import type { Capability } from "./capabilities";
 import { isCapability } from "./capabilities";
 import type { CapabilityOverride } from "./types";
-import { type IdentityRole, isIdentityRole, defaultOrgTierFor, defaultProjectTierFor } from "./roles";
-import { identityCapabilities, orgTierCapabilities, projectTierCapabilities } from "./permissions-matrix";
+import { type IdentityRole, isIdentityRole, defaultProjectTierFor } from "./roles";
+import { identityCapabilities, projectTierCapabilities } from "./permissions-matrix";
 
 /**
  * The BASE (pre-override) capability set a role gets when provisioned the
@@ -27,8 +27,6 @@ import { identityCapabilities, orgTierCapabilities, projectTierCapabilities } fr
  */
 export function baseCapabilitiesFor(role: IdentityRole): Set<Capability> {
   const caps = new Set<Capability>(identityCapabilities(role));
-  const ot = defaultOrgTierFor(role);
-  if (ot === "admin" || ot === "pm") for (const c of orgTierCapabilities(ot)) caps.add(c);
   const pt = defaultProjectTierFor(role);
   if (pt) for (const c of projectTierCapabilities(pt)) caps.add(c);
   return caps;

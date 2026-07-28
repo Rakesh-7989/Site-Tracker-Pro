@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownItem } from "@/components/ui/DropdownMenu";
 export interface RoleOccupant {
   profileId: string;
   name: string;
-  orgRole: string;
+  isAdmin: boolean;
   active: boolean;
   customRoles: string[];
 }
@@ -98,7 +98,7 @@ export function RoleCard({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-ink-800 truncate">{o.name}</div>
-                <div className="text-[10px] text-ink-400">Org: {o.orgRole}</div>
+                {o.isAdmin && <div className="text-[10px] text-ink-400">Org admin</div>}
               </div>
               {o.customRoles.length > 0 && (
                 <Badge tone="neutral" className="flex-shrink-0">

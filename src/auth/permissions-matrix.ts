@@ -25,7 +25,7 @@
 // The composition rule (in RoleResolver) is UNION across the 3 tiers.
 
 import { CAPABILITIES, type Capability } from "./capabilities";
-import type { IdentityRole, OrgTierRole, ProjectTierRole } from "./roles";
+import type { IdentityRole, ProjectTierRole } from "./roles";
 
 const ALL = new Set(CAPABILITIES);
 const arr = (...c: Capability[]): Capability[] => c;
@@ -45,13 +45,17 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "activity:view", "audit:read",
     "org:members:manage", "org:billing:manage", "org:integrations:manage",
     "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
-    "org:branding:manage", "org:features:configure",
-    "vendor:manage", "vendor:select",      // Org admins curate the vendor directory + pick vendors anywhere.
-    "compliance:view", "ledger:view", "budget:view",
+    "org:branding:manage", "org:features:configure", "notification:configure",
+    "vendor:manage", "vendor:select",
+    "project:create", "project:archive", "project:restore", "project:settings:edit",
+    "team:manage",
+    "compliance:view", "ledger:view", "budget:view", "budget:edit",
     "changeorder:approve", "po:approve", "invoice:approve", "rabill:approve", "expense:approve",
-    "material:price:view", "material:delete",  // Full material oversight.
-    "update:delete",                          // Remove inappropriate site updates.
+    "material:price:view", "material:delete",
+    "update:delete",
     "export:pdf", "export:csv",
+    "share:project:public",
+    "handover:generate",
   ),
   promoter: arr(
     // Paying firm owner — sees finances + DPR digests + handover packets.
@@ -274,59 +278,11 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
   ),
 };
 
-// ── Org tier (org_members.role — 6 values) ────────────────────────────────
-// What the user can do at the ORG level (across all projects in that org)
-// based on their org_members.role.
-
-const ORG_TIER_CAPS: Record<OrgTierRole, Capability[]> = {
-  admin: arr(
-    // Full org control. Maps to orgadmin identity + a bit more.
-    "org:members:manage", "org:billing:manage", "org:integrations:manage",
-    "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
-    "org:branding:manage", "org:features:configure", "notification:configure",
-    "vendor:manage", "vendor:select",      // Org admins manage the directory + pick vendors.
-    "project:create", "project:archive", "project:restore", "project:settings:edit",
-    "team:manage",
-    "compliance:view",
-    "budget:view", "budget:edit", "ledger:view",
-    "changeorder:approve", "po:approve", "invoice:approve", "rabill:approve", "expense:approve",
-    "audit:read",
-    "export:pdf", "export:csv",
-    "share:project:public",
-    "handover:generate",
-  ),
-  pm: arr(
-    // Org-level PM tier — can create projects + assign members across the org.
-    "project:create", "project:settings:edit",
-    "team:manage",
-    "compliance:view",
-    "budget:view", "ledger:view",
-    "audit:read",
-    "export:pdf",
-  ),
-  architect: arr(
-    // Org-tier architect — sees all org projects' drawings.
-    "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
-    "boq:edit", "estimate:edit",
-  ),
-  contractor: arr(
-    // Org-tier contractor — minimal.
-    "activity:view",
-  ),
-  client: arr(
-    // Org-tier client (e.g. a buyer of multiple units in the org).
-    "activity:view",
-    "handover:view",
-  ),
-  vendor: arr(
-    // Org-tier vendor — material supplier serving the org across projects.
-    // Vendor portal: respond to quotes, raise invoices, see price master.
-    "activity:view",
-    "po:create",            // submit quote against a PO request
-    "invoice:create",
-    "material:price:view",
-  ),
-};
+// ── Org tier removed (2026-07-28) ─────────────────────────────────────────
+// org_members.role has been deleted. Org-level capabilities are now granted
+// directly through identity roles (profiles.role). The `orgadmin` identity
+// role includes all admin-level org caps. For non-orgadmin users who need
+// org admin access, org_members.is_admin is checked in RoleResolver.ts.
 
 // ── Project tier (project_members.role — 18 values) ───────────────────────
 // What the user can do on a SPECIFIC project based on project_members.role.
@@ -500,9 +456,6 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
 // ── Public API ─────────────────────────────────────────────────────────────
 export function identityCapabilities(role: IdentityRole): Capability[] {
   return IDENTITY_CAPS[role] ?? [];
-}
-export function orgTierCapabilities(role: OrgTierRole): Capability[] {
-  return ORG_TIER_CAPS[role] ?? [];
 }
 export function projectTierCapabilities(role: ProjectTierRole): Capability[] {
   return PROJECT_TIER_CAPS[role] ?? [];

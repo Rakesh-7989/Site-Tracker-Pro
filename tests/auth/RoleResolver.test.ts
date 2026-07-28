@@ -26,7 +26,7 @@ describe("resolveCapabilities — identity tier only", () => {
     expect(r.capabilities.has("dpr:view")).toBe(true);
     expect(r.capabilities.has("progress:edit")).toBe(false);
     expect(r.trace.fromIdentity).toContain("dpr:view");
-    expect(r.trace.fromOrgTier).toBeUndefined();
+    expect(r.trace.fromOrgAdmin).toBeUndefined();
     expect(r.trace.fromProjectTier).toBeUndefined();
   });
 });
@@ -35,22 +35,22 @@ describe("resolveCapabilities — org tier composition", () => {
   it("adds org-tier caps when orgId matches a membership", () => {
     const s = sessionFor({
       user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "demo", role: "admin", joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "demo", isAdmin: true, joinedAt: "2026-01-01" }],
     });
     const r = resolveCapabilities(s, { orgId: "o-1" });
     // architect identity does NOT have project:create, but admin org tier does
     expect(r.capabilities.has("project:create")).toBe(true);
-    expect(r.trace.fromOrgTier).toContain("project:create");
+    expect(r.trace.fromOrgAdmin).toContain("project:create");
   });
 
   it("ignores org-tier when orgId does NOT match", () => {
     const s = sessionFor({
       user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "demo", role: "admin", joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "demo", isAdmin: true, joinedAt: "2026-01-01" }],
     });
     const r = resolveCapabilities(s, { orgId: "o-other" });
     expect(r.capabilities.has("project:create")).toBe(false);
-    expect(r.trace.fromOrgTier).toBeUndefined();
+    expect(r.trace.fromOrgAdmin).toBeUndefined();
   });
 });
 
@@ -89,7 +89,7 @@ describe("resolveCapabilities — project tier composition", () => {
   it("composes ALL three tiers when context includes orgId + projectId", () => {
     const s = sessionFor({
       user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "demo", role: "admin", joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "demo", isAdmin: true, joinedAt: "2026-01-01" }],
       projectMemberships: [{
         projectId: "p-1", projectName: "Vasavi", projectType: "construction",
         role: "site_engineer",
@@ -101,7 +101,7 @@ describe("resolveCapabilities — project tier composition", () => {
     expect(r.capabilities.has("project:create")).toBe(true);    // from admin org tier
     expect(r.capabilities.has("voice:record")).toBe(true);      // from site_engineer project tier
     expect(r.trace.fromIdentity.length).toBeGreaterThan(0);
-    expect(r.trace.fromOrgTier!.length).toBeGreaterThan(0);
+    expect(r.trace.fromOrgAdmin!.length).toBeGreaterThan(0);
     expect(r.trace.fromProjectTier!.length).toBeGreaterThan(0);
   });
 });
@@ -157,8 +157,8 @@ describe("capabilitiesAnywhere", () => {
     const s = sessionFor({
       user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false },
       orgs: [
-        { orgId: "o-1", orgName: "A", orgSlug: "a", role: "admin", joinedAt: "2026-01-01" },
-        { orgId: "o-2", orgName: "B", orgSlug: "b", role: "client", joinedAt: "2026-01-01" },
+        { orgId: "o-1", orgName: "A", orgSlug: "a", isAdmin: true, joinedAt: "2026-01-01" },
+        { orgId: "o-2", orgName: "B", orgSlug: "b", isAdmin: false, joinedAt: "2026-01-01" },
       ],
       projectMemberships: [
         { projectId: "p-1", projectName: "X", projectType: "construction", role: "site_engineer", assignedBy: null, assignedAt: "2026-01-01", removedAt: null },

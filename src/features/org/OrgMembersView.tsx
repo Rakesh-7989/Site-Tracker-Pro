@@ -7,6 +7,7 @@ import {
   type OrgCustomRole,
 } from "@/auth";
 import { Button, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import type { RoleOccupant } from "./RoleCard";
 import {
   listOrgMembers,
   deactivateMember,
@@ -15,7 +16,6 @@ import {
 } from "@/app/orgMemberQueries";
 import { listOrgRoles } from "@/app/customRoleQueries";
 import { RoleGrid } from "./RoleGrid";
-import type { RoleOccupant } from "./RoleCard";
 import { MemberTableView } from "./MemberTableView";
 import { AssignMemberModal } from "./AssignMemberModal";
 

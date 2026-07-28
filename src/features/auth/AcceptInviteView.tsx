@@ -15,7 +15,6 @@ export function AcceptInviteView(): JSX.Element {
   const [params] = useSearchParams();
   const email = params.get("email") ?? "";
   const [orgName, setOrgName] = useState("");
-  const [orgRole, setOrgRole] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export function AcceptInviteView(): JSX.Element {
       if (!error && data?.length > 0) {
         const row = data[0];
         setOrgName(row.org_name ?? "");
-        setOrgRole(row.org_role ?? "");
       }
       setLoading(false);
     })();
@@ -62,8 +60,7 @@ export function AcceptInviteView(): JSX.Element {
             </div>
             <h1 className="font-display text-xl font-bold">You're all set</h1>
             <p className="text-sm text-ink-600 mt-2">
-              You have been added to <b>{orgName || "your organization"}</b>
-              {orgRole ? <> as <b>{orgRole}</b></> : ""}.
+              You have been added to <b>{orgName || "your organization"}</b>.
             </p>
             <Link to="/dashboard" className="inline-block mt-5 px-6 py-2.5 bg-safety-600 text-white font-bold rounded-xl text-sm hover:bg-safety-700">
               Go to dashboard
@@ -73,8 +70,7 @@ export function AcceptInviteView(): JSX.Element {
           <>
             <h1 className="font-display text-xl font-bold">You're invited!</h1>
             <p className="text-sm text-ink-600 mt-2">
-              You've been invited to join <b>{orgName || "SiteTrack Pro"}</b>
-              {orgRole ? <> as <b>{orgRole}</b></> : ""}.
+              You've been invited to join <b>{orgName || "SiteTrack Pro"}</b>.
             </p>
             <p className="text-sm text-ink-500 mt-1">
               Sign in with your email <b>{email}</b> and the temporary password sent to your inbox.

@@ -11,7 +11,7 @@
 // auth layer needs. Per-feature types (DPR, milestones, etc.) live with
 // their feature folders.
 
-import type { IdentityRole, OrgTierRole, ProjectTierRole, ProjectType } from "./roles";
+import type { IdentityRole, ProjectTierRole, ProjectType } from "./roles";
 import type { Capability } from "./capabilities";
 
 /** Canonical user identity. */
@@ -50,7 +50,7 @@ export interface OrgMembership {
   orgId: string;
   orgName: string;
   orgSlug: string;
-  role: OrgTierRole;
+  isAdmin: boolean;
   joinedAt: string;   // ISO timestamp
 }
 
@@ -135,7 +135,7 @@ export interface ResolvedCapabilities {
   /** Trace of which tier(s) granted what — useful for debugging UX gates. */
   trace: {
     fromIdentity: Capability[];
-    fromOrgTier?: Capability[];
+    fromOrgAdmin?: Capability[];
     fromProjectTier?: Capability[];
     /** Capabilities added by a superadmin override (migration 69). */
     overrideGrants?: Capability[];

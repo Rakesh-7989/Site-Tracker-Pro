@@ -60,7 +60,7 @@ describe("lookupUserForInvite", () => {
 
 describe("mutations return ok on success", () => {
   it("addOrgMember upserts", async () => {
-    const r = await addOrgMember(mockClient({ table: { error: null } }), { orgId: "o", profileId: "p", orgRole: "pm" });
+    const r = await addOrgMember(mockClient({ table: { error: null } }), { orgId: "o", profileId: "p" });
     expect(r.ok).toBe(true);
   });
   it("deactivateMember updates", async () => {
@@ -80,11 +80,11 @@ describe("mutations return ok on success", () => {
 
 describe("inviteNewOrgMember (Edge Function)", () => {
   it("ok when the function succeeds", async () => {
-    const r = await inviteNewOrgMember(mockClient({ invoke: { data: { ok: true, invited: true }, error: null } }), { orgId: "o", email: "new@x.com", orgRole: "architect" });
+    const r = await inviteNewOrgMember(mockClient({ invoke: { data: { ok: true, invited: true }, error: null } }), { orgId: "o", email: "new@x.com", identityRole: "architect" });
     expect(r.ok).toBe(true);
   });
   it("surfaces the function's structured failure", async () => {
-    const r = await inviteNewOrgMember(mockClient({ invoke: { data: { ok: false, message: "This email already has an account — use Find to add them." }, error: null } }), { orgId: "o", email: "x@x.com", orgRole: "pm" });
+    const r = await inviteNewOrgMember(mockClient({ invoke: { data: { ok: false, message: "This email already has an account — use Find to add them." }, error: null } }), { orgId: "o", email: "x@x.com", identityRole: "pm" });
     expect(r).toEqual({ ok: false, error: "This email already has an account — use Find to add them." });
   });
 });

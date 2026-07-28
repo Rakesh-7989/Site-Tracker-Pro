@@ -7,12 +7,10 @@
 import { describe, it, expect } from "vitest";
 import {
   IDENTITY_ROLES,
-  ORG_TIER_ROLES,
   PROJECT_TIER_ROLES,
 } from "@/auth/roles";
 import {
   identityCapabilities,
-  orgTierCapabilities,
   projectTierCapabilities,
 } from "@/auth/permissions-matrix";
 
@@ -90,30 +88,6 @@ describe("Identity-tier coverage", () => {
   });
 });
 
-describe("Org-tier coverage", () => {
-  it("every org role has at least one capability", () => {
-    for (const r of ORG_TIER_ROLES) {
-      expect(orgTierCapabilities(r).length, `role=${r}`).toBeGreaterThan(0);
-    }
-  });
-  it("admin gets the full org-mgmt suite", () => {
-    const caps = orgTierCapabilities("admin");
-    expect(caps).toContain("org:members:manage" as never);
-    expect(caps).toContain("org:billing:manage" as never);
-    expect(caps).toContain("project:create" as never);
-    expect(caps).toContain("changeorder:approve" as never);
-    expect(caps).toContain("po:approve" as never);
-    expect(caps).toContain("invoice:approve" as never);
-    expect(caps).toContain("rabill:approve" as never);
-    expect(caps).toContain("notification:configure" as never);
-  });
-  it("client tier is intentionally minimal", () => {
-    const caps = orgTierCapabilities("client");
-    expect(caps).not.toContain("project:create" as never);
-    expect(caps).not.toContain("org:members:manage" as never);
-  });
-});
-
 describe("Project-tier coverage", () => {
   it("every project role has at least one capability", () => {
     for (const r of PROJECT_TIER_ROLES) {
@@ -155,8 +129,6 @@ describe("Vendor capability split", () => {
   it("vendor:manage is restricted to admins + prospector", () => {
     expect(identityCapabilities("orgadmin")).toContain("vendor:manage" as never);
     expect(identityCapabilities("prospector")).toContain("vendor:manage" as never);
-    expect(orgTierCapabilities("admin")).toContain("vendor:manage" as never);
-    // NOT granted to procurement workflow roles:
     expect(identityCapabilities("pm")).not.toContain("vendor:manage" as never);
     expect(identityCapabilities("contractor")).not.toContain("vendor:manage" as never);
     expect(identityCapabilities("site_engineer")).not.toContain("vendor:manage" as never);
@@ -164,17 +136,13 @@ describe("Vendor capability split", () => {
   });
 
   it("vendor:select is broad — every role that creates POs / materials / invoices gets it", () => {
-    // Procurement workflow roles must be able to pick a vendor in a form.
     expect(identityCapabilities("pm")).toContain("vendor:select" as never);
     expect(identityCapabilities("contractor")).toContain("vendor:select" as never);
     expect(identityCapabilities("site_engineer")).toContain("vendor:select" as never);
     expect(identityCapabilities("project_admin")).toContain("vendor:select" as never);
     expect(identityCapabilities("design_architect_interior")).toContain("vendor:select" as never);
-    // Admins + prospector also get it (they already manage).
     expect(identityCapabilities("orgadmin")).toContain("vendor:select" as never);
     expect(identityCapabilities("prospector")).toContain("vendor:select" as never);
-    expect(orgTierCapabilities("admin")).toContain("vendor:select" as never);
-    // Project tier mirrors.
     expect(projectTierCapabilities("pm")).toContain("vendor:select" as never);
     expect(projectTierCapabilities("contractor")).toContain("vendor:select" as never);
     expect(projectTierCapabilities("site_engineer")).toContain("vendor:select" as never);

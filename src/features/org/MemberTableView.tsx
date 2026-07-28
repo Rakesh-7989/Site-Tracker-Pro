@@ -4,15 +4,10 @@ import { Select } from "@/components/ui/forms";
 import {
   ROLE_LABEL,
   identityRoleLabel,
-  orgTierRoleLabel,
   identityRolesForPlan,
-  orgTierRolesForPlan,
-  isOrgTierRole,
-  type OrgTierRole,
 } from "@/auth";
 import {
   setIdentityRole,
-  setOrgTierRole,
   deactivateMember,
   reactivateMember,
   assignCustomRole,
@@ -44,18 +39,10 @@ export function MemberTableView({
 }: MemberTableViewProps): JSX.Element {
   const effectivePlan = plan ?? "enterprise";
   const availableIdentityRoles = useMemo(() => identityRolesForPlan(effectivePlan), [effectivePlan]);
-  const availableOrgRoles = useMemo(() => orgTierRolesForPlan(effectivePlan), [effectivePlan]);
 
   const identityRoleOptions = useMemo(() =>
     availableIdentityRoles.map(r => ({ value: r, label: identityRoleLabel(r) })),
   [availableIdentityRoles]);
-
-  const roleOptions = (current?: string) => {
-    const roles = isOrgTierRole(current) && !availableOrgRoles.includes(current as OrgTierRole)
-      ? [...availableOrgRoles, current as OrgTierRole]
-      : availableOrgRoles;
-    return roles.map(r => ({ value: r, label: orgTierRoleLabel(r as OrgTierRole) }));
-  };
 
   const roleById = useMemo(() => new Map(customRoles.map(r => [r.id, r])), [customRoles]);
 
@@ -65,21 +52,17 @@ export function MemberTableView({
   const runAction = async (
     _key: string,
     fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>,
-    optimistic?: { apply: () => void; rollback?: () => void },
   ) => {
     onError(null);
-    optimistic?.apply();
     const { getClient } = await import("@/lib/supabase");
     const client = await getClient();
     if (!client) {
       onError("Backend not configured.");
-      optimistic?.rollback?.();
       return;
     }
     const res = await fn(client);
     if (!res.ok) {
       onError(res.error ?? "Action failed.");
-      optimistic?.rollback?.();
     }
     onReload();
   };
@@ -94,7 +77,7 @@ export function MemberTableView({
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <div className="font-semibold text-ink-800">{m.name}</div>
-            <div className="text-[11px] text-ink-400">{idLabel(m.identityRole)}</div>
+            <div className="text-[11px] text-ink-400">{idLabel(m.identityRole)}{m.isAdmin ? " · Admin" : ""}</div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Select
@@ -105,15 +88,6 @@ export function MemberTableView({
                 void runAction(`identity-${m.profileId}`, c => setIdentityRole(c, m.profileId, v));
               }}
               options={identityRoleOptions}
-            />
-            <Select
-              className="w-auto text-xs"
-              value={m.orgRole}
-              onChange={e => {
-                const v = e.target.value as OrgTierRole;
-                void runAction(`tier-${m.profileId}`, c => setOrgTierRole(c, { orgId, profileId: m.profileId, orgRole: v }));
-              }}
-              options={roleOptions(m.orgRole)}
             />
             {m.active
               ? <Button size="sm" variant="ghost" onClick={() => void runAction(`deact-${m.profileId}`, c => deactivateMember(c, orgId, m.profileId))}>Deactivate</Button>

@@ -1,15 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button, Spinner, Alert } from "@/components/ui/atoms";
-import { Input, Select } from "@/components/ui/forms";
+import { Input } from "@/components/ui/forms";
 import {
   ROLE_LABEL,
-  defaultOrgTierFor,
-  isOrgTierRole,
-  ORG_TIER_ROLES,
-  orgTierRoleLabel,
-  identityRolesForPlan,
-  type OrgTierRole,
   type IdentityRole,
 } from "@/auth";
 import {
@@ -37,7 +31,7 @@ export function AssignMemberModal({
   orgId,
   orgName: _orgName,
   identityRole,
-  plan,
+  plan: _plan,
   onAssigned,
 }: AssignMemberModalProps): JSX.Element {
   const [email, setEmail] = useState("");
@@ -48,19 +42,8 @@ export function AssignMemberModal({
   const [busy, setBusy] = useState(false);
 
   const [inviteName, setInviteName] = useState("");
-  const [orgTierRole, setOrgTierRole_] = useState<OrgTierRole>("client");
 
   const roleLabel = ROLE_LABEL[identityRole as IdentityRole] ?? identityRole;
-  const defaultTier = defaultOrgTierFor(identityRole as IdentityRole);
-
-  const availableOrgTiers = useCallback(() => {
-    const tiers = identityRolesForPlan(plan);
-    if (isOrgTierRole(defaultTier)) return defaultTier;
-    for (const t of ORG_TIER_ROLES) {
-      if (tiers.some(r => r === t as unknown as string)) return t;
-    }
-    return "client" as OrgTierRole;
-  }, [plan, defaultTier]);
 
   useEffect(() => {
     if (open) {
@@ -69,15 +52,8 @@ export function AssignMemberModal({
       setError(null);
       setNotice(null);
       setInviteName("");
-      setOrgTierRole_(availableOrgTiers());
     }
-  }, [open, availableOrgTiers]);
-
-  useEffect(() => {
-    if (candidate) {
-      setOrgTierRole_(defaultTier);
-    }
-  }, [candidate, defaultTier]);
+  }, [open]);
 
   const search = async () => {
     if (!email.trim()) return;
@@ -118,7 +94,6 @@ export function AssignMemberModal({
     const orgResult = await addOrgMember(client, {
       orgId,
       profileId: candidate.profileId,
-      orgRole: orgTierRole,
     });
     if (!orgResult.ok) {
       setError(orgResult.error);
@@ -147,7 +122,6 @@ export function AssignMemberModal({
     const res = await inviteNewOrgMember(client, {
       orgId,
       email: email.trim(),
-      orgRole: orgTierRole,
       name: inviteName.trim() || undefined,
       identityRole,
     });
@@ -173,26 +147,8 @@ export function AssignMemberModal({
         {error && <Alert variant="danger">{error}</Alert>}
         {notice && <Alert variant="success">{notice}</Alert>}
 
-        <div>
-          <label className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-500 block mb-1.5">
-            Org tier role
-          </label>
-          <Select
-            className="w-full"
-            value={orgTierRole}
-            onChange={e => setOrgTierRole_(e.target.value as OrgTierRole)}
-            options={ORG_TIER_ROLES.map(r => ({
-              value: r,
-              label: orgTierRoleLabel(r),
-            }))}
-          />
-          <p className="text-[11px] text-ink-400 mt-1">
-            Defaults to {orgTierRoleLabel(defaultTier)} for {roleLabel}
-          </p>
-        </div>
-
-        <div className="border-t border-cream-200 pt-4">
-          <h4 className="text-xs font-semibold text-ink-700 mb-3">Find existing user</h4>
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-ink-700">Find existing user</h4>
           <div className="flex gap-2">
             <Input
               className="flex-1"

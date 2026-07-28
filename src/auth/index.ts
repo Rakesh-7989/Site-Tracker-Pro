@@ -9,20 +9,16 @@
 
 export {
   IDENTITY_ROLES,
-  ORG_TIER_ROLES,
   PROJECT_TIER_ROLES,
   PROJECT_TYPES,
   VALID_PROJECT_ROLES_BY_TYPE,
   ROLE_CATEGORY,
   ROLE_LABEL,
   isIdentityRole,
-  isOrgTierRole,
   isProjectTierRole,
   isProjectType,
-  defaultOrgTierFor,
   defaultProjectTierFor,
   type IdentityRole,
-  type OrgTierRole,
   type ProjectTierRole,
   type ProjectType,
   type RoleCategory,
@@ -38,7 +34,6 @@ export {
 
 export {
   identityCapabilities,
-  orgTierCapabilities,
   projectTierCapabilities,
 } from "./permissions-matrix";
 
@@ -161,15 +156,11 @@ export {
 } from "./planCaps";
 export {
   CORE_PLAN_FEATURE_LABELS,
-  ORG_TIER_LABEL,
   PLAN_LABEL as PLAN_ROLE_LABEL,
   displayPlanLabel,
   identityRoleLabel,
   identityRolesForPlan,
   normalizePlanId,
-  orgTierRoleLabel,
-  orgTierRoleOptionsForPlan,
-  orgTierRolesForPlan,
   planAtLeast,
   planFeatureLabelsFor,
   planFeaturesFor,

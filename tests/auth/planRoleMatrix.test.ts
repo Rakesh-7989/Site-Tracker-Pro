@@ -1,10 +1,9 @@
 // SiteTrack Pro - plan-aware role defaults tests.
 
 import { describe, expect, it } from "vitest";
-import { IDENTITY_ROLES, ORG_TIER_ROLES, PROJECT_TIER_ROLES } from "@/auth/roles";
+import { IDENTITY_ROLES, PROJECT_TIER_ROLES } from "@/auth/roles";
 import {
   identityRolesForPlan,
-  orgTierRolesForPlan,
   projectTierRolesForPlan,
   planFeaturesFor,
   planSupportsCustomRoles,
@@ -25,7 +24,6 @@ describe("plan role defaults", () => {
       "sub_contractor",
       "client",
     ]);
-    expect(orgTierRolesForPlan("basic")).not.toContain("vendor");
     expect(projectTierRolesForPlan("basic")).toContain("site_engineer");
     expect(projectTierRolesForPlan("basic")).not.toContain("site_inspector");
   });
@@ -40,7 +38,6 @@ describe("plan role defaults", () => {
   it("Enterprise and Custom receive the full customer role catalogs", () => {
     expect(identityRolesForPlan("enterprise")).toEqual(customerIdentityRoles);
     expect(identityRolesForPlan("custom")).toEqual(customerIdentityRoles);
-    expect(orgTierRolesForPlan("custom")).toEqual([...ORG_TIER_ROLES]);
     expect(projectTierRolesForPlan("enterprise")).toEqual([...PROJECT_TIER_ROLES]);
   });
 

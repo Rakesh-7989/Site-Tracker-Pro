@@ -45,25 +45,25 @@ describe("normalizeProfile", () => {
 });
 
 describe("normalizeOrgMembership", () => {
-  it("returns null when role is not a valid org tier", () => {
-    expect(normalizeOrgMembership({ org_id: "o-1", role: "orgadmin" /* not an org tier */, joined_at: "2026-01-01", organizations: { id: "o-1", name: "X", slug: "x" } })).toBeNull();
+  it("returns null when the row shape is missing org_id", () => {
+    expect(normalizeOrgMembership({ joined_at: "2026-01-01", organizations: { name: "X", slug: "x" } })).toBeNull();
   });
 
   it("normalizes the nested organizations join", () => {
     const r = normalizeOrgMembership({
       org_id: "o-1",
-      role: "admin",
+      is_admin: true,
       joined_at: "2026-01-01T00:00:00Z",
       organizations: { id: "o-1", name: "Demo Builder", slug: "demo-builder" },
     });
     expect(r).not.toBeNull();
     expect(r!.orgId).toBe("o-1");
     expect(r!.orgName).toBe("Demo Builder");
-    expect(r!.role).toBe("admin");
+    expect(r!.isAdmin).toBe(true);
   });
 
   it("returns null when the join is empty", () => {
-    expect(normalizeOrgMembership({ role: "admin", joined_at: "2026-01-01" })).toBeNull();
+    expect(normalizeOrgMembership({ is_admin: true, joined_at: "2026-01-01" })).toBeNull();
   });
 });
 
@@ -99,8 +99,8 @@ describe("normalizeProjectMembership", () => {
 
 describe("pickActiveOrgId", () => {
   const orgs = [
-    { orgId: "o-1", orgName: "A", orgSlug: "a", role: "admin" as const, joinedAt: "2026-01-01" },
-    { orgId: "o-2", orgName: "B", orgSlug: "b", role: "pm" as const, joinedAt: "2026-01-01" },
+    { orgId: "o-1", orgName: "A", orgSlug: "a", isAdmin: true, joinedAt: "2026-01-01" },
+    { orgId: "o-2", orgName: "B", orgSlug: "b", isAdmin: false, joinedAt: "2026-01-01" },
   ];
   it("honors preferred when it matches a membership", () => {
     expect(pickActiveOrgId(orgs, "o-2")).toBe("o-2");
@@ -122,8 +122,8 @@ describe("buildAuthSession", () => {
     const session = buildAuthSession(
       user,
       [
-        { org_id: "o-1", role: "admin", joined_at: "2026-01-01", organizations: { id: "o-1", name: "A", slug: "a" } },
-        { org_id: "o-bad", role: "orgadmin" /* invalid org tier */, joined_at: "x", organizations: { id: "o-bad", name: "B", slug: "b" } },
+        { org_id: "o-1", is_admin: true, joined_at: "2026-01-01", organizations: { id: "o-1", name: "A", slug: "a" } },
+        { org_id: "o-bad", joined_at: "x", organizations: { id: "o-bad", name: "", slug: "b" } },
       ],
       [
         { project_id: "p-1", role: "site_engineer", assigned_by: null, assigned_at: "x", removed_at: null, projects: { id: "p-1", name: "Vasavi", type: "construction" } },

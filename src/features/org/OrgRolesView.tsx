@@ -6,7 +6,6 @@
 import {
   useAuth, useCanWithPlan, useOrgSwitcher, PlanGate,
   displayPlanLabel, identityRoleLabel, identityRolesForPlan,
-  orgTierRoleLabel, orgTierRolesForPlan,
   planFeatureLabelsFor, planSupportsCustomRoles,
   projectTierRoleLabel, projectTierRolesForPlan,
 } from "@/auth";
@@ -46,7 +45,6 @@ export function OrgRolesView(): JSX.Element {
 function PlanRoleSummary({ plan, loading }: { plan: string | null; loading: boolean }): JSX.Element {
   const effectivePlan = plan ?? "enterprise";
   const identityRoles = identityRolesForPlan(effectivePlan).map(identityRoleLabel);
-  const orgRoles = orgTierRolesForPlan(effectivePlan).map(orgTierRoleLabel);
   const projectRoles = projectTierRolesForPlan(effectivePlan).map(projectTierRoleLabel);
   const features = planFeatureLabelsFor(effectivePlan);
   const customRoles = planSupportsCustomRoles(effectivePlan);
@@ -67,7 +65,6 @@ function PlanRoleSummary({ plan, loading }: { plan: string | null; loading: bool
         <Badge tone={customRoles ? "success" : "warning"}>{customRoles ? "Custom roles unlocked" : "Custom roles locked"}</Badge>
       </div>
 
-      <SummaryRow label="Org roles" values={orgRoles} />
       <SummaryRow label="Identity roles" values={identityRoles} max={10} />
       <SummaryRow label="Project roles" values={projectRoles} max={10} />
       <SummaryRow label="Feature groups" values={features} max={8} />

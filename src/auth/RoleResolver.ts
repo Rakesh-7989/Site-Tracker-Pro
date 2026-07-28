@@ -1,60 +1,49 @@
-// SiteTrack Pro — 3-axis capability resolver.
-//
-// Given a user + optional (orgId, projectId) context, returns the UNION
-// of capabilities they hold from:
-//   1. Their identity role (profiles.role)
-//   2. Their org-tier role for that org (org_members.role)
-//   3. Their project-tier role for that project (project_members.role)
-//
-// All three layers are read from the AuthSession the caller passes in.
-// The resolver does NO async work + NO Supabase calls — it's a pure
-// function over the auth state. The hook (useAuthUser) loads the state;
-// the resolver reads it.
-//
-// Returning a `trace` of which tier granted what makes UX debugging
-// straightforward — when the founder asks "why can the architect not
-// create projects on this project but can on that one?", trace tells you
-// whether they're missing the project_members.role.architect entry.
-
 import type { AuthSession, ResolveContext, ResolvedCapabilities } from "./types";
 import type { Capability } from "./capabilities";
 import {
   identityCapabilities,
-  orgTierCapabilities,
   projectTierCapabilities,
 } from "./permissions-matrix";
 import {
   isIdentityRole,
-  isOrgTierRole,
   isProjectTierRole,
 } from "./roles";
 import { applyOverrides } from "./capabilityOverrides";
 
-/**
- * Compute the capability set for a user in the given context.
- * Returns both the union Set + a per-tier trace.
- */
+const ADMIN_EXTRA_CAPS: Capability[] = [
+  "org:members:manage", "org:billing:manage", "org:integrations:manage",
+  "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
+  "org:branding:manage", "org:features:configure", "notification:configure",
+  "vendor:manage", "vendor:select",
+  "project:create", "project:archive", "project:restore", "project:settings:edit",
+  "team:manage",
+  "compliance:view",
+  "budget:view", "budget:edit", "ledger:view",
+  "changeorder:approve", "po:approve", "invoice:approve", "rabill:approve", "expense:approve",
+  "audit:read",
+  "export:pdf", "export:csv",
+  "share:project:public",
+  "handover:generate",
+];
+
 export function resolveCapabilities(
   session: AuthSession,
   context: ResolveContext = {},
 ): ResolvedCapabilities {
   const { user, orgs, projectMemberships } = session;
 
-  // ── Tier 1: identity role ──
   const fromIdentity: Capability[] = isIdentityRole(user.identityRole)
     ? identityCapabilities(user.identityRole)
     : [];
 
-  // ── Tier 2: org tier (only when orgId is in context) ──
-  let fromOrgTier: Capability[] | undefined;
+  let fromOrgAdmin: Capability[] | undefined;
   if (context.orgId) {
     const membership = orgs.find(m => m.orgId === context.orgId);
-    if (membership && isOrgTierRole(membership.role)) {
-      fromOrgTier = orgTierCapabilities(membership.role);
+    if (membership && (membership.isAdmin || user.identityRole === "orgadmin")) {
+      fromOrgAdmin = ADMIN_EXTRA_CAPS;
     }
   }
 
-  // ── Tier 3: project tier (only when projectId is in context AND active) ──
   let fromProjectTier: Capability[] | undefined;
   if (context.projectId) {
     const pm = projectMemberships.find(
@@ -65,14 +54,11 @@ export function resolveCapabilities(
     }
   }
 
-  // ── Union ──
   const union = new Set<Capability>();
   for (const c of fromIdentity) union.add(c);
-  if (fromOrgTier) for (const c of fromOrgTier) union.add(c);
+  if (fromOrgAdmin) for (const c of fromOrgAdmin) union.add(c);
   if (fromProjectTier) for (const c of fromProjectTier) union.add(c);
 
-  // ── Superadmin capability overrides (migration 69) ──
-  // Pre-filtered at fetch time to (global + activeOrg) for this user's role.
   const overrides = session.capabilityOverrides ?? [];
   const all = applyOverrides(union, overrides, user.identityRole);
 
@@ -81,7 +67,7 @@ export function resolveCapabilities(
     capabilities: all,
     trace: {
       fromIdentity,
-      ...(fromOrgTier !== undefined ? { fromOrgTier } : {}),
+      ...(fromOrgAdmin !== undefined ? { fromOrgAdmin } : {}),
       ...(fromProjectTier !== undefined ? { fromProjectTier } : {}),
       ...(applied.length ? {
         overrideGrants: applied.filter(o => o.mode === "grant").map(o => o.capability),
@@ -91,10 +77,6 @@ export function resolveCapabilities(
   };
 }
 
-/**
- * Convenience predicate. Returns true if the user has the capability
- * in the given context.
- */
 export function can(
   session: AuthSession,
   capability: Capability,
@@ -103,10 +85,6 @@ export function can(
   return resolveCapabilities(session, context).capabilities.has(capability);
 }
 
-/**
- * Structured form of can() with a human-readable reason. Useful for UX
- * error messages ("you need to be assigned as architect on this project").
- */
 export function decide(
   session: AuthSession,
   capability: Capability,
@@ -116,7 +94,6 @@ export function decide(
   if (resolved.capabilities.has(capability)) {
     return { allowed: true, reason: "" };
   }
-  // Try to be specific about WHY.
   if (context.projectId && !session.projectMemberships.some(p => p.projectId === context.projectId && p.removedAt === null)) {
     return {
       allowed: false,
@@ -135,28 +112,19 @@ export function decide(
   };
 }
 
-/**
- * Returns ALL capabilities the user has across ANY context they could
- * operate in. Useful for nav rendering (show every menu they MIGHT
- * be able to reach somewhere). NOT a security boundary — UI gates
- * still re-check with the right context.
- */
 export function capabilitiesAnywhere(session: AuthSession): Set<Capability> {
   const out = new Set<Capability>();
-  // Identity-tier
   for (const c of identityCapabilities(session.user.identityRole)) out.add(c);
-  // Every org-tier
   for (const org of session.orgs) {
-    if (isOrgTierRole(org.role)) {
-      for (const c of orgTierCapabilities(org.role)) out.add(c);
+    if (org.isAdmin || session.user.identityRole === "orgadmin") {
+      for (const c of ADMIN_EXTRA_CAPS) out.add(c);
+      break;
     }
   }
-  // Every project-tier (active rows only)
   for (const pm of session.projectMemberships) {
     if (pm.removedAt === null && isProjectTierRole(pm.role)) {
       for (const c of projectTierCapabilities(pm.role)) out.add(c);
     }
   }
-  // Superadmin overrides (migration 69) — same set the per-context resolver uses.
   return applyOverrides(out, session.capabilityOverrides ?? [], session.user.identityRole);
 }

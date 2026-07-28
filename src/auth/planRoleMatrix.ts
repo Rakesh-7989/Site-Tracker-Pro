@@ -13,16 +13,14 @@ import {
 } from "./planCaps";
 import {
   IDENTITY_ROLES,
-  ORG_TIER_ROLES,
   PROJECT_TIER_ROLES,
   ROLE_LABEL,
   type IdentityRole,
-  type OrgTierRole,
   type ProjectTierRole,
 } from "./roles";
 
 export type PlanId = "free" | "basic" | "pro" | "business" | "enterprise" | "custom";
-export type RoleTier = "identity" | "org" | "project";
+export type RoleTier = "identity" | "project";
 
 export const PLAN_LABEL: Record<PlanId, string> = {
   free: "Free",
@@ -67,9 +65,6 @@ const BUSINESS_IDENTITY_ROLES = [
   "site_inspector",
 ] as const satisfies readonly IdentityRole[];
 
-const BASIC_ORG_ROLES = ["admin", "pm", "architect", "contractor", "client"] as const satisfies readonly OrgTierRole[];
-const PRO_ORG_ROLES = [...BASIC_ORG_ROLES, "vendor"] as const satisfies readonly OrgTierRole[];
-
 const BASIC_PROJECT_ROLES = [
   "architect",
   "site_engineer",
@@ -105,15 +100,6 @@ export const CORE_PLAN_FEATURE_LABELS = [
   "Materials, vendors, safety, inspections",
   "Client portal, messages, exports",
 ] as const;
-
-export const ORG_TIER_LABEL: Record<OrgTierRole, string> = {
-  admin: "Admin",
-  pm: "PM",
-  architect: "Architect",
-  contractor: "Contractor",
-  client: "Client",
-  vendor: "Vendor",
-};
 
 function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
@@ -165,20 +151,6 @@ export function identityRolesForPlan(plan: string | null | undefined): IdentityR
   }
 }
 
-export function orgTierRolesForPlan(plan: string | null | undefined): OrgTierRole[] {
-  switch (normalizePlanId(plan)) {
-    case "enterprise":
-    case "custom":
-      return [...ORG_TIER_ROLES];
-    case "business":
-    case "pro":
-      return unique(PRO_ORG_ROLES);
-    case "free":
-    case "basic":
-      return unique(BASIC_ORG_ROLES);
-  }
-}
-
 export function projectTierRolesForPlan(plan: string | null | undefined): ProjectTierRole[] {
   switch (normalizePlanId(plan)) {
     case "enterprise":
@@ -196,7 +168,6 @@ export function projectTierRolesForPlan(plan: string | null | undefined): Projec
 
 export function roleAllowedForPlan(plan: string | null | undefined, tier: RoleTier, role: string): boolean {
   if (tier === "identity") return identityRolesForPlan(plan).includes(role as IdentityRole);
-  if (tier === "org") return orgTierRolesForPlan(plan).includes(role as OrgTierRole);
   return projectTierRolesForPlan(plan).includes(role as ProjectTierRole);
 }
 
@@ -204,14 +175,6 @@ export function identityRoleLabel(role: IdentityRole): string {
   return ROLE_LABEL[role] ?? role;
 }
 
-export function orgTierRoleLabel(role: OrgTierRole): string {
-  return ORG_TIER_LABEL[role] ?? role;
-}
-
 export function projectTierRoleLabel(role: ProjectTierRole): string {
   return ROLE_LABEL[role as IdentityRole] ?? role;
-}
-
-export function orgTierRoleOptionsForPlan(plan: string | null | undefined): Array<{ value: OrgTierRole; label: string }> {
-  return orgTierRolesForPlan(plan).map(role => ({ value: role, label: orgTierRoleLabel(role) }));
 }

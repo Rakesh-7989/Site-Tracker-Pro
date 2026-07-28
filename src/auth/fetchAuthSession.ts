@@ -23,7 +23,6 @@ import type {
 } from "./types";
 import {
   isIdentityRole,
-  isOrgTierRole,
   isProjectTierRole,
   isProjectType,
 } from "./roles";
@@ -98,9 +97,6 @@ export function normalizeProfile(
  */
 export function normalizeOrgMembership(row: Record<string, unknown> | null): OrgMembership | null {
   if (!row) return null;
-  const role = row.role;
-  if (!isOrgTierRole(role)) return null;
-  // Join shape: row.organizations may be a nested object or row.org_name + row.org_slug.
   const orgNested = row.organizations as Record<string, unknown> | undefined;
   const orgId = String((orgNested?.id ?? row.org_id) ?? "");
   const orgName = String((orgNested?.name ?? row.org_name) ?? "");
@@ -110,7 +106,7 @@ export function normalizeOrgMembership(row: Record<string, unknown> | null): Org
     orgId,
     orgName,
     orgSlug,
-    role,
+    isAdmin: Boolean(row.is_admin),
     joinedAt: String(row.joined_at ?? new Date().toISOString()),
   };
 }
@@ -290,7 +286,7 @@ export async function fetchAuthSession(
     // 2. org_members joined with organizations
     const orgsRes = await client
       .from("org_members")
-      .select("org_id, role, joined_at, organizations:org_id (id, name, slug)")
+      .select("org_id, is_admin, joined_at, organizations:org_id (id, name, slug)")
       .eq("profile_id", input.authUserId);
     if (orgsRes.error) {
       return { ok: false, error: String((orgsRes.error as { message?: string }).message ?? orgsRes.error), code: "db-error" };

@@ -48,10 +48,6 @@ export const IDENTITY_ROLES = [
 ] as const;
 export type IdentityRole = (typeof IDENTITY_ROLES)[number];
 
-// ── Org-tier roles (org_members.role — 6 values, migration 65) ─────────────
-export const ORG_TIER_ROLES = ["admin", "pm", "architect", "contractor", "client", "vendor"] as const;
-export type OrgTierRole = (typeof ORG_TIER_ROLES)[number];
-
 // ── Project-tier roles (project_members.role — 18 values) ──────────────────
 export const PROJECT_TIER_ROLES = [
   "architect",
@@ -185,34 +181,11 @@ export const ROLE_LABEL: Record<IdentityRole, string> = {
 export function isIdentityRole(value: unknown): value is IdentityRole {
   return typeof value === "string" && (IDENTITY_ROLES as readonly string[]).includes(value);
 }
-export function isOrgTierRole(value: unknown): value is OrgTierRole {
-  return typeof value === "string" && (ORG_TIER_ROLES as readonly string[]).includes(value);
-}
 export function isProjectTierRole(value: unknown): value is ProjectTierRole {
   return typeof value === "string" && (PROJECT_TIER_ROLES as readonly string[]).includes(value);
 }
 export function isProjectType(value: unknown): value is ProjectType {
   return typeof value === "string" && (PROJECT_TYPES as readonly string[]).includes(value);
-}
-
-/**
- * Map an identity role to its default org-tier role for auto-provisioning.
- * Used when a new user is added to an org without an explicit tier choice.
- */
-export function defaultOrgTierFor(role: IdentityRole): OrgTierRole {
-  if (role === "superadmin" || role === "orgadmin" || role === "promoter" || role === "project_admin") return "admin";
-  if (role === "pm") return "pm";
-  if (
-    role === "architect" || role === "senior_architect" || role === "junior_architect" ||
-    role === "design_architect_interior" ||
-    role === "design_head" || role === "consultant_head" || role === "designer" ||
-    role === "consultant" || role === "mep_consultant" || role === "structural_consultant" ||
-    role === "site_engineer" ||
-    role === "site_inspector"
-  ) return "architect";
-  if (role === "vendor") return "vendor";
-  if (role === "contractor" || role === "sub_contractor") return "contractor";
-  return "client";
 }
 
 /**

@@ -29,10 +29,10 @@ export async function updateOrg(client: any, orgId: string, name: string, contac
 }
 
 export async function insertOrgMembers(
-  client: any, orgId: string, members: Array<{ name: string; email: string; role: string }>,
+  client: any, orgId: string, members: Array<{ name: string; email: string }>,
 ): Promise<PResult<void>> {
   try {
-    const rows = members.map(m => ({ org_id: orgId, name: m.name, email: m.email, role: m.role }));
+    const rows = members.map(m => ({ org_id: orgId, name: m.name, email: m.email }));
     const { error } = await client.from("org_members").insert(rows);
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: undefined };

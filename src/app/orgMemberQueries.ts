@@ -1,23 +1,15 @@
-// SiteTrack Pro — org People module queries (HRMS Phase B, migration 71).
-//
-// Org admins manage their org's people: list, add an existing user by email,
-// change org-tier role, assign/remove custom roles, deactivate/reactivate.
-// Reads go through SECURITY DEFINER RPCs (list_org_members / lookup_user_for_
-// invite); writes are direct table ops gated by RLS (org_members_admin_write,
-// org_member_roles write = org admin).
 
-import type { OrgTierRole } from "@/auth";
 
 export type MResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface OrgMemberRow {
   profileId: string;
   name: string;
-  identityRole: string;   // profiles.role (display only)
-  orgRole: string;        // org_members.role (org tier)
+  identityRole: string;
+  isAdmin: boolean;
   joinedAt: string;
-  active: boolean;        // removed_at IS NULL
-  customRoles: string[];  // active custom-role labels
+  active: boolean;
+  customRoles: string[];
 }
 
 export interface InviteCandidate {
@@ -26,8 +18,6 @@ export interface InviteCandidate {
   identityRole: string;
 }
 
-/** List an org's members via the guarded RPC. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listOrgMembers(client: any, orgId: string): Promise<MResult<OrgMemberRow[]>> {
   try {
     const { data, error } = await client.rpc("list_org_members", { p_org_id: orgId });
@@ -36,7 +26,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<MResul
       profileId: String(r.profile_id),
       name: String(r.name ?? "Member"),
       identityRole: String(r.identity_role ?? ""),
-      orgRole: String(r.org_role ?? ""),
+      isAdmin: Boolean(r.is_admin),
       joinedAt: String(r.joined_at ?? ""),
       active: r.removed_at == null,
       customRoles: Array.isArray(r.custom_roles) ? (r.custom_roles as unknown[]).map(String) : [],
@@ -47,22 +37,12 @@ export async function listOrgMembers(client: any, orgId: string): Promise<MResul
   }
 }
 
-/**
- * Invite a BRAND-NEW user by email (no account yet). Calls the
- * invite_org_member Edge Function (server-side, service role): creates the
- * auth user + sends a set-password email + adds them to the org. For EXISTING
- * accounts use lookupUserForInvite + addOrgMember instead.
- *
- * When sendCredentials is true (default), the EF generates a temp password
- * and sends a branded email with credentials + role info.
- */
 export async function inviteNewOrgMember(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
-  input: { orgId: string; email: string; orgRole: OrgTierRole; name?: string; sendCredentials?: boolean; identityRole?: string },
+  input: { orgId: string; email: string; name?: string; sendCredentials?: boolean; identityRole?: string },
 ): Promise<MResult<{ invited: true; tempPassword?: string; emailSent?: boolean }>> {
   try {
-    const { data, error } = await client.functions.invoke("invite_org_member", { body: input });
+    const { data, error } = await client.functions.invoke("invite_org_member", { body: { ...input, orgRole: "admin" } });
     if (error) {
       let msg = error.message ?? "Could not send the invite.";
       try { const b = await error.context?.json?.(); if (b?.message) msg = b.message; } catch { /* ignore */ }
@@ -75,8 +55,6 @@ export async function inviteNewOrgMember(
   }
 }
 
-/** Look up an existing account by email so it can be added to the org. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function lookupUserForInvite(client: any, email: string): Promise<MResult<InviteCandidate | null>> {
   try {
     const { data, error } = await client.rpc("lookup_user_for_invite", { p_email: email });
@@ -89,17 +67,15 @@ export async function lookupUserForInvite(client: any, email: string): Promise<M
   }
 }
 
-/** Add (or reactivate) a member at the given org tier. */
 export async function addOrgMember(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
-  input: { orgId: string; profileId: string; orgRole: OrgTierRole },
+  input: { orgId: string; profileId: string },
 ): Promise<MResult<{ ok: true }>> {
   try {
     const { error } = await client
       .from("org_members")
       .upsert(
-        { org_id: input.orgId, profile_id: input.profileId, role: input.orgRole, removed_at: null },
+        { org_id: input.orgId, profile_id: input.profileId, removed_at: null },
         { onConflict: "org_id,profile_id" },
       );
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -109,7 +85,6 @@ export async function addOrgMember(
   }
 }
 
-/** Change a member's identity role (profiles.role). */
 export async function setIdentityRole(
   client: any,
   profileId: string,
@@ -127,28 +102,14 @@ export async function setIdentityRole(
   }
 }
 
-/** Change a member's org-tier role. */
-export async function setOrgTierRole(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
-  input: { orgId: string; profileId: string; orgRole: OrgTierRole },
-): Promise<MResult<{ ok: true }>> {
-  return updateMember(client, input.orgId, input.profileId, { role: input.orgRole });
-}
-
-/** Soft-deactivate a member (removed_at = now). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deactivateMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   return updateMember(client, orgId, profileId, { removed_at: new Date().toISOString() });
 }
 
-/** Reactivate a member. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function reactivateMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   return updateMember(client, orgId, profileId, { removed_at: null });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function updateMember(client: any, orgId: string, profileId: string, patch: Record<string, unknown>): Promise<MResult<{ ok: true }>> {
   try {
     const { error } = await client.from("org_members").update(patch).eq("org_id", orgId).eq("profile_id", profileId);
@@ -159,9 +120,7 @@ async function updateMember(client: any, orgId: string, profileId: string, patch
   }
 }
 
-/** Assign a custom role to a member (idempotent). */
 export async function assignCustomRole(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
   input: { orgId: string; profileId: string; orgRoleId: string; assignedBy: string },
 ): Promise<MResult<{ ok: true }>> {
@@ -179,9 +138,7 @@ export async function assignCustomRole(
   }
 }
 
-/** Remove a custom-role assignment from a member. */
 export async function unassignCustomRole(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
   input: { orgId: string; profileId: string; orgRoleId: string },
 ): Promise<MResult<{ ok: true }>> {

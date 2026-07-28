@@ -95,7 +95,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<QueryR
   try {
     const { data, error } = await client
       .from("org_members")
-      .select("profile_id, role, status, profiles:profile_id (name)")
+      .select("profile_id, is_admin, status, profiles:profile_id (name)")
       .eq("org_id", orgId);
     if (error) return { ok: false, error: String(error.message ?? error) };
     const rows = (data ?? []) as Array<Record<string, unknown>>;
@@ -106,7 +106,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<QueryR
         return {
           id: String(r.profile_id),
           name: String(p?.name ?? ""),
-          role: String(r.role ?? ""),
+          role: String(r.is_admin ? "admin" : "member"),
           status: String(r.status ?? "active"),
         };
       }),

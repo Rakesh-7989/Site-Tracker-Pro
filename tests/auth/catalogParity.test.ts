@@ -12,7 +12,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   IDENTITY_ROLES,
-  ORG_TIER_ROLES,
   PROJECT_TIER_ROLES,
 } from "@/auth/roles";
 
@@ -32,18 +31,9 @@ function rolesFromCheck(file: string, constraintMarker: string): string[] {
 }
 
 describe("TS ↔ SQL role catalog parity", () => {
-  // The canonical constraints are the LATEST migration that defines them.
-  // Migration 68 (role consolidation) redefined profiles_role_check (22),
-  // project_members_role_check (18) + the role_catalog view. Org tier was
-  // untouched, so it still points at migration 65.
   it("IDENTITY_ROLES matches migration 68 profiles_role_check", () => {
     const sqlRoles = rolesFromCheck("68_role_consolidation.sql", "profiles_role_check CHECK (role IN (");
     expect(sqlRoles.sort()).toEqual([...IDENTITY_ROLES].sort());
-  });
-
-  it("ORG_TIER_ROLES matches migration 65 org_members_role_check", () => {
-    const sqlRoles = rolesFromCheck("65_org_members_vendor_tier.sql", "org_members_role_check CHECK (role IN (");
-    expect(sqlRoles.sort()).toEqual([...ORG_TIER_ROLES].sort());
   });
 
   it("PROJECT_TIER_ROLES matches migration 68 project_members_role_check", () => {

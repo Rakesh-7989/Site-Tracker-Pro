@@ -59,7 +59,7 @@ export function RoleGrid({
       existing.push({
         profileId: m.profileId,
         name: m.name,
-        orgRole: m.orgRole,
+        isAdmin: m.isAdmin,
         active: m.active,
         customRoles: m.customRoles,
       });

@@ -49,7 +49,7 @@ describe("buildNav", () => {
   it("orgadmin with admin org tier sees New Project + Members + Billing + Custom Roles", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", role: "admin", joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", isAdmin: true, joinedAt: "2026-01-01" }],
     }));
     const paths = nav.map(n => n.to);
     expect(paths).toContain("/projects/new");
@@ -142,7 +142,7 @@ describe("buildNav", () => {
   it("org-tier admin sees /vendors (e.g. a PM granted org admin via membership)", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "PM", identityRole: "pm", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", role: "admin", joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", isAdmin: true, joinedAt: "2026-01-01" }],
     }));
     expect(nav.map(n => n.to)).toContain("/vendors");
   });
