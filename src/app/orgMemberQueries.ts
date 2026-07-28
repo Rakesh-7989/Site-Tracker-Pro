@@ -59,7 +59,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<MResul
 export async function inviteNewOrgMember(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
-  input: { orgId: string; email: string; orgRole: OrgTierRole; name?: string; sendCredentials?: boolean },
+  input: { orgId: string; email: string; orgRole: OrgTierRole; name?: string; sendCredentials?: boolean; identityRole?: string },
 ): Promise<MResult<{ invited: true; tempPassword?: string; emailSent?: boolean }>> {
   try {
     const { data, error } = await client.functions.invoke("invite_org_member", { body: input });

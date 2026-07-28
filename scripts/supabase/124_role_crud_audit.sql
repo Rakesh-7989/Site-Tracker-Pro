@@ -37,9 +37,15 @@ $$;
 -- Helper: execute SQL and return ALLOW / DENY / ERROR.
 CREATE OR REPLACE FUNCTION public.try_sql(p_sql text, OUT result text, OUT detail text)
 RETURNS record LANGUAGE plpgsql AS $$
+DECLARE v_rows bigint;
 BEGIN
   EXECUTE p_sql;
-  result := 'ALLOW'; detail := '';
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  IF v_rows = 0 THEN
+    result := 'DENY'; detail := 'silent (0 rows affected by RLS)';
+  ELSE
+    result := 'ALLOW'; detail := '';
+  END IF;
 EXCEPTION WHEN OTHERS THEN
   result := 'DENY'; detail := SQLERRM;
 END;
@@ -194,6 +200,10 @@ BEGIN
     VALUES ('00000000-0000-0000-0000-000000000048',v_proj_id,'materials','Test expense',1000) ON CONFLICT DO NOTHING;
   INSERT INTO public.labour_register(id,project_id,name,trade)
     VALUES ('00000000-0000-0000-0000-000000000049',v_proj_id,'Test Labourer','mason') ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.vendor_profiles(profile_id, company_name)
+    VALUES ('00000000-0000-0000-0000-000000000029', 'Test Vendor')
+    ON CONFLICT DO NOTHING;
 END $$;
 
 -- ============================================================================
