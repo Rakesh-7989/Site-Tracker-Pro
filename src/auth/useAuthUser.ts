@@ -207,10 +207,15 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
       if (!client || cancelled) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = client as any;
-      const res = sb.auth.onAuthStateChange(() => {
-        // Background re-hydrate (sign-in / sign-out / token refresh) — silent so
-        // it never re-flashes the full-screen "Loading your workspace…" spinner.
-        if (!cancelled) void hydrate(true);
+      const res = sb.auth.onAuthStateChange((event: string) => {
+        // SIGNED_IN is handled by the login page's afterAuth() → refresh() so
+        // there is no race between two concurrent hydrate calls. Events that
+        // fire after the session is established (token refresh, user update)
+        // re-hydrate silently in the background.
+        if (!cancelled) {
+          if (event === "SIGNED_OUT") { setSession(null); setStatus("signed-out"); return; }
+          if (event !== "SIGNED_IN") void hydrate(true);
+        }
       });
       subscription = res?.data?.subscription ?? null;
       // If we were torn down while awaiting, clean up immediately.
