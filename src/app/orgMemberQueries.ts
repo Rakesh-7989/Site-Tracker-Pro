@@ -102,12 +102,13 @@ export async function setIdentityRole(
 
 export async function removeMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   try {
-    const { error } = await client
-      .from("org_members")
-      .delete()
-      .eq("org_id", orgId)
-      .eq("profile_id", profileId);
-    if (error) return { ok: false, error: String(error.message ?? error) };
+    const { data, error } = await client.functions.invoke("remove_org_member", { body: { orgId, profileId } });
+    if (error) {
+      let msg = error.message ?? "Could not remove member.";
+      try { const b = await error.context?.json?.(); if (b?.message) msg = b.message; } catch { /* ignore */ }
+      return { ok: false, error: msg };
+    }
+    if (data && data.ok === false) return { ok: false, error: String(data.message ?? data.error ?? "Remove failed.") };
     return { ok: true, data: { ok: true } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

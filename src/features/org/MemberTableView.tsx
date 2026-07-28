@@ -94,7 +94,7 @@ export function MemberTableView({
               ? <Button size="sm" variant="ghost" onClick={() => void runAction(`deact-${m.profileId}`, c => deactivateMember(c, orgId, m.profileId))}>Deactivate</Button>
               : <Button size="sm" variant="secondary" onClick={() => void runAction(`react-${m.profileId}`, c => reactivateMember(c, orgId, m.profileId))}>Reactivate</Button>}
             <Button size="sm" variant="ghost" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={() => {
-              if (window.confirm(`Remove ${m.name} from this organisation? This cannot be undone.`)) {
+              if (window.confirm(`Permanently delete ${m.name} and their account? They will be able to re-register with the same email.`)) {
                 void runAction(`remove-${m.profileId}`, c => removeMember(c, orgId, m.profileId));
               }
             }}>Delete</Button>
