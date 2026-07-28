@@ -12,6 +12,9 @@ returns trigger
 language plpgsql
 as $$
 begin
+  if current_setting('app.allow_audit_delete', true) = 'true' then
+    return old;
+  end if;
   raise exception 'audit_log_v2 is immutable: update/delete is not permitted. Use delete_organization RPC for DPDP erasure.';
 end;
 $$;

@@ -16,8 +16,12 @@ BEGIN
   IF v_name IS NULL THEN
     RETURN jsonb_build_object('ok', false, 'error', 'organization not found');
   END IF;
-  -- Cascades to projects → milestones/tasks/finance/etc, org_members, templates,
-  -- approval_chains, notification_rules, org_integrations, subscriptions, org_roles…
+  -- Purge audit trail for DPDP erasure before cascade delete (audit log is immutable otherwise)
+  PERFORM set_config('app.allow_audit_delete', 'true', true);
+  DELETE FROM public.audit_log_v2 WHERE org_id = p_org;
+  PERFORM set_config('app.allow_audit_delete', 'false', true);
+
+  -- Cascades to remaining child data (audit_log_v2 rows already gone)
   DELETE FROM public.organizations WHERE id = p_org;
   RETURN jsonb_build_object('ok', true, 'deleted', v_name);
 END $$;

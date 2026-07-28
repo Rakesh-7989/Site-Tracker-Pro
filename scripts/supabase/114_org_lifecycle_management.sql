@@ -83,7 +83,12 @@ BEGIN
     jsonb_build_object('reason', p_reason, 'deleted_name', v_name)
   );
 
-  -- Hard-delete (cascades to all child data)
+  -- Purge audit trail for DPDP erasure before cascade delete (audit log is immutable otherwise)
+  PERFORM set_config('app.allow_audit_delete', 'true', true);
+  DELETE FROM public.audit_log_v2 WHERE org_id = p_org;
+  PERFORM set_config('app.allow_audit_delete', 'false', true);
+
+  -- Hard-delete org (cascades to remaining child data, audit_log_v2 rows already gone)
   DELETE FROM public.organizations WHERE id = p_org;
 
   RETURN jsonb_build_object('ok', true, 'deleted', v_name);
