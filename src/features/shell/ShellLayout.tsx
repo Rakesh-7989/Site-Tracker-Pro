@@ -6,7 +6,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 
-import { RequireSession, useAuth, type AuthStatus } from "@/auth";
+import { RequireSession, useAuth } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";

@@ -1,4 +1,5 @@
 
+import { orgTierForIdentityRole, type IdentityRole } from "@/auth";
 
 export type MResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -42,7 +43,7 @@ export async function inviteNewOrgMember(
   input: { orgId: string; email: string; name?: string; sendCredentials?: boolean; identityRole?: string },
 ): Promise<MResult<{ invited: true; tempPassword?: string; emailSent?: boolean }>> {
   try {
-    const { data, error } = await client.functions.invoke("invite_org_member", { body: { ...input, orgRole: "admin" } });
+    const { data, error } = await client.functions.invoke("invite_org_member", { body: { ...input, orgRole: input.identityRole ? orgTierForIdentityRole(input.identityRole as IdentityRole) : "client" } });
     if (error) {
       let msg = error.message ?? "Could not send the invite.";
       try { const b = await error.context?.json?.(); if (b?.message) msg = b.message; } catch { /* ignore */ }
@@ -69,13 +70,13 @@ export async function lookupUserForInvite(client: any, email: string): Promise<M
 
 export async function addOrgMember(
   client: any,
-  input: { orgId: string; profileId: string },
+  input: { orgId: string; profileId: string; role: string },
 ): Promise<MResult<{ ok: true }>> {
   try {
     const { error } = await client
       .from("org_members")
       .upsert(
-        { org_id: input.orgId, profile_id: input.profileId, removed_at: null },
+        { org_id: input.orgId, profile_id: input.profileId, role: input.role, removed_at: null },
         { onConflict: "org_id,profile_id" },
       );
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -91,10 +92,7 @@ export async function setIdentityRole(
   identityRole: string,
 ): Promise<MResult<{ ok: true }>> {
   try {
-    const { error } = await client
-      .from("profiles")
-      .update({ role: identityRole })
-      .eq("id", profileId);
+    const { error } = await client.rpc("set_member_identity_role", { p_profile_id: profileId, p_role: identityRole });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: { ok: true } };
   } catch (e) {

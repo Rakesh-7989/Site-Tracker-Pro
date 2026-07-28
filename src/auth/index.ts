@@ -18,6 +18,7 @@ export {
   isProjectTierRole,
   isProjectType,
   defaultProjectTierFor,
+  orgTierForIdentityRole,
   type IdentityRole,
   type ProjectTierRole,
   type ProjectType,

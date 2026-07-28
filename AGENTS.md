@@ -49,26 +49,32 @@ Implement the structured UI update plan across the full application: auth gap cl
 
 ## JS→TS Migration (post-redesign cleanup)
 
-### Done
-- **12 dead .jsx files deleted** (vendor, views, detail, shell, org, admin, help, roadmap, dpr/index, attachments, VoiceConfidenceBar, main)
-- **4 dead .js files deleted** (exports, dailySnapshot, demoMode, usePersistent)
-- **Dead code comments removed** from 6 files
-- **`@tanstack/react-query` removed** (dep + 5 wrapper files + tests)
-- **5 `.jsx`→`.tsx` migrated**: DPRStatusBadge, BuildNowBadge, main, errorBoundary, VoiceConfidenceBar
-- **P1 fixed**: `CONTACT_EMAIL` in `legalContent.ts`
-- **Batch 1 (8 `.js`→`.ts`)**: branding, delegations, hierarchy, materialPrices, sentry, notifications, projectArchive, projectTypes — all 44 tests pass
-- **Batch 2 (6 `.js`→`.ts`)**: ai, aiForecast, audit, compliance, buildnowAnchor, i18nDpr — `tsc --noEmit` (0 errors), `vite build` (3.7s, 1161 modules)
-- **Imports updated**: 3 DPR components (BuildNowBadge, VoiceConfidenceBar, DPRStatusBadge) — `.js` extension stripped from imports
-- **Index signatures added**: 6 interfaces across `forecastQueries.ts`, `auditLogQueries.ts`, `audit.ts`
-- **Consumer types aligned**: `ProjectState`, `ProviderConfig`, `LLMOpts` exports/imports fixed
-- **`buildnowAnchor.ts`**: `Metadata.approval_status` made optional, `Partial<DprPayload>` assignment fixed
-- **`compliance.ts`**: `check*Status` return types include `ok`/`format_ok`
+**✅ COMPLETE** — All 38 `.js` files in `src/lib/` + 2 `.js` files in `src/data/` have been migrated to `.ts`. Zero `.js`/`.jsx` files remain under `src/`.
 
-### Remaining (38 `.js` files in `src/lib/` + 2 in `src/data/`)
-- Batch 3: blockchainAnchor, cache, config, deviceOrientation, dprExport, escape (already .ts), i18n
-- Batch 4: localSync, offlineSync, platform, projectDefaults, slug, syncManager, telemetry, templateService
-- Batch 5: transactionManager, unitConverter, aiFeatureRecommender, assetUtils, barcodeScanner, chartUtils, colorUtils
-- Batch 6: dateUtils, docx, drawUtils, fileUtils, formattingUtils, formUtils, geo
-- Batch 7: graphUtils, imageUtils, leaflet, logger, measureUtils, mobile, numberUtils
-- Batch 8: pdf, permissionGroups, permissions, sentry, supabase, urlUtils
-- Batch 9: seed.js, seed.demo.js (in `src/data/`)
+## Auth Login Fix (Session 2026-07-28)
+
+### Problem
+Superadmin sign-in at `/staff/login` failed with `?error=session` after DB cleanup deleted auth users and profiles.
+
+### Root Cause
+1. `org_members.is_admin` column selected by `fetchAuthSession.ts` didn't exist in the live DB → `db-error`
+2. After fixing the column, profile was missing at the auth user's UUID → `no-profile`
+
+### Fixes Applied
+| Change | File / Migration |
+|--------|-----------------|
+| Added `is_admin` column to `org_members` + `ensure_my_profile()` RPC | `migration 127` |
+| Removed `is_admin` from SELECT, derive from `role` field | `fetchAuthSession.ts`, `delegationQueries.ts`, `orgMemberQueries.ts` |
+| Auto-create missing profile on sign-in | `fetchAuthSession.ts` — calls `ensure_my_profile()` RPC on no-profile |
+| Include error detail in `?error=session` redirect | `ShellLayout.tsx`, `LoginScreenV3.tsx` |
+| `onAuthStateChange` skips hydrate on SIGNED_IN to avoid race | `useAuthUser.ts` |
+| Lane mismatch redirects (instead of sign-out) in `afterAuth()` | `LoginScreenV3.tsx` |
+
+### Relevant Files
+- `src/auth/fetchAuthSession.ts`
+- `src/auth/useAuthUser.ts`
+- `src/features/auth/LoginScreenV3.tsx`
+- `src/features/shell/ShellLayout.tsx`
+- `src/app/delegationQueries.ts`
+- `src/app/orgMemberQueries.ts`
+- `scripts/supabase/127_auto_create_missing_profile.sql`

@@ -4,6 +4,7 @@ import { Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import {
   ROLE_LABEL,
+  orgTierForIdentityRole,
   type IdentityRole,
 } from "@/auth";
 import {
@@ -94,6 +95,7 @@ export function AssignMemberModal({
     const orgResult = await addOrgMember(client, {
       orgId,
       profileId: candidate.profileId,
+      role: orgTierForIdentityRole(identityRole as IdentityRole),
     });
     if (!orgResult.ok) {
       setError(orgResult.error);
@@ -130,9 +132,13 @@ export function AssignMemberModal({
       setError(res.error);
       return;
     }
-    setNotice(`Invited ${inviteName || email} as ${roleLabel}.`);
     onAssigned();
-    setTimeout(onClose, 1200);
+    if (res.data?.emailSent === false) {
+      setNotice(`Invited ${inviteName || email} as ${roleLabel}. Email not sent — ask them to log in at sitetrack.in.`);
+    } else {
+      setNotice(`Invited ${inviteName || email} as ${roleLabel}.`);
+      setTimeout(onClose, 1200);
+    }
   };
 
   return (

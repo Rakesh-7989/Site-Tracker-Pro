@@ -60,7 +60,7 @@ describe("lookupUserForInvite", () => {
 
 describe("mutations return ok on success", () => {
   it("addOrgMember upserts", async () => {
-    const r = await addOrgMember(mockClient({ table: { error: null } }), { orgId: "o", profileId: "p" });
+    const r = await addOrgMember(mockClient({ table: { error: null } }), { orgId: "o", profileId: "p", role: "admin" });
     expect(r.ok).toBe(true);
   });
   it("deactivateMember updates", async () => {

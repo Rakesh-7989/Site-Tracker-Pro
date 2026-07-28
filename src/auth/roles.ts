@@ -198,3 +198,36 @@ export function defaultProjectTierFor(role: IdentityRole): ProjectTierRole | nul
   if (role === "vendor") return null;
   return role as ProjectTierRole;
 }
+
+/**
+ * Map an identity role to an org-tier role for org_members.role.
+ * Org-tier roles are: admin | pm | architect | contractor | client | vendor.
+ * Falls back to 'client' for unrecognised roles.
+ */
+const ORG_TIER_FOR_IDENTITY: Partial<Record<IdentityRole, string>> = {
+  orgadmin: "admin",
+  promoter: "admin",
+  project_admin: "admin",
+  prospector: "admin",
+  pm: "pm",
+  architect: "architect",
+  senior_architect: "architect",
+  junior_architect: "architect",
+  design_architect_interior: "architect",
+  design_head: "architect",
+  consultant_head: "architect",
+  mep_consultant: "architect",
+  structural_consultant: "architect",
+  consultant: "architect",
+  designer: "architect",
+  site_engineer: "architect",
+  contractor: "contractor",
+  sub_contractor: "contractor",
+  vendor: "vendor",
+  client: "client",
+  site_inspector: "client",
+};
+
+export function orgTierForIdentityRole(role: IdentityRole): string {
+  return ORG_TIER_FOR_IDENTITY[role] ?? "client";
+}
