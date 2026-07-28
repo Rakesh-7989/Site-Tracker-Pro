@@ -141,7 +141,7 @@ BEGIN
 
   -- Upsert subscription row (include plan + provider for first-time insert, both NOT NULL)
   INSERT INTO public.subscriptions(org_id, plan, provider, status, updated_at)
-    VALUES (p_org, COALESCE(v_org_plan, 'basic'), 'admin', p_status, now())
+    VALUES (p_org, COALESCE(v_org_plan, 'basic'), 'manual', p_status, now())
     ON CONFLICT (org_id)
     DO UPDATE SET status = p_status, updated_at = now();
 
