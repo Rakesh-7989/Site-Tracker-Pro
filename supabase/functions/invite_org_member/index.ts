@@ -29,6 +29,14 @@ const CORS: Record<string, string> = {
 const json = (data: unknown, status: number): Response =>
   new Response(JSON.stringify(data), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
+const VALID_IDENTITY_ROLES = [
+  "superadmin", "orgadmin", "promoter", "project_admin", "prospector", "pm",
+  "architect", "senior_architect", "junior_architect", "design_architect_interior",
+  "design_head", "consultant_head", "mep_consultant", "structural_consultant",
+  "consultant", "designer", "site_engineer", "site_inspector",
+  "contractor", "sub_contractor", "vendor", "client",
+];
+
 const ORG_TIER_ROLES = ["admin", "pm", "architect", "contractor", "client", "vendor"];
 
 const ROLE_LABEL: Record<string, string> = {
@@ -119,6 +127,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (!orgId || !email || !email.includes("@")) return json({ ok: false, error: "missing-fields" }, 400);
   if (!ORG_TIER_ROLES.includes(orgRole)) return json({ ok: false, error: "bad-org-role" }, 400);
+  if (!VALID_IDENTITY_ROLES.includes(identityRole)) return json({ ok: false, error: "invalid-identity-role", message: `"${identityRole}" is not a valid identity role` }, 400);
 
   // ── Authorize: caller must be an admin of this org (or superadmin) ──
   const auth = await authenticate(req, { requireOrgId: orgId });

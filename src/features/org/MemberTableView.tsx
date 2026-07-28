@@ -5,6 +5,7 @@ import {
   ROLE_LABEL,
   identityRoleLabel,
   identityRolesForPlan,
+  isIdentityRole,
 } from "@/auth";
 import {
   setIdentityRole,
@@ -86,6 +87,10 @@ export function MemberTableView({
               value={m.identityRole}
               onChange={e => {
                 const v = e.target.value;
+                if (!isIdentityRole(v)) {
+                  onError(`"${v}" is not a valid identity role.`);
+                  return;
+                }
                 void runAction(`identity-${m.profileId}`, c => setIdentityRole(c, m.profileId, v));
               }}
               options={identityRoleOptions}

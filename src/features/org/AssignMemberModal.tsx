@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/forms";
 import {
   ROLE_LABEL,
   orgTierForIdentityRole,
+  isIdentityRole,
   type IdentityRole,
 } from "@/auth";
 import {
@@ -75,6 +76,10 @@ export function AssignMemberModal({
 
   const assignExisting = async () => {
     if (!candidate) return;
+    if (!isIdentityRole(identityRole)) {
+      setError(`"${identityRole}" is not a valid role. Close and try again from the role grid.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -111,6 +116,10 @@ export function AssignMemberModal({
 
   const assignAndInvite = async () => {
     if (!email.trim()) return;
+    if (!isIdentityRole(identityRole)) {
+      setError(`"${identityRole}" is not a valid role. Close and try again from the role grid.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
