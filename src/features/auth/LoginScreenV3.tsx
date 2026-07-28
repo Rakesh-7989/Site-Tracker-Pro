@@ -7,7 +7,7 @@
 // magic link. /login is org-only; /staff/login is platform-staff-only.
 
 import { useEffect, useState } from "react";
-import { Link, useNavigate, Navigate } from "react-router-dom";
+import { Link, useNavigate, useLocation, Navigate } from "react-router-dom";
 
 import {
   isStaffSession,
@@ -59,6 +59,7 @@ const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const t = useT();
   const { refresh, session, status: authStatus } = useAuth();
   const [method, setMethod] = useState<Method>("password");
@@ -75,6 +76,13 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
     writeStoredLoginLane(lane);
   }, [lane]);
 
+  useEffect(() => {
+    const p = new URLSearchParams(location.search);
+    if (p.get("error") === "session" && status.kind === "idle") {
+      setStatus({ kind: "error", msg: t("auth.errSessionLoad") });
+    }
+  }, [location.search]);
+
   const afterAuth = async () => {
     const refreshed = await refresh();
     if (!refreshed) {
@@ -83,10 +91,7 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
     }
     const staff = isStaffSession(refreshed);
     if ((lane === "org" && staff) || (lane === "staff" && !staff)) {
-      const lib = await authLib();
-      await lib.signOut?.();
-      await refresh();
-      setStatus({ kind: "error", msg: t(LOGIN_META[lane].wrongLaneKey) });
+      navigate(staff ? "/staff/login" : "/login", { replace: true });
       return;
     }
     navigate(postLoginPathForSession(refreshed, lane));

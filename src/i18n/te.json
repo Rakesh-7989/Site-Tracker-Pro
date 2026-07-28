@@ -179,7 +179,8 @@
     "orgCreatePrompt": "వర్క్‌స్పేస్ లేదా?",
     "orgCreateLink": "కొత్తది సృష్టించండి",
     "errEnter6": "6-అంకెల కోడ్‌ను నమోదు చేయండి.",
-    "errInvalidCode": "చెల్లని కోడ్."
+    "errInvalidCode": "చెల్లని కోడ్.",
+    "errSessionLoad": "మీ సెషన్‌ను లోడ్ చేయడం సాధ్యం కాలేదు. దయచేసి మళ్లీ సైన్ ఇన్ చేయండి."
   },
   "signup": {
     "headerSignIn": "సైన్ ఇన్",

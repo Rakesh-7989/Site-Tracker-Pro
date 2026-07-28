@@ -179,7 +179,8 @@
     "orgCreatePrompt": "वर्कस्पेस नहीं है?",
     "orgCreateLink": "नया बनाएं",
     "errEnter6": "6 अंकों का कोड दर्ज करें।",
-    "errInvalidCode": "अमान्य कोड।"
+    "errInvalidCode": "अमान्य कोड।",
+    "errSessionLoad": "आपका सत्र लोड नहीं हो सका। कृपया फिर से साइन इन करें।"
   },
   "signup": {
     "headerSignIn": "साइन इन",

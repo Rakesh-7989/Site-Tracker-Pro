@@ -152,7 +152,8 @@
     "orgCreatePrompt": "Don't have a workspace?",
     "orgCreateLink": "Create one",
     "errEnter6": "Enter the 6-digit code.",
-    "errInvalidCode": "Invalid code."
+    "errInvalidCode": "Invalid code.",
+    "errSessionLoad": "Your session could not be loaded. Please sign in again."
   },
   "signup": {
     "headerSignIn": "Sign in",
