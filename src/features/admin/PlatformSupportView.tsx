@@ -62,57 +62,57 @@ export function PlatformSupportView(): JSX.Element {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto h-[calc(100vh-100px)]">
       <div className="mb-4">
-        <h1 className="text-2xl font-black text-ink-900">Support Inbox</h1>
-        <p className="text-ink-400 text-sm mt-1">{openCount} open · {tickets.length} total</p>
+        <h1 className="text-2xl font-black text-fg-primary">Support Inbox</h1>
+        <p className="text-fg-tertiary text-sm mt-1">{openCount} open · {tickets.length} total</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
-        <div className="lg:col-span-4 bg-white rounded-2xl overflow-hidden border border-stone-200 flex flex-col max-h-[40vh] lg:max-h-none">
-          <div className="px-4 py-3 bg-stone-50 text-xs font-bold uppercase tracking-wider text-ink-500 border-b border-stone-200">{tickets.length} tickets</div>
-          <div className="flex-1 overflow-y-auto divide-y divide-stone-100">
+        <div className="lg:col-span-4 bg-bg-primary rounded-2xl overflow-hidden border border-default flex flex-col max-h-[40vh] lg:max-h-none">
+          <div className="px-4 py-3 bg-bg-secondary text-xs font-bold uppercase tracking-wider text-fg-secondary border-b border-default">{tickets.length} tickets</div>
+          <div className="flex-1 overflow-y-auto divide-y divide-default">
             {tickets.map(t => (
-              <button key={t.id} onClick={() => setActive(t.id)} className={`w-full text-left p-4 hover:bg-stone-50 ${active === t.id ? "bg-amber-50" : ""}`}>
+              <button key={t.id} onClick={() => setActive(t.id)} className={`w-full text-left p-4 hover:bg-bg-secondary ${active === t.id ? "bg-warning-tint" : ""}`}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold text-sm truncate flex-1">{t.subject}</span>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ml-2 ${t.status === "open" ? "bg-red-100 text-red-700" : t.status === "replied" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>{t.status}</span>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ml-2 ${t.status === "open" ? "bg-error-tint text-error" : t.status === "replied" ? "bg-warning-tint text-warning" : "bg-success-tint text-success"}`}>{t.status}</span>
                 </div>
-                <div className="text-xs text-ink-400">{orgs[t.org_id] || "—"} · {t.from}</div>
-                <div className="text-xs text-ink-400 mt-0.5">{fmtTime(t.created)}</div>
+                <div className="text-xs text-fg-tertiary">{orgs[t.org_id] || "—"} · {t.from}</div>
+                <div className="text-xs text-fg-tertiary mt-0.5">{fmtTime(t.created)}</div>
               </button>
             ))}
-            {tickets.length === 0 && <div className="p-6 text-center text-ink-400 italic text-sm">No tickets.</div>}
+            {tickets.length === 0 && <div className="p-6 text-center text-fg-tertiary italic text-sm">No tickets.</div>}
           </div>
         </div>
-        <div className="lg:col-span-8 bg-white rounded-2xl overflow-hidden border border-stone-200 flex flex-col">
+        <div className="lg:col-span-8 bg-bg-primary rounded-2xl overflow-hidden border border-default flex flex-col">
           {ticket ? (
             <>
-              <div className="px-5 py-4 border-b border-stone-200 flex items-center justify-between">
+              <div className="px-5 py-4 border-b border-default flex items-center justify-between">
                 <div>
                   <div className="font-bold text-lg">{ticket.subject}</div>
-                  <div className="text-xs text-ink-400">{orgs[ticket.org_id] || "—"} · {ticket.from} · {fmtTime(ticket.created)}</div>
+                  <div className="text-xs text-fg-tertiary">{orgs[ticket.org_id] || "—"} · {ticket.from} · {fmtTime(ticket.created)}</div>
                 </div>
-                {ticket.status !== "closed" && <button onClick={close} className="px-3 py-1.5 bg-stone-100 text-xs font-bold rounded-lg hover:bg-stone-200">Close</button>}
+                {ticket.status !== "closed" && <button onClick={close} className="px-3 py-1.5 bg-bg-secondary text-xs font-bold rounded-lg hover:bg-elevated">Close</button>}
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <div className="bg-stone-50 rounded-xl p-4">
-                  <div className="text-xs font-bold tracking-wider text-ink-400 uppercase mb-2">Initial message</div>
+                <div className="bg-bg-secondary rounded-xl p-4">
+                  <div className="text-xs font-bold tracking-wider text-fg-tertiary uppercase mb-2">Initial message</div>
                   <p className="text-sm whitespace-pre-line">{ticket.body}</p>
                 </div>
                 {(ticket.messages ?? []).map(m => (
-                  <div key={m.id} className="bg-amber-50 rounded-xl p-4">
-                    <div className="text-xs font-bold tracking-wider text-amber-700 uppercase mb-2">{m.by} · {fmtTime(m.time)}</div>
+                  <div key={m.id} className="bg-warning-tint rounded-xl p-4">
+                    <div className="text-xs font-bold tracking-wider text-warning uppercase mb-2">{m.by} · {fmtTime(m.time)}</div>
                     <p className="text-sm whitespace-pre-line">{m.text}</p>
                   </div>
                 ))}
               </div>
               {ticket.status !== "closed" && (
-                <div className="p-4 border-t border-stone-200">
-                  <textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Type reply..." className="w-full p-3 border border-stone-200 rounded-xl text-sm resize-none h-24 mb-3" />
-                  <button onClick={sendReply} className="px-5 py-2 bg-amber-600 text-white font-bold rounded-xl text-sm">Send reply</button>
+                <div className="p-4 border-t border-default">
+                  <textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Type reply..." className="w-full p-3 border border-default rounded-xl text-sm resize-none h-24 mb-3" />
+                  <button onClick={sendReply} className="px-5 py-2 bg-accent text-white font-bold rounded-xl text-sm">Send reply</button>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-ink-400 italic">Select a ticket</div>
+            <div className="flex-1 flex items-center justify-center text-fg-tertiary italic">Select a ticket</div>
           )}
         </div>
       </div>

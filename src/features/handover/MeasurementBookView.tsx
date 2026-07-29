@@ -83,45 +83,45 @@ export function MeasurementBookView(): JSX.Element {
   const totalAmount = rows.reduce((s, r) => s + (r.amount ?? 0), 0);
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-display text-xl font-bold text-ink-900">Measurement Book</h1>
+    <div className="space-y-6 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Measurement Book</h1>
       {!canView && <Alert variant="danger">You do not have permission to view the measurement book.</Alert>}
       {canView && (
         <>
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-ink-700">Project</label>
-            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-ink-900 outline-none focus:border-safety-500">
+            <label className="text-sm font-medium text-fg-secondary">Project</label>
+            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent">
               {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            {rows.length > 0 && <span className="text-sm text-ink-500 ml-auto">Total: ₹{totalAmount.toLocaleString("en-IN")}</span>}
+            {rows.length > 0 && <span className="text-sm text-fg-secondary ml-auto">Total: ₹{totalAmount.toLocaleString("en-IN")}</span>}
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
           {canEdit && selProject && (
             <Card className="p-3 space-y-3">
               <div className="flex gap-2 flex-wrap items-end">
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">MB No.</span><Input className="mt-1 w-28" placeholder="MB-001" value={mbNo} onChange={e => setMbNo(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Page</span><Input className="mt-1 w-20" type="number" placeholder="1" value={pageNo} onChange={e => setPageNo(e.target.value)} /></div>
-                <div className="flex-1 min-w-[200px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Description</span><Input className="mt-1" placeholder="RCC slab" value={desc} onChange={e => setDesc(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Location</span><Input className="mt-1 w-32" placeholder="Tower A" value={location} onChange={e => setLocation(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">MB No.</span><Input className="mt-1 w-28" placeholder="MB-001" value={mbNo} onChange={e => setMbNo(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Page</span><Input className="mt-1 w-20" type="number" placeholder="1" value={pageNo} onChange={e => setPageNo(e.target.value)} /></div>
+                <div className="flex-1 min-w-[200px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="RCC slab" value={desc} onChange={e => setDesc(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input className="mt-1 w-32" placeholder="Tower A" value={location} onChange={e => setLocation(e.target.value)} /></div>
               </div>
               <div className="flex gap-2 flex-wrap items-end">
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Unit</span><Select className="mt-1 w-auto" value={unit} onChange={e => setUnit(e.target.value)} options={UNIT_OPTS} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">L</span><Input className="mt-1 w-20" type="number" placeholder="0" value={len} onChange={e => setLen(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">B</span><Input className="mt-1 w-20" type="number" placeholder="0" value={br} onChange={e => setBr(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">D</span><Input className="mt-1 w-20" type="number" placeholder="0" value={dep} onChange={e => setDep(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Qty</span><Input className="mt-1 w-24" type="number" placeholder="10.5" value={qty} onChange={e => setQty(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Rate</span><Input className="mt-1 w-28" type="number" placeholder="4500" value={rate} onChange={e => setRate(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Select className="mt-1 w-auto" value={unit} onChange={e => setUnit(e.target.value)} options={UNIT_OPTS} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">L</span><Input className="mt-1 w-20" type="number" placeholder="0" value={len} onChange={e => setLen(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">B</span><Input className="mt-1 w-20" type="number" placeholder="0" value={br} onChange={e => setBr(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">D</span><Input className="mt-1 w-20" type="number" placeholder="0" value={dep} onChange={e => setDep(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input className="mt-1 w-24" type="number" placeholder="10.5" value={qty} onChange={e => setQty(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate</span><Input className="mt-1 w-28" type="number" placeholder="4500" value={rate} onChange={e => setRate(e.target.value)} /></div>
                 <Button onClick={() => void add()} disabled={busy === "add" || !mbNo.trim() || !desc.trim() || !qty.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
               </div>
             </Card>
           )}
           {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-            : rows.length === 0 ? <div className="text-sm text-ink-500">No entries.</div>
+            : rows.length === 0 ? <div className="text-sm text-fg-secondary">No entries.</div>
             : <div className="space-y-2">{rows.map(r => (
                 <Card key={r.id} className="p-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-ink-800 truncate">{r.mbNo}{r.pageNo ? ` / p.${r.pageNo}` : ""} &mdash; {r.description}</div>
-                    <div className="text-[11px] text-ink-400">
+                    <div className="text-sm font-semibold text-fg-primary truncate">{r.mbNo}{r.pageNo ? ` / p.${r.pageNo}` : ""} &mdash; {r.description}</div>
+                    <div className="text-[11px] text-fg-tertiary">
                       {[r.location, r.unit ? `${r.qty} ${r.unit}` : `${r.qty}`].filter(Boolean).join(" · ")}
                       {r.rate ? ` @ ₹${r.rate}` : ""}{r.amount != null ? ` = ₹${r.amount.toLocaleString("en-IN")}` : ""}
                     </div>

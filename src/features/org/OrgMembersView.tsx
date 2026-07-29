@@ -120,11 +120,11 @@ function OrgMembersInner({
   const activeCount = members.filter(m => m.active).length;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5">
+    <div className="max-w-6xl mx-auto space-y-5 p-4 md:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-ink-900">People</h1>
-          <p className="text-sm text-ink-500 mt-1">
+          <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">People</h1>
+          <p className="text-sm text-fg-secondary mt-1">
             {orgName} &middot; {activeCount} active member{activeCount === 1 ? "" : "s"}
           </p>
         </div>

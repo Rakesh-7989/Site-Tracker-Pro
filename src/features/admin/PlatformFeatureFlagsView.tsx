@@ -107,8 +107,8 @@ function FeatureFlagsInner({ userId }: { userId: string }): JSX.Element {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold text-ink-900">Feature Kill Switches</h1>
-        <p className="text-sm text-ink-500 mt-1">
+        <h1 className="font-display text-2xl font-bold text-fg-primary">Feature Kill Switches</h1>
+        <p className="text-sm text-fg-secondary mt-1">
           Platform-wide toggles that override all orgs. When ON, the feature resolves
           per the org's plan + feature-flag chain. When OFF, the feature is globally disabled.
         </p>
@@ -122,40 +122,40 @@ function FeatureFlagsInner({ userId }: { userId: string }): JSX.Element {
         <>
           {featuresByGroup.map(g => (
             <Card key={g.group} className="p-6 mb-5">
-              <div className="text-[10px] font-bold tracking-widest uppercase text-safety-600 mb-1">— {g.label}</div>
+              <div className="text-[10px] font-bold tracking-widest uppercase text-accent mb-1">— {g.label}</div>
               <div className="space-y-2 mt-4">
                 {g.features.map(f => {
                   const eff = getEffective(f.id);
                   const busy = saving === f.id;
                   return (
-                    <div key={f.id} className={`rounded-xl border transition ${eff.enabled ? "border-stone-200 bg-white" : "border-rose-200 bg-rose-50/40"}`}>
+                    <div key={f.id} className={`rounded-xl border transition ${eff.enabled ? "border-default bg-bg-primary" : "border-error bg-error-tint"}`}>
                       <div className="p-3 flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm text-ink-900">{f.label}</span>
-                            <span className="text-[10px] text-ink-400 bg-cream-100 px-1.5 py-0.5 rounded">{f.plan}</span>
+                            <span className="font-semibold text-sm text-fg-primary">{f.label}</span>
+                            <span className="text-[10px] text-fg-tertiary bg-bg-secondary px-1.5 py-0.5 rounded">{f.plan}</span>
                           </div>
-                          <div className="text-xs text-ink-400 mt-0.5">{f.desc}</div>
+                          <div className="text-xs text-fg-tertiary mt-0.5">{f.desc}</div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
                           {busy && <Spinner size={14} />}
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" className="sr-only peer" checked={eff.enabled} disabled={busy} onChange={() => toggle(f.id, eff.enabled)} />
-                            <div className="w-9 h-5 bg-stone-300 peer-checked:bg-safety-500 rounded-full peer after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+                            <div className="w-9 h-5 bg-bg-secondary peer-checked:bg-accent rounded-full peer after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                           </label>
                         </div>
                       </div>
                       <div className="px-3 pb-3 flex flex-wrap items-center gap-4">
-                        <label className="flex items-center gap-2 text-[11px] text-ink-400">
+                        <label className="flex items-center gap-2 text-[11px] text-fg-tertiary">
                           Rollout:
                           <input
                             type="range" min={0} max={100}
                             value={eff.rollout}
                             disabled={busy}
                             onChange={e => updateField(f.id, "rollout", Number(e.target.value))}
-                            className="w-24 accent-safety-500"
+                            className="w-24 accent-[var(--st-accent)]"
                           />
-                          <span className="text-xs font-mono text-ink-600 w-8 text-right">{eff.rollout}%</span>
+                          <span className="text-xs font-mono text-fg-secondary w-8 text-right">{eff.rollout}%</span>
                         </label>
                         <input
                           type="text"
@@ -163,7 +163,7 @@ function FeatureFlagsInner({ userId }: { userId: string }): JSX.Element {
                           value={eff.note ?? ""}
                           disabled={busy}
                           onChange={e => updateField(f.id, "note", e.target.value || null)}
-                          className="flex-1 min-w-[160px] text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white text-ink-700 placeholder:text-ink-300 focus:outline-none focus:border-safety-400"
+                          className="flex-1 min-w-[160px] text-xs border border-default rounded-lg px-2 py-1 bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:border-accent"
                         />
                       </div>
                     </div>
@@ -173,9 +173,9 @@ function FeatureFlagsInner({ userId }: { userId: string }): JSX.Element {
             </Card>
           ))}
 
-          <div className="text-xs text-ink-400 mt-4">
+          <div className="text-xs text-fg-tertiary mt-4">
             {allFeatures.length} features · {killedCount} killed
-            {killedCount > 0 && <span className="ml-2 text-rose-500">· {Math.round(killedCount / allFeatures.length * 100)}% of features disabled</span>}
+            {killedCount > 0 && <span className="ml-2 text-error">· {Math.round(killedCount / allFeatures.length * 100)}% of features disabled</span>}
           </div>
         </>
       )}

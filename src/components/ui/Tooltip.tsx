@@ -18,10 +18,10 @@ const POSITION: Record<TooltipPosition, string> = {
 };
 
 const ARROW: Record<TooltipPosition, string> = {
-  top: "top-full left-1/2 -translate-x-1/2 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-ink-900",
-  bottom: "bottom-full left-1/2 -translate-x-1/2 border-l-[5px] border-r-[5px] border-b-[5px] border-transparent border-b-ink-900",
-  left: "left-full top-1/2 -translate-y-1/2 border-t-[5px] border-b-[5px] border-l-[5px] border-transparent border-l-ink-900",
-  right: "right-full top-1/2 -translate-y-1/2 border-t-[5px] border-b-[5px] border-r-[5px] border-transparent border-r-ink-900",
+  top: "top-full left-1/2 -translate-x-1/2 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-[var(--st-ink)]",
+  bottom: "bottom-full left-1/2 -translate-x-1/2 border-l-[5px] border-r-[5px] border-b-[5px] border-transparent border-b-[var(--st-ink)]",
+  left: "left-full top-1/2 -translate-y-1/2 border-t-[5px] border-b-[5px] border-l-[5px] border-transparent border-l-[var(--st-ink)]",
+  right: "right-full top-1/2 -translate-y-1/2 border-t-[5px] border-b-[5px] border-r-[5px] border-transparent border-r-[var(--st-ink)]",
 };
 
 export function Tooltip({ content, children, position = "top", className }: TooltipProps): JSX.Element {
@@ -33,7 +33,7 @@ export function Tooltip({ content, children, position = "top", className }: Tool
         POSITION[position],
         className,
       )}>
-        <div className="bg-ink-900 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg whitespace-nowrap">
+        <div className="bg-ink text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg whitespace-nowrap">
           {content}
         </div>
         <div className={cn("absolute", ARROW[position])} />

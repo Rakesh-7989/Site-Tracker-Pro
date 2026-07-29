@@ -12,9 +12,9 @@ import { Link } from "react-router-dom";
 
 import { getClient } from "@/lib/supabase";
 const bg: Record<string, string> = {
-  danger: "bg-red-600 text-white",
-  warning: "bg-amber-500 text-white",
-  info: "bg-blue-600 text-white",
+  danger: "bg-error text-white",
+  warning: "bg-accent text-white",
+  info: "bg-info text-white",
 };
 
 export function SubscriptionBanner(): JSX.Element | null {
@@ -47,7 +47,7 @@ export function SubscriptionBanner(): JSX.Element | null {
   );
 
   return (
-    <div className={`flex items-center justify-between gap-3 px-4 py-1.5 text-[13px] font-medium ${bg[alert.severity] ?? "bg-ink-600 text-white"}`}>
+    <div className={`flex items-center justify-between gap-3 px-4 py-1.5 text-[13px] font-medium ${bg[alert.severity] ?? "bg-ink text-white"}`}>
       <div className="flex items-center gap-2 min-w-0">
         <Icon name="alert" size={14} className="shrink-0" />
         <span className="truncate">{alert.message}</span>

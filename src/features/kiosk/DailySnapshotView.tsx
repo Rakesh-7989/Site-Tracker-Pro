@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Daily Snapshot (/kiosk/snapshot).
+// SiteTrack Pro � Daily Snapshot (/kiosk/snapshot).
 // Single-page project status summary with export and action buttons.
 
 import { useCallback, useEffect, useState } from "react";
@@ -71,34 +71,34 @@ function DailySnapshotInner(): JSX.Element {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-black text-ink-900">Daily Snapshot</h1>
+        <h1 className="text-2xl font-black text-fg-primary">Daily Snapshot</h1>
         <div className="flex items-center gap-3">
           <Button size="sm" variant="secondary" onClick={exportCSV}>Export CSV</Button>
-          <select value={selProject} onChange={e => setSelProject(e.target.value)} className="border border-stone-300 rounded-xl px-3 py-2 text-sm">
+          <select value={selProject} onChange={e => setSelProject(e.target.value)} className="border border-default rounded-xl px-3 py-2 text-sm">
             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-200">
-          <div className="text-xs font-bold tracking-wider text-emerald-600 uppercase mb-1">Labour today</div>
-          <div className="text-4xl font-light text-emerald-800">{snap.labour}</div>
+        <div className="bg-success-tint rounded-2xl p-6 border border-success">
+          <div className="text-xs font-bold tracking-wider text-success uppercase mb-1">Labour today</div>
+          <div className="text-4xl font-light text-success">{snap.labour}</div>
         </div>
-        <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
-          <div className="text-xs font-bold tracking-wider text-blue-600 uppercase mb-1">Updates today</div>
-          <div className="text-4xl font-light text-blue-800">{snap.updates}</div>
+        <div className="bg-info-tint rounded-2xl p-6 border border-info">
+          <div className="text-xs font-bold tracking-wider text-info uppercase mb-1">Updates today</div>
+          <div className="text-4xl font-light text-info">{snap.updates}</div>
         </div>
-        <div className="bg-red-50 rounded-2xl p-6 border border-red-200">
-          <div className="text-xs font-bold tracking-wider text-red-600 uppercase mb-1">Open issues</div>
-          <div className="text-4xl font-light text-red-800">{snap.issues}</div>
+        <div className="bg-error-tint rounded-2xl p-6 border border-error">
+          <div className="text-xs font-bold tracking-wider text-error uppercase mb-1">Open issues</div>
+          <div className="text-4xl font-light text-error">{snap.issues}</div>
         </div>
-        <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
-          <div className="text-xs font-bold tracking-wider text-amber-600 uppercase mb-1">RA bills</div>
-          <div className="text-4xl font-light text-amber-800">{snap.raBills}</div>
+        <div className="bg-warning-tint rounded-2xl p-6 border border-warning">
+          <div className="text-xs font-bold tracking-wider text-warning uppercase mb-1">RA bills</div>
+          <div className="text-4xl font-light text-warning">{snap.raBills}</div>
         </div>
       </div>
-      <div className="bg-cream-200 rounded-2xl p-4 border-l-4 border-cream-500 text-sm text-ink-700">
-        <strong>Snapshot summary</strong> for <strong>{projects.find(p => p.id === selProject)?.name ?? "—"}</strong> — fetched in real time from the project's labour register, updates, issues, and RA bills. CSV export downloads instantly.
+      <div className="bg-secondary rounded-2xl p-4 border-l-4 border-default text-sm text-fg-primary">
+        <strong>Snapshot summary</strong> for <strong>{projects.find(p => p.id === selProject)?.name ?? "�"}</strong> � fetched in real time from the project's labour register, updates, issues, and RA bills. CSV export downloads instantly.
       </div>
     </div>
   );

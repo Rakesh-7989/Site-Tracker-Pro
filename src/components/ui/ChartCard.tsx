@@ -32,8 +32,8 @@ export function ChartCard({
     <Card className={cn("p-4 md:p-5", className)}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
-          <div className="text-xs font-semibold tracking-[0.14em] uppercase text-ink-400">{title}</div>
-          {subtitle && <div className="text-[11px] text-ink-500 mt-0.5">{subtitle}</div>}
+          <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary">{title}</div>
+          {subtitle && <div className="text-[11px] text-fg-secondary mt-0.5">{subtitle}</div>}
         </div>
         {action && <div className="flex-shrink-0">{action}</div>}
       </div>
@@ -46,14 +46,14 @@ export function ChartCard({
 
       {!loading && error && (
         <div className="flex flex-col items-center justify-center gap-2" style={{ height }}>
-          <Icon name="alert" size={20} className="text-rose-500" />
-          <span className="text-xs text-ink-500">{error}</span>
+          <Icon name="alert" size={20} className="text-error" />
+          <span className="text-xs text-fg-secondary">{error}</span>
         </div>
       )}
 
       {!loading && !error && empty && (
         <div className="flex items-center justify-center" style={{ height }}>
-          <span className="text-sm text-ink-400">{emptyMessage}</span>
+          <span className="text-sm text-fg-tertiary">{emptyMessage}</span>
         </div>
       )}
 

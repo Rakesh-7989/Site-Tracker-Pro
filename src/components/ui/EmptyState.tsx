@@ -13,11 +13,11 @@ export interface EmptyStateProps {
 export function EmptyState({ icon = "inbox", title = "Nothing here yet", message, action, className }: EmptyStateProps): JSX.Element {
   return (
     <div className={cn("flex flex-col items-center justify-center py-16 text-center", className)}>
-      <div className="w-14 h-14 bg-cream-200 rounded-full flex items-center justify-center mb-4">
-        <Icon name={icon} size={24} className="text-ink-400" />
+      <div className="w-14 h-14 bg-elevated rounded-full flex items-center justify-center mb-4">
+        <Icon name={icon} size={24} className="text-fg-tertiary" />
       </div>
-      <h3 className="font-display font-semibold text-ink-800 mb-1">{title}</h3>
-      {message && <p className="text-sm text-ink-500 max-w-xs mb-4">{message}</p>}
+      <h3 className="font-display font-semibold text-fg-primary mb-1">{title}</h3>
+      {message && <p className="text-sm text-fg-secondary max-w-xs mb-4">{message}</p>}
       {action && <div>{action}</div>}
     </div>
   );

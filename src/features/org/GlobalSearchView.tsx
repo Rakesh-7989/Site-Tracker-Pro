@@ -44,10 +44,10 @@ export function GlobalSearchView(): JSX.Element {
       const m = KIND_META[h.kind];
       return (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-cream-100 text-ink-500 grid place-items-center flex-shrink-0"><Icon name={m.icon} size={16} /></div>
+          <div className="w-8 h-8 rounded-lg bg-secondary text-fg-secondary grid place-items-center flex-shrink-0"><Icon name={m.icon} size={16} /></div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-ink-800 truncate">{h.label}</div>
-            {h.sublabel && <div className="text-[11px] text-ink-400 truncate">{h.sublabel}</div>}
+            <div className="text-sm font-semibold text-fg-primary truncate">{h.label}</div>
+            {h.sublabel && <div className="text-[11px] text-fg-tertiary truncate">{h.sublabel}</div>}
           </div>
           <Badge tone={m.tone}>{m.label}</Badge>
         </div>
@@ -56,17 +56,17 @@ export function GlobalSearchView(): JSX.Element {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Search</h1>
+    <div className="max-w-2xl mx-auto space-y-4 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Search</h1>
       <div className="relative">
-        <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+        <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary" />
         <Input autoFocus className="pl-9" placeholder="Search projects, vendors, milestones, tasks\u2026" value={q}
           onChange={e => { setQ(e.target.value); setParams(e.target.value.trim() ? { q: e.target.value } : {}, { replace: true }); }} />
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
-      {q.trim().length < 2 ? <div className="text-sm text-ink-400">Type at least 2 characters.</div>
+      {q.trim().length < 2 ? <div className="text-sm text-fg-tertiary">Type at least 2 characters.</div>
         : loading ? <div className="grid place-items-center py-8"><Spinner size={22} /></div>
-        : hits.length === 0 && searched ? <div className="text-sm text-ink-400 text-center py-8">No matches for &ldquo;{q.trim()}&rdquo;.</div>
+        : hits.length === 0 && searched ? <div className="text-sm text-fg-tertiary text-center py-8">No matches for &ldquo;{q.trim()}&rdquo;.</div>
         : <DataTable
             columns={columns}
             rows={hits}

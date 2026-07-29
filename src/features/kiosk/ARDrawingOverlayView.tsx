@@ -61,46 +61,46 @@ function ARDrawingOverlayInner(): JSX.Element {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="grid place-items-center p-12 min-h-screen bg-ink-900"><Spinner size={24} /></div>;
+  if (loading) return <div className="grid place-items-center p-12 min-h-screen bg-ink"><Spinner size={24} /></div>;
 
   const drawing = drawings.find(d => d.id === selectedDrawing);
 
   return (
-    <div className="min-h-screen bg-ink-900 text-cream p-6 md:p-10">
+    <div className="min-h-screen bg-ink text-cream p-6 md:p-10">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-light tracking-tight">Drawing Comparison</h1>
-        <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-4 py-2 bg-ink-700 border border-amber-600/30 text-cream rounded-xl text-sm outline-none focus:border-amber-500">
+        <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-4 py-2 bg-ink border border-accent/30 text-cream rounded-xl text-sm outline-none focus:border-accent">
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
 
       {drawings.length === 0 ? (
-        <div className="bg-ink-700/40 rounded-3xl p-8 border border-amber-600/25 text-center">
+        <div className="bg-ink/40 rounded-3xl p-8 border border-accent/25 text-center">
           <div className="text-4xl mb-3 opacity-30">&#9670;</div>
           <p className="text-cream/50 text-sm">No released drawings for this project yet.</p>
         </div>
       ) : (
         <>
           <div className="flex items-center gap-4 mb-6 flex-wrap">
-            <select value={selectedDrawing} onChange={e => setSelectedDrawing(e.target.value)} className="px-4 py-2 bg-ink-700 border border-amber-600/30 text-cream rounded-xl text-sm outline-none focus:border-amber-500">
+            <select value={selectedDrawing} onChange={e => setSelectedDrawing(e.target.value)} className="px-4 py-2 bg-ink border border-accent/30 text-cream rounded-xl text-sm outline-none focus:border-accent">
               {drawings.map(d => <option key={d.id} value={d.id}>{d.title} ({d.drawing_type})</option>)}
             </select>
             {drawing?.file_url && <Button size="sm" variant="secondary" onClick={downloadDrawing}>Download</Button>}
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-ink-700/40 rounded-3xl p-6 border border-amber-600/25">
-              <div className="text-[10px] font-bold tracking-widest uppercase text-amber-500 mb-2">Released drawing</div>
-              <div className="bg-ink-900/60 rounded-2xl p-8 border border-ink-600/30 min-h-[300px] flex flex-col items-center justify-center text-cream/40">
+            <div className="bg-ink/40 rounded-3xl p-6 border border-accent/25">
+              <div className="text-[10px] font-bold tracking-widest uppercase text-warning mb-2">Released drawing</div>
+              <div className="bg-ink/60 rounded-2xl p-8 border border-default/30 min-h-[300px] flex flex-col items-center justify-center text-cream/40">
                 <div className="text-5xl mb-3 opacity-30">&#9670;</div>
                 <div className="font-semibold text-cream/70 text-sm">{drawing?.title}</div>
                 <div className="text-xs text-cream/40 mt-1">{drawing?.drawing_type} · Released {drawing?.released_at?.slice(0, 10) ?? "—"}</div>
-                {drawing?.file_url && <div className="mt-3 text-[10px] text-amber-400">File attached — click Download to open</div>}
+                {drawing?.file_url && <div className="mt-3 text-[10px] text-warning">File attached — click Download to open</div>}
               </div>
             </div>
-            <div className="bg-ink-700/40 rounded-3xl p-6 border border-amber-600/25">
-              <div className="text-[10px] font-bold tracking-widest uppercase text-amber-500 mb-2">As-built / current snapshot</div>
-              <div className="bg-ink-900/60 rounded-2xl p-8 border border-ink-600/30 min-h-[300px] flex flex-col items-center justify-center text-cream/40">
+            <div className="bg-ink/40 rounded-3xl p-6 border border-accent/25">
+              <div className="text-[10px] font-bold tracking-widest uppercase text-warning mb-2">As-built / current snapshot</div>
+              <div className="bg-ink/60 rounded-2xl p-8 border border-default/30 min-h-[300px] flex flex-col items-center justify-center text-cream/40">
                 <div className="text-5xl mb-3 opacity-30">&#9670;</div>
                 <div className="font-semibold text-cream/70 text-sm">Current site view</div>
                 <div className="text-xs text-cream/40 mt-1">Matches GPS + compass bearing against released drawing</div>
@@ -108,12 +108,12 @@ function ARDrawingOverlayInner(): JSX.Element {
             </div>
           </div>
 
-          <div className="mt-6 bg-ink-700/40 rounded-3xl p-6 border border-amber-600/25">
-            <div className="text-[10px] font-bold tracking-widest uppercase text-amber-500 mb-2">Comparison notes</div>
+          <div className="mt-6 bg-ink/40 rounded-3xl p-6 border border-accent/25">
+            <div className="text-[10px] font-bold tracking-widest uppercase text-warning mb-2">Comparison notes</div>
             <div className="space-y-2 text-sm text-cream/70">
-              <div className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Drawing alignment checked against project GPS coordinates</span></div>
-              <div className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">⚠</span><span>Any deviations should be annotated in the Updates tab</span></div>
-              <div className="flex items-start gap-2"><span className="text-red-400 mt-0.5">!</span><span>Unresolved differences must be flagged before next inspection</span></div>
+              <div className="flex items-start gap-2"><span className="text-success mt-0.5">✓</span><span>Drawing alignment checked against project GPS coordinates</span></div>
+              <div className="flex items-start gap-2"><span className="text-warning mt-0.5">⚠</span><span>Any deviations should be annotated in the Updates tab</span></div>
+              <div className="flex items-start gap-2"><span className="text-error mt-0.5">!</span><span>Unresolved differences must be flagged before next inspection</span></div>
             </div>
           </div>
         </>

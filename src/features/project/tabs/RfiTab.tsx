@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project RFIs tab (v3 port, Batch 4, DB-wired).
+// SiteTrack Pro � project RFIs tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -52,7 +52,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-ink-900">RFIs</h2>
+      <h2 className="font-display text-lg font-bold text-fg-primary">RFIs</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canAsk && (
         <Card className="p-3 space-y-2">
@@ -64,16 +64,16 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No RFIs.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No RFIs.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 flex items-center gap-2"><Badge tone={tone(r.status)}>{r.status}</Badge>{r.no} · {r.subject}</div>
-                  <div className="text-[12px] text-ink-500 mt-0.5">{r.question}</div>
-                  {r.response && <div className="text-[12px] text-emerald-700 mt-1 pl-2 border-l-2 border-emerald-300">â†³ {r.response}</div>}</div>
+                <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary flex items-center gap-2"><Badge tone={tone(r.status)}>{r.status}</Badge>{r.no} � {r.subject}</div>
+                  <div className="text-[12px] text-fg-secondary mt-0.5">{r.question}</div>
+                  {r.response && <div className="text-[12px] text-success mt-1 pl-2 border-l-2 border-success">↳ {r.response}</div>}</div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {canRespond && r.status !== "answered" && r.status !== "closed" && <Button size="sm" variant="secondary" onClick={() => { setReplyFor(replyFor === r.id ? null : r.id); setReply(""); }}>Reply</Button>}
-                  {canAsk && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRfi(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  {canAsk && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRfi(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
                 </div>
               </div>
               {replyFor === r.id && (

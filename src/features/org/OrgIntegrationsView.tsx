@@ -34,8 +34,8 @@ function ProviderCard({ meta, configured, onSave, onClear, busy }: {
     <Card className="p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-safety-50 text-safety-600 grid place-items-center"><Icon name={meta.icon as IconName} size={18} /></div>
-          <div><div className="font-semibold text-ink-800">{meta.label}</div><div className="text-[11px] text-ink-400">{meta.help}</div></div>
+          <div className="w-9 h-9 rounded-lg bg-accent-tint text-accent grid place-items-center"><Icon name={meta.icon as IconName} size={18} /></div>
+          <div><div className="font-semibold text-fg-primary">{meta.label}</div><div className="text-[11px] text-fg-tertiary">{meta.help}</div></div>
         </div>
         <Badge tone={configured ? "success" : "neutral"}>{configured ? "Connected" : "Not set"}</Badge>
       </div>
@@ -47,7 +47,7 @@ function ProviderCard({ meta, configured, onSave, onClear, busy }: {
       ) : (
         <div className="mt-3 space-y-2">
           {meta.fields.map(([k, label]) => (
-            <label key={k} className="block"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">{label}</span>
+            <label key={k} className="block"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{label}</span>
               <Input className="mt-1" type={SECRET_FIELDS.has(k) ? "password" : "text"} autoComplete="off" value={vals[k] ?? ""} onChange={e => setVals(s => ({ ...s, [k]: e.target.value }))} /></label>
           ))}
           <div className="flex gap-2 justify-end pt-1">
@@ -76,8 +76,8 @@ function Inner({ orgId, userId }: { orgId: string; userId: string }): JSX.Elemen
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Integrations</h1>
-      <p className="text-sm text-ink-500 -mt-2">Connect your own provider accounts. Keys are stored encrypted-at-RLS and never shown again after saving — re-enter to change.</p>
+      <h1 className="font-display text-2xl font-bold text-fg-primary">Integrations</h1>
+      <p className="text-sm text-fg-secondary -mt-2">Connect your own provider accounts. Keys are stored encrypted-at-RLS and never shown again after saving — re-enter to change.</p>
       {error && <Alert variant="danger">{error}</Alert>}
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : <div className="grid sm:grid-cols-2 gap-3">{PROVIDERS.map(p => (

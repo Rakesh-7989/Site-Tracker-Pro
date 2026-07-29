@@ -41,32 +41,32 @@ export function PlatformAuditView(): JSX.Element {
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-black text-ink-900">Audit Log</h1>
-          <p className="text-ink-400 text-sm mt-1">{filtered.length} events</p>
+          <h1 className="text-2xl font-black text-fg-primary">Audit Log</h1>
+          <p className="text-fg-tertiary text-sm mt-1">{filtered.length} events</p>
         </div>
-        <select value={filterType} onChange={e => setFilterType(e.target.value)} className="border border-stone-300 rounded-xl px-3 py-2 text-sm">
+        <select value={filterType} onChange={e => setFilterType(e.target.value)} className="border border-default rounded-xl px-3 py-2 text-sm">
           <option value="all">All types</option>
           {types.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
       </div>
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-stone-100 text-xs font-bold uppercase tracking-wider text-ink-500 border-b border-stone-200">
-            <div className="col-span-2">Time</div>
-            <div className="col-span-2">User</div>
-            <div className="col-span-2">Type</div>
-            <div className="col-span-6">Action</div>
+          <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-secondary text-xs font-bold uppercase tracking-wider text-fg-secondary border-b border-default">
+            <div className="col-span-4 md:col-span-2">Time</div>
+            <div className="hidden md:block md:col-span-2">User</div>
+            <div className="col-span-3 md:col-span-2">Type</div>
+            <div className="col-span-5 md:col-span-6">Action</div>
           </div>
-          <div className="divide-y divide-stone-100 max-h-[60vh] overflow-y-auto">
+          <div className="divide-y divide-default max-h-[60vh] overflow-y-auto">
             {filtered.map(e => (
-              <div key={e.id} className="grid grid-cols-12 gap-3 px-5 py-3 text-sm hover:bg-stone-50">
-                <div className="col-span-2 text-xs text-ink-500 font-mono">{fmtTime(e.time)}</div>
-                <div className="col-span-2 text-xs font-semibold">{e.by}<span className="text-ink-400 font-normal ml-1">· {e.role}</span></div>
-                <div className="col-span-2"><span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-stone-100 text-ink-600">{e.type}</span></div>
-                <div className="col-span-6 text-xs text-ink-700 truncate"><strong>{e.action}</strong>{e.detail ? ` — ${e.detail}` : ""}</div>
+              <div key={e.id} className="grid grid-cols-12 gap-3 px-5 py-3 text-sm hover:bg-secondary">
+                <div className="col-span-4 md:col-span-2 text-xs text-fg-secondary font-mono">{fmtTime(e.time)}</div>
+                <div className="hidden md:block md:col-span-2 text-xs font-semibold">{e.by}<span className="text-fg-tertiary font-normal ml-1">· {e.role}</span></div>
+                <div className="col-span-3 md:col-span-2"><span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-secondary text-fg-secondary">{e.type}</span></div>
+                <div className="col-span-5 md:col-span-6 text-xs text-fg-primary truncate"><strong>{e.action}</strong>{e.detail ? ` — ${e.detail}` : ""}</div>
               </div>
             ))}
-            {filtered.length === 0 && <div className="p-8 text-center text-ink-500 italic">No events.</div>}
+            {filtered.length === 0 && <div className="p-8 text-center text-fg-secondary italic">No events.</div>}
           </div>
         </div>
       </Card>

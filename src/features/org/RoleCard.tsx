@@ -23,13 +23,13 @@ export interface RoleCardProps {
 }
 
 const CATEGORY_ACCENT: Record<string, string> = {
-  "org-leadership": "border-l-4 border-l-safety-500",
-  "project-execution": "border-l-4 border-l-blue-500",
+  "org-leadership": "border-l-4 border-l-accent",
+  "project-execution": "border-l-4 border-l-info",
   "design-discipline": "border-l-4 border-l-violet-500",
   "engineering-discipline": "border-l-4 border-l-cyan-600",
-  "field-supervision": "border-l-4 border-l-amber-500",
-  "supply-chain": "border-l-4 border-l-emerald-500",
-  "external": "border-l-4 border-l-ink-400",
+  "field-supervision": "border-l-4 border-l-accent",
+  "supply-chain": "border-l-4 border-l-success",
+  "external": "border-l-4 border-l-fg-tertiary",
 };
 
 export function RoleCard({
@@ -43,14 +43,14 @@ export function RoleCard({
   onReactivate,
   onManageCustomRoles,
 }: RoleCardProps): JSX.Element {
-  const accent = CATEGORY_ACCENT[category] ?? "border-l-4 border-l-ink-200";
+  const accent = CATEGORY_ACCENT[category] ?? "border-l-4 border-l-fg-tertiary";
 
   return (
     <Card className={cn("p-4 flex flex-col gap-3", accent)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="font-semibold text-ink-900 text-sm">{label}</div>
-          <div className="text-[10px] text-ink-400 tracking-wide uppercase">{occupants.length} occupant{occupants.length !== 1 ? "s" : ""}</div>
+          <div className="font-semibold text-fg-primary text-sm">{label}</div>
+          <div className="text-[10px] text-fg-tertiary tracking-wide uppercase">{occupants.length} occupant{occupants.length !== 1 ? "s" : ""}</div>
         </div>
         {occupants.length === 0 ? (
           <Button size="sm" variant="secondary" onClick={() => onAssign(identityRole)}>
@@ -59,7 +59,7 @@ export function RoleCard({
         ) : (
           <DropdownMenu
             trigger={
-              <button className="p-1 rounded-lg hover:bg-cream-200 text-ink-400 hover:text-ink-700 transition">
+              <button className="p-1 rounded-lg hover:bg-elevated text-fg-tertiary hover:text-fg-primary transition">
                 <Icon name="menu" size={16} />
               </button>
             }
@@ -81,24 +81,24 @@ export function RoleCard({
       </div>
 
       {occupants.length === 0 ? (
-        <div className="flex items-center gap-2 text-ink-400 text-sm py-2">
+        <div className="flex items-center gap-2 text-fg-tertiary text-sm py-2">
           <Icon name="user" size={16} />
-          <span className="text-ink-300">Vacant</span>
+          <span className="text-fg-tertiary">Vacant</span>
         </div>
       ) : (
         <div className="space-y-1.5 max-h-32 overflow-y-auto">
           {occupants.map(o => (
             <div key={o.profileId} className={cn(
               "flex items-center gap-2 px-2 py-1.5 rounded-lg",
-              "hover:bg-cream-100 transition cursor-pointer group",
+              "hover:bg-secondary transition cursor-pointer group",
               !o.active && "opacity-50",
             )}>
-              <div className="w-7 h-7 rounded-full bg-cream-200 flex items-center justify-center text-[11px] font-semibold text-ink-600 flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[11px] font-semibold text-fg-secondary flex-shrink-0">
                 {o.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-ink-800 truncate">{o.name}</div>
-                {o.isAdmin && <div className="text-[10px] text-ink-400">Org admin</div>}
+                <div className="text-sm font-medium text-fg-primary truncate">{o.name}</div>
+                {o.isAdmin && <div className="text-[10px] text-fg-tertiary">Org admin</div>}
               </div>
               {o.customRoles.length > 0 && (
                 <Badge tone="neutral" className="flex-shrink-0">

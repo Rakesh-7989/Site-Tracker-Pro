@@ -141,10 +141,10 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
 
   if (projects.length === 0) return (
     <div className="p-10">
-      <div className="bg-white rounded-2xl p-12 text-center" style={{ border: "1px dashed var(--st-line)" }}>
-        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-50 flex items-center justify-center"><Icon name="folder" size={24} className="text-amber-700" /></div>
-        <div className="font-display text-xl font-semibold text-ink-900 tracking-editorial mb-2">No projects to organise yet</div>
-        <p className="text-ink-500 text-sm max-w-md mx-auto leading-relaxed mb-5">Create a project first, then come back here to add blocks, floors and units. Useful for high-rises, townships and gated communities.</p>
+      <div className="bg-panel rounded-2xl p-12 text-center" style={{ border: "1px dashed var(--st-line)" }}>
+        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-warning-tint flex items-center justify-center"><Icon name="folder" size={24} className="text-warning" /></div>
+        <div className="font-display text-xl font-semibold text-fg-primary tracking-editorial mb-2">No projects to organise yet</div>
+        <p className="text-fg-secondary text-sm max-w-md mx-auto leading-relaxed mb-5">Create a project first, then come back here to add blocks, floors and units. Useful for high-rises, townships and gated communities.</p>
         {canCreate && <button onClick={() => nav("/projects/new")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Icon name="plus" size={14} />Create your first project</button>}
       </div>
     </div>
@@ -152,59 +152,59 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
 
   return (
     <div className="p-4 md:p-10 max-w-7xl">
-      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b-st-line">
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b border-default">
         <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Structure</div>
-          <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Project Hierarchy</h1>
-          <p className="text-ink-500 text-sm mt-2">Block → Floor → Unit — useful for residential towers, townships, gated communities.</p>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-warning mb-2">— Structure</div>
+          <h1 className="font-display text-2xl md:text-4xl font-light text-fg-primary tracking-editorial leading-none">Project Hierarchy</h1>
+          <p className="text-fg-secondary text-sm mt-2">Block → Floor → Unit — useful for residential towers, townships, gated communities.</p>
         </div>
-        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm font-semibold outline-none focus:border-amber-600">
+        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-panel border border-default rounded-xl text-sm font-semibold outline-none focus:border-accent">
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
       {proj && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Project progress</div><div className="font-display text-2xl font-bold text-ink-900">{progress.project}%</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Blocks</div><div className="font-display text-2xl font-bold text-ink-900">{counts.blocks}</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Floors</div><div className="font-display text-2xl font-bold text-ink-900">{counts.floors}</div></div>
-        <div className="bg-white rounded-2xl p-4 shadow-editorial border-st-line"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 mb-1">Units</div><div className="font-display text-2xl font-bold text-ink-900">{counts.units}</div></div>
+        <div className="bg-panel rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Project progress</div><div className="font-display text-2xl font-bold text-fg-primary">{progress.project}%</div></div>
+        <div className="bg-panel rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Blocks</div><div className="font-display text-2xl font-bold text-fg-primary">{counts.blocks}</div></div>
+        <div className="bg-panel rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Floors</div><div className="font-display text-2xl font-bold text-fg-primary">{counts.floors}</div></div>
+        <div className="bg-panel rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Units</div><div className="font-display text-2xl font-bold text-fg-primary">{counts.units}</div></div>
       </div>}
-      <div className="bg-white rounded-2xl p-6 shadow-editorial border-st-line">
+      <div className="bg-panel rounded-2xl p-6 shadow-editorial border-default">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-semibold text-ink-900 tracking-editorial">{proj?.name || "—"} structure</h2>
+          <h2 className="font-display text-lg md:text-xl font-semibold text-fg-primary tracking-editorial">{proj?.name || "—"} structure</h2>
           {canCreate && <button onClick={addBlock} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-xs tracking-wide"><Icon name="plus" size={12} />Add block</button>}
         </div>
-        {tree.length === 0 && <div className="text-center py-10 text-ink-500"><Icon name="building" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No blocks yet. Add the first one to start.</p></div>}
+        {tree.length === 0 && <div className="text-center py-10 text-fg-secondary"><Icon name="building" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No blocks yet. Add the first one to start.</p></div>}
         <div className="space-y-2">
           {tree.map((b: any) => {
             const bExp = expanded[b.id] !== false;
-            return (<div key={b.id} className="rounded-xl border-st-line">
-              <div className="flex items-center gap-3 p-3 bg-cream-200/40">
-                <button onClick={() => toggleNode(b.id)} className="text-ink-500 w-5 text-center">{bExp ? "â–¾" : "â–¸"}</button>
+            return (<div key={b.id} className="rounded-xl border-default">
+              <div className="flex items-center gap-3 p-3 bg-secondary/40">
+                <button onClick={() => toggleNode(b.id)} className="text-fg-secondary w-5 text-center">{bExp ? "â–¾" : "â–¸"}</button>
                 <div className="flex-1">
-                  <div className="font-display font-semibold text-ink-900 tracking-editorial">{b.name} <span className="text-[10px] font-mono text-amber-700 ml-1">{b.code}</span></div>
-                  <div className="text-[11px] text-ink-500">{(floors[b.id] || []).length} floors · {(progress.blocks as Record<string, number>)[b.id] || 0}% complete</div>
+                  <div className="font-display font-semibold text-fg-primary tracking-editorial">{b.name} <span className="text-[10px] font-mono text-warning ml-1">{b.code}</span></div>
+                  <div className="text-[11px] text-fg-secondary">{(floors[b.id] || []).length} floors · {(progress.blocks as Record<string, number>)[b.id] || 0}% complete</div>
                 </div>
                 {canCreate && <>
-                  <button onClick={() => addFloor(b.id)} className="text-[11px] font-bold text-amber-700 hover:text-amber-900">+ Floor</button>
-                  <button onClick={() => del("block", b.id)} className="text-ink-400 hover:text-red-500"><Icon name="trash" size={14} /></button>
+                  <button onClick={() => addFloor(b.id)} className="text-[11px] font-bold text-warning hover:text-warning">+ Floor</button>
+                  <button onClick={() => del("block", b.id)} className="text-fg-tertiary hover:text-error"><Icon name="trash" size={14} /></button>
                 </>}
               </div>
               {bExp && <div className="px-3 pb-3 space-y-1">{(b.floors || []).map((f: any) => {
                 const fExp = expanded[f.id] !== false;
-                return (<div key={f.id} className="ml-6 rounded-lg border-st-line">
-                  <div className="flex items-center gap-3 p-2 bg-white">
-                    <button onClick={() => toggleNode(f.id)} className="text-ink-500 w-5 text-center">{fExp ? "â–¾" : "â–¸"}</button>
-                    <div className="flex-1"><div className="text-sm font-semibold text-ink-800">Floor {f.number}</div><div className="text-[10px] text-ink-500">{(units[f.id] || []).length} units · {(progress.floors as Record<string, number>)[f.id] || 0}% complete</div></div>
+                return (<div key={f.id} className="ml-6 rounded-lg border-default">
+                  <div className="flex items-center gap-3 p-2 bg-panel">
+                    <button onClick={() => toggleNode(f.id)} className="text-fg-secondary w-5 text-center">{fExp ? "â–¾" : "â–¸"}</button>
+                    <div className="flex-1"><div className="text-sm font-semibold text-fg-primary">Floor {f.number}</div><div className="text-[10px] text-fg-secondary">{(units[f.id] || []).length} units · {(progress.floors as Record<string, number>)[f.id] || 0}% complete</div></div>
                     {canCreate && <>
-                      <button onClick={() => addUnit(f.id, b.id)} className="text-[10px] font-bold text-amber-700 hover:text-amber-900">+ Unit</button>
-                      <button onClick={() => del("floor", f.id)} className="text-ink-400 hover:text-red-500"><Icon name="trash" size={12} /></button>
+                      <button onClick={() => addUnit(f.id, b.id)} className="text-[10px] font-bold text-warning hover:text-warning">+ Unit</button>
+                      <button onClick={() => del("floor", f.id)} className="text-fg-tertiary hover:text-error"><Icon name="trash" size={12} /></button>
                     </>}
                   </div>
-                  {fExp && (f.units || []).length > 0 && <div className="px-2 pb-2"><div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-1">{(f.units || []).map((u: any) => (<div key={u.id} className="rounded-md px-2 py-1.5 bg-cream-200/40 flex items-center justify-between border-st-line">
-                    <div className="min-w-0"><div className="text-[11px] font-bold text-ink-800 truncate">{unitCode(u, f, b)}</div><div className="text-[9px] text-ink-500 truncate">{u.type}</div></div>
+                  {fExp && (f.units || []).length > 0 && <div className="px-2 pb-2"><div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-1">{(f.units || []).map((u: any) => (<div key={u.id} className="rounded-md px-2 py-1.5 bg-secondary/40 flex items-center justify-between border-default">
+                    <div className="min-w-0"><div className="text-[11px] font-bold text-fg-primary truncate">{unitCode(u, f, b)}</div><div className="text-[9px] text-fg-secondary truncate">{u.type}</div></div>
                     <div className="flex items-center gap-1">
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${u.progress >= 100 ? "bg-emerald-50 text-emerald-700" : u.progress >= 50 ? "bg-amber-50 text-amber-700" : "bg-stone-100 text-ink-600"}`}>{u.progress}%</span>
-                      {canCreate && <button onClick={() => del("unit", u.id)} className="text-ink-300 hover:text-red-500"><Icon name="x" size={11} /></button>}
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${u.progress >= 100 ? "bg-success-tint text-success" : u.progress >= 50 ? "bg-warning-tint text-warning" : "bg-secondary text-fg-secondary"}`}>{u.progress}%</span>
+                      {canCreate && <button onClick={() => del("unit", u.id)} className="text-fg-tertiary hover:text-error"><Icon name="x" size={11} /></button>}
                     </div>
                   </div>))}</div></div>}
                 </div>);

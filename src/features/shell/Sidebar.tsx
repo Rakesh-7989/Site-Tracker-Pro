@@ -52,20 +52,20 @@ export function Sidebar({ mobileOpen, onClose, sidebarRef }: { mobileOpen: boole
   return (
     <>
       {/* Backdrop overlay   fades in/out on mobile */}
-      <div className={`fixed inset-0 z-30 bg-ink-900/60 backdrop-blur-sm lg:hidden transition-opacity duration-200 ease-in-out ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={onClose} />
+      <div className={`fixed inset-0 z-30 bg-ink/60 backdrop-blur-sm lg:hidden transition-opacity duration-200 ease-in-out ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={onClose} />
 
       {/* Sidebar: persistent on desktop (lg:), slide-in drawer on mobile */}
       <nav ref={sidebarRef as React.LegacyRef<HTMLElement>} className={`
-        w-56 shrink-0 border-r border-cream-200 bg-white overflow-y-auto
+        w-56 shrink-0 border-r border-default bg-panel overflow-y-auto
         fixed lg:relative z-40 inset-y-0 left-0
         transform transition-transform duration-200 ease-in-out
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0 lg:block
       `}>
         {/* Close button — mobile only */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-3 py-2 border-b border-cream-200 lg:hidden">
-          <span className="text-xs font-semibold tracking-wider uppercase text-ink-400">Menu</span>
-          <button onClick={onClose} className="p-1 rounded-lg text-ink-500 hover:bg-cream-100 transition" aria-label="Close navigation menu">
+        <div className="sticky top-0 bg-panel z-10 flex items-center justify-between px-3 py-2 border-b border-default lg:hidden">
+          <span className="text-xs font-semibold tracking-wider uppercase text-fg-tertiary">Menu</span>
+          <button onClick={onClose} className="p-1 rounded-lg text-fg-secondary hover:bg-secondary transition" aria-label="Close navigation menu">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -74,7 +74,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarRef }: { mobileOpen: boole
           {groups.map(({ group, items }) => (
             <div key={group}>
               {group && (
-                <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">
+                <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-tertiary">
                   {t(`navGroup.${group}`)}
                 </div>
               )}
@@ -88,18 +88,18 @@ export function Sidebar({ mobileOpen, onClose, sidebarRef }: { mobileOpen: boole
                     className={({ isActive }) =>
                       `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition ${
                         isActive
-                          ? "bg-safety-50 text-safety-700 font-semibold"
-                          : "text-ink-600 hover:bg-cream-100"
+                          ? "bg-accent-tint text-accent-2 font-semibold"
+                          : "text-fg-secondary hover:bg-secondary"
                       }`
                     }
                   >
                     <Icon name={item.icon} size={16} />
                     <span className="flex-1">{NAV_KEY[item.to] ? t(NAV_KEY[item.to]) : item.label}</span>
                     {item.to === "/admin/signups" && pending > 0 && (
-                      <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pending}</span>
+                      <span className="ml-auto text-[10px] font-bold bg-accent text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pending}</span>
                     )}
                     {item.to === "/notifications" && unread > 0 && (
-                      <span className="ml-auto text-[10px] font-bold bg-safety-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unread}</span>
+                      <span className="ml-auto text-[10px] font-bold bg-accent text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unread}</span>
                     )}
                   </NavLink>
                 ))}

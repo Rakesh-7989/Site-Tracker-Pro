@@ -31,8 +31,8 @@ export function CreateProjectView(): JSX.Element {
   if (!canCreate) {
     return (
       <Card className="max-w-lg mx-auto p-8 text-center">
-        <Icon name="lock" size={24} className="mx-auto text-ink-400 mb-2" />
-        <div className="text-sm text-ink-600">You don't have permission to create projects in this organization.</div>
+        <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
+        <div className="text-sm text-fg-secondary">You don't have permission to create projects in this organization.</div>
       </Card>
     );
   }
@@ -58,42 +58,42 @@ export function CreateProjectView(): JSX.Element {
   };
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="font-display text-xl font-bold text-ink-900 mb-4">New Project</h1>
+    <div className="max-w-lg mx-auto p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary mb-4">New Project</h1>
       <Card className="p-6">
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label htmlFor="pname" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-500 block mb-1.5">Project name</label>
+            <label htmlFor="pname" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Project name</label>
             <input
               id="pname" value={name} onChange={e => setName(e.target.value)}
               placeholder="e.g. Vasavi Vista Phase 2"
-              className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+              className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
             />
           </div>
 
           <div>
-            <label htmlFor="ptype" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-500 block mb-1.5">Project type</label>
+            <label htmlFor="ptype" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Project type</label>
             <select
               id="ptype" value={type} onChange={e => setType(e.target.value as ProjectType)}
-              className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+              className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
             >
               {PROJECT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
             </select>
           </div>
 
           <div>
-            <label htmlFor="ploc" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-500 block mb-1.5">Location <span className="text-ink-400 normal-case tracking-normal">(optional)</span></label>
+            <label htmlFor="ploc" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Location <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
             <input
               id="ploc" value={location} onChange={e => setLocation(e.target.value)}
               placeholder="Banjara Hills, Hyderabad"
-              className="w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+              className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
             />
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3">
-              <Icon name="alert" size={16} className="text-rose-600 mt-0.5" />
-              <span className="text-xs text-rose-700">{error}</span>
+            <div className="flex items-start gap-2 rounded-lg bg-error-tint border border-error p-3">
+              <Icon name="alert" size={16} className="text-error mt-0.5" />
+              <span className="text-xs text-error">{error}</span>
             </div>
           )}
 

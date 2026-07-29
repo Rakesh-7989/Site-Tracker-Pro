@@ -9,14 +9,14 @@ import { Card, Icon } from "@/components/ui/atoms";
 
 export function PlaceholderView({ title, phase }: { title: string; phase: string }): JSX.Element {
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="font-display text-xl font-bold text-ink-900 mb-4">{title}</h1>
+    <div className="max-w-3xl mx-auto p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary mb-4">{title}</h1>
       <Card className="p-10 text-center">
-        <div className="w-12 h-12 rounded-xl bg-cream-100 text-ink-400 grid place-items-center mx-auto mb-3">
+        <div className="w-12 h-12 rounded-xl bg-secondary text-fg-tertiary grid place-items-center mx-auto mb-3">
           <Icon name="clipboard" size={22} />
         </div>
-        <div className="text-sm font-semibold text-ink-700">Coming in {phase}</div>
-        <div className="text-xs text-ink-500 mt-1 max-w-sm mx-auto">
+        <div className="text-sm font-semibold text-fg-primary">Coming in {phase}</div>
+        <div className="text-xs text-fg-secondary mt-1 max-w-sm mx-auto">
           This surface is part of the v3 TypeScript rebuild. The shell + auth
           layer are live; this view is rebuilt in {phase}.
         </div>
@@ -27,11 +27,11 @@ export function PlaceholderView({ title, phase }: { title: string; phase: string
 
 export function NotFoundView(): JSX.Element {
   return (
-    <div className="max-w-3xl mx-auto">
-      <Card className="p-10 text-center">
-        <div className="text-4xl font-display font-bold text-ink-300">404</div>
-        <div className="text-sm text-ink-500 mt-2">That page doesn't exist in the v3 shell.</div>
-        <a href="/dashboard?shell=v3" className="inline-block mt-4 text-sm font-semibold text-safety-600 hover:text-safety-700">
+    <div className="max-w-3xl mx-auto p-4 md:p-6">
+      <Card className="p-4 md:p-10 text-center">
+        <div className="text-4xl font-display font-bold text-fg-tertiary">404</div>
+        <div className="text-sm text-fg-secondary mt-2">That page doesn't exist in the v3 shell.</div>
+        <a href="/dashboard?shell=v3" className="inline-block mt-4 text-sm font-semibold text-accent hover:text-accent-2">
           ← Back to dashboard
         </a>
       </Card>

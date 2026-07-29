@@ -75,15 +75,15 @@ export function MessagesView(): JSX.Element {
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-black text-ink-900 flex items-center gap-2">
-            <Icon name="msgcircle" size={22} className="text-safety-500" />Messages
+          <h1 className="text-2xl font-black text-fg-primary flex items-center gap-2">
+            <Icon name="msgcircle" size={22} className="text-accent" />Messages
           </h1>
-          <p className="text-ink-400 text-sm mt-1">Project chat</p>
+          <p className="text-fg-tertiary text-sm mt-1">Project chat</p>
         </div>
         <select
           value={pid}
           onChange={e => setPid(e.target.value)}
-          className="p-3 bg-white border border-cream-200 rounded-xl text-sm outline-none focus:border-safety-400"
+          className="p-3 bg-panel border border-default rounded-xl text-sm outline-none focus:border-accent"
         >
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
@@ -92,22 +92,22 @@ export function MessagesView(): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
 
       <Card className="overflow-hidden">
-        <div className="p-4 border-b border-cream-100">
-          <div className="font-bold text-ink-900">{curProject?.name ?? "Select a project"}</div>
-          <div className="text-xs text-ink-400">{msgs.length} messages</div>
+        <div className="p-4 border-b border-default">
+          <div className="font-bold text-fg-primary">{curProject?.name ?? "Select a project"}</div>
+          <div className="text-xs text-fg-tertiary">{msgs.length} messages</div>
         </div>
 
-        <div className="p-4 space-y-3 min-h-[360px] max-h-[520px] overflow-y-auto bg-cream-50">
+        <div className="p-4 space-y-3 min-h-[360px] max-h-[520px] overflow-y-auto bg-panel">
           {loadingMsgs ? <div className="grid place-items-center h-48"><Spinner size={20} /></div>
-            : msgs.length === 0 ? <div className="text-center py-16 text-ink-400">No messages yet</div>
+            : msgs.length === 0 ? <div className="text-center py-16 text-fg-tertiary">No messages yet</div>
             : msgs.map(m => {
                 const mine = m.senderId && m.senderId === myId;
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${mine ? "bg-safety-500 text-white" : "bg-white text-ink-700 border border-cream-200"}`}>
-                      {!mine && <div className="text-xs font-bold text-ink-500 mb-1">{m.senderName}</div>}
+                    <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${mine ? "bg-accent text-white" : "bg-panel text-fg-primary border border-default"}`}>
+                      {!mine && <div className="text-xs font-bold text-fg-secondary mb-1">{m.senderName}</div>}
                       <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
-                      <div className={`text-[10px] mt-1 ${mine ? "text-white/70" : "text-ink-400"}`}>{fmtTs(m.createdAt)}</div>
+                      <div className={`text-[10px] mt-1 ${mine ? "text-white/70" : "text-fg-tertiary"}`}>{fmtTs(m.createdAt)}</div>
                     </div>
                   </div>
                 );
@@ -115,7 +115,7 @@ export function MessagesView(): JSX.Element {
           <div ref={endRef} />
         </div>
 
-        <div className="p-4 border-t border-cream-100 space-y-3">
+        <div className="p-4 border-t border-default space-y-3">
           <div className="flex gap-2">
             <Input
               className="flex-1"

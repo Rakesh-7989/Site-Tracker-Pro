@@ -37,12 +37,12 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   const columns = [
     { key: "po", header: "PO", render: (po: CrossPO) => (
       <div>
-        <div className="text-sm font-semibold text-ink-800 truncate">{po.poNo}{po.vendorName ? ` \u00b7 ${po.vendorName}` : ""}</div>
-        <div className="text-[11px] text-ink-400 truncate">{po.projectName}{po.items ? ` \u00b7 ${po.items}` : ""}{po.deliveryDate ? ` \u00b7 due ${po.deliveryDate}` : ""}</div>
+        <div className="text-sm font-semibold text-fg-primary truncate">{po.poNo}{po.vendorName ? ` \u00b7 ${po.vendorName}` : ""}</div>
+        <div className="text-[11px] text-fg-tertiary truncate">{po.projectName}{po.items ? ` \u00b7 ${po.items}` : ""}{po.deliveryDate ? ` \u00b7 due ${po.deliveryDate}` : ""}</div>
       </div>
     )},
     { key: "amount", header: "Amount", render: (po: CrossPO) => (
-      <span className="text-sm font-semibold text-ink-900">{fmtRupees(po.amount)}</span>
+      <span className="text-sm font-semibold text-fg-primary">{fmtRupees(po.amount)}</span>
     )},
     { key: "status", header: "Status", render: (po: CrossPO) => (
       <Badge tone={tone(po.status)}>{po.status}</Badge>
@@ -52,15 +52,15 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="font-display text-2xl font-bold text-ink-900">Purchase orders</h1>
+        <h1 className="font-display text-2xl font-bold text-fg-primary">Purchase orders</h1>
         <Select className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {!loading && rows.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Card className="p-3"><div className="text-lg font-bold text-ink-900">{totals.count}</div><div className="text-[11px] text-ink-500">Total POs</div></Card>
-          <Card className="p-3"><div className="text-lg font-bold text-ink-900">{fmtRupees(totals.total)}</div><div className="text-[11px] text-ink-500">Value (excl. cancelled)</div></Card>
-          <Card className="p-3"><div className="text-lg font-bold text-amber-600">{fmtRupees(totals.byStatus.pending)}</div><div className="text-[11px] text-ink-500">Pending approval</div></Card>
+          <Card className="p-3"><div className="text-lg font-bold text-fg-primary">{totals.count}</div><div className="text-[11px] text-fg-secondary">Total POs</div></Card>
+          <Card className="p-3"><div className="text-lg font-bold text-fg-primary">{fmtRupees(totals.total)}</div><div className="text-[11px] text-fg-secondary">Value (excl. cancelled)</div></Card>
+          <Card className="p-3"><div className="text-lg font-bold text-warning">{fmtRupees(totals.byStatus.pending)}</div><div className="text-[11px] text-fg-secondary">Pending approval</div></Card>
         </div>
       )}
       <DataTable

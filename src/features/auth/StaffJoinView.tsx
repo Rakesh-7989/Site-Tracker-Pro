@@ -33,12 +33,12 @@ export function StaffJoinView(): JSX.Element {
   // No token → not a valid invite landing.
   if (!token) {
     return (
-      <div className="min-h-screen bg-cream-50 grid place-items-center px-5">
-        <Card className="max-w-md w-full p-6 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 grid place-items-center mx-auto mb-3"><Icon name="alert" size={24} /></div>
+      <div className="min-h-screen bg-panel grid place-items-center p-4 md:p-8">
+        <Card className="max-w-md w-full p-4 md:p-6 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-error-tint text-error grid place-items-center mx-auto mb-3"><Icon name="alert" size={24} /></div>
           <h1 className="font-display text-lg font-bold">Invalid invite link</h1>
-          <p className="text-sm text-ink-600 mt-2">This page needs a valid staff-invite link. Ask the person who invited you to resend it.</p>
-          <Link to="/staff/login" className="inline-block mt-4 text-sm font-semibold text-safety-600 hover:text-safety-700">Back to staff sign in</Link>
+          <p className="text-sm text-fg-secondary mt-2">This page needs a valid staff-invite link. Ask the person who invited you to resend it.</p>
+          <Link to="/staff/login" className="inline-block mt-4 text-sm font-semibold text-accent hover:text-accent-2">Back to staff sign in</Link>
         </Card>
       </div>
     );
@@ -63,56 +63,56 @@ export function StaffJoinView(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 grid place-items-center px-5 py-10">
-      <Card className="w-full max-w-md p-6">
+    <div className="min-h-screen bg-panel grid place-items-center p-4 md:p-8">
+      <Card className="w-full max-w-md p-4 md:p-6">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-safety-500 text-white grid place-items-center font-bold">S</div>
-          <div className="font-display font-bold text-ink-900">SiteTrack Pro</div>
+          <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
+          <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
         </div>
         <h1 className="font-display text-xl font-bold mt-3">Join the staff team</h1>
-        <p className="text-[13px] text-ink-500 mt-1 mb-4">You've been invited as a SiteTrack Pro platform staff member. Set up your account to continue.</p>
+        <p className="text-[13px] text-fg-secondary mt-1 mb-4">You've been invited as a SiteTrack Pro platform staff member. Set up your account to continue.</p>
 
         {error && (
-          <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[12px] text-red-700 flex items-start gap-2">
-            <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}
+          <div className="mb-3 rounded-lg bg-error-tint border border-error p-3 text-[12px] text-error flex items-start gap-2">
+            <Icon name="alert" size={15} className="text-error mt-0.5" /> {error}
           </div>
         )}
 
-        <label htmlFor="nm" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Your name</label>
+        <label htmlFor="nm" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">Your name</label>
         <input id="nm" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Rakesh B."
-          className="w-full mb-3 px-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white" />
+          className="w-full mb-3 px-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel" />
 
-        <label htmlFor="em" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Work email</label>
+        <label htmlFor="em" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">Work email</label>
         <div className="relative mb-3">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="mail" size={16} /></span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="mail" size={16} /></span>
           <input id="em" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.in" autoComplete="email"
-            className="w-full pl-10 pr-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white" />
+            className="w-full pl-10 pr-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel" />
         </div>
 
-        <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Create a password</label>
+        <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">Create a password</label>
         <div className="relative mb-3">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="lock" size={16} /></span>
           <input id="pw" type={show ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
             placeholder="At least 8 characters" autoComplete="new-password"
-            className="w-full pl-10 pr-10 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white" />
+            className="w-full pl-10 pr-10 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel" />
           <button type="button" onClick={() => setShow(s => !s)} tabIndex={-1} aria-label={show ? "Hide password" : "Show password"}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600">
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-tertiary hover:text-fg-secondary">
             <Icon name={show ? "eyeOff" : "eye"} size={16} />
           </button>
         </div>
 
-        <label htmlFor="cf" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Confirm password</label>
+        <label htmlFor="cf" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">Confirm password</label>
         <div className="relative mb-4">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="lock" size={16} /></span>
           <input id="cf" type={show ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)}
             placeholder="Re-enter password" autoComplete="new-password" onKeyDown={e => { if (e.key === "Enter") submit(); }}
-            className="w-full pl-10 pr-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white" />
+            className="w-full pl-10 pr-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel" />
         </div>
 
         <Button fullWidth size="lg" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={16} /> : null}>
           {busy ? "Creating your account…" : "Join & continue"}
         </Button>
-        <p className="text-[11px] text-ink-400 text-center mt-3">Already have an account? <Link to="/staff/login" className="text-safety-600 font-semibold">Staff sign in</Link></p>
+        <p className="text-[11px] text-fg-tertiary text-center mt-3">Already have an account? <Link to="/staff/login" className="text-accent font-semibold">Staff sign in</Link></p>
       </Card>
     </div>
   );

@@ -24,10 +24,10 @@ export function OrgRolesView(): JSX.Element {
   if (!canManage) return <AccessDenied message="Org admin access required." />;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink-900">Custom Roles</h1>
-        <div className="text-sm text-ink-500">
+        <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Custom Roles</h1>
+        <div className="text-sm text-fg-secondary">
           Define org-specific roles (e.g. “Site Lead”, “Billing Head”) with their own feature set,
           then assign members in <b>People</b>. Platform-admin powers can’t be granted here.
         </div>
@@ -53,8 +53,8 @@ function PlanRoleSummary({ plan, loading }: { plan: string | null; loading: bool
     <Card className="p-4 space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">Plan role defaults</h2>
-          <div className="text-sm text-ink-700 mt-1">
+          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Plan role defaults</h2>
+          <div className="text-sm text-fg-primary mt-1">
             {loading ? (
               <span className="inline-flex items-center gap-2"><Spinner size={13} /> Checking active plan...</span>
             ) : (
@@ -77,7 +77,7 @@ function SummaryRow({ label, values, max = 6 }: { label: string; values: string[
   const extra = values.length - shown.length;
   return (
     <div>
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-400 mb-1">{label}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary mb-1">{label}</div>
       <div className="flex flex-wrap gap-1.5">
         {shown.map(value => <Badge key={value} tone="neutral">{value}</Badge>)}
         {extra > 0 && <Badge tone="info">+{extra} more</Badge>}

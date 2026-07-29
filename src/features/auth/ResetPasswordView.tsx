@@ -55,61 +55,61 @@ export function ResetPasswordView(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 grid place-items-center px-5">
+    <div className="min-h-screen bg-panel grid place-items-center px-5">
       <Card className="w-full max-w-md p-6">
         <div className="flex items-center gap-2 mb-5">
-          <div className="w-9 h-9 rounded-lg bg-safety-500 text-white grid place-items-center font-bold">S</div>
+          <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
           <div>
-            <div className="font-display font-bold text-ink-900">SiteTrack Pro</div>
-            <div className="text-[11px] text-ink-500">Set a new password</div>
+            <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
+            <div className="text-[11px] text-fg-secondary">Set a new password</div>
           </div>
         </div>
 
         {phase === "checking" && (
-          <div className="py-8 grid place-items-center gap-3 text-ink-500">
+          <div className="py-8 grid place-items-center gap-3 text-fg-secondary">
             <Spinner size={24} /><span className="text-sm">Verifying your reset link…</span>
           </div>
         )}
 
         {phase === "invalid" && (
           <div>
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-[13px] text-red-700 flex items-start gap-2">
-              <Icon name="alert" size={16} className="text-red-600 mt-0.5" />
+            <div className="rounded-lg bg-error-tint border border-error p-3 text-[13px] text-error flex items-start gap-2">
+              <Icon name="alert" size={16} className="text-error mt-0.5" />
               <span>This reset link is invalid or has expired. Request a fresh one from the sign-in page.</span>
             </div>
-            <Link to="/login" className="mt-4 block text-center text-sm font-semibold text-safety-600 hover:text-safety-700">← Back to sign in</Link>
+            <Link to="/login" className="mt-4 block text-center text-sm font-semibold text-accent hover:text-accent-2">← Back to sign in</Link>
           </div>
         )}
 
         {phase === "form" && (
           <div>
-            <p className="text-[13px] text-ink-500 mb-4">Choose a new password for your account. Use at least 8 characters.</p>
+            <p className="text-[13px] text-fg-secondary mb-4">Choose a new password for your account. Use at least 8 characters.</p>
             {error && (
-              <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[12px] text-red-700 flex items-start gap-2">
-                <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}
+              <div className="mb-3 rounded-lg bg-error-tint border border-error p-3 text-[12px] text-error flex items-start gap-2">
+                <Icon name="alert" size={15} className="text-error mt-0.5" /> {error}
               </div>
             )}
-            <label htmlFor="np" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">New password</label>
+            <label htmlFor="np" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">New password</label>
             <div className="relative mb-3">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="lock" size={16} /></span>
               <input
                 id="np" type={show ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••" autoComplete="new-password"
-                className="w-full pl-10 pr-10 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+                className="w-full pl-10 pr-10 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
               />
               <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600">
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-tertiary hover:text-fg-secondary">
                 <Icon name={show ? "eyeOff" : "eye"} size={16} />
               </button>
             </div>
-            <label htmlFor="cp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">Confirm new password</label>
+            <label htmlFor="cp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">Confirm new password</label>
             <div className="relative mb-4">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="lock" size={16} /></span>
               <input
                 id="cp" type={show ? "text" : "password"} value={confirm} onChange={e => setConfirm(e.target.value)}
                 placeholder="••••••••" autoComplete="new-password"
                 onKeyDown={e => { if (e.key === "Enter") submit(); }}
-                className="w-full pl-10 pr-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+                className="w-full pl-10 pr-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
               />
             </div>
             <Button fullWidth size="lg" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={16} /> : null}>
@@ -120,9 +120,9 @@ export function ResetPasswordView(): JSX.Element {
 
         {phase === "done" && (
           <div>
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 grid place-items-center mx-auto mb-3"><Icon name="check" size={28} /></div>
+            <div className="w-14 h-14 rounded-2xl bg-success-tint text-success grid place-items-center mx-auto mb-3"><Icon name="check" size={28} /></div>
             <h1 className="font-display text-lg font-bold text-center">Password updated 🎉</h1>
-            <p className="text-sm text-ink-600 mt-2 text-center">Your new password is set. You're signed in.</p>
+            <p className="text-sm text-fg-secondary mt-2 text-center">Your new password is set. You're signed in.</p>
             <Button fullWidth size="lg" className="mt-4" onClick={() => navigate("/dashboard")}>Continue to your workspace</Button>
           </div>
         )}

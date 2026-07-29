@@ -10,8 +10,8 @@ import { useSession } from "@/auth/OrganizationContext";
 import { getClient } from "@/lib/supabase";
 function PBar({ v }: { v: number }) {
   return (
-    <div className="w-full h-2 bg-cream-200 rounded-full overflow-hidden">
-      <div className="h-full bg-safety-500 rounded-full transition-all" style={{ width: `${Math.min(v, 100)}%` }} />
+    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+      <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${Math.min(v, 100)}%` }} />
     </div>
   );
 }
@@ -46,32 +46,32 @@ export function PMView(): JSX.Element {
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-black text-ink-900">PM Dashboard</h1>
-          <p className="text-ink-400 text-sm mt-1">Project overview</p>
+          <h1 className="text-2xl font-black text-fg-primary">PM Dashboard</h1>
+          <p className="text-fg-tertiary text-sm mt-1">Project overview</p>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-info-tint text-info">
           <Icon name="shield" size={12} />Project Manager
         </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Card className="p-4"><div className="text-ink-400 text-xs font-semibold uppercase tracking-wider mb-1">Projects</div><div className="text-3xl font-black text-ink-900">{projects.length}</div></Card>
-        <Card className="p-4"><div className="text-ink-400 text-xs font-semibold uppercase tracking-wider mb-1">Active</div><div className="text-3xl font-black text-safety-600">{active}</div></Card>
-        <Card className="p-4"><div className="text-ink-400 text-xs font-semibold uppercase tracking-wider mb-1">Unread</div><div className="text-3xl font-black text-safety-600">{notifs.length}</div></Card>
+        <Card className="p-4"><div className="text-fg-tertiary text-xs font-semibold uppercase tracking-wider mb-1">Projects</div><div className="text-3xl font-black text-fg-primary">{projects.length}</div></Card>
+        <Card className="p-4"><div className="text-fg-tertiary text-xs font-semibold uppercase tracking-wider mb-1">Active</div><div className="text-3xl font-black text-accent">{active}</div></Card>
+        <Card className="p-4"><div className="text-fg-tertiary text-xs font-semibold uppercase tracking-wider mb-1">Unread</div><div className="text-3xl font-black text-accent">{notifs.length}</div></Card>
       </div>
 
       {notifs.length > 0 && (
         <div className="mb-8">
-          <h2 className="font-bold text-ink-900 text-base mb-4">Notifications</h2>
+          <h2 className="font-bold text-fg-primary text-base mb-4">Notifications</h2>
           <div className="space-y-3">
             {notifs.map(n => (
-              <Card key={n.id} className="p-4 border-safety-200 bg-safety-50 flex gap-3">
-                <div className="w-8 h-8 bg-safety-100 rounded-xl flex items-center justify-center shrink-0">
-                  <Icon name="bell" size={16} className="text-safety-600" />
+              <Card key={n.id} className="p-4 border-accent bg-accent-tint flex gap-3">
+                <div className="w-8 h-8 bg-accent-tint rounded-xl flex items-center justify-center shrink-0">
+                  <Icon name="bell" size={16} className="text-accent" />
                 </div>
                 <div>
-                  <div className="font-semibold text-ink-900 text-sm">{n.title}</div>
-                  <p className="text-ink-500 text-xs mt-0.5">{n.message}</p>
+                  <div className="font-semibold text-fg-primary text-sm">{n.title}</div>
+                  <p className="text-fg-secondary text-xs mt-0.5">{n.message}</p>
                 </div>
               </Card>
             ))}
@@ -82,15 +82,15 @@ export function PMView(): JSX.Element {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.map(p => (
           <button key={p.id} onClick={() => navigate(`/projects/${p.id}`)}
-            className="bg-white rounded-2xl border border-cream-200 p-5 text-left hover:shadow-md hover:border-safety-300 transition-all group"
+            className="bg-panel rounded-2xl border border-default p-5 text-left hover:shadow-md hover:border-accent transition-all group"
           >
             <div className="flex items-start justify-between mb-3">
-              <h3 className="font-bold text-ink-900 text-sm group-hover:text-safety-600">{p.name}</h3>
+              <h3 className="font-bold text-fg-primary text-sm group-hover:text-accent">{p.name}</h3>
               <Badge tone={p.status === "active" ? "success" : p.status === "completed" ? "info" : "neutral"}>{p.status}</Badge>
             </div>
-            {p.location && <div className="text-xs text-ink-400 mb-3 flex items-center gap-1.5"><Icon name="map" size={11} />{p.location}</div>}
+            {p.location && <div className="text-xs text-fg-tertiary mb-3 flex items-center gap-1.5"><Icon name="map" size={11} />{p.location}</div>}
             <PBar v={p.progress} />
-            <div className="text-xs text-ink-400 mt-1">{p.progress}%</div>
+            <div className="text-xs text-fg-tertiary mt-1">{p.progress}%</div>
           </button>
         ))}
       </div>

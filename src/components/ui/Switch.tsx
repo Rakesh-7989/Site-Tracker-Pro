@@ -29,7 +29,7 @@ export function Switch({ checked, onChange, label, disabled, className, id }: Sw
         />
         <div className={cn(
           "w-9 h-5 rounded-full transition-colors",
-          checked ? "bg-safety-500" : "bg-cream-200",
+          checked ? "bg-accent" : "bg-elevated",
         )}>
           <div className={cn(
             "w-3.5 h-3.5 bg-white rounded-full shadow-card transition-transform absolute top-0.5",
@@ -37,7 +37,7 @@ export function Switch({ checked, onChange, label, disabled, className, id }: Sw
           )} />
         </div>
       </div>
-      {label && <span className="text-sm text-ink-700">{label}</span>}
+      {label && <span className="text-sm text-fg-primary">{label}</span>}
     </label>
   );
 }

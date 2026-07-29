@@ -73,17 +73,17 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
   const over = seats != null && used > seats;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
-      <h1 className="font-display text-2xl font-bold text-ink-900">{t("billing.title")}</h1>
+    <div className="max-w-3xl mx-auto space-y-5 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">{t("billing.title")}</h1>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !overview ? <div className="text-sm text-ink-500">{t("billing.noData")}</div> : (
+      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !overview ? <div className="text-sm text-fg-secondary">{t("billing.noData")}</div> : (
         <>
           {/* â”€â”€ Plan card â”€â”€ */}
           <Card className="p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-xs text-ink-400 uppercase tracking-wider">{t("billing.currentPlan")}</div>
-                <div className="text-xl font-display font-bold text-ink-900">{PLAN_LABEL[overview.plan] ?? overview.plan}</div>
+                <div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.currentPlan")}</div>
+                <div className="text-xl font-display font-bold text-fg-primary">{PLAN_LABEL[overview.plan] ?? overview.plan}</div>
               </div>
               {sub && <Badge tone={subTone(sub.status)}>{sub.status}</Badge>}
             </div>
@@ -91,9 +91,9 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
               <div className="mt-3 space-y-1.5">
                 {billing.alerts.map((a, i) => (
                   <div key={i} className={`flex items-center gap-2 text-[12px] p-2 rounded-lg ${
-                    a.severity === "danger" ? "bg-red-50 text-red-700" :
-                    a.severity === "warning" ? "bg-amber-50 text-amber-700" :
-                    "bg-blue-50 text-blue-700"
+                    a.severity === "danger" ? "bg-error-tint text-error" :
+                    a.severity === "warning" ? "bg-warning-tint text-warning" :
+                    "bg-info-tint text-info"
                   }`}>
                     <Icon name="alert" size={14} />
                     {a.message}
@@ -106,21 +106,21 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
           {/* â”€â”€ Seat usage â”€â”€ */}
           <Card className="p-5 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-ink-800">{t("billing.seats")}</span>
-              <span className={over ? "text-rose-600 font-semibold" : "text-ink-600"}>{used} {seats != null ? `/ ${seats}` : t("billing.unlimited")}</span>
+              <span className="font-semibold text-fg-primary">{t("billing.seats")}</span>
+              <span className={over ? "text-error font-semibold" : "text-fg-secondary"}>{used} {seats != null ? `/ ${seats}` : t("billing.unlimited")}</span>
             </div>
             {seats != null && (
-              <div className="h-2 rounded-full bg-cream-100 overflow-hidden">
-                <div className={`h-full rounded-full ${over ? "bg-rose-400" : pct > 80 ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${pct}%` }} />
+              <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                <div className={`h-full rounded-full ${over ? "bg-error" : pct > 80 ? "bg-accent" : "bg-success"}`} style={{ width: `${pct}%` }} />
               </div>
             )}
-            {over && <div className="text-[11px] text-rose-600">{t("billing.overLimit")}</div>}
+            {over && <div className="text-[11px] text-error">{t("billing.overLimit")}</div>}
           </Card>
 
           {/* â”€â”€ Subscription details â”€â”€ */}
           <Card className="p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="text-xs text-ink-400 uppercase tracking-wider">{t("billing.subscription")}</div>
+              <div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.subscription")}</div>
               {sub && ["active", "trial"].includes(sub.status) && (
                 <Button size="sm" variant="ghost" onClick={() => { setAction({ kind: "cancel" }); setActionResult(null); }}>
                   Cancel
@@ -132,24 +132,24 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
                 </Button>
               )}
               {sub && sub.status === "past_due" && (
-                <span className="text-[11px] text-ink-400">Contact support to resolve payment</span>
+                <span className="text-[11px] text-fg-tertiary">Contact support to resolve payment</span>
               )}
             </div>
             {sub ? (
               <dl className="grid grid-cols-2 gap-y-2 text-sm">
-                <dt className="text-ink-500">{t("billing.status")}</dt>
-                <dd className="text-ink-800 text-right font-medium"><Badge tone={subTone(sub.status)}>{sub.status}</Badge></dd>
-                <dt className="text-ink-500">{t("billing.provider")}</dt><dd className="text-ink-800 text-right capitalize">{sub.provider || "—"}</dd>
-                <dt className="text-ink-500">{t("billing.renewsEnds")}</dt><dd className="text-ink-800 text-right">{fmtDate(sub.currentPeriodEnd)}</dd>
-                <dt className="text-ink-500">{t("billing.trialEnds")}</dt><dd className="text-ink-800 text-right">{fmtDate(sub.trialEndsAt)}</dd>
+                <dt className="text-fg-secondary">{t("billing.status")}</dt>
+                <dd className="text-fg-primary text-right font-medium"><Badge tone={subTone(sub.status)}>{sub.status}</Badge></dd>
+                <dt className="text-fg-secondary">{t("billing.provider")}</dt><dd className="text-fg-primary text-right capitalize">{sub.provider || "—"}</dd>
+                <dt className="text-fg-secondary">{t("billing.renewsEnds")}</dt><dd className="text-fg-primary text-right">{fmtDate(sub.currentPeriodEnd)}</dd>
+                <dt className="text-fg-secondary">{t("billing.trialEnds")}</dt><dd className="text-fg-primary text-right">{fmtDate(sub.trialEndsAt)}</dd>
                 {sub.cancelledAt ? (
-                  <><dt className="text-ink-500">Cancelled at</dt><dd className="text-ink-800 text-right">{fmtDate(sub.cancelledAt)}</dd></>
+                  <><dt className="text-fg-secondary">Cancelled at</dt><dd className="text-fg-primary text-right">{fmtDate(sub.cancelledAt)}</dd></>
                 ) : null}
                 {sub.gracePeriodEndsAt ? (
-                  <><dt className="text-ink-500">Grace period ends</dt><dd className="text-ink-800 text-right">{fmtDate(sub.gracePeriodEndsAt)}</dd></>
+                  <><dt className="text-fg-secondary">Grace period ends</dt><dd className="text-fg-primary text-right">{fmtDate(sub.gracePeriodEndsAt)}</dd></>
                 ) : null}
               </dl>
-            ) : <div className="text-sm text-ink-500">{t("billing.noSub", { plan: PLAN_LABEL[overview.plan] ?? overview.plan })}</div>}
+            ) : <div className="text-sm text-fg-secondary">{t("billing.noSub", { plan: PLAN_LABEL[overview.plan] ?? overview.plan })}</div>}
           </Card>
 
           {/* â”€â”€ Cancel confirmation modal â”€â”€ */}
@@ -157,12 +157,12 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
             <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/30" onClick={() => { setAction(null); setActionResult(null); }}>
               <div className="w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}><Card className="p-5 space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-display font-bold text-ink-900">Cancel subscription</h3>
-                  <button onClick={() => { setAction(null); setActionResult(null); }} className="text-ink-400 hover:text-ink-700 p-1">
+                  <h3 className="font-display font-bold text-fg-primary">Cancel subscription</h3>
+                  <button onClick={() => { setAction(null); setActionResult(null); }} className="text-fg-tertiary hover:text-fg-primary p-1">
                     <Icon name="x" size={18} />
                   </button>
                 </div>
-                <p className="text-sm text-ink-600">Are you sure you want to cancel your subscription? You will lose access to paid features at the end of the billing period.</p>
+                <p className="text-sm text-fg-secondary">Are you sure you want to cancel your subscription? You will lose access to paid features at the end of the billing period.</p>
                 {actionResult && <Alert variant={actionResult.ok ? "success" : "danger"}>{actionResult.message}</Alert>}
                 <div className="flex gap-2">
                   {actionResult?.ok ? (
@@ -184,34 +184,34 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
 
           {/* â”€â”€ Billing history â”€â”€ */}
           <Card className="p-5">
-            <div className="text-xs text-ink-400 uppercase tracking-wider mb-3">{t("billing.billingHistory")}</div>
+            <div className="text-xs text-fg-tertiary uppercase tracking-wider mb-3">{t("billing.billingHistory")}</div>
             {(!billing?.billingHistory || billing.billingHistory.length === 0) ? (
-              <div className="text-sm text-ink-500">{t("billing.noHistory")}</div>
+              <div className="text-sm text-fg-secondary">{t("billing.noHistory")}</div>
             ) : (
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto"><table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[11px] text-ink-400 uppercase tracking-wider">
+                  <tr className="text-[11px] text-fg-tertiary uppercase tracking-wider">
                     <th className="text-left pb-2 font-medium">Date</th>
                     <th className="text-right pb-2 font-medium">Amount</th>
                     <th className="text-right pb-2 font-medium">Status</th>
                     <th className="text-right pb-2 font-medium" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-cream-100">
+                <tbody className="divide-y divide-default">
                   {billing.billingHistory.map((bh: BillingHistoryItem) => (
-                    <tr key={bh.id} className="text-ink-700">
+                    <tr key={bh.id} className="text-fg-primary">
                       <td className="py-2 text-left">{fmtDate(bh.paidAt)}</td>
                       <td className="py-2 text-right font-medium">{fmtMoney(bh.amount, bh.currency)}</td>
                       <td className="py-2 text-right"><Badge tone={bh.status === "success" ? "success" : bh.status === "pending" ? "warning" : "neutral"}>{bh.status}</Badge></td>
                       <td className="py-2 text-right">
                         {bh.invoiceUrl ? (
-                          <a href={bh.invoiceUrl} target="_blank" rel="noreferrer" className="text-safety-500 hover:text-safety-600 text-[11px] underline">Invoice</a>
+                          <a href={bh.invoiceUrl} target="_blank" rel="noreferrer" className="text-accent hover:text-accent-2 text-[11px] underline">Invoice</a>
                         ) : "—"}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </Card>
 
@@ -252,27 +252,27 @@ function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan
     <Card className="p-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <div className="font-semibold text-ink-800">{t("billing.upgradeTitle")}</div>
-          <div className="text-[13px] text-ink-500 mt-0.5">{t("billing.upgradeSub")}</div>
+          <div className="font-semibold text-fg-primary">{t("billing.upgradeTitle")}</div>
+          <div className="text-[13px] text-fg-secondary mt-0.5">{t("billing.upgradeSub")}</div>
         </div>
         {!open && !done && <Button onClick={() => setOpen(true)} leftIcon={<Icon name="trend" size={15} />}>{t("billing.requestUpgrade")}</Button>}
       </div>
 
-      {done && <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700">{t("billing.requestSent")}</div>}
+      {done && <div className="mt-3 rounded-lg bg-success-tint border border-success p-3 text-[13px] text-success">{t("billing.requestSent")}</div>}
 
       {open && (
-        <div className="mt-4 border-t border-cream-100 pt-4 space-y-3">
+        <div className="mt-4 border-t border-default pt-4 space-y-3">
           {err && <Alert variant="danger">{err}</Alert>}
           <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("billing.moveToPlan")}</span>
-            <select value={desired} onChange={e => setDesired(e.target.value)} className="w-full mt-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.moveToPlan")}</span>
+            <select value={desired} onChange={e => setDesired(e.target.value)} className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm bg-panel">
               <option value="">{t("billing.choosePlan")}</option>
               {targets.map(pl => <option key={pl} value={pl}>{PLAN_LABEL[pl] ?? pl}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("billing.noteLabel")}</span>
-            <input value={note} onChange={e => setNote(e.target.value)} placeholder={t("billing.notePlaceholder")} className="w-full mt-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm bg-white" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.noteLabel")}</span>
+            <input value={note} onChange={e => setNote(e.target.value)} placeholder={t("billing.notePlaceholder")} className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm bg-panel" />
           </label>
           <div className="flex gap-2">
             <Button onClick={submit} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? t("billing.sending") : t("billing.sendRequest")}</Button>

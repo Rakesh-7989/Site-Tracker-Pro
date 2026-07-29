@@ -103,17 +103,17 @@ export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disa
         </Button>
       )}
       {state === "requesting" && (
-        <div className="flex items-center gap-2 text-sm text-ink-500">
+        <div className="flex items-center gap-2 text-sm text-fg-secondary">
           <Spinner size={16} /> Requesting microphone…
         </div>
       )}
       {state === "recording" && (
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-600">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-error">
+            <span className="w-2 h-2 rounded-full bg-error animate-pulse" />
             Recording
           </span>
-          <span className="text-sm font-mono text-ink-500">{fmtTime(durationDisplay)}</span>
+          <span className="text-sm font-mono text-fg-secondary">{fmtTime(durationDisplay)}</span>
           <Button size="sm" variant="secondary" onClick={stopRecording} leftIcon={<Icon name="pause" size={14} />}>
             Stop
           </Button>
@@ -122,7 +122,7 @@ export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disa
       {state === "done" && recordedBlob && (
         <div className="flex items-center gap-3">
           <audio src={URL.createObjectURL(recordedBlob)} controls className="h-9" />
-          <span className="text-xs text-ink-400">{fmtTime(durationDisplay)}</span>
+          <span className="text-xs text-fg-tertiary">{fmtTime(durationDisplay)}</span>
           <Button size="sm" variant="ghost" onClick={retry}>Re-record</Button>
           <Button size="sm" onClick={onTranscribe} disabled={transcribing}>
             {transcribing ? <Spinner size={14} /> : "Transcribe"}
@@ -130,7 +130,7 @@ export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disa
         </div>
       )}
       {state === "error" && error && (
-        <div className="flex items-center gap-2 text-sm text-red-700">
+        <div className="flex items-center gap-2 text-sm text-error">
           <Icon name="alert" size={14} /> {error}
           <Button size="sm" variant="ghost" onClick={retry}>Try again</Button>
         </div>

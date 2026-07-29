@@ -30,15 +30,15 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
       {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="font-display text-xl font-bold text-ink-900">{project.name}</h2>
+          <h2 className="font-display text-xl font-bold text-fg-primary">{project.name}</h2>
           <div className="mt-1 flex items-center gap-2 flex-wrap text-sm">
             <Badge tone="info">{typeLabel(project.type)}</Badge>
-            {project.location && <span className="text-ink-500">{project.location}</span>}
+            {project.location && <span className="text-fg-secondary">{project.location}</span>}
             {project.status && <Badge tone="neutral">{project.status}</Badge>}
           </div>
         </div>
         {canEditSettings && (
-          <button className="text-xs font-semibold text-safety-600 hover:text-safety-700 inline-flex items-center gap-1">
+          <button className="text-xs font-semibold text-accent hover:text-accent-2 inline-flex items-center gap-1">
             <Icon name="sliders" size={13} /> {t("overviewTab.settings")}
           </button>
         )}
@@ -54,9 +54,9 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
 
       {/* Membership summary */}
       <Card className="p-5">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-3">{t("overviewTab.teamComposition")}</h3>
+        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-3">{t("overviewTab.teamComposition")}</h3>
         {members.length === 0 ? (
-          <div className="text-sm text-ink-500">{t("overviewTab.noMembers")}</div>
+          <div className="text-sm text-fg-secondary">{t("overviewTab.noMembers")}</div>
         ) : (
           <div className="flex flex-wrap gap-2">
             {Object.entries(byRole).map(([role, count]) => {

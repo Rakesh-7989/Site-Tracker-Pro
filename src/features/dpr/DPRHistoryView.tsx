@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
@@ -53,19 +53,19 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
   const deliveredCount = rows.filter(r => r.status === "delivered" || r.status === "read").length;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-3xl mx-auto space-y-5 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-2xl font-bold text-ink-900">DPR History</h1>
-          <p className="text-sm text-ink-500 mt-0.5">{rows.length} total · {sentCount} sent · {deliveredCount} delivered · {failedCount} failed</p>
+          <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">DPR History</h1>
+          <p className="text-sm text-fg-secondary mt-0.5">{rows.length} total � {sentCount} sent � {deliveredCount} delivered � {failedCount} failed</p>
         </div>
         <div className="flex items-center gap-2">
-          <select className="text-xs border border-cream-200 rounded-lg px-2 py-1.5 bg-white"
+          <select className="text-xs border border-default rounded-lg px-2 py-1.5 bg-panel"
             value={sort} onChange={e => setSort(e.target.value as "date" | "status")}>
             <option value="date">Newest first</option>
             <option value="status">By status</option>
           </select>
-          <Link to="/dpr" className="text-sm font-semibold text-safety-600 hover:text-safety-700">+ New DPR</Link>
+          <Link to="/dpr" className="text-sm font-semibold text-accent hover:text-accent-2">+ New DPR</Link>
         </div>
       </div>
 
@@ -74,9 +74,9 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
       {loading ? (
         <div className="grid place-items-center py-12"><Spinner size={24} /></div>
       ) : sorted.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-ink-500">
-          <Icon name="clipboard" size={24} className="mx-auto text-ink-300 mb-2" />
-          No DPRs yet. <Link to="/dpr" className="text-safety-600 font-semibold">Send your first one</Link>.
+        <Card className="p-8 text-center text-sm text-fg-secondary">
+          <Icon name="clipboard" size={24} className="mx-auto text-fg-tertiary mb-2" />
+          No DPRs yet. <Link to="/dpr" className="text-accent font-semibold">Send your first one</Link>.
         </Card>
       ) : (
         <div className="space-y-2">
@@ -89,9 +89,9 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
                     {r.language && <Badge tone="neutral">{r.language.toUpperCase()}</Badge>}
                   </div>
                   {r.transcript && (
-                    <p className="text-sm text-ink-700 mt-1.5 line-clamp-2">{r.transcript}</p>
+                    <p className="text-sm text-fg-primary mt-1.5 line-clamp-2">{r.transcript}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-1.5 text-[11px] text-ink-400 flex-wrap">
+                  <div className="flex items-center gap-3 mt-1.5 text-[11px] text-fg-tertiary flex-wrap">
                     <span>{fmtDate(r.createdAt)}</span>
                     {r.supervisorName && <span>{r.supervisorName}</span>}
                     {r.promoterPhone && <span>to {r.promoterPhone}</span>}
@@ -100,7 +100,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {r.photoUrl && (
                     <a href={r.photoUrl} target="_blank" rel="noopener noreferrer" title="View photo">
-                      <Icon name="image" size={16} className="text-ink-400 hover:text-ink-600" />
+                      <Icon name="image" size={16} className="text-fg-tertiary hover:text-fg-secondary" />
                     </a>
                   )}
                   {r.voiceUrl && (
@@ -109,7 +109,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
                 </div>
               </div>
               {r.lat && r.lon && (
-                <div className="mt-2 flex items-center gap-2 text-[11px] text-ink-400">
+                <div className="mt-2 flex items-center gap-2 text-[11px] text-fg-tertiary">
                   <Icon name="map" size={12} />
                   <span>{r.lat.toFixed(4)}, {r.lon.toFixed(4)}</span>
                   {r.status === "delivered" && <BuildNowBadge state="verified" lang={(r.language as any) ?? "en"} size="xs" showLink={false} />}

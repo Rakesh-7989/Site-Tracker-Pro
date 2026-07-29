@@ -31,7 +31,7 @@ export function DropdownMenu({ trigger, children, align = "end", className }: Dr
       {open && (
         <div
           className={cn(
-            "absolute z-50 mt-1 min-w-[160px] bg-white rounded-xl border border-cream-200 shadow-hover py-1 max-h-60 overflow-y-auto",
+            "absolute z-50 mt-1 min-w-[160px] bg-card rounded-xl border border-default shadow-hover py-1 max-h-60 overflow-y-auto",
             align === "end" ? "right-0" : "left-0",
           )}
           onClick={() => setOpen(false)}
@@ -56,7 +56,7 @@ export function DropdownItem({ children, onClick, disabled, className }: Dropdow
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "w-full text-left px-3.5 py-2 text-sm text-ink-700 hover:bg-cream-100 transition flex items-center gap-2",
+        "w-full text-left px-3.5 py-2 text-sm text-fg-primary hover:bg-elevated transition flex items-center gap-2",
         "disabled:opacity-40 disabled:cursor-not-allowed",
         className,
       )}

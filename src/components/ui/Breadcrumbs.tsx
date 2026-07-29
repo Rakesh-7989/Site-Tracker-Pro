@@ -21,7 +21,7 @@ export function Breadcrumbs({ crumbs, className }: BreadcrumbsProps): JSX.Elemen
         const inner = (
           <span className={cn(
             "inline-flex items-center gap-1.5",
-            isLast ? "text-ink-800 font-semibold" : "text-ink-500",
+            isLast ? "text-fg-primary font-semibold" : "text-fg-secondary",
           )} {...(isLast ? { "aria-current": "page" as const } : {})}>
             {crumb.icon && <span className="flex-shrink-0">{crumb.icon}</span>}
             <span>{crumb.label}</span>
@@ -31,10 +31,10 @@ export function Breadcrumbs({ crumbs, className }: BreadcrumbsProps): JSX.Elemen
         return (
           <span key={i} className="inline-flex items-center gap-1.5">
             {crumb.href && !isLast
-              ? <a href={crumb.href} className="hover:text-ink-700 transition-colors">{inner}</a>
+              ? <a href={crumb.href} className="hover:text-fg-primary transition-colors">{inner}</a>
               : inner
             }
-            {!isLast && <Icon name="chevron" size={14} className="text-ink-400" />}
+            {!isLast && <Icon name="chevron" size={14} className="text-fg-tertiary" />}
           </span>
         );
       })}

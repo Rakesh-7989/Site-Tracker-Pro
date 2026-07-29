@@ -15,15 +15,15 @@ const STATUS_ORDER = ["active", "completed", "on_hold", "cancelled"];
 const PROG_ORDER = ["pending", "in_progress", "completed"];
 
 function Stat({ label, value }: { label: string; value: string }): JSX.Element {
-  return <Card className="p-4"><div className="text-2xl font-display font-bold text-ink-900">{value}</div><div className="text-xs text-ink-500 mt-0.5">{label}</div></Card>;
+  return <Card className="p-4"><div className="text-2xl font-display font-bold text-fg-primary">{value}</div><div className="text-xs text-fg-secondary mt-0.5">{label}</div></Card>;
 }
 
 function ChartCard({ title, rows, color }: { title: string; rows: Array<{ name: string; value: number }>; color: string }): JSX.Element {
   const empty = rows.every(r => r.value === 0);
   return (
     <Card className="p-4">
-      <div className="text-xs font-semibold tracking-[0.14em] uppercase text-ink-400 mb-2">{title}</div>
-      {empty ? <div className="h-40 grid place-items-center text-sm text-ink-400">No data yet</div> : (
+      <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary mb-2">{title}</div>
+      {empty ? <div className="h-40 grid place-items-center text-sm text-fg-tertiary">No data yet</div> : (
         <div style={{ width: "100%", height: 160 }}>
           <ResponsiveContainer>
             <BarChart data={rows} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
@@ -62,9 +62,9 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Analytics</h1>
+      <h1 className="font-display text-2xl font-bold text-fg-primary">Analytics</h1>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !a ? <div className="text-sm text-ink-500">No data.</div> : (
+      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !a ? <div className="text-sm text-fg-secondary">No data.</div> : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Stat label="Projects" value={String(a.projectCount)} />
@@ -75,8 +75,8 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
 
           <div className="grid sm:grid-cols-2 gap-3">
             <Card className="p-4">
-              <div className="text-xs font-semibold tracking-[0.14em] uppercase text-ink-400 mb-2">Projects by status</div>
-              {pie.length === 0 ? <div className="h-40 grid place-items-center text-sm text-ink-400">No projects yet</div> : (
+              <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary mb-2">Projects by status</div>
+              {pie.length === 0 ? <div className="h-40 grid place-items-center text-sm text-fg-tertiary">No projects yet</div> : (
                 <div style={{ width: "100%", height: 160 }}>
                   <ResponsiveContainer>
                     <PieChart>
@@ -89,7 +89,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
                 </div>
               )}
               <div className="flex flex-wrap gap-2 justify-center mt-1">
-                {pie.map((r, i) => <span key={r.name} className="text-[11px] text-ink-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />{r.name} ({r.value})</span>)}
+                {pie.map((r, i) => <span key={r.name} className="text-[11px] text-fg-secondary flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />{r.name} ({r.value})</span>)}
               </div>
             </Card>
             <ChartCard title="Milestones by status" rows={toBars(a.milestoneStatus, PROG_ORDER)} color="var(--st-warning)" />
@@ -98,12 +98,12 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           <div className="grid sm:grid-cols-2 gap-3">
             <ChartCard title="Tasks by status" rows={toBars(a.taskStatus, PROG_ORDER)} color="var(--st-indigo)" />
             <Card className="p-4">
-              <div className="text-xs font-semibold tracking-[0.14em] uppercase text-ink-400 mb-3">Finance</div>
+              <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary mb-3">Finance</div>
               <div className="space-y-2">
                 {[["Purchase orders", a.finance.poTotal, "truck"], ["Invoices", a.finance.invoiceTotal, "doc"], ["RA bills", a.finance.raBillTotal, "wallet"]].map(([label, val, icon]) => (
                   <div key={label as string} className="flex items-center justify-between">
-                    <span className="text-sm text-ink-600 flex items-center gap-2"><Icon name={icon as "truck"} size={14} className="text-ink-400" />{label as string}</span>
-                    <span className="text-sm font-semibold text-ink-900">{fmtRupees(val as number)}</span>
+                    <span className="text-sm text-fg-secondary flex items-center gap-2"><Icon name={icon as "truck"} size={14} className="text-fg-tertiary" />{label as string}</span>
+                    <span className="text-sm font-semibold text-fg-primary">{fmtRupees(val as number)}</span>
                   </div>
                 ))}
               </div>

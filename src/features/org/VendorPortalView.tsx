@@ -44,15 +44,15 @@ export function VendorPortalView(): JSX.Element {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="mb-6 flex items-center gap-3">
-        <Icon name="truck" size={22} className="text-safety-500" />
-        <h1 className="text-2xl font-black text-ink-900">Vendor Portal</h1>
+        <Icon name="truck" size={22} className="text-accent" />
+        <h1 className="text-2xl font-black text-fg-primary">Vendor Portal</h1>
         <Badge tone="info">Vendor</Badge>
       </div>
 
-      <div className="flex gap-1 mb-6 bg-cream-100 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-secondary rounded-xl p-1 w-fit">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === t.key ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-800"}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === t.key ? "bg-panel text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}
           >
             <Icon name={t.icon} size={14} />{t.label}
           </button>
@@ -62,16 +62,16 @@ export function VendorPortalView(): JSX.Element {
       {tab === "dashboard" && (
         <div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <Card className="p-4"><div className="text-xs text-ink-400 font-semibold uppercase">Pending POs</div><div className="text-3xl font-black text-ink-900 mt-1">{pos.filter(p => p.status === "pending").length}</div></Card>
-            <Card className="p-4"><div className="text-xs text-ink-400 font-semibold uppercase">Total POs</div><div className="text-3xl font-black text-ink-900 mt-1">{pos.length}</div></Card>
-            <Card className="p-4"><div className="text-xs text-ink-400 font-semibold uppercase">Materials</div><div className="text-3xl font-black text-ink-900 mt-1">{prices.length}</div></Card>
+            <Card className="p-4"><div className="text-xs text-fg-tertiary font-semibold uppercase">Pending POs</div><div className="text-3xl font-black text-fg-primary mt-1">{pos.filter(p => p.status === "pending").length}</div></Card>
+            <Card className="p-4"><div className="text-xs text-fg-tertiary font-semibold uppercase">Total POs</div><div className="text-3xl font-black text-fg-primary mt-1">{pos.length}</div></Card>
+            <Card className="p-4"><div className="text-xs text-fg-tertiary font-semibold uppercase">Materials</div><div className="text-3xl font-black text-fg-primary mt-1">{prices.length}</div></Card>
           </div>
-          <h2 className="font-bold text-ink-900 text-base mb-3">Recent Purchase Orders</h2>
+          <h2 className="font-bold text-fg-primary text-base mb-3">Recent Purchase Orders</h2>
           {pos.slice(0, 5).map(po => (
             <Card key={po.id} className="p-4 mb-2">
               <div className="flex items-start justify-between">
-                <div><span className="text-xs font-mono font-bold text-safety-600">{po.no}</span><div className="font-semibold text-ink-900 text-sm mt-0.5">{po.project_name}</div></div>
-                <div className="text-right"><div className="text-base font-black text-ink-900">{fmtCur(po.amount)}</div><Badge tone={po.status === "active" ? "success" : po.status === "pending" ? "warning" : "neutral"}>{po.status}</Badge></div>
+                <div><span className="text-xs font-mono font-bold text-accent">{po.no}</span><div className="font-semibold text-fg-primary text-sm mt-0.5">{po.project_name}</div></div>
+                <div className="text-right"><div className="text-base font-black text-fg-primary">{fmtCur(po.amount)}</div><Badge tone={po.status === "active" ? "success" : po.status === "pending" ? "warning" : "neutral"}>{po.status}</Badge></div>
               </div>
             </Card>
           ))}
@@ -83,13 +83,13 @@ export function VendorPortalView(): JSX.Element {
           {pos.map(po => (
             <Card key={po.id} className="p-5">
               <div className="flex items-start justify-between gap-3">
-                <div><span className="text-xs font-mono font-bold text-safety-600">{po.no}</span><div className="font-bold text-ink-900 text-sm mt-1">{po.project_name}</div></div>
-                <div className="text-right shrink-0"><div className="text-base font-black text-ink-900">{fmtCur(po.amount)}</div><Badge tone={po.status === "active" ? "success" : po.status === "pending" ? "warning" : "neutral"}>{po.status}</Badge></div>
+                <div><span className="text-xs font-mono font-bold text-accent">{po.no}</span><div className="font-bold text-fg-primary text-sm mt-1">{po.project_name}</div></div>
+                <div className="text-right shrink-0"><div className="text-base font-black text-fg-primary">{fmtCur(po.amount)}</div><Badge tone={po.status === "active" ? "success" : po.status === "pending" ? "warning" : "neutral"}>{po.status}</Badge></div>
               </div>
-              <div className="text-xs text-ink-400 mt-2"><Icon name="calendar" size={11} className="inline mr-1" />{fmtDate(po.created)}</div>
+              <div className="text-xs text-fg-tertiary mt-2"><Icon name="calendar" size={11} className="inline mr-1" />{fmtDate(po.created)}</div>
             </Card>
           ))}
-          {pos.length === 0 && <div className="text-center py-16 text-ink-400"><Icon name="clipboard" size={32} className="mx-auto mb-3 opacity-30" /><p>No purchase orders</p></div>}
+          {pos.length === 0 && <div className="text-center py-16 text-fg-tertiary"><Icon name="clipboard" size={32} className="mx-auto mb-3 opacity-30" /><p>No purchase orders</p></div>}
         </div>
       )}
 
@@ -97,11 +97,11 @@ export function VendorPortalView(): JSX.Element {
         <div className="space-y-2">
           {prices.map(mp => (
             <Card key={mp.id} className="p-4 flex items-center justify-between">
-              <div className="font-semibold text-ink-900 text-sm">{mp.material}</div>
-              <div className="text-right"><div className="font-black text-ink-900">{fmtCur(mp.price)}</div><div className="text-[10px] text-ink-400">{fmtDate(mp.updated)}</div></div>
+              <div className="font-semibold text-fg-primary text-sm">{mp.material}</div>
+              <div className="text-right"><div className="font-black text-fg-primary">{fmtCur(mp.price)}</div><div className="text-[10px] text-fg-tertiary">{fmtDate(mp.updated)}</div></div>
             </Card>
           ))}
-          {prices.length === 0 && <div className="text-center py-16 text-ink-400"><Icon name="trend" size={32} className="mx-auto mb-3 opacity-30" /><p>No material prices</p></div>}
+          {prices.length === 0 && <div className="text-center py-16 text-fg-tertiary"><Icon name="trend" size={32} className="mx-auto mb-3 opacity-30" /><p>No material prices</p></div>}
         </div>
       )}
     </div>

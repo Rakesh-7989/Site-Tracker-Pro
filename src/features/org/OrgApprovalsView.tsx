@@ -57,27 +57,27 @@ function Inner({ orgId, updatedBy }: { orgId: string; updatedBy: string }): JSX.
   const editExisting = (ch: ApprovalChain) => { setResource(ch.resource); setName(ch.name); setRungs(ch.rungs); };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Approval chains</h1>
-      <p className="text-sm text-ink-500 -mt-2">For each resource, define who must sign off above a ₹ threshold. One chain per resource.</p>
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Approval chains</h1>
+      <p className="text-sm text-fg-secondary -mt-2">For each resource, define who must sign off above a ₹ threshold. One chain per resource.</p>
       {error && <Alert variant="danger">{error}</Alert>}
 
       <Card className="p-3 space-y-3">
         <div className="flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Resource</span><Select className="mt-1 w-40" value={resource} onChange={e => setResource(e.target.value as ApprovalResource)} options={RES_OPTS} /></div>
-          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Chain name</span><Input className="mt-1" placeholder="e.g. Standard sign-off" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Resource</span><Select className="mt-1 w-40" value={resource} onChange={e => setResource(e.target.value as ApprovalResource)} options={RES_OPTS} /></div>
+          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Chain name</span><Input className="mt-1" placeholder="e.g. Standard sign-off" value={name} onChange={e => setName(e.target.value)} /></div>
         </div>
-        <div className="flex gap-2 flex-wrap items-end border-t border-cream-100 pt-3">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">{'>='} Amount ₹</span><Input className="mt-1 w-28" type="number" value={thr} onChange={e => setThr(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Approver</span><Select className="mt-1 w-32" value={role} onChange={e => setRole(e.target.value)} options={ROLE_OPTS} /></div>
+        <div className="flex gap-2 flex-wrap items-end border-t border-default pt-3">
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{'>='} Amount ₹</span><Input className="mt-1 w-28" type="number" value={thr} onChange={e => setThr(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Approver</span><Select className="mt-1 w-32" value={role} onChange={e => setRole(e.target.value)} options={ROLE_OPTS} /></div>
           <Button size="sm" variant="secondary" onClick={addRung} disabled={!thr}>+ Rung</Button>
         </div>
         {rungs.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {rungs.map((r, i) => (
-              <span key={i} className="inline-flex items-center gap-1 text-xs bg-cream-100 rounded-full pl-2 pr-1 py-0.5">
+              <span key={i} className="inline-flex items-center gap-1 text-xs bg-secondary rounded-full pl-2 pr-1 py-0.5">
                 {'>='}{fmtThreshold(r.threshold)} → {r.role}
-                <button type="button" onClick={() => setRungs(rs => rs.filter((_, j) => j !== i))} className="text-ink-400 hover:text-rose-500"><Icon name="x" size={12} /></button>
+                <button type="button" onClick={() => setRungs(rs => rs.filter((_, j) => j !== i))} className="text-fg-tertiary hover:text-error"><Icon name="x" size={12} /></button>
               </span>
             ))}
           </div>
@@ -86,14 +86,14 @@ function Inner({ orgId, updatedBy }: { orgId: string; updatedBy: string }): JSX.
       </Card>
 
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No approval chains configured.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No approval chains configured.</div>
         : <div className="space-y-2">{rows.map(ch => (
             <Card key={ch.resource} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 flex items-center gap-2"><Badge tone="info">{RES_LABEL[ch.resource]}</Badge> {ch.name}</div>
-                <div className="text-[11px] text-ink-400 mt-1">{ch.rungs.map(r => `>=${fmtThreshold(r.threshold)} → ${r.role}`).join("  ·  ") || "no rungs"}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary flex items-center gap-2"><Badge tone="info">{RES_LABEL[ch.resource]}</Badge> {ch.name}</div>
+                <div className="text-[11px] text-fg-tertiary mt-1">{ch.rungs.map(r => `>=${fmtThreshold(r.threshold)} → ${r.role}`).join("  ·  ") || "no rungs"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => editExisting(ch)}><Icon name="sliders" size={14} /></Button>
-                <Button size="sm" variant="ghost" onClick={() => void run(`d-${ch.resource}`, c => deleteChain(c, orgId, ch.resource), { apply: () => setRows(prev => prev.filter(x => x.resource !== ch.resource)), rollback: () => setRows(prev => [...prev, ch]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => void run(`d-${ch.resource}`, c => deleteChain(c, orgId, ch.resource), { apply: () => setRows(prev => prev.filter(x => x.resource !== ch.resource)), rollback: () => setRows(prev => [...prev, ch]) })}><Icon name="trash" size={14} className="text-error" /></Button>
               </div>
             </Card>))}</div>}
     </div>

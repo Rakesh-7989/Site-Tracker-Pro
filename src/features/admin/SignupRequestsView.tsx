@@ -115,13 +115,13 @@ function Inner(): JSX.Element {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
       <Alert variant="info">
         Self-service registration is live at <b>/register</b>. Firms can now create their own workspace
         directly. This queue is for legacy/paid-plan requests only.
       </Alert>
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="font-display text-2xl font-bold text-ink-900">Signup requests</h1>
+        <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Signup requests</h1>
         <Select className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
@@ -129,21 +129,21 @@ function Inner(): JSX.Element {
 
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : rows.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-ink-500"><Icon name="mail" size={24} className="mx-auto text-ink-300 mb-2" />No {filter === "all" ? "" : filter} requests.</Card>
+          <Card className="p-8 text-center text-sm text-fg-secondary"><Icon name="mail" size={24} className="mx-auto text-fg-tertiary mb-2" />No {filter === "all" ? "" : filter} requests.</Card>
         ) : <div className="space-y-2">{rows.map(r => (
           <Card key={r.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-ink-900">{r.firmName}</span>
+                  <span className="font-semibold text-fg-primary">{r.firmName}</span>
                   <Badge tone="info">{PLAN_LABEL[r.plan] ?? r.plan}</Badge>
                   <Badge tone={statusTone(r.status)}>{r.status}</Badge>
                   {r.status === "pending" && <Badge tone={PAY_TONE[r.paymentStatus]}>{PAY_LABEL[r.paymentStatus]}</Badge>}
-                  {(() => { const s = slaText(r); return s ? <span className={`text-[11px] font-semibold ${s.over ? "text-rose-600" : "text-amber-600"}`}>â± {s.text}</span> : null; })()}
+                  {(() => { const s = slaText(r); return s ? <span className={`text-[11px] font-semibold ${s.over ? "text-error" : "text-warning"}`}>â± {s.text}</span> : null; })()}
                 </div>
-                <div className="text-sm text-ink-600 mt-0.5">{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ""}</div>
-                {r.message && <div className="text-[12px] text-ink-500 mt-1 italic">"{r.message}"</div>}
-                <div className="text-[11px] text-ink-400 mt-1">{fmtDate(r.createdAt)}{r.reviewNotes ? ` · note: ${r.reviewNotes}` : ""}</div>
+                <div className="text-sm text-fg-secondary mt-0.5">{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ""}</div>
+                {r.message && <div className="text-[12px] text-fg-secondary mt-1 italic">"{r.message}"</div>}
+                <div className="text-[11px] text-fg-tertiary mt-1">{fmtDate(r.createdAt)}{r.reviewNotes ? ` · note: ${r.reviewNotes}` : ""}</div>
               </div>
               {r.status === "pending" && (
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -153,8 +153,8 @@ function Inner(): JSX.Element {
               )}
             </div>
             {canAssign && (
-              <div className="mt-3 flex items-center gap-2 border-t border-cream-100 pt-3 flex-wrap">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Handled by</span>
+              <div className="mt-3 flex items-center gap-2 border-t border-default pt-3 flex-wrap">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Handled by</span>
                 <Select className="w-56" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
                   onChange={e => void assign(r, e.target.value)}
                   options={[{ value: "", label: "— Unassigned —" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
@@ -162,24 +162,24 @@ function Inner(): JSX.Element {
             )}
             {r.status === "pending" && (
               <div className="mt-2 flex items-center gap-2 flex-wrap text-[12px]">
-                <span className="text-ink-400 font-semibold">Payment:</span>
+                <span className="text-fg-tertiary font-semibold">Payment:</span>
                 {r.paymentStatus === "unpaid" ? (<>
                   <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied — share it with ${r.email}.`); }}>Copy UPI link</Button>
                   <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void sendPayLink(r)}>Cashfree link</Button>
                   {isOwner ? (<>
                     <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
                     <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "waived")}>Waive</Button>
-                  </>) : <span className="text-ink-500">Owner must confirm payment.</span>}
-                  {r.paymentRef && <span className="text-ink-500">claim UTR: {r.paymentRef}</span>}
+                  </>) : <span className="text-fg-secondary">Owner must confirm payment.</span>}
+                  {r.paymentRef && <span className="text-fg-secondary">claim UTR: {r.paymentRef}</span>}
                 </>) : (<>
-                  <span className="text-ink-700">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
+                  <span className="text-fg-primary">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
                   {isOwner && <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>}
                 </>)}
               </div>
             )}
             {rejecting === r.id && (
-              <div className="mt-3 flex gap-2 items-end border-t border-cream-100 pt-3">
-                <div className="flex-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Reason (optional)</span>
+              <div className="mt-3 flex gap-2 items-end border-t border-default pt-3">
+                <div className="flex-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Reason (optional)</span>
                   <Input className="mt-1" value={rejectNote} onChange={e => setRejectNote(e.target.value)} placeholder="Why is this being rejected?" /></div>
                 <Button size="sm" variant="secondary" onClick={() => void doReject(r)} disabled={busy === r.id}>Confirm reject</Button>
               </div>

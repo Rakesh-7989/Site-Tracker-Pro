@@ -22,6 +22,8 @@ export interface NavItem {
    * always shown to any signed-in user (e.g. Dashboard).
    */
   requires?: Capability;
+  /** Any of these capabilities unlocks the item. Overrides `requires` when set. */
+  requiresAny?: ReadonlyArray<Capability>;
   /** Optional grouping header shown above the item. */
   group?: string;
   /**
@@ -64,12 +66,13 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/handover", label: "Handover Packet", icon: "doc", requires: "handover:view", group: "Field" },
   { to: "/worklogs", label: "Worklogs", icon: "clipboard", requires: "labour:manage", group: "Field" },
   { to: "/equipment", label: "Equipment", icon: "truck", requires: "material:add", group: "Field" },
-  { to: "/measurement-book", label: "Measurement Book", icon: "doc", requires: "boq:edit", group: "Field" },
+  { to: "/measurement-book", label: "Measurement Book", icon: "doc", requiresAny: ["boq:edit", "progress:edit"], group: "Field" },
 
   { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement" },
-  { to: "/pos", label: "Purchase Orders", icon: "doc", requires: "po:create", group: "Procurement" },
-   { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "vendor:manage", group: "Procurement" },
-   { to: "/hierarchy", label: "Hierarchy", icon: "building", requires: "project:create", group: "Planning" },
+  { to: "/pos", label: "Purchase Orders", icon: "doc", requiresAny: ["po:create", "material:add"], group: "Procurement" },
+  { to: "/rabills", label: "RA Bills", icon: "wallet", requires: "rabill:create", group: "Procurement" },
+   { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "material:price:view", group: "Procurement" },
+   { to: "/hierarchy", label: "Hierarchy", icon: "building", requiresAny: ["project:create", "budget:view"], group: "Planning" },
    { to: "/forecast", label: "Cost Forecast", icon: "barChart", requires: "budget:view", group: "Insights" },
    { to: "/delegations", label: "Delegations", icon: "users", requires: "org:approvals:manage", group: "Org Admin" },
 
@@ -99,8 +102,8 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/admin/usage", label: "Usage", icon: "barChart", requires: "platform:orgs:manage", area: "orgs", group: "Platform" },
   { to: "/admin/support", label: "Support", icon: "mail", requires: "platform:orgs:manage", group: "Platform" },
   { to: "/admin/settings", label: "Settings", icon: "sliders", requires: "platform:settings:manage", area: "orgs", group: "Platform" },
-  { to: "/admin/feature-flags", label: "Feature Flags", icon: "sliders", requires: "platform:settings:manage", area: "orgs", group: "Platform" },
-  { to: "/admin/branding", label: "Branding", icon: "sliders", requires: "platform:orgs:manage", group: "Platform", stubId: "admin-branding" },
+  { to: "/admin/feature-flags", label: "Feature Flags", icon: "flag", requires: "platform:settings:manage", area: "orgs", group: "Platform" },
+  { to: "/admin/branding", label: "Branding", icon: "image", requires: "platform:orgs:manage", group: "Platform", stubId: "admin-branding" },
   { to: "/admin/audit-v2", label: "Audit v2 (immutable)", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform" },
 
   // Always visible — every signed-in user can manage their own account security (2FA).
@@ -147,16 +150,15 @@ export function buildNav(session: AuthSession | null): NavItem[] {
       } catch { return false; }
     })();
 
-  return NAV_CATALOG.filter(item =>
-    (!item.requires || caps.has(item.requires)) &&
+  return NAV_CATALOG.filter(item => {
+    const capOk = item.requiresAny
+      ? item.requiresAny.some(c => caps.has(c))
+      : !item.requires || caps.has(item.requires);
+    return capOk &&
     (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))) &&
-    // A staff MEMBER only sees admin items for areas they're granted (owner/head
-    // are not members, so they see everything). Empty grants = full access (the
-    // default), matching useHasStaffArea + the set_staff_areas RPC semantics.
     (!item.area || !isMember || areas.length === 0 || areas.includes(item.area)) &&
-    // Sprint 1 freeze: hide stub views from non-staff users
-    (!item.stubId || isStaff),
-  );
+    (!item.stubId || isStaff);
+  });
 }
 
 /**

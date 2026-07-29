@@ -38,26 +38,26 @@ function OrgActivityInner({ orgId }: { orgId: string }): JSX.Element {
   useEffect(() => { void reload(); }, [reload]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Activity</h1>
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Activity</h1>
       {error && <Alert variant="danger">{error}</Alert>}
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : rows.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-ink-500"><Icon name="shield" size={22} className="mx-auto text-ink-300 mb-2" />No activity recorded yet.</Card>
+          <Card className="p-6 text-center text-sm text-fg-secondary"><Icon name="shield" size={22} className="mx-auto text-fg-tertiary mb-2" />No activity recorded yet.</Card>
         ) : (
-          <Card className="divide-y divide-cream-100">
+          <Card className="divide-y divide-default">
             {rows.map(r => (
               <div key={r.id} className="p-3 flex items-start gap-3">
                 <Badge tone={ACTION_TONE[r.action] ?? "neutral"}>{r.action || "·"}</Badge>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm text-ink-800">
+                  <div className="text-sm text-fg-primary">
                     <span className="font-semibold">{r.actorName}</span>
-                    {r.actorRole && <span className="text-ink-400"> ({r.actorRole})</span>}
-                    {" "}<span className="text-ink-500">{r.resource}{r.resourceId ? ` #${r.resourceId.slice(0, 8)}` : ""}</span>
+                    {r.actorRole && <span className="text-fg-tertiary"> ({r.actorRole})</span>}
+                    {" "}<span className="text-fg-secondary">{r.resource}{r.resourceId ? ` #${r.resourceId.slice(0, 8)}` : ""}</span>
                   </div>
-                  {r.message && <div className="text-[12px] text-ink-500 truncate">{r.message}</div>}
+                  {r.message && <div className="text-[12px] text-fg-secondary truncate">{r.message}</div>}
                 </div>
-                <div className="text-[11px] text-ink-400 flex-shrink-0 whitespace-nowrap">{fmtTs(r.ts)}</div>
+                <div className="text-[11px] text-fg-tertiary flex-shrink-0 whitespace-nowrap">{fmtTs(r.ts)}</div>
               </div>
             ))}
           </Card>

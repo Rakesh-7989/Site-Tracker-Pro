@@ -75,7 +75,7 @@ export function AddProjectMemberModal({
         {loading ? (
           <div className="flex items-center justify-center py-6"><Spinner size={20} /></div>
         ) : members.length === 0 ? (
-          <p className="text-sm text-ink-500 py-4 text-center">All org members are already on this project.</p>
+          <p className="text-sm text-fg-secondary py-4 text-center">All org members are already on this project.</p>
         ) : (
           <>
             <Select

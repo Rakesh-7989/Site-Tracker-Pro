@@ -194,8 +194,9 @@ export function isProjectType(value: unknown): value is ProjectType {
  * project (e.g. superadmin, prospector).
  */
 export function defaultProjectTierFor(role: IdentityRole): ProjectTierRole | null {
-  if (role === "superadmin" || role === "prospector" || role === "orgadmin") return null;
+  if (role === "superadmin" || role === "orgadmin") return null;
   if (role === "vendor") return null;
+  if (role === "prospector") return "pm";
   return role as ProjectTierRole;
 }
 

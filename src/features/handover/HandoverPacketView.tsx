@@ -46,23 +46,23 @@ export function HandoverPacketView(): JSX.Element {
   useEffect(() => { void loadProjects(); }, [loadProjects]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-xl font-bold text-ink-900">Handover Packet</h1>
-        {canGenerate && <span className="text-xs font-semibold text-safety-600 bg-safety-50 px-2 py-1 rounded-full">Sprint 4</span>}
+        <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Handover Packet</h1>
+        {canGenerate && <span className="text-xs font-semibold text-accent bg-accent-tint px-2 py-1 rounded-full">Sprint 4</span>}
       </div>
       {!canView && <Alert variant="danger">You do not have permission to view the handover packet.</Alert>}
       {canView && (
         <>
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-ink-700">Project</label>
-            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-ink-900 outline-none focus:border-safety-500">
+            <label className="text-sm font-medium text-fg-secondary">Project</label>
+            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent">
               {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
           <nav className="flex gap-1 border-b border-border">
             {(["punch", "submittals", "permits", "generate"] as Tab[]).map(t => (
-              <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === t ? "border-safety-500 text-safety-600" : "border-transparent text-ink-500 hover:text-ink-700"}`}>
+              <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === t ? "border-accent text-accent" : "border-transparent text-fg-secondary hover:text-fg-secondary"}`}>
                 {t === "punch" ? "Punch List" : t === "submittals" ? "Submittals" : t === "permits" ? "Permits" : "Generate Packet"}
               </button>
             ))}
@@ -119,31 +119,31 @@ function PunchList({ projectId }: { projectId: string }): JSX.Element {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-ink-900">Punch List</h2>
-        {rows.length > 0 && <span className="text-sm text-ink-500">{open} open</span>}
+        <h2 className="font-display text-lg font-bold text-fg-primary">Punch List</h2>
+        {rows.length > 0 && <span className="text-sm text-fg-secondary">{open} open</span>}
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Location</span><Input className="mt-1 w-32" placeholder="Unit 4B" value={loc} onChange={e => setLoc(e.target.value)} /></div>
-          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Defect</span><Input className="mt-1" placeholder="e.g. Paint chipped" value={defect} onChange={e => setDefect(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Trade</span><Input className="mt-1 w-28" placeholder="finishing" value={trade} onChange={e => setTrade(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Severity</span><Select className="mt-1 w-auto" value={sev} onChange={e => setSev(e.target.value as PunchSeverity)} options={SEV} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input className="mt-1 w-32" placeholder="Unit 4B" value={loc} onChange={e => setLoc(e.target.value)} /></div>
+          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Defect</span><Input className="mt-1" placeholder="e.g. Paint chipped" value={defect} onChange={e => setDefect(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Trade</span><Input className="mt-1 w-28" placeholder="finishing" value={trade} onChange={e => setTrade(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Severity</span><Select className="mt-1 w-auto" value={sev} onChange={e => setSev(e.target.value as PunchSeverity)} options={SEV} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !loc.trim() || !defect.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No punch items.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No punch items.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className={`p-3 flex items-center justify-between gap-3 ${r.status === "resolved" || r.status === "verified" ? "opacity-60" : ""}`}>
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} &mdash; {r.defect}</div>
-                <div className="text-[11px] text-ink-400">{r.trade ?? "-"}</div>
+                <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} &mdash; {r.defect}</div>
+                <div className="text-[11px] text-fg-tertiary">{r.trade ?? "-"}</div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
-                  : <span className="text-xs text-ink-500">{r.status.replace("_", " ")}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePunch(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePunch(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>
             </Card>))}
         </div>
@@ -187,29 +187,29 @@ function SubmittalsList({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-ink-900">Submittals</h2>
+      <h2 className="font-display text-lg font-bold text-fg-primary">Submittals</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">No.</span><Input className="mt-1 w-24" placeholder="S-001" value={no} onChange={e => setNo(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Type</span><Select className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value as SubmittalType)} options={SUBMITTAL_TYPE_OPTS} /></div>
-          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Title</span><Input className="mt-1" placeholder="Drawing revision" value={title} onChange={e => setTitle(e.target.value)} /></div>
-          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Description</span><Input className="mt-1" placeholder="Optional notes" value={desc} onChange={e => setDesc(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">No.</span><Input className="mt-1 w-24" placeholder="S-001" value={no} onChange={e => setNo(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Select className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value as SubmittalType)} options={SUBMITTAL_TYPE_OPTS} /></div>
+          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Title</span><Input className="mt-1" placeholder="Drawing revision" value={title} onChange={e => setTitle(e.target.value)} /></div>
+          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="Optional notes" value={desc} onChange={e => setDesc(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No submittals.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No submittals.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink-800 truncate">{r.no} &mdash; {r.title}</div>
-                <div className="text-[11px] text-ink-400">{r.type.replace("_", " ")}{r.description ? ` &middot; ${r.description}` : ""}</div>
+                <div className="text-sm font-semibold text-fg-primary truncate">{r.no} &mdash; {r.title}</div>
+                <div className="text-[11px] text-fg-tertiary">{r.type.replace("_", " ")}{r.description ? ` &middot; ${r.description}` : ""}</div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SubmittalStatus; void run(`s-${r.id}`, c => setSubmittalStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={SUBMITTAL_STATUS_OPTS} />
                   : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSubmittal(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSubmittal(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>
             </Card>))}
         </div>
@@ -252,28 +252,28 @@ function PermitsList({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-ink-900">Permits</h2>
+      <h2 className="font-display text-lg font-bold text-fg-primary">Permits</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Kind</span><Select className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as PermitKind)} options={PERMIT_KIND_OPTS} /></div>
-          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Ref no.</span><Input className="mt-1" placeholder="e.g. ENV-001" value={refNo} onChange={e => setRefNo(e.target.value)} /></div>
-          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Authority</span><Input className="mt-1" placeholder="e.g. EPA" value={authority} onChange={e => setAuthority(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as PermitKind)} options={PERMIT_KIND_OPTS} /></div>
+          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Ref no.</span><Input className="mt-1" placeholder="e.g. ENV-001" value={refNo} onChange={e => setRefNo(e.target.value)} /></div>
+          <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Authority</span><Input className="mt-1" placeholder="e.g. EPA" value={authority} onChange={e => setAuthority(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add permit"}</Button>
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No permits tracked.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No permits tracked.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink-800 truncate">{r.kind}{r.refNo ? ` &mdash; ${r.refNo}` : ""}</div>
-                <div className="text-[11px] text-ink-400">{r.issuingAuthority ?? "-"}{r.validUntil ? ` &middot; Valid until ${r.validUntil}` : ""}</div>
+                <div className="text-sm font-semibold text-fg-primary truncate">{r.kind}{r.refNo ? ` &mdash; ${r.refNo}` : ""}</div>
+                <div className="text-[11px] text-fg-tertiary">{r.issuingAuthority ?? "-"}{r.validUntil ? ` &middot; Valid until ${r.validUntil}` : ""}</div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PermitStatus; void run(`s-${r.id}`, c => setPermitStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={PERMIT_STATUS_OPTS} />
                   : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePermit(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePermit(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>
             </Card>))}
         </div>
@@ -314,14 +314,14 @@ function GenerateSection({ projectId, orgId }: { projectId: string; orgId: strin
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-ink-900">Generate Handover Packet</h2>
-      <p className="text-sm text-ink-500">Bundle all submittals and permits into a single handover manifest. The manifest is hashed and a merkle root is computed for the blockchain anchor.</p>
+      <h2 className="font-display text-lg font-bold text-fg-primary">Generate Handover Packet</h2>
+      <p className="text-sm text-fg-secondary">Bundle all submittals and permits into a single handover manifest. The manifest is hashed and a merkle root is computed for the blockchain anchor.</p>
       {error && <Alert variant="danger">{error}</Alert>}
       <Button onClick={() => void generate()} disabled={loading}>{loading ? <Spinner size={14} /> : "Generate Packet"}</Button>
       {manifest && (
         <Card className="p-4">
-          <h3 className="font-display text-sm font-bold text-ink-900 mb-2">Manifest Output</h3>
-          <pre className="text-xs font-mono text-ink-600 whitespace-pre-wrap max-h-64 overflow-auto bg-bg-secondary rounded-lg p-3">{manifest}</pre>
+          <h3 className="font-display text-sm font-bold text-fg-primary mb-2">Manifest Output</h3>
+          <pre className="text-xs font-mono text-fg-secondary whitespace-pre-wrap max-h-64 overflow-auto bg-bg-secondary rounded-lg p-3">{manifest}</pre>
         </Card>
       )}
     </div>
