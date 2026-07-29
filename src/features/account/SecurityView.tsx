@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Account → Security (/settings/security).
+// SiteTrack Pro � Account ? Security (/settings/security).
 import { getClient } from "@/lib/supabase";
 //
 // Self-service two-factor auth (TOTP). Any signed-in user can enable 2FA with
@@ -75,23 +75,23 @@ export function SecurityView(): JSX.Element {
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink-900">Security</h1>
-        <div className="text-sm text-ink-500">{session.user.email}</div>
+        <h1 className="font-display text-2xl font-bold text-fg-primary">Security</h1>
+        <div className="text-sm text-fg-secondary">{session.user.email}</div>
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
       {isAdmin && !isOn && (
-        <Alert variant="warning">You have an admin role — turning on two-factor authentication is strongly recommended.</Alert>
+        <Alert variant="warning">You have an admin role � turning on two-factor authentication is strongly recommended.</Alert>
       )}
 
       <Card className="p-5">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-safety-50 text-safety-600 grid place-items-center"><Icon name="lock" size={18} /></div>
+              <div className="w-9 h-9 rounded-lg bg-accent-tint text-accent grid place-items-center"><Icon name="lock" size={18} /></div>
               <div>
-                <div className="font-semibold text-ink-900">Two-factor authentication</div>
-                <div className="text-xs text-ink-500">An extra 6-digit code from your phone at sign-in.</div>
+                <div className="font-semibold text-fg-primary">Two-factor authentication</div>
+                <div className="text-xs text-fg-secondary">An extra 6-digit code from your phone at sign-in.</div>
               </div>
             </div>
           </div>
@@ -103,20 +103,20 @@ export function SecurityView(): JSX.Element {
         ) : isOn ? (
           <div className="mt-4 space-y-2">
             {verified.map(f => (
-              <div key={f.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-cream-200">
-                <div className="text-sm text-ink-700 flex items-center gap-2"><Icon name="check" size={15} className="text-emerald-500" /> {f.friendlyName || "Authenticator app"}</div>
-                <Button size="sm" variant="ghost" disabled={busy} onClick={() => void removeFactor(f.id)} className="!text-rose-600 hover:!bg-rose-50">Remove</Button>
+              <div key={f.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-default">
+                <div className="text-sm text-fg-primary flex items-center gap-2"><Icon name="check" size={15} className="text-success" /> {f.friendlyName || "Authenticator app"}</div>
+                <Button size="sm" variant="ghost" disabled={busy} onClick={() => void removeFactor(f.id)} className="!text-error hover:!bg-error-tint">Remove</Button>
               </div>
             ))}
           </div>
         ) : enroll ? (
           <div className="mt-4 space-y-3">
-            <div className="text-sm text-ink-700">1. Scan this QR code in Google Authenticator / Authy / 1Password:</div>
+            <div className="text-sm text-fg-primary">1. Scan this QR code in Google Authenticator / Authy / 1Password:</div>
             {enroll.qrCode
-              ? <img src={enroll.qrCode} alt="2FA QR code" className="w-44 h-44 border border-cream-200 rounded-lg bg-white p-2" />
-              : <div className="text-xs text-ink-400">QR unavailable — use the key below.</div>}
-            <div className="text-xs text-ink-500">Or enter this key manually: <code className="font-mono bg-cream-100 px-1.5 py-0.5 rounded text-ink-800 break-all">{enroll.secret}</code></div>
-            <div className="text-sm text-ink-700">2. Enter the 6-digit code it shows:</div>
+              ? <img src={enroll.qrCode} alt="2FA QR code" className="w-44 h-44 border border-default rounded-lg bg-panel p-2" />
+              : <div className="text-xs text-fg-tertiary">QR unavailable � use the key below.</div>}
+            <div className="text-xs text-fg-secondary">Or enter this key manually: <code className="font-mono bg-secondary px-1.5 py-0.5 rounded text-fg-primary break-all">{enroll.secret}</code></div>
+            <div className="text-sm text-fg-primary">2. Enter the 6-digit code it shows:</div>
             <Input value={code} onChange={e => setCode(e.target.value)} inputMode="numeric" maxLength={7} placeholder="123456" autoComplete="one-time-code" className="max-w-[180px] tracking-[0.3em] text-center font-mono" />
             <div className="flex gap-2">
               <Button size="sm" disabled={busy} onClick={() => void confirmEnroll()}>{busy ? <Spinner size={14} /> : "Verify & enable"}</Button>

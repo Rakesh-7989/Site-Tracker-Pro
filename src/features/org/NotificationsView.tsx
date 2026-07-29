@@ -36,22 +36,22 @@ export function NotificationsView(): JSX.Element {
   const unread = rows.filter(r => !r.readAt).length;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-4 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-ink-900">Notifications</h1>
+        <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Notifications</h1>
         {unread > 0 && <Button size="sm" variant="secondary" onClick={() => void allRead()} disabled={busy}>{busy ? <Spinner size={14} /> : `Mark all read (${unread})`}</Button>}
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : rows.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-ink-500"><Icon name="bell" size={24} className="mx-auto text-ink-300 mb-2" />You're all caught up.</Card>
+          <Card className="p-8 text-center text-sm text-fg-secondary"><Icon name="bell" size={24} className="mx-auto text-fg-tertiary mb-2" />You're all caught up.</Card>
         ) : <div className="space-y-2">{rows.map(n => (
-            <button type="button" key={n.id} onClick={() => void open(n)} className="w-full text-left block"><Card className={`p-3 flex items-start gap-3 transition ${n.link ? "hover:border-safety-300" : ""} ${n.readAt ? "" : "border-safety-200 bg-safety-50/40"}`}>
-              <div className="w-8 h-8 rounded-lg bg-cream-100 text-ink-500 grid place-items-center flex-shrink-0 mt-0.5"><Icon name="bell" size={15} /></div>
+            <button type="button" key={n.id} onClick={() => void open(n)} className="w-full text-left block"><Card className={`p-3 flex items-start gap-3 transition ${n.link ? "hover:border-accent" : ""} ${n.readAt ? "" : "border-accent bg-accent-tint"}`}>
+              <div className="w-8 h-8 rounded-lg bg-secondary text-fg-secondary grid place-items-center flex-shrink-0 mt-0.5"><Icon name="bell" size={15} /></div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-ink-800 flex items-center gap-2">{n.title}{!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-safety-500 inline-block" />}</div>
-                {n.body && <div className="text-[12px] text-ink-500">{n.body}</div>}
-                <div className="text-[11px] text-ink-400 mt-0.5">{fmtTs(n.createdAt)}{n.link ? " · tap to open" : ""}</div>
+                <div className="text-sm font-semibold text-fg-primary flex items-center gap-2">{n.title}{!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />}</div>
+                {n.body && <div className="text-[12px] text-fg-secondary">{n.body}</div>}
+                <div className="text-[11px] text-fg-tertiary mt-0.5">{fmtTs(n.createdAt)}{n.link ? " · tap to open" : ""}</div>
               </div>
             </Card></button>
           ))}</div>}

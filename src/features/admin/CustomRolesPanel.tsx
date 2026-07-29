@@ -102,7 +102,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">Custom Roles (this org)</h3>
+        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Custom Roles (this org)</h3>
         {!draft && <Button size="sm" variant="secondary" onClick={startNew}><Icon name="plus" size={14} /> New role</Button>}
       </div>
 
@@ -110,14 +110,14 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
 
       {/* Editor */}
       {draft && (
-        <div className="space-y-3 border border-stone-200 rounded-xl p-3 mb-3">
+        <div className="space-y-3 border border-default rounded-xl p-3 mb-3">
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Role name</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Role name</span>
               <Input className="mt-1" value={draft.label} placeholder="e.g. Site Lead" onChange={e => setDraft(d => d && ({ ...d, label: e.target.value }))} />
             </label>
             <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Start from (optional)</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Start from (optional)</span>
               <Select
                 className="mt-1"
                 value={draft.basedOn}
@@ -130,7 +130,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
           <div className="max-h-72 overflow-y-auto space-y-3 pr-1">
             {groups.map(g => (
               <div key={g.key}>
-                <div className="text-[11px] font-semibold text-ink-500 mb-1">{g.label}</div>
+                <div className="text-[11px] font-semibold text-fg-secondary mb-1">{g.label}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {g.capabilities.map(cap => {
                     const on = draft.caps.has(cap);
@@ -139,7 +139,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
                         key={cap}
                         type="button"
                         onClick={() => toggleCap(cap)}
-                        className={`px-3 py-1.5 rounded-full text-xs border transition ${on ? "bg-safety-500 text-white border-safety-500" : "bg-white text-ink-500 border-stone-200 hover:bg-cream-100"}`}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition ${on ? "bg-accent text-white border-accent" : "bg-bg-primary text-fg-secondary border-default hover:bg-bg-secondary"}`}
                       >
                         {capabilityLabel(cap)}
                       </button>
@@ -153,7 +153,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={() => void save()} disabled={saving}>{saving ? <Spinner size={14} /> : "Save role"}</Button>
             <Button size="sm" variant="ghost" onClick={() => setDraft(null)} disabled={saving}>Cancel</Button>
-            <span className="text-[11px] text-ink-400 ml-auto">{draft.caps.size} feature{draft.caps.size === 1 ? "" : "s"}</span>
+            <span className="text-[11px] text-fg-tertiary ml-auto">{draft.caps.size} feature{draft.caps.size === 1 ? "" : "s"}</span>
           </div>
         </div>
       )}
@@ -162,21 +162,21 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
       {loading ? (
         <div className="grid place-items-center py-6"><Spinner size={18} /></div>
       ) : roles.length === 0 && !draft ? (
-        <div className="text-sm text-ink-500">No custom roles yet. Create one to give this org a role beyond the 22 standard ones.</div>
+        <div className="text-sm text-fg-secondary">No custom roles yet. Create one to give this org a role beyond the 22 standard ones.</div>
       ) : (
         <div className="space-y-1.5">
           {roles.map(r => (
-            <div key={r.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-cream-100">
+            <div key={r.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-bg-secondary">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink-800 truncate">{r.label}</div>
-                <div className="text-[11px] text-ink-400">
+                <div className="text-sm font-semibold text-fg-primary truncate">{r.label}</div>
+                <div className="text-[11px] text-fg-tertiary">
                   <Badge tone="neutral">{r.capabilities.length} features</Badge>
                   {r.basedOn && <span className="ml-1.5">from {ROLE_LABEL[r.basedOn as IdentityRole] ?? r.basedOn}</span>}
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => startEdit(r)}>Edit</Button>
-                <Button size="sm" variant="ghost" onClick={() => void remove(r)}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => void remove(r)}><Icon name="trash" size={14} className="text-error" /></Button>
               </div>
             </div>
           ))}

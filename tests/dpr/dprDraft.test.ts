@@ -108,7 +108,7 @@ describe("dashboardForRole", () => {
     expect(dashboardForRole("client")).toBe("client");
   });
   it("everything else → default", () => {
-    expect(dashboardForRole("pm")).toBe("default");
+    expect(dashboardForRole("pm")).toBe("pm");
     expect(dashboardForRole("architect")).toBe("default");
     expect(dashboardForRole("superadmin")).toBe("default");
   });

@@ -48,7 +48,7 @@ describe("statusColors", () => {
 
   it("returns a neutral default for unknown status", () => {
     const c = statusColors("frobnicated");
-    expect(c.bg).toBe("bg-cream-100");
+    expect(c.bg).toBe("bg-elevated");
   });
 
   it("handles null / undefined", () => {

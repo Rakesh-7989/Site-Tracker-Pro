@@ -65,22 +65,22 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   }, [reraInput, gstInput, epfoInput, selProject]);
 
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
-  if (visible.length === 0) return <div className="p-10 text-center text-ink-500">No projects to verify. Create one first.</div>;
+  if (visible.length === 0) return <div className="p-10 text-center text-fg-secondary">No projects to verify. Create one first.</div>;
 
-  const dotColor = { emerald: "bg-emerald-500", amber: "bg-amber-500", red: "bg-red-500", stone: "bg-stone-400" }[status.color];
+  const dotColor = { emerald: "bg-success", amber: "bg-accent", red: "bg-error", stone: "bg-secondary" }[status.color];
 
   return (
     <div className="p-4 md:p-10 max-w-5xl">
-      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b-st-line">
+      <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b border-default">
         <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-amber-700 mb-2">— Compliance</div>
-          <h1 className="font-display text-4xl font-light text-ink-900 tracking-editorial leading-none">Statutory Checks</h1>
-          <p className="text-ink-500 text-sm mt-2">RERA · GSTIN · EPFO — format validation + async portal verification.</p>
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-accent-2 mb-2">— Compliance</div>
+          <h1 className="font-display text-4xl font-light text-fg-primary tracking-editorial leading-none">Statutory Checks</h1>
+          <p className="text-fg-secondary text-sm mt-2">RERA · GSTIN · EPFO — format validation + async portal verification.</p>
         </div>
-        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm font-semibold outline-none focus:border-amber-600">{visible.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-panel border border-default rounded-xl text-sm font-semibold outline-none focus:border-accent">{visible.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
       </div>
-      <div className="mb-6 bg-white rounded-2xl p-5 flex items-center gap-4 shadow-editorial border-st-line">
-        <span className={`w-3 h-3 rounded-full ${dotColor}`} /><div className="flex-1"><div className="font-display text-lg font-semibold text-ink-900 tracking-editorial">{status.label}</div><div className="text-[11px] text-ink-500">Project: {projects.find(p => p.id === selProject)?.name}</div></div>
+      <div className="mb-6 bg-panel rounded-2xl p-5 flex items-center gap-4 shadow-editorial border-default">
+        <span className={`w-3 h-3 rounded-full ${dotColor}`} /><div className="flex-1"><div className="font-display text-lg font-semibold text-fg-primary tracking-editorial">{status.label}</div><div className="text-[11px] text-fg-secondary">Project: {projects.find(p => p.id === selProject)?.name}</div></div>
       </div>
       <div className="space-y-4">
         {[
@@ -90,18 +90,18 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         ].map(row => {
           const verified = row.result?.verified;
           const ok = verified && (row.result.status === "REGISTERED_ACTIVE" || row.result.status === "ACTIVE" || row.result.status === "COMPLIANT");
-          return (<div key={row.key} className="bg-white rounded-2xl p-5 shadow-editorial border-st-line">
+          return (<div key={row.key} className="bg-panel rounded-2xl p-5 shadow-editorial border-default">
             <div className="flex items-end justify-between mb-3 flex-wrap gap-2">
-              <div><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-ink-500">{row.label}</div>{row.result && <div className={`mt-1 text-[11px] font-bold ${ok ? "text-emerald-700" : verified ? "text-amber-700" : "text-red-700"}`}>{ok ? `✓ ${row.result.status}` : verified ? `âš  ${row.result.status}` : `✗ ${row.result.reason || "Verification failed"}`}{row.extra && ` — ${row.extra}`}</div>}</div>
+              <div><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary">{row.label}</div>{row.result && <div className={`mt-1 text-[11px] font-bold ${ok ? "text-success" : verified ? "text-accent-2" : "text-error"}`}>{ok ? `✓ ${row.result.status}` : verified ? `âš  ${row.result.status}` : `✗ ${row.result.reason || "Verification failed"}`}{row.extra && ` — ${row.extra}`}</div>}</div>
             </div>
             <div className="flex gap-2">
-              <input value={row.val} onChange={e => row.setVal(e.target.value)} placeholder={row.placeholder} className="flex-1 p-3 border border-stone-200 rounded-xl text-sm outline-none focus:border-amber-600" />
-              <button onClick={() => runCheck(row.key)} disabled={busy || !row.val.trim()} className="px-4 py-3 bg-ink-900 text-cream font-bold rounded-xl text-sm tracking-wide disabled:opacity-50">{busy ? "Checking..." : "Verify"}</button>
+              <input value={row.val} onChange={e => row.setVal(e.target.value)} placeholder={row.placeholder} className="flex-1 p-3 border border-default rounded-xl text-sm outline-none focus:border-accent" />
+              <button onClick={() => runCheck(row.key)} disabled={busy || !row.val.trim()} className="px-4 py-3 bg-ink text-cream font-bold rounded-xl text-sm tracking-wide disabled:opacity-50">{busy ? "Checking..." : "Verify"}</button>
             </div>
           </div>);
         })}
       </div>
-      <p className="text-[11px] text-ink-500 mt-6 leading-relaxed">External checks are mocked in this build. Production wires Department of Stamps / GST portal / EPFO portal — see <span className="font-semibold">docs/GOLIVE.md</span>.</p>
+      <p className="text-[11px] text-fg-secondary mt-6 leading-relaxed">External checks are mocked in this build. Production wires Department of Stamps / GST portal / EPFO portal — see <span className="font-semibold">docs/GOLIVE.md</span>.</p>
     </div>
   );
 }

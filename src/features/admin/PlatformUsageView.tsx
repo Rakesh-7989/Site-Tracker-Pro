@@ -29,23 +29,23 @@ export function PlatformUsageView(): JSX.Element {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-black text-ink-900 mb-1">Usage Analytics</h1>
-      <p className="text-ink-400 text-sm mb-6">Aggregate platform metrics</p>
+      <h1 className="text-2xl font-black text-fg-primary mb-1">Usage Analytics</h1>
+      <p className="text-fg-tertiary text-sm mb-6">Aggregate platform metrics</p>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <Card className="p-5">
-          <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">Orgs</div>
+          <div className="text-xs font-bold tracking-wider text-fg-secondary uppercase mb-1">Orgs</div>
           <div className="text-3xl font-light">{stats.orgs}</div>
         </Card>
         <Card className="p-5">
-          <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">Users</div>
+          <div className="text-xs font-bold tracking-wider text-fg-secondary uppercase mb-1">Users</div>
           <div className="text-3xl font-light">{stats.users}</div>
         </Card>
         <Card className="p-5">
-          <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">Projects</div>
+          <div className="text-xs font-bold tracking-wider text-fg-secondary uppercase mb-1">Projects</div>
           <div className="text-3xl font-light">{stats.projects}</div>
         </Card>
       </div>
-      <div className="bg-amber-50 rounded-2xl p-4 border-l-4 border-amber-500 text-sm text-amber-900">
+      <div className="bg-warning-tint rounded-2xl p-4 border-l-4 border-accent text-sm text-warning">
         DAU/WAU/MAU counters require a materialized view on activity_log, refreshed by cron. Build after backend go-live.
       </div>
     </div>

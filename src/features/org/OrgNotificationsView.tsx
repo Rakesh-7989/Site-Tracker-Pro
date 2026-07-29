@@ -45,26 +45,26 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Notification rules</h1>
-      <p className="text-sm text-ink-500 -mt-2">Send an alert on a chosen channel whenever an event happens in your org.</p>
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Notification rules</h1>
+      <p className="text-sm text-fg-secondary -mt-2">Send an alert on a chosen channel whenever an event happens in your org.</p>
       {error && <Alert variant="danger">{error}</Alert>}
       <Card className="p-3 flex gap-2 flex-wrap items-end">
-        <div className="flex-1 min-w-[180px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">When...</span><Select className="mt-1" value={trigger} onChange={e => setTrigger(e.target.value)} options={TRIGGER_OPTS} /></div>
-        <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Notify via</span><Select className="mt-1 w-32" value={channel} onChange={e => setChannel(e.target.value as NotifChannel)} options={CHANNEL_OPTS} /></div>
+        <div className="flex-1 min-w-[180px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">When...</span><Select className="mt-1" value={trigger} onChange={e => setTrigger(e.target.value)} options={TRIGGER_OPTS} /></div>
+        <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Notify via</span><Select className="mt-1 w-32" value={channel} onChange={e => setChannel(e.target.value as NotifChannel)} options={CHANNEL_OPTS} /></div>
         <Button onClick={() => void add()} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add rule"}</Button>
       </Card>
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No rules configured.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No rules configured.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{TRIGGER_LABEL[r.trigger] ?? r.trigger}</div>
-                <div className="text-[11px] text-ink-400">via {CHANNEL_LABEL[r.channel]}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{TRIGGER_LABEL[r.trigger] ?? r.trigger}</div>
+                <div className="text-[11px] text-fg-tertiary">via {CHANNEL_LABEL[r.channel]}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button type="button" disabled={busy === `t-${r.id}`} onClick={() => { const next = !r.enabled; void run(`t-${r.id}`, c => setRuleEnabled(c, r.id, next), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, enabled: next } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, enabled: r.enabled } : x)) }); }}>
                   <Badge tone={r.enabled ? "success" : "neutral"}>{r.enabled ? "On" : "Off"}</Badge>
                 </button>
-                <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRule(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRule(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>
               </div>
             </Card>))}</div>}
     </div>

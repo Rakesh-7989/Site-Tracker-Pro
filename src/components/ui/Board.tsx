@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { EmptyState } from "./EmptyState";
 import type { IconName } from "./icons";
+import { Icon } from "./icons";
 import { Spinner } from "./atoms";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export interface BoardColumn {
   id: string;
@@ -39,6 +41,14 @@ export function Board({
 }: BoardProps): JSX.Element {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const dragItem = useRef<string | null>(null);
+  const isMobile = !useMediaQuery("(min-width: 768px)");
+  const [expandedCols, setExpandedCols] = useState<Set<string>>(new Set(columns.length ? [columns[0].id] : []));
+
+  const toggleCol = (colId: string) => setExpandedCols(prev => {
+    const next = new Set(prev);
+    if (next.has(colId)) next.delete(colId); else next.add(colId);
+    return next;
+  });
 
   const getItems = useCallback((colId: string) =>
     items.filter(i => i.columnId === colId),
@@ -62,6 +72,49 @@ export function Board({
     );
   }
 
+  if (isMobile) {
+    return (
+      <div className={cn("space-y-3", className)}>
+        {columns.map(col => {
+          const colItems = getItems(col.id);
+          const isOpen = expandedCols.has(col.id);
+          return (
+            <div key={col.id} className="rounded-2xl bg-elevated border border-default overflow-hidden">
+              <button
+                onClick={() => toggleCol(col.id)}
+                className="flex items-center gap-2 w-full px-4 py-3 text-left"
+              >
+                {col.icon && <span className="flex-shrink-0">{col.icon}</span>}
+                <span className="font-semibold text-sm text-fg-primary">{col.title}</span>
+                <span className={cn(
+                  "ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full",
+                  col.color ?? "bg-elevated text-fg-secondary",
+                )}>
+                  {colItems.length}
+                </span>
+                <Icon name="arrow" size={14} className={cn("text-fg-tertiary transition-transform", isOpen && "rotate-180")} />
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3 space-y-2">
+                  {colItems.length === 0 ? (
+                    <div className="text-sm text-fg-tertiary py-4 text-center">No items</div>
+                  ) : colItems.map(item => (
+                    <div
+                      key={item.id}
+                      className="bg-card rounded-xl border border-default p-3"
+                    >
+                      {item.content}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex gap-4 overflow-x-auto pb-4", className)}>
       {columns.map(col => {
@@ -71,8 +124,8 @@ export function Board({
           <div
             key={col.id}
             className={cn(
-              "flex-1 min-w-[260px] max-w-[360px] rounded-2xl bg-cream-100/50 border border-cream-200 flex flex-col",
-              isOver && "border-safety-500 bg-safety-50/30",
+              "flex-1 min-w-[260px] max-w-[360px] rounded-2xl bg-elevated border border-default flex flex-col",
+              isOver && "border-accent bg-accent-tint",
             )}
             onDragOver={e => { e.preventDefault(); setDragOverCol(col.id); }}
             onDragLeave={() => setDragOverCol(null)}
@@ -90,13 +143,13 @@ export function Board({
             }}
           >
             <div className={cn(
-              "flex items-center gap-2 px-4 py-3 border-b border-cream-200",
+              "flex items-center gap-2 px-4 py-3 border-b border-default",
             )}>
               {col.icon && <span className="flex-shrink-0">{col.icon}</span>}
-              <span className="font-semibold text-sm text-ink-700">{col.title}</span>
+              <span className="font-semibold text-sm text-fg-primary">{col.title}</span>
               <span className={cn(
                 "ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full",
-                col.color ?? "bg-cream-200 text-ink-500",
+                col.color ?? "bg-elevated text-fg-secondary",
               )}>
                 {colItems.length}
               </span>
@@ -108,8 +161,8 @@ export function Board({
                   draggable
                   onDragStart={() => { dragItem.current = item.id; }}
                   className={cn(
-                    "bg-white rounded-xl border border-cream-200 p-3 cursor-grab active:cursor-grabbing",
-                    "hover:shadow-hover hover:border-ink-500/20 transition-all",
+                    "bg-card rounded-xl border border-default p-3 cursor-grab active:cursor-grabbing",
+                    "hover:shadow-hover hover:border-default transition-all",
                     "select-none",
                   )}
                 >

@@ -1,4 +1,4 @@
-ï»¿// SiteTrack Pro â€” project Attendance tab (v3 port, Batch 2, DB-wired).
+// SiteTrack Pro — project Attendance tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -33,27 +33,27 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between"><h2 className="font-display text-lg font-bold text-ink-900">Attendance</h2>{rows.length > 0 && <span className="text-sm text-ink-500">{present} present</span>}</div>
+      <div className="flex items-center justify-between"><h2 className="font-display text-lg font-bold text-fg-primary">Attendance</h2>{rows.length > 0 && <span className="text-sm text-fg-secondary">{present} present</span>}</div>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Name</span><Input className="mt-1" placeholder="Worker / staff name" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Kind</span><Select className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as AttendeeKind)} options={KIND} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Status</span><Select className="mt-1 w-auto" value={status} onChange={e => setStatus(e.target.value as AttendanceStatus)} options={STT} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Hours</span><Input className="mt-1 w-20" type="number" value={hours} onChange={e => setHours(e.target.value)} /></div>
+          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1" placeholder="Worker / staff name" value={name} onChange={e => setName(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as AttendeeKind)} options={KIND} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Status</span><Select className="mt-1 w-auto" value={status} onChange={e => setStatus(e.target.value as AttendanceStatus)} options={STT} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</span><Input className="mt-1 w-20" type="number" value={hours} onChange={e => setHours(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Mark"}</Button>
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No attendance marked.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No attendance marked.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.attendeeName} <span className="text-[11px] text-ink-400 font-normal">Â· {r.kind}</span></div>
-                <div className="text-[11px] text-ink-400">{r.date}{r.hours != null ? ` Â· ${r.hours}h` : ""}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.attendeeName} <span className="text-[11px] text-fg-tertiary font-normal">· {r.kind}</span></div>
+                <div className="text-[11px] text-fg-tertiary">{r.date}{r.hours != null ? ` · ${r.hours}h` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setAttendanceStatus(c, r.id, e.target.value as AttendanceStatus))} options={STT} />
-                  : <span className="text-xs text-ink-500">{r.status.replace("_", " ")}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteAttendance(c, r.id))}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteAttendance(c, r.id))}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

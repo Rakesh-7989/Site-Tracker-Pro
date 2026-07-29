@@ -64,48 +64,48 @@ export function UpgradeRequestsView(): JSX.Element {
 
   if (!isStaff) {
     return (
-      <div className="max-w-xl mx-auto mt-10">
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-cream-100 text-ink-400 grid place-items-center mx-auto mb-3"><Icon name="shield" size={24} /></div>
+      <div className="max-w-xl mx-auto mt-10 p-4 md:p-6">
+        <Card className="p-4 md:p-6 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-secondary text-fg-tertiary grid place-items-center mx-auto mb-3"><Icon name="shield" size={24} /></div>
           <h1 className="font-display text-lg font-bold">Upgrade requests</h1>
-          <p className="text-sm text-ink-500 mt-2">Only platform staff can view upgrade requests.</p>
+          <p className="text-sm text-fg-secondary mt-2">Only platform staff can view upgrade requests.</p>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Upgrade requests</h1>
-        <p className="text-sm text-ink-500 mt-1">Orgs asking to move up a plan. {canAssign ? "Assign to a staff or take it yourself, then track to close." : "Your assigned requests."}</p>
+        <h1 className="font-display text-xl md:text-2xl font-bold">Upgrade requests</h1>
+        <p className="text-sm text-fg-secondary mt-1">Orgs asking to move up a plan. {canAssign ? "Assign to a staff or take it yourself, then track to close." : "Your assigned requests."}</p>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-[13px] text-red-700 flex items-start gap-2">
-          <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}
+        <div className="rounded-lg bg-error-tint border border-error p-3 text-[13px] text-error flex items-start gap-2">
+          <Icon name="alert" size={15} className="text-error mt-0.5" /> {error}
         </div>
       )}
 
-      {loading ? <div className="grid place-items-center py-12 text-safety-500"><Spinner size={24} /></div>
+      {loading ? <div className="grid place-items-center py-12 text-accent"><Spinner size={24} /></div>
         : rows.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-ink-500"><Icon name="trend" size={24} className="mx-auto text-ink-300 mb-2" />No upgrade requests {page > 0 ? "on this page." : "yet."}</Card>
+          <Card className="p-8 text-center text-sm text-fg-secondary"><Icon name="trend" size={24} className="mx-auto text-fg-tertiary mb-2" />No upgrade requests {page > 0 ? "on this page." : "yet."}</Card>
         ) : <>{rows.map(r => (
           <Card key={r.id} className="p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-ink-900">{r.orgName}</span>
+                  <span className="font-semibold text-fg-primary">{r.orgName}</span>
                   <Badge tone="neutral">{r.currentPlan ?? "?"} → {r.desiredPlan ?? "?"}</Badge>
                   <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                 </div>
-                <div className="text-[12px] text-ink-500 mt-0.5">by {r.requesterEmail ?? "—"} · {r.createdAt.slice(0, 10)}{r.assignedEmail ? ` · handled by ${r.assignedEmail}` : ""}</div>
-                {r.note && <div className="text-[12px] text-ink-600 mt-1 italic">"{r.note}"</div>}
+                <div className="text-[12px] text-fg-secondary mt-0.5">by {r.requesterEmail ?? "—"} · {r.createdAt.slice(0, 10)}{r.assignedEmail ? ` · handled by ${r.assignedEmail}` : ""}</div>
+                {r.note && <div className="text-[12px] text-fg-secondary mt-1 italic">"{r.note}"</div>}
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-2 border-t border-cream-100 pt-3 flex-wrap">
+            <div className="mt-3 flex items-center gap-2 border-t border-default pt-3 flex-wrap">
               {canAssign && (
-                <select className="text-sm border border-cream-200 rounded-lg px-2.5 py-2 bg-white" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
+                <select className="text-sm border border-default rounded-lg px-2.5 py-2 bg-panel" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
                   onChange={e => void doAssign(r, e.target.value)}>
                   <option value="">— Assign to —</option>
                   {staff.map(s => <option key={s.id} value={s.id}>{s.email || s.name}</option>)}

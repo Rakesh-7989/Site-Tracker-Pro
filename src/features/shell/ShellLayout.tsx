@@ -18,10 +18,10 @@ import { useSwipe } from "@/hooks/useSwipe";
 
 function FullScreenSpinner(): JSX.Element {
   return (
-    <div className="min-h-screen grid place-items-center bg-cream-50 text-safety-500">
+    <div className="min-h-screen grid place-items-center bg-panel text-accent">
       <div className="flex flex-col items-center gap-3">
         <Spinner size={28} />
-        <span className="text-sm text-ink-500">Loading your workspace…</span>
+        <span className="text-sm text-fg-secondary">Loading your workspace…</span>
       </div>
     </div>
   );
@@ -70,14 +70,14 @@ function GatedShell(): JSX.Element {
       /* Fixed-height app frame: the TopBar stays put while the Sidebar and the
          main content each scroll on their own (min-h-0 lets the flex children
          actually shrink so their overflow-y-auto kicks in). */
-      <div className="h-screen flex flex-col bg-cream-50 overflow-hidden">
+      <div className="h-screen flex flex-col bg-panel overflow-hidden">
         <ImpersonationBanner />
         <TopBar onMenuToggle={() => setMobileOpen(v => !v)} />
         <SubscriptionBanner />
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <Sidebar mobileOpen={mobileOpen} onClose={closeSidebar} sidebarRef={sidebarRef} />
           <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 pb-16 lg:pb-6 xl:mx-auto xl:w-full xl:max-w-7xl">
-            <Suspense fallback={<div className="grid place-items-center py-20 text-safety-500"><Spinner size={24} /></div>}>
+            <Suspense fallback={<div className="grid place-items-center py-20 text-accent"><Spinner size={24} /></div>}>
               <Outlet />
             </Suspense>
           </main>

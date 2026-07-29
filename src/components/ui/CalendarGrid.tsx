@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "./icons";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export interface CalendarEvent {
   date: Date;
@@ -29,6 +30,7 @@ function eventsForDay(events: CalendarEvent[], day: number, year: number, month:
 }
 
 export function CalendarGrid({ year, month, events = [], className }: CalendarGridProps): JSX.Element {
+  const isMobile = !useMediaQuery("(min-width: 640px)");
   const grid = useMemo(() => {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -45,60 +47,112 @@ export function CalendarGrid({ year, month, events = [], className }: CalendarGr
     return weeks;
   }, [year, month]);
 
+  const sortedEvents = useMemo(() => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const map: Array<{ day: number; events: CalendarEvent[] }> = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const evs = eventsForDay(events, d, year, month);
+      if (evs.length) map.push({ day: d, events: evs });
+    }
+    return map;
+  }, [events, year, month]);
+
+  const today = new Date();
+  const isCurrentMonth = month === today.getMonth() && year === today.getFullYear();
+
   return (
-    <div className={cn("bg-white rounded-2xl border border-cream-200 overflow-hidden", className)}>
-      <div className="grid grid-cols-7">
-        {DAY_LABELS.map(d => (
-          <div key={d} className="px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-ink-400 border-b border-cream-200">
-            {d}
-          </div>
-        ))}
-      </div>
-      {grid.map((week, wi) => (
-        <div key={wi} className="grid grid-cols-7 border-t border-cream-200 first:border-t-0">
-          {week.map((cell, ci) => {
-            if (!cell) return <div key={ci} className="min-h-[80px] bg-cream-100/40" />;
-            const dayEvents = eventsForDay(events, cell.day, year, month);
-            return (
-              <div
-                key={ci}
-                className={cn(
-                  "min-h-[80px] p-1.5 border-r border-cream-200 last:border-r-0",
-                  "hover:bg-cream-100/60 transition-colors",
-                )}
-              >
+    <div className={cn("bg-card rounded-2xl border border-default overflow-hidden", className)}>
+      {isMobile ? (
+        <div className="divide-y divide-default max-h-[400px] overflow-y-auto">
+          {sortedEvents.length === 0 ? (
+            <div className="p-6 text-center text-sm text-fg-tertiary">No events this month</div>
+          ) : sortedEvents.map(({ day, events: evs }) => (
+            <div key={day} className="p-3">
+              <div className="flex items-center gap-2 mb-2">
                 <span className={cn(
-                  "inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-medium",
-                  cell.isCurrent ? "bg-safety-500 text-white" : "text-ink-700",
+                  "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold",
+                  isCurrentMonth && day === today.getDate() ? "bg-accent text-white" : "bg-elevated text-fg-primary",
                 )}>
-                  {cell.day}
+                  {day}
                 </span>
-                <div className="mt-0.5 space-y-0.5">
-                  {dayEvents.slice(0, 2).map((ev, ei) => (
-                    <button
-                      key={ei}
-                      onClick={ev.onClick}
-                      className={cn(
-                        "block w-full text-left truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight",
-                        ev.color ? "" : "bg-safety-500/10 text-safety-600",
-                      )}
-                      style={ev.color ? { backgroundColor: ev.color + "20", color: ev.color } : undefined}
-                      title={ev.label}
-                    >
-                      {ev.label}
-                    </button>
-                  ))}
-                  {dayEvents.length > 2 && (
-                    <span className="block text-[10px] text-ink-400 px-1">
-                      +{dayEvents.length - 2} more
-                    </span>
-                  )}
-                </div>
+                <span className="text-xs text-fg-tertiary font-medium">
+                  {DAY_LABELS[new Date(year, month, day).getDay()]}
+                </span>
               </div>
-            );
-          })}
+              <div className="space-y-1.5 ml-10">
+                {evs.map((ev, ei) => (
+                  <button
+                    key={ei}
+                    onClick={ev.onClick}
+                    className={cn(
+                      "block w-full text-left rounded-lg px-3 py-2 text-sm font-medium leading-snug transition-colors",
+                      ev.color ? "" : "bg-accent-tint text-accent-2",
+                    )}
+                    style={ev.color ? { backgroundColor: ev.color + "20", color: ev.color } : undefined}
+                  >
+                    {ev.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      ) : (
+        <>
+          <div className="grid grid-cols-7">
+            {DAY_LABELS.map(d => (
+              <div key={d} className="px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-fg-tertiary border-b border-default">
+                {d}
+              </div>
+            ))}
+          </div>
+          {grid.map((week, wi) => (
+            <div key={wi} className="grid grid-cols-7 border-t border-default first:border-t-0">
+              {week.map((cell, ci) => {
+                if (!cell) return <div key={ci} className="min-h-[80px] bg-elevated" />;
+                const dayEvents = eventsForDay(events, cell.day, year, month);
+                return (
+                  <div
+                    key={ci}
+                    className={cn(
+                      "min-h-[80px] p-1.5 border-r border-default last:border-r-0",
+                      "hover:bg-elevated transition-colors",
+                    )}
+                  >
+                    <span className={cn(
+                      "inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-medium",
+                      cell.isCurrent ? "bg-accent text-white" : "text-fg-primary",
+                    )}>
+                      {cell.day}
+                    </span>
+                    <div className="mt-0.5 space-y-0.5">
+                      {dayEvents.slice(0, 2).map((ev, ei) => (
+                        <button
+                          key={ei}
+                          onClick={ev.onClick}
+                          className={cn(
+                            "block w-full text-left truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight",
+                            ev.color ? "" : "text-accent-2",
+                          )}
+                          style={ev.color ? { backgroundColor: ev.color + "20", color: ev.color } : undefined}
+                          title={ev.label}
+                        >
+                          {ev.label}
+                        </button>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <span className="block text-[10px] text-fg-tertiary px-1">
+                          +{dayEvents.length - 2} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -114,13 +168,13 @@ export interface CalendarHeaderProps {
 export function CalendarHeader({ year, month, onPrev, onNext, className }: CalendarHeaderProps): JSX.Element {
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <button onClick={onPrev} className="p-1.5 rounded-lg hover:bg-cream-200 text-ink-600 transition-colors">
+      <button onClick={onPrev} className="p-1.5 rounded-lg hover:bg-elevated text-fg-secondary transition-colors">
         <Icon name="arrow" size={16} />
       </button>
-      <h3 className="font-display font-semibold text-ink-800 text-base">
+      <h3 className="font-display font-semibold text-fg-primary text-base">
         {MONTH_LABELS[month]} {year}
       </h3>
-      <button onClick={onNext} className="p-1.5 rounded-lg hover:bg-cream-200 text-ink-600 transition-colors rotate-180">
+      <button onClick={onNext} className="p-1.5 rounded-lg hover:bg-elevated text-fg-secondary transition-colors rotate-180">
         <Icon name="arrow" size={16} />
       </button>
     </div>

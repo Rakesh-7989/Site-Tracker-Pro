@@ -130,9 +130,9 @@ export function ManageCustomRolesModal({
 
         {/* Assigned */}
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-400 mb-2">Currently assigned</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary mb-2">Currently assigned</div>
           {allRoles.filter(r => assigned.has(r.label)).length === 0 ? (
-            <div className="text-sm text-ink-400">No custom roles assigned.</div>
+            <div className="text-sm text-fg-tertiary">No custom roles assigned.</div>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {allRoles.filter(r => assigned.has(r.label)).map(r => (
@@ -141,7 +141,7 @@ export function ManageCustomRolesModal({
                   type="button"
                   disabled={busyToggle === r.id}
                   onClick={() => void handleToggle(r)}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-violet-50 text-violet-700 hover:bg-violet-100 transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-accent-tint text-[var(--st-violet)] hover:bg-accent-tint transition disabled:opacity-50"
                 >
                   {r.label}
                   {busyToggle === r.id ? <Spinner size={10} /> : <Icon name="x" size={12} />}
@@ -153,9 +153,9 @@ export function ManageCustomRolesModal({
 
         {/* Available */}
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-400 mb-2">Available to assign</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary mb-2">Available to assign</div>
           {allRoles.filter(r => !assigned.has(r.label)).length === 0 ? (
-            <div className="text-sm text-ink-400">All roles already assigned. Create a new one below.</div>
+            <div className="text-sm text-fg-tertiary">All roles already assigned. Create a new one below.</div>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {allRoles.filter(r => !assigned.has(r.label)).map(r => (
@@ -164,7 +164,7 @@ export function ManageCustomRolesModal({
                   type="button"
                   disabled={busyToggle === r.id}
                   onClick={() => void handleToggle(r)}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs border border-stone-200 text-ink-600 hover:bg-cream-100 transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs border border-default text-fg-secondary hover:bg-secondary transition disabled:opacity-50"
                 >
                   <Icon name="plus" size={11} />
                   {r.label}
@@ -176,12 +176,12 @@ export function ManageCustomRolesModal({
         </div>
 
         {/* Create new role */}
-        <div className="border-t border-stone-200 pt-3">
+        <div className="border-t border-default pt-3">
           {creating ? (
-            <Card className="p-3 space-y-3 border border-stone-200">
+            <Card className="p-3 space-y-3 border border-default">
               <div className="grid sm:grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Role name</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Role name</span>
                   <Input
                     className="mt-1"
                     value={draft?.label ?? ""}
@@ -190,7 +190,7 @@ export function ManageCustomRolesModal({
                   />
                 </label>
                 <label className="block">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Start from (optional)</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Start from (optional)</span>
                   <Select
                     className="mt-1"
                     value={draft?.basedOn ?? ""}
@@ -203,7 +203,7 @@ export function ManageCustomRolesModal({
               <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                 {groups.map(g => (
                   <div key={g.key}>
-                    <div className="text-[11px] font-semibold text-ink-500 mb-1">{g.label}</div>
+                    <div className="text-[11px] font-semibold text-fg-secondary mb-1">{g.label}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {g.capabilities.map(cap => {
                         const on = draft?.caps.has(cap) ?? false;
@@ -212,7 +212,7 @@ export function ManageCustomRolesModal({
                             key={cap}
                             type="button"
                             onClick={() => toggleCap(cap)}
-                            className={`px-2.5 py-1 rounded-full text-xs border transition ${on ? "bg-safety-500 text-white border-safety-500" : "bg-white text-ink-500 border-stone-200 hover:bg-cream-100"}`}
+                            className={`px-2.5 py-1 rounded-full text-xs border transition ${on ? "bg-accent text-white border-accent" : "bg-panel text-fg-secondary border-default hover:bg-secondary"}`}
                           >
                             {capabilityLabel(cap)}
                           </button>
@@ -231,7 +231,7 @@ export function ManageCustomRolesModal({
                 <Button size="sm" variant="ghost" onClick={() => { setCreating(false); setDraft(null); setError(null); }} disabled={savingCreate}>
                   Cancel
                 </Button>
-                <span className="text-[11px] text-ink-400 ml-auto">{draft?.caps.size ?? 0} feature{draft?.caps.size === 1 ? "" : "s"}</span>
+                <span className="text-[11px] text-fg-tertiary ml-auto">{draft?.caps.size ?? 0} feature{draft?.caps.size === 1 ? "" : "s"}</span>
               </div>
             </Card>
           ) : (
@@ -241,7 +241,7 @@ export function ManageCustomRolesModal({
           )}
         </div>
 
-        <div className="border-t border-stone-200 pt-3 flex justify-end">
+        <div className="border-t border-default pt-3 flex justify-end">
           <Button variant="ghost" onClick={onClose}>Close</Button>
         </div>
       </div>

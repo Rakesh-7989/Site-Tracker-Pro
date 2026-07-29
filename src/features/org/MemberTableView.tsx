@@ -78,8 +78,8 @@ export function MemberTableView({
       <Card key={m.profileId} className={`p-3 ${!m.active ? "opacity-60" : ""}`}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <div className="font-semibold text-ink-800">{m.name}</div>
-            <div className="text-[11px] text-ink-400">{idLabel(m.identityRole)}{m.isAdmin ? " · Admin" : ""}</div>
+            <div className="font-semibold text-fg-primary">{m.name}</div>
+            <div className="text-[11px] text-fg-tertiary">{idLabel(m.identityRole)}{m.isAdmin ? " · Admin" : ""}</div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Select
@@ -98,7 +98,7 @@ export function MemberTableView({
             {m.active
               ? <Button size="sm" variant="ghost" onClick={() => void runAction(`deact-${m.profileId}`, c => deactivateMember(c, orgId, m.profileId))}>Deactivate</Button>
               : <Button size="sm" variant="secondary" onClick={() => void runAction(`react-${m.profileId}`, c => reactivateMember(c, orgId, m.profileId))}>Reactivate</Button>}
-            <Button size="sm" variant="ghost" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={() => {
+            <Button size="sm" variant="ghost" className="text-error hover:text-error hover:bg-error-tint" onClick={() => {
               if (window.confirm(`Permanently delete ${m.name} and their account? They will be able to re-register with the same email.`)) {
                 void runAction(`remove-${m.profileId}`, c => removeMember(c, orgId, m.profileId));
               }
@@ -108,9 +108,9 @@ export function MemberTableView({
 
         <div className="mt-2 flex items-center gap-1.5 flex-wrap">
           {m.customRoles.map(label => (
-            <span key={label} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-violet-50 text-violet-700">
+            <span key={label} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-accent-tint text-[var(--st-violet)]">
               {label}
-              <button type="button" className="hover:text-violet-900"
+              <button type="button" className="hover:text-[var(--st-violet)]"
                 onClick={() => {
                   const role = customRoles.find(r => r.label === label);
                   if (role) void runAction(`unassign-${m.profileId}-${role.id}`, c => unassignCustomRole(c, { orgId, profileId: m.profileId, orgRoleId: role.id }));
@@ -134,7 +134,7 @@ export function MemberTableView({
             />
           )}
           {roleById.size === 0 && m.customRoles.length === 0 && (
-            <span className="text-[11px] text-ink-300">No custom roles defined for this org yet.</span>
+            <span className="text-[11px] text-fg-tertiary">No custom roles defined for this org yet.</span>
           )}
         </div>
       </Card>
@@ -145,13 +145,13 @@ export function MemberTableView({
     <div>
       {active.length > 0 && (
         <div>
-          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-2">Active</h2>
+          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-2">Active</h2>
           <div className="space-y-2">{active.map(renderRow)}</div>
         </div>
       )}
       {inactive.length > 0 && (
         <div className="mt-4">
-          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-2">Inactive</h2>
+          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-2">Inactive</h2>
           <div className="space-y-2">{inactive.map(renderRow)}</div>
         </div>
       )}

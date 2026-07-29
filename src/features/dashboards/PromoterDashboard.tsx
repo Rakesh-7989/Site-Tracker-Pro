@@ -18,10 +18,10 @@ export function PromoterDashboard(): JSX.Element {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink-900">Namaskaram, {session.user.name.split(" ")[0]}</h1>
+        <h1 className="font-display text-2xl font-bold text-fg-primary">Namaskaram, {session.user.name.split(" ")[0]}</h1>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <Badge tone="warning">Promoter</Badge>
-          {activeOrg && <span className="text-sm text-ink-500">{activeOrg.orgName}</span>}
+          {activeOrg && <span className="text-sm text-fg-secondary">{activeOrg.orgName}</span>}
         </div>
       </div>
 
@@ -36,10 +36,10 @@ export function PromoterDashboard(): JSX.Element {
       {canReceiveDigest && (
         <Card className="p-5">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 grid place-items-center flex-shrink-0"><Icon name="msgcircle" size={20} /></div>
+            <div className="w-10 h-10 rounded-xl bg-success-tint text-success grid place-items-center flex-shrink-0"><Icon name="msgcircle" size={20} /></div>
             <div className="flex-1">
-              <div className="font-semibold text-ink-800">7am WhatsApp digest</div>
-              <div className="text-sm text-ink-500 mt-0.5">Every morning: progress, cost-to-date, open risks + yesterday's site photo. You don't log in. Ever.</div>
+              <div className="font-semibold text-fg-primary">7am WhatsApp digest</div>
+              <div className="text-sm text-fg-secondary mt-0.5">Every morning: progress, cost-to-date, open risks + yesterday's site photo. You don't log in. Ever.</div>
             </div>
           </div>
         </Card>
@@ -49,10 +49,10 @@ export function PromoterDashboard(): JSX.Element {
       {canViewHandover && (
         <Card className="p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 grid place-items-center"><Icon name="doc" size={20} /></div>
+            <div className="w-10 h-10 rounded-xl bg-accent-tint text-[var(--st-violet)] grid place-items-center"><Icon name="doc" size={20} /></div>
             <div>
-              <div className="font-semibold text-ink-800">Handover packets</div>
-              <div className="text-sm text-ink-500">Blockchain-verified bundles for completed projects.</div>
+              <div className="font-semibold text-fg-primary">Handover packets</div>
+              <div className="text-sm text-fg-secondary">Blockchain-verified bundles for completed projects.</div>
             </div>
           </div>
           <Button variant="secondary" size="sm" disabled>Coming Sprint 4</Button>
@@ -61,11 +61,11 @@ export function PromoterDashboard(): JSX.Element {
 
       {/* Projects */}
       <div>
-        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-2">Your projects</h2>
+        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-2">Your projects</h2>
         <Link to="/projects">
-          <Card className="p-4 flex items-center justify-between hover:border-safety-300 transition cursor-pointer">
-            <span className="text-sm font-semibold text-ink-800">View all projects</span>
-            <Icon name="chevron" size={18} className="text-ink-400" />
+          <Card className="p-4 flex items-center justify-between hover:border-accent transition cursor-pointer">
+            <span className="text-sm font-semibold text-fg-primary">View all projects</span>
+            <Icon name="chevron" size={18} className="text-fg-tertiary" />
           </Card>
         </Link>
       </div>

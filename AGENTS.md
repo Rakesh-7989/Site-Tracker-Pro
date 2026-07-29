@@ -78,3 +78,54 @@ Superadmin sign-in at `/staff/login` failed with `?error=session` after DB clean
 - `src/app/delegationQueries.ts`
 - `src/app/orgMemberQueries.ts`
 - `scripts/supabase/127_auto_create_missing_profile.sql`
+
+---
+
+## RBAC Deep-Dive + Fixes (2026-07-28)
+
+- **Analysis**: Full per-role capability/nav/dashboard/tab/plan matrix documented in `RBAC_DEEP_DIVE.md`; 7 gaps identified
+- **Gap 1**: sub_contractor — added `attendance:view` to identity + project-tier caps
+- **Gap 2**: nav — added RA Bills (`/rabills`) item gated by `rabill:create` under Procurement group
+- **Gap 3**: prospector — `defaultProjectTierFor()` returns `"pm"` instead of null
+- **Gap 4**: duplicate icons — feature-flags→`flag`, branding→`image`, settings stays `sliders`
+- **Gap 5**: handover — added `handover:generate` to PM + project_admin identity caps
+- **Gap 6**: PM digest — added `digest:subscribe` + `digest:receive` to PM identity caps
+- **Gap 7**: site_inspector Compliance nav — already works, no change needed
+- **All 6 fixes**: TypeScript 0 errors, 94 files / 1201 tests pass
+
+## Phase 4 — Component Library Consistency (Complete)
+
+**All 19 `src/components/ui/` files** — zero palette classes remain:
+- **Batch A** — `atoms.tsx`: BTN_VARIANT, Card, BADGE_TONE (5), ALERT (6), AV_BG (15), ProgressBar BAR (5), StatCard STAT (5), Tile (5) — all `cream-*`/`ink-*`/`safety-*`/`rose-*`/`emerald-*`/`amber-*`/`blue-*`/`violet-*`/`orange-*` → semantic utilities
+- **Batch B** — `status.ts` (8 entries) + `role-meta.ts` (22 entries): migrated to `bg-success-tint`, `bg-info-tint`, `bg-accent-tint`, `bg-elevated`, `text-success`, etc. Added CSS vars for 11 missing color families
+- **Batch C–E** — tabs, calendar, data table, forms, checkbox, switch, modal, dialog, etc.
+
+### Semantic CSS utilities (from index.css)
+| Group | Classes |
+|-------|---------|
+| Surface | `.bg-panel`, `.bg-elevated`, `.bg-card`, `.bg-bg-primary`, `.bg-bg-secondary`, `.bg-ink` |
+| Text | `.text-fg-primary`, `.text-fg-secondary`, `.text-fg-tertiary`, `.text-cream` |
+| Border | `.border-default`, `.border-stronger`, `.border-success`, `.border-warning` |
+| Accent (orange) | `.bg-accent`, `.bg-accent-2`, `.bg-accent-tint`, `.text-accent`, `.text-accent-2`, `.text-accent-light` |
+| Violet | `.bg-violet-tint`, `.text-violet` |
+| Status | `.bg-success-tint`, `.text-success`, `.bg-warning-tint`, `.text-warning`, `.bg-error-tint`, `.text-error`, `.bg-info-tint`, `.text-info` |
+| Role chips (11 families) | `.bg-{teal,cyan,rose,fuchsia,purple,yellow,blue,emerald,indigo,ink}-tint`, `.text-{teal,cyan,rose,fuchsia,purple,yellow}` |
+
+## Phase 5 — Feature & Component Directory Migration (Complete)
+
+All custom palette classes (`ink-*`, `cream-*`, `safety-*`, `amber-*`, `emerald-*`, `red-*`, `rose-*`, `blue-*`, `violet-*`, `stone-*`, `orange-*`) replaced with semantic `--st-*` CSS utilities across ~140 files:
+
+| Batch | Scope | Files | Key patterns replaced |
+|-------|-------|-------|-----------------------|
+| A | `admin/` | 18 | `text-ink-*`, `bg-cream-*`, `border-safety-*`, etc. |
+| B | `org/` | 34 | Same + `text-amber-*`, `bg-emerald-*`, `text-red-*` |
+| C1 | `project/`, `share/`, `dashboards/`, `kiosk/`, `account/`, `dpr/` | 48 | + dark-theme kiosk colors (`bg-ink-700`, `border-amber-600`, `text-cream`) |
+| C2 | `auth/`, `shell/`, `handover/`, `marketing/` | 22 | + `text-violet-*`, `bg-orange-*`, hover variants |
+| D | `errorBoundary.tsx`, `UpiQr.tsx`, `atoms.tsx`, `PlanGate.tsx`, project tabs | 10 | Final cleanup |
+
+**Verification** (all pass):
+- `Select-String -Pattern "ink-|cream-|safety-|amber-|emerald-|rose-|violet-|stone-" src/**/*.{ts,tsx}` → **0 matches** (intentional `bg-white` in toggle thumbs & tab badge overlay remain — 3 sites)
+- `npx tsc --noEmit` → **0 errors**
+
+## Phase 6 — Next (planned)
+- Mobile/responsive audit — CalendarGrid mobile layout, Board stacked column, Tabs overflow indicator, top-20 file content overflow, optional `xs:` breakpoint, landing nav

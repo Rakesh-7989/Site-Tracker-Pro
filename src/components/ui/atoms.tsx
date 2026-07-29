@@ -22,10 +22,10 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
-  primary: "bg-safety-500 hover:bg-safety-600 text-white shadow-cta border border-transparent",
-  secondary: "bg-white hover:bg-cream-200 text-ink-900 border border-cream-200 hover:border-ink-500/30",
-  ghost: "bg-transparent hover:bg-cream-200 text-ink-700 border border-transparent",
-  danger: "bg-rose-600 hover:bg-rose-700 text-white border border-transparent",
+  primary: "bg-accent hover:bg-accent-2 text-white shadow-cta border border-transparent",
+  secondary: "bg-panel hover:bg-elevated text-fg-primary border border-default hover:border-stronger",
+  ghost: "bg-transparent hover:bg-elevated text-fg-primary border border-transparent",
+  danger: "bg-error hover:bg-error-dark text-white border border-transparent",
 };
 const BTN_SIZE: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-xs gap-1.5 rounded-md",
@@ -60,7 +60,7 @@ export function Button({
       className={cn(
         "inline-flex items-center justify-center font-semibold tracking-tight transition-all",
         "disabled:opacity-50 disabled:cursor-not-allowed",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-safety-500",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--st-accent)]",
         BTN_VARIANT[variant], BTN_SIZE[size], fullWidth && "w-full", className,
       )}
       {...rest}
@@ -80,7 +80,7 @@ export interface CardProps {
 
 export function Card({ children, className }: CardProps): JSX.Element {
   return (
-    <div className={cn("bg-white rounded-2xl border border-cream-200 shadow-card", className)}>
+    <div className={cn("bg-panel rounded-2xl border border-default shadow-card", className)}>
       {children}
     </div>
   );
@@ -119,11 +119,11 @@ export interface BadgeProps {
 }
 
 const BADGE_TONE: Record<BadgeTone, string> = {
-  neutral: "bg-cream-100 text-ink-600",
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-700",
-  info: "bg-blue-50 text-blue-700",
-  danger: "bg-rose-50 text-rose-700",
+  neutral: "bg-elevated text-fg-secondary",
+  success: "bg-success-tint text-success",
+  warning: "bg-accent-tint text-accent-2",
+  info: "bg-info-tint text-info",
+  danger: "bg-error-tint text-error",
 };
 
 export function Badge({ children, tone = "neutral", className }: BadgeProps): JSX.Element {
@@ -170,12 +170,12 @@ export interface AlertProps {
 }
 
 const ALERT: Record<AlertVariant, { bg: string; text: string; bar: string }> = {
-  neutral: { bg: "bg-cream-200", text: "text-ink-700", bar: "#5A5248" },
-  info: { bg: "bg-blue-50", text: "text-blue-700", bar: "#1E40AF" },
-  success: { bg: "bg-emerald-50", text: "text-emerald-700", bar: "#047857" },
-  warning: { bg: "bg-amber-50", text: "text-amber-800", bar: "#B45309" },
-  danger: { bg: "bg-rose-50", text: "text-rose-700", bar: "#BE123C" },
-  accent: { bg: "bg-orange-50", text: "text-orange-700", bar: "#FF6B1A" },
+  neutral: { bg: "bg-elevated", text: "text-fg-primary", bar: "#5A5248" },
+  info: { bg: "bg-info-tint", text: "text-info", bar: "#1E40AF" },
+  success: { bg: "bg-success-tint", text: "text-success", bar: "#047857" },
+  warning: { bg: "bg-accent-tint", text: "text-warning", bar: "#B45309" },
+  danger: { bg: "bg-error-tint", text: "text-error", bar: "#BE123C" },
+  accent: { bg: "bg-accent-tint", text: "text-accent-2", bar: "#FF6B1A" },
 };
 
 export function Alert({ children, variant = "neutral", icon, className }: AlertProps): JSX.Element {
@@ -203,10 +203,10 @@ const AV_SIZE: Record<AvatarSize, string> = {
   lg: "w-12 h-12 text-base",
 };
 const AV_BG: Record<AccentColor, string> = {
-  orange: "bg-safety-500", amber: "bg-safety-500", blue: "bg-blue-600", violet: "bg-violet-600",
-  emerald: "bg-emerald-600", teal: "bg-teal-600", cyan: "bg-cyan-600", stone: "bg-stone-600",
-  rose: "bg-rose-600", pink: "bg-pink-600", fuchsia: "bg-fuchsia-600", purple: "bg-purple-600",
-  indigo: "bg-indigo-600", yellow: "bg-yellow-500", slate: "bg-ink-700",
+  orange: "bg-accent", amber: "bg-accent", blue: "bg-avatar-blue", violet: "bg-avatar-violet",
+  emerald: "bg-avatar-emerald", teal: "bg-avatar-teal", cyan: "bg-avatar-cyan", stone: "bg-accent",
+  rose: "bg-avatar-rose", pink: "bg-avatar-pink", fuchsia: "bg-avatar-fuchsia", purple: "bg-avatar-purple",
+  indigo: "bg-avatar-indigo", yellow: "bg-avatar-yellow", slate: "bg-avatar-slate",
 };
 
 export interface AvatarProps {
@@ -222,7 +222,7 @@ export function Avatar({ initials, size = "md", accent = "orange", role, classNa
   return (
     <div className={cn(
       AV_SIZE[size], AV_BG[resolvedAccent],
-      "rounded-lg flex items-center justify-center text-white font-semibold flex-shrink-0 ring-1 ring-ink-900/10",
+      "rounded-lg flex items-center justify-center text-white font-semibold flex-shrink-0 ring-1 ring-black/10",
       className,
     )}>
       {initials.slice(0, 2).toUpperCase()}
@@ -233,7 +233,7 @@ export function Avatar({ initials, size = "md", accent = "orange", role, classNa
 // ── ProgressBar ─────────────────────────────────────────────────────────────
 type BarColor = "orange" | "blue" | "emerald" | "red" | "violet";
 const BAR: Record<BarColor, string> = {
-  orange: "bg-safety-500", blue: "bg-blue-500", emerald: "bg-emerald-500", red: "bg-rose-500", violet: "bg-violet-500",
+  orange: "bg-accent", blue: "bg-bar-blue", emerald: "bg-bar-emerald", red: "bg-bar-red", violet: "bg-bar-violet",
 };
 
 export interface ProgressBarProps {
@@ -245,7 +245,7 @@ export interface ProgressBarProps {
 export function ProgressBar({ value, color = "orange", className }: ProgressBarProps): JSX.Element {
   const pct = Math.min(Math.max(value || 0, 0), 100);
   return (
-    <div className={cn("w-full bg-cream-200 rounded-full h-1.5 overflow-hidden", className)}>
+    <div className={cn("w-full bg-elevated rounded-full h-1.5 overflow-hidden", className)}>
       <div className={cn("h-full rounded-full", BAR[color], "transition-all duration-500")} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -254,11 +254,11 @@ export function ProgressBar({ value, color = "orange", className }: ProgressBarP
 // ── StatCard ────────────────────────────────────────────────────────────────
 type StatAccent = "orange" | "blue" | "emerald" | "violet" | "red";
 const STAT: Record<StatAccent, { bar: string; iconBg: string; iconFg: string }> = {
-  orange: { bar: "bg-safety-500", iconBg: "bg-orange-50", iconFg: "text-safety-500" },
-  blue: { bar: "bg-blue-500", iconBg: "bg-blue-50", iconFg: "text-blue-600" },
-  emerald: { bar: "bg-emerald-500", iconBg: "bg-emerald-50", iconFg: "text-emerald-600" },
-  violet: { bar: "bg-violet-500", iconBg: "bg-violet-50", iconFg: "text-violet-600" },
-  red: { bar: "bg-rose-500", iconBg: "bg-rose-50", iconFg: "text-rose-600" },
+  orange: { bar: "bg-accent", iconBg: "bg-accent-tint", iconFg: "text-accent" },
+  blue: { bar: "bg-bar-blue", iconBg: "bg-stat-blue", iconFg: "text-stat-blue" },
+  emerald: { bar: "bg-bar-emerald", iconBg: "bg-stat-emerald", iconFg: "text-stat-emerald" },
+  violet: { bar: "bg-bar-violet", iconBg: "bg-stat-violet", iconFg: "text-stat-violet" },
+  red: { bar: "bg-bar-red", iconBg: "bg-stat-red", iconFg: "text-stat-red" },
 };
 
 export interface StatCardProps {
@@ -274,16 +274,16 @@ export function StatCard({ icon, label, value, sub, accent = "orange", className
   const a = STAT[accent];
   return (
     <div className={cn(
-      "relative bg-white rounded-xl border border-cream-200 p-3 md:p-5 hover:shadow-hover transition-shadow overflow-hidden",
+      "relative bg-panel rounded-xl border border-default p-3 md:p-5 hover:shadow-hover transition-shadow overflow-hidden",
       className,
     )}>
       <div className={cn("absolute top-0 left-0 right-0 h-0.5", a.bar)} />
       <div className="flex items-start justify-between gap-2 mb-2 md:mb-3">
-        <div className="text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-500 leading-tight">{label}</div>
+        <div className="text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.1em] text-fg-secondary leading-tight">{label}</div>
         {icon && <div className={cn("w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0", a.iconBg, a.iconFg)}><Icon name={icon} size={14} /></div>}
       </div>
-      <div className="font-sans font-bold text-2xl md:text-[2rem] text-ink-900 leading-none tabular-nums tracking-tight">{value}</div>
-      {sub && <div className="text-[10px] md:text-[11px] text-ink-500 mt-1.5 md:mt-2 leading-tight">{sub}</div>}
+      <div className="font-sans font-bold text-2xl md:text-[2rem] text-fg-primary leading-none tabular-nums tracking-tight">{value}</div>
+      {sub && <div className="text-[10px] md:text-[11px] text-fg-secondary mt-1.5 md:mt-2 leading-tight">{sub}</div>}
     </div>
   );
 }
@@ -291,8 +291,8 @@ export function StatCard({ icon, label, value, sub, accent = "orange", className
 // ── Tile (icon + label action cell) ─────────────────────────────────────────
 type TileAccent = "neutral" | "orange" | "blue" | "emerald" | "violet";
 const TILE: Record<TileAccent, string> = {
-  neutral: "text-ink-700 bg-cream-200/60", orange: "text-safety-600 bg-orange-50",
-  blue: "text-blue-700 bg-blue-50", emerald: "text-emerald-700 bg-emerald-50", violet: "text-violet-700 bg-violet-50",
+  neutral: "text-fg-primary bg-elevated/60", orange: "text-accent-2 bg-accent-tint",
+  blue: "text-info bg-info-tint", emerald: "text-success bg-success-tint", violet: "text-tile-violet bg-tile-violet",
 };
 
 export interface TileProps {
@@ -309,15 +309,15 @@ export function Tile({ icon, label, sub, onClick, accent = "neutral", className 
     <button
       onClick={onClick}
       className={cn(
-        "group flex items-center gap-3 p-3 md:p-4 rounded-xl border border-cream-200 bg-white",
-        "hover:border-ink-500/20 hover:shadow-hover text-left transition-all min-h-[64px] w-full",
+        "group flex items-center gap-3 p-3 md:p-4 rounded-xl border border-default bg-panel",
+        "hover:border-stronger hover:shadow-hover text-left transition-all min-h-[64px] w-full",
         className,
       )}
     >
       {icon && <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", TILE[accent])}><Icon name={icon} size={18} /></div>}
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm text-ink-900 leading-tight">{label}</div>
-        {sub && <div className="text-[11px] text-ink-500 mt-0.5 truncate">{sub}</div>}
+        <div className="font-semibold text-sm text-fg-primary leading-tight">{label}</div>
+        {sub && <div className="text-[11px] text-fg-secondary mt-0.5 truncate">{sub}</div>}
       </div>
     </button>
   );
@@ -332,11 +332,11 @@ export interface AccessDeniedProps {
 export function AccessDenied({ message = "You don't have permission.", className }: AccessDeniedProps): JSX.Element {
   return (
     <div className={cn("flex flex-col items-center justify-center py-20 text-center", className)}>
-      <div className="w-16 h-16 bg-cream-200 rounded-full flex items-center justify-center mb-4">
-        <Icon name="lock" size={28} className="text-ink-500" />
+      <div className="w-16 h-16 bg-elevated rounded-full flex items-center justify-center mb-4">
+        <Icon name="lock" size={28} className="text-fg-secondary" />
       </div>
-      <h3 className="font-display font-semibold text-ink-800 mb-1">Access Restricted</h3>
-      <p className="text-ink-500 text-sm max-w-xs">{message}</p>
+      <h3 className="font-display font-semibold text-fg-primary mb-1">Access Restricted</h3>
+      <p className="text-fg-secondary text-sm max-w-xs">{message}</p>
     </div>
   );
 }

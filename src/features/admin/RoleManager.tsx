@@ -31,7 +31,7 @@ export function RoleManager(): JSX.Element {
   const { session } = useAuth();
   const canConfigure = useCan("platform:roles:configure");
   if (!session) {
-    return <div className="grid place-items-center py-20 text-safety-500"><Spinner size={24} /></div>;
+    return <div className="grid place-items-center py-20 text-accent"><Spinner size={24} /></div>;
   }
   if (!canConfigure) {
     return <AccessDenied message="Only a platform admin can configure role permissions." />;
@@ -104,8 +104,8 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink-900">Role Permissions</h1>
-        <p className="text-sm text-ink-500 mt-1">
+        <h1 className="font-display text-2xl font-bold text-fg-primary">Role Permissions</h1>
+        <p className="text-sm text-fg-secondary mt-1">
           Grant or revoke features per role. Changes layer on top of the built-in
           defaults and apply to v3 users in the chosen scope.
         </p>
@@ -114,7 +114,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
       {/* Scope + role selectors */}
       <Card className="p-4 grid sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Scope</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Scope</span>
           <Select
             className="mt-1"
             value={scope}
@@ -123,7 +123,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
           />
         </label>
         <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Role</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Role</span>
           <Select
             className="mt-1"
             value={role}
@@ -147,7 +147,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
       {orgId !== null && <CustomRolesPanel orgId={orgId} createdBy={session.user.id} />}
 
       <div className="pt-1">
-        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">
+        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">
           Standard role overrides — {ROLE_LABEL[role]}
         </h2>
       </div>
@@ -158,7 +158,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-ink-500">
+        <div className="text-sm text-fg-secondary">
           {overrideCount > 0
             ? <span><Badge tone="warning">{overrideCount} override{overrideCount > 1 ? "s" : ""}</Badge> on <b>{ROLE_LABEL[role]}</b> in {orgId ? "this org" : "Global"}</span>
             : <span>No overrides — <b>{ROLE_LABEL[role]}</b> uses the built-in defaults.</span>}
@@ -169,7 +169,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
       {/* Capability grid */}
       {!loading && groups.map(group => (
         <Card key={group.key} className="p-4">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-3">{group.label}</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-3">{group.label}</h3>
           <div className="space-y-1.5">
             {group.capabilities.map(cap => {
               const cur = stateOf(cap);
@@ -179,13 +179,13 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
               return (
                 <div key={cap} className="flex items-center justify-between gap-3 py-1">
                   <div className="min-w-0">
-                    <div className="text-sm text-ink-800 truncate flex items-center gap-1.5">
+                    <div className="text-sm text-fg-primary truncate flex items-center gap-1.5">
                       {capabilityLabel(cap)}
                       {busy && <Spinner size={12} />}
                     </div>
-                    <div className="text-[11px] text-ink-400">
+                    <div className="text-[11px] text-fg-tertiary">
                       Default: {baseHas ? "on" : "off"}
-                      {cur !== "inherit" && <span className={effective ? "text-emerald-600" : "text-rose-600"}> → {effective ? "on" : "off"}</span>}
+                      {cur !== "inherit" && <span className={effective ? "text-success" : "text-error"}> → {effective ? "on" : "off"}</span>}
                     </div>
                   </div>
                   <TriToggle value={cur} disabled={role === "superadmin" || busy} onChange={next => void apply(cap, next)} />
@@ -201,12 +201,12 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
 
 function TriToggle({ value, disabled, onChange }: { value: CellState; disabled?: boolean; onChange: (v: CellState) => void }): JSX.Element {
   const opts: Array<{ v: CellState; label: string; tone: string }> = [
-    { v: "inherit", label: "Default", tone: "bg-stone-100 text-ink-600" },
-    { v: "grant", label: "Grant", tone: "bg-emerald-500 text-white" },
-    { v: "revoke", label: "Revoke", tone: "bg-rose-500 text-white" },
+    { v: "inherit", label: "Default", tone: "bg-bg-secondary text-fg-secondary" },
+    { v: "grant", label: "Grant", tone: "bg-success text-white" },
+    { v: "revoke", label: "Revoke", tone: "bg-error text-white" },
   ];
   return (
-    <div className="flex rounded-lg overflow-hidden border border-stone-200 flex-shrink-0">
+    <div className="flex rounded-lg overflow-hidden border border-default flex-shrink-0">
       {opts.map(o => {
         const active = value === o.v;
         return (
@@ -215,7 +215,7 @@ function TriToggle({ value, disabled, onChange }: { value: CellState; disabled?:
             type="button"
             disabled={disabled}
             onClick={() => !active && onChange(o.v)}
-            className={`px-3 py-2 text-xs font-semibold transition ${active ? o.tone : "bg-white text-ink-400 hover:bg-cream-100"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`px-3 py-2 text-xs font-semibold transition ${active ? o.tone : "bg-bg-primary text-fg-tertiary hover:bg-bg-secondary"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {o.label}
           </button>

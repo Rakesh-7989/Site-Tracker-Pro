@@ -39,26 +39,26 @@ export function PlatformBillingView(): JSX.Element {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-ink-900">Billing & MRR</h1>
-        <p className="text-ink-400 text-sm mt-1">{active.length} active, {trial.length} trial</p>
+        <h1 className="text-2xl font-black text-fg-primary">Billing & MRR</h1>
+        <p className="text-fg-tertiary text-sm mt-1">{active.length} active, {trial.length} trial</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card className="p-5">
-          <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">MRR</div>
-          <div className="text-3xl font-light text-ink-900">₹{totalMRR.toLocaleString("en-IN")}</div>
-          <div className="text-xs text-ink-400 mt-1">{active.length} active subs</div>
+          <div className="text-xs font-bold tracking-wider text-fg-secondary uppercase mb-1">MRR</div>
+          <div className="text-3xl font-light text-fg-primary">₹{totalMRR.toLocaleString("en-IN")}</div>
+          <div className="text-xs text-fg-tertiary mt-1">{active.length} active subs</div>
         </Card>
         <Card className="p-5">
-          <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">ARR</div>
-          <div className="text-3xl font-light text-ink-900">₹{(totalMRR * 12).toLocaleString("en-IN")}</div>
+          <div className="text-xs font-bold tracking-wider text-fg-secondary uppercase mb-1">ARR</div>
+          <div className="text-3xl font-light text-fg-primary">₹{(totalMRR * 12).toLocaleString("en-IN")}</div>
         </Card>
         <Card className="p-5">
-          <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">Active</div>
-          <div className="text-3xl font-light text-ink-900">{active.length}</div>
+          <div className="text-xs font-bold tracking-wider text-fg-secondary uppercase mb-1">Active</div>
+          <div className="text-3xl font-light text-fg-primary">{active.length}</div>
         </Card>
         <Card className="p-5">
-          <div className="text-xs font-bold tracking-wider text-ink-500 uppercase mb-1">Trial / Suspended</div>
-          <div className="text-3xl font-light text-ink-900">{trial.length} / {orgs.filter(o => o.status === "suspended").length}</div>
+          <div className="text-xs font-bold tracking-wider text-fg-secondary uppercase mb-1">Trial / Suspended</div>
+          <div className="text-3xl font-light text-fg-primary">{trial.length} / {orgs.filter(o => o.status === "suspended").length}</div>
         </Card>
       </div>
       <Card className="p-6">
@@ -72,10 +72,10 @@ export function PlatformBillingView(): JSX.Element {
                   <span className="font-semibold capitalize">{p.plan}</span>
                   <span>₹{p.mrr.toLocaleString("en-IN")} ({share}%)</span>
                 </div>
-                <div className="w-full bg-stone-200 rounded-full h-2">
-                  <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${share}%` }} />
+                <div className="w-full bg-bg-secondary rounded-full h-2">
+                  <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${share}%` }} />
                 </div>
-                <div className="text-xs text-ink-400 mt-0.5">{p.orgs.length} orgs</div>
+                <div className="text-xs text-fg-tertiary mt-0.5">{p.orgs.length} orgs</div>
               </div>
             );
           })}

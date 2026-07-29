@@ -30,26 +30,26 @@ interface BandVisual {
 
 const BAND_VISUALS: Record<ConfidenceBand, BandVisual> = {
   high: {
-    fillClass: "bg-emerald-600",
-    pillBg: "bg-emerald-50",
-    pillText: "text-emerald-800",
-    iconColor: "text-emerald-600",
+    fillClass: "bg-success",
+    pillBg: "bg-success-tint",
+    pillText: "text-success",
+    iconColor: "text-success",
     icon: "check",
     labelKey: "voice.confidence.high",
   },
   medium: {
-    fillClass: "bg-amber-500",
-    pillBg: "bg-amber-50",
-    pillText: "text-amber-800",
-    iconColor: "text-amber-600",
+    fillClass: "bg-accent",
+    pillBg: "bg-warning-tint",
+    pillText: "text-warning",
+    iconColor: "text-warning",
     icon: "info",
     labelKey: "voice.confidence.medium",
   },
   low: {
-    fillClass: "bg-red-500",
-    pillBg: "bg-red-50",
-    pillText: "text-red-800",
-    iconColor: "text-red-600",
+    fillClass: "bg-error-tint0",
+    pillBg: "bg-error-tint",
+    pillText: "text-error",
+    iconColor: "text-error",
     icon: "alert",
     labelKey: "voice.confidence.low",
   },
@@ -90,7 +90,7 @@ export function VoiceConfidenceBar({
   return (
     <div className={`flex flex-col gap-1.5 ${className}`} data-voice-band={band}>
       <div
-        className={`w-full bg-cream-200 rounded-full overflow-hidden ${s.height}`}
+        className={`w-full bg-secondary rounded-full overflow-hidden ${s.height}`}
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -111,7 +111,7 @@ export function VoiceConfidenceBar({
             </span>
           )}
           {showPercent && (
-            <span className={`font-mono tabular-nums text-ink-500 ${s.text}`}>{pct}%</span>
+            <span className={`font-mono tabular-nums text-fg-secondary ${s.text}`}>{pct}%</span>
           )}
         </div>
       )}

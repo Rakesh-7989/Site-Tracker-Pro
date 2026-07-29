@@ -68,38 +68,38 @@ export function EquipmentView(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-display text-xl font-bold text-ink-900">Equipment Register</h1>
+    <div className="space-y-6 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Equipment Register</h1>
       {!canView && <Alert variant="danger">You do not have permission to view equipment.</Alert>}
       {canView && (
         <>
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-ink-700">Project</label>
-            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-ink-900 outline-none focus:border-safety-500">
+            <label className="text-sm font-medium text-fg-secondary">Project</label>
+            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent">
               {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
           {canEdit && selProject && (
             <Card className="p-3 flex gap-2 flex-wrap items-end">
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Name</span><Input className="mt-1 w-40" placeholder="Excavator 200" value={name} onChange={e => setName(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Asset no.</span><Input className="mt-1 w-28" placeholder="AST-001" value={assetNo} onChange={e => setAssetNo(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Type</span><Input className="mt-1 w-28" placeholder="excavator" value={eqType} onChange={e => setEqType(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Ownership</span><Select className="mt-1 w-auto" value={ownership} onChange={e => setOwnership(e.target.value as EquipmentOwnership)} options={OWN_OPTS} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Rate/day</span><Input className="mt-1 w-28" type="number" placeholder="5000" value={rate} onChange={e => setRate(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1 w-40" placeholder="Excavator 200" value={name} onChange={e => setName(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Asset no.</span><Input className="mt-1 w-28" placeholder="AST-001" value={assetNo} onChange={e => setAssetNo(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Input className="mt-1 w-28" placeholder="excavator" value={eqType} onChange={e => setEqType(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Ownership</span><Select className="mt-1 w-auto" value={ownership} onChange={e => setOwnership(e.target.value as EquipmentOwnership)} options={OWN_OPTS} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate/day</span><Input className="mt-1 w-28" type="number" placeholder="5000" value={rate} onChange={e => setRate(e.target.value)} /></div>
               <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
             </Card>
           )}
           {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-            : rows.length === 0 ? <div className="text-sm text-ink-500">No equipment registered.</div>
+            : rows.length === 0 ? <div className="text-sm text-fg-secondary">No equipment registered.</div>
             : <div className="space-y-2">{rows.map(r => (
                 <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={statusTone(r.status)}>{r.status.replace("_", " ")}</Badge>{r.name}{r.assetNo ? ` (${r.assetNo})` : ""}</div>
-                    <div className="text-[11px] text-ink-400">{[r.type, r.ownership, r.ratePerDay ? `₹${r.ratePerDay}/day` : ""].filter(Boolean).join(" · ")}{r.operatorName ? ` · Op: ${r.operatorName}` : ""}</div>
+                    <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={statusTone(r.status)}>{r.status.replace("_", " ")}</Badge>{r.name}{r.assetNo ? ` (${r.assetNo})` : ""}</div>
+                    <div className="text-[11px] text-fg-tertiary">{[r.type, r.ownership, r.ratePerDay ? `₹${r.ratePerDay}/day` : ""].filter(Boolean).join(" · ")}{r.operatorName ? ` · Op: ${r.operatorName}` : ""}</div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEquipment(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                    {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEquipment(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
                   </div>
                 </Card>))}
             </div>

@@ -10,7 +10,7 @@ export interface SkeletonProps {
 }
 
 export function Skeleton({ variant = "text", width, height, className }: SkeletonProps): JSX.Element {
-  const base = "animate-pulse bg-cream-200";
+  const base = "animate-pulse bg-elevated";
   const commonProps = { role: "status" as const, "aria-label": "Loading" as const };
 
   if (variant === "circle") {

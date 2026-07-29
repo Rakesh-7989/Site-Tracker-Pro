@@ -11,10 +11,10 @@ import { cn } from "@/lib/cn";
 import { Icon } from "./icons";
 
 const FIELD_BASE =
-  "w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none bg-white transition " +
-  "focus:ring-2 focus:ring-safety-500/15";
-const FIELD_OK = "border-cream-200 focus:border-safety-500";
-const FIELD_ERR = "border-rose-400 focus:border-rose-500";
+  "w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none bg-bg-primary transition " +
+  "focus:ring-2 focus:ring-[rgba(var(--st-accent-rgb),0.15)]";
+const FIELD_OK = "border-default focus:border-[var(--st-accent)]";
+const FIELD_ERR = "border-error focus:border-[var(--st-error)]";
 
 // ── FormField (label + error wrapper) ───────────────────────────────────────
 export interface FormFieldProps {
@@ -30,14 +30,14 @@ export interface FormFieldProps {
 export function FormField({ label, htmlFor, error, hint, optional, children, className }: FormFieldProps): JSX.Element {
   return (
     <div className={className}>
-      <label htmlFor={htmlFor} className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">
+      <label htmlFor={htmlFor} className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">
         {label}
-        {optional && <span className="text-ink-400 normal-case tracking-normal"> (optional)</span>}
+        {optional && <span className="text-fg-tertiary normal-case tracking-normal"> (optional)</span>}
       </label>
       {children}
-      {hint && !error && <p className="mt-1 text-[11px] text-ink-500">{hint}</p>}
+      {hint && !error && <p className="mt-1 text-[11px] text-fg-secondary">{hint}</p>}
       {error && (
-        <p className="mt-1 text-[11px] text-rose-600 flex items-center gap-1">
+        <p className="mt-1 text-[11px] text-error flex items-center gap-1">
           <Icon name="alert" size={11} />{error}
         </p>
       )}
@@ -55,7 +55,7 @@ export function Input({ invalid = false, leftIcon, className, ...rest }: InputPr
   if (leftIcon) {
     return (
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none">{leftIcon}</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none">{leftIcon}</span>
         <input className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "pl-10", className)} {...rest} />
       </div>
     );
@@ -68,13 +68,13 @@ export function PasswordInput({ invalid = false, className, ...rest }: Omit<Inpu
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="lock" size={16} /></span>
       <input type={show ? "text" : "password"} className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "pl-10 pr-10", className)} {...rest} />
       <button
         type="button"
         onClick={() => setShow(s => !s)}
         aria-label={show ? "Hide password" : "Show password"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700 transition"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-tertiary hover:text-fg-primary transition"
       >
         <Icon name={show ? "eyeOff" : "eye"} size={16} />
       </button>

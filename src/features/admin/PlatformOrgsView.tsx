@@ -159,18 +159,18 @@ function Inner(): JSX.Element {
     { key: "org", header: "Organization", render: (o: PlatformOrg) => (
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-ink-900 truncate">{o.name}</span>
+          <span className="font-semibold text-fg-primary truncate">{o.name}</span>
           <Badge tone={planTone(o.plan)}>{PLAN_LABEL[o.plan] ?? o.plan}</Badge>
           {planUnlocksCustomRoles(o.plan) && <span title="Per-org custom roles unlocked"><Badge tone="warning"><Icon name="lock" size={11} /> custom roles</Badge></span>}
         </div>
-        <div className="text-[11px] text-ink-400">{o.slug} \u00b7 created {fmtDate(o.createdAt)}</div>
+        <div className="text-[11px] text-fg-tertiary">{o.slug} \u00b7 created {fmtDate(o.createdAt)}</div>
       </div>
     )},
     { key: "members", header: "Members", render: (o: PlatformOrg) => (
-      <div className="text-center"><div className="text-lg font-bold text-ink-900 leading-none">{o.memberCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">members</div></div>
+      <div className="text-center"><div className="text-lg font-bold text-fg-primary leading-none">{o.memberCount}</div><div className="text-[10px] text-fg-tertiary uppercase tracking-wide">members</div></div>
     )},
     { key: "projects", header: "Projects", render: (o: PlatformOrg) => (
-      <div className="text-center"><div className="text-lg font-bold text-ink-900 leading-none">{o.projectCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">projects</div></div>
+      <div className="text-center"><div className="text-lg font-bold text-fg-primary leading-none">{o.projectCount}</div><div className="text-[10px] text-fg-tertiary uppercase tracking-wide">projects</div></div>
     )},
     { key: "plan", header: "Plan", render: (o: PlatformOrg) => (
       planBusyId === o.id
@@ -179,7 +179,7 @@ function Inner(): JSX.Element {
     )},
     { key: "actions", header: "", render: (o: PlatformOrg) => (
       <Button size="sm" variant="ghost" disabled={manageOrg?.id === o.id} onClick={() => void onOpenManage(o)}
-        className="!text-safety-500 hover:!bg-orange-50" title="Manage organization">
+        className="!text-accent hover:!bg-accent-tint" title="Manage organization">
         {manageOrg?.id === o.id ? <Spinner size={14} /> : <Icon name="sliders" size={16} />}
       </Button>
     )},
@@ -188,9 +188,9 @@ function Inner(): JSX.Element {
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="font-display text-2xl font-bold text-ink-900">Organizations</h1>
+        <h1 className="font-display text-2xl font-bold text-fg-primary">Organizations</h1>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-ink-500">{search ? "filtered" : `page ${page + 1}`}</span>
+          <span className="text-sm text-fg-secondary">{search ? "filtered" : `page ${page + 1}`}</span>
           {isOwner && (
             <Button size="sm" onClick={() => setShowCreate(v => !v)} leftIcon={<Icon name="plus" size={14} />}>
               New organization
@@ -204,16 +204,16 @@ function Inner(): JSX.Element {
         <Card className="p-4 space-y-4">
           {createResult ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg text-sm font-semibold">
+              <div className="flex items-center gap-2 text-success bg-success-tint px-3 py-2 rounded-lg text-sm font-semibold">
                 <Icon name="check" size={16} /> Organization created successfully
               </div>
-              <div className="text-sm bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1.5">
-                <p className="font-semibold text-amber-900">Admin login credentials</p>
-                <p className="text-amber-800">Email: <span className="font-mono font-bold">{createResult.email}</span></p>
-                <p className="text-amber-800">Temporary password: <span className="font-mono font-bold text-base bg-amber-100 px-2 py-0.5 rounded select-all">{createResult.tempPassword}</span></p>
-                <p className="text-[11px] text-amber-600 mt-1">Save this password \u2014 it will only be shown once.</p>
+              <div className="text-sm bg-warning-tint border border-warning rounded-lg p-3 space-y-1.5">
+                <p className="font-semibold text-warning">Admin login credentials</p>
+                <p className="text-warning">Email: <span className="font-mono font-bold">{createResult.email}</span></p>
+                <p className="text-warning">Temporary password: <span className="font-mono font-bold text-base bg-warning-tint px-2 py-0.5 rounded select-all">{createResult.tempPassword}</span></p>
+                <p className="text-[11px] text-warning mt-1">Save this password \u2014 it will only be shown once.</p>
               </div>
-              <p className="text-xs text-ink-500">
+              <p className="text-xs text-fg-secondary">
                 {createResult.emailSent ? "Welcome email sent with credentials." : createResult.userAlreadyExisted ? "User already existed (original password unchanged)." : "Email not sent \u2014 configure RESEND_API_KEY."}
               </p>
               <Button size="sm" onClick={() => { setShowCreate(false); setCreateResult(null); setCreateOrgName(""); setCreateAdminEmail(""); setCreateAdminPhone(""); setCreateAdminName(""); }}>
@@ -222,7 +222,7 @@ function Inner(): JSX.Element {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-ink-700">Create a new organization with admin user</p>
+              <p className="text-sm font-semibold text-fg-primary">Create a new organization with admin user</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <FormField label="Organization name *" htmlFor="create-org-name">
                   <Input id="create-org-name" value={createOrgName} onChange={e => setCreateOrgName(e.target.value)} placeholder="e.g. G Architects" disabled={creating} />
@@ -265,20 +265,20 @@ function Inner(): JSX.Element {
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-24 bg-black/30" onClick={onCloseManage}>
           <div className="w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}><Card className="p-5 space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display font-bold text-ink-900 truncate">{manageOrg.name}</h2>
+              <h2 className="font-display font-bold text-fg-primary truncate">{manageOrg.name}</h2>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Badge tone={planTone(manageOrg.plan)}>{PLAN_LABEL[manageOrg.plan] ?? manageOrg.plan}</Badge>
                 {manageSubLoading ? <Spinner size={12} /> : manageSub?.status ? (
                   <Badge tone={subTone(manageSub.status)}>{manageSub.status}</Badge>
                 ) : <Badge tone="neutral">no subscription</Badge>}
               </div>
-              <button onClick={onCloseManage} className="text-ink-400 hover:text-ink-700 p-1" aria-label="Close">
+              <button onClick={onCloseManage} className="text-fg-tertiary hover:text-fg-primary p-1" aria-label="Close">
                 <Icon name="x" size={18} />
               </button>
             </div>
 
             {manageSub && !manageSubLoading && (
-              <div className="text-[11px] text-ink-500 flex gap-4">
+              <div className="text-[11px] text-fg-secondary flex gap-4">
                 {manageSub.provider && <span>Provider: {manageSub.provider}</span>}
                 {manageSub.currentPeriodEnd && <span>Period end: {fmtDate(manageSub.currentPeriodEnd)}</span>}
               </div>
@@ -296,7 +296,7 @@ function Inner(): JSX.Element {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="text-sm text-ink-700 font-medium">
+                <div className="text-sm text-fg-primary font-medium">
                   {manageAction === "delete" ? `Delete "${manageOrg.name}" and ALL its data?` :
                    manageAction === "pause" ? `Pause subscription for "${manageOrg.name}"?` :
                    manageAction === "cancel" ? `Cancel subscription for "${manageOrg.name}"?` :
@@ -305,7 +305,7 @@ function Inner(): JSX.Element {
                 </div>
                 <FormField label="Reason *" htmlFor="manage-reason">
                   <textarea id="manage-reason" value={manageReason} onChange={e => setManageReason(e.target.value)}
-                    className="w-full px-3 py-2 border border-cream-200 rounded-lg text-sm bg-white min-h-[80px] resize-y"
+                    className="w-full px-3 py-2 border border-default rounded-lg text-sm bg-bg-primary min-h-[80px] resize-y"
                     placeholder="Explain why this action is being taken\u2026" disabled={manageBusy} />
                 </FormField>
                 {manageResult && (
@@ -340,14 +340,14 @@ function ActionTile({ icon, label, desc, tone = "neutral", onClick, className = 
   icon: IconName; label: string; desc: string; tone?: "neutral" | "danger"; onClick: () => void; className?: string;
 }): JSX.Element {
   const c = tone === "danger"
-    ? "border-red-200 hover:bg-red-50 text-red-700"
-    : "border-cream-200 hover:bg-cream-100 text-ink-700";
+    ? "border-error hover:bg-error-tint text-error"
+    : "border-default hover:bg-bg-secondary text-fg-primary";
   return (
-    <button onClick={onClick} className={`flex items-center gap-3 p-3 rounded-xl border bg-white text-left transition-all ${c} ${className}`}>
+    <button onClick={onClick} className={`flex items-center gap-3 p-3 rounded-xl border bg-bg-primary text-left transition-all ${c} ${className}`}>
       <Icon name={icon} size={18} />
       <div>
         <div className="font-semibold text-sm leading-tight">{label}</div>
-        <div className="text-[10px] text-ink-400 mt-0.5">{desc}</div>
+        <div className="text-[10px] text-fg-tertiary mt-0.5">{desc}</div>
       </div>
     </button>
   );

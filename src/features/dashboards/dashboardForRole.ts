@@ -6,7 +6,7 @@
 
 import type { IdentityRole } from "@/auth";
 
-export type DashboardKind = "promoter" | "field" | "client" | "default";
+export type DashboardKind = "promoter" | "field" | "client" | "pm" | "default";
 
 /**
  * Pick the dashboard for an identity role.
@@ -24,6 +24,8 @@ export function dashboardForRole(role: IdentityRole): DashboardKind {
       return "field";
     case "client":
       return "client";
+    case "pm":
+      return "pm";
     default:
       return "default";
   }

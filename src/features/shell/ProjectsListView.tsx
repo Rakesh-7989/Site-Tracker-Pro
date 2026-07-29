@@ -50,7 +50,7 @@ export function ProjectsListView(): JSX.Element {
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-xl font-bold text-ink-900">Projects</h1>
+        <h1 className="font-display text-xl font-bold text-fg-primary">Projects</h1>
         {canCreate && (
           <Link to="/projects/new">
             <Button size="sm" leftIcon={<Icon name="plus" size={14} />}>New Project</Button>
@@ -59,25 +59,25 @@ export function ProjectsListView(): JSX.Element {
       </div>
 
       {state.kind === "loading" && (
-        <div className="grid place-items-center py-16 text-safety-500"><Spinner size={24} /></div>
+        <div className="grid place-items-center py-16 text-accent"><Spinner size={24} /></div>
       )}
 
       {state.kind === "no-org" && (
-        <Card className="p-8 text-center text-ink-500 text-sm">
+        <Card className="p-8 text-center text-fg-secondary text-sm">
           You're not a member of any organization yet.
         </Card>
       )}
 
       {state.kind === "error" && (
-        <Card className="p-6 flex items-start gap-3 border-rose-200 bg-rose-50">
-          <Icon name="alert" size={18} className="text-rose-600 mt-0.5" />
-          <div className="text-sm text-rose-700">Couldn't load projects: {state.message}</div>
+        <Card className="p-6 flex items-start gap-3 border-error bg-error-tint">
+          <Icon name="alert" size={18} className="text-error mt-0.5" />
+          <div className="text-sm text-error">Couldn't load projects: {state.message}</div>
         </Card>
       )}
 
       {state.kind === "ready" && state.projects.length === 0 && (
         <Card className="p-8 text-center">
-          <div className="text-sm text-ink-500 mb-3">No projects yet in {activeOrg?.orgName}.</div>
+          <div className="text-sm text-fg-secondary mb-3">No projects yet in {activeOrg?.orgName}.</div>
           <RequireCapability capability="project:create" orgId={activeOrg?.orgId}>
             <Link to="/projects/new">
               <Button size="md" leftIcon={<Icon name="plus" size={16} />}>Create the first project</Button>
@@ -90,15 +90,15 @@ export function ProjectsListView(): JSX.Element {
         <div className="grid sm:grid-cols-2 gap-3">
           {state.projects.map(p => (
             <Link key={p.id} to={`/projects/${p.id}`}>
-              <Card className="p-4 hover:border-safety-300 transition cursor-pointer h-full">
+              <Card className="p-4 hover:border-accent transition cursor-pointer h-full">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="font-semibold text-ink-800">{p.name}</div>
-                    {p.location && <div className="text-xs text-ink-500 mt-0.5">{p.location}</div>}
+                    <div className="font-semibold text-fg-primary">{p.name}</div>
+                    {p.location && <div className="text-xs text-fg-secondary mt-0.5">{p.location}</div>}
                   </div>
                   <Badge tone={TYPE_TONE[p.type] ?? "neutral"}>{p.type}</Badge>
                 </div>
-                {p.status && <div className="mt-2 text-[11px] text-ink-400 uppercase tracking-wide">{p.status}</div>}
+                {p.status && <div className="mt-2 text-[11px] text-fg-tertiary uppercase tracking-wide">{p.status}</div>}
               </Card>
             </Link>
           ))}

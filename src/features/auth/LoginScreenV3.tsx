@@ -176,7 +176,7 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
   const meta = LOGIN_META[lane];
 
   return (
-    <div className="relative min-h-screen grid lg:grid-cols-2 bg-ink-900">
+    <div className="relative min-h-screen grid lg:grid-cols-2 bg-ink">
       {/* Pre-login language picker (top-right) */}
       <div className="absolute top-4 right-4 z-10"><LanguageSwitcher /></div>
 
@@ -185,42 +185,42 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
         <h1 className="font-display text-5xl font-bold leading-tight">
           {t("auth.heroTitle1")}
           <br />
-          <span className="text-safety-500">{t("auth.heroTitle2")}</span>
+          <span className="text-accent">{t("auth.heroTitle2")}</span>
         </h1>
-        <p className="mt-5 text-ink-300 text-base max-w-md leading-relaxed">
+        <p className="mt-5 text-fg-tertiary text-base max-w-md leading-relaxed">
           {t("auth.heroSub")}
         </p>
-        <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] uppercase text-safety-500">
-          <span className="w-2 h-2 rounded-full bg-safety-500" /> {t("auth.shellTag")}
+        <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] uppercase text-accent">
+          <span className="w-2 h-2 rounded-full bg-accent" /> {t("auth.shellTag")}
         </div>
       </div>
 
       {/* Right auth panel */}
-      <div className="flex items-center justify-center p-6 bg-cream-50">
+      <div className="flex items-center justify-center p-6 bg-panel">
         <Card className="w-full max-w-md p-6">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-9 h-9 rounded-lg bg-safety-500 text-white grid place-items-center font-bold">S</div>
+            <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
             <div>
-              <div className="font-display font-bold text-ink-900">SiteTrack Pro</div>
-              <div className="text-[11px] text-ink-500">{t(meta.subKey)}</div>
+              <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
+              <div className="text-[11px] text-fg-secondary">{t(meta.subKey)}</div>
             </div>
           </div>
 
           {mfaFactorId ? (
             /* MFA challenge — only when the signed-in user has 2FA enabled */
             <div>
-              <div className="text-sm font-semibold text-ink-900 mb-1">{t("auth.mfaTitle")}</div>
-              <p className="text-[12px] text-ink-500 mb-3">{t("auth.mfaSub")}</p>
+              <div className="text-sm font-semibold text-fg-primary mb-1">{t("auth.mfaTitle")}</div>
+              <p className="text-[12px] text-fg-secondary mb-3">{t("auth.mfaSub")}</p>
               <input
                 id="mfa" value={mfaCode} inputMode="numeric" maxLength={6} autoFocus
                 onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 onKeyDown={e => { if (e.key === "Enter") onSubmitMfa(); }}
                 placeholder="123456"
-                className="w-full px-3 py-3 border border-cream-200 rounded-lg text-base font-mono tracking-[0.4em] text-center outline-none focus:border-safety-500 bg-white"
+                className="w-full px-3 py-3 border border-default rounded-lg text-base font-mono tracking-[0.4em] text-center outline-none focus:border-accent bg-panel"
               />
               {status.kind === "error" && (
-                <div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[12px] text-red-700 flex items-start gap-2">
-                  <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {status.msg}
+                <div className="mt-3 rounded-lg bg-error-tint border border-error p-3 text-[12px] text-error flex items-start gap-2">
+                  <Icon name="alert" size={15} className="text-error mt-0.5" /> {status.msg}
                 </div>
               )}
               <Button fullWidth size="lg" className="mt-3" disabled={busy} onClick={onSubmitMfa} leftIcon={busy ? <Spinner size={16} /> : null}>
@@ -228,22 +228,22 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
               </Button>
             </div>
           ) : (<>
-          <div className="mb-4 rounded-lg border border-cream-200 bg-cream-50 px-3 py-2 text-[12px] text-ink-600 flex items-start gap-2">
-            <Icon name={meta.icon} size={15} className="text-safety-600 mt-0.5 flex-shrink-0" />
+          <div className="mb-4 rounded-lg border border-default bg-panel px-3 py-2 text-[12px] text-fg-secondary flex items-start gap-2">
+            <Icon name={meta.icon} size={15} className="text-accent mt-0.5 flex-shrink-0" />
             <span>
-              <span className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-400 mb-0.5">{t(meta.eyebrowKey)}</span>
+              <span className="block text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-tertiary mb-0.5">{t(meta.eyebrowKey)}</span>
               {t(meta.noticeKey)}
             </span>
           </div>
 
           {/* Method tabs */}
-          <div className="flex items-center gap-4 mb-4 border-b border-cream-200">
+          <div className="flex items-center gap-4 mb-4 border-b border-default">
             {(["password", "magic"] as Method[]).map(m => (
               <button
                 key={m}
                 onClick={() => { setMethod(m); setStatus({ kind: "idle" }); }}
                 className={`text-[11px] font-semibold tracking-[0.14em] uppercase pb-2 -mb-px transition ${
-                  method === m ? "text-safety-600 border-b-2 border-safety-500" : "text-ink-500 hover:text-ink-700 border-b-2 border-transparent"
+                  method === m ? "text-accent border-b-2 border-accent" : "text-fg-secondary hover:text-fg-primary border-b-2 border-transparent"
                 }`}
               >
                 {m === "password" ? t("auth.tabPassword") : t("auth.tabMagic")}
@@ -253,14 +253,14 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
 
           {/* Email */}
           <div className="mb-3">
-            <label htmlFor="email" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-1.5">{t("auth.workEmail")}</label>
+            <label htmlFor="email" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">{t("auth.workEmail")}</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="mail" size={16} /></span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="mail" size={16} /></span>
               <input
                 id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder={t("auth.emailPlaceholder")} autoComplete="email"
                 onKeyDown={e => { if (e.key === "Enter") method === "password" ? onPasswordLogin() : onMagicLink(); }}
-                className="w-full pl-10 pr-3.5 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+                className="w-full pl-10 pr-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
               />
             </div>
           </div>
@@ -269,23 +269,23 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
           {method === "password" && (
             <div className="mb-3">
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500">{t("auth.passwordLabel")}</label>
+                <label htmlFor="pw" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary">{t("auth.passwordLabel")}</label>
                 <button type="button" onClick={onForgotPassword} disabled={busy}
-                  className="text-[11px] font-semibold text-safety-600 hover:text-safety-700 disabled:opacity-50">
+                  className="text-[11px] font-semibold text-accent hover:text-accent-2 disabled:opacity-50">
                   {t("auth.forgot")}
                 </button>
               </div>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"><Icon name="lock" size={16} /></span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none"><Icon name="lock" size={16} /></span>
                 <input
                   id="pw" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••" autoComplete="current-password"
                   onKeyDown={e => { if (e.key === "Enter") onPasswordLogin(); }}
-                  className="w-full pl-10 pr-10 py-3 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white"
+                  className="w-full pl-10 pr-10 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
                 />
                 <button type="button" onClick={() => setShowPassword(s => !s)} tabIndex={-1}
                   aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-tertiary hover:text-fg-secondary">
                   <Icon name={showPassword ? "eyeOff" : "eye"} size={16} />
                 </button>
               </div>
@@ -302,39 +302,39 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
 
           {/* Status */}
           {status.kind === "sent" && (
-            <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[12px] text-emerald-700 flex items-start gap-2">
-              <Icon name="check" size={15} className="text-emerald-600 mt-0.5" /> {status.msg}
+            <div className="mt-3 rounded-lg bg-success-tint border border-success p-3 text-[12px] text-success flex items-start gap-2">
+              <Icon name="check" size={15} className="text-success mt-0.5" /> {status.msg}
             </div>
           )}
           {status.kind === "error" && (
-            <div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[12px] text-red-700 flex items-start gap-2">
-              <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {status.msg}
+            <div className="mt-3 rounded-lg bg-error-tint border border-error p-3 text-[12px] text-error flex items-start gap-2">
+              <Icon name="alert" size={15} className="text-error mt-0.5" /> {status.msg}
             </div>
           )}
 
           {/* OTP fallback after magic link */}
           {status.kind === "sent" && (
-            <div className="mt-4 pt-4 border-t border-cream-200">
-              <label htmlFor="otp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-500 block mb-2">{t("auth.orEnterCode")}</label>
+            <div className="mt-4 pt-4 border-t border-default">
+              <label htmlFor="otp" className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-2">{t("auth.orEnterCode")}</label>
               <div className="flex gap-2">
                 <input
                   id="otp" value={otp} inputMode="numeric" maxLength={6}
                   onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   onKeyDown={e => { if (e.key === "Enter") onVerifyOtp(); }}
                   placeholder="123456"
-                  className="flex-1 px-3 py-2.5 border border-cream-200 rounded-lg text-sm font-mono tracking-[0.3em] text-center outline-none focus:border-safety-500 bg-white"
+                  className="flex-1 px-3 py-2.5 border border-default rounded-lg text-sm font-mono tracking-[0.3em] text-center outline-none focus:border-accent bg-panel"
                 />
                 <Button variant="secondary" size="md" onClick={onVerifyOtp} disabled={busy}>{t("auth.verify")}</Button>
               </div>
             </div>
           )}
           {lane === "staff" ? (
-            <p className="mt-4 text-center text-[11px] text-ink-400">
-              {t("auth.customerLoginPrompt")} <Link to="/login" className="font-semibold text-safety-600 hover:text-safety-700">{t("auth.customerLoginLink")}</Link>
+            <p className="mt-4 text-center text-[11px] text-fg-tertiary">
+              {t("auth.customerLoginPrompt")} <Link to="/login" className="font-semibold text-accent hover:text-accent-2">{t("auth.customerLoginLink")}</Link>
             </p>
           ) : (
-            <p className="mt-4 text-center text-[11px] text-ink-400">
-              {t("auth.orgCreatePrompt")} <Link to="/register" className="font-semibold text-safety-600 hover:text-safety-700">{t("auth.orgCreateLink")}</Link>
+            <p className="mt-4 text-center text-[11px] text-fg-tertiary">
+              {t("auth.orgCreatePrompt")} <Link to="/register" className="font-semibold text-accent hover:text-accent-2">{t("auth.orgCreateLink")}</Link>
             </p>
           )}
           </>)}

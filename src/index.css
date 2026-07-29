@@ -23,6 +23,7 @@
 
   /* Accents */
   --st-accent:        #FF6B1A;  /* safety orange — primary CTA + active */
+  --st-accent-rgb:    255, 107, 26;  /* RGB decomposition for opacity */
   --st-accent-2:      #E55A0E;  /* pressed */
   --st-accent-light:  #FF8A3D;  /* hover / gradient end */
   --st-accent-tint:   #FFF1E6;  /* saffron */
@@ -32,9 +33,30 @@
   --st-success-tint:  #F0FDF4;  /* success bg tint */
   --st-warning:       #B45309;  /* amber */
   --st-error:         #B91C1C;  /* deep red */
-  --st-error-tint:    #FEF2F2;  /* error bg tint */
+  --st-error-tint:  #FEF2F2;  /* error bg tint */
+  --st-warning-tint:  #FFFBEB;  /* warning bg tint */
   --st-indigo-tint:   #EFF6FF;  /* info bg tint */
   --st-violet-tint:   #F5F3FF;  /* violet bg tint */
+  --st-overlay:       rgba(15,17,21,0.6);  /* modal / dialog backdrop */
+
+  /* Role chip tint colors (light mode, matches Tailwind default palettes) */
+  --st-teal:          #0F766E;
+  --st-teal-tint:     #CCFBF1;
+  --st-cyan:          #0E7490;
+  --st-cyan-tint:     #CFFAFE;
+  --st-rose:          #BE123C;
+  --st-rose-tint:     #FFE4E6;
+  --st-fuchsia:       #A21CAF;
+  --st-fuchsia-tint:  #FAE8FF;
+  --st-purple:        #7E22CE;
+  --st-purple-tint:   #F3E8FF;
+  --st-yellow:        #854D0E;
+  --st-yellow-tint:   #FEF9C3;
+  --st-blue-tint:     #DBEAFE;
+  --st-emerald-tint:  #D1FAE5;
+  --st-orange-tint-100: #FFEDD5;
+  --st-violet-tint-100: #EDE9FE;
+  --st-ink:           #292524;
 
 
   /* RGB decompositions for opacity modifiers */
@@ -92,6 +114,7 @@
   --st-text-tertiary:  #6B6E76;
 
   --st-accent:        #FF8A3D;
+  --st-accent-rgb:    255, 138, 61;
   --st-accent-2:      #FF6B1A;
   --st-accent-light:  #FFAA5E;
   --st-accent-tint:   #3A2A1A;
@@ -101,9 +124,30 @@
   --st-warning:       #FBBF24;
   --st-error:         #F87171;
   --st-error-tint:    rgba(248,113,113,0.12);
+  --st-warning-tint:  rgba(251,191,36,0.12);
   --st-indigo-tint:   rgba(96,165,250,0.12);
   --st-violet-tint:   rgba(167,139,250,0.12);
   --st-violet:        #A78BFA;
+  --st-overlay:       rgba(0,0,0,0.7);  /* modal / dialog backdrop */
+
+  /* Role chip tints — dark mode (rgba on the light-mode dim text color) */
+  --st-teal:          #2DD4BF;
+  --st-teal-tint:     rgba(45,212,191,0.12);
+  --st-cyan:          #22D3EE;
+  --st-cyan-tint:     rgba(34,211,238,0.12);
+  --st-rose:          #FB7185;
+  --st-rose-tint:     rgba(251,113,133,0.12);
+  --st-fuchsia:       #E879F9;
+  --st-fuchsia-tint:  rgba(232,121,249,0.12);
+  --st-purple:        #C084FC;
+  --st-purple-tint:   rgba(192,132,252,0.12);
+  --st-yellow:        #FBBF24;
+  --st-yellow-tint:   rgba(251,191,36,0.12);
+  --st-blue-tint:     rgba(96,165,250,0.15);
+  --st-emerald-tint:  rgba(52,211,153,0.15);
+  --st-orange-tint-100: rgba(255,138,61,0.15);
+  --st-violet-tint-100: rgba(167,139,250,0.18);
+  --st-ink:           #292524;
 
   /* RGB decompositions for dark mode */
   --st-bg-elevated-rgb: 40, 43, 48;
@@ -293,6 +337,119 @@ button.bg-orange-500, button.bg-orange-400 {
 
 /* Saffron-tint helper class — direct token access for flat status banners */
 .bg-saffron-tint { background-color: var(--st-saffron-tint) !important; }
+
+/* ── Design system semantic color utilities (Phase 4) ──────────────────────── */
+.bg-panel          { background-color: var(--st-bg-panel); }
+.bg-card           { background-color: var(--st-bg-panel); }
+.bg-primary        { background-color: var(--st-bg-primary); }
+.bg-bg-primary     { background-color: var(--st-bg-primary); }
+.bg-elevated       { background-color: var(--st-bg-elevated); }
+.bg-secondary      { background-color: var(--st-bg-elevated); }
+.bg-bg-secondary   { background-color: var(--st-bg-elevated); }
+.hover\:bg-elevated:hover            { background-color: var(--st-bg-elevated); }
+.hover\:bg-secondary:hover            { background-color: var(--st-bg-elevated); }
+.hover\:bg-bg-secondary:hover         { background-color: var(--st-bg-elevated); }
+.text-fg-primary   { color: var(--st-text-primary); }
+.text-fg-secondary { color: var(--st-text-secondary); }
+.text-fg-tertiary  { color: var(--st-text-tertiary); }
+.border-default    { border-color: var(--st-border); }
+.border-accent     { border-color: var(--st-accent); }
+.divide-default > * + * { border-color: var(--st-border); }
+.hover\:border-stronger:hover        { border-color: var(--st-text-secondary); }
+/* Accent (safety orange) */
+.bg-accent       { background-color: var(--st-accent); }
+.bg-accent-2     { background-color: var(--st-accent-2); }
+.hover\:bg-accent-2:hover  { background-color: var(--st-accent-2); }
+.text-accent     { color: var(--st-accent); }
+.text-accent-2   { color: var(--st-accent-2); }
+.bg-accent-tint  { background-color: var(--st-accent-tint); }
+.text-accent-light { color: var(--st-accent-light); }
+
+/* Violet */
+.bg-violet-tint   { background-color: var(--st-violet-tint); }
+.text-violet      { color: var(--st-violet); }
+
+/* Role chip tints (teal, cyan, rose, fuchsia, purple, yellow, etc.) */
+.bg-teal-tint     { background-color: var(--st-teal-tint); }
+.text-teal        { color: var(--st-teal); }
+.bg-cyan-tint     { background-color: var(--st-cyan-tint); }
+.text-cyan        { color: var(--st-cyan); }
+.bg-rose-tint     { background-color: var(--st-rose-tint); }
+.text-rose        { color: var(--st-rose); }
+.bg-fuchsia-tint  { background-color: var(--st-fuchsia-tint); }
+.text-fuchsia     { color: var(--st-fuchsia); }
+.bg-purple-tint   { background-color: var(--st-purple-tint); }
+.text-purple      { color: var(--st-purple); }
+.bg-yellow-tint   { background-color: var(--st-yellow-tint); }
+.text-yellow      { color: var(--st-yellow); }
+
+.bg-blue-tint      { background-color: var(--st-blue-tint); }
+.bg-indigo-tint    { background-color: var(--st-indigo-tint); }
+.bg-emerald-tint   { background-color: var(--st-emerald-tint); }
+.bg-orange-tint-100 { background-color: var(--st-orange-tint-100); }
+.bg-violet-tint-100 { background-color: var(--st-violet-tint-100); }
+.bg-ink            { background-color: var(--st-ink); }
+.text-cream        { color: var(--st-cream); }
+
+/* Semantic status — success (emerald) */
+.bg-success-tint { background-color: var(--st-success-tint); }
+.text-success    { color: var(--st-success); }
+.border-success  { border-color: var(--st-success); }
+
+/* Semantic status — warning (amber → accent mapped) */
+.bg-warning-tint { background-color: var(--st-warning-tint); }
+.text-warning    { color: var(--st-warning); }
+.border-warning  { border-color: var(--st-warning); }
+
+/* Semantic status — error (rose/red) */
+.bg-error-tint   { background-color: var(--st-error-tint); }
+.text-error      { color: var(--st-error); }
+.bg-error        { background-color: var(--st-error); }
+.border-error    { border-color: var(--st-error); }
+.bg-overlay      { background-color: var(--st-overlay); }
+.hover\:bg-error-dark:hover { background-color: #991b1b; }
+
+/* Semantic status — info (indigo/blue) */
+.bg-info-tint    { background-color: var(--st-indigo-tint); }
+.text-info       { color: var(--st-indigo); }
+
+/* Avatar accent backgrounds (replaces raw Tailwind color classes) */
+.bg-avatar-blue     { background-color: #2563eb; }
+.bg-avatar-violet   { background-color: #7c3aed; }
+.bg-avatar-emerald  { background-color: #059669; }
+.bg-avatar-teal     { background-color: #0d9488; }
+.bg-avatar-cyan     { background-color: #0891b2; }
+.bg-avatar-rose     { background-color: #e11d48; }
+.bg-avatar-pink     { background-color: #db2777; }
+.bg-avatar-fuchsia  { background-color: #c026d3; }
+.bg-avatar-purple   { background-color: #9333ea; }
+.bg-avatar-indigo   { background-color: #4f46e5; }
+.bg-avatar-yellow   { background-color: #eab308; }
+.bg-avatar-slate    { background-color: var(--st-text-primary); }
+
+/* Progress bar colors */
+.bg-bar-blue     { background-color: #3b82f6; }
+.bg-bar-emerald  { background-color: #10b981; }
+.bg-bar-red      { background-color: var(--st-error); }
+.bg-bar-violet   { background-color: #8b5cf6; }
+
+/* StatCard accent icon surfaces */
+.bg-stat-blue     { background-color: var(--st-indigo-tint); }
+.bg-stat-emerald  { background-color: var(--st-success-tint); }
+.bg-stat-violet   { background-color: var(--st-violet-tint); }
+.bg-stat-red      { background-color: var(--st-error-tint); }
+.text-stat-blue   { color: var(--st-indigo); }
+.text-stat-emerald { color: var(--st-success); }
+.text-stat-violet { color: var(--st-violet); }
+.text-stat-red    { color: var(--st-error); }
+
+/* Tile accent surfaces */
+.bg-tile-blue     { background-color: var(--st-indigo-tint); }
+.bg-tile-emerald  { background-color: var(--st-success-tint); }
+.bg-tile-violet   { background-color: var(--st-violet-tint); }
+.text-tile-blue   { color: var(--st-indigo); }
+.text-tile-emerald { color: var(--st-success); }
+.text-tile-violet { color: var(--st-violet); }
 
 /* Safe-area bottom for mobile insets (BottomNav, sticky footers) */
 .safe-area-bottom {

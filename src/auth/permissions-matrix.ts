@@ -78,6 +78,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "milestone:add", "milestone:edit",
     "vendor:select",   // Pick vendors when creating invoices / RA bills.
     "budget:view", "ledger:view", "material:price:view",  // Financial context for invoice/RA bill creation.
+    "handover:generate",
     "export:pdf", "export:csv",
   ),
   prospector: arr(
@@ -105,6 +106,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "safety:close",
     "team:manage", "attendance:view", "attendance:mark",
     "compliance:view",
+    "digest:subscribe", "digest:receive",
     "material:add", "material:edit", "material:delete",
     "material:price:view",
     "po:create", "vendor:select",   // PMs raise POs and pick vendors in the form.
@@ -115,6 +117,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "budget:view", "ledger:view",
     "dpr:view", "dpr:approve",
     "drawings:upload",
+    "handover:generate",
     "message:send", "whatsapp:send",
     "export:pdf", "export:csv",
   ),
@@ -247,7 +250,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
   sub_contractor: arr(
     "activity:view",
     "update:add",
-    "attendance:mark",
+    "attendance:mark", "attendance:view",
     "rfi:create",
     "photo:upload",
   ),
@@ -434,7 +437,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
   ),
   sub_contractor: arr(
     "update:add",
-    "attendance:mark",
+    "attendance:mark", "attendance:view",
     "rfi:create",
     "photo:upload",
   ),

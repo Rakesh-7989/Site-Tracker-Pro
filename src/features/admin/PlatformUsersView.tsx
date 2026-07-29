@@ -39,31 +39,31 @@ function Inner(): JSX.Element {
   const columns = [
     { key: "name", header: "Name", render: (u: PlatformUser) => (
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-semibold text-ink-900">{u.name || "\u2014"}</span>
+        <span className="font-semibold text-fg-primary">{u.name || "\u2014"}</span>
         <Badge tone={u.role === "superadmin" ? "danger" : "neutral"}>{roleLabel(u.role)}</Badge>
         {u.isStaff && <Badge tone="warning">Staff</Badge>}
       </div>
     )},
     { key: "email", header: "Email", render: (u: PlatformUser) => (
-      <span className="text-sm text-ink-500">{u.email ?? "no email"}</span>
+      <span className="text-sm text-fg-secondary">{u.email ?? "no email"}</span>
     ), hideOnMobile: true },
     { key: "joined", header: "Joined", render: (u: PlatformUser) => (
-      <span className="text-xs text-ink-400">{fmtDate(u.createdAt)}</span>
+      <span className="text-xs text-fg-tertiary">{fmtDate(u.createdAt)}</span>
     ), hideOnMobile: true },
     { key: "orgCount", header: "Orgs", className: "text-center", render: (u: PlatformUser) => (
-      <div className="text-center"><div className="text-lg font-bold text-ink-900 leading-none">{u.orgCount}</div><div className="text-[10px] text-ink-400 uppercase tracking-wide">orgs</div></div>
+      <div className="text-center"><div className="text-lg font-bold text-fg-primary leading-none">{u.orgCount}</div><div className="text-[10px] text-fg-tertiary uppercase tracking-wide">orgs</div></div>
     )},
   ];
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="font-display text-2xl font-bold text-ink-900">Users</h1>
-        <span className="text-sm text-ink-500">{search ? "filtered" : `page ${page + 1}`}</span>
+        <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Users</h1>
+        <span className="text-sm text-fg-secondary">{search ? "filtered" : `page ${page + 1}`}</span>
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       <Input placeholder="Search by name or email\u2026" value={q} onChange={e => setQ(e.target.value)} />
-      <DataTable
+      <div className="overflow-x-auto"><DataTable
         columns={columns}
         rows={rows}
         rowKey={u => u.id}
@@ -72,7 +72,7 @@ function Inner(): JSX.Element {
         emptyMessage={search ? `No users match "${search}".` : "No users."}
         variant="card"
         pagination={{ page, hasNext, busy: loading, onPrev: () => setPage(p => Math.max(0, p - 1)), onNext: () => setPage(p => p + 1) }}
-      />
+      /></div>
     </div>
   );
 }

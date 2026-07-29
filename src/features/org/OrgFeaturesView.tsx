@@ -70,44 +70,44 @@ export function OrgFeaturesView(): JSX.Element {
   };
 
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
-  if (error && !orgId) return <div className="p-8"><div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm">{error}</div></div>;
+  if (error && !orgId) return <div className="p-8"><div className="bg-error-tint border border-error text-error rounded-xl p-4 text-sm">{error}</div></div>;
 
   const allFeatures = FEATURE_GROUPS.flatMap(g => g.features);
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-ink-900 flex items-center gap-2">
-          <Icon name="sliders" size={22} className="text-safety-500" />Feature Toggles
+        <h1 className="text-xl md:text-2xl font-black text-fg-primary flex items-center gap-2">
+          <Icon name="sliders" size={22} className="text-accent" />Feature Toggles
         </h1>
-        <p className="text-ink-400 text-sm mt-1">Enable or disable features for your organisation</p>
+        <p className="text-fg-tertiary text-sm mt-1">Enable or disable features for your organisation</p>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm mb-4">{error}</div>}
+      {error && <div className="bg-error-tint border border-error text-error rounded-xl p-4 text-sm mb-4">{error}</div>}
 
       {FEATURE_GROUPS.map(g => {
         const features = g.features;
         return (
           <Card key={g.id} className="p-6 mb-5">
-            <div className="text-[10px] font-bold tracking-widest uppercase text-safety-600 mb-1">— {g.label}</div>
-            <h2 className="font-bold text-lg text-ink-900 mb-1">{g.label}</h2>
-            <p className="text-xs text-ink-500 mb-4">{g.desc}</p>
+            <div className="text-[10px] font-bold tracking-widest uppercase text-accent mb-1">— {g.label}</div>
+            <h2 className="font-bold text-lg text-fg-primary mb-1">{g.label}</h2>
+            <p className="text-xs text-fg-secondary mb-4">{g.desc}</p>
             <div className="space-y-2">
               {features.map(f => {
                 const enabled = flags.get(f.key) ?? true;
                 const busy = saving === f.key;
                 return (
-                  <label key={f.key} className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all ${enabled ? "bg-emerald-50" : "bg-cream-200/40"}`}>
+                  <label key={f.key} className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all ${enabled ? "bg-success-tint" : "bg-secondary/40"}`}>
                     <input
                       type="checkbox"
                       checked={enabled}
                       disabled={busy}
                       onChange={() => toggle(f.key, enabled)}
-                      className="w-5 h-5 accent-safety-600"
+                      className="w-5 h-5 accent-[var(--st-accent)]"
                     />
                     <div className="flex-1">
-                      <div className="font-semibold text-ink-900 text-sm">{f.label}</div>
-                      <div className="text-xs text-ink-400">Plan: {f.plan}</div>
+                      <div className="font-semibold text-fg-primary text-sm">{f.label}</div>
+                      <div className="text-xs text-fg-tertiary">Plan: {f.plan}</div>
                     </div>
                     {busy && <Spinner size={14} />}
                   </label>
@@ -118,7 +118,7 @@ export function OrgFeaturesView(): JSX.Element {
         );
       })}
 
-      <div className="text-xs text-ink-400 mt-4">
+      <div className="text-xs text-fg-tertiary mt-4">
         {allFeatures.length} features · {Array.from(flags.values()).filter(Boolean).length} enabled
       </div>
     </div>

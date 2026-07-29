@@ -14,7 +14,7 @@ export function UpiQr({ uri, size = 220 }: { uri: string; size?: number }): JSX.
   }, [uri, size]);
 
   if (!dataUrl) {
-    return <div className="grid place-items-center bg-cream-50 rounded-xl border border-cream-200 text-ink-300 text-xs" style={{ width: size, height: size }}>Generating QR…</div>;
+    return <div className="grid place-items-center bg-panel rounded-xl border border-default text-fg-tertiary text-xs" style={{ width: size, height: size }}>Generating QR…</div>;
   }
-  return <img src={dataUrl} alt="UPI payment QR" width={size} height={size} className="rounded-xl border border-cream-200 bg-white" />;
+  return <img src={dataUrl} alt="UPI payment QR" width={size} height={size} className="rounded-xl border border-default bg-card" />;
 }

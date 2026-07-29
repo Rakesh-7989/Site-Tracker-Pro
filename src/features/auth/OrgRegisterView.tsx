@@ -17,8 +17,8 @@ const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 function Logo(): JSX.Element {
   return (
     <Link to="/" className="flex items-center gap-2">
-      <div className="w-9 h-9 rounded-xl bg-safety-500 text-white grid place-items-center font-display font-bold">S</div>
-      <span className="font-display text-lg font-bold text-ink-900">SiteTrack Pro</span>
+      <div className="w-9 h-9 rounded-xl bg-accent text-white grid place-items-center font-display font-bold">S</div>
+      <span className="font-display text-lg font-bold text-fg-primary">SiteTrack Pro</span>
     </Link>
   );
 }
@@ -71,18 +71,18 @@ export function OrgRegisterView(): JSX.Element {
   if (done) {
     const planTier = PLAN_TIERS.find(p => p.id === plan);
     return (
-      <div className="min-h-screen bg-cream-50 grid place-items-center px-5">
+      <div className="min-h-screen bg-panel grid place-items-center px-5">
         <Card className="max-w-md w-full p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 grid place-items-center mx-auto mb-3"><Icon name="check" size={28} /></div>
+          <div className="w-14 h-14 rounded-2xl bg-success-tint text-success grid place-items-center mx-auto mb-3"><Icon name="check" size={28} /></div>
           <h1 className="font-display text-xl font-bold">Your workspace is ready</h1>
-          <p className="text-sm text-ink-600 mt-2">
+          <p className="text-sm text-fg-secondary mt-2">
             <b>{firmName}</b> has been created on the <b>{planTier?.name ?? plan}</b> plan.
             You are registered as <b>Firm Owner</b>.
           </p>
-          <p className="text-sm text-ink-600 mt-1">
+          <p className="text-sm text-fg-secondary mt-1">
             Sign in with your email <b>{email}</b> and the password you chose.
           </p>
-          <Link to="/login" className="inline-block mt-5 px-6 py-2.5 bg-safety-600 text-white font-bold rounded-xl text-sm hover:bg-safety-700">
+          <Link to="/login" className="inline-block mt-5 px-6 py-2.5 bg-accent text-white font-bold rounded-xl text-sm hover:bg-accent-2">
             Sign in to SiteTrack Pro
           </Link>
         </Card>
@@ -91,19 +91,19 @@ export function OrgRegisterView(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-cream-50 text-ink-900">
+    <div className="min-h-screen bg-panel text-fg-primary">
       <header className="max-w-5xl mx-auto px-5 py-4 flex items-center justify-between">
         <Logo />
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
-          <Link to="/login" className="text-sm font-semibold text-ink-600 hover:text-ink-900">Sign in</Link>
+          <Link to="/login" className="text-sm font-semibold text-fg-secondary hover:text-fg-primary">Sign in</Link>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-5 pb-16">
         <div className="text-center mb-6">
           <h1 className="font-display text-3xl font-bold">Create your workspace</h1>
-          <p className="text-sm text-ink-500 mt-1">No approval needed — start using SiteTrack Pro right away</p>
+          <p className="text-sm text-fg-secondary mt-1">No approval needed — start using SiteTrack Pro right away</p>
         </div>
 
         {/* Plan selector */}
@@ -113,16 +113,16 @@ export function OrgRegisterView(): JSX.Element {
             const pr = priceFor(p, billing);
             return (
               <button key={p.id} type="button" onClick={() => setPlan(p.id as RegisterPlan)}
-                className={`text-left p-4 rounded-xl border-2 transition relative ${active ? "border-safety-500 bg-white shadow-sm" : "border-cream-200 bg-white hover:border-cream-300"}`}>
+                className={`text-left p-4 rounded-xl border-2 transition relative ${active ? "border-accent bg-panel shadow-sm" : "border-default bg-panel hover:border-default"}`}>
                 {p.popular && <div className="absolute -top-2 right-3"><Badge tone="warning">Popular</Badge></div>}
                 <div className="flex items-center justify-between">
                   <div className="font-display font-bold">{p.name}</div>
-                  {active && <Icon name="check" size={16} className="text-safety-600" />}
+                  {active && <Icon name="check" size={16} className="text-accent" />}
                 </div>
-                <div className="text-xl font-bold mt-1">{pr.amount}<span className="text-xs font-normal text-ink-400">{pr.cadence}</span></div>
-                {billing === "annual" && <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">{pr.effectiveMonthly} &middot; Save {pr.savingsAmount}</div>}
-                <div className="text-[10px] text-ink-400 mt-0.5">{t("signup.gstLine", { amount: formatINR(gstInclusive(billing === "annual" ? p.annual : p.monthly)) })}</div>
-                <div className="text-[11px] text-ink-500 mt-0.5">{p.tagline}</div>
+                <div className="text-xl font-bold mt-1">{pr.amount}<span className="text-xs font-normal text-fg-tertiary">{pr.cadence}</span></div>
+                {billing === "annual" && <div className="text-[10px] text-success font-semibold mt-0.5">{pr.effectiveMonthly} &middot; Save {pr.savingsAmount}</div>}
+                <div className="text-[10px] text-fg-tertiary mt-0.5">{t("signup.gstLine", { amount: formatINR(gstInclusive(billing === "annual" ? p.annual : p.monthly)) })}</div>
+                <div className="text-[11px] text-fg-secondary mt-0.5">{p.tagline}</div>
               </button>
             );
           })}
@@ -132,33 +132,33 @@ export function OrgRegisterView(): JSX.Element {
         <Card className="max-w-xl mx-auto p-6 space-y-4">
           {error && <Alert variant="danger">{error}</Alert>}
           <div className="grid sm:grid-cols-2 gap-3">
-            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Firm name</span>
+            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Firm name</span>
               <Input className="mt-1" value={firmName} onChange={e => setFirmName(e.target.value)} placeholder="e.g. ABC Constructions" /></label>
-            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Your name</span>
+            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Your name</span>
               <Input className="mt-1" value={contactName} onChange={e => setContactName(e.target.value)} placeholder="e.g. Rakesh" /></label>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
-            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Work email</span>
+            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Work email</span>
               <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@firm.com" /></label>
-            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Phone <span className="text-ink-300 normal-case">(optional)</span></span>
+            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Phone <span className="text-fg-tertiary normal-case">(optional)</span></span>
               <Input className="mt-1" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" /></label>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
-            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Password</span>
+            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Password</span>
               <Input className="mt-1" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
-            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Confirm password</span>
+            <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Confirm password</span>
               <Input className="mt-1" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter password" /></label>
           </div>
 
-          <label className="flex items-start gap-2 text-[12px] text-ink-600 cursor-pointer">
-            <input type="checkbox" className="mt-0.5 accent-safety-500" checked={consent} onChange={e => setConsent(e.target.checked)} />
-            <span>I agree to the <Link to="/terms" target="_blank" className="text-safety-600 font-semibold hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-safety-600 font-semibold hover:underline">Privacy Policy</Link>.</span>
+          <label className="flex items-start gap-2 text-[12px] text-fg-secondary cursor-pointer">
+            <input type="checkbox" className="mt-0.5 accent-[var(--st-accent)]" checked={consent} onChange={e => setConsent(e.target.checked)} />
+            <span>I agree to the <Link to="/terms" target="_blank" className="text-accent font-semibold hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-accent font-semibold hover:underline">Privacy Policy</Link>.</span>
           </label>
 
           <Button className="w-full" onClick={() => void submit()} disabled={busy || !consent}>
             {busy ? <Spinner size={16} /> : <>Create workspace</>}
           </Button>
-          <p className="text-[11px] text-ink-400 text-center">Already have an account? <Link to="/login" className="text-safety-600 font-semibold">Sign in</Link></p>
+          <p className="text-[11px] text-fg-tertiary text-center">Already have an account? <Link to="/login" className="text-accent font-semibold">Sign in</Link></p>
         </Card>
       </div>
     </div>

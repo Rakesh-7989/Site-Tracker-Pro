@@ -47,23 +47,23 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Templates</h1>
-      <p className="text-sm text-ink-500 -mt-2">Reusable project, BOQ &amp; checklist starting points shared across your org.</p>
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Templates</h1>
+      <p className="text-sm text-fg-secondary -mt-2">Reusable project, BOQ &amp; checklist starting points shared across your org.</p>
       {error && <Alert variant="danger">{error}</Alert>}
       <Card className="p-3 flex gap-2 flex-wrap items-end">
-        <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Kind</span><Select className="mt-1 w-32" value={kind} onChange={e => setKind(e.target.value as TemplateKind)} options={KIND_OPTS} /></div>
-        <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Name</span><Input className="mt-1" placeholder="e.g. G+3 residential" value={name} onChange={e => setName(e.target.value)} /></div>
-        <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Description</span><Input className="mt-1" placeholder="optional" value={desc} onChange={e => setDesc(e.target.value)} /></div>
+        <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select className="mt-1 w-32" value={kind} onChange={e => setKind(e.target.value as TemplateKind)} options={KIND_OPTS} /></div>
+        <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1" placeholder="e.g. G+3 residential" value={name} onChange={e => setName(e.target.value)} /></div>
+        <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="optional" value={desc} onChange={e => setDesc(e.target.value)} /></div>
         <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
       </Card>
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No templates yet.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No templates yet.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2"><Badge tone={kindTone(r.kind)}>{r.kind}</Badge>
-                <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.name}</div>{r.description && <div className="text-[11px] text-ink-400 truncate">{r.description}</div>}</div></div>
-              <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteTemplate(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>
+                <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.name}</div>{r.description && <div className="text-[11px] text-fg-tertiary truncate">{r.description}</div>}</div></div>
+              <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteTemplate(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>
             </Card>))}</div>}
     </div>
   );

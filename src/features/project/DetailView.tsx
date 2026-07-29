@@ -8,7 +8,7 @@
 //
 // URL: /projects/:id/:tab?  (defaults to overview)
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 import { useAuth, resolveCapabilities } from "@/auth";
@@ -53,6 +53,19 @@ export function DetailView(): JSX.Element {
   const t = useT();
   const { session } = useAuth();
   const { can: planCan } = usePlanCaps();
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  useEffect(() => {
+    const el = tabBarRef.current;
+    if (!el) return;
+    const check = () => setCanScrollRight(el.scrollWidth > el.clientWidth && el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+    check();
+    el.addEventListener("scroll", check);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
+  }, []);
   const { state, reload } = useProject(id);
 
   // Resolve the user's capabilities for THIS project's context.
@@ -71,14 +84,14 @@ export function DetailView(): JSX.Element {
   }, [caps, state, planCan]);
 
   if (state.kind === "loading") {
-    return <div className="grid place-items-center py-20 text-safety-500"><Spinner size={26} /></div>;
+    return <div className="grid place-items-center py-20 text-accent"><Spinner size={26} /></div>;
   }
   if (state.kind === "error") {
     return (
       <Card className="max-w-lg mx-auto p-8 text-center">
-        <Icon name="alert" size={24} className="mx-auto text-red-500 mb-2" />
-        <div className="text-sm text-ink-700">{state.message}</div>
-        <Link to="/projects" className="inline-block mt-4 text-sm font-semibold text-safety-600 hover:text-safety-700">← {t("nav.projects")}</Link>
+        <Icon name="alert" size={24} className="mx-auto text-error mb-2" />
+        <div className="text-sm text-fg-primary">{state.message}</div>
+        <Link to="/projects" className="inline-block mt-4 text-sm font-semibold text-accent hover:text-accent-2">← {t("nav.projects")}</Link>
       </Card>
     );
   }
@@ -96,29 +109,30 @@ export function DetailView(): JSX.Element {
   const activeId = tab && tabs.some(tb => tb.id === tab) ? tab : DEFAULT_TAB;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto p-4 md:p-6">
       {/* Breadcrumb + title */}
       <div className="mb-4">
-        <Link to="/projects" className="text-xs text-ink-500 hover:text-safety-600 inline-flex items-center gap-1">
+        <Link to="/projects" className="text-xs text-fg-secondary hover:text-accent inline-flex items-center gap-1">
           <Icon name="arrow" size={12} /> {t("nav.projects")}
         </Link>
         <div className="mt-1 flex items-center gap-2 flex-wrap">
-          <h1 className="font-display text-xl font-bold text-ink-900">{project.name}</h1>
+          <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">{project.name}</h1>
           <Badge tone="info">{project.type}</Badge>
         </div>
       </div>
 
       {/* Tab bar */}
-      <div className="border-b border-cream-200 mb-5 overflow-x-auto">
-        <div className="flex gap-1 min-w-max">
+      <div className="relative mb-5">
+        <div ref={tabBarRef} className="border-b border-default overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 min-w-max">
           {tabs.map(tb => (
             <button
               key={tb.id}
               onClick={() => navigate(`/projects/${project.id}/${tb.id}`)}
               className={`flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 -mb-px transition ${
                 tb.id === activeId
-                  ? "border-safety-500 text-safety-700 font-semibold"
-                  : "border-transparent text-ink-500 hover:text-ink-700"
+                  ? "border-accent text-accent-2 font-semibold"
+                  : "border-transparent text-fg-secondary hover:text-fg-primary"
               }`}
             >
               <Icon name={tb.icon} size={15} />
@@ -126,6 +140,10 @@ export function DetailView(): JSX.Element {
             </button>
           ))}
         </div>
+      </div>
+      {canScrollRight && (
+        <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none bg-gradient-to-l from-bg-primary to-transparent" />
+      )}
       </div>
 
       {/* Tab content */}

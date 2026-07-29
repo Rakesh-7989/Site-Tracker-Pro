@@ -37,12 +37,12 @@ export function DashboardView(): JSX.Element {
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Greeting */}
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink-900">
+        <h1 className="font-display text-2xl font-bold text-fg-primary">
           {t("dash.welcome", { name: session.user.name.split(" ")[0] })}
         </h1>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <Badge tone="info">{ROLE_LABEL[session.user.identityRole]}</Badge>
-          {activeOrg && <span className="text-sm text-ink-500">{t("dash.atOrg", { org: activeOrg.orgName })}</span>}
+          {activeOrg && <span className="text-sm text-fg-secondary">{t("dash.atOrg", { org: activeOrg.orgName })}</span>}
           {session.user.isStaff && <Badge tone="warning">{t("dash.staff")}</Badge>}
         </div>
       </div>
@@ -50,15 +50,15 @@ export function DashboardView(): JSX.Element {
       {/* Quick actions */}
       {visibleActions.length > 0 && (
         <div>
-          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400 mb-2">{t("dash.quickActions")}</h2>
+          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-2">{t("dash.quickActions")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {visibleActions.map(a => (
               <Link key={a.to} to={a.to}>
-                <Card className="p-4 hover:border-safety-300 transition cursor-pointer h-full">
-                  <div className="w-9 h-9 rounded-lg bg-safety-50 text-safety-600 grid place-items-center mb-2">
+                <Card className="p-4 hover:border-accent transition cursor-pointer h-full">
+                  <div className="w-9 h-9 rounded-lg bg-accent-tint text-accent grid place-items-center mb-2">
                     <Icon name={a.icon} size={18} />
                   </div>
-                  <div className="text-sm font-semibold text-ink-800">{t(a.labelKey)}</div>
+                  <div className="text-sm font-semibold text-fg-primary">{t(a.labelKey)}</div>
                 </Card>
               </Link>
             ))}
@@ -69,20 +69,20 @@ export function DashboardView(): JSX.Element {
       {/* Membership summary */}
       <div className="grid sm:grid-cols-3 gap-3">
         <Card className="p-4">
-          <div className="text-3xl font-display font-bold text-ink-900">{session.orgs.length}</div>
-          <div className="text-xs text-ink-500 mt-0.5">{t("dash.orgs")}</div>
+          <div className="text-3xl font-display font-bold text-fg-primary">{session.orgs.length}</div>
+          <div className="text-xs text-fg-secondary mt-0.5">{t("dash.orgs")}</div>
         </Card>
         <Card className="p-4">
-          <div className="text-3xl font-display font-bold text-ink-900">{session.projectMemberships.length}</div>
-          <div className="text-xs text-ink-500 mt-0.5">{t("dash.projectAssignments")}</div>
+          <div className="text-3xl font-display font-bold text-fg-primary">{session.projectMemberships.length}</div>
+          <div className="text-xs text-fg-secondary mt-0.5">{t("dash.projectAssignments")}</div>
         </Card>
         <Card className="p-4">
           <Link to="/projects" className="flex items-center justify-between h-full group">
             <div>
-              <div className="text-sm font-semibold text-ink-800">{t("dash.viewProjects")}</div>
-              <div className="text-xs text-ink-500 mt-0.5">{t("dash.browseManage")}</div>
+              <div className="text-sm font-semibold text-fg-primary">{t("dash.viewProjects")}</div>
+              <div className="text-xs text-fg-secondary mt-0.5">{t("dash.browseManage")}</div>
             </div>
-            <Icon name="chevron" size={18} className="text-ink-400 group-hover:text-safety-500 transition" />
+            <Icon name="chevron" size={18} className="text-fg-tertiary group-hover:text-accent transition" />
           </Link>
         </Card>
       </div>

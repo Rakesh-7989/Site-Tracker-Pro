@@ -95,7 +95,7 @@ describe("Type guards", () => {
 describe("defaultProjectTierFor", () => {
   it("returns null for non-project roles", () => {
     expect(defaultProjectTierFor("superadmin")).toBeNull();
-    expect(defaultProjectTierFor("prospector")).toBeNull();
+    expect(defaultProjectTierFor("prospector")).toBe("pm");
     expect(defaultProjectTierFor("vendor")).toBeNull();
   });
   it("defaultProjectTierFor passes through for project roles", () => {

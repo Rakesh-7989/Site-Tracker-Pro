@@ -25,26 +25,26 @@ export function RequestProjectAccess({ projectId, projectName }: RequestProjectA
   };
 
   return (
-    <div className="grid place-items-center py-20">
-      <Card className="max-w-md w-full p-8 text-center space-y-4">
+    <div className="grid place-items-center py-20 p-4 md:p-8">
+      <Card className="max-w-md w-full p-4 md:p-8 text-center space-y-4">
         {done ? (
           <>
-            <div className="w-12 h-12 rounded-full bg-safety-100 flex items-center justify-center mx-auto">
-              <span className="text-safety-600 text-xl font-bold">✓</span>
+            <div className="w-12 h-12 rounded-full bg-accent-tint flex items-center justify-center mx-auto">
+              <span className="text-accent text-xl font-bold">✓</span>
             </div>
-            <h2 className="font-display text-lg font-bold text-ink-900">Request sent</h2>
-            <p className="text-sm text-ink-600">
+            <h2 className="font-display text-lg font-bold text-fg-primary">Request sent</h2>
+            <p className="text-sm text-fg-secondary">
               Your request to access <strong>{projectName}</strong> has been sent to the org admin.
               You will be notified when it is approved.
             </p>
           </>
         ) : (
           <>
-            <div className="w-12 h-12 rounded-full bg-cream-200 flex items-center justify-center mx-auto">
-              <span className="text-ink-500 text-xl font-bold">?</span>
+            <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto">
+              <span className="text-fg-secondary text-xl font-bold">?</span>
             </div>
-            <h2 className="font-display text-lg font-bold text-ink-900">Access required</h2>
-            <p className="text-sm text-ink-600">
+            <h2 className="font-display text-lg font-bold text-fg-primary">Access required</h2>
+            <p className="text-sm text-fg-secondary">
               You are not a member of <strong>{projectName}</strong>. Ask the org admin to add you, or send a request.
             </p>
             {error && <Alert variant="danger">{error}</Alert>}

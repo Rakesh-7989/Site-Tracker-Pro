@@ -103,9 +103,9 @@ export function DPRComposer(): JSX.Element {
 
   if (!canSubmitDpr) {
     return (
-      <Card className="max-w-lg mx-auto p-8 text-center">
-        <Icon name="lock" size={24} className="mx-auto text-ink-400 mb-2" />
-        <div className="text-sm text-ink-600">Your role can't submit daily progress reports.</div>
+      <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
+        <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
+        <div className="text-sm text-fg-secondary">Your role can't submit daily progress reports.</div>
       </Card>
     );
   }
@@ -126,11 +126,11 @@ export function DPRComposer(): JSX.Element {
 
   if (submitted) {
     return (
-      <div className="max-w-lg mx-auto">
-        <Card className="p-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center mx-auto mb-3"><Icon name="check" size={24} /></div>
-          <h2 className="font-display text-lg font-bold text-ink-900">DPR submitted</h2>
-          <p className="text-sm text-ink-500 mt-1">The promoter will receive the WhatsApp digest at 7am.</p>
+      <div className="max-w-lg mx-auto p-4 md:p-6">
+        <Card className="p-4 md:p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-success-tint text-success grid place-items-center mx-auto mb-3"><Icon name="check" size={24} /></div>
+          <h2 className="font-display text-lg font-bold text-fg-primary">DPR submitted</h2>
+          <p className="text-sm text-fg-secondary mt-1">The promoter will receive the WhatsApp digest at 7am.</p>
           <Button className="mt-4" variant="secondary" size="md" onClick={() => { setSubmitted(false); dispatch({ type: "reset" }); }}>
             Compose another
           </Button>
@@ -140,13 +140,13 @@ export function DPRComposer(): JSX.Element {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl mx-auto space-y-5 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-xl font-bold text-ink-900">Daily Progress Report</h1>
-          <p className="text-sm text-ink-500 mt-0.5">Speak your update, add a site photo, send to the promoter.</p>
+          <h1 className="font-display text-xl font-bold text-fg-primary">Daily Progress Report</h1>
+          <p className="text-sm text-fg-secondary mt-0.5">Speak your update, add a site photo, send to the promoter.</p>
         </div>
-        <Link to="/dpr/history" className="text-xs font-semibold text-safety-600 hover:text-safety-700 whitespace-nowrap">View history</Link>
+        <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2 whitespace-nowrap">View history</Link>
       </div>
 
       {/* Language */}
@@ -160,7 +160,7 @@ export function DPRComposer(): JSX.Element {
       {/* Voice */}
       <Card className="p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">1 · Voice note</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">1 · Voice note</h3>
           {draft.voice.status === "done" && quality !== null && (
             <Badge tone={quality ? "success" : "warning"}>
               {Math.round((draft.voice.confidence ?? 0) * 100)}% {quality ? "good" : "low"}
@@ -175,7 +175,7 @@ export function DPRComposer(): JSX.Element {
           />
         )}
         {draft.voice.status === "transcribing" && (
-          <div className="flex items-center gap-2 text-sm text-ink-500"><Spinner size={16} /> Transcribing…</div>
+          <div className="flex items-center gap-2 text-sm text-fg-secondary"><Spinner size={16} /> Transcribing…</div>
         )}
         {draft.voice.status === "done" && (
           <FormField label={`Transcript (${draft.voice.provider})`} htmlFor="dpr-transcript">
@@ -187,11 +187,11 @@ export function DPRComposer(): JSX.Element {
 
       {/* Photo */}
       <Card className="p-5 space-y-3">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">2 · Site photo</h3>
+        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">2 · Site photo</h3>
         <input type="file" accept="image/*" capture="environment" onChange={onPhoto}
-          className="block w-full text-sm text-ink-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-cream-200 file:text-ink-700 file:text-sm file:font-semibold" />
+          className="block w-full text-sm text-fg-secondary file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-secondary file:text-fg-primary file:text-sm file:font-semibold" />
         {draft.photo.status === "added" && (
-          <div className="text-xs text-ink-500 flex items-center gap-2 flex-wrap">
+          <div className="text-xs text-fg-secondary flex items-center gap-2 flex-wrap">
             <Icon name="image" size={13} /> {draft.photo.fileName}
             {geoBusy && <span className="inline-flex items-center gap-1"><Spinner size={11} /> verifying location…</span>}
             {draft.photo.withinHyderabad === true && <Badge tone="success">Hyderabad ✓</Badge>}
@@ -203,11 +203,11 @@ export function DPRComposer(): JSX.Element {
       {/* Preview + submit */}
       {preview && (
         <Card className="p-5 space-y-3">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-400">3 · Promoter will receive</h3>
-          <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-sm text-ink-800 whitespace-pre-line leading-relaxed">{preview}</div>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">3 · Promoter will receive</h3>
+          <div className="rounded-xl bg-success-tint border border-default p-3 text-sm text-fg-primary whitespace-pre-line leading-relaxed">{preview}</div>
           <div className="space-y-1.5">
             {checklist.map(c => (
-              <div key={c.label} className={`flex items-center gap-2 text-xs ${c.done ? "text-emerald-700" : "text-ink-400"}`}>
+              <div key={c.label} className={`flex items-center gap-2 text-xs ${c.done ? "text-success" : "text-fg-tertiary"}`}>
                 <Icon name={c.done ? "check" : "clipboard"} size={13} /> {c.label}
               </div>
             ))}

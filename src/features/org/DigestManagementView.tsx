@@ -61,45 +61,45 @@ export function DigestManagementView(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-display text-xl font-bold text-ink-900">Digest Management</h1>
+    <div className="space-y-6 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Digest Management</h1>
       {!canView && <Alert variant="danger">You do not have permission to manage digests.</Alert>}
       {canView && (
         <>
           {error && <Alert variant="danger">{error}</Alert>}
           {canEdit && (
             <Card className="p-3 flex gap-2 flex-wrap items-end">
-              <div className="flex-1 min-w-[200px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Phone (E.164)</span><Input className="mt-1" placeholder="+919876543210" value={phone} onChange={e => setPhone(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Name</span><Input className="mt-1 w-40" placeholder="Ravi" value={name} onChange={e => setName(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Language</span><Select className="mt-1 w-auto" value={lang} onChange={e => setLang(e.target.value as DigestLang)} options={LANG_OPTS} /></div>
+              <div className="flex-1 min-w-[200px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Phone (E.164)</span><Input className="mt-1" placeholder="+919876543210" value={phone} onChange={e => setPhone(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1 w-40" placeholder="Ravi" value={name} onChange={e => setName(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Language</span><Select className="mt-1 w-auto" value={lang} onChange={e => setLang(e.target.value as DigestLang)} options={LANG_OPTS} /></div>
               <Button onClick={() => void add()} disabled={busy === "add" || !phone.trim()}>{busy === "add" ? <Spinner size={14} /> : "Subscribe"}</Button>
             </Card>
           )}
           {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-            : subs.length === 0 ? <div className="text-sm text-ink-500">No digest subscriptions.</div>
+            : subs.length === 0 ? <div className="text-sm text-fg-secondary">No digest subscriptions.</div>
             : <div className="space-y-2">{subs.map(s => (
                 <div key={s.id}>
                   <Card className="p-3"><div className="flex items-center justify-between gap-3 cursor-pointer" onClick={() => void toggleExpanded(s.id)}>
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2"><Badge tone={statusTone(s.status)}>{s.status}</Badge>{s.promoterName ?? s.promoterPhoneE164}</div>
-                      <div className="text-[11px] text-ink-400">{s.promoterPhoneE164} &middot; {s.language === "te" ? "తెలుగు" : s.language === "hi" ? "हिन्दी" : "English"} &middot; {s.hourLocal}:00 {s.timezone}</div>
+                      <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={statusTone(s.status)}>{s.status}</Badge>{s.promoterName ?? s.promoterPhoneE164}</div>
+                      <div className="text-[11px] text-fg-tertiary">{s.promoterPhoneE164} &middot; {s.language === "te" ? "తెలుగు" : s.language === "hi" ? "हिन्दी" : "English"} &middot; {s.hourLocal}:00 {s.timezone}</div>
                     </div>
                     {canEdit && (
                       <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                         {s.status === "active" && <Button size="sm" variant="ghost" onClick={() => void run(`pause-${s.id}`, c => updateDigestSubscription(c, s.id, { status: "paused" }), { apply: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: "paused" as DigestStatus } : x)), rollback: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: s.status } : x)) })}>Pause</Button>}
                         {s.status === "paused" && <Button size="sm" variant="ghost" onClick={() => void run(`resume-${s.id}`, c => updateDigestSubscription(c, s.id, { status: "active" }), { apply: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: "active" as DigestStatus } : x)), rollback: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: s.status } : x)) })}>Resume</Button>}
-                        <Button size="sm" variant="ghost" onClick={() => void run(`cancel-${s.id}`, c => updateDigestSubscription(c, s.id, { status: "cancelled" }), { apply: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: "cancelled" as DigestStatus } : x)), rollback: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: s.status } : x)) })}><span className="text-rose-500">Cancel</span></Button>
+                        <Button size="sm" variant="ghost" onClick={() => void run(`cancel-${s.id}`, c => updateDigestSubscription(c, s.id, { status: "cancelled" }), { apply: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: "cancelled" as DigestStatus } : x)), rollback: () => setSubs(prev => prev.map(x => x.id === s.id ? { ...x, status: s.status } : x)) })}><span className="text-error">Cancel</span></Button>
                       </div>
                     )}
                     </div>
                   </Card>
                   {expandedId === s.id && (
                     <Card className="p-3 mt-1 border-t border-border">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-ink-500 mb-2">Dispatch History</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-fg-secondary mb-2">Dispatch History</h4>
                       {dispLoading ? <Spinner size={14} />
-                        : dispatches.length === 0 ? <div className="text-xs text-ink-400">No dispatches yet.</div>
+                        : dispatches.length === 0 ? <div className="text-xs text-fg-tertiary">No dispatches yet.</div>
                         : <div className="space-y-1">{dispatches.map(d => (
-                            <div key={d.id} className="flex items-center justify-between text-xs text-ink-600">
+                            <div key={d.id} className="flex items-center justify-between text-xs text-fg-secondary">
                               <span>{d.sentForDate}</span>
                               <Badge tone={d.outcome === "sent" ? "success" : d.outcome === "failed" ? "danger" : "neutral"}>{d.outcome}</Badge>
                             </div>

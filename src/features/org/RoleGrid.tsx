@@ -88,7 +88,7 @@ export function RoleGrid({
         if (!roles || roles.length === 0) return null;
         return (
           <section key={cat}>
-            <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-500 mb-3">
+            <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-secondary mb-3">
               {CATEGORY_LABEL[cat]}
             </h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

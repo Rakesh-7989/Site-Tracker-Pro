@@ -45,14 +45,14 @@ export function Modal({
     <div
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4",
-        "bg-ink-900/60",
+        "bg-overlay",
         backdropBlur && "backdrop-blur-sm",
       )}
       onClick={e => { if (closeOnOverlay && e.target === e.currentTarget) onClose(); }}
     >
       <div
         className={cn(
-          "w-full md:rounded-2xl bg-white shadow-editorial-deep",
+          "w-full md:rounded-2xl bg-card shadow-editorial-deep",
           "flex flex-col max-h-[92vh]",
           "md:max-h-[85vh]",
           "rounded-t-3xl md:rounded-2xl",
@@ -63,11 +63,11 @@ export function Modal({
         {(title || showCloseButton) && (
           <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-0 md:px-6 md:pt-6">
             <div className="min-w-0">
-              {title && <h3 className="font-display font-semibold text-ink-900 text-lg leading-tight">{title}</h3>}
-              {subtitle && <p className="text-sm text-ink-500 mt-1">{subtitle}</p>}
+              {title && <h3 className="font-display font-semibold text-fg-primary text-lg leading-tight">{title}</h3>}
+              {subtitle && <p className="text-sm text-fg-secondary mt-1">{subtitle}</p>}
             </div>
             {showCloseButton && (
-              <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-cream-200 text-ink-400 hover:text-ink-700 transition flex-shrink-0 -mr-1 -mt-1">
+              <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-elevated text-fg-tertiary hover:text-fg-primary transition flex-shrink-0 -mr-1 -mt-1">
                 <Icon name="x" size={18} />
               </button>
             )}
@@ -79,7 +79,7 @@ export function Modal({
         </div>
 
         {footer && (
-          <div className="px-5 py-4 md:px-6 border-t border-cream-200">
+          <div className="px-5 py-4 md:px-6 border-t border-default">
             {footer}
           </div>
         )}
