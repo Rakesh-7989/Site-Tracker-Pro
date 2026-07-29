@@ -54,8 +54,8 @@ export async function addProjectMember(
     const { error } = await client
       .from("project_members")
       .upsert(
-        { project_id: projectId, profile_id: profileId, role: projectRole, assigned_at: new Date().toISOString() },
-        { onConflict: "project_id,profile_id,role" },
+        { project_id: projectId, profile_id: profileId, role: projectRole, assigned_at: new Date().toISOString(), removed_at: null },
+        { onConflict: "project_id,profile_id" },
       );
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: { ok: true } };
