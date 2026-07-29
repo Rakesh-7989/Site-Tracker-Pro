@@ -152,9 +152,31 @@ export async function rejectRequest(
   }
 }
 
+const PROJECT_ROLE_FOR_IDENTITY: Partial<Record<IdentityRole, string>> = {
+  superadmin: "pm",
+  orgadmin: "pm",
+  promoter: "pm",
+  project_admin: "pm",
+  prospector: "pm",
+  pm: "pm",
+  architect: "architect",
+  senior_architect: "architect",
+  junior_architect: "architect",
+  design_architect_interior: "architect",
+  design_head: "architect",
+  consultant_head: "architect",
+  mep_consultant: "architect",
+  structural_consultant: "architect",
+  consultant: "architect",
+  designer: "architect",
+  site_engineer: "architect",
+  contractor: "contractor",
+  sub_contractor: "contractor",
+  vendor: "contractor",
+  client: "client",
+  site_inspector: "client",
+};
+
 function defaultProjectRoleFor(role: IdentityRole): string {
-  if (role === "superadmin" || role === "orgadmin" || role === "prospector") return "pm";
-  if (role === "vendor") return "contractor";
-  if (role === "client" || role === "site_inspector") return "client";
-  return role;
+  return PROJECT_ROLE_FOR_IDENTITY[role] ?? "architect";
 }
