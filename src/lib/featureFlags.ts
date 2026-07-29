@@ -6,25 +6,15 @@ interface User {
 }
 
 export const STUB_VIEWS = new Set([
-  "compliance",
-  "forecast",
-  "material-prices",
   "ar-overlay",
   "kiosk-labour",
   "kiosk-site",
-  "delegations",
   "snapshot",
   "admin-audit-log",
   "admin-branding",
-  "org-templates",
-  "org-approvals",
-  "org-notifications",
-  "org-integrations",
-  "org-features",
-  "org-onboarding",
 ]);
 
-export const STUB_TABS = new Set(["ai"]);
+export const STUB_TABS = new Set<string>();
 
 export const PRIMARY_WORKFLOW = "dpr";
 

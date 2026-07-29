@@ -1,26 +1,74 @@
-// SiteTrack Pro — project Team tab (Phase 6, real).
+// SiteTrack Pro — project Team tab.
 //
-// Lists active project members with their per-project role. "Manage"
-// affordance is capability-gated (team:manage). Adding/removing members
-// via a form lands in a Phase 6 sub-pass; this is the read surface.
+// Lists active project members with their per-project role. Org admins
+// can add members and approve/reject access requests.
 
+import { useState, useEffect, useCallback } from "react";
 import { useOrgSwitcher, useCan, ROLE_LABEL } from "@/auth";
-import { Card, Avatar, Badge, Icon } from "@/components/ui/atoms";
+import { Card, Avatar, Badge, Icon, Button, Spinner, Alert } from "@/components/ui/atoms";
 import type { ProjectMemberRow } from "@/app/queries";
 import type { IdentityRole } from "@/auth";
+import { getClient } from "@/lib/supabase";
+import {
+  listPendingRequests,
+  approveRequest,
+  rejectRequest,
+  type PendingAccessRequest,
+} from "@/app/projectMemberQueries";
+import { AddProjectMemberModal } from "../AddProjectMemberModal";
 
-export function TeamTab({ projectId, members }: { projectId: string; members: ProjectMemberRow[] }): JSX.Element {
+export function TeamTab({ projectId, orgId, members, onReload }: {
+  projectId: string;
+  orgId: string;
+  members: ProjectMemberRow[];
+  onReload: () => void;
+}): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("team:manage", { orgId: activeOrg?.orgId, projectId });
+  const [showAdd, setShowAdd] = useState(false);
+  const [pending, setPending] = useState<PendingAccessRequest[]>([]);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendError, setPendError] = useState<string | null>(null);
+
+  const reloadPending = useCallback(async () => {
+    if (!canManage) return;
+    setPendError(null);
+    const client = await getClient();
+    if (!client) return;
+    const res = await listPendingRequests(client, projectId);
+    if (res.ok) setPending(res.data);
+    else setPendError(res.error);
+  }, [projectId, canManage]);
+
+  useEffect(() => { void reloadPending(); }, [reloadPending]);
+
+  const handleApprove = async (reqId: string) => {
+    setBusyId(reqId);
+    const client = await getClient();
+    if (!client) { setBusyId(null); return; }
+    await approveRequest(client, reqId);
+    setBusyId(null);
+    void reloadPending();
+    onReload();
+  };
+
+  const handleReject = async (reqId: string) => {
+    setBusyId(reqId);
+    const client = await getClient();
+    if (!client) { setBusyId(null); return; }
+    await rejectRequest(client, reqId);
+    setBusyId(null);
+    void reloadPending();
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-bold text-ink-900">Team</h2>
         {canManage && (
-          <button className="text-xs font-semibold text-safety-600 hover:text-safety-700 inline-flex items-center gap-1">
+          <Button size="sm" variant="secondary" onClick={() => setShowAdd(true)}>
             <Icon name="plus" size={13} /> Add member
-          </button>
+          </Button>
         )}
       </div>
 
@@ -39,6 +87,45 @@ export function TeamTab({ projectId, members }: { projectId: string; members: Pr
             </div>
           ))}
         </Card>
+      )}
+
+      {canManage && pending.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-ink-500 mb-2">
+            Pending access requests ({pending.length})
+          </h3>
+          {pendError && <Alert variant="danger">{pendError}</Alert>}
+          <Card className="divide-y divide-cream-100">
+            {pending.map(r => (
+              <div key={r.id} className="flex items-center justify-between p-3">
+                <div>
+                  <div className="text-sm font-semibold text-ink-800">{r.requesterName}</div>
+                  <div className="text-[11px] text-ink-400">{r.requesterRole} · {r.createdAt.slice(0, 10)}</div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" onClick={() => void handleApprove(r.id)} disabled={busyId === r.id}>
+                    {busyId === r.id ? <Spinner size={12} /> : null}
+                    Approve
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => void handleReject(r.id)} disabled={busyId === r.id}>
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {showAdd && (
+        <AddProjectMemberModal
+          open={showAdd}
+          onClose={() => setShowAdd(false)}
+          projectId={projectId}
+          orgId={orgId}
+          currentMemberIds={members.map(m => m.profileId)}
+          onAdded={() => { onReload(); void reloadPending(); }}
+        />
       )}
     </div>
   );

@@ -18,6 +18,7 @@ import { listOrgRoles } from "@/app/customRoleQueries";
 import { RoleGrid } from "./RoleGrid";
 import { MemberTableView } from "./MemberTableView";
 import { AssignMemberModal } from "./AssignMemberModal";
+import { ManageCustomRolesModal } from "./ManageCustomRolesModal";
 
 type ViewMode = "grid" | "list";
 
@@ -61,7 +62,7 @@ function OrgMembersInner({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const [assignRole, setAssignRole] = useState<string | null>(null);
-  const [_changeOccupant, setChangeOccupant] = useState<{ role: string; occupant: RoleOccupant } | null>(null);
+  const [manageRolesFor, setManageRolesFor] = useState<{ occupant: RoleOccupant } | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -90,8 +91,8 @@ function OrgMembersInner({
     setAssignRole(identityRole);
   }, []);
 
-  const handleChange = useCallback((identityRole: string, occupant: RoleOccupant) => {
-    setChangeOccupant({ role: identityRole, occupant });
+  const handleChange = useCallback((_identityRole: string, _occupant: RoleOccupant) => {
+    // Future: "Change occupant" modal
   }, []);
 
   const handleDeactivate = useCallback(async (occupant: RoleOccupant) => {
@@ -113,7 +114,7 @@ function OrgMembersInner({
   }, [orgId, reload]);
 
   const handleManageCustomRoles = useCallback((occupant: RoleOccupant) => {
-    setChangeOccupant({ role: occupant.profileId, occupant });
+    setManageRolesFor({ occupant });
   }, []);
 
   const activeCount = members.filter(m => m.active).length;
@@ -183,6 +184,19 @@ function OrgMembersInner({
         identityRole={assignRole ?? ""}
         plan={plan}
         onAssigned={() => void reload()}
+      />
+
+      <ManageCustomRolesModal
+        open={manageRolesFor !== null}
+        onClose={() => setManageRolesFor(null)}
+        profileId={manageRolesFor?.occupant.profileId ?? ""}
+        memberName={manageRolesFor?.occupant.name ?? ""}
+        orgId={orgId}
+        createdBy={createdBy}
+        customRoles={customRoles}
+        assignedRoleLabels={manageRolesFor ? members.find(m => m.profileId === manageRolesFor.occupant.profileId)?.customRoles ?? [] : []}
+        onReload={() => void reload()}
+        onError={setError}
       />
     </div>
   );

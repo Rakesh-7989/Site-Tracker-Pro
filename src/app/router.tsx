@@ -15,6 +15,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 // ── Eager: entry + first paint + small ──────────────────────────────────────
 import { RequireStaffArea } from "@/auth";
 import { ShellLayout } from "@/features/shell/ShellLayout";
+import { StubGuard } from "@/auth/StubGuard";
 import { LandingView } from "@/features/marketing/LandingView";
 import { SignupView } from "@/features/marketing/SignupView";
 import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
@@ -80,8 +81,14 @@ const MaterialPricesView = lazy(() => import("@/features/org/MaterialPricesView"
 const ForecastView = lazy(() => import("@/features/org/ForecastView").then(m => ({ default: m.ForecastView })));
 const DelegationsView = lazy(() => import("@/features/org/DelegationsView").then(m => ({ default: m.DelegationsView })));
 const ComplianceView = lazy(() => import("@/features/org/ComplianceView").then(m => ({ default: m.ComplianceView })));
+const DigestManagementView = lazy(() => import("@/features/org/DigestManagementView").then(m => ({ default: m.DigestManagementView })));
+const HandoverPacketView = lazy(() => import("@/features/handover/HandoverPacketView").then(m => ({ default: m.HandoverPacketView })));
+const WorklogsView = lazy(() => import("@/features/handover/WorklogsView").then(m => ({ default: m.WorklogsView })));
+const EquipmentView = lazy(() => import("@/features/handover/EquipmentView").then(m => ({ default: m.EquipmentView })));
+const MeasurementBookView = lazy(() => import("@/features/handover/MeasurementBookView").then(m => ({ default: m.MeasurementBookView })));
 const PlatformBrandingView = lazy(() => import("@/features/admin/PlatformBrandingView").then(m => ({ default: m.PlatformBrandingView })));
 const PlatformAuditLogV2View = lazy(() => import("@/features/admin/PlatformAuditLogV2View").then(m => ({ default: m.PlatformAuditLogV2View })));
+const PlatformFeatureFlagsView = lazy(() => import("@/features/admin/PlatformFeatureFlagsView").then(m => ({ default: m.PlatformFeatureFlagsView })));
 
 export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
@@ -128,6 +135,11 @@ export const router = createBrowserRouter([
       { path: "forecast", element: <ForecastView /> },
       { path: "delegations", element: <DelegationsView /> },
       { path: "compliance", element: <ComplianceView /> },
+      { path: "digest", element: <DigestManagementView /> },
+      { path: "handover", element: <HandoverPacketView /> },
+      { path: "worklogs", element: <WorklogsView /> },
+      { path: "equipment", element: <EquipmentView /> },
+      { path: "measurement-book", element: <MeasurementBookView /> },
       { path: "org", element: <OrgDashboardView /> },
       { path: "org/members", element: <OrgMembersView /> },
       { path: "org/roles", element: <OrgRolesView /> },
@@ -150,14 +162,15 @@ export const router = createBrowserRouter([
       { path: "admin/usage", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformUsageView /></RequireStaffArea> },
       { path: "admin/support", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformSupportView /></RequireStaffArea> },
       { path: "admin/settings", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformSettingsView /></RequireStaffArea> },
-      { path: "admin/branding", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformBrandingView /></RequireStaffArea> },
-      { path: "admin/audit-v2", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformAuditLogV2View /></RequireStaffArea> },
+      { path: "admin/feature-flags", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformFeatureFlagsView /></RequireStaffArea> },
+      { path: "admin/branding", element: <StubGuard stubId="admin-branding"><RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformBrandingView /></RequireStaffArea></StubGuard> },
+      { path: "admin/audit-v2", element: <StubGuard stubId="admin-audit-log"><RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformAuditLogV2View /></RequireStaffArea></StubGuard> },
       { path: "settings/security", element: <SecurityView /> },
       { path: "settings/profile", element: <ProfileView /> },
-      { path: "kiosk/labour", element: <LabourKioskView /> },
-      { path: "kiosk/site", element: <SiteWallKioskView /> },
-      { path: "kiosk/ar", element: <ARDrawingOverlayView /> },
-      { path: "kiosk/snapshot", element: <DailySnapshotView /> },
+      { path: "kiosk/labour", element: <StubGuard stubId="kiosk-labour"><LabourKioskView /></StubGuard> },
+      { path: "kiosk/site", element: <StubGuard stubId="kiosk-site"><SiteWallKioskView /></StubGuard> },
+      { path: "kiosk/ar", element: <StubGuard stubId="ar-overlay"><ARDrawingOverlayView /></StubGuard> },
+      { path: "kiosk/snapshot", element: <StubGuard stubId="snapshot"><DailySnapshotView /></StubGuard> },
     ],
   },
   // Public catch-all 404 (works signed-out too).

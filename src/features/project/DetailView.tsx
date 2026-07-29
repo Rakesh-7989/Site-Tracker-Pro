@@ -19,6 +19,7 @@ import { usePlanCaps } from "@/auth";
 import { visibleTabs, DEFAULT_TAB } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
+import { RequestProjectAccess } from "./RequestProjectAccess";
 import { MilestonesTab } from "./tabs/MilestonesTab";
 import { TasksTab } from "./tabs/TasksTab";
 import { UpdatesTab } from "./tabs/UpdatesTab";
@@ -52,7 +53,7 @@ export function DetailView(): JSX.Element {
   const t = useT();
   const { session } = useAuth();
   const { can: planCan } = usePlanCaps();
-  const { state } = useProject(id);
+  const { state, reload } = useProject(id);
 
   // Resolve the user's capabilities for THIS project's context.
   const caps = useMemo(() => {
@@ -83,6 +84,14 @@ export function DetailView(): JSX.Element {
   }
 
   const { project, members } = state;
+  const isMember = session ? session.projectMemberships.some(pm => pm.projectId === project.id) : false;
+  const isOrgAdmin = session ? session.orgs.some(o => o.orgId === project.orgId && o.isAdmin) : false;
+  const canAccess = isMember || isOrgAdmin;
+
+  if (!canAccess) {
+    return <RequestProjectAccess projectId={project.id} projectName={project.name} />;
+  }
+
   // Resolve the active tab: requested → if visible use it, else default.
   const activeId = tab && tabs.some(tb => tb.id === tab) ? tab : DEFAULT_TAB;
 
@@ -122,7 +131,7 @@ export function DetailView(): JSX.Element {
       {/* Tab content */}
       <div>
         {activeId === "overview" && <OverviewTab project={project} members={members} />}
-        {activeId === "team" && <TeamTab projectId={project.id} members={members} />}
+        {activeId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
         {activeId === "milestones" && <MilestonesTab projectId={project.id} />}
         {activeId === "tasks" && <TasksTab projectId={project.id} />}
         {activeId === "updates" && <UpdatesTab projectId={project.id} />}

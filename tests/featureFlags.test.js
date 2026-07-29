@@ -19,43 +19,37 @@ import {
 } from "../src/lib/featureFlags";
 
 describe("STUB_VIEWS source-of-truth", () => {
-  it("is a Set with exactly 16 frozen views", () => {
+  it("is a Set with exactly 6 frozen views (staff-only features that lack internal RBAC)", () => {
     expect(STUB_VIEWS).toBeInstanceOf(Set);
-    expect(STUB_VIEWS.size).toBe(16);
+    expect(STUB_VIEWS.size).toBe(6);
   });
 
-  it("includes every RERA / GSTN / compliance surface", () => {
-    expect(STUB_VIEWS.has("compliance")).toBe(true);
-    expect(STUB_VIEWS.has("forecast")).toBe(true);
-    expect(STUB_VIEWS.has("material-prices")).toBe(true);
+  it("includes kiosk features (physical device access — staff-only)", () => {
+    expect(STUB_VIEWS.has("kiosk-labour")).toBe(true);
+    expect(STUB_VIEWS.has("kiosk-site")).toBe(true);
     expect(STUB_VIEWS.has("ar-overlay")).toBe(true);
   });
 
-  it("includes both labour + site wall kiosks", () => {
-    expect(STUB_VIEWS.has("kiosk-labour")).toBe(true);
-    expect(STUB_VIEWS.has("kiosk-site")).toBe(true);
+  it("includes snapshot and admin staff features", () => {
+    expect(STUB_VIEWS.has("snapshot")).toBe(true);
+    expect(STUB_VIEWS.has("admin-audit-log")).toBe(true);
+    expect(STUB_VIEWS.has("admin-branding")).toBe(true);
   });
 
-  it("includes all 10 broken-persistence admin/org surfaces", () => {
-    const persistenceBroken = [
-      "delegations",
-      "snapshot",
-      "admin-audit-log",
-      "admin-branding",
-      "org-templates",
-      "org-approvals",
-      "org-notifications",
-      "org-integrations",
-      "org-features",
-      "org-onboarding",
-    ];
-    for (const id of persistenceBroken) {
-      expect(STUB_VIEWS.has(id), `${id} should be in STUB_VIEWS`).toBe(true);
-    }
+  it("does NOT include org admin or user-facing features — they are gated by internal capability RBAC", () => {
+    expect(STUB_VIEWS.has("compliance")).toBe(false);
+    expect(STUB_VIEWS.has("forecast")).toBe(false);
+    expect(STUB_VIEWS.has("material-prices")).toBe(false);
+    expect(STUB_VIEWS.has("delegations")).toBe(false);
+    expect(STUB_VIEWS.has("org-templates")).toBe(false);
+    expect(STUB_VIEWS.has("org-approvals")).toBe(false);
+    expect(STUB_VIEWS.has("org-notifications")).toBe(false);
+    expect(STUB_VIEWS.has("org-integrations")).toBe(false);
+    expect(STUB_VIEWS.has("org-features")).toBe(false);
+    expect(STUB_VIEWS.has("org-onboarding")).toBe(false);
   });
 
-  it("does NOT include the dashboard, projects, or DPR placeholder", () => {
-    // These are the surfaces non-staff users SHOULD see.
+  it("does NOT include everyday views non-staff users should see", () => {
     expect(STUB_VIEWS.has("dashboard")).toBe(false);
     expect(STUB_VIEWS.has("projects")).toBe(false);
     expect(STUB_VIEWS.has("dpr")).toBe(false);
@@ -66,8 +60,8 @@ describe("STUB_VIEWS source-of-truth", () => {
 });
 
 describe("STUB_TABS", () => {
-  it("freezes the AI insights tab (needs customer LLM key)", () => {
-    expect(STUB_TABS.has("ai")).toBe(true);
+  it("is empty — the 'ai' phantom stub tab was removed (no matching component in tabs-config.ts)", () => {
+    expect(STUB_TABS.size).toBe(0);
   });
 
   it("does not freeze the everyday tabs", () => {
@@ -104,15 +98,13 @@ describe("isStubView()", () => {
   });
 });
 
-describe("isStubTab()", () => {
-  it("returns true for ai tab", () => {
-    expect(isStubTab("ai")).toBe(true);
-  });
-  it("returns false for everyday tabs", () => {
-    expect(isStubTab("overview")).toBe(false);
-    expect(isStubTab("rabills")).toBe(false);
-  });
-});
+ describe("isStubTab()", () => {
+   it("returns false for all tabs — STUB_TABS is empty", () => {
+     expect(isStubTab("ai")).toBe(false);
+     expect(isStubTab("overview")).toBe(false);
+     expect(isStubTab("rabills")).toBe(false);
+   });
+ });
 
 describe("isStaffUser() — three bypass paths", () => {
   // Vitest doesn't inherit import.meta.env from the host process; the
@@ -216,29 +208,25 @@ describe("isViewStubBlocked() — the actual gate", () => {
     }
   });
 
-  it("blocks frozen views even with null user (defensive — no staff bypass)", () => {
-    expect(isViewStubBlocked(null, "compliance")).toBe(true);
-    expect(isViewStubBlocked(undefined, "forecast")).toBe(true);
-  });
+   it("blocks frozen views even with null user (defensive — no staff bypass)", () => {
+     for (const id of STUB_VIEWS) {
+       expect(isViewStubBlocked(null, id), `${id} must be blocked for null user`).toBe(true);
+       expect(isViewStubBlocked(undefined, id), `${id} must be blocked for undefined user`).toBe(true);
+     }
+   });
 });
 
-describe("isTabStubBlocked()", () => {
-  const regularUser = { id: "u1", role: "client", email: "rita@firm.in" };
-  const staffUser = { id: "u2", role: "client", email: "x@y.com", is_staff: true };
+ describe("isTabStubBlocked()", () => {
+   const regularUser = { id: "u1", role: "client", email: "rita@firm.in" };
+   const staffUser = { id: "u2", role: "client", email: "x@y.com", is_staff: true };
 
-  it("blocks the ai tab for non-staff", () => {
-    expect(isTabStubBlocked(regularUser, "ai")).toBe(true);
-  });
-
-  it("passes the ai tab for staff", () => {
-    expect(isTabStubBlocked(staffUser, "ai")).toBe(false);
-  });
-
-  it("never blocks a non-stub tab", () => {
-    expect(isTabStubBlocked(regularUser, "overview")).toBe(false);
-    expect(isTabStubBlocked(regularUser, "rabills")).toBe(false);
-  });
-});
+   it("never blocks any tab — STUB_TABS is empty", () => {
+     expect(isTabStubBlocked(regularUser, "ai")).toBe(false);
+     expect(isTabStubBlocked(regularUser, "overview")).toBe(false);
+     expect(isTabStubBlocked(regularUser, "rabills")).toBe(false);
+     expect(isTabStubBlocked(staffUser, "ai")).toBe(false);
+   });
+ });
 
 describe("Sprint 1 contract — never-block list", () => {
   // These are the views the founder is actively SELLING in Sprint 1.

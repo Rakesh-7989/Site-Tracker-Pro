@@ -1,7 +1,7 @@
 // SiteTrack Pro — site-ops query tests (Batch 2: materials/safety/inspections/punch).
 
 import { describe, it, expect } from "vitest";
-import { listMaterials, listSafety, listInspections, listPunch } from "@/app/siteOpsQueries";
+import { listMaterials, listSafety, listInspections, listPunch, listSubmittals, listPermits } from "@/app/siteOpsQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};
@@ -53,6 +53,30 @@ describe("listPunch", () => {
     expect(r.ok && r.data[0]).toMatchObject({ severity: "high", status: "open" });
     expect(r.ok && r.data[1]).toMatchObject({ severity: "medium", status: "open" });
     const e = await listPunch(mockClient({ data: null, error: { message: "denied" } }), "p");
+    expect(e).toEqual({ ok: false, error: "denied" });
+  });
+});
+
+describe("listSubmittals", () => {
+  it("maps + coerces type/status", async () => {
+    const r = await listSubmittals(mockClient({ data: [
+      { id: "1", no: "S-001", type: "shop_drawing", title: "GA-01", description: "General arrangement", status: "approved", submitted_by: "u1", submitted_at: "2026-06-01", reviewer_role: "architect", reviewed_by: "u2", reviewed_at: "2026-06-10", comments: "Approved as noted" },
+      { id: "2", no: "S-002", type: "weird", title: "MS-01", description: null, status: "weird", submitted_by: null, submitted_at: null, reviewer_role: null, reviewed_by: null, reviewed_at: null, comments: null },
+    ], error: null }), "p");
+    expect(r.ok && r.data[0]).toMatchObject({ no: "S-001", type: "shop_drawing", title: "GA-01", status: "approved" });
+    expect(r.ok && r.data[1]).toMatchObject({ type: "shop_drawing", status: "pending" });
+  });
+});
+
+describe("listPermits", () => {
+  it("maps + coerces kind/status + surfaces error", async () => {
+    const r = await listPermits(mockClient({ data: [
+      { id: "1", kind: "environment", issuing_authority: "EPA", ref_no: "ENV-001", applied_at: "2026-01-15", issued_at: "2026-03-01", valid_until: "2027-03-01", status: "issued", cost: 500000, notes: "All clear", applied_by: "u1" },
+      { id: "2", kind: "weird", issuing_authority: null, ref_no: null, applied_at: null, issued_at: null, valid_until: null, status: "weird", cost: null, notes: null, applied_by: null },
+    ], error: null }), "p");
+    expect(r.ok && r.data[0]).toMatchObject({ kind: "environment", status: "issued", cost: 500000 });
+    expect(r.ok && r.data[1]).toMatchObject({ kind: "environment", status: "applied" });
+    const e = await listPermits(mockClient({ data: null, error: { message: "denied" } }), "p");
     expect(e).toEqual({ ok: false, error: "denied" });
   });
 });
