@@ -62,7 +62,7 @@ export default {
     },
   },
   plugins: [
-    function({ addUtilities }: { addUtilities: (utils: Record<string, Record<string, string>>) => void }) {
+    function({ addUtilities }) {
       addUtilities({
         ".scrollbar-hide": {
           "-ms-overflow-style": "none",
