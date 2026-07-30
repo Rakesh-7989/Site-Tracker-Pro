@@ -1,4 +1,5 @@
-import { PROJECT_TYPE_IDS, DEFAULT_PROJECT_TYPE } from "../data/lookups";
+import { PROJECT_TYPE_IDS, DEFAULT_PROJECT_TYPE, CONSTRUCTION_INDUSTRIES } from "../data/lookups";
+import type { ConstructionIndustry } from "../auth/roles";
 
 export type ProjectType = "construction" | "interior" | "design" | "consultant";
 
@@ -93,6 +94,17 @@ export function recommendedTeam(type: string): TeamTemplateEntry[] {
 export function boqPresets(type: string): string[] {
   const t = PROJECT_TYPE_IDS.includes(type) ? type : DEFAULT_PROJECT_TYPE;
   return TYPE_BOQ_PRESETS[t as ProjectType] || [];
+}
+
+export function industryLabel(industry: ConstructionIndustry | string | null | undefined): string {
+  if (!industry) return "";
+  const entry = CONSTRUCTION_INDUSTRIES.find(i => i.id === industry);
+  return entry?.label ?? industry;
+}
+
+export function canProjectHaveIndustry(type: string, industry: ConstructionIndustry | string): boolean {
+  if (type !== "construction") return false;
+  return CONSTRUCTION_INDUSTRIES.some(i => i.id === industry);
 }
 
 export function isTabVisible(

@@ -22,6 +22,15 @@ export const PROJECT_TYPES: ProjectType[] = [
 export const PROJECT_TYPE_IDS: string[] = PROJECT_TYPES.map(t => t.id);
 export const DEFAULT_PROJECT_TYPE = "construction" as const;
 
+export const CONSTRUCTION_INDUSTRIES: { id: string; label: string; desc: string }[] = [
+  { id: "residential",    label: "Residential",    desc: "Single-family homes, apartments, housing developments" },
+  { id: "commercial",     label: "Commercial",     desc: "Office buildings, retail spaces, hotels, malls" },
+  { id: "industrial",     label: "Industrial",     desc: "Manufacturing plants, warehouses, processing facilities" },
+  { id: "infrastructure", label: "Infrastructure", desc: "Roads, bridges, utilities, public works" },
+  { id: "institutional",  label: "Institutional",  desc: "Government buildings, schools, hospitals, religious facilities" },
+  { id: "mixed_use",      label: "Mixed-Use",      desc: "Properties combining multiple uses" },
+];
+
 export const EXPENSE_CATS: string[] = ["Materials","Labour","Equipment","Misc","Consultancy","Permits"];
 export const VENDOR_CATS: string[]  = ["Steel","Cement","Concrete","Electrical","Plumbing","Tiles","Paint","Glass","Wood","Sand","Aggregate","Tools","Other"];
 export const TRADES: string[]       = ["Mason","Helper","Carpenter","Electrician","Plumber","Painter","Welder","Steel Fixer","Tile Worker","Operator"];

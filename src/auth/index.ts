@@ -17,11 +17,15 @@ export {
   isIdentityRole,
   isProjectTierRole,
   isProjectType,
+  isConstructionIndustry,
   defaultProjectTierFor,
   orgTierForIdentityRole,
+  CONSTRUCTION_INDUSTRIES,
+  CONSTRUCTION_INDUSTRY_LABEL,
   type IdentityRole,
   type ProjectTierRole,
   type ProjectType,
+  type ConstructionIndustry,
   type RoleCategory,
 } from "./roles";
 
