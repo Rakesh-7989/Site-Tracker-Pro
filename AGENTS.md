@@ -129,3 +129,35 @@ All custom palette classes (`ink-*`, `cream-*`, `safety-*`, `amber-*`, `emerald-
 
 ## Phase 6 — Next (planned)
 - Mobile/responsive audit — CalendarGrid mobile layout, Board stacked column, Tabs overflow indicator, top-20 file content overflow, optional `xs:` breakpoint, landing nav
+
+## UTF-8 Corruption Incident & Fix (2026-07-30)
+
+### Root Cause
+The `edit` tool on Windows mangled multi-byte UTF-8 sequences during Phase 4-6 palette migration. Em dashes `—` (U+2014, bytes `E2 80 94`) were split, leaving orphaned continuation bytes (`0x97`, `0xB7`) at positions where the lead byte was overwritten.
+
+Earlier byte-fix attempts used `execSync` with `encoding: 'utf8'` in Node.js, which **silently replaces invalid bytes with U+FFFD** (`�`) instead of throwing, making the corruption invisible to validation.
+
+### Affected Files (24)
+All in commit `ce0cb67` (original Phase 4-6), now restored from parent `9b70a9b`:
+- `src/features/account/ProfileCompleteView.tsx`
+- `src/features/account/ProfileView.tsx`
+- `src/features/project/tabs/AttendanceTab.tsx`, `BoqTab.tsx`, `BudgetTab.tsx`, `ChangeOrdersTab.tsx`, `ComplianceTab.tsx`, `DrawingsTab.tsx`, `EstimateTab.tsx`, `FieldOpsTab.tsx`, `InspectionsTab.tsx`, `InvoicesTab.tsx`, `IssuesTab.tsx`, `LabourTab.tsx`, `LedgerTab.tsx`, `MaterialsTab.tsx`, `MessagesTab.tsx`, `MilestonesTab.tsx`, `POsTab.tsx`, `PunchTab.tsx`, `RaBillsTab.tsx`, `SafetyTab.tsx`, `TasksTab.tsx`, `UpdatesTab.tsx`
+
+### Fix Applied
+| Branch | Before | After | Method |
+|--------|--------|-------|--------|
+| `prod` | `ce0cb67` (corrupted) | `b317321` | Cherry-pick 24-file restore onto prod |
+| `main` | `ce0cb67` (remote) | `5310a4c` | Rebased fix onto origin/main |
+
+Both branches: `git checkout HEAD~1 -- <24 files>` restores clean parent versions, losing Phase 4-6 palette changes only for those 24 files. Remaining 130 Phase 4-6 files are unaffected. Build verified: **1172 modules, 2.4–6.9s**, 0 errors.
+
+**Commands to re-apply** (if needed):
+```
+git checkout 9b70a9b -- src/features/account/ProfileCompleteView.tsx src/features/account/ProfileView.tsx src/features/project/tabs/AttendanceTab.tsx ... (all 24 files)
+```
+
+### Prevention Guidelines
+1. **Never use `execSync(cmd, { encoding: 'utf8' })` for validation** — it silently replaces invalid bytes. Use `{ encoding: 'buffer' }` + `TextDecoder('utf-8', { fatal: true })` instead.
+2. **Script available**: `utf8-audit.mjs` — scans working tree + git refs for byte-level invalid UTF-8 in source files. Run with `node utf8-audit.mjs`.
+3. **If editing files via the `edit` tool** on Windows, verify UTF-8 integrity afterward using the auditor.
+4. **When restoring corrupted files**, compare raw git blobs via `git cat-file blob "ref:file"` not `git show` (which pipes through stdout encoding).
