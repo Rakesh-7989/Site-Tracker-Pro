@@ -50,8 +50,8 @@ export function ProfileView(): JSX.Element {
   if (status === "loading" || status === "idle") return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (status === "signed-out" || !session) return <Navigate to="/login" replace />;
 
-  const inputCls = "w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white";
-  const lockedCls = "w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm bg-cream-50 text-ink-500 cursor-not-allowed";
+  const inputCls = "w-full px-3.5 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-accent bg-white";
+  const lockedCls = "w-full px-3.5 py-2.5 border border-border rounded-lg text-sm bg-bg-secondary text-fg-secondary cursor-not-allowed";
 
   const save = async () => {
     setError(null);
@@ -68,9 +68,9 @@ export function ProfileView(): JSX.Element {
   };
 
   const Row = ({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) => (
-    <div className="py-2.5 border-b border-cream-100 last:border-0">
-      <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">{label}</div>
-      {children ?? <div className="text-sm text-ink-800 mt-0.5">{value || <span className="text-ink-300">—</span>}</div>}
+    <div className="py-2.5 border-b border-border last:border-0">
+      <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{label}</div>
+      {children ?? <div className="text-sm text-fg-primary mt-0.5">{value || <span className="text-fg-tertiary">—</span>}</div>}
     </div>
   );
 
@@ -78,7 +78,7 @@ export function ProfileView(): JSX.Element {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Link to="/dashboard" title={t("profile.back")} className="w-8 h-8 rounded-lg grid place-items-center text-ink-500 hover:bg-cream-100 transition">
+          <Link to="/dashboard" title={t("profile.back")} className="w-8 h-8 rounded-lg grid place-items-center text-fg-secondary hover:bg-bg-secondary transition">
             <Icon name="arrow" size={18} />
           </Link>
           <h1 className="font-display text-2xl font-bold">{t("profile.title")}</h1>
@@ -88,7 +88,7 @@ export function ProfileView(): JSX.Element {
 
       {error && <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[13px] text-red-700 flex items-start gap-2"><Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}</div>}
       {saved && (
-        <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700 flex items-center justify-between gap-3 flex-wrap">
+        <div className="mb-3 rounded-lg bg-success-tint border border-success p-3 text-[13px] text-success flex items-center justify-between gap-3 flex-wrap">
           <span>✅ {t("profile.updated")}</span>
           <Button size="sm" variant="secondary" onClick={() => navigate("/dashboard")}>{t("profile.goToDashboard")}</Button>
         </div>
@@ -96,10 +96,10 @@ export function ProfileView(): JSX.Element {
 
       <Card className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-ink-900 text-white grid place-items-center font-bold">{(name || session.user.name || "U").slice(0, 2).toUpperCase()}</div>
+          <div className="w-12 h-12 rounded-full bg-fg-primary text-white grid place-items-center font-bold">{(name || session.user.name || "U").slice(0, 2).toUpperCase()}</div>
           <div>
-            <div className="font-semibold text-ink-900">{name || session.user.name}</div>
-            <div className="text-[12px] text-ink-500">{session.user.email}</div>
+            <div className="font-semibold text-fg-primary">{name || session.user.name}</div>
+            <div className="text-[12px] text-fg-secondary">{session.user.email}</div>
           </div>
         </div>
 
@@ -108,8 +108,8 @@ export function ProfileView(): JSX.Element {
             <Row label={t("profile.emailLabel")} value={session.user.email} />
             <Row label={t("profile.fullName")} value={name} />
             <Row label={t("profile.mobile")}>
-              <div className="text-sm text-ink-800 mt-0.5 flex items-center gap-2">
-                {phone || <span className="text-ink-300">—</span>}
+              <div className="text-sm text-fg-primary mt-0.5 flex items-center gap-2">
+                {phone || <span className="text-fg-tertiary">—</span>}
                 {phone && <Badge tone="warning">{t("profile.unverified")}</Badge>}
               </div>
             </Row>
@@ -121,20 +121,20 @@ export function ProfileView(): JSX.Element {
         ) : (
           <div className="space-y-3">
             <div>
-              <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-400">{t("profile.emailLabel")}</div>
+              <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("profile.emailLabel")}</div>
               <input value={session.user.email} readOnly className={`mt-1 ${lockedCls}`} />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.fullName")} *</span><input value={name} onChange={e => setName(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.mobile")} *</span><input value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.fullName")} *</span><input value={name} onChange={e => setName(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.mobile")} *</span><input value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" className={`mt-1 ${inputCls}`} /></label>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.company")} *</span><input value={company} onChange={e => setCompany(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.designation")}</span><input value={jobTitle} onChange={e => setJobTitle(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.company")} *</span><input value={company} onChange={e => setCompany(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.designation")}</span><input value={jobTitle} onChange={e => setJobTitle(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.city")}</span><input value={city} onChange={e => setCity(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
-              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">{t("profile.prefLanguage")}</span>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.city")}</span><input value={city} onChange={e => setCity(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
+              <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.prefLanguage")}</span>
                 <select value={language} onChange={e => setLanguage(e.target.value)} className={`mt-1 ${inputCls}`}>{Object.entries(LANGS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
               </label>
             </div>

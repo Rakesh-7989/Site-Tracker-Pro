@@ -63,8 +63,8 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-ink-900">Milestones</h2>
-        {rows.length > 0 && <span className="text-sm text-ink-500">{done}/{rows.length} completed</span>}
+        <h2 className="font-display text-lg font-bold text-fg-primary">Milestones</h2>
+        {rows.length > 0 && <span className="text-sm text-fg-secondary">{done}/{rows.length} completed</span>}
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -72,11 +72,11 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[180px]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">New milestone</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">New milestone</span>
             <Input className="mt-1" placeholder="e.g. Foundation complete" value={title} onChange={e => setTitle(e.target.value)} />
           </div>
           <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Due</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Due</span>
             <Input className="mt-1" type="date" value={due} onChange={e => setDue(e.target.value)} />
           </div>
           <Button onClick={() => void add()} disabled={busy === "add" || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
@@ -86,14 +86,14 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
       {loading ? (
         <div className="grid place-items-center py-10"><Spinner size={22} /></div>
       ) : rows.length === 0 ? (
-        <div className="text-sm text-ink-500">No milestones yet.{canEdit ? " Add the first one above." : ""}</div>
+        <div className="text-sm text-fg-secondary">No milestones yet.{canEdit ? " Add the first one above." : ""}</div>
       ) : (
         <div className="space-y-2">
           {rows.map(m => (
             <Card key={m.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink-800 truncate">{m.title}</div>
-                <div className="text-[11px] text-ink-400">
+                <div className="text-sm font-semibold text-fg-primary truncate">{m.title}</div>
+                <div className="text-[11px] text-fg-tertiary">
                   {m.dueDate ? `Due ${m.dueDate}` : "No due date"}
                   {m.completedDate && ` · Done ${m.completedDate}`}
                 </div>
@@ -113,7 +113,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
                 )}
                 {canEdit && (
                   <Button size="sm" variant="ghost" onClick={() => void run(`d-${m.id}`, c => deleteMilestone(c, m.id), { apply: () => setRows(prev => prev.filter(x => x.id !== m.id)), rollback: () => setRows(prev => [...prev, m]) })}>
-                    <Icon name="trash" size={14} className="text-rose-500" />
+                    <Icon name="trash" size={14} className="text-error" />
                   </Button>
                 )}
               </div>

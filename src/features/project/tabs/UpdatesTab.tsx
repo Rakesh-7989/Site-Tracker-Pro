@@ -49,7 +49,7 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-ink-900">Site Updates</h2>
+      <h2 className="font-display text-lg font-bold text-fg-primary">Site Updates</h2>
       {error && <Alert variant="danger">{error}</Alert>}
 
       {canEdit && (
@@ -64,19 +64,19 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
       )}
 
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">No updates yet.</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No updates yet.</div>
         : <div className="space-y-2">
             {rows.map(u => (
               <Card key={u.id} className="p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm text-ink-800 whitespace-pre-wrap">{u.notes}</div>
-                    <div className="text-[11px] text-ink-400 mt-1">
+                    <div className="text-sm text-fg-primary whitespace-pre-wrap">{u.notes}</div>
+                    <div className="text-[11px] text-fg-tertiary mt-1">
                       {u.updateDate}{u.authorName ? ` · ${u.authorName}` : ""}
                       {u.weather ? ` · ${u.weather}` : ""}{u.workersCount != null ? ` · ${u.workersCount} workers` : ""}
                     </div>
                   </div>
-                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${u.id}`, c => deleteUpdate(c, u.id), { apply: () => setRows(prev => prev.filter(x => x.id !== u.id)), rollback: () => setRows(prev => [...prev, u]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${u.id}`, c => deleteUpdate(c, u.id), { apply: () => setRows(prev => prev.filter(x => x.id !== u.id)), rollback: () => setRows(prev => [...prev, u]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
                 </div>
               </Card>
             ))}
