@@ -12,6 +12,16 @@ export const STUB_VIEWS = new Set([
   "snapshot",
   "admin-audit-log",
   "admin-branding",
+  "compliance",
+  "forecast",
+  "material-prices",
+  "delegations",
+  "org-templates",
+  "org-approvals",
+  "org-notifications",
+  "org-integrations",
+  "org-features",
+  "org-onboarding",
 ]);
 
 export const STUB_TABS = new Set<string>();

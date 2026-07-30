@@ -7,8 +7,8 @@ import {
 } from "@/lib/featureFlags";
 
 describe("STUB_VIEWS catalog", () => {
-  it("contains the 6 remaining stub view IDs (staff-only features)", () => {
-    expect(STUB_VIEWS.size).toBe(6);
+  it("contains all 16 frozen stub view IDs", () => {
+    expect(STUB_VIEWS.size).toBe(16);
   });
 
   it("includes kiosk features (physical device access)", () => {
@@ -23,21 +23,23 @@ describe("STUB_VIEWS catalog", () => {
     expect(STUB_VIEWS.has("admin-branding")).toBe(true);
   });
 
-  it("does NOT include org admin features (now accessible via capability gate)", () => {
-    expect(STUB_VIEWS.has("compliance")).toBe(false);
-    expect(STUB_VIEWS.has("forecast")).toBe(false);
-    expect(STUB_VIEWS.has("material-prices")).toBe(false);
-    expect(STUB_VIEWS.has("delegations")).toBe(false);
-    expect(STUB_VIEWS.has("org-templates")).toBe(false);
-    expect(STUB_VIEWS.has("org-approvals")).toBe(false);
-    expect(STUB_VIEWS.has("org-notifications")).toBe(false);
-    expect(STUB_VIEWS.has("org-integrations")).toBe(false);
-    expect(STUB_VIEWS.has("org-features")).toBe(false);
-    expect(STUB_VIEWS.has("org-onboarding")).toBe(false);
+  it("includes org admin features (frozen — persistence not yet wired)", () => {
+    expect(STUB_VIEWS.has("compliance")).toBe(true);
+    expect(STUB_VIEWS.has("forecast")).toBe(true);
+    expect(STUB_VIEWS.has("material-prices")).toBe(true);
+    expect(STUB_VIEWS.has("delegations")).toBe(true);
+    expect(STUB_VIEWS.has("org-templates")).toBe(true);
+    expect(STUB_VIEWS.has("org-approvals")).toBe(true);
+    expect(STUB_VIEWS.has("org-notifications")).toBe(true);
+    expect(STUB_VIEWS.has("org-integrations")).toBe(true);
+    expect(STUB_VIEWS.has("org-features")).toBe(true);
+    expect(STUB_VIEWS.has("org-onboarding")).toBe(true);
   });
 
-  it("does NOT include user-facing features (now publicly accessible to capable users)", () => {
-    expect(STUB_VIEWS.has("compliance")).toBe(false);
+  it("does NOT include user-facing features (publicly accessible to all capable users)", () => {
+    expect(STUB_VIEWS.has("dashboard")).toBe(false);
+    expect(STUB_VIEWS.has("projects")).toBe(false);
+    expect(STUB_VIEWS.has("dpr")).toBe(false);
   });
 });
 
@@ -47,10 +49,15 @@ describe("isStubView", () => {
     expect(isStubView("admin-audit-log")).toBe(true);
   });
 
-  it("returns false for previously-stubbed features now activated", () => {
-    expect(isStubView("forecast")).toBe(false);
-    expect(isStubView("compliance")).toBe(false);
-    expect(isStubView("delegations")).toBe(false);
+  it("returns true for all frozen stub IDs", () => {
+    expect(isStubView("forecast")).toBe(true);
+    expect(isStubView("compliance")).toBe(true);
+    expect(isStubView("delegations")).toBe(true);
+    expect(isStubView("org-templates")).toBe(true);
+    expect(isStubView("org-approvals")).toBe(true);
+    expect(isStubView("org-integrations")).toBe(true);
+    expect(isStubView("org-features")).toBe(true);
+    expect(isStubView("org-onboarding")).toBe(true);
   });
 
   it("returns false for non-stub IDs", () => {
@@ -108,9 +115,8 @@ describe("isViewStubBlocked", () => {
   it("returns false for non-staff on non-stub views", () => {
     const user = { is_staff: false, role: "orgadmin", email: "user@org.com" };
     expect(isViewStubBlocked(user, "dashboard")).toBe(false);
-    expect(isViewStubBlocked(user, "forecast")).toBe(false);
-    expect(isViewStubBlocked(user, "compliance")).toBe(false);
-    expect(isViewStubBlocked(user, "delegations")).toBe(false);
+    expect(isViewStubBlocked(user, "projects")).toBe(false);
+    expect(isViewStubBlocked(user, "dpr")).toBe(false);
   });
 
   it("returns false for all users on non-stub views", () => {

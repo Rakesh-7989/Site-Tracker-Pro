@@ -19,9 +19,9 @@ import {
 } from "../src/lib/featureFlags";
 
 describe("STUB_VIEWS source-of-truth", () => {
-  it("is a Set with exactly 6 frozen views (staff-only features that lack internal RBAC)", () => {
+  it("is a Set with exactly 16 frozen views (staff-only features that lack internal RBAC)", () => {
     expect(STUB_VIEWS).toBeInstanceOf(Set);
-    expect(STUB_VIEWS.size).toBe(6);
+    expect(STUB_VIEWS.size).toBe(16);
   });
 
   it("includes kiosk features (physical device access — staff-only)", () => {
@@ -36,17 +36,17 @@ describe("STUB_VIEWS source-of-truth", () => {
     expect(STUB_VIEWS.has("admin-branding")).toBe(true);
   });
 
-  it("does NOT include org admin or user-facing features — they are gated by internal capability RBAC", () => {
-    expect(STUB_VIEWS.has("compliance")).toBe(false);
-    expect(STUB_VIEWS.has("forecast")).toBe(false);
-    expect(STUB_VIEWS.has("material-prices")).toBe(false);
-    expect(STUB_VIEWS.has("delegations")).toBe(false);
-    expect(STUB_VIEWS.has("org-templates")).toBe(false);
-    expect(STUB_VIEWS.has("org-approvals")).toBe(false);
-    expect(STUB_VIEWS.has("org-notifications")).toBe(false);
-    expect(STUB_VIEWS.has("org-integrations")).toBe(false);
-    expect(STUB_VIEWS.has("org-features")).toBe(false);
-    expect(STUB_VIEWS.has("org-onboarding")).toBe(false);
+  it("includes org admin features (frozen — need persistence before live)", () => {
+    expect(STUB_VIEWS.has("compliance")).toBe(true);
+    expect(STUB_VIEWS.has("forecast")).toBe(true);
+    expect(STUB_VIEWS.has("material-prices")).toBe(true);
+    expect(STUB_VIEWS.has("delegations")).toBe(true);
+    expect(STUB_VIEWS.has("org-templates")).toBe(true);
+    expect(STUB_VIEWS.has("org-approvals")).toBe(true);
+    expect(STUB_VIEWS.has("org-notifications")).toBe(true);
+    expect(STUB_VIEWS.has("org-integrations")).toBe(true);
+    expect(STUB_VIEWS.has("org-features")).toBe(true);
+    expect(STUB_VIEWS.has("org-onboarding")).toBe(true);
   });
 
   it("does NOT include everyday views non-staff users should see", () => {
