@@ -57,7 +57,7 @@ function scanRef(ref) {
         const details = describeCorruption(buf);
         corrupted.push({ file, details });
       }
-    } catch {}
+    } catch { /* file not found in this ref */ }
   }
   return { hash, total: gitFiles.length, corrupted };
 }
@@ -90,7 +90,7 @@ for (const file of gitFiles) {
   try {
     const buf = readFileSync(file);
     if (!isValidUTF8(buf)) wtCorrupted.push(file);
-  } catch {}
+  } catch { /* skip unreadable files */ }
 }
 console.log(`\nWorking tree: ${wtCorrupted.length}/${gitFiles.length} source files corrupted`);
 if (wtCorrupted.length > 0) {
