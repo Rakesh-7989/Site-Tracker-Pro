@@ -1,4 +1,4 @@
-// SiteTrack Pro � mandatory profile completion (route "/profile/complete").
+﻿// SiteTrack Pro — mandatory profile completion (route "/profile/complete").
 import { getClient } from "@/lib/supabase";
 //
 // Every user must finish their profile once after sign-in before they can use
@@ -14,12 +14,12 @@ import { completeMyProfile } from "@/app/profileQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
-const LANGS = [{ value: "en", label: "English" }, { value: "te", label: "తెలుగు (Telugu)" }, { value: "hi", label: "हिंदी (Hindi)" }];
+const LANGS = [{ value: "en", label: "English" }, { value: "te", label: "à°¤à±†à°²à±à°—à± (Telugu)" }, { value: "hi", label: "à¤¹à¤¿à¤‚à¤¦à¥€ (Hindi)" }];
 
 function Field({ label, children, required }: { label: string; required?: boolean; children: React.ReactNode }): JSX.Element {
   return (
     <label className="block">
-      <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary">{label}{required && <span className="text-accent"> *</span>}</span>
+      <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-ink-500">{label}{required && <span className="text-safety-500"> *</span>}</span>
       <div className="mt-1">{children}</div>
     </label>
   );
@@ -39,13 +39,13 @@ export function ProfileCompleteView(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
 
   if (status === "loading" || status === "idle") {
-    return <div className="min-h-screen grid place-items-center bg-panel"><Spinner size={26} /></div>;
+    return <div className="min-h-screen grid place-items-center bg-cream-50"><Spinner size={26} /></div>;
   }
   if (status === "signed-out" || !session) return <Navigate to="/login" replace />;
-  // Already done ? no reason to be here.
+  // Already done → no reason to be here.
   if (session.user.profileCompleted === true) return <Navigate to="/dashboard" replace />;
 
-  const inputCls = "w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel";
+  const inputCls = "w-full px-3.5 py-2.5 border border-cream-200 rounded-lg text-sm outline-none focus:border-safety-500 bg-white";
 
   const submit = async () => {
     setError(null);
@@ -56,30 +56,30 @@ export function ProfileCompleteView(): JSX.Element {
     const client = await getClient();
     const res = await completeMyProfile(client, { name, phone, company, jobTitle, city, language });
     if (!res.ok) { setBusy(false); return setError(res.error); }
-    await refresh();               // re-hydrate ? profileCompleted now true
+    await refresh();               // re-hydrate → profileCompleted now true
     setBusy(false);
     navigate("/dashboard", { replace: true });
   };
 
   return (
-    <div className="min-h-screen bg-panel grid place-items-center px-5 py-10">
+    <div className="min-h-screen bg-cream-50 grid place-items-center px-5 py-10">
       <Card className="w-full max-w-lg p-6">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
-          <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
+          <div className="w-9 h-9 rounded-lg bg-safety-500 text-white grid place-items-center font-bold">S</div>
+          <div className="font-display font-bold text-ink-900">SiteTrack Pro</div>
         </div>
         <h1 className="font-display text-xl font-bold mt-3">Complete your profile</h1>
-        <p className="text-[13px] text-fg-secondary mt-1 mb-4">A few details so your team and clients know who you are. You only do this once.</p>
+        <p className="text-[13px] text-ink-500 mt-1 mb-4">A few details so your team and clients know who you are. You only do this once.</p>
 
         {error && (
-          <div className="mb-3 rounded-lg bg-error-tint border border-error p-3 text-[12px] text-error flex items-start gap-2">
-            <Icon name="alert" size={15} className="text-error mt-0.5" /> {error}
+          <div className="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[12px] text-red-700 flex items-start gap-2">
+            <Icon name="alert" size={15} className="text-red-600 mt-0.5" /> {error}
           </div>
         )}
 
         <div className="space-y-3">
           <Field label="Email">
-            <input value={session.user.email} readOnly className={`${inputCls} bg-panel text-fg-secondary cursor-not-allowed`} />
+            <input value={session.user.email} readOnly className={`${inputCls} bg-cream-50 text-ink-500 cursor-not-allowed`} />
           </Field>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Full name" required>

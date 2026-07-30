@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Drawings tab (v3 port, Batch 4, DB-wired).
+ï»¿// SiteTrack Pro â€” project Drawings tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -39,26 +39,26 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">Drawings</h2>
+      <h2 className="font-display text-lg font-bold text-ink-900">Drawings</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Title</span><Input className="mt-1" placeholder="e.g. Ground floor plan" value={title} onChange={e => setTitle(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Select className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value)} options={[{ value: "architectural", label: "Architectural" }, { value: "structural", label: "Structural" }, { value: "mep", label: "MEP" }, { value: "interior", label: "Interior" }]} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Revision</span><Input className="mt-1 w-24" value={rev} onChange={e => setRev(e.target.value)} /></div>
+          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Title</span><Input className="mt-1" placeholder="e.g. Ground floor plan" value={title} onChange={e => setTitle(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Type</span><Select className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value)} options={[{ value: "architectural", label: "Architectural" }, { value: "structural", label: "Structural" }, { value: "mep", label: "MEP" }, { value: "interior", label: "Interior" }]} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Revision</span><Input className="mt-1 w-24" value={rev} onChange={e => setRev(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Release"}</Button>
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No drawings released.</div>
+        : rows.length === 0 ? <div className="text-sm text-ink-500">No drawings released.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className={`p-3 flex items-center justify-between gap-3 ${r.status === "superseded" ? "opacity-60" : ""}`}>
-              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
-                <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
+                <div className="text-[11px] text-ink-400 capitalize">{r.type}{r.releaseDate ? ` Â· ${r.releaseDate}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteDrawing(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteDrawing(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

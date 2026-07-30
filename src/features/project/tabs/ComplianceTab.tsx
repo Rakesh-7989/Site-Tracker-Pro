@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Compliance tab (v3 port, DB-wired). Project-level
+ï»¿// SiteTrack Pro â€” project Compliance tab (v3 port, DB-wired). Project-level
 // RERA / GST / EPFO / PAN filings. Visible to compliance:view; editing needs a
 // filing capability (rera/gstn/epfo).
 
@@ -44,26 +44,26 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">Compliance &amp; filings</h2>
+      <h2 className="font-display text-lg font-bold text-ink-900">Compliance &amp; filings</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Select className="mt-1 w-28" value={kind} onChange={e => setKind(e.target.value as ComplianceKind)} options={KIND_OPTS} /></div>
-          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Reference no.</span><Input className="mt-1" placeholder="e.g. P02400003456" value={ref} onChange={e => setRef(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Stage</span><Input className="mt-1 w-32" placeholder="foundation" value={stage} onChange={e => setStage(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Type</span><Select className="mt-1 w-28" value={kind} onChange={e => setKind(e.target.value as ComplianceKind)} options={KIND_OPTS} /></div>
+          <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Reference no.</span><Input className="mt-1" placeholder="e.g. P02400003456" value={ref} onChange={e => setRef(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Stage</span><Input className="mt-1 w-32" placeholder="foundation" value={stage} onChange={e => setStage(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add filing"}</Button>
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No filings tracked.</div>
+        : rows.length === 0 ? <div className="text-sm text-ink-500">No filings tracked.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate uppercase">{r.kind}{r.refNo ? <span className="text-fg-secondary font-normal normal-case"> · {r.refNo}</span> : null}</div>
-                <div className="text-[11px] text-fg-tertiary">{[r.stage, r.expiresAt && `expires ${r.expiresAt.slice(0, 10)}`].filter(Boolean).join(" · ") || "—"}</div></div>
+              <div className="min-w-0"><div className="text-sm font-semibold text-ink-800 truncate uppercase">{r.kind}{r.refNo ? <span className="text-ink-500 font-normal normal-case"> Â· {r.refNo}</span> : null}</div>
+                <div className="text-[11px] text-ink-400">{[r.stage, r.expiresAt && `expires ${r.expiresAt.slice(0, 10)}`].filter(Boolean).join(" Â· ") || "â€”"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as ComplianceStatus; void run(`s-${r.id}`, c => setComplianceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
                   : <Badge tone={tone(r.status)}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteCompliance(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteCompliance(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>
