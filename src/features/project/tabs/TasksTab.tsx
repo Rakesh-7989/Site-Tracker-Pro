@@ -60,34 +60,34 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-ink-900">{t("projTab.tasks")}</h2>
+      <h2 className="font-display text-lg font-bold text-fg-primary">{t("projTab.tasks")}</h2>
       {error && <Alert variant="danger">{error}</Alert>}
 
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[160px]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">{t("tasksTab.task")}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("tasksTab.task")}</span>
             <Input className="mt-1" placeholder={t("tasksTab.taskPlaceholder")} value={title} onChange={e => setTitle(e.target.value)} />
           </div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">{t("tasksTab.assignee")}</span>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("tasksTab.assignee")}</span>
             <Input className="mt-1 w-32" placeholder={t("tasksTab.assigneeName")} value={assignee} onChange={e => setAssignee(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">{t("tasksTab.priority")}</span>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("tasksTab.priority")}</span>
             <Select className="mt-1 w-auto" value={priority} onChange={e => setPriority(e.target.value as TaskPriority)}
               options={[{ value: "high", label: t("tasksTab.high") }, { value: "medium", label: t("tasksTab.medium") }, { value: "low", label: t("tasksTab.low") }]} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">{t("tasksTab.due")}</span>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("tasksTab.due")}</span>
             <Input className="mt-1" type="date" value={due} onChange={e => setDue(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : t("tasksTab.add")}</Button>
         </Card>
       )}
 
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-ink-500">{t("tasksTab.noTasks")}</div>
+        : rows.length === 0 ? <div className="text-sm text-fg-secondary">{t("tasksTab.noTasks")}</div>
         : <div className="space-y-2">
             {rows.map(tk => (
               <Card key={tk.id} className="p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-ink-800 truncate">{tk.title}</div>
-                  <div className="text-[11px] text-ink-400">{tk.assigneeName ?? t("tasksTab.unassigned")}{tk.dueDate ? ` · ${t("tasksTab.dueLabel")} ${tk.dueDate}` : ""}</div>
+                  <div className="text-sm font-semibold text-fg-primary truncate">{tk.title}</div>
+                  <div className="text-[11px] text-fg-tertiary">{tk.assigneeName ?? t("tasksTab.unassigned")}{tk.dueDate ? ` · ${t("tasksTab.dueLabel")} ${tk.dueDate}` : ""}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Badge tone={PR_TONE[tk.priority]}>{t(`tasksTab.${tk.priority}`)}</Badge>
@@ -96,7 +96,7 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
                       <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>
                     </button>
                   ) : <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>}
-                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${tk.id}`, c => deleteTask(c, tk.id), { apply: () => setRows(prev => prev.filter(x => x.id !== tk.id)), rollback: () => setRows(prev => [...prev, tk]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${tk.id}`, c => deleteTask(c, tk.id), { apply: () => setRows(prev => prev.filter(x => x.id !== tk.id)), rollback: () => setRows(prev => [...prev, tk]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
                 </div>
               </Card>
             ))}
