@@ -1,4 +1,4 @@
-// SiteTrack Pro � project Safety tab (v3 port, Batch 2, DB-wired).
+﻿// SiteTrack Pro — project Safety tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -41,7 +41,7 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">Safety incidents</h2>
+      <h2 className="font-display text-lg font-bold text-ink-900">Safety incidents</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 space-y-2">
@@ -55,15 +55,15 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No incidents reported. ??</div>
+        : rows.length === 0 ? <div className="text-sm text-ink-500">No incidents reported. 🦺</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-start justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm text-fg-primary flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity.replace("_", " ")}</Badge>{r.description}</div>
-                <div className="text-[11px] text-fg-tertiary mt-0.5">{[r.incidentDate, r.category, r.location].filter(Boolean).join(" � ")}</div></div>
+              <div className="min-w-0"><div className="text-sm text-ink-800 flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity.replace("_", " ")}</Badge>{r.description}</div>
+                <div className="text-[11px] text-ink-400 mt-0.5">{[r.incidentDate, r.category, r.location].filter(Boolean).join(" · ")}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SafetyStatus; void run(`s-${r.id}`, c => setSafetyStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
-                  : <span className="text-xs text-fg-secondary">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSafety(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                  : <span className="text-xs text-ink-500">{r.status}</span>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSafety(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

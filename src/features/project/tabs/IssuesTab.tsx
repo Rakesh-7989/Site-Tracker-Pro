@@ -1,4 +1,4 @@
-// SiteTrack Pro — project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
+ï»¿// SiteTrack Pro â€” project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -57,17 +57,17 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-fg-primary">Issues</h2>
-        {rows.length > 0 && <span className="text-sm text-fg-secondary">{open} open</span>}
+        <h2 className="font-display text-lg font-bold text-ink-900">Issues</h2>
+        {rows.length > 0 && <span className="text-sm text-ink-500">{open} open</span>}
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
 
       {canAdd && (
         <Card className="p-3 space-y-2">
           <div className="flex gap-2 flex-wrap items-end">
-            <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Issue</span>
+            <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Issue</span>
               <Input className="mt-1" placeholder="e.g. Water seepage in basement" value={title} onChange={e => setTitle(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Severity</span>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Severity</span>
               <Select className="mt-1 w-auto" value={severity} onChange={e => setSeverity(e.target.value as IssueSeverity)}
                 options={[{ value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} /></div>
             <Button onClick={() => void add()} disabled={busy === "add" || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
@@ -77,18 +77,18 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
       )}
 
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No issues logged.</div>
+        : rows.length === 0 ? <div className="text-sm text-ink-500">No issues logged.</div>
         : <div className="space-y-2">
             {rows.map(i => (
               <Card key={i.id} className={`p-3 ${i.status === "resolved" ? "opacity-60" : ""}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2">
+                    <div className="text-sm font-semibold text-ink-800 truncate flex items-center gap-2">
                       <Badge tone={SEV_TONE[i.severity]}>{i.severity}</Badge>{i.title}
                     </div>
-                    {i.description && <div className="text-[12px] text-fg-secondary mt-0.5">{i.description}</div>}
-                    <div className="text-[11px] text-fg-tertiary mt-0.5">
-                      {i.reportedDate ? `Raised ${i.reportedDate}` : ""}{i.resolvedDate ? ` · Resolved ${i.resolvedDate}` : ""}
+                    {i.description && <div className="text-[12px] text-ink-500 mt-0.5">{i.description}</div>}
+                    <div className="text-[11px] text-ink-400 mt-0.5">
+                      {i.reportedDate ? `Raised ${i.reportedDate}` : ""}{i.resolvedDate ? ` Â· Resolved ${i.resolvedDate}` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -101,7 +101,7 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
                         {i.status === "open" ? "Resolve" : "Reopen"}
                       </Button>
                     )}
-                    {canAdd && <Button size="sm" variant="ghost" onClick={() => void run(`d-${i.id}`, c => deleteIssue(c, i.id), { apply: () => setRows(prev => prev.filter(x => x.id !== i.id)), rollback: () => setRows(prev => [...prev, i]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                    {canAdd && <Button size="sm" variant="ghost" onClick={() => void run(`d-${i.id}`, c => deleteIssue(c, i.id), { apply: () => setRows(prev => prev.filter(x => x.id !== i.id)), rollback: () => setRows(prev => [...prev, i]) })}><Icon name="trash" size={14} className="text-rose-500" /></Button>}
                   </div>
                 </div>
               </Card>
