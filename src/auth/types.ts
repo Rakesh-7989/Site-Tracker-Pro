@@ -11,7 +11,7 @@
 // auth layer needs. Per-feature types (DPR, milestones, etc.) live with
 // their feature folders.
 
-import type { IdentityRole, ProjectTierRole, ProjectType } from "./roles";
+import type { IdentityRole, ProjectTierRole, ProjectType, ConstructionIndustry } from "./roles";
 import type { Capability } from "./capabilities";
 
 /** Canonical user identity. */
@@ -89,6 +89,8 @@ export interface ProjectMembership {
   projectId: string;
   projectName: string;
   projectType: ProjectType;
+  /** Optional industry subtype when project.type === 'construction'. */
+  industrySubtype?: ConstructionIndustry | null;
   /** project_members.role — what THIS user does on THIS project */
   role: ProjectTierRole;
   /** project_members.assigned_by (profile_id) */

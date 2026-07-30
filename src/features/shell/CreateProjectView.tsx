@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useOrgSwitcher, useCan, PROJECT_TYPES, type ProjectType } from "@/auth";
+import { useOrgSwitcher, useCan, PROJECT_TYPES, CONSTRUCTION_INDUSTRIES, CONSTRUCTION_INDUSTRY_LABEL, type ProjectType, type ConstructionIndustry } from "@/auth";
 import { createProject } from "@/app/queries";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 
@@ -24,6 +24,7 @@ export function CreateProjectView(): JSX.Element {
 
   const [name, setName] = useState("");
   const [type, setType] = useState<ProjectType>("construction");
+  const [industrySubtype, setIndustrySubtype] = useState<ConstructionIndustry | "">("");
   const [location, setLocation] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export function CreateProjectView(): JSX.Element {
       name: name.trim(),
       type,
       ...(location.trim() ? { location: location.trim() } : {}),
+      ...(industrySubtype ? { industrySubtype: industrySubtype as ConstructionIndustry } : {}),
     });
     setBusy(false);
     if (res.ok) navigate("/projects");
@@ -80,6 +82,19 @@ export function CreateProjectView(): JSX.Element {
               {PROJECT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
             </select>
           </div>
+
+          {type === "construction" && (
+            <div>
+              <label htmlFor="pindustry" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Construction industry <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
+              <select
+                id="pindustry" value={industrySubtype} onChange={e => setIndustrySubtype(e.target.value as ConstructionIndustry | "")}
+                className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
+              >
+                <option value="">Any industry</option>
+                {CONSTRUCTION_INDUSTRIES.map(ind => <option key={ind} value={ind}>{CONSTRUCTION_INDUSTRY_LABEL[ind]}</option>)}
+              </select>
+            </div>
+          )}
 
           <div>
             <label htmlFor="ploc" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Location <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>

@@ -5,7 +5,7 @@
 // unrelated columns can't break the list. Each returns a discriminated
 // {ok} result instead of throwing.
 
-import type { ProjectType, ProjectTierRole } from "@/auth";
+import type { ProjectType, ProjectTierRole, ConstructionIndustry } from "@/auth";
 import { isProjectTierRole } from "@/auth";
 
 export interface ProjectSummary {
@@ -14,12 +14,14 @@ export interface ProjectSummary {
   type: ProjectType;
   status: string | null;
   location: string | null;
+  industrySubtype?: ConstructionIndustry | null;
 }
 
 export interface ProjectDetail extends ProjectSummary {
   orgId: string;
   startedAt: string | null;
   completedAt: string | null;
+  industrySubtype?: ConstructionIndustry | null;
 }
 
 export interface ProjectMemberRow {
@@ -42,7 +44,7 @@ export async function listProjectsForOrg(client: any, orgId: string): Promise<Qu
   try {
     const { data, error } = await client
       .from("projects")
-      .select("id, name, type, status, location")
+      .select("id, name, type, status, location, industry_subtype")
       .eq("org_id", orgId)
       .order("name", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -53,6 +55,7 @@ export async function listProjectsForOrg(client: any, orgId: string): Promise<Qu
       type: (r.type as ProjectType) ?? "construction",
       status: r.status === undefined || r.status === null ? null : String(r.status),
       location: r.location === undefined || r.location === null ? null : String(r.location),
+      industrySubtype: r.industry_subtype == null ? null : (r.industry_subtype as ConstructionIndustry),
     }));
     return { ok: true, data: projects };
   } catch (e) {
@@ -66,7 +69,7 @@ export async function listProjectsForOrg(client: any, orgId: string): Promise<Qu
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createProject(
   client: any,
-  input: { orgId: string; name: string; type: ProjectType; location?: string },
+  input: { orgId: string; name: string; type: ProjectType; location?: string; industrySubtype?: ConstructionIndustry | null },
 ): Promise<QueryResult<{ id: string }>> {
   try {
     const { data, error } = await client
@@ -76,6 +79,7 @@ export async function createProject(
         name: input.name,
         type: input.type,
         ...(input.location ? { location: input.location } : {}),
+        ...(input.industrySubtype ? { industry_subtype: input.industrySubtype } : {}),
       })
       .select("id")
       .single();
@@ -96,7 +100,7 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
   try {
     const { data, error } = await client
       .from("projects")
-      .select("id, name, type, status, location, org_id, start_date")
+      .select("id, name, type, status, location, org_id, start_date, industry_subtype")
       .eq("id", projectId)
       .maybeSingle();
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -113,6 +117,7 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
         orgId: String(r.org_id),
         startedAt: r.start_date == null ? null : String(r.start_date),
         completedAt: null,
+        industrySubtype: r.industry_subtype == null ? null : (r.industry_subtype as ConstructionIndustry),
       },
     };
   } catch (e) {

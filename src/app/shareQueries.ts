@@ -1,11 +1,14 @@
 // SiteTrack Pro — share-link queries (public/read-only project data).
 
+import type { ConstructionIndustry } from "@/auth";
+
 export interface ShareProjectData {
   id: string;
   name: string;
   type: string;
   status: string | null;
   location: string | null;
+  industrySubtype?: ConstructionIndustry | null;
   startDate: string | null;
   description: string | null;
   progress: number | null;
@@ -50,7 +53,7 @@ export async function getShareData(client: any, projectId: string): Promise<Shar
     const [projectRes, milestonesRes, updatesRes, drawingsRes] = await Promise.all([
       client
         .from("projects")
-        .select("id, name, type, status, location, start_date, description, progress, expected_end_date, client_name")
+        .select("id, name, type, status, location, start_date, description, progress, expected_end_date, client_name, industry_subtype")
         .eq("id", projectId)
         .single(),
       client
@@ -86,6 +89,7 @@ export async function getShareData(client: any, projectId: string): Promise<Shar
       progress: proj.progress === undefined || proj.progress === null ? null : Number(proj.progress),
       expectedEndDate: proj.expected_end_date === undefined || proj.expected_end_date === null ? null : String(proj.expected_end_date),
       clientName: proj.client_name === undefined || proj.client_name === null ? null : String(proj.client_name),
+      industrySubtype: proj.industry_subtype == null ? null : (proj.industry_subtype as import("@/auth").ConstructionIndustry),
     };
 
     const mapRow = <T>(rows: unknown, fn: (r: Record<string, unknown>) => T): T[] =>

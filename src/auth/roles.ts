@@ -75,6 +75,25 @@ export type ProjectTierRole = (typeof PROJECT_TIER_ROLES)[number];
 export const PROJECT_TYPES = ["construction", "interior", "design", "consultant"] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
+export const CONSTRUCTION_INDUSTRIES = [
+  "residential",
+  "commercial",
+  "industrial",
+  "infrastructure",
+  "institutional",
+  "mixed_use",
+] as const;
+export type ConstructionIndustry = (typeof CONSTRUCTION_INDUSTRIES)[number];
+
+export const CONSTRUCTION_INDUSTRY_LABEL: Record<ConstructionIndustry, string> = {
+  residential:    "Residential",
+  commercial:     "Commercial",
+  industrial:     "Industrial",
+  infrastructure: "Infrastructure",
+  institutional:  "Institutional",
+  mixed_use:      "Mixed-Use",
+};
+
 /**
  * Which project_member.role values are valid for a given project.type.
  * UI dropdowns + member-add forms enforce this. RLS does not (yet).
@@ -186,6 +205,9 @@ export function isProjectTierRole(value: unknown): value is ProjectTierRole {
 }
 export function isProjectType(value: unknown): value is ProjectType {
   return typeof value === "string" && (PROJECT_TYPES as readonly string[]).includes(value);
+}
+export function isConstructionIndustry(value: unknown): value is ConstructionIndustry {
+  return typeof value === "string" && (CONSTRUCTION_INDUSTRIES as readonly string[]).includes(value);
 }
 
 /**
