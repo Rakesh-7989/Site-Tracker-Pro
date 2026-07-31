@@ -1,11 +1,8 @@
-// SiteTrack Pro — Handover Packet page (/handover).
-// Sprint 4: wraps PunchList, SubmittalsList, PermitsList sub-components
-// and the Generate Packet workflow. Gated by handover:view capability.
-
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listPunch, createPunch, setPunchStatus, deletePunch, type PunchItem, type PunchSeverity, type PunchStatus } from "@/app/siteOpsQueries";
 import { listSubmittals, createSubmittal, setSubmittalStatus, deleteSubmittal, type Submittal, type SubmittalStatus, type SubmittalType } from "@/app/siteOpsQueries";
 import { listPermits, createPermit, setPermitStatus, deletePermit, type Permit, type PermitKind, type PermitStatus } from "@/app/siteOpsQueries";
@@ -116,6 +113,32 @@ function PunchList({ projectId }: { projectId: string }): JSX.Element {
 
   const open = rows.filter(r => r.status === "open" || r.status === "in_progress").length;
 
+  const columns: Column<PunchItem>[] = [
+    {
+      key: "detail", header: "Item", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} &mdash; {r.defect}</div>
+          <div className="text-[11px] text-fg-tertiary">{r.trade ?? "-"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "status", header: "Status", className: "flex-shrink-0",
+      render: r => canEdit ? (
+        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+      ) : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>,
+    },
+    ...(canEdit ? [{
+      key: "actions" as const, header: "", className: "flex-shrink-0",
+      render: (r: PunchItem) => (
+        <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePunch(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
+          <Icon name="trash" size={14} className="text-error" />
+        </Button>
+      ),
+    }] : []),
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -132,22 +155,7 @@ function PunchList({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add" || !loc.trim() || !defect.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No punch items.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <Card key={r.id} className={`p-3 flex items-center justify-between gap-3 ${r.status === "resolved" || r.status === "verified" ? "opacity-60" : ""}`}>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} &mdash; {r.defect}</div>
-                <div className="text-[11px] text-fg-tertiary">{r.trade ?? "-"}</div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
-                  : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePunch(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
-              </div>
-            </Card>))}
-        </div>
-      }
+      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No punch items." />
     </div>
   );
 }
@@ -185,6 +193,32 @@ function SubmittalsList({ projectId }: { projectId: string }): JSX.Element {
     setNo(""); setTitle(""); setDesc("");
   };
 
+  const columns: Column<Submittal>[] = [
+    {
+      key: "detail", header: "Submittal", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate">{r.no} &mdash; {r.title}</div>
+          <div className="text-[11px] text-fg-tertiary">{r.type.replace("_", " ")}{r.description ? ` · ${r.description}` : ""}</div>
+        </div>
+      ),
+    },
+    {
+      key: "status", header: "Status", className: "flex-shrink-0",
+      render: r => canEdit ? (
+        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SubmittalStatus; void run(`s-${r.id}`, c => setSubmittalStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={SUBMITTAL_STATUS_OPTS} />
+      ) : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>,
+    },
+    ...(canEdit ? [{
+      key: "actions" as const, header: "", className: "flex-shrink-0",
+      render: (r: Submittal) => (
+        <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSubmittal(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
+          <Icon name="trash" size={14} className="text-error" />
+        </Button>
+      ),
+    }] : []),
+  ];
+
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-fg-primary">Submittals</h2>
@@ -198,22 +232,7 @@ function SubmittalsList({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No submittals.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-fg-primary truncate">{r.no} &mdash; {r.title}</div>
-                <div className="text-[11px] text-fg-tertiary">{r.type.replace("_", " ")}{r.description ? ` &middot; ${r.description}` : ""}</div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SubmittalStatus; void run(`s-${r.id}`, c => setSubmittalStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={SUBMITTAL_STATUS_OPTS} />
-                  : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSubmittal(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
-              </div>
-            </Card>))}
-        </div>
-      }
+      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No submittals." />
     </div>
   );
 }
@@ -250,6 +269,32 @@ function PermitsList({ projectId }: { projectId: string }): JSX.Element {
     setRefNo(""); setAuthority("");
   };
 
+  const columns: Column<Permit>[] = [
+    {
+      key: "detail", header: "Permit", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate">{r.kind}{r.refNo ? ` &mdash; ${r.refNo}` : ""}</div>
+          <div className="text-[11px] text-fg-tertiary">{r.issuingAuthority ?? "-"}{r.validUntil ? ` · Valid until ${r.validUntil}` : ""}</div>
+        </div>
+      ),
+    },
+    {
+      key: "status", header: "Status", className: "flex-shrink-0",
+      render: r => canEdit ? (
+        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PermitStatus; void run(`s-${r.id}`, c => setPermitStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={PERMIT_STATUS_OPTS} />
+      ) : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>,
+    },
+    ...(canEdit ? [{
+      key: "actions" as const, header: "", className: "flex-shrink-0",
+      render: (r: Permit) => (
+        <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePermit(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
+          <Icon name="trash" size={14} className="text-error" />
+        </Button>
+      ),
+    }] : []),
+  ];
+
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-fg-primary">Permits</h2>
@@ -262,22 +307,7 @@ function PermitsList({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add permit"}</Button>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No permits tracked.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-fg-primary truncate">{r.kind}{r.refNo ? ` &mdash; ${r.refNo}` : ""}</div>
-                <div className="text-[11px] text-fg-tertiary">{r.issuingAuthority ?? "-"}{r.validUntil ? ` &middot; Valid until ${r.validUntil}` : ""}</div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PermitStatus; void run(`s-${r.id}`, c => setPermitStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={PERMIT_STATUS_OPTS} />
-                  : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePermit(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
-              </div>
-            </Card>))}
-        </div>
-      }
+      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No permits tracked." />
     </div>
   );
 }

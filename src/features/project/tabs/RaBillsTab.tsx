@@ -1,12 +1,10 @@
-﻿// SiteTrack Pro — project RA Bills tab (v3 port, Batch 3, DB-wired).
-
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listRaBills, createRaBill, setRaBillStatus, deleteRaBill, raNetPayable, fmtRupees, type RaBill, type RaBillStatus } from "@/app/financeQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "submitted", label: "Submitted" }, { value: "approved", label: "Approved" }, { value: "paid", label: "Paid" }, { value: "rejected", label: "Rejected" }];
@@ -39,6 +37,32 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
     setNo(""); setSub(""); setScope(""); setAmount("");
   };
 
+  const columns: Column<RaBill>[] = [
+    {
+      key: "detail", header: "RA Bill", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
+          <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div>
+        </div>
+      ),
+    },
+    {
+      key: "status", header: "Status", className: "flex-shrink-0",
+      render: r => canApprove ? (
+        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as RaBillStatus; void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, v, v === "paid" ? raNetPayable(r) : undefined), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+      ) : <span className="text-xs text-fg-secondary">{r.status}</span>,
+    },
+    ...(canCreate ? [{
+      key: "actions" as const, header: "", className: "flex-shrink-0",
+      render: (r: RaBill) => (
+        <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRaBill(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
+          <Icon name="trash" size={14} className="text-error" />
+        </Button>
+      ),
+    }] : []),
+  ];
+
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-fg-primary">RA Bills</h2>
@@ -52,18 +76,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No RA bills.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
-                <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div></div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as RaBillStatus; void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, v, v === "paid" ? raNetPayable(r) : undefined), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
-                  : <span className="text-xs text-fg-secondary">{r.status}</span>}
-                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRaBill(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
-              </div>
-            </Card>))}</div>}
+      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No RA bills." />
     </div>
   );
 }

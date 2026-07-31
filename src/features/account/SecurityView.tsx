@@ -118,7 +118,7 @@ export function SecurityView(): JSX.Element {
             <div className="text-xs text-fg-secondary">Or enter this key manually: <code className="font-mono bg-secondary px-1.5 py-0.5 rounded text-fg-primary break-all">{enroll.secret}</code></div>
             <div className="text-sm text-fg-primary">2. Enter the 6-digit code it shows:</div>
             <Input value={code} onChange={e => setCode(e.target.value)} inputMode="numeric" maxLength={7} placeholder="123456" autoComplete="one-time-code" className="max-w-[180px] tracking-[0.3em] text-center font-mono" />
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button size="sm" disabled={busy} onClick={() => void confirmEnroll()}>{busy ? <Spinner size={14} /> : "Verify & enable"}</Button>
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setEnroll(null); setCode(""); setError(null); }}>Cancel</Button>
             </div>

@@ -1,13 +1,11 @@
-﻿// SiteTrack Pro — project BOQ (Bill of Quantities) tab (v3 port, DB-wired).
-
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
 import { listBoq, createBoq, deleteBoq, type BoqItem, type BoqCategory } from "@/app/siteAdminQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const CATS: BoqCategory[] = ["Civil", "MEP", "Finishing", "External", "Other"];
@@ -41,6 +39,34 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
 
   const total = rows.reduce((s, r) => s + (r.amount ?? 0), 0);
 
+  const columns: Column<BoqItem>[] = [
+    {
+      key: "item", header: "Item", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate">{r.code ? `${r.code} · ` : ""}{r.description}</div>
+          <div className="text-[11px] text-fg-tertiary">{[r.qty != null && `${r.qty}${r.unit ? " " + r.unit : ""}`, r.rate != null && `@ ${fmtRupees(r.rate)}`].filter(Boolean).join(" · ")}</div>
+        </div>
+      ),
+    },
+    {
+      key: "category", header: "Category", className: "flex-shrink-0",
+      render: r => <Badge tone="neutral">{r.category}</Badge>,
+    },
+    {
+      key: "amount", header: "Amount", className: "flex-shrink-0 text-right",
+      render: r => <span className="text-sm font-semibold text-fg-primary">{r.amount != null ? fmtRupees(r.amount) : "—"}</span>,
+    },
+    ...(canEdit ? [{
+      key: "actions" as const, header: "", className: "flex-shrink-0",
+      render: (r: BoqItem) => (
+        <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteBoq(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
+          <Icon name="trash" size={14} className="text-error" />
+        </Button>
+      ),
+    }] : []),
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -58,18 +84,7 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add" || !desc.trim() || !qty || !rate}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No BOQ items yet.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.code ? `${r.code} · ` : ""}{r.description}</div>
-                <div className="text-[11px] text-fg-tertiary">{[r.qty != null && `${r.qty}${r.unit ? " " + r.unit : ""}`, r.rate != null && `@ ${fmtRupees(r.rate)}`].filter(Boolean).join(" · ")}</div></div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge tone="neutral">{r.category}</Badge>
-                <span className="text-sm font-semibold text-fg-primary w-24 text-right">{r.amount != null ? fmtRupees(r.amount) : "—"}</span>
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteBoq(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
-              </div>
-            </Card>))}</div>}
+      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No BOQ items yet." />
     </div>
   );
 }

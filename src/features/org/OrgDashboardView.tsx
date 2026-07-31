@@ -101,7 +101,7 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
                 <div className="space-y-2">
                   <div className="text-sm text-fg-primary">Type <b className="text-error">{orgDisplayName}</b> to confirm permanent deletion:</div>
                   <Input value={confirmName} onChange={e => setConfirmName(e.target.value)} placeholder={orgDisplayName} autoComplete="off" />
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-2 justify-end flex-wrap">
                     <Button size="sm" variant="ghost" onClick={() => { setShowDanger(false); setConfirmName(""); }}>Cancel</Button>
                     <button type="button" disabled={deleting || confirmName.trim() !== orgDisplayName}
                       onClick={() => void doDelete()}

@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { exportAuditCsv } from "@/lib/audit";
 import { getClient } from "@/lib/supabase";
 import {
@@ -14,6 +15,31 @@ function fmtTime(iso: string): string {
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
 
+const COLUMNS: Column<AuditLogRow>[] = [
+  {
+    key: "ts", header: "Time", className: "flex-shrink-0",
+    render: r => <span className="text-[11px] text-fg-secondary font-mono">{fmtTime(r.ts)}</span>,
+  },
+  {
+    key: "actor", header: "Actor", hideOnMobile: true, className: "flex-shrink-0",
+    render: r => <div><span className="font-semibold text-fg-primary text-xs">{r.actorName}</span><div className="text-[10px] text-fg-secondary">{r.actorRole}</div></div>,
+  },
+  {
+    key: "action", header: "Action", className: "flex-shrink-0",
+    render: r => {
+      const tone = r.action === "APPROVE" ? "bg-success-tint text-success" : r.action === "REJECT" || r.action === "DELETE" ? "bg-error-tint text-error" : "bg-warning-tint text-warning";
+      return <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${tone}`}>{r.action}</span>;
+    },
+  },
+  {
+    key: "resource", header: "Resource", hideOnMobile: true, className: "flex-shrink-0",
+    render: r => <span className="text-xs text-fg-primary">{r.resource}{r.resourceId ? ` #${String(r.resourceId).slice(0, 12)}` : ""}</span>,
+  },
+  {
+    key: "message", header: "Message", className: "flex-1 min-w-0",
+    render: r => <span className="text-xs text-fg-secondary truncate">{r.message || (r.projectId ? `Project ${r.projectId}` : "\u2014")}</span>,
+  },
+];
 
 export function PlatformAuditLogV2View(): JSX.Element {
   const { session } = useAuth();
@@ -97,15 +123,8 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         <select value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} className="p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent"><option value="">All resources</option>{["project", "drawing", "boq", "ra_bill", "mb", "po", "invoice", "issue", "rfi", "change_order", "user", "org", "subscription", "comment", "unit", "block", "floor"].map(r => <option key={r} value={r}>{r}</option>)}</select>
       </div>
       <div className="bg-bg-primary rounded-2xl overflow-hidden shadow-editorial border-default">
-        {filtered.length === 0 ? <div className="p-12 text-center text-fg-secondary"><Icon name="search" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">{auditLog.length === 0 ? "No audit entries yet. As users approve / reject / release, entries appear here." : "No entries match the filters."}</p></div> :
-          <div className="overflow-x-auto"><div className="divide-y divide-default">{filtered.slice(0, 200).map((r: AuditLogRow) => (<div key={r.id} className="px-5 py-3 grid grid-cols-12 gap-3 items-center text-xs">
-            <div className="col-span-3 md:col-span-2 text-[11px] text-fg-secondary font-mono">{fmtTime(r.ts)}</div>
-            <div className="hidden md:block md:col-span-3"><span className="font-semibold text-fg-primary">{r.actorName}</span><div className="text-[10px] text-fg-secondary">{r.actorRole}</div></div>
-            <div className="col-span-3 md:col-span-1"><span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${r.action === "APPROVE" ? "bg-success-tint text-success" : r.action === "REJECT" || r.action === "DELETE" ? "bg-error-tint text-error" : "bg-warning-tint text-warning"}`}>{r.action}</span></div>
-            <div className="hidden sm:block sm:col-span-2 text-fg-primary">{r.resource}{r.resourceId ? ` #${String(r.resourceId).slice(0, 12)}` : ""}</div>
-            <div className="col-span-6 md:col-span-4 text-fg-secondary truncate">{r.message || (r.projectId ? `Project ${r.projectId}` : "—")}</div>
-          </div>))}{filtered.length > 200 && <div className="px-5 py-3 text-[11px] text-fg-secondary text-center italic">Showing first 200 — refine filters or export CSV for the full set.</div>}</div></div>
-        }
+        <DataTable columns={COLUMNS} rows={filtered.slice(0, 200)} rowKey={r => r.id} emptyMessage={auditLog.length === 0 ? "No audit entries yet." : "No entries match the filters."} />
+        {filtered.length > 200 && <div className="px-5 py-3 text-[11px] text-fg-secondary text-center italic">Showing first 200 — refine filters or export CSV for the full set.</div>}
       </div>
     </div>
   );

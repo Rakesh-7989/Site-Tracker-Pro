@@ -1,20 +1,15 @@
-﻿// SiteTrack Pro — plan-upgrade requests (/admin/upgrades). Platform staff.
-import { getClient } from "@/lib/supabase";
-//
-// Owner/Head see all requests (and can assign them to a staff); an assigned
-// staff member sees + works their own. Status: open → in_progress → closed.
+﻿import { getClient } from "@/lib/supabase";
 
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listUpgradeRequests, assignUpgradeRequest, setUpgradeStatus, type UpgradeRequest, type UpgradeStatus } from "@/app/upgradeQueries";
 import { listStaff, type StaffMember } from "@/app/staffQueries";
 import { Pager } from "@/components/ui/Pager";
 
 const UPGRADE_PAGE_SIZE = 100;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 const STATUS_TONE: Record<UpgradeStatus, "warning" | "info" | "success"> = { open: "warning", in_progress: "info", closed: "success" };
 const STATUS_LABEL: Record<UpgradeStatus, string> = { open: "Open", in_progress: "In progress", closed: "Closed" };
@@ -74,8 +69,47 @@ export function UpgradeRequestsView(): JSX.Element {
     );
   }
 
+  const columns: Column<UpgradeRequest>[] = [
+    {
+      key: "org", header: "Org", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-fg-primary text-sm">{r.orgName}</span>
+            <Badge tone="neutral">{r.currentPlan ?? "?"} → {r.desiredPlan ?? "?"}</Badge>
+            <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
+          </div>
+          <div className="text-xs text-fg-secondary mt-0.5">by {r.requesterEmail ?? "\u2014"} · {r.createdAt.slice(0, 10)}{r.assignedEmail ? ` · handled by ${r.assignedEmail}` : ""}</div>
+          {r.note && <div className="text-xs text-fg-secondary mt-0.5 italic truncate">"{r.note}"</div>}
+        </div>
+      ),
+    },
+    ...(canAssign ? [{
+      key: "assign" as const, header: "Assign", hideOnMobile: true, className: "flex-shrink-0",
+      render: (r: UpgradeRequest) => (
+        <select className="text-sm border border-default rounded-lg px-2.5 py-2 bg-panel" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
+          onChange={e => void doAssign(r, e.target.value)}>
+          <option value="">\u2014 Assign to \u2014</option>
+          {staff.map(s => <option key={s.id} value={s.id}>{s.email || s.name}</option>)}
+        </select>
+      ),
+    }] : []),
+    {
+      key: "actions", header: "Status", className: "flex-shrink-0",
+      render: r => (
+        <div className="flex items-center gap-1">
+          {(["open", "in_progress", "closed"] as UpgradeStatus[]).map(st => (
+            <Button key={st} size="sm" variant={r.status === st ? "primary" : "secondary"} disabled={busy === r.id} onClick={() => void doStatus(r, st)}>
+              {STATUS_LABEL[st]}
+            </Button>
+          ))}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+    <div className="max-w-6xl mx-auto space-y-4 p-4 md:p-6">
       <div>
         <h1 className="font-display text-xl md:text-2xl font-bold">Upgrade requests</h1>
         <p className="text-sm text-fg-secondary mt-1">Orgs asking to move up a plan. {canAssign ? "Assign to a staff or take it yourself, then track to close." : "Your assigned requests."}</p>
@@ -88,41 +122,10 @@ export function UpgradeRequestsView(): JSX.Element {
       )}
 
       {loading ? <div className="grid place-items-center py-12 text-accent"><Spinner size={24} /></div>
-        : rows.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-fg-secondary"><Icon name="trend" size={24} className="mx-auto text-fg-tertiary mb-2" />No upgrade requests {page > 0 ? "on this page." : "yet."}</Card>
-        ) : <>{rows.map(r => (
-          <Card key={r.id} className="p-4">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-fg-primary">{r.orgName}</span>
-                  <Badge tone="neutral">{r.currentPlan ?? "?"} → {r.desiredPlan ?? "?"}</Badge>
-                  <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
-                </div>
-                <div className="text-[12px] text-fg-secondary mt-0.5">by {r.requesterEmail ?? "—"} · {r.createdAt.slice(0, 10)}{r.assignedEmail ? ` · handled by ${r.assignedEmail}` : ""}</div>
-                {r.note && <div className="text-[12px] text-fg-secondary mt-1 italic">"{r.note}"</div>}
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2 border-t border-default pt-3 flex-wrap">
-              {canAssign && (
-                <select className="text-sm border border-default rounded-lg px-2.5 py-2 bg-panel" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
-                  onChange={e => void doAssign(r, e.target.value)}>
-                  <option value="">— Assign to —</option>
-                  {staff.map(s => <option key={s.id} value={s.id}>{s.email || s.name}</option>)}
-                </select>
-              )}
-              <div className="flex items-center gap-1.5">
-                {(["open", "in_progress", "closed"] as UpgradeStatus[]).map(st => (
-                  <Button key={st} size="sm" variant={r.status === st ? "primary" : "secondary"} disabled={busy === r.id} onClick={() => void doStatus(r, st)}>
-                    {STATUS_LABEL[st]}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </Card>
-        ))}
-        <Pager page={page} hasNext={rows.length === UPGRADE_PAGE_SIZE} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />
-        </>}
+        : <Card className="overflow-hidden">
+            <DataTable columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No upgrade requests ${page > 0 ? "on this page." : "yet."}`} />
+          </Card>}
+      {rows.length > 0 && <Pager page={page} hasNext={rows.length === UPGRADE_PAGE_SIZE} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />}
     </div>
   );
 }

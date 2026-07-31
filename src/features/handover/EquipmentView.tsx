@@ -1,10 +1,8 @@
-// SiteTrack Pro — Equipment Register (/equipment).
-// Heavy machinery and tools per project. Gated by material:add capability.
-
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listEquipment, createEquipment, deleteEquipment, type Equipment, type EquipmentOwnership } from "@/app/siteOpsQueries";
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
@@ -67,6 +65,27 @@ export function EquipmentView(): JSX.Element {
     setName(""); setAssetNo(""); setEqType(""); setRate("");
   };
 
+  const columns: Column<Equipment>[] = [
+    {
+      key: "detail", header: "Equipment", className: "flex-1 min-w-0",
+      sortable: true,
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={statusTone(r.status)}>{r.status.replace("_", " ")}</Badge>{r.name}{r.assetNo ? ` (${r.assetNo})` : ""}</div>
+          <div className="text-[11px] text-fg-tertiary">{[r.type, r.ownership, r.ratePerDay ? `₹${r.ratePerDay}/day` : ""].filter(Boolean).join(" · ")}{r.operatorName ? ` · Op: ${r.operatorName}` : ""}</div>
+        </div>
+      ),
+    },
+    ...(canEdit ? [{
+      key: "actions" as const, header: "", className: "flex-shrink-0",
+      render: (r: Equipment) => (
+        <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEquipment(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
+          <Icon name="trash" size={14} className="text-error" />
+        </Button>
+      ),
+    }] : []),
+  ];
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Equipment Register</h1>
@@ -90,20 +109,7 @@ export function EquipmentView(): JSX.Element {
               <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
             </Card>
           )}
-          {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-            : rows.length === 0 ? <div className="text-sm text-fg-secondary">No equipment registered.</div>
-            : <div className="space-y-2">{rows.map(r => (
-                <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={statusTone(r.status)}>{r.status.replace("_", " ")}</Badge>{r.name}{r.assetNo ? ` (${r.assetNo})` : ""}</div>
-                    <div className="text-[11px] text-fg-tertiary">{[r.type, r.ownership, r.ratePerDay ? `₹${r.ratePerDay}/day` : ""].filter(Boolean).join(" · ")}{r.operatorName ? ` · Op: ${r.operatorName}` : ""}</div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEquipment(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
-                  </div>
-                </Card>))}
-            </div>
-          }
+          <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No equipment registered." />
         </>
       )}
     </div>

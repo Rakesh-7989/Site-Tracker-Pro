@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, AccessDenied, Icon } from "@/components/ui/atoms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { requestPlanUpgrade } from "@/app/upgradeQueries";
 import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, PLAN_SEATS, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/orgAdminQueries";
 import { useT } from "@/i18n/I18nProvider";
@@ -164,7 +165,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
                 </div>
                 <p className="text-sm text-fg-secondary">Are you sure you want to cancel your subscription? You will lose access to paid features at the end of the billing period.</p>
                 {actionResult && <Alert variant={actionResult.ok ? "success" : "danger"}>{actionResult.message}</Alert>}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {actionResult?.ok ? (
                     <Button size="sm" onClick={() => { setAction(null); setActionResult(null); }}>Done</Button>
                   ) : (
@@ -185,34 +186,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
           {/* â”€â”€ Billing history â”€â”€ */}
           <Card className="p-5">
             <div className="text-xs text-fg-tertiary uppercase tracking-wider mb-3">{t("billing.billingHistory")}</div>
-            {(!billing?.billingHistory || billing.billingHistory.length === 0) ? (
-              <div className="text-sm text-fg-secondary">{t("billing.noHistory")}</div>
-            ) : (
-              <div className="overflow-x-auto"><table className="w-full text-sm">
-                <thead>
-                  <tr className="text-[11px] text-fg-tertiary uppercase tracking-wider">
-                    <th className="text-left pb-2 font-medium">Date</th>
-                    <th className="text-right pb-2 font-medium">Amount</th>
-                    <th className="text-right pb-2 font-medium">Status</th>
-                    <th className="text-right pb-2 font-medium" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-default">
-                  {billing.billingHistory.map((bh: BillingHistoryItem) => (
-                    <tr key={bh.id} className="text-fg-primary">
-                      <td className="py-2 text-left">{fmtDate(bh.paidAt)}</td>
-                      <td className="py-2 text-right font-medium">{fmtMoney(bh.amount, bh.currency)}</td>
-                      <td className="py-2 text-right"><Badge tone={bh.status === "success" ? "success" : bh.status === "pending" ? "warning" : "neutral"}>{bh.status}</Badge></td>
-                      <td className="py-2 text-right">
-                        {bh.invoiceUrl ? (
-                          <a href={bh.invoiceUrl} target="_blank" rel="noreferrer" className="text-accent hover:text-accent-2 text-[11px] underline">Invoice</a>
-                        ) : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table></div>
-            )}
+          <DataTable columns={BILLING_COLUMNS} rows={billing?.billingHistory ?? []} rowKey={r => r.id} emptyMessage={t("billing.noHistory")} />
           </Card>
 
           {/* â”€â”€ Request upgrade card â”€â”€ */}
@@ -222,6 +196,13 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
     </div>
   );
 }
+
+const BILLING_COLUMNS: Column<BillingHistoryItem>[] = [
+  { key: "date", header: "Date", className: "flex-1 min-w-0", render: r => <span className="text-sm text-fg-primary">{fmtDate(r.paidAt)}</span> },
+  { key: "amount", header: "Amount", className: "flex-shrink-0 font-medium", render: r => <span className="text-sm">{fmtMoney(r.amount, r.currency)}</span> },
+  { key: "status", header: "Status", className: "flex-shrink-0", render: r => <Badge tone={r.status === "success" ? "success" : r.status === "pending" ? "warning" : "neutral"}>{r.status}</Badge> },
+  { key: "invoice", header: "", className: "flex-shrink-0", render: r => r.invoiceUrl ? <a href={r.invoiceUrl} target="_blank" rel="noreferrer" className="text-accent hover:text-accent-2 text-[11px] underline">Invoice</a> : <span className="text-sm text-fg-tertiary">\u2014</span> },
+];
 
 const ORDER = ["free", "basic", "pro", "business", "enterprise", "custom"];
 const UPGRADE_TARGETS = ["pro", "business", "enterprise"];
@@ -274,7 +255,7 @@ function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan
             <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.noteLabel")}</span>
             <input value={note} onChange={e => setNote(e.target.value)} placeholder={t("billing.notePlaceholder")} className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm bg-panel" />
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button onClick={submit} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? t("billing.sending") : t("billing.sendRequest")}</Button>
             <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>{t("billing.cancel")}</Button>
           </div>
