@@ -22,10 +22,10 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
-  primary: "bg-accent hover:bg-accent-2 text-white shadow-cta border border-transparent",
+  primary: "bg-accent hover:bg-accent-2 text-inverse shadow-cta border border-transparent",
   secondary: "bg-panel hover:bg-elevated text-fg-primary border border-default hover:border-stronger",
   ghost: "bg-transparent hover:bg-elevated text-fg-primary border border-transparent",
-  danger: "bg-error hover:bg-error-dark text-white border border-transparent",
+  danger: "bg-error hover:bg-error-dark text-inverse border border-transparent",
 };
 const BTN_SIZE: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-xs gap-1.5 rounded-md",
@@ -153,7 +153,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps): JSX.Elemen
       )}
       style={{ boxShadow: `inset 3px 0 0 0 ${c.bar}` }}
     >
-      <span className={cn("w-1.5 h-1.5 rounded-full", c.dot)} />
+      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.dot }} />
       {(status || "").replace(/_/g, " ")}
     </span>
   );
@@ -170,12 +170,12 @@ export interface AlertProps {
 }
 
 const ALERT: Record<AlertVariant, { bg: string; text: string; bar: string }> = {
-  neutral: { bg: "bg-elevated", text: "text-fg-primary", bar: "#5A5248" },
-  info: { bg: "bg-info-tint", text: "text-info", bar: "#1E40AF" },
-  success: { bg: "bg-success-tint", text: "text-success", bar: "#047857" },
-  warning: { bg: "bg-accent-tint", text: "text-warning", bar: "#B45309" },
-  danger: { bg: "bg-error-tint", text: "text-error", bar: "#BE123C" },
-  accent: { bg: "bg-accent-tint", text: "text-accent-2", bar: "#FF6B1A" },
+  neutral: { bg: "bg-elevated", text: "text-fg-primary", bar: "var(--st-text-secondary)" },
+  info: { bg: "bg-info-tint", text: "text-info", bar: "var(--st-indigo)" },
+  success: { bg: "bg-success-tint", text: "text-success", bar: "var(--st-success)" },
+  warning: { bg: "bg-accent-tint", text: "text-warning", bar: "var(--st-warning)" },
+  danger: { bg: "bg-error-tint", text: "text-error", bar: "var(--st-error)" },
+  accent: { bg: "bg-accent-tint", text: "text-accent-2", bar: "var(--st-accent)" },
 };
 
 export function Alert({ children, variant = "neutral", icon, className }: AlertProps): JSX.Element {
@@ -222,7 +222,7 @@ export function Avatar({ initials, size = "md", accent = "orange", role, classNa
   return (
     <div className={cn(
       AV_SIZE[size], AV_BG[resolvedAccent],
-      "rounded-lg flex items-center justify-center text-white font-semibold flex-shrink-0 ring-1 ring-black/10",
+      "rounded-lg flex items-center justify-center text-inverse font-semibold flex-shrink-0 ring-1 ring-black/10",
       className,
     )}>
       {initials.slice(0, 2).toUpperCase()}

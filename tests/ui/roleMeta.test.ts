@@ -42,7 +42,7 @@ describe("statusColors", () => {
     for (const s of KNOWN_STATUSES) {
       const c = statusColors(s);
       expect(c.bg).toMatch(/^bg-/);
-      expect(c.bar).toMatch(/^#/);
+      expect(c.bar).toMatch(/^var\(--st-/);
     }
   });
 

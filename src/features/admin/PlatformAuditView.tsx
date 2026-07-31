@@ -1,10 +1,8 @@
-﻿// SiteTrack Pro — Platform Audit Log admin view.
-
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listAuditEvents, type AuditEvent } from "@/app/platformAuditQueries";
-
 
 import { getClient } from "@/lib/supabase";
 function fmtTime(iso: string): string {
@@ -12,6 +10,25 @@ function fmtTime(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
+
+const COLUMNS: Column<AuditEvent>[] = [
+  {
+    key: "time", header: "Time", className: "flex-shrink-0",
+    render: r => <span className="text-xs text-fg-secondary font-mono">{fmtTime(r.time)}</span>,
+  },
+  {
+    key: "user", header: "User", hideOnMobile: true, className: "flex-shrink-0",
+    render: r => <span className="text-xs font-semibold">{r.by}<span className="text-fg-tertiary font-normal ml-1">· {r.role}</span></span>,
+  },
+  {
+    key: "type", header: "Type", className: "flex-shrink-0",
+    render: r => <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-secondary text-fg-secondary">{r.type}</span>,
+  },
+  {
+    key: "action", header: "Action", className: "flex-1 min-w-0",
+    render: r => <span className="text-xs text-fg-primary truncate"><strong>{r.action}</strong>{r.detail ? ` — ${r.detail}` : ""}</span>,
+  },
+];
 
 export function PlatformAuditView(): JSX.Element {
   const can = useCan("platform:audit:read:cross-org");
@@ -50,25 +67,7 @@ export function PlatformAuditView(): JSX.Element {
         </select>
       </div>
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-secondary text-xs font-bold uppercase tracking-wider text-fg-secondary border-b border-default">
-            <div className="col-span-4 md:col-span-2">Time</div>
-            <div className="hidden md:block md:col-span-2">User</div>
-            <div className="col-span-3 md:col-span-2">Type</div>
-            <div className="col-span-5 md:col-span-6">Action</div>
-          </div>
-          <div className="divide-y divide-default max-h-[60vh] overflow-y-auto">
-            {filtered.map(e => (
-              <div key={e.id} className="grid grid-cols-12 gap-3 px-5 py-3 text-sm hover:bg-secondary">
-                <div className="col-span-4 md:col-span-2 text-xs text-fg-secondary font-mono">{fmtTime(e.time)}</div>
-                <div className="hidden md:block md:col-span-2 text-xs font-semibold">{e.by}<span className="text-fg-tertiary font-normal ml-1">· {e.role}</span></div>
-                <div className="col-span-3 md:col-span-2"><span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-secondary text-fg-secondary">{e.type}</span></div>
-                <div className="col-span-5 md:col-span-6 text-xs text-fg-primary truncate"><strong>{e.action}</strong>{e.detail ? ` — ${e.detail}` : ""}</div>
-              </div>
-            ))}
-            {filtered.length === 0 && <div className="p-8 text-center text-fg-secondary italic">No events.</div>}
-          </div>
-        </div>
+        <DataTable columns={COLUMNS} rows={filtered} rowKey={r => r.id} emptyMessage="No events." />
       </Card>
     </div>
   );

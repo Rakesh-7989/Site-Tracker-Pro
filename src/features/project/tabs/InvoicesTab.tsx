@@ -1,12 +1,10 @@
-﻿// SiteTrack Pro — project Invoices tab (v3 port, Batch 3, DB-wired).
-
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listInvoices, createInvoice, setInvoiceStatus, deleteInvoice, fmtRupees, type Invoice, type InvoiceStatus } from "@/app/financeQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "sent", label: "Sent" }, { value: "paid", label: "Paid" }, { value: "overdue", label: "Overdue" }, { value: "cancelled", label: "Cancelled" }];
@@ -40,6 +38,32 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     setNo(""); setAmount("");
   };
 
+  const columns: Column<Invoice>[] = [
+    {
+      key: "detail", header: "Invoice", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.amount)}</div>
+          <div className="text-[11px] text-fg-tertiary">{r.issuedDate ? `Issued ${r.issuedDate}` : ""} · GST {r.gst}% · TDS {r.tds}%</div>
+        </div>
+      ),
+    },
+    {
+      key: "status", header: "Status", className: "flex-shrink-0",
+      render: r => canApprove ? (
+        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as InvoiceStatus; void run(`s-${r.id}`, c => setInvoiceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+      ) : <Badge tone={tone(r.status)}>{r.status}</Badge>,
+    },
+    ...(canCreate ? [{
+      key: "actions" as const, header: "", className: "flex-shrink-0",
+      render: (r: Invoice) => (
+        <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteInvoice(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
+          <Icon name="trash" size={14} className="text-error" />
+        </Button>
+      ),
+    }] : []),
+  ];
+
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-fg-primary">Invoices</h2>
@@ -52,18 +76,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
           <span className="text-[11px] text-fg-tertiary ml-auto self-center">GST 18% · TDS 2% applied</span>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No invoices raised.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.amount)}</div>
-                <div className="text-[11px] text-fg-tertiary">{r.issuedDate ? `Issued ${r.issuedDate}` : ""} · GST {r.gst}% · TDS {r.tds}%</div></div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as InvoiceStatus; void run(`s-${r.id}`, c => setInvoiceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
-                  : <Badge tone={tone(r.status)}>{r.status}</Badge>}
-                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteInvoice(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
-              </div>
-            </Card>))}</div>}
+      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No invoices raised." />
     </div>
   );
 }

@@ -40,14 +40,14 @@ export function BottomNav(): JSX.Element {
   if (items.length === 0) return <></>;
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-panel border-t border-default safe-area-bottom">
-      <div className="flex items-center justify-around px-2 py-1">
+      <div className="flex items-center justify-around px-2 py-1 overflow-x-auto scrollbar-hide">
         {items.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === "/dashboard"}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-lg transition min-w-0 ${
+              `flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg transition shrink-0 ${
                 isActive
                   ? "text-accent"
                   : "text-fg-tertiary hover:text-fg-secondary"
@@ -55,7 +55,7 @@ export function BottomNav(): JSX.Element {
             }
           >
             <Icon name={item.icon} size={20} />
-            <span className="text-[10px] font-semibold leading-tight">{item.label}</span>
+            <span className="text-[10px] font-semibold leading-tight whitespace-nowrap">{item.label}</span>
           </NavLink>
         ))}
       </div>

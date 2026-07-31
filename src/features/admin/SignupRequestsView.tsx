@@ -1,14 +1,11 @@
-﻿// SiteTrack Pro — superadmin signup queue (/admin/signups). Review pending
-// signup requests: approve (creates org + invites the applicant) or reject.
-
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useCan, useAuth } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listSignupRequests, reviewSignupRequest, markSignupPaid, createCheckoutLink, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
 import { listStaff, assignSignupRequest, type StaffMember } from "@/app/staffQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
 const FILTERS = [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "all", label: "All" }];
 const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
@@ -16,7 +13,6 @@ const statusTone = (s: SignupStatus): "neutral" | "warning" | "success" | "dange
 const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 const PAY_TONE: Record<string, "warning" | "success" | "neutral"> = { unpaid: "warning", paid: "success", waived: "neutral" };
 const PAY_LABEL: Record<string, string> = { unpaid: "Payment due", paid: "Paid", waived: "Waived" };
-// 24h provisioning SLA — clock starts at payment confirmation.
 function slaText(r: SignupRequestRow): { text: string; over: boolean } | null {
   if (r.status !== "pending" || r.paymentStatus === "unpaid" || !r.paidAt) return null;
   const hrs = Math.round((new Date(r.paidAt).getTime() + 24 * 3600 * 1000 - Date.now()) / 3600000);
@@ -38,7 +34,6 @@ function Inner(): JSX.Element {
   const [notice, setNotice] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState("");
-  // Staff routing (owner/head only): load the roster + assign requests to a staff.
   const { session } = useAuth();
   const isOwner = session?.user.staffTier === "owner";
   const canAssign = session?.user.staffTier === "owner" || session?.user.staffTier === "head";
@@ -114,8 +109,99 @@ function Inner(): JSX.Element {
     setRejecting(null); setRejectNote(""); await reload(); setBusy(null);
   };
 
+  const columns: Column<SignupRequestRow>[] = [
+    {
+      key: "firm", header: "Firm", className: "flex-1 min-w-0",
+      render: r => (
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-fg-primary text-sm">{r.firmName}</span>
+            <Badge tone="info">{PLAN_LABEL[r.plan] ?? r.plan}</Badge>
+            <Badge tone={statusTone(r.status)}>{r.status}</Badge>
+            {r.status === "pending" && <Badge tone={PAY_TONE[r.paymentStatus]}>{PAY_LABEL[r.paymentStatus]}</Badge>}
+            {(() => { const s = slaText(r); return s ? <span className={`text-[11px] font-semibold ${s.over ? "text-error" : "text-warning"}`}>⏱ {s.text}</span> : null; })()}
+          </div>
+          <div className="text-xs text-fg-secondary mt-0.5">{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ""}</div>
+          {r.message && <div className="text-[11px] text-fg-secondary mt-0.5 italic truncate">"{r.message}"</div>}
+          <div className="text-[10px] text-fg-tertiary mt-0.5">{fmtDate(r.createdAt)}{r.reviewNotes ? ` · note: ${r.reviewNotes}` : ""}</div>
+        </div>
+      ),
+    },
+    {
+      key: "payment", header: "Payment", hideOnMobile: true, className: "flex-shrink-0",
+      render: r => r.status === "pending" ? (
+        <div className="space-y-1">
+          {r.paymentStatus === "unpaid" ? (
+            <>
+              <div className="flex gap-1 flex-wrap">
+                <Button size="sm" variant="secondary" disabled={busy === r.id}
+                  onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied — share it with ${r.email}.`); }}>
+                  UPI
+                </Button>
+                <Button size="sm" variant="ghost" disabled={busy === r.id}
+                  onClick={() => void sendPayLink(r)}>
+                  Cashfree
+                </Button>
+              </div>
+              <div className="flex gap-1 flex-wrap">
+                {isOwner ? (
+                  <>
+                    <Button size="sm" variant="secondary" disabled={busy === r.id}
+                      onClick={() => void markPaid(r, "paid")}>
+                      Mark paid
+                    </Button>
+                    <Button size="sm" variant="ghost" disabled={busy === r.id}
+                      onClick={() => void markPaid(r, "waived")}>
+                      Waive
+                    </Button>
+                  </>
+                ) : <span className="text-[11px] text-fg-secondary">Owner must confirm payment.</span>}
+              </div>
+              {r.paymentRef && <span className="text-[10px] text-fg-secondary block">claim UTR: {r.paymentRef}</span>}
+            </>
+          ) : (
+            <div>
+              <span className="text-xs text-fg-primary">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
+              {isOwner && <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>}
+            </div>
+          )}
+        </div>
+      ) : <span className="text-xs text-fg-secondary">{PAY_LABEL[r.paymentStatus] ?? r.paymentStatus}</span>,
+    },
+    ...(canAssign ? [{
+      key: "assigned" as const, header: "Staff", hideOnMobile: true, className: "flex-shrink-0",
+      render: (r: SignupRequestRow) => (
+        <Select className="w-40" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
+          onChange={e => void assign(r, e.target.value)}
+          options={[{ value: "", label: "— Unassigned —" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
+      ),
+    }] : []),
+    {
+      key: "actions", header: "", className: "flex-shrink-0",
+      render: r => (
+        <div className="space-y-1">
+          {r.status === "pending" && (
+            <div className="flex gap-1">
+              <Button size="sm" variant="secondary"
+                onClick={() => { setRejecting(rejecting === r.id ? null : r.id); setRejectNote(""); }}
+                disabled={busy === r.id}>Reject</Button>
+              <Button size="sm" onClick={() => void approve(r)} disabled={busy === r.id || !canApprove(r)}
+                title={approveTitle(r)}>{busy === r.id ? <Spinner size={14} /> : "Approve"}</Button>
+            </div>
+          )}
+          {rejecting === r.id && (
+            <div className="flex gap-1 items-center">
+              <Input className="w-28" value={rejectNote} onChange={e => setRejectNote(e.target.value)} placeholder="Reason" />
+              <Button size="sm" variant="secondary" onClick={() => void doReject(r)} disabled={busy === r.id}>Confirm</Button>
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+    <div className="max-w-6xl mx-auto space-y-4 p-4 md:p-6">
       <Alert variant="info">
         Self-service registration is live at <b>/register</b>. Firms can now create their own workspace
         directly. This queue is for legacy/paid-plan requests only.
@@ -128,64 +214,9 @@ function Inner(): JSX.Element {
       {notice && <Alert variant="success">{notice}</Alert>}
 
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
-        : rows.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-fg-secondary"><Icon name="mail" size={24} className="mx-auto text-fg-tertiary mb-2" />No {filter === "all" ? "" : filter} requests.</Card>
-        ) : <div className="space-y-2">{rows.map(r => (
-          <Card key={r.id} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-fg-primary">{r.firmName}</span>
-                  <Badge tone="info">{PLAN_LABEL[r.plan] ?? r.plan}</Badge>
-                  <Badge tone={statusTone(r.status)}>{r.status}</Badge>
-                  {r.status === "pending" && <Badge tone={PAY_TONE[r.paymentStatus]}>{PAY_LABEL[r.paymentStatus]}</Badge>}
-                  {(() => { const s = slaText(r); return s ? <span className={`text-[11px] font-semibold ${s.over ? "text-error" : "text-warning"}`}>â± {s.text}</span> : null; })()}
-                </div>
-                <div className="text-sm text-fg-secondary mt-0.5">{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ""}</div>
-                {r.message && <div className="text-[12px] text-fg-secondary mt-1 italic">"{r.message}"</div>}
-                <div className="text-[11px] text-fg-tertiary mt-1">{fmtDate(r.createdAt)}{r.reviewNotes ? ` · note: ${r.reviewNotes}` : ""}</div>
-              </div>
-              {r.status === "pending" && (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Button size="sm" variant="secondary" onClick={() => { setRejecting(rejecting === r.id ? null : r.id); setRejectNote(""); }} disabled={busy === r.id}>Reject</Button>
-                  <Button size="sm" onClick={() => void approve(r)} disabled={busy === r.id || !canApprove(r)} title={approveTitle(r)}>{busy === r.id ? <Spinner size={14} /> : "Approve"}</Button>
-                </div>
-              )}
-            </div>
-            {canAssign && (
-              <div className="mt-3 flex items-center gap-2 border-t border-default pt-3 flex-wrap">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Handled by</span>
-                <Select className="w-56" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
-                  onChange={e => void assign(r, e.target.value)}
-                  options={[{ value: "", label: "— Unassigned —" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
-              </div>
-            )}
-            {r.status === "pending" && (
-              <div className="mt-2 flex items-center gap-2 flex-wrap text-[12px]">
-                <span className="text-fg-tertiary font-semibold">Payment:</span>
-                {r.paymentStatus === "unpaid" ? (<>
-                  <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied — share it with ${r.email}.`); }}>Copy UPI link</Button>
-                  <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void sendPayLink(r)}>Cashfree link</Button>
-                  {isOwner ? (<>
-                    <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => void markPaid(r, "paid")}>Mark received</Button>
-                    <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "waived")}>Waive</Button>
-                  </>) : <span className="text-fg-secondary">Owner must confirm payment.</span>}
-                  {r.paymentRef && <span className="text-fg-secondary">claim UTR: {r.paymentRef}</span>}
-                </>) : (<>
-                  <span className="text-fg-primary">{PAY_LABEL[r.paymentStatus]}{r.paidAt ? ` · ${fmtDate(r.paidAt)}` : ""}{r.paymentRef ? ` · ref ${r.paymentRef}` : ""}</span>
-                  {isOwner && <Button size="sm" variant="ghost" disabled={busy === r.id} onClick={() => void markPaid(r, "unpaid")}>Undo</Button>}
-                </>)}
-              </div>
-            )}
-            {rejecting === r.id && (
-              <div className="mt-3 flex gap-2 items-end border-t border-default pt-3">
-                <div className="flex-1"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Reason (optional)</span>
-                  <Input className="mt-1" value={rejectNote} onChange={e => setRejectNote(e.target.value)} placeholder="Why is this being rejected?" /></div>
-                <Button size="sm" variant="secondary" onClick={() => void doReject(r)} disabled={busy === r.id}>Confirm reject</Button>
-              </div>
-            )}
-          </Card>
-        ))}</div>}
+        : <Card className="overflow-hidden">
+            <DataTable columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No ${filter === "all" ? "" : filter} requests.`} />
+          </Card>}
     </div>
   );
 }

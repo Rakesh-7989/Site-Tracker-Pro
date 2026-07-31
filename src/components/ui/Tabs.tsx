@@ -19,7 +19,7 @@ export interface TabsProps {
 
 const TAB_ACTIVE: Record<string, string> = {
   underline: "text-accent border-accent",
-  pills: "bg-accent text-white shadow-cta",
+  pills: "bg-accent text-inverse shadow-cta",
 };
 
 const TAB_INACTIVE: Record<string, string> = {
@@ -93,7 +93,7 @@ export function Tabs({ tabs, activeTab, onChange, variant = "underline", classNa
               {tab.count != null && (
                 <span className={cn(
                   "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
-                  isActive ? "bg-white/20 text-white" : "bg-elevated text-fg-secondary",
+                  isActive ? "bg-white/20 text-inverse" : "bg-elevated text-fg-secondary",
                 )}>
                   {tab.count}
                 </span>

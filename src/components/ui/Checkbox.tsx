@@ -27,7 +27,7 @@ export function Checkbox({ checked, onChange, label, disabled, error, className,
             : "bg-bg-primary border-default hover:border-fg-tertiary",
           error && "border-error",
         )}>
-          {checked && <Icon name="check" size={11} className="text-white" />}
+          {checked && <Icon name="check" size={11} className="text-inverse" />}
         </div>
         <input
           id={inputId}

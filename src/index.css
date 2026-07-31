@@ -20,6 +20,7 @@
   --st-text-primary:   #0F1115;
   --st-text-secondary: #5A5248;
   --st-text-tertiary:  #8E887C;
+  --st-text-inverse:   #FFFFFF;
 
   /* Accents */
   --st-accent:        #FF6B1A;  /* safety orange — primary CTA + active */
@@ -54,7 +55,7 @@
   --st-yellow-tint:   #FEF9C3;
   --st-blue-tint:     #DBEAFE;
   --st-emerald-tint:  #D1FAE5;
-  --st-orange-tint-100: #FFEDD5;
+  --st-orange-tint: #FFEDD5;
   --st-violet-tint-100: #EDE9FE;
   --st-ink:           #292524;
 
@@ -112,6 +113,7 @@
   --st-text-primary:   #EDEDEF;
   --st-text-secondary: #A0A2A8;
   --st-text-tertiary:  #6B6E76;
+  --st-text-inverse:   #FFFFFF;
 
   --st-accent:        #FF8A3D;
   --st-accent-rgb:    255, 138, 61;
@@ -145,7 +147,7 @@
   --st-yellow-tint:   rgba(251,191,36,0.12);
   --st-blue-tint:     rgba(96,165,250,0.15);
   --st-emerald-tint:  rgba(52,211,153,0.15);
-  --st-orange-tint-100: rgba(255,138,61,0.15);
+  --st-orange-tint: rgba(255,138,61,0.15);
   --st-violet-tint-100: rgba(167,139,250,0.18);
   --st-ink:           #292524;
 
@@ -352,6 +354,7 @@ button.bg-orange-500, button.bg-orange-400 {
 .text-fg-primary   { color: var(--st-text-primary); }
 .text-fg-secondary { color: var(--st-text-secondary); }
 .text-fg-tertiary  { color: var(--st-text-tertiary); }
+.text-inverse      { color: var(--st-text-inverse); }
 .border-default    { border-color: var(--st-border); }
 .border-accent     { border-color: var(--st-accent); }
 .divide-default > * + * { border-color: var(--st-border); }
@@ -386,7 +389,7 @@ button.bg-orange-500, button.bg-orange-400 {
 .bg-blue-tint      { background-color: var(--st-blue-tint); }
 .bg-indigo-tint    { background-color: var(--st-indigo-tint); }
 .bg-emerald-tint   { background-color: var(--st-emerald-tint); }
-.bg-orange-tint-100 { background-color: var(--st-orange-tint-100); }
+.bg-orange-tint { background-color: var(--st-orange-tint); }
 .bg-violet-tint-100 { background-color: var(--st-violet-tint-100); }
 .bg-ink            { background-color: var(--st-ink); }
 .text-cream        { color: var(--st-cream); }
@@ -400,6 +403,9 @@ button.bg-orange-500, button.bg-orange-400 {
 .bg-warning-tint { background-color: var(--st-warning-tint); }
 .text-warning    { color: var(--st-warning); }
 .border-warning  { border-color: var(--st-warning); }
+
+.border-info { border-color: var(--st-indigo); }
+.border-violet { border-color: var(--st-violet); }
 
 /* Semantic status — error (rose/red) */
 .bg-error-tint   { background-color: var(--st-error-tint); }

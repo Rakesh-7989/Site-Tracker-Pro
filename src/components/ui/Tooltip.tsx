@@ -33,7 +33,7 @@ export function Tooltip({ content, children, position = "top", className }: Tool
         POSITION[position],
         className,
       )}>
-        <div className="bg-ink text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg whitespace-nowrap">
+        <div className="bg-ink text-inverse text-[11px] font-medium px-2.5 py-1.5 rounded-lg whitespace-nowrap">
           {content}
         </div>
         <div className={cn("absolute", ARROW[position])} />

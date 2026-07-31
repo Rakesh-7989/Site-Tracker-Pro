@@ -1,18 +1,14 @@
-// SiteTrack Pro — Measurement Book (/measurement-book).
-// Append-only BOQ measurement entries. Gated by boq:edit capability.
-
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listMeasurementBook, createMbEntry, setMbStatus, type MbEntry, type MbStatus } from "@/app/siteOpsQueries";
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 
 const STATUS_OPTS = [{ value: "recorded", label: "Recorded" }, { value: "verified", label: "Verified" }, { value: "billed", label: "Billed" }, { value: "disputed", label: "Disputed" }, { value: "cancelled", label: "Cancelled" }];
 const UNIT_OPTS = [{ value: "cum", label: "Cu.m" }, { value: "sqm", label: "Sq.m" }, { value: "rmt", label: "Rmt" }, { value: "nos", label: "Nos" }, { value: "kg", label: "Kg" }, { value: "lump", label: "Lump" }];
-const statusTone = (s: MbStatus): "neutral" | "success" | "info" | "danger" | "warning" =>
-  s === "verified" ? "success" : s === "billed" ? "info" : s === "disputed" || s === "cancelled" ? "danger" : "neutral";
 
 export function MeasurementBookView(): JSX.Element {
   const canView = useCan("boq:edit");
@@ -82,6 +78,28 @@ export function MeasurementBookView(): JSX.Element {
 
   const totalAmount = rows.reduce((s, r) => s + (r.amount ?? 0), 0);
 
+  const columns: Column<MbEntry>[] = [
+    {
+      key: "detail", header: "Entry", className: "flex-1 min-w-0",
+      sortable: true,
+      render: r => (
+        <div>
+          <div className="text-sm font-semibold text-fg-primary truncate">{r.mbNo}{r.pageNo ? ` / p.${r.pageNo}` : ""} &mdash; {r.description}</div>
+          <div className="text-[11px] text-fg-tertiary">
+            {[r.location, r.unit ? `${r.qty} ${r.unit}` : `${r.qty}`].filter(Boolean).join(" · ")}
+            {r.rate ? ` @ ₹${r.rate}` : ""}{r.amount != null ? ` = ₹${r.amount.toLocaleString("en-IN")}` : ""}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "status", header: "Status", className: "flex-shrink-0",
+      render: r => canEdit ? (
+        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MbStatus; void run(`s-${r.id}`, c => setMbStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
+      ) : <span className="text-xs text-fg-secondary">{r.status}</span>,
+    },
+  ];
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Measurement Book</h1>
@@ -115,24 +133,7 @@ export function MeasurementBookView(): JSX.Element {
               </div>
             </Card>
           )}
-          {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-            : rows.length === 0 ? <div className="text-sm text-fg-secondary">No entries.</div>
-            : <div className="space-y-2">{rows.map(r => (
-                <Card key={r.id} className="p-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-fg-primary truncate">{r.mbNo}{r.pageNo ? ` / p.${r.pageNo}` : ""} &mdash; {r.description}</div>
-                    <div className="text-[11px] text-fg-tertiary">
-                      {[r.location, r.unit ? `${r.qty} ${r.unit}` : `${r.qty}`].filter(Boolean).join(" · ")}
-                      {r.rate ? ` @ ₹${r.rate}` : ""}{r.amount != null ? ` = ₹${r.amount.toLocaleString("en-IN")}` : ""}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MbStatus; void run(`s-${r.id}`, c => setMbStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
-                      : <Badge tone={statusTone(r.status)}>{r.status}</Badge>}
-                  </div>
-                </Card>))}
-            </div>
-          }
+          <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No entries." />
         </>
       )}
     </div>
