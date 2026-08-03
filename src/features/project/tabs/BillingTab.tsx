@@ -299,13 +299,25 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
               <h3 className="font-semibold text-fg-primary">Generated invoices</h3>
               <div className="space-y-1.5">
                 {generated.map(i => (
-                  <div key={i.id} className="flex items-center justify-between gap-2 text-sm">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-semibold text-fg-primary truncate">{i.no}</span>
-                      <Badge tone={SOURCE_TONE[i.source ?? "phase"]}>{i.source ?? "manual"}</Badge>
-                      <span className="text-fg-tertiary">{i.periodFrom ?? ""}{i.periodTo ? ` → ${i.periodTo}` : ""}</span>
+                  <div key={i.id}>
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-semibold text-fg-primary truncate">{i.no}</span>
+                        <Badge tone={SOURCE_TONE[i.source ?? "phase"]}>{i.source ?? "manual"}</Badge>
+                        <span className="text-fg-tertiary">{i.periodFrom ?? ""}{i.periodTo ? ` → ${i.periodTo}` : ""}</span>
+                      </div>
+                      <span className="font-semibold text-fg-primary flex-shrink-0">{fmtRupees(i.amount)} · {i.status}</span>
                     </div>
-                    <span className="font-semibold text-fg-primary flex-shrink-0">{fmtRupees(i.amount)} · {i.status}</span>
+                    {i.lines.length > 0 && (
+                      <div className="ml-6 mt-0.5 space-y-0.5 border-l border-default pl-3">
+                        {i.lines.map(l => (
+                          <div key={l.id} className="flex items-center justify-between gap-2 text-[11px] text-fg-secondary">
+                            <span className="truncate">{l.description}{l.qty !== 1 ? ` × ${l.qty}` : ""}</span>
+                            <span className="font-mono text-fg-primary flex-shrink-0">{fmtRupees(l.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

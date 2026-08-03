@@ -14,6 +14,18 @@ const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
 const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: String(e.message ?? e) });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapOrgLines(raw: unknown): { id: string; description: string; qty: number; unitPrice: number; amount: number }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(l => {
+    const r = l as Record<string, unknown>;
+    return {
+      id: String(r.id ?? ""), description: String(r.description ?? ""),
+      qty: Number(r.qty ?? 0), unitPrice: Number(r.unit_price ?? 0), amount: Number(r.amount ?? 0),
+    };
+  });
+}
+
 /** Aggregate of the approved + billable + unbilled time entries in a project. */
 export interface UnbilledSummary {
   hours: number;
@@ -90,7 +102,7 @@ export async function listOrgInvoices(client: any, projectIds: readonly string[]
     if (projectIds.length === 0) return ok([]);
     const { data, error } = await client
       .from("invoices")
-      .select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id, project_id")
+      .select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id, project_id, invoice_lines(id, description, qty, unit_price, amount)")
       .in("project_id", projectIds)
       .order("issued_date", { ascending: false });
     if (error) return dbe(error);
@@ -106,6 +118,7 @@ export async function listOrgInvoices(client: any, projectIds: readonly string[]
       retainerId: r.retainer_id == null ? null : String(r.retainer_id),
       phaseId: r.phase_id == null ? null : String(r.phase_id),
       projectId: String(r.project_id ?? ""),
+      lines: mapOrgLines(r.invoice_lines),
     })));
   } catch (e) { return er(e); }
 }
