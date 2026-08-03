@@ -43,6 +43,28 @@ describe("FEATURE_MIN_PLAN + labels", () => {
       expect(PLAN_FEATURE_LABEL[f]).toBeTruthy();
     }
   });
+  it("v4 segment features resolve at the planned tiers", () => {
+    expect(FEATURE_MIN_PLAN.time_tracking).toBe("pro");
+    expect(FEATURE_MIN_PLAN.fee_billing).toBe("pro");
+    expect(FEATURE_MIN_PLAN.deliverables).toBe("pro");
+    expect(FEATURE_MIN_PLAN.review_rounds).toBe("pro");
+    expect(FEATURE_MIN_PLAN.ffe).toBe("pro");
+    expect(FEATURE_MIN_PLAN.statutory).toBe("business");
+    expect(FEATURE_MIN_PLAN.utilization).toBe("business");
+    expect(FEATURE_MIN_PLAN.procurement).toBe("business");
+    // deny-by-default still applies to the new flags
+    expect(hasPlanCap({ fee_billing: true }, "time_tracking")).toBe(false);
+    expect(hasPlanCap({ time_tracking: true }, "time_tracking")).toBe(true);
+  });
+  it("v4 C2 billing features resolve at Pro with deny-by-default", () => {
+    expect(FEATURE_MIN_PLAN.rate_cards).toBe("pro");
+    expect(FEATURE_MIN_PLAN.time_approval).toBe("pro");
+    expect(FEATURE_MIN_PLAN.retainer_billing).toBe("pro");
+    expect(FEATURE_MIN_PLAN.hourly_billing).toBe("pro");
+    // present but off unless explicitly true
+    expect(hasPlanCap({ rate_cards: true }, "hourly_billing")).toBe(false);
+    expect(hasPlanCap({ hourly_billing: true }, "hourly_billing")).toBe(true);
+  });
   it("plan rank orders correctly", () => {
     expect(PLAN_RANK.basic).toBeLessThan(PLAN_RANK.pro);
     expect(PLAN_RANK.pro).toBeLessThan(PLAN_RANK.business);

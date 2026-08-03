@@ -32,7 +32,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     if (!no.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createInvoice(c, { projectId, no: no.trim(), amount: amt }), {
-      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: 18, tds: 2, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10) }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: 18, tds: 2, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10), source: null, periodFrom: null, periodTo: null, retainerId: null, phaseId: null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setNo(""); setAmount("");

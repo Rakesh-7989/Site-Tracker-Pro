@@ -115,4 +115,27 @@ COMMENT ON VIEW public.role_catalog IS
 
 GRANT SELECT ON public.role_catalog TO authenticated, anon;
 
+-- ── Capability ↔ RLS gate map (v4 C1 + C2, comment-only) ──────────────────
+-- Policies in 137_time_entries / 138_fee_phases / 139_deliverables /
+-- 141_rate_cards_time_approval / 142_retainers_invoice_generation are
+-- ROLE-BASED (manager lists + project membership) and do NOT reference
+-- capabilities. The identifiers below are the capabilities in
+-- src/auth/capabilities.ts that gate the same actions in the UI — kept as
+-- comments so the capability catalog stays single-sourced and drift-checkable
+-- (step 4 of the capabilities.ts checklist).
+--
+--   time_entries  (insert/update/delete)  → time:log, time:manage, time:approve
+--   fee_phases    (manager write)          → phase:manage
+--   deliverables  (member write / manager delete) → deliverable:manage, deliverable:approve
+--   review_rounds (member write / manager close)  → review:comment, review:manage
+--   utilization report (org)               → utilization:view
+--   rate_cards    (manager write)          → rate:manage
+--   retainers     (manager write)          → retainer:manage
+--   invoices source tags / generation RPCs → billing:generate
+--   revenue report (org)                   → revenue:view
+--
+-- RLS gap note: invoices / retainers / rate_cards read gates are project
+-- membership-based; org-wide rollups (utilization/revenue) therefore only
+-- surface projects the caller is already a member of — by design.
+
 COMMIT;

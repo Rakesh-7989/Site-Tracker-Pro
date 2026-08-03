@@ -8,6 +8,7 @@
 import type { AuthSession } from "@/auth";
 import { capabilitiesAnywhere } from "@/auth";
 import type { Capability } from "@/auth";
+import type { CompanySegment } from "@/auth";
 import type { IconName } from "@/components/ui/icons";
 
 export interface NavItem {
@@ -42,6 +43,13 @@ export interface NavItem {
    * The value is the STUB_VIEWS id from src/lib/featureFlags.js.
    */
   stubId?: string;
+  /**
+   * v4 company-segment gate (migration 134). When set, the item is shown ONLY
+   * to orgs whose segment is in this list. Orthogonal to `requires` — both
+   * must pass. Absent = visible to every segment. When the active org has no
+   * segment (legacy orgs), segment-gated items stay hidden.
+   */
+  segments?: ReadonlyArray<CompanySegment>;
 }
 
 /**
@@ -77,6 +85,8 @@ export const NAV_CATALOG: NavItem[] = [
    { to: "/delegations", label: "Delegations", icon: "users", requires: "org:approvals:manage", group: "Org Admin" },
 
   { to: "/analytics", label: "Analytics", icon: "barChart", requires: "budget:view", group: "Insights" },
+  { to: "/utilization", label: "Utilization", icon: "trend", requires: "utilization:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights" },
+  { to: "/revenue", label: "Revenue", icon: "wallet", requires: "revenue:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights" },
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },
   { to: "/audit", label: "Audit Log", icon: "shield", requires: "audit:read", group: "Insights" },
 
@@ -123,8 +133,10 @@ export const NAV_CATALOG: NavItem[] = [
  * guards still re-check with the precise context.
  *
  * @param session   the current auth session (null → empty nav)
+ * @param catalog   the nav catalog to filter (defaults to NAV_CATALOG; tests
+ *                  inject synthetic segment-gated items)
  */
-export function buildNav(session: AuthSession | null): NavItem[] {
+export function buildNav(session: AuthSession | null, catalog: NavItem[] = NAV_CATALOG): NavItem[] {
   if (!session) return [];
   const caps = capabilitiesAnywhere(session);
   const tier = session.user.staffTier ?? null;
@@ -150,14 +162,19 @@ export function buildNav(session: AuthSession | null): NavItem[] {
       } catch { return false; }
     })();
 
-  return NAV_CATALOG.filter(item => {
+  // Active org's segment (migration 134) — segment-gated nav items resolve
+  // against this. Legacy orgs (null segment) hide segment-gated items.
+  const activeSegment = session.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
+
+  return catalog.filter(item => {
     const capOk = item.requiresAny
       ? item.requiresAny.some(c => caps.has(c))
       : !item.requires || caps.has(item.requires);
     return capOk &&
     (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))) &&
     (!item.area || !isMember || areas.length === 0 || areas.includes(item.area)) &&
-    (!item.stubId || isStaff);
+    (!item.stubId || isStaff) &&
+    (!item.segments || (activeSegment !== null && item.segments.includes(activeSegment)));
   });
 }
 

@@ -236,3 +236,136 @@ describe("Session gap fixes — prospector messaging", () => {
     expect(caps).toContain("whatsapp:send" as never);
   });
 });
+
+// ── v4 C1 consultancy capabilities (2026-07-31) ──────────────────────────────
+// Fee phases + billable time + deliverables + review rounds + utilization.
+// Contributor tier: log time / create deliverables / comment on reviews.
+// Manager tier: manage time+phases, approve deliverables, manage reviews,
+// view utilization (heads + pm + project_admin + orgadmin).
+const C1_CONTRIBUTOR = ["time:log", "deliverable:manage", "review:comment"] as const;
+const C1_MANAGER = [
+  "time:manage", "phase:manage", "deliverable:approve", "review:manage", "utilization:view",
+] as const;
+const C1_CONTRIBUTOR_ROLES = [
+  "architect", "senior_architect", "junior_architect", "design_architect_interior",
+  "designer", "consultant", "mep_consultant", "structural_consultant",
+] as const;
+const C1_MANAGER_ROLES = ["design_head", "consultant_head", "pm", "project_admin"] as const;
+
+describe("v4 C1 — consultancy capability assignment (identity tier)", () => {
+  for (const role of C1_CONTRIBUTOR_ROLES) {
+    it(`${role} is a consultancy contributor`, () => {
+      const caps = identityCapabilities(role);
+      for (const c of C1_CONTRIBUTOR) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    });
+  }
+  for (const role of C1_MANAGER_ROLES) {
+    it(`${role} is a consultancy manager (contributor + manager caps)`, () => {
+      const caps = identityCapabilities(role);
+      for (const c of C1_CONTRIBUTOR) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+      for (const c of C1_MANAGER) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    });
+  }
+  it("orgadmin is a consultancy manager", () => {
+    const caps = identityCapabilities("orgadmin");
+    for (const c of [...C1_CONTRIBUTOR, ...C1_MANAGER]) {
+      expect(caps, `cap=${c}`).toContain(c as never);
+    }
+  });
+  it("client can comment on review rounds but cannot manage/approve", () => {
+    const caps = identityCapabilities("client");
+    expect(caps).toContain("review:comment" as never);
+    expect(caps).not.toContain("review:manage" as never);
+    expect(caps).not.toContain("deliverable:approve" as never);
+    expect(caps).not.toContain("time:log" as never);
+  });
+});
+
+describe("v4 C1 — consultancy capability assignment (project tier)", () => {
+  it("mirrors the identity-tier assignment on a project", () => {
+    for (const role of C1_CONTRIBUTOR_ROLES) {
+      const caps = projectTierCapabilities(role);
+      for (const c of C1_CONTRIBUTOR) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    }
+    for (const role of C1_MANAGER_ROLES) {
+      const caps = projectTierCapabilities(role);
+      for (const c of C1_MANAGER) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    }
+  });
+  it("client (project) can comment on review rounds but not manage", () => {
+    const caps = projectTierCapabilities("client");
+    expect(caps).toContain("review:comment" as never);
+    expect(caps).not.toContain("review:manage" as never);
+  });
+});
+
+describe("v4 C1 — no dead capabilities", () => {
+  it("each new cap is granted to at least one identity role", () => {
+    for (const cap of [...C1_CONTRIBUTOR, ...C1_MANAGER]) {
+      const granted = IDENTITY_ROLES.some(r => identityCapabilities(r).includes(cap as never));
+      expect(granted, `cap=${cap}`).toBe(true);
+    }
+  });
+  it("each new cap is denied to at least one identity role", () => {
+    for (const cap of [...C1_CONTRIBUTOR, ...C1_MANAGER]) {
+      const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
+      expect(denied, `cap=${cap}`).toBe(true);
+    }
+  });
+});
+
+// ── v4 C2 consultancy billing capabilities (2026-07-31) ──────────────────────
+// Rate cards + time-entry approval + retainer/hourly invoice generation.
+// Manager tier only (heads + pm + project_admin + orgadmin); contributors log
+// pending time but cannot approve, bill, or set rates; client sees none.
+const C2_MANAGER = [
+  "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+] as const;
+const C2_MANAGER_ROLES = ["design_head", "consultant_head", "pm", "project_admin"] as const;
+
+describe("v4 C2 — billing capability assignment (identity tier)", () => {
+  for (const role of C2_MANAGER_ROLES) {
+    it(`${role} holds all C2 billing caps`, () => {
+      const caps = identityCapabilities(role);
+      for (const c of C2_MANAGER) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    });
+  }
+  it("orgadmin holds all C2 billing caps", () => {
+    const caps = identityCapabilities("orgadmin");
+    for (const c of C2_MANAGER) expect(caps, `cap=${c}`).toContain(c as never);
+  });
+  it("contributors get no C2 billing caps (log time, managers bill)", () => {
+    for (const role of [...C1_CONTRIBUTOR_ROLES, "client", "site_engineer", "contractor"] as const) {
+      const caps = identityCapabilities(role);
+      for (const c of C2_MANAGER) expect(caps, `role=${role} cap=${c}`).not.toContain(c as never);
+    }
+  });
+});
+
+describe("v4 C2 — billing capability assignment (project tier)", () => {
+  it("mirrors the identity-tier assignment on a project", () => {
+    for (const role of C2_MANAGER_ROLES) {
+      const caps = projectTierCapabilities(role);
+      for (const c of C2_MANAGER) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    }
+  });
+  it("client (project) holds no C2 billing caps", () => {
+    const caps = projectTierCapabilities("client");
+    for (const c of C2_MANAGER) expect(caps, `cap=${c}`).not.toContain(c as never);
+  });
+});
+
+describe("v4 C2 — no dead capabilities", () => {
+  it("each C2 cap is granted to at least one identity role", () => {
+    for (const cap of C2_MANAGER) {
+      const granted = IDENTITY_ROLES.some(r => identityCapabilities(r).includes(cap as never));
+      expect(granted, `cap=${cap}`).toBe(true);
+    }
+  });
+  it("each C2 cap is denied to at least one identity role", () => {
+    for (const cap of C2_MANAGER) {
+      const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
+      expect(denied, `cap=${cap}`).toBe(true);
+    }
+  });
+});

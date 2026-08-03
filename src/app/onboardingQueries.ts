@@ -1,8 +1,16 @@
 // SiteTrack Pro — org onboarding queries.
 
+import type { CompanySegment, ProjectType } from "@/auth";
+
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-export interface OrgDetails { id: string; name: string; contact_email: string; }
+export interface OrgDetails {
+  id: string;
+  name: string;
+  contact_email: string;
+  /** Company segment (migration 134); null until the owner picks one. */
+  segment: CompanySegment | null;
+}
 
 /** Gets the current user's org id and details. */
 export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; org: OrgDetails | null }>> {
@@ -13,16 +21,20 @@ export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; or
       .select("org_id").eq("profile_id", uid).limit(1).maybeSingle();
     if (omErr) return { ok: false, error: String(omErr.message ?? omErr) };
     if (!om?.org_id) return { ok: false, error: "No org membership." };
-    const { data: org } = await client.from("orgs")
-      .select("id, name, contact_email").eq("id", om.org_id).maybeSingle();
+    const { data: org } = await client.from("organizations")
+      .select("id, name, contact_email, segment").eq("id", om.org_id).maybeSingle();
     return { ok: true, data: { orgId: om.org_id, org: org ?? null } };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function updateOrg(client: any, orgId: string, name: string, contactEmail: string): Promise<PResult<void>> {
+export async function updateOrg(
+  client: any, orgId: string, name: string, contactEmail: string, segment?: CompanySegment | null,
+): Promise<PResult<void>> {
   try {
-    const { error } = await client.from("orgs")
-      .update({ name: name.trim(), contact_email: contactEmail.trim() }).eq("id", orgId);
+    const patch: Record<string, unknown> = { name: name.trim(), contact_email: contactEmail.trim() };
+    if (segment) patch.segment = segment;
+    const { error } = await client.from("organizations")
+      .update(patch).eq("id", orgId);
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: undefined };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
@@ -40,12 +52,12 @@ export async function insertOrgMembers(
 }
 
 export async function createProject(
-  client: any, orgId: string, name: string, clientName: string, startDate: string,
+  client: any, orgId: string, name: string, clientName: string, startDate: string, type: ProjectType = "construction",
 ): Promise<PResult<void>> {
   try {
     const { error } = await client.from("projects").insert({
       org_id: orgId, name: name.trim(), client_name: clientName.trim(),
-      start_date: startDate, status: "active", progress: 0,
+      start_date: startDate, status: "active", progress: 0, type,
     });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: undefined };

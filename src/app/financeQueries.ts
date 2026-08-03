@@ -48,21 +48,36 @@ export const deletePO = (client: any, id: string) => del(client, "purchase_order
 
 // ── Invoices ──────────────────────────────────────────────────────────────
 export type InvoiceStatus = "sent" | "paid" | "overdue" | "cancelled";
-export interface Invoice { id: string; no: string; amount: number; gst: number; tds: number; status: InvoiceStatus; issuedDate: string | null; }
+/** Source of a generated invoice (v4 C2). phase = fee_phases, hourly/retainer = billing engine. */
+export type InvoiceSource = "phase" | "hourly" | "retainer";
+export interface Invoice {
+  id: string; no: string; amount: number; gst: number; tds: number;
+  status: InvoiceStatus; issuedDate: string | null;
+  source: InvoiceSource | null; periodFrom: string | null; periodTo: string | null;
+  retainerId: string | null; phaseId: string | null;
+}
 const asInv = oneOf<InvoiceStatus>(["sent", "paid", "overdue", "cancelled"], "sent");
+const asSource = oneOf<InvoiceSource>(["phase", "hourly", "retainer"], "phase");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listInvoices(client: any, projectId: string): Promise<Result<Invoice[]>> {
   try {
-    const { data, error } = await client.from("invoices").select("id, no, amount, gst, tds, status, issued_date").eq("project_id", projectId).order("issued_date", { ascending: false });
+    const { data, error } = await client.from("invoices").select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id").eq("project_id", projectId).order("issued_date", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), no: String(r.no ?? ""), amount: Number(r.amount ?? 0), gst: Number(r.gst ?? 0), tds: Number(r.tds ?? 0), status: asInv(r.status), issuedDate: r.issued_date == null ? null : String(r.issued_date) })));
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      id: String(r.id), no: String(r.no ?? ""), amount: Number(r.amount ?? 0), gst: Number(r.gst ?? 0), tds: Number(r.tds ?? 0), status: asInv(r.status), issuedDate: r.issued_date == null ? null : String(r.issued_date),
+      source: r.source == null ? null : asSource(r.source),
+      periodFrom: r.period_from == null ? null : String(r.period_from),
+      periodTo: r.period_to == null ? null : String(r.period_to),
+      retainerId: r.retainer_id == null ? null : String(r.retainer_id),
+      phaseId: r.phase_id == null ? null : String(r.phase_id),
+    })));
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createInvoice(client: any, input: { projectId: string; no: string; amount: number; gst?: number; tds?: number }): Promise<Result<{ id: string }>> {
+export async function createInvoice(client: any, input: { projectId: string; no: string; amount: number; gst?: number; tds?: number; phaseId?: string | null }): Promise<Result<{ id: string }>> {
   try {
-    const { data, error } = await client.from("invoices").insert({ project_id: input.projectId, no: input.no, amount: input.amount, gst: input.gst ?? 18, tds: input.tds ?? 2, issued_date: new Date().toISOString().slice(0, 10) }).select("id").single();
+    const { data, error } = await client.from("invoices").insert({ project_id: input.projectId, no: input.no, amount: input.amount, gst: input.gst ?? 18, tds: input.tds ?? 2, phase_id: input.phaseId ?? null, issued_date: new Date().toISOString().slice(0, 10) }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
 }

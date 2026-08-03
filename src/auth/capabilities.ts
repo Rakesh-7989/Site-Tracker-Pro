@@ -101,6 +101,23 @@ export const CAPABILITIES = [
   "gstn:file",
   "epfo:file",
 
+  // ── Consultancy (v4 C1: fee phases + billable time + deliverables) ───────
+  "phase:manage",           // create/edit/delete fixed-fee phases + amounts
+  "time:log",               // log one's own billable time entries
+  "time:manage",            // edit/delete any project time entry
+  "deliverable:manage",     // create/edit deliverables
+  "deliverable:approve",    // approve / reject / issue a deliverable
+  "review:comment",         // comment on a deliverable review round
+  "review:manage",          // open / close review rounds
+  "utilization:view",       // view fee vs billed-hours utilization reports
+
+  // ── Consultancy billing (v4 C2: rate cards + time approval + retainer/hourly) ──
+  "rate:manage",          // manage project rate cards (member hourly rates)
+  "time:approve",         // approve / reject submitted time entries
+  "retainer:manage",      // create / edit / delete monthly retainers
+  "billing:generate",     // generate hourly / retainer invoices from approved time
+  "revenue:view",         // view org-level revenue / billing rollups
+
   // ── Communications ───────────────────────────────────────────────────────
   "message:send",
   "notification:configure",

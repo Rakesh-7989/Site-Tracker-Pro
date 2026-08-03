@@ -74,6 +74,16 @@ describe("Project types", () => {
   it("design does NOT include site_engineer (no construction on design projects)", () => {
     expect(VALID_PROJECT_ROLES_BY_TYPE.design).not.toContain("site_engineer");
   });
+  it("design + consultant accept specialist consultants (v4 C1)", () => {
+    for (const t of ["design", "consultant"] as const) {
+      expect(VALID_PROJECT_ROLES_BY_TYPE[t]).toContain("mep_consultant");
+      expect(VALID_PROJECT_ROLES_BY_TYPE[t]).toContain("structural_consultant");
+      expect(VALID_PROJECT_ROLES_BY_TYPE[t]).not.toContain("site_engineer");
+    }
+    expect(VALID_PROJECT_ROLES_BY_TYPE.consultant).toContain("consultant_head");
+    expect(VALID_PROJECT_ROLES_BY_TYPE.consultant).toContain("consultant");
+    expect(VALID_PROJECT_ROLES_BY_TYPE.design).toContain("design_head");
+  });
 });
 
 describe("Type guards", () => {

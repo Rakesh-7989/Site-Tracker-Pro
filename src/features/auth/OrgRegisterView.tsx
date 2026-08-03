@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/auth";
+import { useAuth, SEGMENTS, type CompanySegment } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
@@ -32,6 +32,7 @@ export function OrgRegisterView(): JSX.Element {
 
   const [plan, setPlan] = useState<RegisterPlan>(initialPlan as RegisterPlan);
   const billing = initialBilling;
+  const [segment, setSegment] = useState<CompanySegment>("construction");
   const [firmName, setFirmName] = useState("");
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
@@ -61,6 +62,7 @@ export function OrgRegisterView(): JSX.Element {
       contactName: contactName.trim(),
       phone: phone.trim() || undefined,
       plan,
+      segment,
       consentVersion: CONSENT_VERSION,
     });
     setBusy(false);
@@ -104,6 +106,26 @@ export function OrgRegisterView(): JSX.Element {
         <div className="text-center mb-6">
           <h1 className="font-display text-3xl font-bold">Create your workspace</h1>
           <p className="text-sm text-fg-secondary mt-1">No approval needed — start using SiteTrack Pro right away</p>
+        </div>
+
+        {/* Company segment (v4 C0) */}
+        <div className="mb-8">
+          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary mb-2">What does your company do?</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {SEGMENTS.map(s => {
+              const active = segment === s;
+              return (
+                <button key={s} type="button" onClick={() => setSegment(s)}
+                  className={`text-left p-3 rounded-xl border-2 transition relative ${active ? "border-accent bg-panel shadow-sm" : "border-default bg-panel hover:border-default"}`}>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="font-display font-bold text-sm leading-tight">{t(`segment.label.${s}`)}</div>
+                    {active && <Icon name="check" size={14} className="text-accent shrink-0" />}
+                  </div>
+                  <div className="text-[10px] text-fg-tertiary mt-0.5 leading-snug">{t(`segment.tagline.${s}`)}</div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Plan selector */}

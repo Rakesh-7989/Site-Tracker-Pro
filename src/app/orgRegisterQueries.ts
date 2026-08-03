@@ -1,5 +1,7 @@
 // SiteTrack Pro — self-service org registration queries.
 
+import type { CompanySegment } from "@/auth";
+
 export type RegisterPlan = "basic" | "pro" | "business";
 export interface RegisterInput {
   email: string;
@@ -8,6 +10,8 @@ export interface RegisterInput {
   contactName: string;
   phone?: string;
   plan: RegisterPlan;
+  /** What kind of company this org is (migration 134). */
+  segment: CompanySegment;
   consentVersion?: string;
 }
 export type RegisterResult = { ok: true; orgId: string; emailSent: boolean } | { ok: false; error: string };

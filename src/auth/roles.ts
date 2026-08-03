@@ -117,11 +117,13 @@ export const VALID_PROJECT_ROLES_BY_TYPE: Record<ProjectType, ReadonlyArray<Proj
   ],
   design: [
     "design_head", "architect", "designer",
+    "mep_consultant", "structural_consultant",
     "project_admin",
     "client",
   ],
   consultant: [
     "consultant_head", "architect", "consultant",
+    "mep_consultant", "structural_consultant",
     "project_admin",
     "client",
   ],

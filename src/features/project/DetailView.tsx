@@ -46,6 +46,11 @@ import { FieldOpsTab } from "./tabs/FieldOpsTab";
 import { GanttTab } from "./tabs/GanttTab";
 import { ApprovalsTab } from "./tabs/ApprovalsTab";
 import { MessagesTab } from "./tabs/MessagesTab";
+import { PhasesTab } from "./tabs/PhasesTab";
+import { TimeTab } from "./tabs/TimeTab";
+import { DeliverablesTab } from "./tabs/DeliverablesTab";
+import { ReviewRoundsTab } from "./tabs/ReviewRoundsTab";
+import { BillingTab } from "./tabs/BillingTab";
 
 export function DetailView(): JSX.Element {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
@@ -80,8 +85,10 @@ export function DetailView(): JSX.Element {
   const tabs = useMemo(() => {
     if (state.kind !== "ready") return [];
     // planCan hides Pro+ tabs (finance/rfi/estimate/etc) on lower plans.
-    return visibleTabs(caps, state.project.type, planCan);
-  }, [caps, state, planCan]);
+    // activeSegment gates v4 segment-specific tabs (migration 134).
+    const activeSegment = session?.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
+    return visibleTabs(caps, state.project.type, planCan, activeSegment);
+  }, [caps, state, planCan, session]);
 
   if (state.kind === "loading") {
     return <div className="grid place-items-center py-20 text-accent"><Spinner size={26} /></div>;
@@ -176,6 +183,11 @@ export function DetailView(): JSX.Element {
         {activeId === "gantt" && <GanttTab projectId={project.id} />}
         {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
         {activeId === "messages" && <MessagesTab projectId={project.id} />}
+        {activeId === "phases" && <PhasesTab projectId={project.id} />}
+        {activeId === "time" && <TimeTab projectId={project.id} />}
+        {activeId === "deliverables" && <DeliverablesTab projectId={project.id} />}
+        {activeId === "reviews" && <ReviewRoundsTab projectId={project.id} />}
+        {activeId === "billing" && <BillingTab projectId={project.id} />}
       </div>
     </div>
   );

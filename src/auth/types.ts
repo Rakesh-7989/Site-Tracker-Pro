@@ -13,6 +13,7 @@
 
 import type { IdentityRole, ProjectTierRole, ProjectType, ConstructionIndustry } from "./roles";
 import type { Capability } from "./capabilities";
+import type { CompanySegment } from "./segmentConfig";
 
 /** Canonical user identity. */
 export interface AuthUser {
@@ -50,6 +51,11 @@ export interface OrgMembership {
   orgId: string;
   orgName: string;
   orgSlug: string;
+  /**
+   * What kind of company this org is (migration 134). Null for legacy orgs
+   * that haven't picked a segment yet — treat as "all segments".
+   */
+  segment: CompanySegment | null;
   isAdmin: boolean;
   joinedAt: string;   // ISO timestamp
 }

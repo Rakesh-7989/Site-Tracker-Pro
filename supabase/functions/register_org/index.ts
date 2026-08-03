@@ -21,6 +21,7 @@ const json = (data: unknown, status: number): Response =>
   new Response(JSON.stringify(data), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
 const VALID_PLANS = ["basic", "pro", "business"] as const;
+const VALID_SEGMENTS = ["construction", "architecture", "interior", "consultancy", "multiple"] as const;
 const ROLE_LABEL: Record<string, string> = {
   orgadmin: "Firm Owner",
 };
@@ -100,11 +101,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const phone = body.phone ? String(body.phone).trim() : null;
   const plan = String(body.plan ?? "basic");
   const consentVersion = body.consentVersion ? String(body.consentVersion).trim() : null;
+  // Company segment (v4 C0, migration 134). Optional for back-compat with
+  // older clients; when present it MUST be a known segment. Legacy rows keep
+  // segment = null until the owner picks one in onboarding.
+  const segment = body.segment ? String(body.segment).trim() : null;
 
   if (!email || !email.includes("@")) return json({ ok: false, error: "invalid-email" }, 400);
   if (password.length < 8) return json({ ok: false, error: "password-too-short" }, 400);
   if (!firmName) return json({ ok: false, error: "firm-name-required" }, 400);
   if (!VALID_PLANS.includes(plan as typeof VALID_PLANS[number])) return json({ ok: false, error: "invalid-plan" }, 400);
+  if (segment && !VALID_SEGMENTS.includes(segment as typeof VALID_SEGMENTS[number])) {
+    return json({ ok: false, error: "invalid-segment" }, 400);
+  }
 
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -136,7 +144,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // 2. Create org
   const { data: orgData, error: orgErr } = await admin
     .from("organizations")
-    .insert({ slug: slugify(firmName), name: firmName, plan })
+    .insert({ slug: slugify(firmName), name: firmName, plan, ...(segment ? { segment } : {}) })
     .select("id")
     .single();
 

@@ -54,12 +54,37 @@ describe("normalizeOrgMembership", () => {
       org_id: "o-1",
       is_admin: true,
       joined_at: "2026-01-01T00:00:00Z",
-      organizations: { id: "o-1", name: "Demo Builder", slug: "demo-builder" },
+      organizations: { id: "o-1", name: "Demo Builder", slug: "demo-builder", segment: "construction" },
     });
     expect(r).not.toBeNull();
     expect(r!.orgId).toBe("o-1");
     expect(r!.orgName).toBe("Demo Builder");
+    expect(r!.segment).toBe("construction");
     expect(r!.isAdmin).toBe(true);
+  });
+
+  it("reads a flat segment column when the join shape has none", () => {
+    const r = normalizeOrgMembership({
+      org_id: "o-1",
+      segment: "consultancy",
+      organizations: { id: "o-1", name: "Eng Co", slug: "eng-co" },
+    });
+    expect(r!.segment).toBe("consultancy");
+  });
+
+  it("coerces unknown / legacy-null segment to null (never rejects the row)", () => {
+    const unknown = normalizeOrgMembership({
+      org_id: "o-1",
+      segment: "realestate",
+      organizations: { id: "o-1", name: "X", slug: "x" },
+    });
+    expect(unknown!.segment).toBeNull();
+
+    const legacy = normalizeOrgMembership({
+      org_id: "o-1",
+      organizations: { id: "o-1", name: "X", slug: "x", segment: null },
+    });
+    expect(legacy!.segment).toBeNull();
   });
 
   it("returns null when the join is empty", () => {
@@ -99,8 +124,8 @@ describe("normalizeProjectMembership", () => {
 
 describe("pickActiveOrgId", () => {
   const orgs = [
-    { orgId: "o-1", orgName: "A", orgSlug: "a", isAdmin: true, joinedAt: "2026-01-01" },
-    { orgId: "o-2", orgName: "B", orgSlug: "b", isAdmin: false, joinedAt: "2026-01-01" },
+    { orgId: "o-1", orgName: "A", orgSlug: "a", segment: null, isAdmin: true, joinedAt: "2026-01-01" },
+    { orgId: "o-2", orgName: "B", orgSlug: "b", segment: null, isAdmin: false, joinedAt: "2026-01-01" },
   ];
   it("honors preferred when it matches a membership", () => {
     expect(pickActiveOrgId(orgs, "o-2")).toBe("o-2");
@@ -122,7 +147,7 @@ describe("buildAuthSession", () => {
     const session = buildAuthSession(
       user,
       [
-        { org_id: "o-1", is_admin: true, joined_at: "2026-01-01", organizations: { id: "o-1", name: "A", slug: "a" } },
+        { org_id: "o-1", is_admin: true, joined_at: "2026-01-01", organizations: { id: "o-1", name: "A", slug: "a", segment: "construction" } },
         { org_id: "o-bad", joined_at: "x", organizations: { id: "o-bad", name: "", slug: "b" } },
       ],
       [
@@ -133,6 +158,7 @@ describe("buildAuthSession", () => {
     );
     expect(session.orgs.length).toBe(1);
     expect(session.orgs[0]!.orgId).toBe("o-1");
+    expect(session.orgs[0]!.segment).toBe("construction");
     expect(session.projectMemberships.length).toBe(1);
     expect(session.activeOrgId).toBe("o-1");
   });
@@ -197,7 +223,7 @@ describe("fetchAuthSession", () => {
       profiles: async () => ({ data: { id: "u-1", name: "R", role: "architect", avatar: null, is_staff: false }, error: null }),
       org_members: async () => ({
         data: [
-          { org_id: "o-1", role: "admin", joined_at: "2026-01-01", organizations: { id: "o-1", name: "Demo", slug: "demo" } },
+          { org_id: "o-1", role: "admin", joined_at: "2026-01-01", organizations: { id: "o-1", name: "Demo", slug: "demo", segment: "consultancy" } },
         ],
         error: null,
       }),
@@ -213,6 +239,7 @@ describe("fetchAuthSession", () => {
     if (r.ok) {
       expect(r.session.user.identityRole).toBe("architect");
       expect(r.session.orgs.length).toBe(1);
+      expect(r.session.orgs[0]!.segment).toBe("consultancy");
       expect(r.session.projectMemberships.length).toBe(1);
       expect(r.session.activeOrgId).toBe("o-1");
     }

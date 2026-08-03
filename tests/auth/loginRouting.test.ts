@@ -24,7 +24,7 @@ function session(overrides: Partial<AuthSession["user"]> = {}, activeOrgId: stri
       profileCompleted: true,
       ...overrides,
     },
-    orgs: activeOrgId ? [{ orgId: activeOrgId, orgName: "Org", orgSlug: "org", isAdmin: false, joinedAt: "now" }] : [],
+    orgs: activeOrgId ? [{ orgId: activeOrgId, orgName: "Org", orgSlug: "org", segment: null, isAdmin: false, joinedAt: "now" }] : [],
     activeOrgId,
     projectMemberships: [],
   };

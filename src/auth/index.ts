@@ -30,6 +30,16 @@ export {
 } from "./roles";
 
 export {
+  SEGMENTS,
+  SEGMENT_CONFIG,
+  isCompanySegment,
+  defaultProjectTypeFor,
+  segmentProjectTypes,
+  type CompanySegment,
+  type SegmentConfig,
+} from "./segmentConfig";
+
+export {
   CAPABILITIES,
   isCapability,
   capabilityDomain,
