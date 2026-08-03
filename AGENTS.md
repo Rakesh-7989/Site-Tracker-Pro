@@ -231,5 +231,25 @@ Turn approved consultancy time + monthly retainers into invoices. Rate cards giv
 - Migrations 140–142 are NOT re-runnable-mutating beyond idempotent guards; keep the C1 pattern (`if not exists`, drop-policy-if-exists) for any follow-ups.
 - Phase C3 candidates: per-phase utilization drill-down, deliverable file uploads (storage), invoice line items, scheduled (cron) retainer generation.
 
+## v4 Phase C3 — Consultancy Billing Depth (Complete, 2026-08-04)
+
+### Goal
+Deepen the C2 consultancy billing stack with per-phase time tracking, project-scoped utilization drill-down, deliverable file uploads, invoice line items, and fully automated retainer billing via pg_cron. Every step shipped with its own migration + frontend + tests + commit.
+
+### Done (C3.0–C3.4, all verified)
+- **C3.0+C3.1** commit `b98857f`: `time_entries.phase_id` (migration **144**, non-unique partial index, no new RLS policy); `buildPhaseRows` + `UNASSIGNED_PHASE_ID` in `utilizationQueries.ts`; UtilizationView drill-down + Unassigned bucket; `tests/app/c3Utilization.test.ts` (7). Also fixed pre-existing C2 TS errors (tabs-config icon, TimeTab Select/FeePhase, test fixtures).
+- **C3.2** commit `113e5d9`: migration **145** — private storage bucket `deliverables` (50 MB, id=name) + 4 RLS policies (read=member, insert=member minus client/vendor/sub_contractor, update=member, delete=managers+orgadmin incl. `has_project_role`); `src/app/deliverableStorageQueries.ts`; DeliverablesTab upload/download/delete UI + `upload` icon; `tests/app/c3DeliverableStorage.test.ts` (9). Root-cause findings: `storage.foldername()` returns `text[]` (index `[1]`, never pass to `string_to_array`); compare folder `text` against `user_project_ids()::text`.
+- **C3.3** commit `597a525`: migration **146** — `invoice_lines` table (description/qty/unit_price/amount bigint/sort_order, FK CASCADE, RLS read=member / write=managers+orgadmin) + both billing RPCs re-created to emit lines atomically (hourly = one line/member+rate via temp table `_hrly`; retainer = `coalesce(title,'Retainer')`, qty 1); `financeQueries.ts` `InvoiceLine` + `invoiceLinesTotal()`, `listInvoices`/`listOrgInvoices` embed lines; BillingTab + InvoicesTab render nested rows; `tests/app/c3InvoiceLines.test.ts` (6).
+- **C3.4** commit `397d2d8`: migration **147** `scripts/supabase/147_retainer_cron.sql` — SECURITY DEFINER `admin_generate_due_retainer_invoices()`: loops ACTIVE retainers whose `billing_day = day(now() AT TIME ZONE 'Asia/Kolkata')`, period = current month `[1st..last day]`, honours `start_date`/`end_date` bounds (out-of-range → `skipped_out_of_range`), idempotent via existing non-cancelled invoice check (`skipped_existing`), emits invoice `RTR-YYYYMM-md5` + line item, per-retainer exception isolation, returns outcome table; `GRANT` to **service_role only** (cron runs as postgres = owner; manual UI flow untouched); `cron.schedule('generate-due-retainers','5 2 * * *', ...)` (idempotent by name). Frontend: `autoBillingHint(billingDay)` pure helper in `retainerQueries.ts` + per-retainer "Auto-bills on day N each month" hint in BillingTab (active retainers only); `tests/app/c3RetainerCron.test.ts` (5).
+
+### Verification
+- Final C3.4 gate: `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` (4.65s) · `vitest` **104 files / 1326 tests** · `npm run smoke` **233 checks**.
+- **Live DB apply**: `npm run db:apply` → **108 passed / 28 failed** (28 = same benign pre-existing). 147 verified live via pg + functional probe: function exists, job `generate-due-retainers` (schedule `5 2 * * *`), grants svc=true/auth=false; end-to-end run generated invoice `RTR-202608-…` + line, re-run → `skipped_existing`, future-start retainer → `skipped_out_of_range`; test rows cleaned.
+
+### Notes / Follow-ups
+- **Cron timezone**: billing_day is interpreted in IST (`now() AT TIME ZONE 'Asia/Kolkata'`); job fires 02:05 UTC daily.
+- **C3.4 security posture**: the admin function is NOT callable by authenticated users (service_role grant only) — manual Generate keeps its manager gate. This blocks self-serve "run now"; acceptable per agreed scope.
+- **Roadmap complete**: C0→C3.4 all shipped, verified, committed. Next candidates (needs user go): org-wide cross-project rollups (utilization/revenue across all member projects), per-deliverable download audit, monthly statement PDF, push `prod` branch + live deploy.
+
 
 
