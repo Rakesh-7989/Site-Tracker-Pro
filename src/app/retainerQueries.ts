@@ -19,6 +19,13 @@ export const RETAINER_NEXT: Record<RetainerStatus, RetainerStatus | null> = {
   active: "paused", paused: "active", cancelled: null,
 };
 
+/** Auto-billing hint for active retainers (v4 C3.4 cron). */
+export function autoBillingHint(billingDay: number): string | null {
+  const b = Math.trunc(Number(billingDay) || 0);
+  if (b < 1 || b > 28) return null;
+  return `Auto-bills on day ${b} each month`;
+}
+
 export interface Retainer {
   id: string;
   projectId: string;

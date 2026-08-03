@@ -17,7 +17,7 @@ import { listInvoices, type Invoice, type InvoiceSource } from "@/app/financeQue
 import { listRateCards, upsertRateCard, deleteRateCard, type RateCard } from "@/app/rateCardQueries";
 import { listTimeEntries, type TimeEntry } from "@/app/timeQueries";
 import {
-  listRetainers, createRetainer, deleteRetainer, setRetainerStatus, RETAINER_NEXT,
+  listRetainers, createRetainer, deleteRetainer, setRetainerStatus, RETAINER_NEXT, autoBillingHint,
   type Retainer, type RetainerStatus,
 } from "@/app/retainerQueries";
 import {
@@ -231,6 +231,9 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
                             <div className="text-[11px] text-fg-tertiary">
                               {fmtRupees(r.monthlyAmount)}/mo · day {r.billingDay}
                             </div>
+                            {r.status === "active" && autoBillingHint(r.billingDay) && (
+                              <div className="mt-1 text-[11px] text-fg-tertiary">{autoBillingHint(r.billingDay)}</div>
+                            )}
                             {r.status === "active" && (
                               <div className="mt-1.5 flex items-center gap-1.5">
                                 <Input className="h-8 w-32" type="date" value={p.from} onChange={e => setGenPeriod(prev => ({ ...prev, [r.id]: { from: e.target.value, to: prev[r.id]?.to ?? p.to } }))} />
