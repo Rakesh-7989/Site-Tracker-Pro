@@ -137,51 +137,87 @@ export async function getOrgUtilization(client: any, orgId: string): Promise<Res
   } catch (e) { return er(e); }
 }
 
+const UNASSIGNED_PHASE_ID = "__unassigned__";
+
+/** Sort phases by fee descending so the heaviest commit lands first. */
+function phaseSort(a: UtilizationPhaseRow, b: UtilizationPhaseRow): number {
+  if (a.phaseId === UNASSIGNED_PHASE_ID) return 1;
+  if (b.phaseId === UNASSIGNED_PHASE_ID) return -1;
+  return b.feeAmount - a.feeAmount;
+}
+
+/**
+ * Build per-phase utilization rows for one project from raw phase + entry
+ * records. Billable entries without a phase_id roll into a single "Unassigned"
+ * bucket so effort isn't silently dropped from the drill-down. Pure — no
+ * client dependency, unit-testable.
+ */
+export function buildPhaseRows(
+  projectId: string,
+  projectName: string,
+  phases: Array<Record<string, unknown>>,
+  entries: Array<Record<string, unknown>>,
+): UtilizationPhaseRow[] {
+  const rows: UtilizationPhaseRow[] = [];
+
+  let unassignedHours = 0;
+  let unassignedValue = 0;
+
+  for (const p of phases) {
+    const phaseId = String(p.id);
+    const phaseTitle = String(p.title ?? "");
+    const feeAmount = Number(p.fee_amount ?? 0);
+    const phaseEntries = entries.filter(e => String(e.phase_id ?? "") === phaseId);
+
+    const loggedHours = phaseEntries
+      .filter(e => Boolean(e.billable))
+      .reduce((s, e) => s + Number(e.hours ?? 0), 0);
+
+    const billedValue = phaseEntries
+      .filter(e => Boolean(e.billable) && e.rate != null)
+      .reduce((s, e) => s + (Number(e.hours ?? 0) * Number(e.rate ?? 0)), 0);
+
+    const variance = feeAmount - billedValue;
+    const utilizationPct = feeAmount > 0 ? Math.round((billedValue / feeAmount) * 100) : 0;
+
+    rows.push({ projectId, projectName, phaseId, phaseTitle, feeAmount, loggedHours, billedValue, variance, utilizationPct });
+  }
+
+  const unassigned = entries.filter(e => Boolean(e.billable) && (e.phase_id == null || String(e.phase_id) === ""));
+  if (unassigned.length > 0) {
+    unassignedHours = unassigned.reduce((s, e) => s + Number(e.hours ?? 0), 0);
+    unassignedValue = unassigned
+      .filter(e => e.rate != null)
+      .reduce((s, e) => s + (Number(e.hours ?? 0) * Number(e.rate ?? 0)), 0);
+    rows.push({
+      projectId, projectName, phaseId: UNASSIGNED_PHASE_ID, phaseTitle: "Unassigned",
+      feeAmount: 0, loggedHours: unassignedHours, billedValue: unassignedValue,
+      variance: -unassignedValue, utilizationPct: 0,
+    });
+  }
+
+  return rows.sort(phaseSort);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getProjectUtilizationByPhase(client: any, projectId: string): Promise<Result<UtilizationPhaseRow[]>> {
   try {
-    const [phasesRes, entriesRes] = await Promise.all([
+    const [phasesRes, entriesRes, projectRes] = await Promise.all([
       client.from("fee_phases").select("id, project_id, title, fee_amount, status").eq("project_id", projectId),
       client.from("time_entries").select("id, project_id, hours, billable, rate, phase_id").eq("project_id", projectId),
+      client.from("projects").select("id, name").eq("id", projectId).maybeSingle(),
     ]);
     if (phasesRes.error) return dbe(phasesRes.error);
     if (entriesRes.error) return dbe(entriesRes.error);
+    if (projectRes.error) return dbe(projectRes.error);
 
-    const phases = (phasesRes.data ?? []) as Array<Record<string, unknown>>;
-    const entries = (entriesRes.data ?? []) as Array<Record<string, unknown>>;
-
-    const phaseRows: UtilizationPhaseRow[] = [];
-    for (const p of phases) {
-      const phaseId = String(p.id);
-      const phaseTitle = String(p.title ?? "");
-      const feeAmount = Number(p.fee_amount ?? 0);
-      const phaseEntries = entries.filter(e => String(e.phase_id ?? "") === phaseId);
-
-      const loggedHours = phaseEntries
-        .filter(e => Boolean(e.billable))
-        .reduce((s, e) => s + Number(e.hours ?? 0), 0);
-
-      const billedValue = phaseEntries
-        .filter(e => Boolean(e.billable) && e.rate != null)
-        .reduce((s, e) => s + (Number(e.hours ?? 0) * (e.rate ?? 0)), 0);
-
-      const variance = feeAmount - billedValue;
-      const utilizationPct = feeAmount > 0 ? Math.round((billedValue / feeAmount) * 100) : 0;
-
-      phaseRows.push({
-        projectId: String(p.project_id),
-        projectName: "", // Would need to fetch project name
-        phaseId,
-        phaseTitle,
-        feeAmount,
-        loggedHours,
-        billedValue,
-        variance,
-        utilizationPct,
-      });
-    }
-
-    return ok(phaseRows);
+    const projectName = (projectRes.data as { name?: string } | null)?.name ?? "";
+    return ok(buildPhaseRows(
+      projectId,
+      projectName,
+      (phasesRes.data ?? []) as Array<Record<string, unknown>>,
+      (entriesRes.data ?? []) as Array<Record<string, unknown>>,
+    ));
   } catch (e) { return er(e); }
 }
 
@@ -210,39 +246,32 @@ export async function getOrgUtilizationByPhase(client: any, orgId: string): Prom
     const phases = (phasesRes.data ?? []) as Array<Record<string, unknown>>;
     const entries = (entriesRes.data ?? []) as Array<Record<string, unknown>>;
 
-    const phaseRows: UtilizationPhaseRow[] = [];
+    // Group phases + entries per project, then run buildPhaseRows once per
+    // project so the Unassigned bucket is computed exactly once per project.
+    const phasesByProject = new Map<string, Array<Record<string, unknown>>>();
     for (const p of phases) {
-      const phaseId = String(p.id);
-      const projectId = String(p.project_id);
-      const projectName = projectNames.get(projectId) ?? "";
-      const phaseTitle = String(p.title ?? "");
-      const feeAmount = Number(p.fee_amount ?? 0);
-      const phaseEntries = entries.filter(e => String(e.phase_id ?? "") === phaseId);
-
-      const loggedHours = phaseEntries
-        .filter(e => Boolean(e.billable))
-        .reduce((s, e) => s + Number(e.hours ?? 0), 0);
-
-      const billedValue = phaseEntries
-        .filter(e => Boolean(e.billable) && e.rate != null)
-        .reduce((s, e) => s + (Number(e.hours ?? 0) * (e.rate ?? 0)), 0);
-
-      const variance = feeAmount - billedValue;
-      const utilizationPct = feeAmount > 0 ? Math.round((billedValue / feeAmount) * 100) : 0;
-
-      phaseRows.push({
-        projectId,
-        projectName,
-        phaseId,
-        phaseTitle,
-        feeAmount,
-        loggedHours,
-        billedValue,
-        variance,
-        utilizationPct,
-      });
+      const pid = String(p.project_id);
+      if (!phasesByProject.has(pid)) phasesByProject.set(pid, []);
+      phasesByProject.get(pid)!.push(p);
+    }
+    const entriesByProject = new Map<string, Array<Record<string, unknown>>>();
+    for (const e of entries) {
+      const pid = String(e.project_id);
+      if (!entriesByProject.has(pid)) entriesByProject.set(pid, []);
+      entriesByProject.get(pid)!.push(e);
     }
 
-    return ok(phaseRows);
+    const phaseRows: UtilizationPhaseRow[] = [];
+    for (const p of projects.data) {
+      phaseRows.push(...buildPhaseRows(
+        p.id,
+        projectNames.get(p.id) ?? p.name,
+        phasesByProject.get(p.id) ?? [],
+        entriesByProject.get(p.id) ?? [],
+      ));
+    }
+
+    const withData = phaseRows.filter(r => r.feeAmount > 0 || r.loggedHours > 0 || r.billedValue > 0);
+    return ok(withData.sort(phaseSort));
   } catch (e) { return er(e); }
 }

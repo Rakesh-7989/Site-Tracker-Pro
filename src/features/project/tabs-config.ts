@@ -64,7 +64,7 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "time",         label: "Time",          icon: "calendar",   requires: "time:log",           projectTypes: CONSULTANCY_TYPES, planFeature: "time_tracking" },
   { id: "deliverables", label: "Deliverables",  icon: "download",   requires: "deliverable:manage", projectTypes: CONSULTANCY_TYPES, planFeature: "deliverables" },
   { id: "reviews",      label: "Reviews",       icon: "refresh",    requires: "review:comment",     projectTypes: CONSULTANCY_TYPES, planFeature: "review_rounds" },
-  { id: "utilization",  label: "Utilization",   icon: "stat",       requires: "utilization:view",   projectTypes: CONSULTANCY_TYPES, planFeature: "utilization" },
+  { id: "utilization",  label: "Utilization",   icon: "barChart",   requires: "utilization:view",   projectTypes: CONSULTANCY_TYPES, planFeature: "utilization" },
 
   // Consultancy billing (v4 C2) — sections self-plan-gate (rate_cards /
   // retainer_billing / hourly_billing) inside BillingTab.

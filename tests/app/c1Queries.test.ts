@@ -20,7 +20,7 @@ function entry(over: Partial<TimeEntry>): TimeEntry {
     id: "t", profileId: "u", memberName: null, date: "2026-07-31",
     activity: "Work", hours: 1, billable: true, rate: null, notes: null,
     approvalStatus: "approved", approvedBy: null, approvedAt: null,
-    billed: false, billedInvoiceId: null, createdAt: "", ...over,
+    billed: false, billedInvoiceId: null, createdAt: "", phaseId: null, ...over,
   };
 }
 

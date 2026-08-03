@@ -16,7 +16,7 @@ import {
   billableHours, entryValue, type TimeEntry, type ApprovalStatus,
 } from "@/app/timeQueries";
 import { listRateCards, effectiveRate, type RateCard } from "@/app/rateCardQueries";
-import { listFeePhases, type FeePhase } from "@/app/phaseQueries";
+import { listFeePhases } from "@/app/phaseQueries";
 import { localDateISO } from "@/lib/dateLocal";
 
 const STATUS_TONE: Record<ApprovalStatus, "success" | "warning" | "danger"> = {
@@ -141,14 +141,7 @@ export function TimeTab({ projectId }: { projectId: string }): JSX.Element {
                   <input type="checkbox" className="accent-[var(--st-accent)]" checked={billable} onChange={e => setBillable(e.target.checked)} />
                   Billable
                 </label>
-                <Select className="w-48" value={phaseId || ""} onChange={(v) => setPhaseId(v as string || null)} placeholder="--- Phase (optional) ---">
-                  <option key="empty" value="">--- Phase (optional) ---</option>
-                  {phases.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
-                    </option>
-                  ))}
-                </Select>
+                <Select className="w-48" value={phaseId || ""} onChange={e => setPhaseId(e.target.value || null)} options={[{ value: "", label: "--- Phase (optional) ---" }, ...phases.map(p => ({ value: p.id, label: p.title }))]} />
                 <Button size="sm" onClick={() => void add()} disabled={busy === "add" || !activity.trim() || !hours.trim()}>{busy === "add" ? <Spinner size={14} /> : "Log time"}</Button>
               </div>
             </Card>

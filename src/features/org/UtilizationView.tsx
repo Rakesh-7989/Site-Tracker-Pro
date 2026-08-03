@@ -10,13 +10,12 @@
 // architecture / multiple-segment orgs (segments gate in nav-config).
 
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { getClient } from "@/lib/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
-import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
-import { getOrgUtilization, getOrgUtilizationByPhase, type UtilizationRow, type UtilizationPhaseRow } from "@/app/utilizationQueries";
+import { getOrgUtilization, getProjectUtilizationByPhase, type UtilizationRow, type UtilizationPhaseRow } from "@/app/utilizationQueries";
 
 export function UtilizationView(): JSX.Element {
   return <PlanGate feature="utilization"><UtilizationInner /></PlanGate>;
@@ -25,7 +24,6 @@ export function UtilizationView(): JSX.Element {
 function UtilizationInner(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canView = useCan("utilization:view", { orgId: activeOrg?.orgId });
-  const navigate = useNavigate();
 
   const [rows, setRows] = useState<UtilizationRow[]>([]);
   const [phases, setPhases] = useState<UtilizationPhaseRow[]>([]);
@@ -48,10 +46,10 @@ function UtilizationInner(): JSX.Element {
     setPhaseLoading(true);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setPhaseLoading(false); return; }
-    const phaseRes = await getOrgUtilizationByPhase(client, activeOrg?.orgId || "");
+    const phaseRes = await getProjectUtilizationByPhase(client, projectId);
     if (phaseRes.ok) setPhases(phaseRes.data); else setError(phaseRes.error);
     setPhaseLoading(false);
-  }, [activeOrg?.orgId]);
+  }, []);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -108,12 +106,12 @@ function UtilizationInner(): JSX.Element {
   ];
 
   const phaseColumns: Column<UtilizationPhaseRow>[] = [
-    { key: "phaseTitle", header: "Phase", className: "flex-1 min-w-0", render: r => <div className="font-medium">{r.phaseTitle}</div> },
-    { key: "feeAmount", header: "Fee", className: "flex-shrink-0 text-right", render: r => <span className="text-sm font-mono">{fmtRupees(r.feeAmount)}</span> },
+    { key: "phaseTitle", header: "Phase", className: "flex-1 min-w-0", render: r => <div className={`font-medium ${r.phaseId === "__unassigned__" ? "italic text-fg-tertiary" : ""}`}>{r.phaseTitle}</div> },
+    { key: "feeAmount", header: "Fee", className: "flex-shrink-0 text-right", render: r => <span className="text-sm font-mono">{r.phaseId === "__unassigned__" ? "—" : fmtRupees(r.feeAmount)}</span> },
     { key: "loggedHours", header: "Logged h", className: "flex-shrink-0 text-right", render: r => <span className="text-xs">{r.loggedHours.toFixed(1)}</span> },
     { key: "billedValue", header: "Billed", className: "flex-shrink-0 text-right", render: r => <span className="text-xs">{fmtRupees(Math.round(r.billedValue))}</span> },
     { key: "variance", header: "Variance", className: "flex-shrink-0 text-right", render: r => <span className={`text-sm font-mono ${r.variance >= 0 ? "text-success" : "text-warning"}`}>{r.variance >= 0 ? "+" : ""}{fmtRupees(Math.round(r.variance))}</span> },
-    { key: "utilizationPct", header: "Util %", className: "flex-shrink-0", render: r => <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.utilizationPct > 100 ? "bg-warning-tint text-warning" : "bg-info-tint text-info"}`}>{r.utilizationPct}%</span> },
+    { key: "utilizationPct", header: "Util %", className: "flex-shrink-0", render: r => r.phaseId === "__unassigned__" ? <span className="text-xs text-fg-tertiary">—</span> : <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.utilizationPct > 100 ? "bg-warning-tint text-warning" : "bg-info-tint text-info"}`}>{r.utilizationPct}%</span> },
   ];
 
   return (
@@ -166,7 +164,7 @@ function UtilizationInner(): JSX.Element {
                {phaseLoading ? (
                  <div className="grid place-items-center py-8"><Spinner size={20} /></div>
                ) : phases.length === 0 ? (
-                 <Card className="p-6 text-center text-sm text-fg-secondary">No phases logged with time entries for this project.</Card>
+                 <Card className="p-6 text-center text-sm text-fg-secondary">No phases or billable time logged for this project.</Card>
                ) : (
                  <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
                    <DataTable columns={phaseColumns} rows={phases} rowKey={r => `${r.projectId}-${r.phaseId}`} />
