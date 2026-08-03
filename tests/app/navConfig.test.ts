@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from "vitest";
 import { buildNav, groupNav, NAV_CATALOG } from "@/app/nav-config";
-import type { AuthSession } from "@/auth";
+import type { AuthSession, CompanySegment } from "@/auth";
 
 function session(overrides: Partial<AuthSession>): AuthSession {
   return {
@@ -49,7 +49,7 @@ describe("buildNav", () => {
   it("orgadmin with admin org tier sees New Project + Members + Billing + Custom Roles", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", isAdmin: true, joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: null, isAdmin: true, joinedAt: "2026-01-01" }],
     }));
     const paths = nav.map(n => n.to);
     expect(paths).toContain("/projects/new");
@@ -142,7 +142,7 @@ describe("buildNav", () => {
   it("org-tier admin sees /vendors (e.g. a PM granted org admin via membership)", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "PM", identityRole: "pm", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", isAdmin: true, joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: null, isAdmin: true, joinedAt: "2026-01-01" }],
     }));
     expect(nav.map(n => n.to)).toContain("/vendors");
   });
@@ -172,5 +172,45 @@ describe("groupNav", () => {
     // Every catalog item lands in exactly one group
     const total = grouped.reduce((n, g) => n + g.items.length, 0);
     expect(total).toBe(NAV_CATALOG.length);
+  });
+});
+
+describe("buildNav — segment gating (v4 C0)", () => {
+  const segItem = (segments: CompanySegment[]) => ({
+    to: "/segment-gated",
+    label: "Segment Gated",
+    icon: "lock" as const,
+    requires: "project:create" as const,
+    segments,
+  });
+  const segOrg = (segment: CompanySegment | null): AuthSession => ({
+    user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
+    orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment, isAdmin: true, joinedAt: "2026-01-01" }],
+    activeOrgId: "o-1",
+    projectMemberships: [],
+  });
+
+  it("a consultancy-gated item shows only for a consultancy org", () => {
+    const catalog = [segItem(["consultancy"])];
+    expect(buildNav(segOrg("consultancy"), catalog).map(n => n.to)).toContain("/segment-gated");
+    expect(buildNav(segOrg("construction"), catalog).map(n => n.to)).not.toContain("/segment-gated");
+    expect(buildNav(segOrg("multiple"), catalog).map(n => n.to)).not.toContain("/segment-gated");
+  });
+
+  it("a multi-segment item shows for each listed segment only", () => {
+    const catalog = [segItem(["architecture", "interior"])];
+    expect(buildNav(segOrg("architecture"), catalog).map(n => n.to)).toContain("/segment-gated");
+    expect(buildNav(segOrg("interior"), catalog).map(n => n.to)).toContain("/segment-gated");
+    expect(buildNav(segOrg("consultancy"), catalog).map(n => n.to)).not.toContain("/segment-gated");
+  });
+
+  it("a null segment (legacy org) hides segment-gated items", () => {
+    const catalog = [segItem(["consultancy"])];
+    expect(buildNav(segOrg(null), catalog).map(n => n.to)).not.toContain("/segment-gated");
+  });
+
+  it("items without a segments field always pass the gate", () => {
+    const catalog = [{ to: "/open", label: "Open", icon: "home" as const }];
+    expect(buildNav(segOrg(null), catalog).map(n => n.to)).toContain("/open");
   });
 });

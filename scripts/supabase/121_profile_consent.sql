@@ -11,10 +11,12 @@ alter table public.profiles
 
 -- Backfill existing profiles from their signup_request if available.
 -- This is best-effort and only catches approval-gated signups.
+-- profiles has no email column (it lives on auth.users) — match via correlated
+-- subquery (the UPDATE target may not appear in FROM).
 update public.profiles p
   set consent_version = sr.consent_version,
       consent_updated_at = sr.created_at
   from public.signup_requests sr
-  where sr.email = p.email
+  where sr.email = (select u.email from auth.users u where u.id = p.id)
     and sr.consent_version is not null
     and p.consent_version is null;

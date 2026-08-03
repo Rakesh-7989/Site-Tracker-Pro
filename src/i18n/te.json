@@ -306,13 +306,31 @@
     "compliance": "కంప్లయన్స్",
     "map": "మ్యాప్",
     "gantt": "గ్యాంట్",
-    "messages": "సందేశాలు"
+    "messages": "సందేశాలు",
+    "phases": "దశలు", "time": "సమయం", "deliverables": "డెలివరబుల్స్", "reviews": "సమీక్షలు",
+    "billing": "బిల్లింగ్"
   },
   "projType": {
     "construction": "నిర్మాణం",
     "interior": "ఇంటీరియర్",
     "design": "డిజైన్",
     "consultant": "కన్సల్టెంట్"
+  },
+  "segment": {
+    "label": {
+      "construction": "నిర్మాణ సంస్థ",
+      "architecture": "ఆర్కిటెక్చర్ సంస్థ",
+      "interior": "ఇంటీరియర్ డిజైన్",
+      "consultancy": "కన్సల్టెన్సీ",
+      "multiple": "బహుళ విభాగాలు"
+    },
+    "tagline": {
+      "construction": "బిల్డర్లు, కాంట్రాక్టర్లు & డెవలపర్లు",
+      "architecture": "వాస్తు డిజైన్ ప్రాక్టీసులు",
+      "interior": "ఇంటీరియర్ డిజైన్ & ఫిట్-అవుట్ సంస్థలు",
+      "consultancy": "స్ట్రక్చరల్ / MEP / స్పెషలిస్ట్ కన్సల్టెంట్లు",
+      "multiple": "అనేక విభాగాల్లో పనిచేసే సంస్థలు"
+    }
   },
   "overviewTab": {
     "settings": "సెట్టింగ్‌లు",

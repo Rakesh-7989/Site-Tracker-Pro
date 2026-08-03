@@ -12,7 +12,7 @@ import {
   isTabVisible,
   tabById,
 } from "@/features/project/tabs-config";
-import { resolveCapabilities, type AuthSession, type Capability } from "@/auth";
+import { resolveCapabilities, type AuthSession, type Capability, type CompanySegment } from "@/auth";
 import { isIconName } from "@/components/ui/icons";
 
 function capsFor(session: AuthSession, ctx: { orgId?: string; projectId?: string } = {}): Set<Capability> {
@@ -138,5 +138,134 @@ describe("visibleTabs — plan gating", () => {
     const caps = capsFor(baseSession("pm"));
     const ids = visibleTabs(caps, "construction").map(t => t.id);
     expect(ids).toContain("budget"); // unchanged when planCan omitted
+  });
+});
+
+describe("visibleTabs — segment gating (v4 C0)", () => {
+  const reviewsTab = (segments: CompanySegment[]) => ({
+    id: "reviews",
+    label: "Reviews",
+    icon: "check" as const,
+    segments,
+  });
+
+  it("a consultancy-gated tab shows only for a consultancy org", () => {
+    const caps = capsFor(baseSession("pm"));
+    const cat = [reviewsTab(["consultancy"])];
+    const consultancy = visibleTabs(caps, "consultant", undefined, "consultancy", cat).map(t => t.id);
+    const construction = visibleTabs(caps, "consultant", undefined, "construction", cat).map(t => t.id);
+    expect(consultancy).toContain("reviews");
+    expect(construction).not.toContain("reviews");
+  });
+
+  it("a null segment (legacy org) hides segment-gated tabs", () => {
+    const caps = capsFor(baseSession("pm"));
+    const cat = [reviewsTab(["consultancy"])];
+    expect(visibleTabs(caps, "consultant", undefined, null, cat).map(t => t.id)).not.toContain("reviews");
+  });
+
+  it("tabs without a segments field pass for every org (back-compat)", () => {
+    const caps = capsFor(baseSession("pm"));
+    const cat = [{ id: "overview", label: "Overview", icon: "dashboard" as const }];
+    expect(visibleTabs(caps, "consultant", undefined, "construction", cat).map(t => t.id)).toContain("overview");
+  });
+
+  it("omitting segment entirely is identical to null (no regressions)", () => {
+    const caps = capsFor(baseSession("pm"));
+    const cat = [reviewsTab(["consultancy"])];
+    const withArg = visibleTabs(caps, "consultant", undefined, null, cat).map(t => t.id);
+    const without = visibleTabs(caps, "consultant", undefined, undefined, cat).map(t => t.id);
+    expect(without).toEqual(withArg);
+  });
+});
+
+describe("v4 C1 — consultancy / design engagement tabs", () => {
+  const proPlan = () => true;
+  const basicPlan = () => false;
+  const C1_TABS = ["phases", "time", "deliverables", "reviews"] as const;
+
+  it("consultant_head sees all 4 C1 tabs on consultant + design projects (Pro plan)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    for (const type of ["consultant", "design"] as const) {
+      const ids = visibleTabs(caps, type, proPlan).map(t => t.id);
+      for (const tab of C1_TABS) {
+        expect(ids, `type=${type} tab=${tab}`).toContain(tab);
+      }
+    }
+  });
+
+  it("C1 tabs never appear on construction projects (project-type gate)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
+    for (const tab of C1_TABS) {
+      expect(ids, `tab=${tab}`).not.toContain(tab);
+    }
+  });
+
+  it("a contributor (consultant) sees deliverables + reviews + time but not phases", () => {
+    const caps = capsFor(baseSession("consultant"));
+    const ids = visibleTabs(caps, "consultant", proPlan).map(t => t.id);
+    expect(ids).toContain("deliverables");
+    expect(ids).toContain("reviews");
+    expect(ids).toContain("time");
+    expect(ids).not.toContain("phases");   // phase:manage is manager-only
+  });
+
+  it("client sees only the reviews tab (review:comment)", () => {
+    const caps = capsFor(baseSession("client"));
+    const ids = visibleTabs(caps, "consultant", proPlan).map(t => t.id);
+    expect(ids).toContain("reviews");
+    expect(ids).not.toContain("phases");
+    expect(ids).not.toContain("time");
+    expect(ids).not.toContain("deliverables");
+  });
+
+  it("C1 tabs hide on a Basic plan even for consultant_head (plan-feature gate)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    const ids = visibleTabs(caps, "consultant", basicPlan).map(t => t.id);
+    for (const tab of C1_TABS) {
+      expect(ids, `tab=${tab}`).not.toContain(tab);
+    }
+  });
+});
+
+describe("v4 C2 — consultancy billing tab", () => {
+  const proPlan = () => true;
+
+  it("manager roles see the billing tab on consultant + design projects (requiresAny)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    for (const type of ["consultant", "design"] as const) {
+      const ids = visibleTabs(caps, type, proPlan).map(t => t.id);
+      expect(ids, `type=${type}`).toContain("billing");
+    }
+  });
+
+  it("billing tab requires ANY of rate/retainer/billing caps — contributor gets none", () => {
+    const caps = capsFor(baseSession("consultant"));
+    const ids = visibleTabs(caps, "consultant", proPlan).map(t => t.id);
+    expect(ids).not.toContain("billing");
+    expect(caps.has("rate:manage")).toBe(false);
+    expect(caps.has("retainer:manage")).toBe(false);
+    expect(caps.has("billing:generate")).toBe(false);
+  });
+
+  it("billing tab never appears on construction projects (project-type gate)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
+    expect(ids).not.toContain("billing");
+  });
+
+  it("billing tab has no plan feature — visible even on Basic plan (internal PlanGate per section)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    const ids = visibleTabs(caps, "consultant", () => false).map(t => t.id);
+    expect(ids).toContain("billing");
+  });
+
+  it("a pm with only billing:generate can still see the tab (requiresAny union)", () => {
+    // Project-tier caps for pm include all C2 manager caps; simulate a custom
+    // role that holds just one of the three.
+    const onlyGenerate = new Set<Capability>(["billing:generate"]);
+    const ids = visibleTabs(onlyGenerate, "consultant", proPlan).map(t => t.id);
+    expect(ids).toContain("billing");
   });
 });

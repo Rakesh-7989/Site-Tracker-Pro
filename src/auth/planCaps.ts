@@ -18,7 +18,12 @@ export type PlanFeature =
   | "custom_roles" | "audit_unlimited" | "audit_export"
   | "rera_filing" | "gstn_filing" | "epfo_filing"
   | "whatsapp_send" | "dpr_auto" | "cashfree_payments"
-  | "kiosks" | "ar_overlay" | "ai_forecast" | "priority_support";
+  | "kiosks" | "ar_overlay" | "ai_forecast" | "priority_support"
+  // v4 Phase C0 — consultancy / architecture / interior segment features
+  | "time_tracking" | "fee_billing" | "deliverables" | "review_rounds"
+  | "statutory" | "utilization" | "ffe" | "procurement"
+  // v4 Phase C2 — consultancy retainer & hourly billing
+  | "rate_cards" | "time_approval" | "retainer_billing" | "hourly_billing";
 
 /** Numeric plan limits (null = unlimited). */
 export type PlanLimit = "users_max" | "projects_max" | "projects_ceiling" | "storage_gb" | "audit_days";
@@ -52,6 +57,9 @@ export const FEATURE_MIN_PLAN: Record<PlanFeature, string> = {
   rera_filing: "business", gstn_filing: "business", epfo_filing: "business",
   whatsapp_send: "business", dpr_auto: "business", cashfree_payments: "business",
   kiosks: "business", ar_overlay: "business", ai_forecast: "business", priority_support: "business",
+  time_tracking: "pro", fee_billing: "pro", deliverables: "pro", review_rounds: "pro",
+  ffe: "pro", statutory: "business", utilization: "business", procurement: "business",
+  rate_cards: "pro", time_approval: "pro", retainer_billing: "pro", hourly_billing: "pro",
 };
 
 /** Human labels for upsell cards. */
@@ -66,6 +74,12 @@ export const PLAN_FEATURE_LABEL: Record<PlanFeature, string> = {
   whatsapp_send: "Automated WhatsApp send", dpr_auto: "Automated DPR (6 PM)",
   cashfree_payments: "Cashfree payments", kiosks: "Site & labour kiosks", ar_overlay: "AR drawing overlay",
   ai_forecast: "AI cost forecast", priority_support: "Priority support",
+  time_tracking: "Billable time tracking", fee_billing: "Fee & milestone billing",
+  deliverables: "Deliverables register", review_rounds: "Design review rounds",
+  statutory: "Statutory approvals (NOC)", utilization: "Utilization & profitability reports",
+  ffe: "FF&E schedules & moodboards", procurement: "Procurement & vendor quotes",
+  rate_cards: "Project rate cards", time_approval: "Time-entry approval workflow",
+  retainer_billing: "Monthly retainer billing", hourly_billing: "Hourly billing from time logs",
 };
 
 export const PLAN_RANK: Record<string, number> = { free: 0, basic: 1, pro: 2, business: 3, enterprise: 4, custom: 4 };

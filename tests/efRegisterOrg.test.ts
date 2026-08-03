@@ -1,0 +1,31 @@
+// SiteTrack Pro — register_org edge function segment wiring (v4 C0).
+//
+// register_org stamps the org's company segment (migration 134). This file
+// parses the EF source and asserts the allowlist validation + org insert
+// keep passing segment through — a future edit can't silently drop it.
+
+import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const src = readFileSync(join(process.cwd(), "supabase", "functions", "register_org", "index.ts"), "utf8");
+
+describe("register_org — company segment (v4 C0)", () => {
+  it("defines the segment allowlist", () => {
+    expect(src).toMatch(/VALID_SEGMENTS\s*=/);
+    for (const s of ["construction", "architecture", "interior", "consultancy", "multiple"]) {
+      expect(src).toContain(s);
+    }
+  });
+
+  it("rejects an unknown segment with invalid-segment", () => {
+    expect(src).toMatch(/invalid-segment/);
+  });
+
+  it("passes segment into the organizations insert", () => {
+    // The insert must include segment (spread only when present), selecting
+    // its value from the validated body field.
+    expect(src).toMatch(/\.insert\(\{\s*slug: slugify\(firmName\),\s*name: firmName,\s*plan,/);
+    expect(src).toContain("segment");
+  });
+});

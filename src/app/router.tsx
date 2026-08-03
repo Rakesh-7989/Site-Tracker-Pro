@@ -80,6 +80,8 @@ const HierarchyView = lazy(() => import("@/features/org/HierarchyView").then(m =
 const MaterialPricesView = lazy(() => import("@/features/org/MaterialPricesView").then(m => ({ default: m.MaterialPricesView })));
 const ForecastView = lazy(() => import("@/features/org/ForecastView").then(m => ({ default: m.ForecastView })));
 const DelegationsView = lazy(() => import("@/features/org/DelegationsView").then(m => ({ default: m.DelegationsView })));
+const UtilizationView = lazy(() => import("@/features/org/UtilizationView").then(m => ({ default: m.UtilizationView })));
+const RevenueView = lazy(() => import("@/features/org/RevenueView").then(m => ({ default: m.RevenueView })));
 const ComplianceView = lazy(() => import("@/features/org/ComplianceView").then(m => ({ default: m.ComplianceView })));
 const DigestManagementView = lazy(() => import("@/features/org/DigestManagementView").then(m => ({ default: m.DigestManagementView })));
 const HandoverPacketView = lazy(() => import("@/features/handover/HandoverPacketView").then(m => ({ default: m.HandoverPacketView })));
@@ -120,6 +122,8 @@ export const router = createBrowserRouter([
       { path: "vendors", element: <VendorsView /> },
       { path: "calendar", element: <CalendarView /> },
       { path: "analytics", element: <AnalyticsView /> },
+      { path: "utilization", element: <UtilizationView /> },
+      { path: "revenue", element: <RevenueView /> },
       { path: "search", element: <GlobalSearchView /> },
       { path: "pos", element: <CrossProjectPOsView /> },
       { path: "notifications", element: <NotificationsView /> },

@@ -4,12 +4,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, Button, Spinner } from "@/components/ui/atoms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
+import { SEGMENTS, defaultProjectTypeFor, segmentProjectTypes, type CompanySegment } from "@/auth";
+import type { ProjectType } from "@/auth";
+import { useT } from "@/i18n/I18nProvider";
 
 
 import { getClient } from "@/lib/supabase";
 const STEPS = ["Org details", "Invite team", "First project", "Feature presets", "Integrations"];
 
 export function OnboardingView(): JSX.Element {
+  const t = useT();
   const [orgId, setOrgId] = useState("");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -18,6 +22,7 @@ export function OnboardingView(): JSX.Element {
   // Step 1
   const [orgName, setOrgName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [segment, setSegment] = useState<CompanySegment | null>(null);
 
   // Step 2
   const [inviteName, setInviteName] = useState("");
@@ -28,6 +33,7 @@ export function OnboardingView(): JSX.Element {
   const [projName, setProjName] = useState("");
   const [clientName, setClientName] = useState("");
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [projType, setProjType] = useState<ProjectType>("construction");
 
   // Step 4
   const [preset, setPreset] = useState<"minimal" | "balanced" | "full">("balanced");
@@ -41,16 +47,29 @@ export function OnboardingView(): JSX.Element {
     const res = await getMyOrg(client);
     if (!res.ok) { setError(res.error); setLoading(false); return; }
     setOrgId(res.data.orgId);
-    if (res.data.org) { setOrgName(res.data.org.name ?? ""); setContactEmail(res.data.org.contact_email ?? ""); }
+    if (res.data.org) {
+      setOrgName(res.data.org.name ?? "");
+      setContactEmail(res.data.org.contact_email ?? "");
+      if (res.data.org.segment) {
+        setSegment(res.data.org.segment);
+        setProjType(defaultProjectTypeFor(res.data.org.segment));
+      }
+    }
     setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
+  const pickSegment = (s: CompanySegment) => {
+    setSegment(s);
+    setProjType(defaultProjectTypeFor(s));
+  };
+
   const saveOrg = async () => {
     if (!orgName.trim()) { alert("Org name required"); return; }
+    if (!segment) { alert("Please select what your company does"); return; }
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail);
+    await updateOrg(client, orgId, orgName, contactEmail, segment);
     setStep(2);
   };
 
@@ -72,7 +91,7 @@ export function OnboardingView(): JSX.Element {
     if (!projName.trim()) { alert("Project name required"); return; }
     if (!clientName.trim()) { alert("Client name required"); return; }
     const client = await getClient();
-    await createProject(client, orgId, projName, clientName, startDate);
+    await createProject(client, orgId, projName, clientName, startDate, projType);
     setStep(4);
   };
 
@@ -129,6 +148,21 @@ export function OnboardingView(): JSX.Element {
                 <label className="text-xs font-semibold text-fg-primary block mb-1">Contact email</label>
                 <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
               </div>
+              <div>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">What does your company do? *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {SEGMENTS.map(s => {
+                    const active = segment === s;
+                    return (
+                      <button key={s} type="button" onClick={() => pickSegment(s)}
+                        className={`text-left p-3 rounded-xl border-2 transition ${active ? "border-accent bg-accent-tint" : "border-default"}`}>
+                        <div className="font-semibold text-sm">{t(`segment.label.${s}`)}</div>
+                        <div className="text-[10px] text-fg-tertiary leading-snug mt-0.5">{t(`segment.tagline.${s}`)}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="flex justify-end pt-2"><Button onClick={saveOrg}>Continue</Button></div>
             </div>
           )}
@@ -164,7 +198,7 @@ export function OnboardingView(): JSX.Element {
           {step === 3 && (
             <div className="space-y-4">
               <h2 className="font-bold text-lg">Create your first project</h2>
-              <p className="text-xs text-fg-secondary">A project is a construction site you track.</p>
+              <p className="text-xs text-fg-secondary">A project is what you deliver for a client.</p>
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">Project name *</label>
                 <input value={projName} onChange={e => setProjName(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
@@ -172,6 +206,12 @@ export function OnboardingView(): JSX.Element {
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">Client name *</label>
                 <input value={clientName} onChange={e => setClientName(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">Project type</label>
+                <select value={projType} onChange={e => setProjType(e.target.value as ProjectType)} className="w-full rounded-lg border border-default px-3 py-2 text-sm">
+                  {segmentProjectTypes(segment).map(pt => <option key={pt} value={pt}>{t(`projType.${pt}`)}</option>)}
+                </select>
               </div>
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">Start date</label>

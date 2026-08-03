@@ -3,10 +3,10 @@
 // Capability-gated form. The project-type select drives which member
 // roles are valid later (per VALID_PROJECT_ROLES_BY_TYPE).
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useOrgSwitcher, useCan, PROJECT_TYPES, CONSTRUCTION_INDUSTRIES, CONSTRUCTION_INDUSTRY_LABEL, type ProjectType, type ConstructionIndustry } from "@/auth";
+import { useOrgSwitcher, useCan, CONSTRUCTION_INDUSTRIES, CONSTRUCTION_INDUSTRY_LABEL, segmentProjectTypes, defaultProjectTypeFor, type ProjectType, type ConstructionIndustry } from "@/auth";
 import { createProject } from "@/app/queries";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 
@@ -28,6 +28,15 @@ export function CreateProjectView(): JSX.Element {
   const [location, setLocation] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // v4 C0 — org segment scopes which project types may be created. Legacy
+  // orgs (null segment) keep the full catalog.
+  const segment = activeOrg?.segment ?? null;
+  const allowedTypes = segmentProjectTypes(segment);
+  useEffect(() => {
+    if (!allowedTypes.includes(type)) setType(defaultProjectTypeFor(segment));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segment]);
 
   if (!canCreate) {
     return (
@@ -79,7 +88,7 @@ export function CreateProjectView(): JSX.Element {
               id="ptype" value={type} onChange={e => setType(e.target.value as ProjectType)}
               className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
             >
-              {PROJECT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+              {allowedTypes.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
             </select>
           </div>
 

@@ -50,6 +50,13 @@ export const FEATURE_LABEL: Record<string, string> = {
   "platform:billing:manage": "Manage platform billing", "platform:settings:manage": "Manage platform settings",
   "platform:impersonate": "Impersonate any user", "platform:audit:read:cross-org": "Read cross-org audit log",
   "platform:roles:configure": "Assign / revoke capabilities to roles",
+  "phase:manage": "Manage fee phases & amounts", "time:log": "Log billable time",
+  "time:manage": "Manage all time entries", "deliverable:manage": "Create / edit deliverables",
+  "deliverable:approve": "Approve / issue deliverables", "review:comment": "Comment on review rounds",
+  "review:manage": "Open / close review rounds", "utilization:view": "View utilization reports",
+  "rate:manage": "Manage rate cards", "time:approve": "Approve / reject time entries",
+  "retainer:manage": "Manage monthly retainers", "billing:generate": "Generate hourly / retainer invoices",
+  "revenue:view": "View revenue & billing rollups",
 };
 
 /** Founder-readable label for a capability (falls back to a humanized id). */
@@ -67,6 +74,10 @@ const GROUP_BY_DOMAIN: Record<string, string> = {
   drawings: "drawings", boq: "boq", estimate: "boq",
   rfi: "rfi", changeorder: "rfi",
   expense: "finance", rabill: "finance", invoice: "finance", budget: "finance", ledger: "finance",
+  phase: "consultancy", time: "consultancy", deliverable: "consultancy",
+  review: "consultancy", utilization: "consultancy",
+  rate: "consultancy", retainer: "consultancy",
+  billing: "finance", revenue: "finance",
   compliance: "compliance", rera: "compliance", gstn: "compliance", epfo: "compliance",
   message: "comms", notification: "comms", whatsapp: "comms", digest: "comms",
   activity: "activity", audit: "activity",
@@ -74,14 +85,14 @@ const GROUP_BY_DOMAIN: Record<string, string> = {
   handover: "handover", org: "orgadmin", platform: "platform",
 };
 
-export const GROUP_ORDER = ["projects","progress","dpr","capture","siteops","team","materials","drawings","boq","rfi","finance","compliance","comms","activity","export","handover","orgadmin","platform"] as const;
+export const GROUP_ORDER = ["projects","progress","dpr","capture","siteops","team","materials","drawings","boq","rfi","finance","consultancy","compliance","comms","activity","export","handover","orgadmin","platform"] as const;
 
 export const GROUP_LABEL: Record<string, string> = {
   projects: "Projects", progress: "Progress & Milestones", dpr: "Daily Reports (DPR)",
   capture: "Voice & Photos", siteops: "Site Operations", team: "Team & Attendance",
   materials: "Materials & Procurement", drawings: "Drawings", boq: "BOQ & Estimates",
-  rfi: "RFIs & Change Orders", finance: "Finance & Billing", compliance: "Compliance & Filings",
-  comms: "Communications", activity: "Activity & Audit", export: "Export & Sharing",
+  rfi: "RFIs & Change Orders", finance: "Finance & Billing", consultancy: "Consultancy Engagements",
+  compliance: "Compliance & Filings", comms: "Communications", activity: "Activity & Audit", export: "Export & Sharing",
   handover: "Handover", orgadmin: "Org Administration", platform: "Platform Administration",
 };
 

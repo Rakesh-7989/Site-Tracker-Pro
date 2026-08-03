@@ -306,13 +306,31 @@
     "compliance": "अनुपालन",
     "map": "मानचित्र",
     "gantt": "गैंट",
-    "messages": "संदेश"
+    "messages": "संदेश",
+    "phases": "चरण", "time": "समय", "deliverables": "डिलिवरेबल्स", "reviews": "समीक्षाएं",
+    "billing": "बिलिंग"
   },
   "projType": {
     "construction": "निर्माण",
     "interior": "इंटीरियर",
     "design": "डिज़ाइन",
     "consultant": "सलाहकार"
+  },
+  "segment": {
+    "label": {
+      "construction": "निर्माण कंपनी",
+      "architecture": "आर्किटेक्चर फर्म",
+      "interior": "इंटीरियर डिज़ाइन",
+      "consultancy": "परामर्श",
+      "multiple": "एकाधिक खंड"
+    },
+    "tagline": {
+      "construction": "बिल्डर, ठेकेदार और डेवलपर्स",
+      "architecture": "वास्तुकला डिज़ाइन अभ्यास",
+      "interior": "इंटीरियर डिज़ाइन और फ़िट-आउट फर्में",
+      "consultancy": "संरचनात्मक / MEP / विशेषज्ञ सलाहकार",
+      "multiple": "कई खंडों में काम करने वाली फर्में"
+    }
   },
   "overviewTab": {
     "settings": "सेटिंग्स",

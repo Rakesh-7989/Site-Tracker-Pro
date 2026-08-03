@@ -32,7 +32,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     if (!no.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createInvoice(c, { projectId, no: no.trim(), amount: amt }), {
-      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: 18, tds: 2, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10) }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: 18, tds: 2, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10), source: null, periodFrom: null, periodTo: null, retainerId: null, phaseId: null, lines: [] }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setNo(""); setAmount("");
@@ -42,9 +42,19 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "detail", header: "Invoice", className: "flex-1 min-w-0",
       render: r => (
-        <div>
+        <div className="min-w-0">
           <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.amount)}</div>
           <div className="text-[11px] text-fg-tertiary">{r.issuedDate ? `Issued ${r.issuedDate}` : ""} · GST {r.gst}% · TDS {r.tds}%</div>
+          {r.lines.length > 0 && (
+            <div className="mt-1.5 space-y-0.5">
+              {r.lines.map(l => (
+                <div key={l.id} className="flex items-center justify-between gap-2 text-[11px] text-fg-secondary">
+                  <span className="truncate">{l.description}{l.qty !== 1 ? ` × ${l.qty}` : ""}</span>
+                  <span className="font-mono text-fg-primary flex-shrink-0">{fmtRupees(l.amount)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ),
     },

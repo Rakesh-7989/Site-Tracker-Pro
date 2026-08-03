@@ -26,6 +26,7 @@ import {
   isProjectTierRole,
   isProjectType,
 } from "./roles";
+import { isCompanySegment } from "./segmentConfig";
 import { normalizeOverride } from "./capabilityOverrides";
 import { customRoleGrants } from "./customRoles";
 import { isCapability, type Capability } from "./capabilities";
@@ -103,10 +104,15 @@ export function normalizeOrgMembership(row: Record<string, unknown> | null): Org
   const orgSlug = String((orgNested?.slug ?? row.org_slug) ?? "");
   if (!orgId || !orgName) return null;
   const rowRole = String(row.role ?? "");
+  // Unrecognized / legacy-null segment → null (treated as "all segments"
+  // downstream). Never rejects the whole membership row over an unknown value.
+  const rawSegment = orgNested?.segment ?? row.segment;
+  const segment = isCompanySegment(rawSegment) ? rawSegment : null;
   return {
     orgId,
     orgName,
     orgSlug,
+    segment,
     isAdmin: Boolean(row.is_admin) || rowRole === "admin",
     joinedAt: String(row.joined_at ?? new Date().toISOString()),
   };
@@ -296,7 +302,7 @@ export async function fetchAuthSession(
     // 2. org_members joined with organizations
     const orgsRes = await client
       .from("org_members")
-      .select("org_id, role, joined_at, organizations:org_id (id, name, slug)")
+      .select("org_id, role, joined_at, organizations:org_id (id, name, slug, segment)")
       .eq("profile_id", input.authUserId);
     if (orgsRes.error) {
       return { ok: false, error: String((orgsRes.error as { message?: string }).message ?? orgsRes.error), code: "db-error" };
