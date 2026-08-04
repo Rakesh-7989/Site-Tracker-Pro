@@ -29,6 +29,7 @@ const ADMIN_EXTRA_CAPS: Capability[] = [
   "review:comment", "review:manage",
   "utilization:view",
   "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+  "ffe:manage", "statutory:manage", "procurement:view",
 ];
 
 export function resolveCapabilities(

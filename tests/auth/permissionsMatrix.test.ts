@@ -369,3 +369,70 @@ describe("v4 C2 — no dead capabilities", () => {
     }
   });
 });
+
+// ── v4 D architecture segment capabilities (2026-08-04) ──────────────────────
+// FF&E schedules + statutory/NOC approvals + procurement quote compare.
+// Design-heads / project-admin / orgadmin own the registers; PM gets
+// procurement:view only (procurement is a finance/proc action, while FF&E +
+// statutory are design-register ownership); contributors + client see none.
+const D_MANAGER = ["ffe:manage", "statutory:manage", "procurement:view"] as const;
+const D_MANAGER_ROLES = ["design_head", "consultant_head", "project_admin"] as const;
+
+describe("v4 D — architecture capability assignment (identity tier)", () => {
+  for (const role of D_MANAGER_ROLES) {
+    it(`${role} holds all D architecture caps`, () => {
+      const caps = identityCapabilities(role);
+      for (const c of D_MANAGER) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    });
+  }
+  it("orgadmin holds all D architecture caps", () => {
+    const caps = identityCapabilities("orgadmin");
+    for (const c of D_MANAGER) expect(caps, `cap=${c}`).toContain(c as never);
+  });
+  it("pm holds procurement:view but not the design-register caps", () => {
+    const caps = identityCapabilities("pm");
+    expect(caps).toContain("procurement:view" as never);
+    expect(caps).not.toContain("ffe:manage" as never);
+    expect(caps).not.toContain("statutory:manage" as never);
+  });
+  it("contributors + client get no D architecture caps", () => {
+    for (const role of [...C1_CONTRIBUTOR_ROLES, "client", "site_engineer", "contractor"] as const) {
+      const caps = identityCapabilities(role);
+      for (const c of D_MANAGER) expect(caps, `role=${role} cap=${c}`).not.toContain(c as never);
+    }
+  });
+});
+
+describe("D — architecture capability assignment (project tier)", () => {
+  it("mirrors the identity-tier assignment on a project", () => {
+    for (const role of D_MANAGER_ROLES) {
+      const caps = projectTierCapabilities(role);
+      for (const c of D_MANAGER) expect(caps, `role=${role} cap=${c}`).toContain(c as never);
+    }
+  });
+  it("project-tier pm holds procurement:view only", () => {
+    const caps = projectTierCapabilities("pm");
+    expect(caps).toContain("procurement:view" as never);
+    expect(caps).not.toContain("ffe:manage" as never);
+    expect(caps).not.toContain("statutory:manage" as never);
+  });
+  it("client (project) holds no D architecture caps", () => {
+    const caps = projectTierCapabilities("client");
+    for (const c of D_MANAGER) expect(caps, `cap=${c}`).not.toContain(c as never);
+  });
+});
+
+describe("D — no dead capabilities", () => {
+  it("each D cap is granted to at least one identity role", () => {
+    for (const cap of D_MANAGER) {
+      const granted = IDENTITY_ROLES.some(r => identityCapabilities(r).includes(cap as never));
+      expect(granted, `cap=${cap}`).toBe(true);
+    }
+  });
+  it("each D cap is denied to at least one identity role", () => {
+    for (const cap of D_MANAGER) {
+      const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
+      expect(denied, `cap=${cap}`).toBe(true);
+    }
+  });
+});

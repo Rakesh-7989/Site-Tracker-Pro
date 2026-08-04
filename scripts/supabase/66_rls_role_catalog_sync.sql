@@ -134,6 +134,15 @@ GRANT SELECT ON public.role_catalog TO authenticated, anon;
 --   invoices source tags / generation RPCs → billing:generate
 --   revenue report (org)                   → revenue:view
 --
+-- ── Capability ↔ RLS gate map (v4 D, comment-only) ──────────────────────
+-- D features (FF&E / statutory / procurement) are gated at plan + RBAC
+-- level in src/auth/planCaps.ts + permissions-matrix.ts; their tables
+-- (ffe_entries / statutory_approvals, migrations 150/151) will use the
+-- same member-read / manager-write role-based policy pattern as 145/146:
+--   ffe_entries      (manager write)       → ffe:manage
+--   statutory_approvals (manager write)    → statutory:manage
+--   procurement compare view (org)         → procurement:view
+--
 -- RLS gap note: invoices / retainers / rate_cards read gates are project
 -- membership-based; org-wide rollups (utilization/revenue) therefore only
 -- surface projects the caller is already a member of — by design.
