@@ -8,7 +8,8 @@ import { CAPABILITIES, capabilityDomain, type Capability } from "./capabilities"
 
 export const FEATURE_LABEL: Record<string, string> = {
   "project:create": "Create new projects", "project:archive": "Archive projects",
-  "project:restore": "Restore archived projects", "project:settings:edit": "Edit project settings",
+  "project:restore": "Restore archived projects", "project:delete": "Delete projects",
+  "project:settings:edit": "Edit project settings",
   "progress:edit": "Update overall progress %",
   "milestone:add": "Add milestones", "milestone:edit": "Edit milestones", "milestone:delete": "Delete milestones",
   "dpr:submit": "File daily progress reports (DPR)", "dpr:approve": "Approve / publish DPRs", "dpr:view": "View daily reports",

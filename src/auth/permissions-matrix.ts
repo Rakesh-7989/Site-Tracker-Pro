@@ -227,6 +227,10 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
   ),
 
   // Engineering disciplines.
+  // NOTE (founder 2026-08-04): mep_consultant and structural_consultant have
+  // IDENTICAL capability sets — deliberate branding twins, not drift. Both are
+  // discipline-specific inspections + drawings + RFIs; they exist as separate
+  // identities so the org can tag people by trade for tendering/reporting.
   mep_consultant: arr(
     "activity:view",
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",
@@ -247,6 +251,11 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
   ),
+  // NOTE (founder 2026-08-04): consultant and designer are near-identical
+  // (only differ by rfi:respond vs drawings:upload) — deliberate. designer is
+  // the design-project drafting identity (upload drawings); consultant is the
+  // general RFI-responder on consultant projects. Keep both until a real
+  // capability gap emerges.
   consultant: arr(
     "activity:view",
     "drawings:markup",
@@ -270,7 +279,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rfi:create",
     "inspection:create", "inspection:close",
     "voice:record", "photo:upload",
-    "dpr:submit", "dpr:approve", "dpr:view",
+    "dpr:submit", "dpr:view",   // files DPRs; pm approves/publishes them (SoD)
     "drawings:markup",
   ),
 
@@ -312,10 +321,10 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
   ),
   site_inspector: arr(
     // External RERA / govt audit — read-only + immutable assignment.
+    // Read-only: does NOT file RERA returns (project_admin files them).
     "activity:view",
     "compliance:view", "audit:read",
     "drawings:markup",
-    "rera:file",   // external inspector files compliance docs on behalf of project
     "export:pdf",
   ),
 };
@@ -441,14 +450,14 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "rfi:create",
     "inspection:create", "inspection:close",
     "voice:record", "photo:upload",
-    "dpr:submit", "dpr:approve", "dpr:view",
+    "dpr:submit", "dpr:view",   // files DPRs; pm approves/publishes them (SoD)
     "drawings:markup",
   ),
   site_inspector: arr(
     // External read-only audit. Write-once assignment (trigger-enforced).
+    // Read-only: does NOT file RERA returns (project_admin files them).
     "compliance:view", "audit:read",
     "drawings:markup",
-    "rera:file",
   ),
   // pm absorbs the former project_head role (founder consolidation
   // 2026-06-04): gains project:settings:edit, budget:view,

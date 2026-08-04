@@ -11,34 +11,34 @@ of all three. The features below show the **base set a role gets when
 provisioned the normal way**. A superadmin can further grant/revoke any
 feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
-**22 roles · 92 total capabilities.** Consolidated 2026-06-04.
+**22 roles · 107 total capabilities.** Consolidated 2026-06-04.
 
 ## Quick index
 
 | Role | What they are | Features |
 |---|---|---|
-| **Platform Admin** (`superadmin`) | Platform owner (you). Full access to every org + every feature. | 92 |
-| **Firm Owner** (`orgadmin`) | Firm owner / workspace admin. Runs the org — members, billing, settings. | 34 |
-| **Promoter** (`promoter`) | Paying builder / firm owner. Gets the 7am WhatsApp digest; finance + handover view. Owns the org but rarely logs in. | 36 |
-| **Project Admin** (`project_admin`) | Back-office paperwork — invoices, RA bills, RERA / GST / EPFO filings. | 38 |
-| **Sales / BD** (`prospector`) | Sales / BD. Creates draft projects for prospects; minimal access. | 6 |
-| **Project Manager** (`pm`) | Project Manager. Runs project execution end-to-end (absorbed Project Head — full approval power). | 37 |
-| **Architect** (`architect`) | Drawings + RFIs + BOQ + change orders. | 14 |
-| **Senior Architect** (`senior_architect`) | Senior architect — supervises juniors, approves RFIs + change orders. | 20 |
-| **Junior Architect** (`junior_architect`) | Junior architect — drafting + drawing revisions. | 6 |
-| **Design Architect (Interior)** (`design_architect_interior`) | Interior design lead (absorbed Interior Designer) — drawings + materials. | 13 |
-| **Design Head** (`design_head`) | Design Project lead — runs the design team. | 14 |
-| **Consultant Head** (`consultant_head`) | Consultant Project lead. | 8 |
-| **MEP Consultant** (`mep_consultant`) | MEP (mechanical / electrical / plumbing) consultant. | 11 |
-| **Structural Consultant** (`structural_consultant`) | Structural engineer / consultant. | 11 |
-| **Consultant** (`consultant`) | Generic consultant — markup + RFIs. | 5 |
-| **Designer** (`designer`) | Designer (design projects) — drawings + updates. | 4 |
-| **Site Engineer** (`site_engineer`) | The field role. Files DPRs (voice + photo), runs site ops + attendance (absorbed Site Supervisor + Civil Engineer). | 24 |
-| **Contractor** (`contractor`) | Contractor — updates, attendance, RA bills, photos. | 9 |
-| **Sub-contractor** (`sub_contractor`) | Sub-contractor — updates, attendance, RFIs, photos. | 5 |
+| **Platform Admin** (`superadmin`) | Platform owner (you). Full access to every org + every feature. | 107 |
+| **Firm Owner** (`orgadmin`) | Firm owner / workspace admin. Runs the org — members, billing, settings. | 50 |
+| **Promoter** (`promoter`) | Paying builder / firm owner. Gets the 7am WhatsApp digest; finance + handover view. Owns the org but rarely logs in. | 12 |
+| **Project Admin** (`project_admin`) | Back-office paperwork — invoices, RA bills, RERA / GST / EPFO filings. | 34 |
+| **Sales / BD** (`prospector`) | Sales / BD. Creates draft projects for prospects; minimal access. | 50 |
+| **Project Manager** (`pm`) | Project Manager. Runs project execution end-to-end (absorbed Project Head — full approval power). | 54 |
+| **Architect** (`architect`) | Drawings + RFIs + BOQ + change orders. | 18 |
+| **Senior Architect** (`senior_architect`) | Senior architect — supervises juniors, approves RFIs + change orders. | 24 |
+| **Junior Architect** (`junior_architect`) | Junior architect — drafting + drawing revisions. | 11 |
+| **Design Architect (Interior)** (`design_architect_interior`) | Interior design lead (absorbed Interior Designer) — drawings + materials. | 16 |
+| **Design Head** (`design_head`) | Design Project lead — runs the design team. | 31 |
+| **Consultant Head** (`consultant_head`) | Consultant Project lead. | 25 |
+| **MEP Consultant** (`mep_consultant`) | MEP (mechanical / electrical / plumbing) consultant. | 15 |
+| **Structural Consultant** (`structural_consultant`) | Structural engineer / consultant. | 15 |
+| **Consultant** (`consultant`) | Generic consultant — markup + RFIs. | 8 |
+| **Designer** (`designer`) | Designer (design projects) — drawings + updates. | 8 |
+| **Site Engineer** (`site_engineer`) | The field role. Files DPRs (voice + photo), runs site ops + attendance (absorbed Site Supervisor + Civil Engineer). | 25 |
+| **Contractor** (`contractor`) | Contractor — updates, attendance, RA bills, photos. | 10 |
+| **Sub-contractor** (`sub_contractor`) | Sub-contractor — updates, attendance, RFIs, photos. | 6 |
 | **Vendor** (`vendor`) | Material supplier — vendor portal: quotes, invoices, price master. | 4 |
-| **Client / Unit Buyer** (`client`) | Unit buyer — read-only progress + payments + handover; client portal. | 7 |
-| **Site Inspector (RERA)** (`site_inspector`) | External RERA / govt inspector — read-only audit + RERA filing. | 6 |
+| **Client / Unit Buyer** (`client`) | Unit buyer — read-only progress + payments + handover; client portal. | 8 |
+| **Site Inspector (RERA)** (`site_inspector`) | External RERA / govt inspector — read-only audit (no filings; project_admin files returns). | 5 |
 
 ## Platform
 
@@ -59,7 +59,9 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 - **Team & Attendance:** Manage project team
 - **Materials & Procurement:** Delete materials, View material price master, Manage vendor directory, Select a vendor in PO / material / invoice forms, Approve purchase orders
 - **RFIs & Change Orders:** Approve change orders
-- **Finance & Billing:** Approve expenses, Approve RA bills, Approve invoices, View budget, Edit budget, View financial ledger
+- **Finance & Billing:** Approve expenses, Approve RA bills, Approve invoices, View budget, Edit budget, View financial ledger, Generate hourly / retainer invoices, View revenue & billing rollups
+- **Consultancy Engagements:** Manage fee phases & amounts, Log billable time, Manage all time entries, Create / edit deliverables, Approve / issue deliverables, Comment on review rounds, Open / close review rounds, View utilization reports, Manage rate cards, Approve / reject time entries, Manage monthly retainers
+- **Architecture & Design:** Manage FF&E schedules & moodboards, Manage statutory approvals / NOC register, View & compare vendor quotes
 - **Compliance & Filings:** View compliance status
 - **Communications:** Configure notifications
 - **Activity & Audit:** View activity feed, Read audit log
@@ -71,42 +73,45 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
 *Paying builder / firm owner. Gets the 7am WhatsApp digest; finance + handover view. Owns the org but rarely logs in.*
 
-- **Projects:** Create new projects, Archive projects, Restore archived projects, Edit project settings
 - **Daily Reports (DPR):** View daily reports
-- **Team & Attendance:** Manage project team
-- **Materials & Procurement:** Manage vendor directory, Select a vendor in PO / material / invoice forms, Approve purchase orders
-- **RFIs & Change Orders:** Approve change orders
-- **Finance & Billing:** Approve expenses, Approve RA bills, Approve invoices, View budget, Edit budget, View financial ledger
+- **Finance & Billing:** View budget, View financial ledger
 - **Compliance & Filings:** View compliance status
-- **Communications:** Configure notifications, Subscribe to daily digest, Receive the 7am WhatsApp digest
+- **Communications:** Subscribe to daily digest, Receive the 7am WhatsApp digest
 - **Activity & Audit:** View activity feed, Read audit log
-- **Export & Sharing:** Export PDF reports, Export CSV data, Share project publicly
-- **Handover:** Generate handover packets, View handover packets, Sign handover packets
-- **Org Administration:** Manage org members, Manage billing / subscription, Manage integrations, Manage templates, Configure approval chains, Manage org notifications, Manage org branding, Configure feature flags
+- **Export & Sharing:** Export PDF reports, Export CSV data
+- **Handover:** View handover packets, Sign handover packets
 
 ### Project Admin `project_admin`
 
 *Back-office paperwork — invoices, RA bills, RERA / GST / EPFO filings.*
 
-- **Projects:** Create new projects, Archive projects, Restore archived projects, Edit project settings
 - **Progress & Milestones:** Add milestones, Edit milestones
-- **Team & Attendance:** Manage project team
-- **Materials & Procurement:** Manage vendor directory, Select a vendor in PO / material / invoice forms, Approve purchase orders
-- **RFIs & Change Orders:** Approve change orders
-- **Finance & Billing:** Approve expenses, Create RA bills, Approve RA bills, Create invoices, Approve invoices, View budget, Edit budget, View financial ledger
+- **Materials & Procurement:** View material price master, Select a vendor in PO / material / invoice forms, Approve purchase orders
+- **Finance & Billing:** Create RA bills, Create invoices, View budget, View financial ledger, Generate hourly / retainer invoices, View revenue & billing rollups
+- **Consultancy Engagements:** Manage fee phases & amounts, Log billable time, Manage all time entries, Create / edit deliverables, Approve / issue deliverables, Comment on review rounds, Open / close review rounds, View utilization reports, Manage rate cards, Approve / reject time entries, Manage monthly retainers
+- **Architecture & Design:** Manage FF&E schedules & moodboards, Manage statutory approvals / NOC register, View & compare vendor quotes
 - **Compliance & Filings:** View compliance status, File RERA returns, File GST returns, File EPFO returns
-- **Communications:** Configure notifications
 - **Activity & Audit:** View activity feed, Read audit log
-- **Export & Sharing:** Export PDF reports, Export CSV data, Share project publicly
+- **Export & Sharing:** Export PDF reports, Export CSV data
 - **Handover:** Generate handover packets
-- **Org Administration:** Manage org members, Manage billing / subscription, Manage integrations, Manage templates, Configure approval chains, Manage org notifications, Manage org branding, Configure feature flags
 
 ### Sales / BD `prospector`
 
 *Sales / BD. Creates draft projects for prospects; minimal access.*
 
-- **Projects:** Create new projects
-- **Materials & Procurement:** Manage vendor directory, Select a vendor in PO / material / invoice forms
+- **Projects:** Create new projects, Edit project settings
+- **Progress & Milestones:** Update overall progress %, Add milestones, Edit milestones, Delete milestones
+- **Daily Reports (DPR):** Approve / publish DPRs, View daily reports
+- **Site Operations:** Post site updates, Edit site updates, Delete site updates, Raise issues, Resolve issues, Close safety incidents
+- **Team & Attendance:** Manage project team, Mark labour attendance, View attendance
+- **Materials & Procurement:** Add materials, Edit materials, Manage vendor directory, Select a vendor in PO / material / invoice forms, Create / submit purchase orders
+- **Drawings:** Upload drawings
+- **RFIs & Change Orders:** Respond to RFIs, Close RFIs, Create change orders
+- **Finance & Billing:** Add expenses, Create RA bills, View budget, View financial ledger, Generate hourly / retainer invoices, View revenue & billing rollups
+- **Consultancy Engagements:** Manage fee phases & amounts, Log billable time, Manage all time entries, Create / edit deliverables, Approve / issue deliverables, Comment on review rounds, Open / close review rounds, View utilization reports, Manage rate cards, Approve / reject time entries, Manage monthly retainers
+- **Architecture & Design:** View & compare vendor quotes
+- **Compliance & Filings:** View compliance status
+- **Communications:** Send in-app messages, Send WhatsApp messages
 - **Activity & Audit:** View activity feed
 - **Export & Sharing:** Export PDF reports, Export CSV data
 
@@ -117,16 +122,19 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 - **Projects:** Create new projects, Edit project settings
 - **Progress & Milestones:** Update overall progress %, Add milestones, Edit milestones, Delete milestones
 - **Daily Reports (DPR):** Approve / publish DPRs, View daily reports
-- **Site Operations:** Post site updates, Edit site updates, Delete site updates, Raise issues, Resolve issues
+- **Site Operations:** Post site updates, Edit site updates, Delete site updates, Raise issues, Resolve issues, Close safety incidents
 - **Team & Attendance:** Manage project team, Mark labour attendance, View attendance
 - **Materials & Procurement:** Add materials, Edit materials, Delete materials, View material price master, Select a vendor in PO / material / invoice forms, Create / submit purchase orders
 - **Drawings:** Upload drawings
 - **RFIs & Change Orders:** Respond to RFIs, Close RFIs, Create change orders
-- **Finance & Billing:** Add expenses, Create RA bills, View budget, View financial ledger
+- **Finance & Billing:** Add expenses, Create RA bills, View budget, View financial ledger, Generate hourly / retainer invoices, View revenue & billing rollups
+- **Consultancy Engagements:** Manage fee phases & amounts, Log billable time, Manage all time entries, Create / edit deliverables, Approve / issue deliverables, Comment on review rounds, Open / close review rounds, View utilization reports, Manage rate cards, Approve / reject time entries, Manage monthly retainers
+- **Architecture & Design:** View & compare vendor quotes
 - **Compliance & Filings:** View compliance status
-- **Communications:** Send in-app messages, Send WhatsApp messages
-- **Activity & Audit:** View activity feed, Read audit log
+- **Communications:** Send in-app messages, Send WhatsApp messages, Subscribe to daily digest, Receive the 7am WhatsApp digest
+- **Activity & Audit:** View activity feed
 - **Export & Sharing:** Export PDF reports, Export CSV data
+- **Handover:** Generate handover packets
 
 ## Architecture & Project Execution
 
@@ -135,9 +143,11 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 *Drawings + RFIs + BOQ + change orders.*
 
 - **Site Operations:** Post site updates, Raise issues
+- **Materials & Procurement:** View material price master
 - **Drawings:** Upload drawings, Edit drawings, Release drawing revisions, Mark up drawings
 - **BOQ & Estimates:** Edit BOQ, Edit estimates
 - **RFIs & Change Orders:** Raise RFIs, Respond to RFIs, Create change orders
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 - **Export & Sharing:** Export PDF reports, Export CSV data
 
@@ -147,9 +157,11 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
 - **Site Operations:** Post site updates, Edit site updates, Delete site updates, Raise issues, Resolve issues
 - **Team & Attendance:** Manage project team
+- **Materials & Procurement:** View material price master
 - **Drawings:** Upload drawings, Edit drawings, Release drawing revisions, Mark up drawings
 - **BOQ & Estimates:** Edit BOQ, Edit estimates
 - **RFIs & Change Orders:** Raise RFIs, Respond to RFIs, Close RFIs, Create change orders, Approve change orders
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 - **Export & Sharing:** Export PDF reports, Export CSV data
 
@@ -157,9 +169,10 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
 *Junior architect — drafting + drawing revisions.*
 
-- **Site Operations:** Post site updates
+- **Site Operations:** Post site updates, Raise issues
 - **Drawings:** Upload drawings, Edit drawings, Mark up drawings
-- **RFIs & Change Orders:** Raise RFIs
+- **RFIs & Change Orders:** Raise RFIs, Respond to RFIs
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 
 ## Design
@@ -173,6 +186,7 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 - **Drawings:** Upload drawings, Edit drawings, Release drawing revisions, Mark up drawings
 - **BOQ & Estimates:** Edit BOQ
 - **RFIs & Change Orders:** Raise RFIs, Respond to RFIs
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 
 ### Design Head `design_head`
@@ -181,9 +195,13 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
 - **Site Operations:** Post site updates, Edit site updates
 - **Team & Attendance:** Manage project team
+- **Materials & Procurement:** View material price master
 - **Drawings:** Upload drawings, Edit drawings, Release drawing revisions, Mark up drawings
 - **BOQ & Estimates:** Edit BOQ, Edit estimates
 - **RFIs & Change Orders:** Respond to RFIs, Close RFIs, Approve change orders
+- **Finance & Billing:** Generate hourly / retainer invoices, View revenue & billing rollups
+- **Consultancy Engagements:** Manage fee phases & amounts, Log billable time, Manage all time entries, Create / edit deliverables, Approve / issue deliverables, Comment on review rounds, Open / close review rounds, View utilization reports, Manage rate cards, Approve / reject time entries, Manage monthly retainers
+- **Architecture & Design:** Manage FF&E schedules & moodboards, Manage statutory approvals / NOC register, View & compare vendor quotes
 - **Activity & Audit:** View activity feed
 - **Export & Sharing:** Export PDF reports
 
@@ -192,8 +210,12 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 *Consultant Project lead.*
 
 - **Site Operations:** Post site updates
+- **Materials & Procurement:** View material price master
 - **Drawings:** Edit drawings, Mark up drawings
 - **RFIs & Change Orders:** Respond to RFIs, Close RFIs, Approve change orders
+- **Finance & Billing:** Generate hourly / retainer invoices, View revenue & billing rollups
+- **Consultancy Engagements:** Manage fee phases & amounts, Log billable time, Manage all time entries, Create / edit deliverables, Approve / issue deliverables, Comment on review rounds, Open / close review rounds, View utilization reports, Manage rate cards, Approve / reject time entries, Manage monthly retainers
+- **Architecture & Design:** Manage FF&E schedules & moodboards, Manage statutory approvals / NOC register, View & compare vendor quotes
 - **Activity & Audit:** View activity feed
 - **Export & Sharing:** Export PDF reports
 
@@ -204,6 +226,7 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 - **Site Operations:** Post site updates
 - **Drawings:** Mark up drawings
 - **RFIs & Change Orders:** Raise RFIs, Respond to RFIs
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 
 ### Designer `designer`
@@ -212,6 +235,8 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
 - **Site Operations:** Post site updates
 - **Drawings:** Upload drawings, Mark up drawings
+- **RFIs & Change Orders:** Raise RFIs
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 
 ## Engineering & Field
@@ -221,8 +246,10 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 *MEP (mechanical / electrical / plumbing) consultant.*
 
 - **Site Operations:** Post site updates, Create inspections, Close inspections
+- **Materials & Procurement:** View material price master
 - **Drawings:** Upload drawings, Edit drawings, Release drawing revisions, Mark up drawings
 - **RFIs & Change Orders:** Raise RFIs, Respond to RFIs, Create change orders
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 
 ### Structural Consultant `structural_consultant`
@@ -230,8 +257,10 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 *Structural engineer / consultant.*
 
 - **Site Operations:** Post site updates, Create inspections, Close inspections
+- **Materials & Procurement:** View material price master
 - **Drawings:** Upload drawings, Edit drawings, Release drawing revisions, Mark up drawings
 - **RFIs & Change Orders:** Raise RFIs, Respond to RFIs, Create change orders
+- **Consultancy Engagements:** Log billable time, Create / edit deliverables, Comment on review rounds
 - **Activity & Audit:** View activity feed
 
 ### Site Engineer `site_engineer`
@@ -239,11 +268,11 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 *The field role. Files DPRs (voice + photo), runs site ops + attendance (absorbed Site Supervisor + Civil Engineer).*
 
 - **Progress & Milestones:** Update overall progress %
-- **Daily Reports (DPR):** File daily progress reports (DPR), Approve / publish DPRs, View daily reports
+- **Daily Reports (DPR):** File daily progress reports (DPR), View daily reports
 - **Voice & Photos:** Record Telugu voice notes, Upload site photos
-- **Site Operations:** Post site updates, Edit site updates, Raise issues, Resolve issues, Report safety incidents, Create inspections, Close inspections, Add punch-list items, Close punch-list items
+- **Site Operations:** Post site updates, Edit site updates, Raise issues, Resolve issues, Report safety incidents, Close safety incidents, Create inspections, Close inspections, Add punch-list items, Close punch-list items
 - **Team & Attendance:** Mark labour attendance, View attendance, Manage labour records
-- **Materials & Procurement:** Add materials, Edit materials, Select a vendor in PO / material / invoice forms
+- **Materials & Procurement:** Add materials, Edit materials, View material price master, Select a vendor in PO / material / invoice forms
 - **Drawings:** Mark up drawings
 - **RFIs & Change Orders:** Raise RFIs
 - **Activity & Audit:** View activity feed
@@ -257,7 +286,7 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 - **Voice & Photos:** Upload site photos
 - **Site Operations:** Post site updates
 - **Team & Attendance:** Mark labour attendance, View attendance
-- **Materials & Procurement:** Add materials, Select a vendor in PO / material / invoice forms
+- **Materials & Procurement:** Add materials, View material price master, Select a vendor in PO / material / invoice forms
 - **RFIs & Change Orders:** Raise RFIs
 - **Finance & Billing:** Create RA bills
 - **Activity & Audit:** View activity feed
@@ -268,7 +297,7 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
 - **Voice & Photos:** Upload site photos
 - **Site Operations:** Post site updates
-- **Team & Attendance:** Mark labour attendance
+- **Team & Attendance:** Mark labour attendance, View attendance
 - **RFIs & Change Orders:** Raise RFIs
 - **Activity & Audit:** View activity feed
 
@@ -287,6 +316,7 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 *Unit buyer — read-only progress + payments + handover; client portal.*
 
 - **Daily Reports (DPR):** View daily reports
+- **Consultancy Engagements:** Comment on review rounds
 - **Compliance & Filings:** View compliance status
 - **Activity & Audit:** View activity feed
 - **Export & Sharing:** Export PDF reports, Access the client portal
@@ -294,10 +324,10 @@ feature per role from **Role Permissions** (`/admin/roles`, migration 69).
 
 ### Site Inspector (RERA) `site_inspector`
 
-*External RERA / govt inspector — read-only audit + RERA filing.*
+*External RERA / govt inspector — read-only audit (no filings; project_admin files returns).*
 
 - **Drawings:** Mark up drawings
-- **Compliance & Filings:** View compliance status, File RERA returns
+- **Compliance & Filings:** View compliance status
 - **Activity & Audit:** View activity feed, Read audit log
 - **Export & Sharing:** Export PDF reports
 

@@ -38,7 +38,7 @@ const ROLE_DESC: Record<string, string> = {
   sub_contractor: "Sub-contractor — updates, attendance, RFIs, photos.",
   vendor: "Material supplier — vendor portal: quotes, invoices, price master.",
   client: "Unit buyer — read-only progress + payments + handover; client portal.",
-  site_inspector: "External RERA / govt inspector — read-only audit + RERA filing.",
+  site_inspector: "External RERA / govt inspector — read-only audit (no filings; project_admin files returns).",
 };
 
 const CATEGORY_ORDER = ["platform","org-leadership","project-execution","design-discipline","engineering-discipline","field-supervision","supply-chain","external"] as const;

@@ -8,6 +8,8 @@ import { describe, it, expect } from "vitest";
 import {
   IDENTITY_ROLES,
   PROJECT_TIER_ROLES,
+  type IdentityRole,
+  type ProjectTierRole,
 } from "@/auth/roles";
 import {
   identityCapabilities,
@@ -26,6 +28,14 @@ describe("Identity-tier coverage", () => {
     const caps = identityCapabilities("superadmin");
     // Superadmin gets the full set — should match CAPABILITIES length.
     expect(caps.length).toBeGreaterThan(50);   // sanity: matrix grew past 50
+  });
+
+  it("project:delete is superadmin-only (irreversible)", () => {
+    expect(identityCapabilities("superadmin")).toContain("project:delete" as never);
+    for (const r of IDENTITY_ROLES) {
+      if (r === "superadmin") continue;
+      expect(identityCapabilities(r), `role=${r}`).not.toContain("project:delete" as never);
+    }
   });
 
   it("prospector cannot resolve issues / edit progress (sales-only); has export", () => {
@@ -49,6 +59,7 @@ describe("Identity-tier coverage", () => {
     expect(caps).toContain("dpr:submit" as never);
     expect(caps).toContain("voice:record" as never);
     expect(caps).toContain("photo:upload" as never);
+    expect(caps).not.toContain("dpr:approve" as never); // SoD: submits, pm approves
   });
 
   it("promoter receives digest + sees finance (paying customer)", () => {
@@ -59,11 +70,11 @@ describe("Identity-tier coverage", () => {
     expect(caps).not.toContain("progress:edit" as never);   // not an editor
   });
 
-  it("site_inspector is read + RERA file ONLY (no drawing edit, no progress)", () => {
+  it("site_inspector is read + audit ONLY (no RERA filing, no drawing edit, no progress)", () => {
     const caps = identityCapabilities("site_inspector");
     expect(caps).toContain("compliance:view" as never);
-    expect(caps).toContain("rera:file" as never);
     expect(caps).toContain("audit:read" as never);
+    expect(caps).not.toContain("rera:file" as never);   // external role files nothing; project_admin files RERA
     expect(caps).not.toContain("drawings:edit" as never);
     expect(caps).not.toContain("progress:edit" as never);
   });
@@ -99,6 +110,7 @@ describe("Project-tier coverage", () => {
     expect(caps).toContain("dpr:submit" as never);
     expect(caps).toContain("voice:record" as never);
     expect(caps).toContain("photo:upload" as never);
+    expect(caps).not.toContain("dpr:approve" as never); // SoD: submits, pm approves
   });
   it("client (project tier) is read + handover-only", () => {
     const caps = projectTierCapabilities("client");
@@ -109,6 +121,7 @@ describe("Project-tier coverage", () => {
   it("site_inspector (project tier) cannot edit drawings", () => {
     const caps = projectTierCapabilities("site_inspector");
     expect(caps).toContain("compliance:view" as never);
+    expect(caps).not.toContain("rera:file" as never);   // read-only on project too
     expect(caps).not.toContain("drawings:edit" as never);
     expect(caps).not.toContain("drawings:release" as never);
   });
@@ -433,6 +446,42 @@ describe("D — no dead capabilities", () => {
     for (const cap of D_MANAGER) {
       const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
       expect(denied, `cap=${cap}`).toBe(true);
+    }
+  });
+});
+
+// ── Separation of duties invariant (2026-08-04) ──────────────────────────────
+// No ROLE IN THE SECURITY-ANALYSIS SCOPE may both CREATE and APPROVE the same
+// financial document type in the resolved union (identity ∪ project tier).
+// The 2026-06-21 RBAC security analysis targeted pm + project_admin (removed
+// self-approval) and site_engineer/orgadmin; senior_architect deliberately
+// keeps changeorder:create + changeorder:approve per founder intent
+// (ROLE_FEATURES.md) and is NOT in scope. superadmin is the platform override.
+const FINANCE_DOMAINS: Array<{ create: string; approve: string }> = [
+  { create: "po:create", approve: "po:approve" },
+  { create: "changeorder:create", approve: "changeorder:approve" },
+  { create: "rabill:create", approve: "rabill:approve" },
+  { create: "invoice:create", approve: "invoice:approve" },
+  { create: "expense:add", approve: "expense:approve" },
+];
+
+const SOD_SCOPE: readonly string[] = ["pm", "project_admin", "site_engineer", "orgadmin"];
+
+describe("Separation of duties — no self-approval", () => {
+  it("no in-scope role holds create + approve on the same finance domain", () => {
+    for (const role of SOD_SCOPE) {
+      const resolved = new Set(identityCapabilities(role as IdentityRole));
+      if ((PROJECT_TIER_ROLES as readonly string[]).includes(role)) {
+        for (const c of projectTierCapabilities(role as ProjectTierRole)) resolved.add(c);
+      }
+      for (const d of FINANCE_DOMAINS) {
+        const hasCreate = resolved.has(d.create as never);
+        const hasApprove = resolved.has(d.approve as never);
+        expect(
+          hasCreate && hasApprove,
+          `SoD violation: ${role} can both ${d.create} and ${d.approve}`,
+        ).toBe(false);
+      }
     }
   });
 });

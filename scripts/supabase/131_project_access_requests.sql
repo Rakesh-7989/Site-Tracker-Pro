@@ -107,13 +107,41 @@ BEGIN
     RAISE EXCEPTION 'permission-denied';
   END IF;
 
-  -- Add as project member with their identity role (or 'client' as fallback)
+  -- Add as a project member. Map the identity role to a valid project-tier
+  -- role (mirrors PROJECT_ROLE_FOR_IDENTITY in src/app/projectMemberQueries.ts)
+  -- so trigger 155 (enforce_project_role_by_type) never rejects an approval.
+  -- Fallback 'client' covers unknown/missing profiles.
   INSERT INTO public.project_members (project_id, profile_id, role, assigned_by)
   SELECT v_project_id, v_requester_id, COALESCE(
-    (SELECT role FROM public.profiles WHERE id = v_requester_id),
+    (SELECT CASE role
+       WHEN 'pm' THEN 'pm'
+       WHEN 'architect' THEN 'architect'
+       WHEN 'senior_architect' THEN 'architect'
+       WHEN 'junior_architect' THEN 'architect'
+       WHEN 'design_architect_interior' THEN 'architect'
+       WHEN 'design_head' THEN 'architect'
+       WHEN 'consultant_head' THEN 'architect'
+       WHEN 'mep_consultant' THEN 'architect'
+       WHEN 'structural_consultant' THEN 'architect'
+       WHEN 'consultant' THEN 'architect'
+       WHEN 'designer' THEN 'architect'
+       WHEN 'site_engineer' THEN 'architect'
+       WHEN 'contractor' THEN 'contractor'
+       WHEN 'sub_contractor' THEN 'contractor'
+       WHEN 'vendor' THEN 'contractor'
+       WHEN 'client' THEN 'client'
+       WHEN 'site_inspector' THEN 'client'
+       WHEN 'superadmin' THEN 'pm'
+       WHEN 'orgadmin' THEN 'pm'
+       WHEN 'promoter' THEN 'pm'
+       WHEN 'project_admin' THEN 'pm'
+       WHEN 'prospector' THEN 'pm'
+       ELSE 'client'
+     END
+     FROM public.profiles WHERE id = v_requester_id),
     'client'
   ), auth.uid()
-  ON CONFLICT (project_id, profile_id, role) DO NOTHING;
+  ON CONFLICT (project_id, profile_id) DO NOTHING;
 
   UPDATE public.project_access_requests
   SET status = 'approved', reviewed_by = auth.uid(), reviewed_at = now()
