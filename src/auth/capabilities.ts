@@ -20,6 +20,7 @@ export const CAPABILITIES = [
   "project:create",
   "project:archive",
   "project:restore",
+  "project:delete",          // irreversible — superadmin only
   "project:settings:edit",
 
   // ── Progress + milestones ────────────────────────────────────────────────
