@@ -35,9 +35,9 @@ export async function listPOs(client: any, projectId: string): Promise<Result<Pu
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createPO(client: any, input: { projectId: string; poNo: string; items?: string; amount: number; deliveryDate?: string | null }): Promise<Result<{ id: string }>> {
+export async function createPO(client: any, input: { projectId: string; poNo: string; items?: string; amount: number; deliveryDate?: string | null; vendorId?: string | null }): Promise<Result<{ id: string }>> {
   try {
-    const { data, error } = await client.from("purchase_orders").insert({ project_id: input.projectId, po_no: input.poNo, items: input.items || null, amount: input.amount, delivery_date: input.deliveryDate || null }).select("id").single();
+    const { data, error } = await client.from("purchase_orders").insert({ project_id: input.projectId, po_no: input.poNo, items: input.items || null, amount: input.amount, delivery_date: input.deliveryDate || null, vendor_id: input.vendorId || null }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
 }

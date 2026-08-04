@@ -162,6 +162,31 @@ describe("buildNav", () => {
       expect(nav.map(n => n.to)).not.toContain("/vendors");
     }
   });
+
+  it("procurement:view holders see /procurement only in architecture/interior/multiple segments (v4 D5)", () => {
+    const mk = (role: "pm" | "design_head" | "consultant_head" | "designer", segment: "architecture" | "interior" | "multiple" | "construction" | "consultancy" | null) =>
+      buildNav(session({
+        user: { id: "u", email: "a@b", name: role, identityRole: role, isStaff: false },
+        orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment, isAdmin: false, joinedAt: "2026-01-01" }],
+        activeOrgId: "o-1",
+        projectMemberships: [],
+      })).map(n => n.to);
+
+    // pm, design_head, consultant_head hold procurement:view → visible in arch/interior/multiple.
+    for (const role of ["pm", "design_head", "consultant_head"] as const) {
+      expect(mk(role, "architecture")).toContain("/procurement");
+      expect(mk(role, "interior")).toContain("/procurement");
+      expect(mk(role, "multiple")).toContain("/procurement");
+      // NOT in construction/consultancy segments.
+      expect(mk(role, "construction")).not.toContain("/procurement");
+      expect(mk(role, "consultancy")).not.toContain("/procurement");
+      // NOT without a segment (legacy org).
+      expect(mk(role, null)).not.toContain("/procurement");
+    }
+
+    // designer does NOT hold procurement:view → never sees it.
+    expect(mk("designer", "architecture")).not.toContain("/procurement");
+  });
 });
 
 describe("groupNav", () => {
