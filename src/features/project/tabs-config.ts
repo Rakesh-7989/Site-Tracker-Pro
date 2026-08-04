@@ -47,7 +47,7 @@ export const TAB_CATALOG: readonly TabDef[] = [
 
   // Progress + planning
   { id: "milestones",   label: "Milestones",    icon: "flag",      requires: "milestone:add" },
-  { id: "tasks",        label: "Tasks",         icon: "check" },
+  { id: "tasks",        label: "Tasks",         icon: "check",      requires: "task:add" },
   { id: "updates",      label: "Updates",       icon: "activity" },
   { id: "issues",       label: "Issues",        icon: "alert",     requires: "issue:add" },
   { id: "punchlist",    label: "Punch List",    icon: "clipboard", requires: "punchlist:add", projectTypes: SITE_TYPES },
@@ -91,15 +91,15 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "invoices",     label: "Invoices",      icon: "doc",       requires: "invoice:create",  planFeature: "finance" },
   { id: "rabills",      label: "RA Bills",      icon: "wallet",    requires: "rabill:create",   planFeature: "finance" },
 
-  // Approvals + compliance (Pro+)
-  {
-    id: "approvals",
-    label: "Approvals",
-    icon: "check",
-    requiresAny: ["changeorder:approve", "rabill:approve", "po:approve"],
-    planFeature: "approvals",
-  },
-  { id: "compliance",   label: "Compliance",    icon: "shield",    requires: "compliance:view", planFeature: "compliance_read" },
+    // Approvals + compliance (Pro+)
+    {
+      id: "approvals",
+      label: "Approvals",
+      icon: "check",
+      requiresAny: ["changeorder:approve", "rabill:approve", "po:approve"],
+      planFeature: "approvals",
+    },
+    { id: "compliance",   label: "Compliance",    icon: "shield",    requires: "compliance:view" },
 
   // Always-on viewers
   { id: "map",          label: "Map",           icon: "map" },

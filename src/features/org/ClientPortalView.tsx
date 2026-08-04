@@ -88,11 +88,14 @@ export function ClientPortalView(): JSX.Element {
             className="w-full bg-panel rounded-2xl border border-default p-6 text-left hover:shadow-md hover:border-accent transition-all group"
           >
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-fg-primary group-hover:text-accent">{p.name}</h3>
-                {p.location && <div className="flex items-center gap-1.5 text-fg-tertiary text-xs mt-1"><Icon name="map" size={12} />{p.location}</div>}
-              </div>
-              <Badge tone={p.status === "active" ? "success" : p.status === "completed" ? "info" : "neutral"}>{p.status}</Badge>
+          <div>
+            <h3 className="font-bold text-fg-primary group-hover:text-accent">{p.name}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              {p.location && <div className="flex items-center gap-1.5 text-fg-tertiary text-xs"><Icon name="map" size={12} />{p.location}</div>}
+              <Badge tone="neutral" size="sm" className="text-xs">{p.type || "construction"}</Badge>
+            </div>
+          </div>
+          <Badge tone={p.status === "active" ? "success" : p.status === "completed" ? "info" : "neutral"}>{p.status}</Badge>
             </div>
             <div className="mb-2 flex justify-between text-sm">
               <span className="text-fg-tertiary">Progress</span>

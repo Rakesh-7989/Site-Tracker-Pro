@@ -24,6 +24,7 @@ const PERMIT_STATUS_OPTS = [{ value: "applied", label: "Applied" }, { value: "is
 export function HandoverPacketView(): JSX.Element {
   const canGenerate = useCan("handover:generate");
   const canView = useCan("handover:view");
+  const canSign = useCan("handover:sign");
   const [activeTab, setActiveTab] = useState<Tab>("punch");
 
   const { activeOrg } = useOrgSwitcher();
@@ -50,7 +51,7 @@ export function HandoverPacketView(): JSX.Element {
       </div>
       {!canView && <Alert variant="danger">You do not have permission to view the handover packet.</Alert>}
       {canView && (
-        <>
+        >
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-fg-secondary">Project</label>
             <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent">
@@ -65,14 +66,25 @@ export function HandoverPacketView(): JSX.Element {
             ))}
           </nav>
           {selProject && activeOrg && (
-            <>
+            >
               {activeTab === "punch" && <PunchList projectId={selProject} />}
               {activeTab === "submittals" && <SubmittalsList projectId={selProject} />}
               {activeTab === "permits" && <PermitsList projectId={selProject} />}
-              {activeTab === "generate" && <GenerateSection projectId={selProject} orgId={activeOrg.orgId} />}
-            </>
+              {activeTab === "generate" && canGenerate && <GenerateSection projectId={selProject} orgId={activeOrg.orgId} />}
+              {activeTab === "generate" && !canGenerate && (
+                <div className="p-8 text-center text-fg-secondary">
+                  You do not have permission to generate handover packets. Contact your project manager.
+                </div>
+              )}
+            >
           )}
-        </>
+          {selProject && canSign && activeOrg && (
+            <div className="mt-6 border-t pt-4">
+              <h3 className="font-display text-lg font-bold text-fg-primary mb-4">Sign Handover Packet</h3>
+              <SignHandoverSection projectId={selProject} orgId={activeOrg.orgId} />
+            </div>
+          )}
+        >
       )}
     </div>
   );
@@ -342,18 +354,71 @@ function GenerateSection({ projectId, orgId }: { projectId: string; orgId: strin
     setLoading(false);
   };
 
+    return (
+      <div className="space-y-4">
+        <h2 className="font-display text-lg font-bold text-fg-primary">Generate Handover Packet</h2>
+        <p className="text-sm text-fg-secondary">Bundle all submittals and permits into a single handover manifest. The manifest is hashed and a merkle root is computed for the blockchain anchor.</p>
+        {error && <Alert variant="danger">{error}</Alert>}
+        <Button onClick={() => void generate()} disabled={loading}>{loading ? <Spinner size={14} /> : "Generate Packet"}</Button>
+        {manifest && (
+          <Card className="p-4">
+            <h3 className="font-display text-sm font-bold text-fg-primary mb-2">Manifest Output</h3>
+            <pre className="text-xs font-mono text-fg-secondary whitespace-pre-wrap max-h-64 overflow-auto bg-bg-secondary rounded-lg p-3">{manifest}</pre>
+          </Card>
+        )}
+      </div>
+    );
+  }
+}
+
+function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: string }): JSX.Element {
+  const [signature, setSignature] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
+
+  const sign = async () => {
+    if (!signature.trim()) {
+      setError("Signature is required.");
+      return;
+    }
+    setLoading(true); setError(null);
+    try {
+      const client = await getClient();
+      if (!client) { setError("Backend not configured."); return; }
+      // Sign the handover packet (implementation depends on your API/endpoint)
+      const { data, error: signError } = await client
+        .from("handover_signatures")
+        .insert({
+          project_id: projectId,
+          org_id: orgId,
+          signed_by: session?.user.id,
+          signature: signature,
+          signed_at: new Date().toISOString(),
+        });
+      if (signError) throw signError;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to sign handover packet");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">Generate Handover Packet</h2>
-      <p className="text-sm text-fg-secondary">Bundle all submittals and permits into a single handover manifest. The manifest is hashed and a merkle root is computed for the blockchain anchor.</p>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Button onClick={() => void generate()} disabled={loading}>{loading ? <Spinner size={14} /> : "Generate Packet"}</Button>
-      {manifest && (
-        <Card className="p-4">
-          <h3 className="font-display text-sm font-bold text-fg-primary mb-2">Manifest Output</h3>
-          <pre className="text-xs font-mono text-fg-secondary whitespace-pre-wrap max-h-64 overflow-auto bg-bg-secondary rounded-lg p-3">{manifest}</pre>
-        </Card>
-      )}
-    </div>
+    <Card className="p-4">
+      <h3 className="font-display text-sm font-bold text-fg-primary mb-2">Sign Handover Packet</h3>
+      <p className="text-xs text-fg-secondary mb-4">Please provide your signature to finalize the handover packet. This signature will be recorded and included in the final handover packet.
+      </p>
+      {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+      <Textarea
+        placeholder="Type your signature here..."
+        value={signature}
+        onChange={e => setSignature(e.target.value)}
+        rows={4}
+        className="mb-4"
+      />
+      <Button onClick={() => void sign()} disabled={loading || !signature.trim()} leftIcon={<Icon name="pen" size={16} />}>{loading ? <Spinner size={14} /> : "Sign Handover Packet"}</Button>
+      <p className="text-xs text-fg-tertiary mt-3">By signing, you acknowledge that you have reviewed all punch list items, submittals, and permits, and the project is ready for handover.</p>
+    </Card>
   );
 }

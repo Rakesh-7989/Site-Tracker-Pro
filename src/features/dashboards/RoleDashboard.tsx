@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/atoms";
 import { dashboardForRole } from "./dashboardForRole";
 import { PromoterDashboard } from "./PromoterDashboard";
 import { SiteSupervisorDashboard } from "./SiteSupervisorDashboard";
+import { ClientDashboard } from "./ClientDashboard";
 import { DashboardView } from "../shell/DashboardView";
 
 export function RoleDashboard(): JSX.Element {
@@ -24,9 +25,8 @@ export function RoleDashboard(): JSX.Element {
       return <SiteSupervisorDashboard />;
     case "pm":
       return <Navigate to="/pm" replace />;
-    // 'client' + 'default' use the capability-driven generic dashboard for
-    // now; a dedicated client portal lands in a Phase 7 sub-pass.
     case "client":
+      return <ClientDashboard />;
     case "default":
     default:
       return <DashboardView />;
