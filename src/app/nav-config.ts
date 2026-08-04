@@ -58,12 +58,12 @@ export interface NavItem {
  */
 export const NAV_CATALOG: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: "home", group: "Workspace" },
-  { to: "/projects", label: "Projects", icon: "folder", group: "Workspace" },
+{ to: "/projects", label: "Projects", icon: "folder", group: "Workspace" },
   { to: "/calendar", label: "Calendar", icon: "calendar", group: "Workspace" },
   { to: "/search", label: "Search", icon: "search", group: "Workspace" },
   { to: "/notifications", label: "Notifications", icon: "bell", group: "Workspace" },
   { to: "/messages", label: "Messages", icon: "msgcircle", group: "Workspace" },
-   { to: "/client", label: "Client Portal", icon: "shield", requires: "share:client:portal", group: "Workspace" },
+    { to: "/client", label: "Client Portal", icon: "shield", requires: "share:client:portal", group: "Workspace", segments: ["architecture", "interior", "multiple"] },
   { to: "/pm", label: "PM Dashboard", icon: "hardhat", requires: "project:create", group: "Workspace" },
   { to: "/vendor", label: "Vendor Portal", icon: "truck", requires: "po:create", group: "Workspace" },
   { to: "/projects/new", label: "New Project", icon: "plus", requires: "project:create", group: "Workspace" },
@@ -167,7 +167,41 @@ export function buildNav(session: AuthSession | null, catalog: NavItem[] = NAV_C
   // against this. Legacy orgs (null segment) hide segment-gated items.
   const activeSegment = session.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
 
-  return catalog.filter(item => {
+  // Client-specific sidebar: group client-visible items under "Client" group
+  // This provides a cleaner, role-appropriate sidebar for clients
+  const isClient = session.user.identityRole === "client";
+  
+  // Filter out client-specific items from the catalog for non-clients
+  // and reorganize for clients
+  const filteredCatalog = catalog.map(item => {
+    // Client portal already has segments gate, no need to change group
+    if (item.to === "/client") {
+      return item;
+    }
+    
+    // Client-visible items that should be grouped under "Client" for client users
+    if (isClient && (item.to === "/dpr" || item.to === "/compliance" || item.to === "/handover" || item.to === "/activity")) {
+      return { ...item, group: "Client" };
+    }
+    
+    // For non-clients, move client group items back to original groups
+    if (!isClient && (item.group === "Client" && (item.to === "/dpr" || item.to === "/compliance" || item.to === "/handover" || item.to === "/activity"))) {
+      // Map back to original groups based on capability
+      if (item.to === "/dpr") {
+        return { ...item, group: "Field" };
+      } else if (item.to === "/handover") {
+        return { ...item, group: "Field" };
+      } else if (item.to === "/compliance") {
+        return { ...item, group: "Field" };
+      } else if (item.to === "/activity") {
+        return { ...item, group: "Insights" };
+      }
+    }
+    
+    return item;
+  });
+
+  return filteredCatalog.filter(item => {
     const capOk = item.requiresAny
       ? item.requiresAny.some(c => caps.has(c))
       : !item.requires || caps.has(item.requires);

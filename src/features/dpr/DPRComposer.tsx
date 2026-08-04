@@ -44,11 +44,40 @@ export function DPRComposer(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canSubmitDpr = useCan("dpr:submit");
+  const canViewDpr = useCan("dpr:view");
   const [draft, dispatch] = useReducer(dprReducer, EMPTY_DRAFT);
   const [submitted, setSubmitted] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [transcribing, setTranscribing] = useState(false);
+
+  // If user can only view DPRs, redirect to read-only view
+  if (canViewDpr && !canSubmitDpr) {
+    // Check if redirect=true query param is present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('redirect') === 'true') {
+      return (
+        <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
+          <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
+          <div className="text-sm text-fg-secondary">Access denied. You can view DPR history at the main DPR history page.</div>
+        </Card>
+      );
+    }
+    return (
+      <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
+        <Icon name="clipboard" size={24} className="mx-auto text-fg-tertiary mb-2" />
+        <div className="text-sm text-fg-secondary mb-4">
+          Your role can view daily progress reports but cannot submit them.
+        </div>
+        <Button
+          onClick={() => window.location.assign('/dpr/history')}
+          leftIcon={<Icon name="list" size={16} />}
+        >
+          View DPR history
+        </Button>
+      </Card>
+    );
+  }
 
   // ── Voice: transcribe via the real lib ──
   const onRecorded = useCallback((result: VoiceRecordingResult) => {
