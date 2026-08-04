@@ -308,7 +308,7 @@
     "gantt": "गैंट",
     "messages": "संदेश",
     "phases": "चरण", "time": "समय", "deliverables": "डिलिवरेबल्स", "reviews": "समीक्षाएं",
-    "billing": "बिलिंग"
+    "billing": "बिलिंग", "ffe": "FF&E", "statutory": "वैधानिक"
   },
   "projType": {
     "construction": "निर्माण",

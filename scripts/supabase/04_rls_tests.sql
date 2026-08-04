@@ -103,7 +103,7 @@ begin
   perform assert_eq('Architect sees all org projects', n, 2);
 
   select count(*) into n from drawings;
-  perform assert_eq('Architect sees all drawings (full history)', n, 2);
+  perform assert_eq('Architect sees all drawings (member read, 149)', n, 2);
 
   select count(*) into n from invoices;
   perform assert_eq('Architect sees invoices', n, 1);
@@ -124,7 +124,7 @@ begin
   perform assert_eq('PM sees only assigned project', n, 1);
 
   select count(*) into n from drawings where status = 'current';
-  perform assert_eq('PM sees current drawings released to PM', n, 2);
+  perform assert_eq('PM sees current drawings (member read, 149)', n, 2);
 
   select count(*) into n from invoices;
   perform assert_eq('PM sees invoices (project-scoped)', n, 1);

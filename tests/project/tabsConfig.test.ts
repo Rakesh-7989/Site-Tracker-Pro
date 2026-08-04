@@ -269,3 +269,101 @@ describe("v4 C2 — consultancy billing tab", () => {
     expect(ids).toContain("billing");
   });
 });
+
+describe("v4 D3 — FF&E schedule tab", () => {
+  const proPlan = () => true;
+
+  it("manager roles holding ffe:manage see the FF&E tab on design + interior projects", () => {
+    for (const role of ["design_head", "consultant_head", "project_admin", "orgadmin"] as const) {
+      const caps = capsFor(baseSession(role));
+      expect(caps.has("ffe:manage"), `role=${role}`).toBe(true);
+      for (const type of ["design", "interior"] as const) {
+        const ids = visibleTabs(caps, type, proPlan).map(t => t.id);
+        expect(ids, `role=${role} type=${type}`).toContain("ffe");
+      }
+    }
+  });
+
+  it("FF&E tab never appears on construction projects (project-type gate)", () => {
+    const caps = capsFor(baseSession("design_head"));
+    const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
+    expect(ids).not.toContain("ffe");
+  });
+
+  it("pm does NOT hold ffe:manage (procurement:view only) so does not see the tab", () => {
+    const caps = capsFor(baseSession("pm"));
+    expect(caps.has("ffe:manage")).toBe(false);
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("ffe");
+  });
+
+  it("contributors (designer) without ffe:manage do not see the FF&E tab", () => {
+    const caps = capsFor(baseSession("designer"));
+    expect(caps.has("ffe:manage")).toBe(false);
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("ffe");
+  });
+
+  it("client does not see the FF&E tab", () => {
+    const caps = capsFor(baseSession("client"));
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("ffe");
+  });
+
+  it("FF&E tab hides on a Basic plan even for design_head (plan-feature gate)", () => {
+    const caps = capsFor(baseSession("design_head"));
+    const ids = visibleTabs(caps, "design", () => false).map(t => t.id);
+    expect(ids).not.toContain("ffe");
+  });
+
+  it("FF&E tab has no segment gate (org-segment agnostic, project-type based)", () => {
+    const def = tabById("ffe");
+    expect(def?.segments).toBeUndefined();
+  });
+});
+
+describe("v4 D4 — statutory approvals tab", () => {
+  const proPlan = () => true;
+
+  it("manager roles holding statutory:manage see the Statutory tab on design + interior + construction projects", () => {
+    for (const role of ["design_head", "consultant_head", "project_admin", "orgadmin"] as const) {
+      const caps = capsFor(baseSession(role));
+      expect(caps.has("statutory:manage"), `role=${role}`).toBe(true);
+      for (const type of ["design", "interior", "construction"] as const) {
+        const ids = visibleTabs(caps, type, proPlan).map(t => t.id);
+        expect(ids, `role=${role} type=${type}`).toContain("statutory");
+      }
+    }
+  });
+
+  it("pm does NOT hold statutory:manage (procurement:view only) so does not see the tab", () => {
+    const caps = capsFor(baseSession("pm"));
+    expect(caps.has("statutory:manage")).toBe(false);
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("statutory");
+  });
+
+  it("contributors (designer) without statutory:manage do not see the tab", () => {
+    const caps = capsFor(baseSession("designer"));
+    expect(caps.has("statutory:manage")).toBe(false);
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("statutory");
+  });
+
+  it("client does not see the Statutory tab", () => {
+    const caps = capsFor(baseSession("client"));
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("statutory");
+  });
+
+  it("Statutory tab hides on a Basic plan even for design_head (plan-feature gate)", () => {
+    const caps = capsFor(baseSession("design_head"));
+    const ids = visibleTabs(caps, "design", () => false).map(t => t.id);
+    expect(ids).not.toContain("statutory");
+  });
+
+  it("Statutory tab has no segment gate (project-type based)", () => {
+    const def = tabById("statutory");
+    expect(def?.segments).toBeUndefined();
+  });
+});

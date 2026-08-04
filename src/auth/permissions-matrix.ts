@@ -61,6 +61,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "ffe:manage", "statutory:manage", "procurement:view",
   ),
   promoter: arr(
     // Paying firm owner — sees finances + DPR digests + handover packets.
@@ -89,6 +90,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "ffe:manage", "statutory:manage", "procurement:view",
     "export:pdf", "export:csv",
   ),
   prospector: arr(
@@ -134,6 +136,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "procurement:view",
     "export:pdf", "export:csv",
   ),
 
@@ -198,6 +201,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "ffe:manage", "statutory:manage", "procurement:view",
   ),
   consultant_head: arr(
     "activity:view",
@@ -212,6 +216,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "ffe:manage", "statutory:manage", "procurement:view",
   ),
   designer: arr(
     "activity:view",
@@ -378,6 +383,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "ffe:manage", "statutory:manage", "procurement:view",
   ),
   consultant_head: arr(
     "drawings:edit", "drawings:markup",
@@ -390,6 +396,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "ffe:manage", "statutory:manage", "procurement:view",
   ),
   designer: arr(
     "drawings:upload", "drawings:markup",
@@ -471,6 +478,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "procurement:view",
     "export:pdf", "export:csv",
   ),
   project_admin: arr(
@@ -486,6 +494,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "review:comment", "review:manage",
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
+    "ffe:manage", "statutory:manage", "procurement:view",
     "export:pdf", "export:csv",
   ),
   contractor: arr(

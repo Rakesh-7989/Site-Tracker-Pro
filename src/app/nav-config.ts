@@ -77,6 +77,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/measurement-book", label: "Measurement Book", icon: "doc", requiresAny: ["boq:edit", "progress:edit"], group: "Field" },
 
   { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement" },
+  { to: "/procurement", label: "Procurement", icon: "wallet", requires: "procurement:view", segments: ["architecture", "interior", "multiple"], group: "Procurement" },
   { to: "/pos", label: "Purchase Orders", icon: "doc", requiresAny: ["po:create", "material:add"], group: "Procurement" },
   { to: "/rabills", label: "RA Bills", icon: "wallet", requires: "rabill:create", group: "Procurement" },
    { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "material:price:view", group: "Procurement" },

@@ -57,6 +57,8 @@ export const FEATURE_LABEL: Record<string, string> = {
   "rate:manage": "Manage rate cards", "time:approve": "Approve / reject time entries",
   "retainer:manage": "Manage monthly retainers", "billing:generate": "Generate hourly / retainer invoices",
   "revenue:view": "View revenue & billing rollups",
+  "ffe:manage": "Manage FF&E schedules & moodboards", "statutory:manage": "Manage statutory approvals / NOC register",
+  "procurement:view": "View & compare vendor quotes",
 };
 
 /** Founder-readable label for a capability (falls back to a humanized id). */
@@ -78,6 +80,7 @@ const GROUP_BY_DOMAIN: Record<string, string> = {
   review: "consultancy", utilization: "consultancy",
   rate: "consultancy", retainer: "consultancy",
   billing: "finance", revenue: "finance",
+  ffe: "architecture", statutory: "architecture", procurement: "architecture",
   compliance: "compliance", rera: "compliance", gstn: "compliance", epfo: "compliance",
   message: "comms", notification: "comms", whatsapp: "comms", digest: "comms",
   activity: "activity", audit: "activity",
@@ -85,13 +88,14 @@ const GROUP_BY_DOMAIN: Record<string, string> = {
   handover: "handover", org: "orgadmin", platform: "platform",
 };
 
-export const GROUP_ORDER = ["projects","progress","dpr","capture","siteops","team","materials","drawings","boq","rfi","finance","consultancy","compliance","comms","activity","export","handover","orgadmin","platform"] as const;
+export const GROUP_ORDER = ["projects","progress","dpr","capture","siteops","team","materials","drawings","boq","rfi","finance","consultancy","architecture","compliance","comms","activity","export","handover","orgadmin","platform"] as const;
 
 export const GROUP_LABEL: Record<string, string> = {
   projects: "Projects", progress: "Progress & Milestones", dpr: "Daily Reports (DPR)",
   capture: "Voice & Photos", siteops: "Site Operations", team: "Team & Attendance",
   materials: "Materials & Procurement", drawings: "Drawings", boq: "BOQ & Estimates",
   rfi: "RFIs & Change Orders", finance: "Finance & Billing", consultancy: "Consultancy Engagements",
+  architecture: "Architecture & Design",
   compliance: "Compliance & Filings", comms: "Communications", activity: "Activity & Audit", export: "Export & Sharing",
   handover: "Handover", orgadmin: "Org Administration", platform: "Platform Administration",
 };

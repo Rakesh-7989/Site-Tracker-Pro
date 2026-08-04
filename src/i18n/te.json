@@ -308,7 +308,7 @@
     "gantt": "గ్యాంట్",
     "messages": "సందేశాలు",
     "phases": "దశలు", "time": "సమయం", "deliverables": "డెలివరబుల్స్", "reviews": "సమీక్షలు",
-    "billing": "బిల్లింగ్"
+    "billing": "బిల్లింగ్", "ffe": "FF&E", "statutory": "శాసనపరమైనవి"
   },
   "projType": {
     "construction": "నిర్మాణం",

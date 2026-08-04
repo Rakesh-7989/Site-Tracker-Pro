@@ -118,6 +118,11 @@ export const CAPABILITIES = [
   "billing:generate",     // generate hourly / retainer invoices from approved time
   "revenue:view",         // view org-level revenue / billing rollups
 
+  // ── Architecture (v4 D: FF&E + statutory approvals + procurement compare) ──
+  "ffe:manage",           // create / edit FF&E schedule entries + moodboards
+  "statutory:manage",     // manage statutory approvals / NOC register
+  "procurement:view",     // view + compare vendor quotes for spec'd items
+
   // ── Communications ───────────────────────────────────────────────────────
   "message:send",
   "notification:configure",

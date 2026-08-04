@@ -251,5 +251,40 @@ Deepen the C2 consultancy billing stack with per-phase time tracking, project-sc
 - **C3.4 security posture**: the admin function is NOT callable by authenticated users (service_role grant only) — manual Generate keeps its manager gate. This blocks self-serve "run now"; acceptable per agreed scope.
 - **Roadmap complete**: C0→C3.4 all shipped, verified, committed. Next candidates (needs user go): org-wide cross-project rollups (utilization/revenue across all member projects), per-deliverable download audit, monthly statement PDF, push `prod` branch + live deploy.
 
+---
+
+## v4 Phase D — Architecture Segment Registers (Complete, 2026-08-04)
+
+### Goal
+Ship the architecture-segment register stack on the C0 substrate: storage-backed **drawing file register**, drawing **diff overlay** substrate, **FF&E schedule**, **statutory approvals / NOC register**, org-scoped **procurement quote-comparison** (with vendor portal submit), and **register cross-links** tying the registers to each other + the PO pipeline. Gated by plan feature (`ffe`/`statutory`/`procurement`, Business+) + capability + project type (arch/interior).
+
+### Done (D0–D6, all verified)
+- **D0** commit `5e7de08` — **migration 148** `scripts/supabase/148_arch_segment_feature_caps.sql` (jsonb-merge seeding the 3 C0 `PlanFeature`s into `plans.feature_caps`: pro→`ffe` true, business/enterprise/custom→`ffe`+`statutory`+`procurement` true, basic all off; sanity NOTICE loop).
+- **D1** commit `a5d47bb` — **migration 149** `scripts/supabase/149_drawings_file_register.sql` (`drawings` + `drawing_files` in the shared `deliverables` bucket, member-read / released-client-read policies, insert/update members-minus-external, delete managers+orgadmin incl. `has_project_role`; `src/app/drawingFileQueries.ts` (folder/path/sanitize/formatBytes pure helpers + storage CRUD); DrawingsTab upload/download/delete; `tests/app/d1DrawingFiles.test.ts` (9)).
+- **D2** commit `a46e93a` — **migration 150** `scripts/supabase/150_drawings_preview_url.sql` (`drawings.preview_url`); diff overlay substrate (`src/lib/drawingDiffPair.ts`, `src/app/drawingDiffSources.ts`, `DiffView`), DrawingsTab "compare revisions" + AR kiosk overlay; `tests/app/d2DrawingDiff.test.ts` (13).
+- **D3** commit `b652dcc` — **migration 151** `scripts/supabase/151_ffe_schedules.sql` (`ffe_entries` CHECKs: category furniture/fixture/equipment, status specified/selected/ordered/installed/cancelled, qty≥1, unit_cost≥0; member read, member-minus-external write, manager delete); `src/app/ffeQueries.ts` (list/upsert/setStatus/delete + pure `committedCost`, `isCommittedStatus`, `ffeBudgetRollup`); FfeTab at `ffe` tab (projectTypes design/interior, planFeature ffe); `tests/app/d3Ffe.test.ts` (10).
+- **D4** commit `3f7a62f` — **migration 152** `scripts/supabase/152_statutory_approvals.sql` (`statutory_approvals` NOC register: kinds fire/municipal/environment/electrical/labour/occupancy/other, statuses draft/applied/approved/rejected/expired, valid_until, cost≥0; manager+orgadmin write); `src/app/statutoryQueries.ts` (+ pure `isExpiring(validUntil, today, days=30)`); StatutoryTab at `statutory` tab (design/interior/construction, planFeature statutory); `tests/app/d4Statutory.test.ts` (8).
+- **D5** commit `8b3ff94` — **migration 153** `scripts/supabase/153_procurement_quotes.sql` (**org-scoped** `procurement_quotes`: org_id FK, ffe_entry_id FK→ffe_entries set-null, project_id FK set-null, vendor_id FK→vendors set-null, item_name free-text fallback, unit_price≥0, qty≥1, lead_days, valid_until, status requested/received/selected/rejected CHECK, notes, created_by; indexes (org_id,status)+(ffe_entry_id); RLS read=org member, insert=org-tier `vendor` OR manager set, update/delete=managers); `src/app/procurementQuotes.ts` (`listOrgQuotes` w/ vendor join, `upsertQuote`, `attachQuote`, `setQuoteStatus`, `deleteQuote`, `listOrgProjects`, pure `quoteTotal`, `isComparable`, `bestQuote`, `QUOTE_NEXT`); `src/app/financeQueries.ts` `createPO` accepts optional `vendorId`; `src/features/org/ProcurementView.tsx` at `/procurement` (PlanGate procurement + `procurement:view`; Mode A project→FF&E compare received quotes best-highlight → **Raise PO** (createPO + mark selected); Mode B unassigned-quotes attach; manual quote form); `VendorPortalView` new **quotes tab** (org-tier vendor submit); nav `/procurement` (segments architecture/interior/multiple, Procurement group); `tests/app/d5Procurement.test.ts` (15) + navConfig suite.
+- **D6** commit `TBD` — **migration 154** `scripts/supabase/154_po_quote_link.sql` (register cross-links):
+  - `purchase_orders.quote_id` FK → `procurement_quotes(id)` ON DELETE SET NULL + partial index (no RLS change).
+  - `org_calendar()` recreated with a third **`kind='noc'`** branch: approved NOCs with `valid_until` within the next 30 days surface in the org `/calendar` agenda (member-gate identical to milestone/task branches).
+  - `financeQueries.ts`: `PurchaseOrder` + `listPOs` carry `vendorId/vendorName/quoteId/quoteItem` (join `vendor:vendor_id(name)` + `quote:quote_id(item_name)`); `createPO` accepts `quoteId`.
+  - `procurementQuotes.ts`: new project-scoped `listProjectQuotes(client, projectId)`.
+  - `calendarQueries.ts`: `CalKind` = `"milestone"|"task"|"noc"`, mapped in `getOrgCalendar`.
+  - `ProcurementView` Raise PO passes `quoteId: q.id`.
+  - `POsTab`: "from quote" chip + **vendor Select** in the create form (`vendorQueries.listVendors`).
+  - `FfeTab`: per-entry procurement surface (loads quotes + POs in parallel) — "N quotes · best ₹X" link → `/procurement`, or "PO PO-XXX" once a selected quote has a linked PO.
+  - `OverviewTab`: **Registers strip** — Drawings/FF&E/Statutory/POs count chips, each gated by the same rules as the target tab (`isTabVisible` → capability + plan + segment + project-type), plus an amber "N NOC expiring in 30d" alert (`isExpiring`) → Statutory tab.
+  - `CalendarView`: NOC rows → `/projects/{id}/statutory`, danger badge "NOC · Expiring".
+  - `tests/app/d6CrossLinks.test.ts` (5: PO provenance mapper, listProjectQuotes mapper, getOrgCalendar noc mapping, bucketByDate NOC placement).
+
+### Verification
+- Final D6 gate: `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (6.38s) · `vitest` **110 files / 1411 tests pass** · `npm run smoke` **233 checks**.
+- **Live DB apply**: `npm run db:apply` → **115 passed / 28 failed** (28 = same benign pre-existing). 154 verified live via pg: `purchase_orders.quote_id` + FK + partial index present; `org_calendar` def contains the `'noc'` branch + authenticated grant intact; functional probe (gate removed, postgres role has no org membership so the RPC returns empty for it — same as milestone/task branches): within-30d approved NOC → `kind=noc` row, >30d → excluded; test rows cleaned.
+
+### Notes / Follow-ups
+- **D6 note**: `org_calendar` is a member-gated RPC — as `postgres` the gate (`is_superadmin() OR p_org = ANY(user_org_ids())`) yields empty for all branches; the D6 branch was functionally verified with the gate clause removed, matching how milestones/tasks behave.
+- **Phase D complete**: D0→D6 all shipped, verified, committed. Next candidates (needs user go): Phase E (procurement purchase lifecycle depth, per-quote supplier scoring, cross-project FF&E rollups), push `prod` branch + live deploy.
+
 
 
