@@ -6,11 +6,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listDrawings, createDrawing, setDrawingStatus, deleteDrawing, type Drawing, type DrawingStatus } from "@/app/designQueries";
+import { Modal } from "@/components/ui/Modal";
+import { DiffView } from "@/features/shared/DiffView";
+import { listDrawings, createDrawing, setDrawingStatus, setDrawingPreviewUrl, deleteDrawing, type Drawing, type DrawingStatus } from "@/app/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
   drawingObjectPath, formatBytes, type DrawingFileRef,
 } from "@/app/drawingFileQueries";
+import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
+import { resolveDiffPair } from "@/app/drawingDiffSources";
+import type { DiffImageSource } from "@/features/shared/DiffView";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
@@ -31,6 +36,9 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const [title, setTitle] = useState(""); const [type, setType] = useState("architectural"); const [rev, setRev] = useState("Rev A");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [targetDrawing, setTargetDrawing] = useState<string | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [pairIndex, setPairIndex] = useState(0);
+  const [compareImages, setCompareImages] = useState<{ oldImage: DiffImageSource | null; newImage: DiffImageSource | null }>({ oldImage: null, newImage: null });
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -39,6 +47,23 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
   const { busy, run } = useAction(reload, setError);
+
+  const pairs = diffPairs(rows);
+
+  useEffect(() => {
+    if (!compareOpen || pairs.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const pair = pairs[pairIndex];
+      if (!pair) return;
+      const client = await getClient();
+      if (!client || cancelled) return;
+      const src = await resolveDiffPair(client, projectId, pair.old, pair.newer);
+      if (cancelled) return;
+      setCompareImages({ oldImage: src.oldImage, newImage: src.newImage });
+    })();
+    return () => { cancelled = true; };
+  }, [compareOpen, pairIndex, pairs, projectId]);
 
   const reloadFiles = useCallback(async (drawingId: string) => {
     setFileLoading(drawingId); setFileError(null);
@@ -54,7 +79,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
     if (!title.trim() || !session) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createDrawing(c, { projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", releasedBy: session.user.id }), {
-      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10) }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setTitle(""); setRev("Rev A");
@@ -75,7 +100,14 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
     const client = await getClient();
     if (!client) { setFileError("Backend not configured."); setUploading(null); return; }
     const res = await uploadDrawingFile(client, projectId, drawingId, file, file.name, { upsert: true });
-    if (res.ok) await reloadFiles(drawingId);
+    if (res.ok) {
+      await reloadFiles(drawingId);
+      if (isRasterFileName(file.name)) {
+        const path = drawingObjectPath(projectId, drawingId, file.name);
+        await setDrawingPreviewUrl(client, drawingId, path);
+        setRows(prev => prev.map(x => x.id === drawingId ? { ...x, previewUrl: path } : x));
+      }
+    }
     else setFileError(res.error);
     setUploading(null);
   };
@@ -100,7 +132,14 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">Drawings</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-lg font-bold text-fg-primary">Drawings</h2>
+        {pairs.length > 0 && (
+          <Button size="sm" variant="secondary" onClick={() => { setPairIndex(0); setCompareImages({ oldImage: null, newImage: null }); setCompareOpen(true); }}>
+            <Icon name="image" size={14} /><span className="ml-1">Compare revisions</span>
+          </Button>
+        )}
+      </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {fileError && <Alert variant="danger">{fileError}</Alert>}
       {canEdit && (
@@ -165,6 +204,30 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
                 )}
               </div>
             </Card>))}</div>}
+
+      <Modal open={compareOpen} onClose={() => setCompareOpen(false)} size="full" title="Compare drawing revisions" subtitle={pairs[pairIndex] ? `${pairs[pairIndex].old.title} (${pairs[pairIndex].old.type})` : undefined}>
+        {pairs.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            <Select
+              className="w-full sm:w-auto"
+              value={String(pairIndex)}
+              onChange={e => { setPairIndex(Number(e.target.value)); setCompareImages({ oldImage: null, newImage: null }); }}
+              options={pairs.map((p, i) => ({ value: String(i), label: `${p.old.revision} → ${p.newer.revision} · ${p.old.title}` }))}
+            />
+            {compareImages.oldImage && compareImages.newImage && (
+              <DiffView
+                title={`${pairs[pairIndex].old.title} (${pairs[pairIndex].old.type})`}
+                oldImage={compareImages.oldImage}
+                newImage={compareImages.newImage}
+                onClose={() => setCompareOpen(false)}
+                onDownload={s => { if (s.url) window.open(s.url, "_blank", "noopener,noreferrer"); }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-fg-secondary">No two-revision pairs to compare.</div>
+        )}
+      </Modal>
     </div>
   );
 }

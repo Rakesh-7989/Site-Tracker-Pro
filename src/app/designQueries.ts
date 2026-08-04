@@ -17,15 +17,35 @@ async function del(client: any, table: string, id: string): Promise<Result<{ ok:
 
 // ── Drawings ────────────────────────────────────────────────────────────────
 export type DrawingStatus = "current" | "superseded";
-export interface Drawing { id: string; title: string; type: string; revision: string; status: DrawingStatus; releaseDate: string | null; }
+export interface Drawing {
+  id: string;
+  projectId: string;
+  title: string;
+  type: string;
+  revision: string;
+  status: DrawingStatus;
+  releaseDate: string | null;
+  storagePath: string | null;
+  previewUrl: string | null;
+}
 const asDw = oneOf<DrawingStatus>(["current", "superseded"], "current");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listDrawings(client: any, projectId: string): Promise<Result<Drawing[]>> {
   try {
-    const { data, error } = await client.from("drawings").select("id, title, type, revision, status, release_date").eq("project_id", projectId).order("release_date", { ascending: false });
+    const { data, error } = await client.from("drawings").select("id, project_id, title, type, revision, status, release_date, storage_path, preview_url").eq("project_id", projectId).order("release_date", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), title: String(r.title ?? ""), type: String(r.type ?? ""), revision: String(r.revision ?? "Rev A"), status: asDw(r.status), releaseDate: r.release_date == null ? null : String(r.release_date) })));
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      id: String(r.id),
+      projectId: String(r.project_id ?? ""),
+      title: String(r.title ?? ""),
+      type: String(r.type ?? ""),
+      revision: String(r.revision ?? "Rev A"),
+      status: asDw(r.status),
+      releaseDate: r.release_date == null ? null : String(r.release_date),
+      storagePath: r.storage_path == null ? null : String(r.storage_path),
+      previewUrl: r.preview_url == null ? null : String(r.preview_url),
+    })));
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +57,8 @@ export async function createDrawing(client: any, input: { projectId: string; tit
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const setDrawingStatus = (client: any, id: string, status: DrawingStatus) => upd(client, "drawings", id, { status });
+/** Persist the preferred raster preview file path (migration 150) for the D2 diff overlay. */
+export const setDrawingPreviewUrl = (client: any, id: string, previewUrl: string | null) => upd(client, "drawings", id, { preview_url: previewUrl });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const deleteDrawing = (client: any, id: string) => del(client, "drawings", id);
 

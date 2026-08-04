@@ -16,7 +16,7 @@ interface Drawing {
   [key: string]: unknown;
 }
 
-interface Layer {
+export interface Layer {
   id: string;
   label: string;
   imageUrl: string;
@@ -36,7 +36,7 @@ interface Pixel {
   a?: number;
 }
 
-interface ViewportState {
+export interface ViewportState {
   zoom: number;
   panX: number;
   panY: number;
@@ -112,7 +112,10 @@ export function buildLayer(drawing: Drawing, overrides: Partial<Layer> = {}): La
   };
 }
 
-export function canDiff(a: Layer | null | undefined, b: Layer | null | undefined): { ok: boolean; reason?: string } {
+/** Minimal structural subset of Layer that canDiff actually inspects. */
+type DiffLayerInput = Pick<Layer, "project_id" | "title" | "type" | "revision"> | null | undefined;
+
+export function canDiff(a: DiffLayerInput, b: DiffLayerInput): { ok: boolean; reason?: string } {
   if (!a || !b) return { ok: false, reason: "two-layers-required" };
   if (a.project_id !== b.project_id) return { ok: false, reason: "different-projects" };
   const sameTitle = (a.title || "").trim().toLowerCase() === (b.title || "").trim().toLowerCase();
