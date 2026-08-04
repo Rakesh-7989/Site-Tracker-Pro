@@ -70,6 +70,9 @@ export const TAB_CATALOG: readonly TabDef[] = [
   // retainer_billing / hourly_billing) inside BillingTab.
   { id: "billing",      label: "Billing",       icon: "wallet",     requiresAny: ["rate:manage", "retainer:manage", "billing:generate"], projectTypes: CONSULTANCY_TYPES },
 
+  // Architecture (v4 D3) — FF&E schedule register for design/interior fit-out.
+  { id: "ffe",          label: "FF&E",          icon: "hardhat",    requires: "ffe:manage", projectTypes: ["design", "interior"], planFeature: "ffe" },
+
   // Site execution (construction / interior only)
   { id: "fieldops",     label: "Field Ops",     icon: "hardhat",   projectTypes: SITE_TYPES, requires: "progress:edit" },
   { id: "materials",    label: "Materials",     icon: "truck",     requires: "material:add",  projectTypes: SITE_TYPES },

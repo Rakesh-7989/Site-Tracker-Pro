@@ -51,6 +51,7 @@ import { TimeTab } from "./tabs/TimeTab";
 import { DeliverablesTab } from "./tabs/DeliverablesTab";
 import { ReviewRoundsTab } from "./tabs/ReviewRoundsTab";
 import { BillingTab } from "./tabs/BillingTab";
+import { FfeTab } from "./tabs/FfeTab";
 
 export function DetailView(): JSX.Element {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
@@ -188,6 +189,7 @@ export function DetailView(): JSX.Element {
         {activeId === "deliverables" && <DeliverablesTab projectId={project.id} />}
         {activeId === "reviews" && <ReviewRoundsTab projectId={project.id} />}
         {activeId === "billing" && <BillingTab projectId={project.id} />}
+        {activeId === "ffe" && <FfeTab projectId={project.id} />}
       </div>
     </div>
   );

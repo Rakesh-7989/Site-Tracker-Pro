@@ -260,7 +260,7 @@
     "po": "POs", "invoices": "Invoices", "rabills": "RA Bills", "approvals": "Approvals",
     "compliance": "Compliance", "map": "Map", "gantt": "Gantt", "messages": "Messages",
     "phases": "Phases", "time": "Time", "deliverables": "Deliverables", "reviews": "Reviews",
-    "billing": "Billing"
+    "billing": "Billing", "ffe": "FF&E"
   },
   "projType": {
     "construction": "Construction", "interior": "Interior", "design": "Design", "consultant": "Consultant"
