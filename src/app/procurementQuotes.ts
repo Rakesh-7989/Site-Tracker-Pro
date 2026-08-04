@@ -100,6 +100,36 @@ export async function listOrgQuotes(client: any, orgId: string): Promise<Result<
   } catch (e) { return er(e); }
 }
 
+/** Same shape/join as listOrgQuotes but scoped to one project (v4 D6). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listProjectQuotes(client: any, projectId: string): Promise<Result<ProcurementQuote[]>> {
+  try {
+    const { data, error } = await client
+      .from("procurement_quotes")
+      .select("id, org_id, ffe_entry_id, project_id, vendor_id, vendor:vendor_id(name), item_name, unit_price, qty, lead_days, valid_until, status, notes, created_by, created_at")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+    if (error) return dbe(error);
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      id: String(r.id),
+      orgId: String(r.org_id ?? ""),
+      ffeEntryId: r.ffe_entry_id == null ? null : String(r.ffe_entry_id),
+      projectId: r.project_id == null ? null : String(r.project_id),
+      vendorId: r.vendor_id == null ? null : String(r.vendor_id),
+      vendorName: (r.vendor as { name?: unknown } | null)?.name == null ? null : String((r.vendor as { name?: unknown }).name),
+      itemName: r.item_name == null ? null : String(r.item_name),
+      unitPrice: Number(r.unit_price ?? 0),
+      qty: Number(r.qty ?? 1),
+      leadDays: r.lead_days == null ? null : Number(r.lead_days),
+      validUntil: r.valid_until == null ? null : String(r.valid_until),
+      status: asStatus(r.status),
+      notes: r.notes == null ? null : String(r.notes),
+      createdBy: r.created_by == null ? null : String(r.created_by),
+      createdAt: String(r.created_at ?? ""),
+    })));
+  } catch (e) { return er(e); }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function upsertQuote(client: any, input: {
   id?: string | null;

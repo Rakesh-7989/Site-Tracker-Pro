@@ -2,7 +2,7 @@
 // tasks) across the org's projects via the org_calendar RPC (migration 85).
 
 export type CalResult<T> = { ok: true; data: T } | { ok: false; error: string };
-export type CalKind = "milestone" | "task";
+export type CalKind = "milestone" | "task" | "noc";
 export interface CalItem {
   kind: CalKind;
   id: string;
@@ -19,7 +19,7 @@ export async function getOrgCalendar(client: any, orgId: string): Promise<CalRes
     const { data, error } = await client.rpc("org_calendar", { p_org: orgId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
-      kind: (r.kind === "task" ? "task" : "milestone") as CalKind,
+      kind: (r.kind === "task" ? "task" : r.kind === "noc" ? "noc" : "milestone") as CalKind,
       id: String(r.id), projectId: String(r.project_id), projectName: String(r.project_name ?? ""),
       title: String(r.title ?? ""), dueDate: String(r.due_date ?? "").slice(0, 10), status: String(r.status ?? ""),
     })) };

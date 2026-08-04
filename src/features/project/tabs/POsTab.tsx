@@ -4,6 +4,7 @@ import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listPOs, createPO, setPOStatus, deletePO, fmtRupees, type PurchaseOrder, type POStatus } from "@/app/financeQueries";
+import { listVendors, type Vendor } from "@/app/vendorQueries";
 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
@@ -11,30 +12,35 @@ const STT = [{ value: "pending", label: "Pending" }, { value: "approved", label:
 
 export function POsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
-  const ctx = { orgId: activeOrg?.orgId, projectId };
+  const orgId = activeOrg?.orgId;
+  const ctx = { orgId, projectId };
   const canCreate = useCan("po:create", ctx);
   const canApprove = useCan("po:approve", ctx);
   const [rows, setRows] = useState<PurchaseOrder[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [poNo, setPoNo] = useState(""); const [items, setItems] = useState(""); const [amount, setAmount] = useState(""); const [dd, setDd] = useState("");
+  const [poNo, setPoNo] = useState(""); const [items, setItems] = useState(""); const [amount, setAmount] = useState(""); const [dd, setDd] = useState(""); const [vendorId, setVendorId] = useState("");
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listPOs(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [projectId]);
+    const res = await listPOs(client, projectId); if (res.ok) setRows(res.data); else setError(res.error);
+    if (orgId) { const v = await listVendors(client, orgId); if (v.ok) setVendors(v.data); }
+    setLoading(false);
+  }, [projectId, orgId]);
   useEffect(() => { void reload(); }, [reload]);
   const { busy, run } = useAction(reload, setError);
   const add = async () => {
     const amt = Number(amount);
     if (!poNo.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
-    await run("add", c => createPO(c, { projectId, poNo: poNo.trim(), items: items.trim() || undefined, amount: amt, deliveryDate: dd || null }), {
-      apply: () => setRows(prev => [{ id: tmpId, poNo: poNo.trim(), items: items.trim() || null, amount: amt, deliveryDate: dd || null, status: "pending" as POStatus }, ...prev]),
+    const v = vendorId ? vendors.find(x => x.id === vendorId) : undefined;
+    await run("add", c => createPO(c, { projectId, poNo: poNo.trim(), items: items.trim() || undefined, amount: amt, deliveryDate: dd || null, vendorId: v?.id ?? null }), {
+      apply: () => setRows(prev => [{ id: tmpId, poNo: poNo.trim(), items: items.trim() || null, amount: amt, deliveryDate: dd || null, status: "pending" as POStatus, vendorId: v?.id ?? null, vendorName: v?.name ?? null, quoteId: null, quoteItem: null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
-    setPoNo(""); setItems(""); setAmount(""); setDd("");
+    setPoNo(""); setItems(""); setAmount(""); setDd(""); setVendorId("");
   };
 
   const columns: Column<PurchaseOrder>[] = [
@@ -43,7 +49,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
       render: r => (
         <div>
           <div className="text-sm font-semibold text-fg-primary truncate">{r.poNo} · {fmtRupees(r.amount)}</div>
-          <div className="text-[11px] text-fg-tertiary truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" · ") || "—"}</div>
+          <div className="text-[11px] text-fg-tertiary truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`, r.vendorName && `vendor ${r.vendorName}`, r.quoteItem && `from quote "${r.quoteItem}"`].filter(Boolean).join(" · ") || "—"}</div>
         </div>
       ),
     },
@@ -73,6 +79,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Items</span><Input className="mt-1" placeholder="e.g. 100 bags cement" value={items} onChange={e => setItems(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Delivery</span><Input className="mt-1" type="date" value={dd} onChange={e => setDd(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span><Select className="mt-1 min-w-[140px]" value={vendorId} onChange={e => setVendorId(e.target.value)} options={[{ value: "", label: "Unassigned" }, ...vendors.map(v => ({ value: v.id, label: v.name }))]} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !poNo.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Create"}</Button>
         </Card>
       )}

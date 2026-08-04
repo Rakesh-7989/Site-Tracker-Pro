@@ -11,7 +11,7 @@ import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/calendarQuerie
 import { getClient } from "@/lib/supabase";
 const todayISO = (): string => new Date().toISOString().slice(0, 10);
 const fmtDay = (iso: string): string => { const d = new Date(iso + "T00:00:00"); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); };
-const tabUrl = (it: CalItem): string => `/projects/${it.projectId}/${it.kind === "milestone" ? "milestones" : "tasks"}`;
+const tabUrl = (it: CalItem): string => `/projects/${it.projectId}/${it.kind === "milestone" ? "milestones" : it.kind === "noc" ? "statutory" : "tasks"}`;
 const statusTone = (s: string): "neutral" | "info" | "success" => (s === "completed" ? "success" : s === "in_progress" ? "info" : "neutral");
 
 function Row({ it }: { it: CalItem }): JSX.Element {
@@ -19,11 +19,11 @@ function Row({ it }: { it: CalItem }): JSX.Element {
     <Link to={tabUrl(it)}>
       <Card className="p-3 flex items-center justify-between gap-3 hover:border-accent transition">
         <div className="min-w-0 flex items-center gap-2">
-          <Badge tone={it.kind === "milestone" ? "warning" : "neutral"}>{it.kind === "milestone" ? "Milestone" : "Task"}</Badge>
+          <Badge tone={it.kind === "milestone" ? "warning" : it.kind === "noc" ? "danger" : "neutral"}>{it.kind === "milestone" ? "Milestone" : it.kind === "noc" ? "NOC" : "Task"}</Badge>
           <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{it.title}</div>
             <div className="text-[11px] text-fg-tertiary truncate">{it.projectName}</div></div>
         </div>
-        <Badge tone={statusTone(it.status)}>{it.status}</Badge>
+        <Badge tone={it.kind === "noc" ? "danger" : statusTone(it.status)}>{it.kind === "noc" ? "Expiring" : it.status}</Badge>
       </Card>
     </Link>
   );

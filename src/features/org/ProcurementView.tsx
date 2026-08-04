@@ -163,6 +163,7 @@ function ProcurementInner(): JSX.Element {
         amount,
         deliveryDate: null,
         vendorId: q.vendorId,
+        quoteId: q.id,
       });
       if (!po.ok) return po;
       return setQuoteStatus(c, q.id, "selected");

@@ -6,6 +6,7 @@
 // a per-space breakdown.
 
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getClient } from "@/lib/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
@@ -16,6 +17,9 @@ import {
   ffeBudgetRollup, FFE_CATEGORIES,
   type FfeEntry, type FfeCategory, type FfeStatus,
 } from "@/app/ffeQueries";
+import { listProjectQuotes, bestQuote, quoteTotal, type ProcurementQuote } from "@/app/procurementQuotes";
+import { listPOs, type PurchaseOrder } from "@/app/financeQueries";
+import { localDateISO } from "@/lib/dateLocal";
 
 const STATUS_TONE: Record<FfeStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
   specified: "neutral", selected: "info", ordered: "warning", installed: "success", cancelled: "danger",
@@ -41,6 +45,8 @@ export function FfeTab({ projectId }: { projectId: string }): JSX.Element {
   const canManage = useCan("ffe:manage", { orgId: activeOrg?.orgId, projectId });
 
   const [rows, setRows] = useState<FfeEntry[]>([]);
+  const [quotes, setQuotes] = useState<ProcurementQuote[]>([]);
+  const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY);
@@ -50,8 +56,14 @@ export function FfeTab({ projectId }: { projectId: string }): JSX.Element {
     setLoading(true); setError(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listFfeEntries(client, projectId);
-    if (res.ok) setRows(res.data); else setError(res.error);
+    const [ffeRes, qRes, poRes] = await Promise.all([
+      listFfeEntries(client, projectId),
+      listProjectQuotes(client, projectId),
+      listPOs(client, projectId),
+    ]);
+    if (ffeRes.ok) setRows(ffeRes.data); else setError(ffeRes.error);
+    if (qRes.ok) setQuotes(qRes.data);
+    if (poRes.ok) setPos(poRes.data);
     setLoading(false);
   }, [projectId]);
 
@@ -113,6 +125,15 @@ export function FfeTab({ projectId }: { projectId: string }): JSX.Element {
 
   const rollup = ffeBudgetRollup(rows);
   const set = (k: keyof typeof EMPTY) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const today = localDateISO();
+  const poByQuote = new Map(pos.filter(p => p.quoteId).map(p => [p.quoteId as string, p]));
+  const entryProc = (e: FfeEntry): { count: number; best: string | null; po: PurchaseOrder | null } => {
+    const mine = quotes.filter(q => q.ffeEntryId === e.id);
+    const best = bestQuote(mine, today);
+    const po = mine.map(q => poByQuote.get(q.id)).find((p): p is PurchaseOrder => !!p) ?? null;
+    return { count: mine.length, best: best ? formatINR(quoteTotal(best)) : null, po };
+  };
 
   return (
     <div className="space-y-4">
@@ -225,6 +246,11 @@ export function FfeTab({ projectId }: { projectId: string }): JSX.Element {
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {(() => { const p = entryProc(e); return p.count > 0 && (
+                    <Link to="/procurement" className="text-[11px] font-semibold text-accent hover:text-accent-2 underline-offset-2 hover:underline">
+                      {p.po ? `PO ${p.po.poNo} · ${formatINR(p.po.amount)}` : `${p.count} quote${p.count === 1 ? "" : "s"} · best ${p.best ?? "—"}`}
+                    </Link>
+                  ); })()}
                   {canManage ? (
                     <button type="button" disabled={busy === `s-${e.id}`} onClick={() => void toggle(e)} title="Advance status">
                       <Badge tone={STATUS_TONE[e.status]}>{STATUS_LABEL[e.status]}</Badge>
