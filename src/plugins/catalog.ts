@@ -52,6 +52,7 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
     label: "Design & FF&E",
     routes: [
       { path: "ffe", lazy: () => import("@/features/org/FfeRollupView").then(m => ({ default: m.FfeRollupView })) },
+      { path: "download-audit", modules: ["consultancy", "design"], lazy: () => import("@/features/org/DownloadAuditView").then(m => ({ default: m.DownloadAuditView })) },
     ],
   },
   {

@@ -13,6 +13,7 @@ import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
   drawingObjectPath, formatBytes, type DrawingFileRef,
 } from "@/app/drawingFileQueries";
+import { logDownloadEvent } from "@/app/downloadAuditQueries";
 import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
 import { resolveDiffPair } from "@/app/drawingDiffSources";
 import type { DiffImageSource } from "@/features/shared/DiffView";
@@ -117,8 +118,11 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
     if (!client) { setFileError("Backend not configured."); return; }
     const path = drawingObjectPath(projectId, d.id, name);
     const res = await drawingFileUrl(client, path, 300);
-    if (res.ok) window.open(res.data, "_blank", "noopener,noreferrer");
-    else setFileError(res.error);
+    if (res.ok) {
+      const size = files[d.id]?.find(f => f.name === name)?.size ?? 0;
+      void logDownloadEvent(client, { projectId, register: "drawing", refId: d.id, fileName: name, filePath: path, sizeBytes: size });
+      window.open(res.data, "_blank", "noopener,noreferrer");
+    } else setFileError(res.error);
   };
 
   const removeFile = async (d: Drawing, name: string) => {

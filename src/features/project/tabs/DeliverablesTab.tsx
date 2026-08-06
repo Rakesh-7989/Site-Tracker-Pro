@@ -19,6 +19,7 @@ import {
   listDeliverableFiles, uploadDeliverableFile, deleteDeliverableFiles, deliverableFileUrl,
   deliverableObjectPath, formatBytes, type DeliverableFileRef,
 } from "@/app/deliverableStorageQueries";
+import { logDownloadEvent } from "@/app/downloadAuditQueries";
 
 const STATUS_TONE: Record<DeliverableStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
   draft: "neutral", in_review: "info", approved: "success", rejected: "danger", issued: "success",
@@ -113,8 +114,11 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
     if (!client) { setFileError("Backend not configured."); return; }
     const path = deliverableObjectPath(projectId, d.id, name);
     const res = await deliverableFileUrl(client, path, 300);
-    if (res.ok) window.open(res.data, "_blank", "noopener,noreferrer");
-    else setFileError(res.error);
+    if (res.ok) {
+      const size = files[d.id]?.find(f => f.name === name)?.size ?? 0;
+      void logDownloadEvent(client, { projectId, register: "deliverable", refId: d.id, fileName: name, filePath: path, sizeBytes: size });
+      window.open(res.data, "_blank", "noopener,noreferrer");
+    } else setFileError(res.error);
   };
 
   const removeFile = async (d: Deliverable, name: string) => {
