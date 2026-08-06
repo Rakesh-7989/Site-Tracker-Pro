@@ -23,7 +23,7 @@ import { listVendors, type Vendor } from "@/app/vendorQueries";
 import { listFfeEntries, type FfeEntry } from "@/app/ffeQueries";
 import {
   listOrgProjects, listOrgQuotes, upsertQuote, attachQuote, setQuoteStatus, deleteQuote,
-  bestQuote, quoteTotal, QUOTE_NEXT,
+  quoteTotal, QUOTE_NEXT, scoreQuote, bestScoredQuote,
   type ProcurementQuote, type OrgProjectBrief, type QuoteStatus,
 } from "@/app/procurementQuotes";
 
@@ -34,6 +34,8 @@ const STATUS_LABEL: Record<QuoteStatus, string> = {
   requested: "Requested", received: "Received", selected: "Selected", rejected: "Rejected",
 };
 const todayISO = () => new Date().toISOString().slice(0, 10);
+const scoreTone = (s: number): "success" | "warning" | "neutral" => (s >= 75 ? "success" : s >= 55 ? "warning" : "neutral");
+const scoreLabel = (s: number): string => (s >= 75 ? "Best value" : s >= 55 ? "Good value" : "Basic");
 
 export function ProcurementView(): JSX.Element {
   return <PlanGate feature="procurement"><ProcurementInner /></PlanGate>;
@@ -110,6 +112,7 @@ function ProcurementInner(): JSX.Element {
   }, [quotes]);
 
   const vendorName = (id: string | null) => vendors.find(v => v.id === id)?.name ?? "Unknown vendor";
+  const vendorRating = (id: string | null): number | undefined => vendors.find(v => v.id === id)?.rating ?? undefined;
 
   const saveManual = async (ffeEntry: FfeEntry) => {
     if (!form.itemName.trim() && !ffeEntry.name) return;
@@ -256,7 +259,7 @@ function ProcurementInner(): JSX.Element {
     </div>
   );
 
-  const quoteRow = (q: ProcurementQuote, ffeEntry: FfeEntry | null, isBest: boolean) => (
+  const quoteRow = (q: ProcurementQuote, ffeEntry: FfeEntry | null, isBest: boolean, score: number | null) => (
     <Card key={q.id} className={`p-3 ${isBest ? "border-2 border-accent" : ""}`}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -264,12 +267,14 @@ function ProcurementInner(): JSX.Element {
             <span className="text-sm font-semibold text-fg-primary truncate">{q.vendorName}</span>
             <Badge tone={STATUS_TONE[q.status]}>{STATUS_LABEL[q.status]}</Badge>
             {isBest && <Badge tone="success">Best</Badge>}
+            {score != null && <Badge tone={scoreTone(score)}>{scoreLabel(score)}</Badge>}
             {q.itemName && ffeEntry && q.itemName !== ffeEntry.name && <span className="text-[11px] text-fg-tertiary truncate">{q.itemName}</span>}
           </div>
           <div className="text-[11px] text-fg-tertiary">
             {q.qty} × {fmtRupees(q.unitPrice)} = <span className="font-semibold text-fg-primary">{fmtRupees(quoteTotal(q))}</span>
             {q.leadDays != null && ` · ${q.leadDays}d lead`}
             {q.validUntil && ` · valid till ${q.validUntil}`}
+            {score != null && ` · score ${score}/100`}
             {q.notes && ` · ${q.notes}`}
           </div>
         </div>
@@ -317,8 +322,10 @@ function ProcurementInner(): JSX.Element {
               )}
               {ffe.map(ffeEntry => {
                 const list = byFfe.get(ffeEntry.id) ?? [];
-                const best = bestQuote(list, todayISO());
+                const ratings = new Map(vendors.map(v => [v.id, v.rating ?? 0]));
+                const bestScored = bestScoredQuote(list, todayISO(), ratings);
                 const expandedOpen = expanded[ffeEntry.id];
+                const scoreOf = (q: ProcurementQuote) => scoreQuote(q, list.filter(x => x.id !== q.id), vendorRating(q.vendorId)).score;
                 return (
                   <Card key={ffeEntry.id} className="p-4">
                     <div className="flex items-center justify-between gap-3">
@@ -342,7 +349,12 @@ function ProcurementInner(): JSX.Element {
                     {expandedOpen && (
                       <div className="mt-3 space-y-2">
                         {list.length === 0 && <div className="text-sm text-fg-tertiary">No quotes yet.</div>}
-                        {list.map(q => quoteRow(q, ffeEntry, best !== null && q.id === best.id))}
+                        {list.map(q => quoteRow(
+                          q,
+                          ffeEntry,
+                          bestScored !== null && q.id === bestScored.id,
+                          bestScored !== null && q.id === bestScored.id ? bestScored.score.score : scoreOf(q),
+                        ))}
                       </div>
                     )}
                   </Card>

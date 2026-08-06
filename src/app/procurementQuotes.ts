@@ -71,6 +71,100 @@ export const QUOTE_NEXT: Record<QuoteStatus, QuoteStatus> = {
   rejected: "received",
 };
 
+// ── Supplier score (v4 Phase E) ─────────────────────────────────────────────
+//
+// A 0–100 composite ranking a comparable quote as a purchase side. Lower price,
+// shorter lead time, and a better vendor rating all improve the score. Each
+// factor is scored 0–100 via a within-pool comparison, then blended with the
+// weights below. Best for picking a supplier when the cheapest isn't clearly
+// the best (lead time + track record matter).
+
+export interface QuoteScore {
+  score: number;
+  priceScore: number;
+  leadScore: number;
+  ratingScore: number;
+}
+
+export const SCORE_WEIGHTS = { price: 0.5, lead: 0.3, rating: 0.2 };
+
+/**
+ * Score one comparable quote against its pool.
+ *
+ * - priceScore: cheapest-total / own-total × 100 (the cheapest → 100; a 2×
+ *   premium → 50). No comparable peer → 50 (neutral).
+ * - leadScore: min-lead / own-lead × 100 (shortest → 100). No lead stated →
+ *   50; only quote with a lead → 100.
+ * - ratingScore: vendorRating / 5 × 100 (rating 0–5). Unknown → 50.
+ *
+ * Final score = Σ weight × factor (0–100, rounded).
+ */
+export function scoreQuote(q: ProcurementQuote, peers: ProcurementQuote[], vendorRating?: number): QuoteScore {
+  let priceScore: number;
+  if (peers.length === 0) {
+    priceScore = 50;
+  } else {
+    const cheapest = Math.min(...peers.map(p => quoteTotal(p)));
+    const own = quoteTotal(q);
+    priceScore = cheapest > 0 && own > 0 ? (cheapest / own) * 100 : 50;
+  }
+
+  let leadScore: number;
+  const withLead = peers.filter(p => p.leadDays != null && p.leadDays > 0);
+  if (q.leadDays == null || q.leadDays <= 0) {
+    leadScore = 50;
+  } else if (withLead.length === 0) {
+    leadScore = 100;
+  } else {
+    const minLead = Math.min(...withLead.map(p => (p.leadDays ?? 1)));
+    leadScore = (minLead / Math.max(1, q.leadDays)) * 100;
+  }
+
+  const ratingScore = vendorRating == null ? 50 : (Math.min(5, Math.max(0, vendorRating)) / 5) * 100;
+
+  const p = Math.min(1, Math.max(0, priceScore / 100));
+  const l = Math.min(1, Math.max(0, leadScore / 100));
+  const r = Math.min(1, Math.max(0, ratingScore / 100));
+  const score = Math.round((p * SCORE_WEIGHTS.price + l * SCORE_WEIGHTS.lead + r * SCORE_WEIGHTS.rating) * 100);
+
+  return { score, priceScore: Math.round(priceScore), leadScore: Math.round(leadScore), ratingScore: Math.round(ratingScore) };
+}
+
+/**
+ * Score every comparable quote in a pool; returns the id + score of the top
+ * scorer (best value). Ties resolve to the lower quote total. Returns null
+ * when nothing is comparable.
+ */
+export function bestScoredQuote(quotes: ProcurementQuote[], today: string, ratings: Map<string, number>): { id: string; score: QuoteScore } | null {
+  const comparable = quotes.filter(q => isComparable(q, today));
+  if (comparable.length === 0) return null;
+  let best: { id: string; score: QuoteScore } | null = null;
+  for (const q of comparable) {
+    const s = scoreQuote(q, comparable, ratings.get(q.vendorId ?? "") ?? undefined);
+    const tie = best !== null && s.score === best.score.score;
+    const lowerTotal = tie
+      ? quoteTotal(q) < quoteTotal(comparable.find(x => x.id === best!.id) ?? q)
+      : false;
+    if (best === null || s.score > best.score.score || lowerTotal) {
+      best = { id: q.id, score: s };
+    }
+  }
+  return best;
+}
+
+/**
+ * Score a single quote without a peer pool (for quick per-quote displays).
+ * Price and lead can't be judged competitively alone, so they sit at the
+ * neutral 50; only the vendor rating moves the score. Reads as "supplier
+ * quality" rather than a competitive comparison.
+ */
+export function scoreQuoteAlone(vendorRating?: number): QuoteScore {
+  const ratingScore = vendorRating == null ? 50 : (Math.min(5, Math.max(0, vendorRating)) / 5) * 100;
+  const r = Math.min(1, Math.max(0, ratingScore / 100));
+  const score = Math.round((0.5 * 0.5 + 0.3 * 0.5 + 0.2 * r) * 100);
+  return { score, priceScore: 50, leadScore: 50, ratingScore: Math.round(ratingScore) };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listOrgQuotes(client: any, orgId: string): Promise<Result<ProcurementQuote[]>> {
   try {
