@@ -50,6 +50,26 @@
     "sprint-coach": {
       "description": "Guide founder through field work: interviews, outreach, meetings, pilot pursuit, Telugu phrases.",
       "mode": "subagent"
+    },
+    "v4-verify": {
+      "description": "Run the full verify suite (lint, tsc, build, smoke, unit) gate-by-gate, fix what a failing gate points at, and report pass/fail. Use after any code change or before a deploy.",
+      "mode": "subagent"
+    },
+    "v4-phase3": {
+      "description": "Ship v4 Phase 3: per-industry module surface — map C1-D registers into segment templates, gate module-specific tabs/views with ModuleGate, add module.* i18n labels.",
+      "mode": "subagent"
+    },
+    "v4-phase6": {
+      "description": "Ship v4 Phase 6: mobile/responsive audit and fixes (CalendarGrid, Board, Tabs overflow, file content, optional xs: breakpoint, landing nav).",
+      "mode": "subagent"
+    },
+    "v4-db": {
+      "description": "Apply and verify pending Supabase migrations, classify failures, keep the AGENTS.md migration log accurate.",
+      "mode": "subagent"
+    },
+    "v4-deploy": {
+      "description": "Push prod branch, wait for GitHub CI + Vercel Deploy, verify the live site returns 200, optionally fast-forward main.",
+      "mode": "subagent"
     }
   },
   "provider": {
