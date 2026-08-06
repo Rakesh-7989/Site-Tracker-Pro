@@ -4,7 +4,6 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { listDprMessages, type DprMessageRow, type DprStatus } from "@/app/dprQueries";
 import { DPRStatusBadge } from "./DPRStatusBadge";
-import { BuildNowBadge } from "./BuildNowBadge";
 
 
 import { getClient } from "@/lib/supabase";
@@ -57,7 +56,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">DPR History</h1>
-          <p className="text-sm text-fg-secondary mt-0.5">{rows.length} total � {sentCount} sent � {deliveredCount} delivered � {failedCount} failed</p>
+          <p className="text-sm text-fg-secondary mt-0.5">{rows.length} total · {sentCount} sent · {deliveredCount} delivered · {failedCount} failed</p>
         </div>
         <div className="flex items-center gap-2">
           <select className="text-xs border border-default rounded-lg px-2 py-1.5 bg-panel"
@@ -89,7 +88,9 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
                     {r.language && <Badge tone="neutral">{r.language.toUpperCase()}</Badge>}
                   </div>
                   {r.transcript && (
-                    <p className="text-sm text-fg-primary mt-1.5 line-clamp-2">{r.transcript}</p>
+                    <Link to={`/dpr/${r.id}`} className="block">
+                      <p className="text-sm text-fg-primary mt-1.5 line-clamp-2 hover:text-accent">{r.transcript}</p>
+                    </Link>
                   )}
                   <div className="flex items-center gap-3 mt-1.5 text-[11px] text-fg-tertiary flex-wrap">
                     <span>{fmtDate(r.createdAt)}</span>
@@ -98,6 +99,9 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  <Link to={`/dpr/${r.id}`} className="text-xs font-semibold text-accent hover:text-accent-2 whitespace-nowrap" title="View details">
+                    Details
+                  </Link>
                   {r.photoUrl && (
                     <a href={r.photoUrl} target="_blank" rel="noopener noreferrer" title="View photo">
                       <Icon name="image" size={16} className="text-fg-tertiary hover:text-fg-secondary" />
@@ -112,7 +116,6 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
                 <div className="mt-2 flex items-center gap-2 text-[11px] text-fg-tertiary">
                   <Icon name="map" size={12} />
                   <span>{r.lat.toFixed(4)}, {r.lon.toFixed(4)}</span>
-                  {r.status === "delivered" && <BuildNowBadge state="verified" lang={(r.language as any) ?? "en"} size="xs" showLink={false} />}
                 </div>
               )}
             </Card>

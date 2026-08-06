@@ -227,6 +227,23 @@ describe("transcribe() — public interface", () => {
     expect(result.ok).toBe(true);
     expect(result.text).toBe("from-EF");
   });
+
+  it("delegates the full fallback chain to the EF when client has no keys over 'ef' transport", async () => {
+    let sentOrder;
+    const efClient = {
+      invoke: async (name, opts) => {
+        sentOrder = opts.body.provider_order;
+        return {
+          data: { ok: true, text: "mock fallback", confidence: 0.9, lang: "te", provider: "mock", audio_sha256: "deadbeef" },
+        };
+      },
+    };
+    const audio = new Uint8Array([1, 2, 3]);
+    const result = await transcribe(audio, { lang: "te", transport: "ef", efClient });
+    expect(sentOrder).toEqual(["bhashini", "aws", "mock"]);
+    expect(result.ok).toBe(true);
+    expect(result.text).toBe("mock fallback");
+  });
 });
 
 describe("meetsAccuracyBar()", () => {

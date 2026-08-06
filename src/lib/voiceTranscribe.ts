@@ -7,6 +7,9 @@ export const SUPPORTED_LANGUAGES: readonly string[] = ['te', 'hi', 'en'];
 export const ALL_PROVIDERS: readonly string[] = ['bhashini', 'aws', 'mock'];
 export const DEFAULT_PROVIDER_ORDER: readonly string[] = ['bhashini', 'aws'];
 
+/** Full fallback chain sent to the EF so it can try real providers then mock. */
+export const FULL_PROVIDER_ORDER: readonly string[] = ['bhashini', 'aws', 'mock'];
+
 export function pickProviderOrder({ lang, provider, env = {} }: { lang: Language; provider: Provider; env?: Record<string, any> }): Provider[] {
   const awsAllowed = isProviderAllowed('aws', env).allowed;
   if (provider === 'mock') return ['mock'];
@@ -102,8 +105,12 @@ export async function transcribe(
 
   if (efClient && typeof efClient.invoke === 'function') {
     try {
+      // When the client has no provider keys, we can't pick a non-empty
+      // order locally — but over the 'ef' transport the Edge Function holds
+      // the real keys, so delegate the whole fallback chain to it.
+      const planOrder = order.length ? order : (transport === 'ef' ? [...FULL_PROVIDER_ORDER] : order);
       const res = await efClient.invoke('voice_transcribe', {
-        body: { audio_sha256, lang, provider_order: order },
+        body: { audio_sha256, lang, provider_order: planOrder },
       });
       if (res?.error) {
         return { ok: false, error: res.error.message || 'EF error', provider_tried: order };

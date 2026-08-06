@@ -20,6 +20,8 @@ interface QueueItem {
   [key: string]: unknown;
 }
 
+export type { QueueItem };
+
 interface StorageAdapter {
   put: (item: QueueItem) => Promise<string | undefined>;
   get: (id: string) => Promise<QueueItem | null>;

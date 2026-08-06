@@ -30,6 +30,7 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
     routes: [
       { path: "dpr", lazy: () => import("@/features/dpr/DPRComposer").then(m => ({ default: m.DPRComposer })) },
       { path: "dpr/history", lazy: () => import("@/features/dpr/DPRHistoryView").then(m => ({ default: m.DPRHistoryView })) },
+      { path: "dpr/:id", lazy: () => import("@/features/dpr/DPRDetailView").then(m => ({ default: m.DPRDetailView })) },
       { path: "handover", modules: ["site_ops", "clients"], lazy: () => import("@/features/handover/HandoverPacketView").then(m => ({ default: m.HandoverPacketView })) },
       { path: "measurement-book", lazy: () => import("@/features/handover/MeasurementBookView").then(m => ({ default: m.MeasurementBookView })) },
     ],

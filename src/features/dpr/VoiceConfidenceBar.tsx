@@ -46,7 +46,7 @@ const BAND_VISUALS: Record<ConfidenceBand, BandVisual> = {
     labelKey: "voice.confidence.medium",
   },
   low: {
-    fillClass: "bg-error-tint0",
+    fillClass: "bg-error",
     pillBg: "bg-error-tint",
     pillText: "text-error",
     iconColor: "text-error",

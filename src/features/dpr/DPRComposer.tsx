@@ -13,15 +13,18 @@ import { Link } from "react-router-dom";
 
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Button, Icon, Spinner, Alert, Badge } from "@/components/ui/atoms";
-import { FormField, Select, Textarea } from "@/components/ui/forms";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { HYDERABAD_BBOX } from "../../lib/photoStorage";
+import { FormField, Select, Textarea, Input } from "@/components/ui/forms";
+import { normalizeE164, submitDpr, makeSupabaseDprRuntime, type DprSendStatus } from "@/app/dprSubmit";
+import { getClient } from "@/lib/supabase";
+import { isOnline } from "@/lib/offline";
+import { useOfflineSync } from "@/lib/dprOfflineSync";
 import {
   dprReducer, EMPTY_DRAFT, canSubmit, meetsQualityBar, draftChecklist,
   type DprLanguage,
 } from "./dprDraft";
 import { previewDigest } from "./digestPreview";
 import { VoiceNoteRecorder, type VoiceRecordingResult } from "./VoiceNoteRecorder";
+import { PhotoGeotagCapture, type PhotoGeotagResult } from "./PhotoGeotagCapture";
 
 const LANG_OPTIONS = [
   { value: "te", label: "Telugu" },
@@ -35,21 +38,19 @@ const todayIso = (): string => {
   return new Date().toISOString().slice(0, 10);
 };
 
-function withinHyderabad(lat: number, lon: number): boolean {
-  return lat >= HYDERABAD_BBOX.latMin && lat <= HYDERABAD_BBOX.latMax
-    && lon >= HYDERABAD_BBOX.lonMin && lon <= HYDERABAD_BBOX.lonMax;
-}
-
 export function DPRComposer(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canSubmitDpr = useCan("dpr:submit");
   const canViewDpr = useCan("dpr:view");
   const [draft, dispatch] = useReducer(dprReducer, EMPTY_DRAFT);
-  const [submitted, setSubmitted] = useState(false);
-  const [geoBusy, setGeoBusy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitState, setSubmitState] = useState<{ status: DprSendStatus; error?: string; queued: boolean } | null>(null);
+  const [promoterPhone, setPromoterPhone] = useState("");
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [transcribing, setTranscribing] = useState(false);
+  const [photo, setPhoto] = useState<PhotoGeotagResult | null>(null);
+  const { queued: offlineQueued, draining: offlineDraining } = useOfflineSync();
 
   // If user can only view DPRs, redirect to read-only view
   if (canViewDpr && !canSubmitDpr) {
@@ -79,7 +80,7 @@ export function DPRComposer(): JSX.Element {
     );
   }
 
-  // ── Voice: transcribe via the real lib ──
+  // ── Voice: transcribe via the real lib (EF when backend present) ──
   const onRecorded = useCallback((result: VoiceRecordingResult) => {
     setRecordedBlob(result.blob);
   }, []);
@@ -90,7 +91,11 @@ export function DPRComposer(): JSX.Element {
     setTranscribing(true);
     try {
       const mod = await import("../../lib/voiceTranscribe");
-      const res = await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "mock", transport: "mock" });
+      const client = await getClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = client
+        ? await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "auto", transport: "ef", efClient: client })
+        : await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "mock", transport: "mock" });
       if (res?.ok) {
         dispatch({ type: "voice-done", transcript: res.text, confidence: res.confidence ?? 0, provider: res.provider ?? "mock" });
       } else {
@@ -102,30 +107,67 @@ export function DPRComposer(): JSX.Element {
     setTranscribing(false);
   }, [draft.language, recordedBlob]);
 
-  // ── Photo: pick a file, then verify location via device GPS ──
-  const onPhoto = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    dispatch({ type: "photo-add", fileName: file.name });
-    // Verify geo via device geolocation (on-site = site coords).
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      setGeoBusy(true);
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          setGeoBusy(false);
-          const { latitude, longitude } = pos.coords;
-          dispatch({ type: "photo-add", fileName: file.name, lat: latitude, lon: longitude, withinHyderabad: withinHyderabad(latitude, longitude) });
-        },
-        () => { setGeoBusy(false); /* permission denied → photo stays geo-unknown */ },
-        { enableHighAccuracy: true, timeout: 8000 },
-      );
+  // ── Photo: capture + geotag (EXIF first, device GPS fallback) ──
+  const onPhotoCapture = useCallback((res: PhotoGeotagResult | null) => {
+    setPhoto(res);
+    if (res) {
+      dispatch({
+        type: "photo-add",
+        fileName: res.fileName,
+        lat: res.lat ?? undefined,
+        lon: res.lon ?? undefined,
+        withinHyderabad: res.withinHyderabad ?? undefined,
+      });
+    } else {
+      dispatch({ type: "photo-clear" });
     }
   }, []);
 
-  const onSubmit = useCallback(() => {
-    // Real send wires to whatsapp_dpr_send EF once WhatsApp is keyed. For
-    // now we mark submitted so the demo shows the full round trip.
-    setSubmitted(true);
+  // ── Submit: upload media → enqueue → real WhatsApp EF send ──
+  const onSubmit = useCallback(async () => {
+    if (!canSubmit(draft) || !session || submitting) return;
+    setSubmitting(true);
+    setSubmitState(null);
+    try {
+      const client = await getClient();
+      const runtime = client
+        ? makeSupabaseDprRuntime(client, activeOrg?.orgId ?? "", { online: isOnline() })
+        : { online: isOnline() };
+      const res = await submitDpr(
+        {
+          orgId: activeOrg?.orgId ?? "",
+          supervisorUserId: session.user?.id,
+          promoterPhone,
+          language: draft.language,
+          transcript: draft.voice.transcript ?? undefined,
+          confidence: draft.voice.confidence ?? undefined,
+          provider: draft.voice.provider ?? undefined,
+          photoLat: draft.photo.lat,
+          photoLon: draft.photo.lon,
+          photoTakenAt: photo?.takenAt ?? undefined,
+        },
+        { photo: photo?.blob ?? undefined, voice: recordedBlob ?? undefined },
+        runtime,
+      );
+      setSubmitState({
+        status: res.status ?? (res.queued ? "queued" : "failed"),
+        error: res.error,
+        queued: res.queued,
+      });
+    } catch (e) {
+      setSubmitState({ status: "failed", error: e instanceof Error ? e.message : String(e), queued: false });
+    } finally {
+      setSubmitting(false);
+    }
+  }, [canSubmit, draft, session, activeOrg, promoterPhone, photo, recordedBlob, submitting]);
+
+  const resetAll = useCallback(() => {
+    setSubmitting(false);
+    setSubmitState(null);
+    setPromoterPhone("");
+    setPhoto(null);
+    setRecordedBlob(null);
+    dispatch({ type: "reset" });
   }, []);
 
   if (!session) return <></>;
@@ -153,14 +195,21 @@ export function DPRComposer(): JSX.Element {
       })
     : null;
 
-  if (submitted) {
+  if (submitState) {
+    const done = submitState.status === "sent" || submitState.status === "delivered" || submitState.status === "read";
     return (
       <div className="max-w-lg mx-auto p-4 md:p-6">
         <Card className="p-4 md:p-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-success-tint text-success grid place-items-center mx-auto mb-3"><Icon name="check" size={24} /></div>
-          <h2 className="font-display text-lg font-bold text-fg-primary">DPR submitted</h2>
-          <p className="text-sm text-fg-secondary mt-1">The promoter will receive the WhatsApp digest at 7am.</p>
-          <Button className="mt-4" variant="secondary" size="md" onClick={() => { setSubmitted(false); dispatch({ type: "reset" }); }}>
+          <div className={`w-12 h-12 rounded-full grid place-items-center mx-auto mb-3 ${done ? "bg-success-tint text-success" : submitState.queued ? "bg-accent-tint text-accent" : "bg-error-tint text-error"}`}>
+            <Icon name={done ? "check" : submitState.queued ? "send" : "alert"} size={24} />
+          </div>
+          <h2 className="font-display text-lg font-bold text-fg-primary">
+            {submitState.queued ? "DPR queued — will send" : done ? "DPR submitted" : "DPR send failed"}
+          </h2>
+          <p className="text-sm text-fg-secondary mt-1">
+            {submitState.error ?? (submitState.queued ? "Saved offline. We'll send it to the promoter as soon as you're back online." : "The promoter will receive the WhatsApp digest.")}
+          </p>
+          <Button className="mt-4" variant="secondary" size="md" onClick={resetAll}>
             Compose another
           </Button>
         </Card>
@@ -178,11 +227,26 @@ export function DPRComposer(): JSX.Element {
         <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2 whitespace-nowrap">View history</Link>
       </div>
 
-      {/* Language */}
-      <Card className="p-5">
+      {/* Offline queue banner */}
+      {offlineQueued > 0 && (
+        <div className="flex items-center gap-2 text-xs font-semibold rounded-lg bg-accent-tint border border-accent text-accent px-3 py-2">
+          <Icon name="send" size={14} />
+          <span>{offlineQueued} DPR{offlineQueued === 1 ? "" : "s"} queued — {offlineDraining ? "sending…" : "will send when you're back online"}</span>
+        </div>
+      )}
+
+      {/* Language + promoter */}
+      <Card className="p-5 space-y-4">
         <FormField label="Report language" htmlFor="dpr-lang">
           <Select id="dpr-lang" value={draft.language} options={LANG_OPTIONS}
             onChange={e => dispatch({ type: "set-language", language: e.target.value as DprLanguage })} />
+        </FormField>
+        <FormField label="Promoter WhatsApp number" htmlFor="dpr-promoter"
+          hint="+91XXXXXXXXXX — this is who receives the daily digest.">
+          <Input id="dpr-promoter" type="tel" inputMode="tel" value={promoterPhone}
+            placeholder="+91 98765 43210"
+            invalid={promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null}
+            onChange={e => setPromoterPhone(e.target.value)} />
         </FormField>
       </Card>
 
@@ -216,17 +280,12 @@ export function DPRComposer(): JSX.Element {
 
       {/* Photo */}
       <Card className="p-5 space-y-3">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">2 · Site photo</h3>
-        <input type="file" accept="image/*" capture="environment" onChange={onPhoto}
-          className="block w-full text-sm text-fg-secondary file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-secondary file:text-fg-primary file:text-sm file:font-semibold" />
-        {draft.photo.status === "added" && (
-          <div className="text-xs text-fg-secondary flex items-center gap-2 flex-wrap">
-            <Icon name="image" size={13} /> {draft.photo.fileName}
-            {geoBusy && <span className="inline-flex items-center gap-1"><Spinner size={11} /> verifying location…</span>}
-            {draft.photo.withinHyderabad === true && <Badge tone="success">Hyderabad ✓</Badge>}
-            {draft.photo.withinHyderabad === false && <Badge tone="warning">Outside Hyderabad</Badge>}
-          </div>
-        )}
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">2 · Site photo</h3>
+          {draft.photo.status === "added" && draft.photo.withinHyderabad === true && <Badge tone="success">Hyderabad ✓</Badge>}
+          {draft.photo.status === "added" && draft.photo.withinHyderabad === false && <Badge tone="warning">Outside Hyderabad</Badge>}
+        </div>
+        <PhotoGeotagCapture onCapture={onPhotoCapture} />
       </Card>
 
       {/* Preview + submit */}
@@ -241,7 +300,13 @@ export function DPRComposer(): JSX.Element {
               </div>
             ))}
           </div>
-          <Button fullWidth size="lg" onClick={onSubmit} leftIcon={<Icon name="send" size={16} />}>Send to promoter</Button>
+          <Button fullWidth size="lg" onClick={() => void onSubmit()} disabled={submitting || normalizeE164(promoterPhone) == null}
+            leftIcon={submitting ? <Spinner size={16} /> : <Icon name="send" size={16} />}>
+            {submitting ? "Sending…" : "Send to promoter"}
+          </Button>
+          {promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null && (
+            <p className="text-xs text-error text-center">Enter a valid +91XXXXXXXXXX number.</p>
+          )}
         </Card>
       )}
     </div>

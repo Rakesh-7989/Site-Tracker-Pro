@@ -29,8 +29,8 @@ const STATE_VISUALS: Record<DprStatus, StateVisual> = {
   },
   sending: {
     bg: "bg-accent-tint",
-    border: "border-orange-200",
-    text: "text-orange-800",
+    border: "border-accent",
+    text: "text-accent",
     iconColor: "text-accent",
     icon: "refresh",
     labelKey: "dpr.status.sending",

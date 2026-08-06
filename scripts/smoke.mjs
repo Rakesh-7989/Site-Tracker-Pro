@@ -40,6 +40,7 @@ const app = [
   read("src/features/project/tabs/EstimateTab.tsx"),
   read("src/features/admin/PlatformAuditView.tsx"),
   read("src/features/dpr/DPRComposer.tsx"),
+  read("src/features/dpr/PhotoGeotagCapture.tsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
