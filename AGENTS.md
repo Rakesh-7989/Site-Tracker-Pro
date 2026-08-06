@@ -249,7 +249,7 @@ Deepen the C2 consultancy billing stack with per-phase time tracking, project-sc
 ### Notes / Follow-ups
 - **Cron timezone**: billing_day is interpreted in IST (`now() AT TIME ZONE 'Asia/Kolkata'`); job fires 02:05 UTC daily.
 - **C3.4 security posture**: the admin function is NOT callable by authenticated users (service_role grant only) — manual Generate keeps its manager gate. This blocks self-serve "run now"; acceptable per agreed scope.
-- **Roadmap complete**: C0→C3.4 all shipped, verified, committed. Next candidates (needs user go): org-wide cross-project rollups (utilization/revenue across all member projects), per-deliverable download audit, monthly statement PDF, push `prod` branch + live deploy.
+- **Roadmap complete**: C0→C3.4 all shipped, verified, committed. Next candidates (needs user go): per-deliverable download audit, monthly statement PDF, push `prod` branch + live deploy.
 
 ---
 
