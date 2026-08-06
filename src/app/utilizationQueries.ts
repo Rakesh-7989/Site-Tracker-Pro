@@ -1,5 +1,5 @@
 // SiteTrack Pro — utilization reporting (v4 C1).
-// Fee-vs-effort variance per consultancy/design project. On a fixed-fee
+// Fee-vs-effort variance per project. On a fixed-fee
 // engagement there is no hourly billing; `billedValue` is the effort the
 // team logged at the rate snapshot in each time entry (0 when rate unset).
 //
@@ -15,6 +15,7 @@
 
 import { committedFee, type FeePhase } from "./phaseQueries";
 import { APPROVAL_STATUSES, type TimeEntry } from "./timeQueries";
+import { PROJECT_TYPES } from "@/auth/roles";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
@@ -48,7 +49,7 @@ export interface UtilizationPhaseRow {
   utilizationPct: number;
 }
 
-const CONSULTANCY_TYPES = ["consultant", "design"];
+const CONSULTANCY_TYPES = PROJECT_TYPES;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listProjectsByType(client: any, orgId: string, types: readonly string[] = CONSULTANCY_TYPES): Promise<Result<ProjectBrief[]>> {

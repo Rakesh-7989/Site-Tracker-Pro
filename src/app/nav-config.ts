@@ -97,8 +97,8 @@ export const NAV_CATALOG: NavItem[] = [
    { to: "/delegations", label: "Delegations", icon: "users", requires: "org:approvals:manage", group: "Org Admin" },
 
   { to: "/analytics", label: "Analytics", icon: "barChart", requires: "budget:view", group: "Insights", modules: ["insights"] },
-  { to: "/utilization", label: "Utilization", icon: "trend", requires: "utilization:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights", modules: ["consultancy"] },
-  { to: "/revenue", label: "Revenue", icon: "wallet", requires: "revenue:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights", modules: ["finance"] },
+  { to: "/utilization", label: "Utilization", icon: "trend", requires: "utilization:view", group: "Insights", modules: ["consultancy"] },
+  { to: "/revenue", label: "Revenue", icon: "wallet", requires: "revenue:view", group: "Insights", modules: ["finance"] },
   { to: "/monthly-statement", label: "Monthly Statement", icon: "doc", requiresAny: ["budget:view", "revenue:view"], group: "Insights", modules: ["finance"] },
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },
   { to: "/audit", label: "Audit Log", icon: "shield", requires: "audit:read", group: "Insights" },
