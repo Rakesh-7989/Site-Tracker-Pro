@@ -310,7 +310,7 @@ Extend the D6 quote → PO chain through to settlement: **goods receipts** (part
 
 ### Notes / Follow-ups
 - **`amount` snapshot**: receipts store a unit-price snapshot at receive time (not re-read from PO), so settlement value reflects the actual receipt; over-delivery (`Σ receipts > PO amount`) clamps `open_amount` to 0 while `deliveryProgress` clamps at 100%.
-- Candidate next sub-tasks (needs user go): per-quote supplier scoring, cross-project FF&E rollups, deliverable download audit, monthly statement PDF.
+- Candidate next sub-tasks (needs user go): all Phase D backlog complete (per-quote supplier scoring, cross-project FF&E rollups, deliverable download audit, monthly statement).
 
 ---
 
@@ -334,7 +334,7 @@ Rank comparable quotes as purchase sides so managers pick the **best value**, no
 ### Notes / Follow-ups
 - Scoring reads `vendors.rating` only — a 0–5 star value set via vendor directory / `setVendorRating`. Unrated vendors score neutral (50 on that factor), so they're not penalized for missing data.
 - `bestQuote` (cheapest-only) still exported for callers that want raw price comparison; ProcurementView now highlights `bestScoredQuote`.
-- Candidate next sub-tasks (needs user go): cross-project FF&E rollup, deliverable download audit, monthly statement PDF.
+- Candidate next sub-tasks (needs user go): all Phase D backlog complete (cross-project FF&E rollup, deliverable download audit, monthly statement).
 
 ---
 
@@ -358,7 +358,7 @@ Lift the per-project FF&E schedule register to an **org-wide budget rollup** acr
 ### Notes / Follow-ups
 - RLS read on `ffe_entries` is project-membership based, so the org rollup only surfaces projects the caller can already see — by design, consistent with utilization/revenue.
 - `ffe:manage` is the same write gate the per-project FF&E tab uses for visibility, so the rollup matches tab-visible scope.
-- Candidate next sub-tasks (needs user go): monthly statement PDF.
+- Candidate next sub-tasks (needs user go): all Phase D backlog complete (deliverable download audit, monthly statement).
 
 ---
 
@@ -383,7 +383,7 @@ Audit which files were downloaded from the shared `deliverables` bucket by whom,
 ### Notes / Follow-ups
 - RLS on `download_events` is project-scoped like the underlying storage, so only member downloads are surfaced — consistent with utilization/revenue.
 - The event is logged asynchronously from the download handler (doesn't block the download UI).
-- Candidate next sub-task (needs user go): **monthly statement PDF**.
+- Candidate next sub-task (needs user go): all Phase D backlog complete.
 
 ---
 
