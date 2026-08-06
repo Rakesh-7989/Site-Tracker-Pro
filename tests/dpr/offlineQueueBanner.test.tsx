@@ -3,7 +3,6 @@
 
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import React from "react";
 
 import { I18nProvider } from "../../src/i18n/I18nProvider";
 import { OfflineQueueBanner } from "../../src/features/dpr/OfflineQueueBanner";
