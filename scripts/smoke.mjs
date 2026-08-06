@@ -41,6 +41,7 @@ const app = [
   read("src/features/admin/PlatformAuditView.tsx"),
   read("src/features/dpr/DPRComposer.tsx"),
   read("src/features/dpr/PhotoGeotagCapture.tsx"),
+  read("src/features/org/FfeRollupView.tsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -124,6 +125,8 @@ const vite = read("vite.config.js");
   "FEATURE_CATALOG",
   "isFeatureEnabled",
   "Feature Toggles",
+  "FfeRollupView",
+  "ffeOrgRollup",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

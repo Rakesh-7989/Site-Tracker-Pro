@@ -48,6 +48,13 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
     ],
   },
   {
+    moduleId: "design",
+    label: "Design & FF&E",
+    routes: [
+      { path: "ffe", lazy: () => import("@/features/org/FfeRollupView").then(m => ({ default: m.FfeRollupView })) },
+    ],
+  },
+  {
     moduleId: "finance",
     label: "Finance & Billing",
     routes: [

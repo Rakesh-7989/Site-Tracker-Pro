@@ -3,6 +3,8 @@
 // members minus external (ffe:manage); delete = managers + org admin. UI gating
 // via the ffe:manage capability + plan gate (PlanFeature "ffe").
 
+import { listProjectsByType } from "./utilizationQueries";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -79,32 +81,165 @@ export function ffeBudgetRollup(entries: Pick<FfeEntry, "qty" | "unitCost" | "st
   };
 }
 
+export const FFE_STATUS_LABEL: Record<FfeStatus, string> = {
+  specified: "Specified", selected: "Selected", ordered: "Ordered", installed: "Installed", cancelled: "Cancelled",
+};
+export const FFE_CATEGORY_LABEL: Record<FfeCategory, string> = {
+  furniture: "Furniture", fixture: "Fixture", equipment: "Equipment",
+};
+
+const FFE_SELECT = "id, code, category, name, space_or_room, manufacturer, model, finish, dimensions, qty, unit_cost, status, notes, created_at";
+
+function mapFfeRow(r: Record<string, unknown>): FfeEntry {
+  return {
+    id: String(r.id),
+    code: String(r.code ?? ""),
+    category: asCategory(r.category),
+    name: String(r.name ?? ""),
+    spaceOrRoom: r.space_or_room == null ? null : String(r.space_or_room),
+    manufacturer: r.manufacturer == null ? null : String(r.manufacturer),
+    model: r.model == null ? null : String(r.model),
+    finish: r.finish == null ? null : String(r.finish),
+    dimensions: r.dimensions == null ? null : String(r.dimensions),
+    qty: Number(r.qty ?? 1),
+    unitCost: Number(r.unit_cost ?? 0),
+    status: asStatus(r.status),
+    notes: r.notes == null ? null : String(r.notes),
+    createdAt: String(r.created_at ?? ""),
+  };
+}
+
+/** Project types that carry an FF&E schedule (mirror the `ffe` tab gate). */
+export const FFE_PROJECT_TYPES: readonly string[] = ["design", "interior"];
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listFfeEntries(client: any, projectId: string): Promise<Result<FfeEntry[]>> {
   try {
     const { data, error } = await client
       .from("ffe_entries")
-      .select("id, code, category, name, space_or_room, manufacturer, model, finish, dimensions, qty, unit_cost, status, notes, created_at")
+      .select(FFE_SELECT)
       .eq("project_id", projectId)
       .order("created_at", { ascending: true });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
-      id: String(r.id),
-      code: String(r.code ?? ""),
-      category: asCategory(r.category),
-      name: String(r.name ?? ""),
-      spaceOrRoom: r.space_or_room == null ? null : String(r.space_or_room),
-      manufacturer: r.manufacturer == null ? null : String(r.manufacturer),
-      model: r.model == null ? null : String(r.model),
-      finish: r.finish == null ? null : String(r.finish),
-      dimensions: r.dimensions == null ? null : String(r.dimensions),
-      qty: Number(r.qty ?? 1),
-      unitCost: Number(r.unit_cost ?? 0),
-      status: asStatus(r.status),
-      notes: r.notes == null ? null : String(r.notes),
-      createdAt: String(r.created_at ?? ""),
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(mapFfeRow));
+  } catch (e) { return er(e); }
+}
+
+export interface FfeOrgProject {
+  projectId: string;
+  name: string;
+  type: string | null;
+  entries: FfeEntry[];
+}
+
+/**
+ * Org-wide FF&E across design/interior projects. Fetches the project list once
+ * (listProjectsByType) then every ffe_entries row for those projects in a
+ * single `.in(project_id)` call, grouped back by project. RLS read = project
+ * member, so this only surfaces projects the caller can already see.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listOrgFfe(client: any, orgId: string): Promise<Result<FfeOrgProject[]>> {
+  try {
+    const projectsRes = await listProjectsByType(client, orgId, FFE_PROJECT_TYPES);
+    if (!projectsRes.ok) return projectsRes;
+    if (projectsRes.data.length === 0) return ok([]);
+    const ids = projectsRes.data.map(p => p.id);
+    const { data, error } = await client
+      .from("ffe_entries")
+      .select(FFE_SELECT)
+      .in("project_id", ids);
+    if (error) return dbe(error);
+    const byProject = new Map<string, FfeEntry[]>(projectsRes.data.map(p => [p.id, []]));
+    for (const r of (data ?? []) as Array<Record<string, unknown>>) {
+      const pid = String(r.project_id ?? "");
+      if (byProject.has(pid)) byProject.get(pid)!.push(mapFfeRow(r));
+    }
+    return ok(projectsRes.data.map(p => ({
+      projectId: p.id, name: p.name, type: p.type, entries: byProject.get(p.id) ?? [],
     })));
   } catch (e) { return er(e); }
+}
+
+export interface FfeBucket {
+  key: string;
+  label: string;
+  count: number;
+  committed: number;
+}
+
+export interface FfeOrgRow {
+  projectId: string;
+  name: string;
+  type: string | null;
+  count: number;
+  committed: number;
+  procured: number;
+}
+
+export interface FfeOrgRollup {
+  projects: number;
+  entries: number;
+  committed: number;
+  procured: number;
+  byStatus: FfeBucket[];
+  byCategory: FfeBucket[];
+  byProject: FfeOrgRow[];
+}
+
+/**
+ * Pure cross-project FF&E rollup. Committed = non-cancelled qty×unit_cost;
+ * procured = the committed subset whose status is materially procured
+ * (selected/ordered/installed). Buckets are pre-seeded in canonical order so a
+ * zero status/category still shows a (count 0) legend slot.
+ */
+export function ffeOrgRollup(
+  projects: Array<{
+    projectId: string;
+    name: string;
+    type: string | null;
+    entries: Array<Pick<FfeEntry, "qty" | "unitCost" | "status" | "category">>;
+  }>,
+): FfeOrgRollup {
+  const byStatus = new Map<FfeStatus, FfeBucket>(FFE_STATUSES.map(s => [s, { key: s, label: FFE_STATUS_LABEL[s], count: 0, committed: 0 }]));
+  const byCategory = new Map<FfeCategory, FfeBucket>(FFE_CATEGORIES.map(c => [c, { key: c, label: FFE_CATEGORY_LABEL[c], count: 0, committed: 0 }]));
+
+  let entries = 0;
+  let committed = 0;
+  let procured = 0;
+  const byProject: FfeOrgRow[] = [];
+
+  for (const p of projects) {
+    let pCommitted = 0;
+    let pProcured = 0;
+    for (const e of p.entries) {
+      const c = committedCost(e);
+      entries += 1;
+      committed += c;
+      pCommitted += c;
+      if (isCommittedStatus(e.status)) {
+        procured += c;
+        pProcured += c;
+      }
+      const sb = byStatus.get(e.status);
+      if (sb) { sb.count += 1; sb.committed += c; }
+      const cb = byCategory.get(e.category);
+      if (cb) { cb.count += 1; cb.committed += c; }
+    }
+    byProject.push({ projectId: p.projectId, name: p.name, type: p.type, count: p.entries.length, committed: pCommitted, procured: pProcured });
+  }
+
+  byProject.sort((a, b) => b.committed - a.committed);
+
+  return {
+    projects: projects.length,
+    entries,
+    committed,
+    procured,
+    byStatus: [...byStatus.values()],
+    byCategory: [...byCategory.values()],
+    byProject,
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
