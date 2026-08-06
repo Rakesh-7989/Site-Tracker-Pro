@@ -286,5 +286,30 @@ Ship the architecture-segment register stack on the C0 substrate: storage-backed
 - **D6 note**: `org_calendar` is a member-gated RPC — as `postgres` the gate (`is_superadmin() OR p_org = ANY(user_org_ids())`) yields empty for all branches; the D6 branch was functionally verified with the gate clause removed, matching how milestones/tasks behave.
 - **Phase D complete**: D0→D6 all shipped, verified, committed. Next candidates (needs user go): Phase E (procurement purchase lifecycle depth, per-quote supplier scoring, cross-project FF&E rollups), push `prod` branch + live deploy.
 
+---
+
+## v4 Phase 1 — Module System (Complete, 2026-08-06)
+
+### Goal
+First slice of the "One Platform, Multiple Industry Modules" strategy: an org-level **module registry** with per-industry (segment) templates, persisted on `organizations.enabled_modules`, driving module-gated nav + a `useModules()`/`<ModuleGate>` API and an onboarding module toggle. Build order for the broader v4 product: module substrate → plugin registry (lazy routes) → per-industry module surface.
+
+### Done (all verified)
+- **Migration 155** `scripts/supabase/155_enabled_modules.sql` — `organizations.enabled_modules` (text[], nullable, CHECK that every element ∈ 11 known ids, GIN index). NULL = not configured yet → all modules enabled (back-compat); array = only those enabled.
+- **`src/modules/`** (new): `types.ts` (`ModuleId`, `ModuleDef`, `EnabledModules` — zero runtime imports, safe for auth-layer import), `registry.ts` (11 modules, `MODULE_IDS`, `moduleById`, `isModuleId`, `normalizeModules` (drops unknowns/dedupes/null), `isModuleEnabled`, `CORE_MODULE='projects'`, `INDUSTRY_TEMPLATES` per segment, `templateModules`, `isRecommendedForSegment`, `alwaysOnModules`), `useModules.ts` (`{ enabledModules, isEnabled(id), orgId }` from active org), `ModuleGate.tsx` (renders children only if module enabled; null config → render), `index.ts` barrel.
+- **Auth session** — `OrgMembership.enabledModules?: EnabledModules` (types.ts); `normalizeOrgMembership` reads + normalizes it; org join select includes `enabled_modules` (fetchAuthSession.ts).
+- **Nav gating** — `NavItem.modules?: ModuleId[]` (ANY-of gate) + 4th filter in `buildNav` (null config → show, back-compat); applied to catalog: /client→clients, /procurement /vendors /pos /equipment /material-prices→procurement, /rabills /revenue→finance, /dpr /handover /measurement-book→site_ops, /compliance→compliance, /worklogs /hierarchy→people, /forecast /analytics→insights, /utilization→consultancy, /vendor→procurement, /kiosk/*→kiosks.
+- **Onboarding Step 1** — segment pick now also renders a **module toggle** (pre-selected from the segment template, "Recommended"/"Always on" chips, projects locked on); `saveOrg` persists `enabled_modules` via `updateOrg(client, orgId, name, email, segment, modules)`; `getMyOrg` returns `enabled_modules`.
+- **Tests** — new `tests/modules/registry.test.ts` (registry/normalize/templates); navConfig module-gating suite (incl. `/client` via `client` role which holds `share:client:portal`); fetchAuthSession + onboardingQueries extensions.
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (13.14s) · `vitest` **112 files / 1439 tests pass** (+23).
+- Commit `3100cd5` (v4 Phase 1). Also committed `a3cb746` (fix recurring build failure: handover JSX, Badge size prop, invalid icons/capability, test fixes — 7 files).
+- **Live DB apply: NOT yet run** — migration 155 is ready; run `npm run db:apply` when deploying.
+
+### Next Phase
+- Apply migration 155 live (`npm run db:apply`).
+- Phase 2: **plugin registry** — lazy `import()` module map (`src/plugins/`) wired to `enabled_modules` (runtime dynamic imports per Q8 decision: single build, per-company module loading, matches existing React.lazy router pattern; avoid static+dynamic import mixing e.g. `supabase.ts`).
+- Phase 3: per-industry module surface — map existing C1–D registers (consultancy billing, drawings/FF&E, statutory, procurement) into templates; `ModuleGate` gating of tabs/views; i18n keys for module labels (en/hi/te).
+
 
 
