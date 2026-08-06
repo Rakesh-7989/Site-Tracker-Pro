@@ -200,11 +200,11 @@ export function OnboardingView(): JSX.Element {
                           </span>
                           <span className="flex-1">
                             <span className="flex items-center gap-2 text-sm font-semibold text-fg-primary">
-                              {m.label}
+                              {t(`module.${m.id}.label`)}
                               {recommended && <span className="text-[9px] font-bold uppercase tracking-wide text-accent bg-accent-tint px-1.5 py-0.5 rounded-full">Recommended</span>}
                               {locked && <span className="text-[9px] font-bold uppercase tracking-wide text-fg-tertiary px-1.5 py-0.5 rounded-full">Always on</span>}
                             </span>
-                            <span className="block text-[11px] text-fg-tertiary leading-snug">{m.description}</span>
+                            <span className="block text-[11px] text-fg-tertiary leading-snug">{t(`module.${m.id}.desc`)}</span>
                           </span>
                         </button>
                       );

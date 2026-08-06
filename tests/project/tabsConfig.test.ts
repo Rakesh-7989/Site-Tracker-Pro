@@ -11,9 +11,10 @@ import {
   visibleTabs,
   isTabVisible,
   tabById,
-} from "@/features/project/tabs-config";
-import { resolveCapabilities, type AuthSession, type Capability, type CompanySegment } from "@/auth";
+} from "@/features/project/tabs-config";import { resolveCapabilities, type AuthSession, type Capability, type CompanySegment } from "@/auth";
 import { isIconName } from "@/components/ui/icons";
+import { isModuleId } from "@/modules";
+import { tabModuleId } from "@/features/project/tabs-config";
 
 function capsFor(session: AuthSession, ctx: { orgId?: string; projectId?: string } = {}): Set<Capability> {
   return resolveCapabilities(session, ctx).capabilities;
@@ -365,5 +366,77 @@ describe("v4 D4 — statutory approvals tab", () => {
   it("Statutory tab has no segment gate (project-type based)", () => {
     const def = tabById("statutory");
     expect(def?.segments).toBeUndefined();
+  });
+});
+
+describe("visibleTabs — module gating (v4 Phase 3)", () => {
+  const caps = capsFor(baseSession("pm"));
+  const proPlan = () => true;
+
+  it("back-compat: without a predicate, module-gated tabs still show (legacy callers)", () => {
+    const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
+    expect(ids).toContain("fieldops");
+    expect(ids).toContain("drawings");
+    expect(ids).toContain("attendance");
+  });
+
+  it("hides a tab only when its owning module is disabled", () => {
+    const onlySiteOps = (id: string) => id === "site_ops";
+    const ids = visibleTabs(caps, "construction", proPlan, undefined, undefined, onlySiteOps).map(t => t.id);
+    expect(ids).toContain("fieldops");        // site_ops on
+    expect(ids).not.toContain("drawings");    // design off
+    expect(ids).not.toContain("attendance");  // people off
+    expect(ids).not.toContain("budget");      // finance off
+  });
+
+  it("shows every module-gated tab when the predicate is always true", () => {
+    const ids = visibleTabs(caps, "construction", proPlan, undefined, undefined, () => true).map(t => t.id);
+    expect(ids).toContain("fieldops");
+    expect(ids).toContain("drawings");
+    expect(ids).toContain("attendance");
+  });
+
+  it("core tabs (no moduleId) are never hidden by the module gate", () => {
+    const ids = visibleTabs(caps, "construction", undefined, undefined, undefined, () => false).map(t => t.id);
+    expect(ids).toContain("overview");
+    expect(ids).toContain("team");
+    expect(ids).not.toContain("fieldops");
+  });
+
+  it("isTabVisible honours the module predicate", () => {
+    const allOff = () => false;
+    expect(isTabVisible("drawings", caps, "construction", proPlan, undefined, undefined, allOff)).toBe(false);
+    expect(isTabVisible("drawings", caps, "construction", proPlan, undefined, undefined, () => true)).toBe(true);
+  });
+});
+
+describe("tab module ownership (v4 Phase 3)", () => {
+  it("every declared moduleId on a tab is a valid ModuleId", () => {
+    for (const t of TAB_CATALOG) {
+      if (t.moduleId) expect(isModuleId(t.moduleId), `tab ${t.id} module=${t.moduleId}`).toBe(true);
+    }
+  });
+
+  it("maps the C1–D registers to their owning modules", () => {
+    expect(tabModuleId("drawings")).toBe("design");
+    expect(tabModuleId("ffe")).toBe("design");
+    expect(tabModuleId("phases")).toBe("consultancy");
+    expect(tabModuleId("time")).toBe("consultancy");
+    expect(tabModuleId("billing")).toBe("consultancy");
+    expect(tabModuleId("statutory")).toBe("compliance");
+    expect(tabModuleId("po")).toBe("procurement");
+    expect(tabModuleId("budget")).toBe("finance");
+    expect(tabModuleId("attendance")).toBe("people");
+    expect(tabModuleId("fieldops")).toBe("site_ops");
+  });
+
+  it("core / always-on tabs have no owning module", () => {
+    expect(tabModuleId("overview")).toBeUndefined();
+    expect(tabModuleId("team")).toBeUndefined();
+    expect(tabModuleId("milestones")).toBeUndefined();
+  });
+
+  it("unknown tab id yields no module", () => {
+    expect(tabModuleId("nope")).toBeUndefined();
   });
 });

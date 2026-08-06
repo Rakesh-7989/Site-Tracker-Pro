@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useOrgSwitcher, useCan, ROLE_LABEL, useAuth, resolveCapabilities, usePlanCaps } from "@/auth";
+import { useModules } from "@/modules";
 import { Card, StatCard, Badge, Icon, Alert, Spinner } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/atoms";
 import type { ProjectDetail, ProjectMemberRow } from "@/app/queries";
@@ -33,6 +34,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
   const { activeOrg } = useOrgSwitcher();
   const { session } = useAuth();
   const { can: planCan } = usePlanCaps();
+  const { isEnabled: moduleEnabled } = useModules();
   const t = useT();
   const typeLabel = (ty: string): string => t(`projType.${ty}`);
   const canEditSettings = useCan("project:settings:edit", {
@@ -45,7 +47,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
   }, [session, project.orgId, project.id]);
 
   const segment = session?.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
-  const visible = (tabId: string): boolean => isTabVisible(tabId, caps, project.type, planCan, segment);
+  const visible = (tabId: string): boolean => isTabVisible(tabId, caps, project.type, planCan, segment, undefined, moduleEnabled);
 
   const [counts, setCounts] = useState<RegisterCounts>({ drawings: 0, ffe: 0, statutory: 0, po: 0 });
   const [loading, setLoading] = useState(true);

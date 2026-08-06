@@ -16,7 +16,8 @@ import { Card, Icon, Spinner, Badge } from "@/components/ui/atoms";
 import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
-import { visibleTabs, DEFAULT_TAB } from "./tabs-config";
+import { useModules, ModuleGate } from "@/modules";
+import { visibleTabs, tabModuleId, DEFAULT_TAB } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { RequestProjectAccess } from "./RequestProjectAccess";
@@ -60,6 +61,7 @@ export function DetailView(): JSX.Element {
   const t = useT();
   const { session } = useAuth();
   const { can: planCan } = usePlanCaps();
+  const { isEnabled: moduleEnabled } = useModules();
   const tabBarRef = useRef<HTMLDivElement>(null);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -88,15 +90,16 @@ export function DetailView(): JSX.Element {
     if (state.kind !== "ready") return [];
     // planCan hides Pro+ tabs (finance/rfi/estimate/etc) on lower plans.
     // activeSegment gates v4 segment-specific tabs (migration 134).
+    // moduleEnabled hides tabs whose owning industry module is switched off.
     const activeSegment = session?.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
-    return visibleTabs(caps, state.project.type, planCan, activeSegment);
-  }, [caps, state, planCan, session]);
+    return visibleTabs(caps, state.project.type, planCan, activeSegment, undefined, moduleEnabled);
+  }, [caps, state, planCan, session, moduleEnabled]);
 
   if (state.kind === "loading") {
     return <div className="grid place-items-center py-20 text-accent"><Spinner size={26} /></div>;
   }
   if (state.kind === "error") {
-    return (
+  return (
       <Card className="max-w-lg mx-auto p-8 text-center">
         <Icon name="alert" size={24} className="mx-auto text-error mb-2" />
         <div className="text-sm text-fg-primary">{state.message}</div>
@@ -116,6 +119,47 @@ export function DetailView(): JSX.Element {
 
   // Resolve the active tab: requested → if visible use it, else default.
   const activeId = tab && tabs.some(tb => tb.id === tab) ? tab : DEFAULT_TAB;
+  const activeModule = tabModuleId(activeId);
+
+  const tabContent = (
+    <div>
+      {activeId === "overview" && <OverviewTab project={project} members={members} />}
+      {activeId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
+      {activeId === "milestones" && <MilestonesTab projectId={project.id} />}
+      {activeId === "tasks" && <TasksTab projectId={project.id} />}
+      {activeId === "updates" && <UpdatesTab projectId={project.id} />}
+      {activeId === "issues" && <IssuesTab projectId={project.id} />}
+      {activeId === "materials" && <MaterialsTab projectId={project.id} />}
+      {activeId === "safety" && <SafetyTab projectId={project.id} />}
+      {activeId === "inspections" && <InspectionsTab projectId={project.id} />}
+      {activeId === "punchlist" && <PunchTab projectId={project.id} />}
+      {activeId === "attendance" && <AttendanceTab projectId={project.id} />}
+      {activeId === "po" && <POsTab projectId={project.id} />}
+      {activeId === "invoices" && <InvoicesTab projectId={project.id} />}
+      {activeId === "budget" && <BudgetTab projectId={project.id} />}
+      {activeId === "rabills" && <RaBillsTab projectId={project.id} />}
+      {activeId === "ledger" && <LedgerTab projectId={project.id} />}
+      {activeId === "drawings" && <DrawingsTab projectId={project.id} />}
+      {activeId === "rfi" && <RfiTab projectId={project.id} />}
+      {activeId === "changeorders" && <ChangeOrdersTab projectId={project.id} />}
+      {activeId === "estimate" && <EstimateTab projectId={project.id} />}
+      {activeId === "map" && <MapTab project={project} />}
+      {activeId === "boq" && <BoqTab projectId={project.id} />}
+      {activeId === "labour" && <LabourTab projectId={project.id} />}
+      {activeId === "compliance" && <ComplianceTab projectId={project.id} orgId={project.orgId} />}
+      {activeId === "fieldops" && <FieldOpsTab projectId={project.id} />}
+      {activeId === "gantt" && <GanttTab projectId={project.id} />}
+      {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
+      {activeId === "messages" && <MessagesTab projectId={project.id} />}
+      {activeId === "phases" && <PhasesTab projectId={project.id} />}
+      {activeId === "time" && <TimeTab projectId={project.id} />}
+      {activeId === "deliverables" && <DeliverablesTab projectId={project.id} />}
+      {activeId === "reviews" && <ReviewRoundsTab projectId={project.id} />}
+      {activeId === "billing" && <BillingTab projectId={project.id} />}
+      {activeId === "ffe" && <FfeTab projectId={project.id} />}
+      {activeId === "statutory" && <StatutoryTab projectId={project.id} />}
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
@@ -155,44 +199,8 @@ export function DetailView(): JSX.Element {
       )}
       </div>
 
-      {/* Tab content */}
-      <div>
-        {activeId === "overview" && <OverviewTab project={project} members={members} />}
-        {activeId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
-        {activeId === "milestones" && <MilestonesTab projectId={project.id} />}
-        {activeId === "tasks" && <TasksTab projectId={project.id} />}
-        {activeId === "updates" && <UpdatesTab projectId={project.id} />}
-        {activeId === "issues" && <IssuesTab projectId={project.id} />}
-        {activeId === "materials" && <MaterialsTab projectId={project.id} />}
-        {activeId === "safety" && <SafetyTab projectId={project.id} />}
-        {activeId === "inspections" && <InspectionsTab projectId={project.id} />}
-        {activeId === "punchlist" && <PunchTab projectId={project.id} />}
-        {activeId === "attendance" && <AttendanceTab projectId={project.id} />}
-        {activeId === "po" && <POsTab projectId={project.id} />}
-        {activeId === "invoices" && <InvoicesTab projectId={project.id} />}
-        {activeId === "budget" && <BudgetTab projectId={project.id} />}
-        {activeId === "rabills" && <RaBillsTab projectId={project.id} />}
-        {activeId === "ledger" && <LedgerTab projectId={project.id} />}
-        {activeId === "drawings" && <DrawingsTab projectId={project.id} />}
-        {activeId === "rfi" && <RfiTab projectId={project.id} />}
-        {activeId === "changeorders" && <ChangeOrdersTab projectId={project.id} />}
-        {activeId === "estimate" && <EstimateTab projectId={project.id} />}
-        {activeId === "map" && <MapTab project={project} />}
-        {activeId === "boq" && <BoqTab projectId={project.id} />}
-        {activeId === "labour" && <LabourTab projectId={project.id} />}
-        {activeId === "compliance" && <ComplianceTab projectId={project.id} orgId={project.orgId} />}
-        {activeId === "fieldops" && <FieldOpsTab projectId={project.id} />}
-        {activeId === "gantt" && <GanttTab projectId={project.id} />}
-        {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
-        {activeId === "messages" && <MessagesTab projectId={project.id} />}
-        {activeId === "phases" && <PhasesTab projectId={project.id} />}
-        {activeId === "time" && <TimeTab projectId={project.id} />}
-        {activeId === "deliverables" && <DeliverablesTab projectId={project.id} />}
-        {activeId === "reviews" && <ReviewRoundsTab projectId={project.id} />}
-        {activeId === "billing" && <BillingTab projectId={project.id} />}
-        {activeId === "ffe" && <FfeTab projectId={project.id} />}
-        {activeId === "statutory" && <StatutoryTab projectId={project.id} />}
-      </div>
+      {/* Tab content (module-gated at render time as defense-in-depth) */}
+      {activeModule ? <ModuleGate module={activeModule}>{tabContent}</ModuleGate> : tabContent}
     </div>
   );
 }
