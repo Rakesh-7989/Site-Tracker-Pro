@@ -288,6 +288,32 @@ Ship the architecture-segment register stack on the C0 substrate: storage-backed
 
 ---
 
+## v4 Phase E — Procurement Purchase Lifecycle Depth (Complete, 2026-08-06)
+
+### Goal
+Extend the D6 quote → PO chain through to settlement: **goods receipts** (partial deliveries) against a purchase order. Track each delivered batch (qty, unit-price snapshot, line amount, who recorded it), roll up received-vs-open settlement amounts org-wide, and surface per-PO delivery progress in the POs tab. Gated by project membership + the manager set (no new capability/plan gate — rides existing `po:create`/`po:approve` and `procurement:view`).
+
+### Done (all verified)
+- **Migration 158** `scripts/supabase/158_po_receipts.sql`:
+  - `po_receipts` table (id, po_id FK→purchase_orders ON DELETE CASCADE, received_date, qty CHECK ≥ 1, unit_price CHECK ≥ 0, amount CHECK ≥ 0, notes, received_by FK→auth.users SET NULL, created_at) + `idx_po_receipts_po_id`.
+  - **RLS project-scoped, mirroring purchase_orders**: read = `can_read_project(<po>.project_id)`, insert/update/delete = `can_write_project(<po>.project_id)` (manager set covers org admin + project-tier manager via `has_project_role`). `grant DML to authenticated`, revoke anon.
+  - `org_purchase_orders(uuid)` **recreated** (DROP+CREATE — CREATE OR REPLACE can't add OUT params; verified no deps) to add `vendor_id, quote_id, quote_item, received_amount` (Σ receipts) and `open_amount` (GREATEST(0, amount − received)); same member gate as before.
+- **`src/app/poReceiptQueries.ts`** (new) — `PoReceipt` + CRUD (`listPoReceipts` w/ `received_by(name)` join, `addPoReceipt` computes `amount = qty × unit_price`, `deletePoReceipt`) + pure helpers `receiptAmount`, `receivedTotal`, `openAmount`, `deliveryProgress` (0–100, clamps over-delivery), `isFullyDelivered`.
+- **`src/app/crossPoQueries.ts`** — `CrossPO` gained `receivedAmount`/`openAmount` mapped from the recreated RPC.
+- **`src/features/project/tabs/POsTab.tsx`** — "Receipts" expandable per PO: delivery progress bar (emerald when 100%), received/open ₹, receipts list (received_by name), Add-receipt form (date/qty/unit ₹/notes) + delete (both gated by `po:approve`). Rows use an explicit Receipts button (dropped whole-row `onRowClick` to avoid a `<select>` nested inside a `<button>`, invalid HTML).
+- **Tests** — new `tests/poReceipts.test.ts` (9: pure math + query mappers incl. error surfaces), `tests/crossPoQueries.test.ts` extended for received/open.
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (5.68s) · `npm run smoke` **233 checks** · `vitest` **122 files / 1548 tests pass** (+1 file / +9).
+- **Live DB apply**: `npm run db:apply` → **120 passed / 28 failed** (28 = same benign pre-existing). 158 verified live via pg: `po_receipts` columns + 4 RLS policies present; rebuilt `org_purchase_orders` OUT params include `received_amount`/`open_amount`.
+- **Live deploy** (2026-08-06, commit `2809dc8`): pushed `prod`; Vercel site 200 OK.
+
+### Notes / Follow-ups
+- **`amount` snapshot**: receipts store a unit-price snapshot at receive time (not re-read from PO), so settlement value reflects the actual receipt; over-delivery (`Σ receipts > PO amount`) clamps `open_amount` to 0 while `deliveryProgress` clamps at 100%.
+- Candidate next sub-tasks (needs user go): per-quote supplier scoring, cross-project FF&E rollups, deliverable download audit, monthly statement PDF.
+
+---
+
 ## v4 Phase 1 — Module System (Complete, 2026-08-06)
 
 ### Goal
