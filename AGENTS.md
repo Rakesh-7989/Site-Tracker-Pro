@@ -381,8 +381,7 @@ Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agree
 - **Live DB**: migration **157** NOT yet applied live (pending in Phase F — `v4-db`). No prod deploy yet for this Sprint 2 work.
 
 ### Notes / Follow-ups
-- EF internals (voice_transcribe retry/cache/idempotency, whatsapp_dpr_send idempotency/quota, buildnow_anchor api/scrape) still lack unit tests — **Phase B sub-task**.
-- DPR view/component tests (DPRComposer/VoiceNoteRecorder/PhotoGeotag/Detail/History renders) still missing — **Phase B sub-task**.
+- **Phase B — DPR test coverage (done 2026-08-06, commit `96e30a2`)**: added `tests/dpr/digestPreview.test.ts` (pure previewDigest), `tests/dpr/efInternals.test.ts` (source-contract locks on Sprint 2 hardening: idempotent upserts `on_conflict=org_id,client_token` / `project_id,sync_date`, retry maxAttempts 3 + baseMs 1000, quota guard 402/budget-blocked, cache-first voice/binary, `message?.status` terminal cached path, auth gates), `tests/dpr/dprViews.test.ts` (exported `sortByStatus`/`sortByDate`/`STATUS_ORDER` from DPRHistoryView + `outcomeVisual`/`fmtDateTime` from DPRDetailView). Full gate: lint/tsc/build clean, smoke 233, vitest **121 files / 1539 tests** (+3/+37). Pushed `prod`; live 200 OK.
 - `VoiceConfidenceBar.tsx` is dead code (never imported) — cleanup candidate.
 - Full status + execution log in `docs/SPRINT_2_DPR_RESEARCH.md`.
 

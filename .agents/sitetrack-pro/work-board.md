@@ -95,9 +95,9 @@ Total: **96 test files, 1251 tests** — all passing (lint 0, tsc 0, build 1187 
 | v4 Phase 2 — Plugin Registry | ✅ Complete | `src/plugins/` catalog, `createPluginRoutes()`, `<ModuleGuard>` |
 | v4 Phase 3 — Per-Industry Module Surface | ✅ Complete | `TabDef.moduleId`, `<ModuleGate>` in DetailView, `module.*` i18n |
 | Sprint 2 DPR — Real Submit + Foundation | ✅ Complete (code) | real Meta client, geotag photo, offline sync, mig 157; **mig 157 not yet applied live, not yet deployed** |
-| Phase 6 — Mobile/Responsive | 🔶 Partial | only DPR-history overflow fix (commits `a986b8a`); CalendarGrid/Board/Tabs/xs/landing-nav pending |
+| Phase 6 — Mobile/Responsive | ✅ Complete | DPR-history overflow (`a986b8a`) + CalendarGrid `isMobile` list, Board stacked accordion, Tabs horizontal scroll + fade, `xs: 480px` breakpoint, landing hamburger, `truncate`/`min-w-0` wrap across project tabs (commits `c37de9c`/`1abbbce`) |
 
-**Open / pending:** mig 157 live apply + prod deploy (Phase F); Sprint 2 EF-internal + DPR-component tests (Phase B); Phase 6 remaining mobile items (Phase C); backlog candidates (Phase D) — Phase E procurement depth, org-wide rollups, statement PDF, deliverable download audit.
+**Open / pending:** mig 157 live apply + prod deploy (Phase F); Phase D backlog candidates — procurement purchase lifecycle depth, org-wide rollups, statement PDF, deliverable download audit.
 
 ## Dependencies / schema references
 
