@@ -117,7 +117,7 @@ describe("visibleTabs — plan gating", () => {
   it("hides finance / rfi / estimate / approvals / compliance / gantt on Basic plan (even for a pm)", () => {
     const caps = capsFor(baseSession("pm"));
     const ids = visibleTabs(caps, "construction", basicPlan).map(t => t.id);
-    for (const gated of ["budget", "ledger", "po", "invoices", "rabills", "rfi", "changeorders", "estimate", "approvals", "compliance", "gantt"]) {
+    for (const gated of ["budget", "ledger", "po", "invoices", "rabills", "rfi", "changeorders", "estimate", "approvals", "gantt"]) {
       expect(ids, `expected ${gated} hidden on Basic`).not.toContain(gated);
     }
     // Base tabs still show

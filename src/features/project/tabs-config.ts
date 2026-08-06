@@ -47,7 +47,7 @@ export const TAB_CATALOG: readonly TabDef[] = [
 
   // Progress + planning
   { id: "milestones",   label: "Milestones",    icon: "flag",      requires: "milestone:add" },
-  { id: "tasks",        label: "Tasks",         icon: "check",      requires: "task:add" },
+  { id: "tasks",        label: "Tasks",         icon: "check",      requires: "update:add" },
   { id: "updates",      label: "Updates",       icon: "activity" },
   { id: "issues",       label: "Issues",        icon: "alert",     requires: "issue:add" },
   { id: "punchlist",    label: "Punch List",    icon: "clipboard", requires: "punchlist:add", projectTypes: SITE_TYPES },

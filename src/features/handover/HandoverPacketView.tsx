@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { Input, Select } from "@/components/ui/forms";
+import { Input, Select, Textarea } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listPunch, createPunch, setPunchStatus, deletePunch, type PunchItem, type PunchSeverity, type PunchStatus } from "@/app/siteOpsQueries";
 import { listSubmittals, createSubmittal, setSubmittalStatus, deleteSubmittal, type Submittal, type SubmittalStatus, type SubmittalType } from "@/app/siteOpsQueries";
@@ -51,7 +51,7 @@ export function HandoverPacketView(): JSX.Element {
       </div>
       {!canView && <Alert variant="danger">You do not have permission to view the handover packet.</Alert>}
       {canView && (
-        >
+        <>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-fg-secondary">Project</label>
             <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent">
@@ -66,7 +66,7 @@ export function HandoverPacketView(): JSX.Element {
             ))}
           </nav>
           {selProject && activeOrg && (
-            >
+            <>
               {activeTab === "punch" && <PunchList projectId={selProject} />}
               {activeTab === "submittals" && <SubmittalsList projectId={selProject} />}
               {activeTab === "permits" && <PermitsList projectId={selProject} />}
@@ -76,7 +76,7 @@ export function HandoverPacketView(): JSX.Element {
                   You do not have permission to generate handover packets. Contact your project manager.
                 </div>
               )}
-            >
+            </>
           )}
           {selProject && canSign && activeOrg && (
             <div className="mt-6 border-t pt-4">
@@ -84,7 +84,7 @@ export function HandoverPacketView(): JSX.Element {
               <SignHandoverSection projectId={selProject} orgId={activeOrg.orgId} />
             </div>
           )}
-        >
+        </>
       )}
     </div>
   );
@@ -368,7 +368,6 @@ function GenerateSection({ projectId, orgId }: { projectId: string; orgId: strin
         )}
       </div>
     );
-  }
 }
 
 function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: string }): JSX.Element {
@@ -387,7 +386,7 @@ function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: s
       const client = await getClient();
       if (!client) { setError("Backend not configured."); return; }
       // Sign the handover packet (implementation depends on your API/endpoint)
-      const { data, error: signError } = await client
+      const { error: signError } = await client
         .from("handover_signatures")
         .insert({
           project_id: projectId,
@@ -417,7 +416,7 @@ function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: s
         rows={4}
         className="mb-4"
       />
-      <Button onClick={() => void sign()} disabled={loading || !signature.trim()} leftIcon={<Icon name="pen" size={16} />}>{loading ? <Spinner size={14} /> : "Sign Handover Packet"}</Button>
+      <Button onClick={() => void sign()} disabled={loading || !signature.trim()} leftIcon={<Icon name="check" size={16} />}>{loading ? <Spinner size={14} /> : "Sign Handover Packet"}</Button>
       <p className="text-xs text-fg-tertiary mt-3">By signing, you acknowledge that you have reviewed all punch list items, submittals, and permits, and the project is ready for handover.</p>
     </Card>
   );

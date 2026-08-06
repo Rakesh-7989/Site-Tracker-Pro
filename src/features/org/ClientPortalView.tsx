@@ -92,7 +92,7 @@ export function ClientPortalView(): JSX.Element {
             <h3 className="font-bold text-fg-primary group-hover:text-accent">{p.name}</h3>
             <div className="flex items-center gap-2 mt-1">
               {p.location && <div className="flex items-center gap-1.5 text-fg-tertiary text-xs"><Icon name="map" size={12} />{p.location}</div>}
-              <Badge tone="neutral" size="sm" className="text-xs">{p.type || "construction"}</Badge>
+              <Badge tone="neutral" className="text-xs">{p.type || "construction"}</Badge>
             </div>
           </div>
           <Badge tone={p.status === "active" ? "success" : p.status === "completed" ? "info" : "neutral"}>{p.status}</Badge>

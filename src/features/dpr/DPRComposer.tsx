@@ -71,7 +71,7 @@ export function DPRComposer(): JSX.Element {
         </div>
         <Button
           onClick={() => window.location.assign('/dpr/history')}
-          leftIcon={<Icon name="list" size={16} />}
+          leftIcon={<Icon name="doc" size={16} />}
         >
           View DPR history
         </Button>

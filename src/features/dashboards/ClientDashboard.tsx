@@ -172,7 +172,7 @@ export function ClientDashboard(): JSX.Element {
                           {p.location}
                         </div>
                       )}
-                      <Badge tone="neutral" size="sm" className="text-xs">
+                      <Badge tone="neutral" className="text-xs">
                         {p.type || "construction"}
                       </Badge>
                     </div>

@@ -1,10 +1,10 @@
-"use client";
-
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ClientDashboard } from "./ClientDashboard";
+import { MemoryRouter } from "react-router-dom";
+import { ClientDashboard } from "@/features/dashboards/ClientDashboard";
+import { listClientProjects } from "@/app/clientPortalQueries";
+import { getClient } from "@/lib/supabase";
 
-// Mock the dependencies
 vi.mock("@/auth", () => ({
   useAuth: () => ({
     session: {
@@ -15,8 +15,8 @@ vi.mock("@/auth", () => ({
 
 vi.mock("@/components/ui/atoms", () => ({
   Card: ({ children, className }: any) => <div className={className}>{children}</div>,
-  Spinner: () => <div>Spinner</div>,
-  Alert: ({ variant, children }: any) => <div>{children}</div>,
+  Spinner: () => <div role="spinner">Spinner</div>,
+  Alert: ({ children }: any) => <div>{children}</div>,
   Icon: () => <span>icon</span>,
   Badge: ({ children, ...props }: any) => <span {...props}>{children}</span>,
 }));
@@ -30,82 +30,76 @@ vi.mock("@/components/ui/forms", () => ({
 }));
 
 vi.mock("@/app/clientPortalQueries", () => ({
-  listClientProjects: () => Promise.resolve({ ok: true, data: [] }),
-  listClientNotifications: () => Promise.resolve({ ok: true, data: [] }),
+  listClientProjects: vi.fn(),
+  listClientNotifications: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase", () => ({
-  getClient: () => Promise.resolve(null),
+  getClient: vi.fn(),
 }));
 
 describe("ClientDashboard", () => {
   it("renders client dashboard with project list", async () => {
-    const TestComponent = () => {
-      const { useEffect } = require("react");
-      useEffect(() => {
-        // Mock successful project data
-        vi.mocked(require("@/app/clientPortalQueries")).listClientProjects.mockResolvedValue(
-          Promise.resolve({
-            ok: true,
-            data: [
-              {
-                id: "project1",
-                name: "Skyline Tower",
-                location: "New York, NY",
-                status: "active",
-                progress: 75,
-                type: "construction",
-                client_email: "client@example.com",
-              },
-              {
-                id: "project2",
-                name: "Ocean View Apartments",
-                location: null,
-                status: "completed",
-                progress: 100,
-                type: "interior",
-                client_email: "client@example.com",
-              },
-            ],
-          })
-        );
-      }, []);
+    vi.mocked(getClient).mockResolvedValue({} as never);
+    vi.mocked(listClientProjects).mockResolvedValue({
+      ok: true,
+      data: [
+        {
+          id: "project1",
+          name: "Skyline Tower",
+          location: "New York, NY",
+          status: "active",
+          progress: 75,
+          type: "construction",
+          client_email: "client@example.com",
+        },
+        {
+          id: "project2",
+          name: "Ocean View Apartments",
+          location: null,
+          status: "completed",
+          progress: 100,
+          type: "interior",
+          client_email: "client@example.com",
+        },
+      ],
+    });
 
-      return <ClientDashboard />;
-    };
+    render(
+      <MemoryRouter>
+        <ClientDashboard />
+      </MemoryRouter>
+    );
 
-    const { container } = render(<TestComponent />);
-    expect(screen.getByText("Welcome back")).toBeInTheDocument();
+    expect(await screen.findByText("Welcome back")).toBeInTheDocument();
+    expect(screen.getByText("Skyline Tower")).toBeInTheDocument();
+    expect(screen.getByText("Ocean View Apartments")).toBeInTheDocument();
     expect(screen.getByText("Client Portal")).toBeInTheDocument();
     expect(screen.getByText("Daily Reports")).toBeInTheDocument();
     expect(screen.getByText("Handover Packet")).toBeInTheDocument();
   });
 
   it("shows loading state initially", () => {
-    const TestComponent = () => {
-      const { useEffect } = require("react");
-      useEffect(() => {
-        // Keep the mock unresolved to test loading state
-      }, []);
+    vi.mocked(getClient).mockImplementation(() => new Promise(() => {}));
 
-      return <ClientDashboard />;
-    };
+    render(
+      <MemoryRouter>
+        <ClientDashboard />
+      </MemoryRouter>
+    );
 
-    const { container } = render(<TestComponent />);
-    expect(screen.getByRole("spinner") || container.querySelector(".animate-spin")).toBeInTheDocument();
+    expect(screen.getByRole("spinner")).toBeInTheDocument();
   });
 
   it("shows error message when backend is not configured", async () => {
-    const TestComponent = () => {
-      const { useEffect } = require("react");
-      useEffect(() => {
-        vi.mocked(require("@/lib/supabase")).getClient.mockResolvedValue(null);
-      }, []);
+    vi.mocked(getClient).mockResolvedValue(null);
 
-      return <ClientDashboard />;
-    };
+    render(
+      <MemoryRouter>
+        <ClientDashboard />
+      </MemoryRouter>
+    );
 
-    const { container } = render(<TestComponent />);
-    expect(screen.getByText("Backend not configured.")).toBeInTheDocument();
+    expect(await screen.findByText("Backend not configured.")).toBeInTheDocument();
   });
 });
