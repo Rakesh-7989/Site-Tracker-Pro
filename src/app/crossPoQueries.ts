@@ -14,6 +14,8 @@ export interface CrossPO {
   status: POStatus;
   createdDate: string | null;
   deliveryDate: string | null;
+  receivedAmount: number;
+  openAmount: number;
 }
 
 const asStatus = (v: unknown): POStatus => (["pending", "approved", "delivered", "cancelled"].includes(v as string) ? (v as POStatus) : "pending");
@@ -30,6 +32,8 @@ export async function getOrgPurchaseOrders(client: any, orgId: string): Promise<
       amount: num(r.amount), status: asStatus(r.status),
       createdDate: r.created_date == null ? null : String(r.created_date).slice(0, 10),
       deliveryDate: r.delivery_date == null ? null : String(r.delivery_date).slice(0, 10),
+      receivedAmount: num(r.received_amount),
+      openAmount: num(r.open_amount),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
