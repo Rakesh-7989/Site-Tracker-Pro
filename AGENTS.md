@@ -334,7 +334,31 @@ Rank comparable quotes as purchase sides so managers pick the **best value**, no
 ### Notes / Follow-ups
 - Scoring reads `vendors.rating` only — a 0–5 star value set via vendor directory / `setVendorRating`. Unrated vendors score neutral (50 on that factor), so they're not penalized for missing data.
 - `bestQuote` (cheapest-only) still exported for callers that want raw price comparison; ProcurementView now highlights `bestScoredQuote`.
-- Candidate next sub-tasks (needs user go): cross-project FF&E rollups, deliverable download audit, monthly statement PDF.
+- Candidate next sub-tasks (needs user go): cross-project FF&E rollup, deliverable download audit, monthly statement PDF.
+
+---
+
+## v4 Phase E3 — Cross-Project FF&E Rollup (Complete, 2026-08-06)
+
+### Goal
+Lift the per-project FF&E schedule register to an **org-wide budget rollup** across design/interior projects: committed (non-cancelled qty×unit_cost) vs procured, split by status and category, with a per-project table + delivery-progress bar. Mirrors the `CrossProjectPOsView` + `RevenueView` org-rollup pattern (project list once, rows grouped back by project). No schema change.
+
+### Done (all verified)
+- **`src/app/ffeQueries.ts`** — refactored the row mapper into `mapFfeRow`/`FFE_SELECT` (shared by list + org fetch); added `FFE_STATUS_LABEL`/`FFE_CATEGORY_LABEL`, `FFE_PROJECT_TYPES` (`["design","interior"]`), `listOrgFfe(client, orgId)` (via `listProjectsByType` then a single `.in(project_id)` fetch grouped back by project — RLS member-gated), and the pure `ffeOrgRollup(projects) → { projects, entries, committed, procured, byStatus, byCategory, byProject }`. Status/category buckets are pre-seeded in canonical order (zero slots show), byProject sorted by committed desc.
+- **`src/features/org/FfeRollupView.tsx`** (new, `/ffe`) — `<PlanGate feature="ffe">` + `useCan("ffe:manage")`/AccessDenied; stat cards (Projects · Entries, Committed, Procured, Procured %); By-status + By-category cards; per-project `DataTable` with a Progress bar (emerald at 100%) and row-click → `/projects/{id}/ffe`.
+- **`src/plugins/catalog.ts`** — new **`design`** plugin owning the `ffe` route (route inherits module gate `design`; also makes `design` a nav-module owner, satisfying the catalog↔nav parity test).
+- **`src/app/nav-config.ts`** — nav item `/ffe` "FF&E Rollup" under **Procurement** group: `requires: "ffe:manage"`, `segments: ["architecture","interior","multiple"]`, `modules: ["design"]`.
+- **`scripts/smoke.mjs`** — added `FfeRollupView` to the app-source scan + `FfeRollupView`/`ffeOrgRollup` markers (235 checks).
+- **Tests** — new `tests/app/e3FfeRollup.test.ts` (10: org rollup aggregation with cancelled excluded, status/category bucket seeding + ordering, per-project sort, empty rollup, listOrgFfe grouping/camelCase mapping, empty-entries, no-projects short-circuit, project-error + ffe-error surfacing).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (10.61s) · `npm run smoke` **235 checks** (was 233; +2) · `vitest` **124 files / 1567 tests pass** (+1 file / +10).
+- **Live deploy** (2026-08-06, commit `c34ab20`): pushed `prod`; Vercel site 200 OK. No DB change.
+
+### Notes / Follow-ups
+- RLS read on `ffe_entries` is project-membership based, so the org rollup only surfaces projects the caller can already see — by design, consistent with utilization/revenue.
+- `ffe:manage` is the same write gate the per-project FF&E tab uses for visibility, so the rollup matches tab-visible scope.
+- Candidate next sub-tasks (needs user go): deliverable download audit, monthly statement PDF.
 
 ---
 
