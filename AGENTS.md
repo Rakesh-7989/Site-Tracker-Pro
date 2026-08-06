@@ -382,8 +382,32 @@ Audit which files were downloaded from the shared `deliverables` bucket by whom,
 
 ### Notes / Follow-ups
 - RLS on `download_events` is project-scoped like the underlying storage, so only member downloads are surfaced — consistent with utilization/revenue.
-- The event is logged asynchronously from the download handler (doesn’t block the download UI).
+- The event is logged asynchronously from the download handler (doesn't block the download UI).
 - Candidate next sub-task (needs user go): **monthly statement PDF**.
+
+---
+
+## v4 Phase E5 — Monthly Statement (Complete, 2026-08-07)
+
+### Goal
+Org-wide monthly financial statement across all member projects: invoices split by source (phase/hourly/retainer), retainer MRR, expenses, RA bills, PO receipts, and consultancy billable hours/value. Mirrors RevenueView/UtilizationView org-rollup pattern. Gated by budget:view or revenue:view. Nav under Insights group with finance module. No schema change.
+
+### Done (all verified)
+- **`src/app/monthlyStatementQueries.ts`** — pure `buildMonthlyStatement` aggregator + `monthlyStatementTotals` + `listOrgMonthlyStatement(client, orgId, monthStart, monthEnd)`. Fetches projects once, then 6 parallel `.in(project_id)` queries (invoices, retainers, expenses, ra_bills, po_receipts, time_entries). Filters by month, groups by project, sorts by invoiced total desc. Handles edge cases: out-of-month invoices, paused/ended retainers, non-approved/non-billable time entries.
+- **`src/features/org/MonthlyStatementView.tsx`** (new, `/monthly-statement`) — month selector (last 12 months), project-type filter, stat cards (Projects, Invoiced, MRR, Expenses, RA Bills, PO Receipts), per-project DataTable with all 10 financial columns. Uses `<AccessDenied>` for `budget:view` OR `revenue:view`.
+- **`src/plugins/catalog.ts`** — route `monthly-statement` under `finance` plugin (module gate `finance`).
+- **`src/app/nav-config.ts`** — nav item `/monthly-statement` "Monthly Statement" under Insights: `requiresAny: ["budget:view","revenue:view"]`, `modules: ["finance"]`.
+- **`scripts/smoke.mjs`** — added `MonthlyStatementView`, `monthlyStatementTotals` markers (239 checks).
+- **Tests** — new `tests/app/monthlyStatement.test.ts` (9: pure aggregator by source/MRR/expenses/RA/PO/time, totals, query mapper with project-list + 6-table join, error propagation, empty org short-circuit).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (3.72s) · `npm run smoke` **239 checks** (+2) · `vitest` **126 files / 1586 tests pass** (+1 file / +9).
+- **Live deploy** (2026-08-07, commit `5d1f2e7`): pushed `prod`; Vercel site 200 OK. No DB change.
+
+### Notes / Follow-ups
+- RLS on all source tables is project-scoped, so the org rollup only surfaces projects the caller can already see — consistent with utilization/revenue.
+- The view provides a complete financial snapshot for the selected month; PDF export can be added as a separate feature (print CSS or client-side PDF generation).
+- All Phase D backlog candidates now complete: cross-project FF&E rollup, deliverable download audit, monthly statement.
 
 ---
 

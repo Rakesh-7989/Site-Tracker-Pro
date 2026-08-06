@@ -99,8 +99,10 @@ Total: **96 test files, 1251 tests** — all passing (lint 0, tsc 0, build 1187 
 | v4 Phase E — Procurement Lifecycle Depth | ✅ Complete | `po_receipts` goods receipts (mig 158, applied live), received/open org rollup, POsTab progress + receipts panel (commit `2809dc8`, prod live 200 OK) |
 | v4 Phase E2 — Per-Quote Supplier Scoring | ✅ Complete | composite 0–100 score (price/lead/rating), best-value highlight in ProcurementView, no schema change (commit `ad67268`, prod live 200 OK) |
 | v4 Phase E3 — Cross-Project FF&E Rollup | ✅ Complete | org-wide committed/procured budget rollup + `/ffe` view + `design` plugin (commit `c34ab20`, prod live 200 OK) |
+| v4 Phase E4 — Deliverable / Drawing Download Audit | ✅ Complete | append-only events (mig 159), org `/download-audit` view, logged on every file download (commit `1121312`, prod live 200 OK) |
+| v4 Phase E5 — Monthly Statement | ✅ Complete | org-wide monthly financial rollup (invoices/MRR/expenses/RA/PO/time) at `/monthly-statement` (commit `5d1f2e7`, prod live 200 OK) |
 
-**Open / pending:** Phase D backlog candidates — deliverable download audit, monthly statement PDF.
+**Open / pending:** Phase D backlog candidates — all complete.
 
 ## Dependencies / schema references
 
