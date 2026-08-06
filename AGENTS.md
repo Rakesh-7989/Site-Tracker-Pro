@@ -304,11 +304,12 @@ First slice of the "One Platform, Multiple Industry Modules" strategy: an org-le
 ### Verification
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (13.14s) · `vitest` **112 files / 1439 tests pass** (+23).
 - Commit `3100cd5` (v4 Phase 1). Also committed `a3cb746` (fix recurring build failure: handover JSX, Badge size prop, invalid icons/capability, test fixes — 7 files).
-- **Live DB apply: NOT yet run** — migration 155 is ready; run `npm run db:apply` when deploying.
+- **Live DB apply**: `npm run db:apply` → **118 passed / 28 failed** (28 = the same benign pre-existing). Migration **155** applied + verified live: `organizations.enabled_modules` present, GIN index + CHECK constraint live. `orgs with modules: 0` (correct until onboarding sets it).
+- **Live deploy** (2026-08-06): pushed `prod`; Vercel Deploy + GitHub CI both green; site 200 OK at https://sitetrack-rakesh.vercel.app.
+  - Note: `npm run smoke` initially failed 8 "App marker" checks for views that moved from router.tsx into the plugin catalog — fixed by adding `src/plugins/catalog.ts` to the smoke scan (commit `2c819bc`, "fix(smoke): scan plugin catalog for module-gated view markers").
 
 ### Next Phase
-- Apply migration 155 live (`npm run db:apply`).
-- Phase 2: **plugin registry** — lazy `import()` module map (`src/plugins/`) wired to `enabled_modules` (runtime dynamic imports per Q8 decision: single build, per-company module loading, matches existing React.lazy router pattern; avoid static+dynamic import mixing e.g. `supabase.ts`).
+- Phase 2: **plugin registry** — lazy `import()` module map (`src/plugins/`) wired to `enabled_modules` (runtime dynamic imports per Q8 decision: single build, per-company module loading, matches existing React.lazy router pattern; avoid static+dynamic import mixing e.g. `supabase.ts`). ✅ Done (see Phase 2 below).
 - Phase 3: per-industry module surface — map existing C1–D registers (consultancy billing, drawings/FF&E, statutory, procurement) into templates; `ModuleGate` gating of tabs/views; i18n keys for module labels (en/hi/te).
 
 ---
