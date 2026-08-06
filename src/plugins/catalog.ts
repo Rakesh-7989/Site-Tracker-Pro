@@ -60,6 +60,7 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
     label: "Finance & Billing",
     routes: [
       { path: "revenue", lazy: () => import("@/features/org/RevenueView").then(m => ({ default: m.RevenueView })) },
+      { path: "monthly-statement", modules: ["finance"], lazy: () => import("@/features/org/MonthlyStatementView").then(m => ({ default: m.MonthlyStatementView })) },
     ],
   },
   {

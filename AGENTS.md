@@ -358,7 +358,32 @@ Lift the per-project FF&E schedule register to an **org-wide budget rollup** acr
 ### Notes / Follow-ups
 - RLS read on `ffe_entries` is project-membership based, so the org rollup only surfaces projects the caller can already see — by design, consistent with utilization/revenue.
 - `ffe:manage` is the same write gate the per-project FF&E tab uses for visibility, so the rollup matches tab-visible scope.
-- Candidate next sub-tasks (needs user go): deliverable download audit, monthly statement PDF.
+- Candidate next sub-tasks (needs user go): monthly statement PDF.
+
+---
+
+## v4 Phase E4 — Deliverable / Drawing Download Audit (Complete, 2026-08-06)
+
+### Goal
+Audit which files were downloaded from the shared `deliverables` bucket by whom, when, and from which register row (deliverable vs drawing). Append-only events are logged automatically on every signed-URL download in the Deliverables / Drawings tabs; this provides an org-wide rollup with a UI at `/download-audit`.
+
+### Done (all verified)
+- **Migration 159** `scripts/supabase/159_download_events.sql`: `download_events` table (id, project_id, register, ref_id, file_name, file_path, size_bytes, downloaded_by, downloaded_at) with RLS: read = project member; insert = self + member; no update/delete. Grants authenticated (select+insert), anon none.
+- **`src/app/downloadAuditQueries.ts`** — pure decorators (decorateDownloadEvents) + org-rollup helpers (`logDownloadEvent`, `listOrgDownloadEvents`, `downloadTotals`). Mirrors the CrossProjectPOsView + RevenueView pattern.
+- **`src/features/org/DownloadAuditView.tsx`** (new, `/download-audit`) — `<AccessDenied>` for (`deliverable:manage` OR `deliverable:approve` OR `drawings:upload`); stat cards (Downloads, Deliverables, Drawings); a filter to separate by register; per-event table (File, Project, Register, Downloaded by, Size, Time). Click-row opens the source (deliverable/drawing) tab.
+- **`src/plugins/catalog.ts`** — new **`design`** plugin owning the `download-audit` route (module gate `design`; also satisfies catalog↔nav parity).
+- **`src/app/nav-config.ts`** — nav item `/download-audit` "Download Audit" under Insights: `requiresAny: ["deliverable:manage", "deliverable:approve", "drawings:upload"]`, `modules: ["design"]`.
+- **`scripts/smoke.mjs`** — added `DownloadAuditView`, `downloadAuditQueries`, `logDownloadEvent` to the app-source scan (237 checks).
+- **Tests** — new `tests/app/e4DownloadAudit.test.ts` (10: totals, decorator, log events, org rollup error surfaces, invalid register coercion).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (5.61s) · `npm run smoke` **237 checks** (+2) · `vitest` **125 files / 1577 tests pass** (+2 files / +10 tests).
+- **Live deploy** (2026-08-06, commit `1121312`): pushed `prod`; Vercel site 200 OK.
+
+### Notes / Follow-ups
+- RLS on `download_events` is project-scoped like the underlying storage, so only member downloads are surfaced — consistent with utilization/revenue.
+- The event is logged asynchronously from the download handler (doesn’t block the download UI).
+- Candidate next sub-task (needs user go): **monthly statement PDF**.
 
 ---
 
