@@ -25,8 +25,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 import { authenticate } from "../_shared/auth.ts";
 import { requirePlanFeature } from "../_shared/planCheck.ts";
 import { corsResponse } from "../_shared/cors.ts";
-
-const META_API_BASE = "https://graph.facebook.com/v18.0";
+import { sendWhatsAppMessage, type WhatsAppMessage } from "../_shared/whatsapp_client.ts";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -49,18 +48,11 @@ interface SendRequestTemplate {
   org_id?: string;
 }
 
+type SendRequest = SendRequestText | SendRequestTemplate;
+
 interface TemplateComponent {
   type: "header" | "body" | "footer" | "button";
   parameters?: { type: "text" | "currency" | "date_time"; text?: string }[];
-}
-
-type SendRequest = SendRequestText | SendRequestTemplate;
-
-interface MetaResponse {
-  messaging_product?: "whatsapp";
-  contacts?: { input: string; wa_id: string }[];
-  messages?: { id: string }[];
-  error?: { message: string; type: string; code: number; error_data?: unknown };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -70,36 +62,6 @@ const json = (data: unknown, status = 200) =>
     status,
     headers: { "Content-Type": "application/json" },
   });
-
-function normalizeNumber(raw: string): string {
-  // Meta wants the number WITHOUT the leading "+", just digits.
-  return raw.replace(/[^0-9]/g, "");
-}
-
-function buildPayload(req: SendRequest): Record<string, unknown> {
-  const base = {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to: normalizeNumber(req.to),
-  };
-  if (req.kind === "text") {
-    return {
-      ...base,
-      type: "text",
-      text: { body: req.body, preview_url: false },
-      ...(req.context ? { context: req.context } : {}),
-    };
-  }
-  return {
-    ...base,
-    type: "template",
-    template: {
-      name: req.template_name,
-      language: { code: req.language === "te" ? "te_IN" : req.language === "hi" ? "hi_IN" : "en_IN" },
-      ...(req.components ? { components: req.components } : {}),
-    },
-  };
-}
 
 async function rateLimitCheck(
   supa: SupabaseClient, orgId: string | undefined,
@@ -182,45 +144,42 @@ Deno.serve(async (req) => {
   }
 
   // Call Meta
-  const payload = buildPayload(body);
-  const metaRes = await fetch(`${META_API_BASE}/${phoneNumberId}/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-    body: JSON.stringify(payload),
+  const sendRes = await sendWhatsAppMessage({
+    phoneNumberId,
+    token,
+    message: body as WhatsAppMessage,
   });
-  const metaJson = (await metaRes.json()) as MetaResponse;
-  const messageId = metaJson.messages?.[0]?.id;
-  const waId = metaJson.contacts?.[0]?.wa_id;
+  const metaJson = sendRes.raw ?? {};
 
   await supa.from("whatsapp_log").insert({
     org_id: body.org_id,
     project_id: body.project_id,
     to_phone: body.to,
-    wa_id: waId,
+    wa_id: sendRes.wa_id,
     kind: body.kind,
     template_name: body.kind === "template" ? body.template_name : null,
     language: body.kind === "template" ? body.language : null,
     body: body.kind === "text" ? body.body : null,
-    meta_message_id: messageId,
-    meta_status_code: metaRes.status,
-    status: metaRes.ok ? "sent" : "failed",
-    failure_reason: metaJson.error?.message,
-    failure_code: metaJson.error?.code,
-    raw_response: metaJson as unknown as Record<string, unknown>,
+    meta_message_id: sendRes.meta_message_id,
+    meta_status_code: sendRes.status_code ?? (sendRes.ok ? 200 : 500),
+    status: sendRes.ok ? "sent" : "failed",
+    failure_reason: sendRes.error,
+    failure_code: sendRes.error_code,
+    raw_response: metaJson,
   });
 
-  if (!metaRes.ok) {
+  if (!sendRes.ok) {
     return json({
       error: "meta-error",
-      code: metaJson.error?.code,
-      message: metaJson.error?.message,
-    }, metaRes.status);
+      code: sendRes.error_code,
+      message: sendRes.error,
+    }, sendRes.status_code ?? 502);
   }
 
   return json({
     ok: true,
-    message_id: messageId,
-    wa_id: waId,
+    message_id: sendRes.meta_message_id,
+    wa_id: sendRes.wa_id,
     log_id: undefined,   // filled in by trigger if we add returning() later
   });
 });

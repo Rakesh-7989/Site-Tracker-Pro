@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Button, Icon, Spinner, Alert, Badge } from "@/components/ui/atoms";
 import { FormField, Select, Textarea, Input } from "@/components/ui/forms";
+import { useT } from "@/i18n/I18nProvider";
 import { normalizeE164, submitDpr, makeSupabaseDprRuntime, type DprSendStatus } from "@/app/dprSubmit";
 import { getClient } from "@/lib/supabase";
 import { isOnline } from "@/lib/offline";
@@ -25,11 +26,12 @@ import {
 import { previewDigest } from "./digestPreview";
 import { VoiceNoteRecorder, type VoiceRecordingResult } from "./VoiceNoteRecorder";
 import { PhotoGeotagCapture, type PhotoGeotagResult } from "./PhotoGeotagCapture";
+import { OfflineQueueBanner } from "./OfflineQueueBanner";
 
-const LANG_OPTIONS = [
-  { value: "te", label: "Telugu" },
-  { value: "hi", label: "Hindi" },
-  { value: "en", label: "English" },
+const LANG_OPTIONS: Array<{ value: DprLanguage; labelKey: string }> = [
+  { value: "te", labelKey: "voice.language.te" },
+  { value: "hi", labelKey: "voice.language.hi" },
+  { value: "en", labelKey: "voice.language.en" },
 ];
 
 const todayIso = (): string => {
@@ -43,6 +45,7 @@ export function DPRComposer(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canSubmitDpr = useCan("dpr:submit");
   const canViewDpr = useCan("dpr:view");
+  const t = useT();
   const [draft, dispatch] = useReducer(dprReducer, EMPTY_DRAFT);
   const [submitting, setSubmitting] = useState(false);
   const [submitState, setSubmitState] = useState<{ status: DprSendStatus; error?: string; queued: boolean } | null>(null);
@@ -60,7 +63,7 @@ export function DPRComposer(): JSX.Element {
       return (
         <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
           <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
-          <div className="text-sm text-fg-secondary">Access denied. You can view DPR history at the main DPR history page.</div>
+          <div className="text-sm text-fg-secondary">{t("dpr.composer.accessDeniedViewOnly")}</div>
         </Card>
       );
     }
@@ -68,13 +71,13 @@ export function DPRComposer(): JSX.Element {
       <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
         <Icon name="clipboard" size={24} className="mx-auto text-fg-tertiary mb-2" />
         <div className="text-sm text-fg-secondary mb-4">
-          Your role can view daily progress reports but cannot submit them.
+          {t("dpr.composer.roleViewOnly")}
         </div>
         <Button
           onClick={() => window.location.assign('/dpr/history')}
           leftIcon={<Icon name="doc" size={16} />}
         >
-          View DPR history
+          {t("dpr.composer.viewDprTitle")}
         </Button>
       </Card>
     );
@@ -176,7 +179,7 @@ export function DPRComposer(): JSX.Element {
     return (
       <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
         <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
-        <div className="text-sm text-fg-secondary">Your role can't submit daily progress reports.</div>
+        <div className="text-sm text-fg-secondary">{t("dpr.composer.roleCantSubmit")}</div>
       </Card>
     );
   }
@@ -204,13 +207,13 @@ export function DPRComposer(): JSX.Element {
             <Icon name={done ? "check" : submitState.queued ? "send" : "alert"} size={24} />
           </div>
           <h2 className="font-display text-lg font-bold text-fg-primary">
-            {submitState.queued ? "DPR queued — will send" : done ? "DPR submitted" : "DPR send failed"}
+            {submitState.queued ? t("dpr.composer.queuedTitle") : done ? t("dpr.composer.submittedTitle") : t("dpr.composer.failedTitle")}
           </h2>
           <p className="text-sm text-fg-secondary mt-1">
-            {submitState.error ?? (submitState.queued ? "Saved offline. We'll send it to the promoter as soon as you're back online." : "The promoter will receive the WhatsApp digest.")}
+            {submitState.error ?? (submitState.queued ? t("dpr.composer.queuedBody") : t("dpr.composer.sentBody"))}
           </p>
           <Button className="mt-4" variant="secondary" size="md" onClick={resetAll}>
-            Compose another
+            {t("dpr.composer.composeAnother")}
           </Button>
         </Card>
       </div>
@@ -221,28 +224,23 @@ export function DPRComposer(): JSX.Element {
     <div className="max-w-2xl mx-auto space-y-5 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-xl font-bold text-fg-primary">Daily Progress Report</h1>
-          <p className="text-sm text-fg-secondary mt-0.5">Speak your update, add a site photo, send to the promoter.</p>
+          <h1 className="font-display text-xl font-bold text-fg-primary">{t("dpr.composer.title")}</h1>
+          <p className="text-sm text-fg-secondary mt-0.5">{t("dpr.composer.subtitle")}</p>
         </div>
-        <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2 whitespace-nowrap">View history</Link>
+        <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2 whitespace-nowrap">{t("dpr.composer.viewHistory")}</Link>
       </div>
 
       {/* Offline queue banner */}
-      {offlineQueued > 0 && (
-        <div className="flex items-center gap-2 text-xs font-semibold rounded-lg bg-accent-tint border border-accent text-accent px-3 py-2">
-          <Icon name="send" size={14} />
-          <span>{offlineQueued} DPR{offlineQueued === 1 ? "" : "s"} queued — {offlineDraining ? "sending…" : "will send when you're back online"}</span>
-        </div>
-      )}
+      <OfflineQueueBanner queued={offlineQueued} draining={offlineDraining} />
 
       {/* Language + promoter */}
       <Card className="p-5 space-y-4">
-        <FormField label="Report language" htmlFor="dpr-lang">
-          <Select id="dpr-lang" value={draft.language} options={LANG_OPTIONS}
+        <FormField label={t("dpr.composer.reportLanguage")} htmlFor="dpr-lang">
+          <Select id="dpr-lang" value={draft.language} options={LANG_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey) }))}
             onChange={e => dispatch({ type: "set-language", language: e.target.value as DprLanguage })} />
         </FormField>
-        <FormField label="Promoter WhatsApp number" htmlFor="dpr-promoter"
-          hint="+91XXXXXXXXXX — this is who receives the daily digest.">
+        <FormField label={t("dpr.composer.promoterPhoneLabel")} htmlFor="dpr-promoter"
+          hint={t("dpr.composer.promoterHint")}>
           <Input id="dpr-promoter" type="tel" inputMode="tel" value={promoterPhone}
             placeholder="+91 98765 43210"
             invalid={promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null}
@@ -253,10 +251,10 @@ export function DPRComposer(): JSX.Element {
       {/* Voice */}
       <Card className="p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">1 · Voice note</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepVoice")}</h3>
           {draft.voice.status === "done" && quality !== null && (
             <Badge tone={quality ? "success" : "warning"}>
-              {Math.round((draft.voice.confidence ?? 0) * 100)}% {quality ? "good" : "low"}
+              {Math.round((draft.voice.confidence ?? 0) * 100)}% {quality ? t("dpr.composer.qualityGood") : t("dpr.composer.qualityLow")}
             </Badge>
           )}
         </div>
@@ -268,10 +266,10 @@ export function DPRComposer(): JSX.Element {
           />
         )}
         {draft.voice.status === "transcribing" && (
-          <div className="flex items-center gap-2 text-sm text-fg-secondary"><Spinner size={16} /> Transcribing…</div>
+          <div className="flex items-center gap-2 text-sm text-fg-secondary"><Spinner size={16} /> {t("dpr.composer.transcribing")}</div>
         )}
         {draft.voice.status === "done" && (
-          <FormField label={`Transcript (${draft.voice.provider})`} htmlFor="dpr-transcript">
+          <FormField label={t("dpr.composer.transcriptLabel", { provider: draft.voice.provider ?? "mock" })} htmlFor="dpr-transcript">
             <Textarea id="dpr-transcript" value={draft.voice.transcript ?? ""} readOnly rows={3} />
           </FormField>
         )}
@@ -281,9 +279,9 @@ export function DPRComposer(): JSX.Element {
       {/* Photo */}
       <Card className="p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">2 · Site photo</h3>
-          {draft.photo.status === "added" && draft.photo.withinHyderabad === true && <Badge tone="success">Hyderabad ✓</Badge>}
-          {draft.photo.status === "added" && draft.photo.withinHyderabad === false && <Badge tone="warning">Outside Hyderabad</Badge>}
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepPhoto")}</h3>
+          {draft.photo.status === "added" && draft.photo.withinHyderabad === true && <Badge tone="success">{t("dpr.composer.hyderabadVerified")}</Badge>}
+          {draft.photo.status === "added" && draft.photo.withinHyderabad === false && <Badge tone="warning">{t("dpr.composer.outsideHyderabad")}</Badge>}
         </div>
         <PhotoGeotagCapture onCapture={onPhotoCapture} />
       </Card>
@@ -291,7 +289,7 @@ export function DPRComposer(): JSX.Element {
       {/* Preview + submit */}
       {preview && (
         <Card className="p-5 space-y-3">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">3 · Promoter will receive</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepPreview")}</h3>
           <div className="rounded-xl bg-success-tint border border-default p-3 text-sm text-fg-primary whitespace-pre-line leading-relaxed">{preview}</div>
           <div className="space-y-1.5">
             {checklist.map(c => (
@@ -302,10 +300,10 @@ export function DPRComposer(): JSX.Element {
           </div>
           <Button fullWidth size="lg" onClick={() => void onSubmit()} disabled={submitting || normalizeE164(promoterPhone) == null}
             leftIcon={submitting ? <Spinner size={16} /> : <Icon name="send" size={16} />}>
-            {submitting ? "Sending…" : "Send to promoter"}
+            {submitting ? t("dpr.composer.sendingCta") : t("dpr.composer.sendCta")}
           </Button>
           {promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null && (
-            <p className="text-xs text-error text-center">Enter a valid +91XXXXXXXXXX number.</p>
+            <p className="text-xs text-error text-center">{t("dpr.composer.enterValidNumber")}</p>
           )}
         </Card>
       )}

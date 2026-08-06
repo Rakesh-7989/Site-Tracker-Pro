@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Spinner, Icon } from "@/components/ui/atoms";
+import { useT } from "@/i18n/I18nProvider";
 
 export interface VoiceRecordingResult {
   blob: Blob;
@@ -16,6 +17,7 @@ interface VoiceNoteRecorderProps {
 type RecorderState = "idle" | "requesting" | "recording" | "done" | "error";
 
 export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disabled }: VoiceNoteRecorderProps): JSX.Element {
+  const t = useT();
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +60,7 @@ export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disa
 
       rec.onerror = () => {
         stream.getTracks().forEach(t => t.stop());
-        setError("Recording failed. Try again.");
+        setError(t("dpr.recorder.errRecordingFailed"));
         setState("error");
       };
 
@@ -68,12 +70,12 @@ export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disa
       timer.current = setInterval(() => { elapsed++; setDurationDisplay(elapsed); }, 1000);
     } catch (e) {
       const msg = (e as DOMException)?.name === "NotAllowedError"
-        ? "Microphone permission denied. Enable in browser settings."
-        : "Could not start recording. Check your microphone.";
+        ? t("dpr.recorder.errMicPermission")
+        : t("dpr.recorder.errStart");
       setError(msg);
       setState("error");
     }
-  }, [onRecorded]);
+  }, [onRecorded, t]);
 
   const stopRecording = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
@@ -99,23 +101,23 @@ export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disa
     <div className="space-y-3">
       {state === "idle" && (
         <Button size="lg" onClick={() => void startRecording()} disabled={disabled} leftIcon={<Icon name="phone" size={16} />}>
-          Record voice note
+          {t("dpr.recorder.record")}
         </Button>
       )}
       {state === "requesting" && (
         <div className="flex items-center gap-2 text-sm text-fg-secondary">
-          <Spinner size={16} /> Requesting microphone…
+          <Spinner size={16} /> {t("dpr.recorder.requesting")}
         </div>
       )}
       {state === "recording" && (
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-error">
             <span className="w-2 h-2 rounded-full bg-error animate-pulse" />
-            Recording
+            {t("dpr.recorder.recording")}
           </span>
           <span className="text-sm font-mono text-fg-secondary">{fmtTime(durationDisplay)}</span>
           <Button size="sm" variant="secondary" onClick={stopRecording} leftIcon={<Icon name="pause" size={14} />}>
-            Stop
+            {t("dpr.recorder.stop")}
           </Button>
         </div>
       )}
@@ -123,16 +125,16 @@ export function VoiceNoteRecorder({ onRecorded, onTranscribe, transcribing, disa
         <div className="flex items-center gap-3">
           <audio src={URL.createObjectURL(recordedBlob)} controls className="h-9" />
           <span className="text-xs text-fg-tertiary">{fmtTime(durationDisplay)}</span>
-          <Button size="sm" variant="ghost" onClick={retry}>Re-record</Button>
+          <Button size="sm" variant="ghost" onClick={retry}>{t("dpr.recorder.rerecord")}</Button>
           <Button size="sm" onClick={onTranscribe} disabled={transcribing}>
-            {transcribing ? <Spinner size={14} /> : "Transcribe"}
+            {transcribing ? <Spinner size={14} /> : t("dpr.recorder.transcribe")}
           </Button>
         </div>
       )}
       {state === "error" && error && (
         <div className="flex items-center gap-2 text-sm text-error">
           <Icon name="alert" size={14} /> {error}
-          <Button size="sm" variant="ghost" onClick={retry}>Try again</Button>
+          <Button size="sm" variant="ghost" onClick={retry}>{t("dpr.recorder.retry")}</Button>
         </div>
       )}
     </div>

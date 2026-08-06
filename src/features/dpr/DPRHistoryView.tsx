@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
+import { useT } from "@/i18n/I18nProvider";
 import { listDprMessages, type DprMessageRow, type DprStatus } from "@/app/dprQueries";
 import { DPRStatusBadge } from "./DPRStatusBadge";
 
@@ -20,15 +21,17 @@ export function DPRHistoryView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canView = useCan("dpr:view");
+  const t = useT();
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
-  if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  if (!canView) return <Alert variant="warning">Your role can't view DPR history.</Alert>;
+  if (!activeOrg) return <Alert variant="warning">{t("dpr.history.noOrg")}</Alert>;
+  if (!canView) return <Alert variant="warning">{t("dpr.history.noPermission")}</Alert>;
 
   return <DPRHistoryInner orgId={activeOrg.orgId} />;
 }
 
 function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
+  const t = useT();
   const [rows, setRows] = useState<DprMessageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +40,11 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient();
-    if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    if (!client) { setError(t("dpr.history.backendUnconfigured")); setLoading(false); return; }
     const res = await listDprMessages(client, orgId);
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
-  }, [orgId]);
+  }, [orgId, t]);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -55,16 +58,16 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
     <div className="max-w-3xl mx-auto space-y-5 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">DPR History</h1>
-          <p className="text-sm text-fg-secondary mt-0.5">{rows.length} total · {sentCount} sent · {deliveredCount} delivered · {failedCount} failed</p>
+          <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">{t("dpr.history.title")}</h1>
+          <p className="text-sm text-fg-secondary mt-0.5">{t("dpr.history.summary", { total: rows.length, sent: sentCount, delivered: deliveredCount, failed: failedCount })}</p>
         </div>
         <div className="flex items-center gap-2">
           <select className="text-xs border border-default rounded-lg px-2 py-1.5 bg-panel"
             value={sort} onChange={e => setSort(e.target.value as "date" | "status")}>
-            <option value="date">Newest first</option>
-            <option value="status">By status</option>
+            <option value="date">{t("dpr.history.sortNewest")}</option>
+            <option value="status">{t("dpr.history.sortStatus")}</option>
           </select>
-          <Link to="/dpr" className="text-sm font-semibold text-accent hover:text-accent-2">+ New DPR</Link>
+          <Link to="/dpr" className="text-sm font-semibold text-accent hover:text-accent-2">{t("dpr.history.newDpr")}</Link>
         </div>
       </div>
 
@@ -75,7 +78,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
       ) : sorted.length === 0 ? (
         <Card className="p-8 text-center text-sm text-fg-secondary">
           <Icon name="clipboard" size={24} className="mx-auto text-fg-tertiary mb-2" />
-          No DPRs yet. <Link to="/dpr" className="text-accent font-semibold">Send your first one</Link>.
+          {t("dpr.history.empty")} <Link to="/dpr" className="text-accent font-semibold">{t("dpr.history.emptyCta")}</Link>.
         </Card>
       ) : (
         <div className="space-y-2">
@@ -95,12 +98,12 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
                   <div className="flex items-center gap-3 mt-1.5 text-[11px] text-fg-tertiary flex-wrap">
                     <span>{fmtDate(r.createdAt)}</span>
                     {r.supervisorName && <span>{r.supervisorName}</span>}
-                    {r.promoterPhone && <span>to {r.promoterPhone}</span>}
+                    {r.promoterPhone && <span>{t("dpr.history.toPhone", { phone: r.promoterPhone })}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Link to={`/dpr/${r.id}`} className="text-xs font-semibold text-accent hover:text-accent-2 whitespace-nowrap" title="View details">
-                    Details
+                  <Link to={`/dpr/${r.id}`} className="text-xs font-semibold text-accent hover:text-accent-2 whitespace-nowrap" title={t("dpr.history.details")}>
+                    {t("dpr.history.details")}
                   </Link>
                   {r.photoUrl && (
                     <a href={r.photoUrl} target="_blank" rel="noopener noreferrer" title="View photo">

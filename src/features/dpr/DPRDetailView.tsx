@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
+import { useT } from "@/i18n/I18nProvider";
 import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
 import { invokeSendDpr } from "@/app/dprSubmit";
 import { getClient } from "@/lib/supabase";
@@ -31,6 +32,7 @@ export function DPRDetailView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canView = useCan("dpr:view");
+  const t = useT();
 
   const [row, setRow] = useState<DprMessageRow | null>(null);
   const [log, setLog] = useState<DprDeliveryLogRow[]>([]);
@@ -39,12 +41,13 @@ export function DPRDetailView(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [retryMsg, setRetryMsg] = useState<string | null>(null);
+  const [retryOk, setRetryOk] = useState(false);
 
   const reload = useCallback(async () => {
     if (!id) return;
     setLoading(true); setError(null);
     const client = await getClient();
-    if (!client || !activeOrg) { setError("Backend not configured."); setLoading(false); return; }
+    if (!client || !activeOrg) { setError(t("dpr.history.backendUnconfigured")); setLoading(false); return; }
     const res = await getDprMessage(client, activeOrg.orgId, id);
     if (!res.ok) { setError(res.error); setLoading(false); return; }
     setRow(res.data);
@@ -58,7 +61,7 @@ export function DPRDetailView(): JSX.Element {
       }
     }
     setLoading(false);
-  }, [id, activeOrg]);
+  }, [id, activeOrg, t]);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -66,7 +69,7 @@ export function DPRDetailView(): JSX.Element {
     if (!row) return;
     const client = await getClient();
     if (!client) return;
-    setRetrying(true); setRetryMsg(null);
+    setRetrying(true); setRetryMsg(null); setRetryOk(false);
     const payload = {
       client_token: row.clientToken,
       org_id: row.orgId,
@@ -84,22 +87,23 @@ export function DPRDetailView(): JSX.Element {
       buildnow_anchor_hash: row.buildnowAnchorHash ?? undefined,
     };
     const res = await invokeSendDpr(client, payload);
-    setRetryMsg(res.ok ? (res.error || `Send ok (${res.status ?? "sent"}).`) : res.error ?? "Send failed.");
+    setRetryOk(res.ok);
+    setRetryMsg(res.ok ? (res.error || t("dpr.detail.sendOk", { status: res.status ?? "sent" })) : res.error ?? t("dpr.detail.sendFailed"));
     setRetrying(false);
     await reload();
-  }, [row, reload]);
+  }, [row, reload, t]);
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
-  if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  if (!canView) return <Alert variant="warning">Your role can't view DPR history.</Alert>;
+  if (!activeOrg) return <Alert variant="warning">{t("dpr.history.noOrg")}</Alert>;
+  if (!canView) return <Alert variant="warning">{t("dpr.history.noPermission")}</Alert>;
 
   if (loading) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
 
   if (!row) {
     return (
       <div className="max-w-2xl mx-auto space-y-4 p-4 md:p-6">
-        <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2">← Back to history</Link>
-        <Alert variant="danger">{error ?? "DPR not found."}</Alert>
+        <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2">{t("dpr.detail.backToHistory")}</Link>
+        <Alert variant="danger">{error ?? t("dpr.detail.notFound")}</Alert>
       </div>
     );
   }
@@ -109,7 +113,7 @@ export function DPRDetailView(): JSX.Element {
   return (
     <div className="max-w-2xl mx-auto space-y-5 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2">← Back to history</Link>
+        <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2">{t("dpr.detail.backToHistory")}</Link>
         <div className="flex items-center gap-2">
           <DPRStatusBadge status={row.status} lang={lang} size="sm" attempts={row.attempts} />
           {row.language && <span className="text-[11px] font-mono text-fg-tertiary">{row.language.toUpperCase()}</span>}
@@ -120,16 +124,16 @@ export function DPRDetailView(): JSX.Element {
 
       {/* Transcript */}
       <Card className="p-5 space-y-2">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Site update</h3>
+        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.siteUpdate")}</h3>
         {row.transcript ? (
           <p className="text-sm text-fg-primary whitespace-pre-line leading-relaxed">{row.transcript}</p>
         ) : (
-          <p className="text-sm text-fg-tertiary">No transcript recorded.</p>
+          <p className="text-sm text-fg-tertiary">{t("dpr.detail.noTranscript")}</p>
         )}
         <div className="flex items-center gap-3 text-[11px] text-fg-tertiary flex-wrap pt-1">
           <span>{fmtDateTime(row.createdAt)}</span>
           {row.supervisorName && <span>{row.supervisorName}</span>}
-          <span>to {row.promoterPhone}</span>
+          <span>{t("dpr.history.toPhone", { phone: row.promoterPhone })}</span>
           {row.metaMessageId && <span className="font-mono">Meta {row.metaMessageId.slice(0, 12)}…</span>}
         </div>
       </Card>
@@ -137,7 +141,7 @@ export function DPRDetailView(): JSX.Element {
       {/* Photo */}
       {row.photoUrl && (
         <Card className="p-5 space-y-2">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Site photo</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.sitePhoto")}</h3>
           <a href={row.photoUrl} target="_blank" rel="noopener noreferrer" className="block">
             <img src={row.photoUrl} alt="Site photo" className="rounded-xl max-h-72 w-full object-cover border border-default bg-secondary" />
           </a>
@@ -154,7 +158,7 @@ export function DPRDetailView(): JSX.Element {
       {/* Voice */}
       {row.voiceUrl && (
         <Card className="p-5 space-y-2">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Voice note</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.voiceNote")}</h3>
           <audio src={row.voiceUrl} controls className="w-full" />
           {row.voiceSha256 && <p className="text-[10px] font-mono text-fg-tertiary break-all">sha256:{row.voiceSha256}</p>}
         </Card>
@@ -163,10 +167,10 @@ export function DPRDetailView(): JSX.Element {
       {/* BuildNow anchor */}
       {(row.buildnowAnchorUrl || row.buildnowAnchorHash) && (
         <Card className="p-5 space-y-2">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">BuildNow anchor</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.buildnowAnchor")}</h3>
           <div className="flex items-center gap-2">
             <BuildNowBadge metadata={buildnowMeta ?? undefined} lang={lang} size="sm" showLink={false} />
-            {row.buildnowSyncedAt && <span className="text-[11px] text-fg-tertiary">synced {fmtDateTime(row.buildnowSyncedAt)}</span>}
+            {row.buildnowSyncedAt && <span className="text-[11px] text-fg-tertiary">{t("dpr.detail.syncedAt", { time: fmtDateTime(row.buildnowSyncedAt) })}</span>}
           </div>
           {row.buildnowAnchorHash && <p className="text-[10px] font-mono text-fg-tertiary break-all">{row.buildnowAnchorHash}</p>}
         </Card>
@@ -175,23 +179,23 @@ export function DPRDetailView(): JSX.Element {
       {/* Delivery log + retry */}
       <Card className="p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Delivery attempts</h3>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.deliveryAttempts")}</h3>
           {row.status === "failed" && (
             <Button size="sm" onClick={() => void onRetry()} disabled={retrying} leftIcon={retrying ? <Spinner size={12} /> : <Icon name="refresh" size={12} />}>
-              Retry send
+              {t("dpr.detail.retrySend")}
             </Button>
           )}
         </div>
-        {retryMsg && <Alert variant={retryMsg.startsWith("Send ok") ? "success" : "danger"}>{retryMsg}</Alert>}
+        {retryMsg && <Alert variant={retryOk ? "success" : "danger"}>{retryMsg}</Alert>}
         {log.length === 0 ? (
-          <p className="text-xs text-fg-tertiary">No delivery attempts logged yet.</p>
+          <p className="text-xs text-fg-tertiary">{t("dpr.detail.noAttempts")}</p>
         ) : (
           <ol className="space-y-1.5">
             {log.map(a => (
               <li key={a.id} className="flex items-start gap-2 text-xs">
                 <Icon name="refresh" size={12} className={`mt-0.5 ${outcomeVisual(a.outcome)}`} />
                 <span className="min-w-0 flex-1">
-                  <span className={`font-semibold ${outcomeVisual(a.outcome)}`}>Attempt {a.attemptNumber} · {a.outcome}</span>
+                  <span className={`font-semibold ${outcomeVisual(a.outcome)}`}>{t("dpr.detail.attemptRow", { number: a.attemptNumber, outcome: a.outcome })}</span>
                   {a.attemptedAt && <span className="text-fg-tertiary"> · {fmtDateTime(a.attemptedAt)}</span>}
                   {a.durationMs != null && <span className="text-fg-tertiary"> · {a.durationMs}ms</span>}
                   {(a.errorDetail || a.errorCode) && (

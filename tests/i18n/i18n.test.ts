@@ -59,3 +59,31 @@ describe("bundle parity (nav/navGroup/shell must be key-identical across locales
     });
   }
 });
+
+describe("bundle parity (dpr/voice/buildnow namespaces across locales)", () => {
+  const keysOf = (obj: Record<string, unknown>, ns: string): string[] =>
+    Object.keys((obj[ns] ?? {}) as Record<string, unknown>).sort();
+  const deepKeys = (obj: Record<string, unknown>, prefix = ""): string[] =>
+    Object.entries(obj).flatMap(([k, v]) =>
+      v !== null && typeof v === "object" && !Array.isArray(v)
+        ? deepKeys(v as Record<string, unknown>, `${prefix}${k}.`)
+        : [`${prefix}${k}`],
+    );
+  for (const ns of ["dpr", "voice", "buildnow"]) {
+    it(`'${ns}' has the same keys in en/te/hi (flat)`, () => {
+      const enK = keysOf(en as Record<string, unknown>, ns);
+      expect(keysOf(te as Record<string, unknown>, ns)).toEqual(enK);
+      expect(keysOf(hi as Record<string, unknown>, ns)).toEqual(enK);
+      expect(enK.length).toBeGreaterThan(0);
+    });
+  }
+  it("'dpr.*' nested keys are identical across locales", () => {
+    const enDpr = (en as Record<string, unknown>).dpr as Record<string, unknown>;
+    const teDpr = (te as Record<string, unknown>).dpr as Record<string, unknown>;
+    const hiDpr = (hi as Record<string, unknown>).dpr as Record<string, unknown>;
+    const enDeep = deepKeys(enDpr).sort();
+    expect(enDeep.length).toBeGreaterThan(0);
+    expect(deepKeys(teDpr).sort()).toEqual(enDeep);
+    expect(deepKeys(hiDpr).sort()).toEqual(enDeep);
+  });
+});

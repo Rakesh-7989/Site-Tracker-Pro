@@ -8,10 +8,10 @@
 //   - Builder-promoter routing (different from a generic recipient)
 //   - Telemetry: total_ms, attempts, provider response
 //
-// Status today: SHELL only. Real Meta Cloud API call wired in Sprint 2
-// mid-cycle once founder confirms WHATSAPP_PERMANENT_TOKEN access for the
-// 2 pilot orgs. Until then, the EF returns a structured "dry-run" response
-// that the mobile client treats as success in non-prod.
+// Status: real Meta Cloud API send wired via _shared/whatsapp_client.ts
+// (same client whatsapp-send uses). Sends go live once the founder sets
+// WHATSAPP_PHONE_NUMBER_ID + WHATSAPP_PERMANENT_TOKEN for the pilot orgs;
+// SITETRACK_DRY_RUN=true keeps the EF usable without Meta wiring.
 //
 // See docs/SPRINT_2_ARCHITECTURE.md for the contract.
 
@@ -20,6 +20,7 @@ import { retry } from "../_shared/retry.ts";
 import { getBudgetMode } from "../_shared/budget.ts";
 import { authenticate } from "../_shared/auth.ts";
 import { requirePlanFeature } from "../_shared/planCheck.ts";
+import { sendWhatsAppMessage } from "../_shared/whatsapp_client.ts";
 
 /**
  * Meta Cloud API gives 1k free service conversations per WABA per UTC
@@ -153,32 +154,56 @@ function validate(req: DprSendRequest): string | null {
 }
 
 /**
- * Stub: future real Meta Cloud API send. For Sprint 2 Day 16 this is
- * intentionally a TODO — it returns success when SITETRACK_DRY_RUN is set,
- * else returns a 503 so the founder knows env wiring is required before
- * a live pilot demo.
+ * Real Meta Cloud API send. Wired in Sprint 2 mid-cycle via the shared
+ * whatsapp_client.ts (same client whatsapp-send uses).
+ *
+ * - SITETRACK_DRY_RUN=true → returns a fake wamid without hitting Meta
+ *   (used for demo / acceptance testing before the founder sets the token).
+ * - Otherwise requires WHATSAPP_PHONE_NUMBER_ID + WHATSAPP_PERMANENT_TOKEN.
+ *   The DPR is rendered into a short text body (language-aware) and sent as
+ *   a text message to the promoter.
  */
 async function sendViaMetaCloudApi(
-  _payload: DprSendRequest,
+  payload: DprSendRequest,
   env: Record<string, string>,
 ): Promise<{ ok: boolean; meta_message_id?: string; error?: string }> {
-  // TODO Sprint 2 mid-cycle: wire to _shared/whatsapp_client.ts once the
-  // founder confirms WHATSAPP_PERMANENT_TOKEN for the 2 pilot orgs.
   if (env.SITETRACK_DRY_RUN === "true") {
     return {
       ok: true,
       meta_message_id: `wamid.DRY_RUN_${Date.now()}`,
     };
   }
-  if (!env.WHATSAPP_PERMANENT_TOKEN) {
+  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = env.WHATSAPP_PERMANENT_TOKEN;
+  if (!phoneNumberId || !token) {
     return {
       ok: false,
       error:
-        "WHATSAPP_PERMANENT_TOKEN missing. Set SITETRACK_DRY_RUN=true to test the EF without Meta wiring.",
+        "WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_PERMANENT_TOKEN missing. Set SITETRACK_DRY_RUN=true to test the EF without Meta wiring.",
     };
   }
-  // Placeholder for the real Meta Cloud API call. Returns 501 until wired.
-  return { ok: false, error: "not implemented yet — Sprint 2 mid-cycle" };
+
+  // Compose the short WhatsApp body the promoter sees — mirrors the tone of
+  // the browser preview (digestPreview.ts) so the two never diverge.
+  const lines: string[] = [];
+  lines.push(payload.language === "en" ? "Daily Progress Report" : "Site update");
+  lines.push(payload.transcript_text ?? "(audio note attached)");
+  if (payload.photo_url) lines.push(`Photo: ${payload.photo_url}`);
+
+  const res = await sendWhatsAppMessage({
+    phoneNumberId,
+    token,
+    message: {
+      kind: "text",
+      to: payload.promoter_phone_e164,
+      body: lines.join("\n").slice(0, 4096),
+    },
+  });
+
+  if (!res.ok) {
+    return { ok: false, error: `meta error ${res.status_code ?? "?"}: ${res.error}` };
+  }
+  return { ok: true, meta_message_id: res.meta_message_id };
 }
 
 Deno.serve(async (httpReq: Request) => {
