@@ -314,6 +314,30 @@ Extend the D6 quote → PO chain through to settlement: **goods receipts** (part
 
 ---
 
+## v4 Phase E2 — Per-Quote Supplier Scoring (Complete, 2026-08-06)
+
+### Goal
+Rank comparable quotes as purchase sides so managers pick the **best value**, not just the cheapest. A composite 0–100 score blends price competitiveness (vs the cheapest comparable), lead time (vs the pool minimum), and the vendor's stored track record rating. Purely client-side — no schema change (reads existing `vendors.rating numeric(2,1)` 0–5).
+
+### Done (all verified)
+- **`src/app/procurementQuotes.ts`** — three pure helpers:
+  - `scoreQuote(q, peers, vendorRating?)` → `{ score, priceScore, leadScore, ratingScore }`. `priceScore = cheapestTotal/ownTotal×100` (cheapest → 100, 2× premium → 50); `leadScore = minLead/ownLead×100` (no lead → 50, only-quote-with-lead → 100); `ratingScore = rating/5×100`. Final = `Σ factor × SCORE_WEIGHTS` (`{ price: 0.5, lead: 0.3, rating: 0.2 }`).
+  - `bestScoredQuote(quotes, today, ratings)` → top composite scorer among comparable quotes; ties fall to the lower quote total; null when nothing comparable.
+  - `scoreQuoteAlone(rating?)` → price/lead neutral at 50, only rating moves the total (per-quote display context).
+- **`src/features/org/ProcurementView.tsx`** — each FF&E group computes `bestScoredQuote`; per-quote rows show a score badge (`Best value` ≥75 / `Good value` ≥55 / `Basic`, tone success/warning/neutral), `· score N/100` in the meta line, and the top scorer gets the accent border (previously the cheapest did — now "best value").
+- **Tests** — new `tests/app/quoteScoring.test.ts` (9: price scale, lead scale, rating scale, weight sum, alone-neutral, best-selection, non-comparable exclusion, tie-break, weights export).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (5.96s) · `npm run smoke` **233 checks** · `vitest` **123 files / 1557 tests pass** (+1 file / +9).
+- **Live deploy** (2026-08-06, commit `ad67268`): pushed `prod`; Vercel site 200 OK. No DB change.
+
+### Notes / Follow-ups
+- Scoring reads `vendors.rating` only — a 0–5 star value set via vendor directory / `setVendorRating`. Unrated vendors score neutral (50 on that factor), so they're not penalized for missing data.
+- `bestQuote` (cheapest-only) still exported for callers that want raw price comparison; ProcurementView now highlights `bestScoredQuote`.
+- Candidate next sub-tasks (needs user go): cross-project FF&E rollups, deliverable download audit, monthly statement PDF.
+
+---
+
 ## v4 Phase 1 — Module System (Complete, 2026-08-06)
 
 ### Goal

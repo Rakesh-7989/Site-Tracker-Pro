@@ -97,8 +97,9 @@ Total: **96 test files, 1251 tests** — all passing (lint 0, tsc 0, build 1187 
 | Sprint 2 DPR — Real Submit + Foundation | ✅ Complete | real Meta client, geotag photo, offline sync, mig 157; **mig 157 applied live + prod deployed (2026-08-06, commit `96e30a2`)** |
 | Phase 6 — Mobile/Responsive | ✅ Complete | DPR-history overflow (`a986b8a`) + CalendarGrid `isMobile` list, Board stacked accordion, Tabs horizontal scroll + fade, `xs: 480px` breakpoint, landing hamburger, `truncate`/`min-w-0` wrap across project tabs (commits `c37de9c`/`1abbbce`) |
 | v4 Phase E — Procurement Lifecycle Depth | ✅ Complete | `po_receipts` goods receipts (mig 158, applied live), received/open org rollup, POsTab progress + receipts panel (commit `2809dc8`, prod live 200 OK) |
+| v4 Phase E2 — Per-Quote Supplier Scoring | ✅ Complete | composite 0–100 score (price/lead/rating), best-value highlight in ProcurementView, no schema change (commit `ad67268`, prod live 200 OK) |
 
-**Open / pending:** Phase D backlog candidates — per-quote supplier scoring, cross-project FF&E rollups, deliverable download audit, monthly statement PDF.
+**Open / pending:** Phase D backlog candidates — cross-project FF&E rollups, deliverable download audit, monthly statement PDF.
 
 ## Dependencies / schema references
 
