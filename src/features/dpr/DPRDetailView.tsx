@@ -16,12 +16,12 @@ import { getClient } from "@/lib/supabase";
 import { DPRStatusBadge } from "./DPRStatusBadge";
 import { BuildNowBadge } from "./BuildNowBadge";
 
-const fmtDateTime = (iso: string): string => {
+export const fmtDateTime = (iso: string): string => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
-function outcomeVisual(outcome: DprDeliveryLogRow["outcome"]): string {
+export function outcomeVisual(outcome: DprDeliveryLogRow["outcome"]): string {
   if (outcome === "success") return "text-success";
   if (outcome === "failed") return "text-error";
   return "text-fg-secondary";

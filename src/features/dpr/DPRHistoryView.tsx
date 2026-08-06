@@ -13,9 +13,9 @@ const fmtDate = (iso: string): string => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
-const STATUS_ORDER: Record<DprStatus, number> = { queued: 0, sending: 1, sent: 2, delivered: 3, read: 4, failed: 5 };
-const sortByStatus = (a: DprMessageRow, b: DprMessageRow): number => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0);
-const sortByDate = (a: DprMessageRow, b: DprMessageRow): number => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+export const STATUS_ORDER: Record<DprStatus, number> = { queued: 0, sending: 1, sent: 2, delivered: 3, read: 4, failed: 5 };
+export const sortByStatus = (a: DprMessageRow, b: DprMessageRow): number => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0);
+export const sortByDate = (a: DprMessageRow, b: DprMessageRow): number => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 
 export function DPRHistoryView(): JSX.Element {
   const { session } = useAuth();
