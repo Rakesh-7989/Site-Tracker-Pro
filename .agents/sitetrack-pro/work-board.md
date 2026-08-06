@@ -1,6 +1,6 @@
 # SiteTrack Pro — Work Board
 
-**Last updated:** 2026-06-24
+**Last updated:** 2026-08-06
 
 ---
 
@@ -85,6 +85,20 @@ Total: **96 test files, 1251 tests** — all passing (lint 0, tsc 0, build 1187 
 
 ---
 
+## v4 Current State (Fast-forward from v3 Phases above)
+
+**Last updated:** 2026-08-06 — reconciled to the committed state of `prod` (all verified in AGENTS.md):
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| v4 Phase 1 — Module System | ✅ Complete | `enabled_modules` (mig 155), register, onboarding toggle, nav module gate |
+| v4 Phase 2 — Plugin Registry | ✅ Complete | `src/plugins/` catalog, `createPluginRoutes()`, `<ModuleGuard>` |
+| v4 Phase 3 — Per-Industry Module Surface | ✅ Complete | `TabDef.moduleId`, `<ModuleGate>` in DetailView, `module.*` i18n |
+| Sprint 2 DPR — Real Submit + Foundation | ✅ Complete (code) | real Meta client, geotag photo, offline sync, mig 157; **mig 157 not yet applied live, not yet deployed** |
+| Phase 6 — Mobile/Responsive | 🔶 Partial | only DPR-history overflow fix (commits `a986b8a`); CalendarGrid/Board/Tabs/xs/landing-nav pending |
+
+**Open / pending:** mig 157 live apply + prod deploy (Phase F); Sprint 2 EF-internal + DPR-component tests (Phase B); Phase 6 remaining mobile items (Phase C); backlog candidates (Phase D) — Phase E procurement depth, org-wide rollups, statement PDF, deliverable download audit.
+
 ## Dependencies / schema references
 
 - `hierarchyQueries.ts` → tables `blocks`, `floors`, `units` (FK cascades for deletes)
@@ -92,3 +106,5 @@ Total: **96 test files, 1251 tests** — all passing (lint 0, tsc 0, build 1187 
 - `brandingQueries.ts` → table `branding` (migration 23), partial unique indexes
 - `auditLogQueries.ts` → table `audit_log_v2` (migration 03), RLS org-scoped reads
 - `forecastQueries.ts` → tables `boq_items`, `ra_bills`, `inventory_transactions`, `site_updates`, `projects`
+- `dprSubmit.ts`/`dprQueries.ts` → tables `dpr_messages`, `dpr_delivery_log`, `voice_transcripts`, storage bucket `dpr-media` (mig 50/51/52/157)
+- `module system` → `organizations.enabled_modules` (mig 155), `src/modules/registry.ts`, `src/plugins/catalog.ts`

@@ -309,8 +309,8 @@ First slice of the "One Platform, Multiple Industry Modules" strategy: an org-le
   - Note: `npm run smoke` initially failed 8 "App marker" checks for views that moved from router.tsx into the plugin catalog — fixed by adding `src/plugins/catalog.ts` to the smoke scan (commit `2c819bc`, "fix(smoke): scan plugin catalog for module-gated view markers").
 
 ### Next Phase
-- Phase 2: **plugin registry** — lazy `import()` module map (`src/plugins/`) wired to `enabled_modules` (runtime dynamic imports per Q8 decision: single build, per-company module loading, matches existing React.lazy router pattern; avoid static+dynamic import mixing e.g. `supabase.ts`). ✅ Done (see Phase 2 below).
-- Phase 3: per-industry module surface — map existing C1–D registers (consultancy billing, drawings/FF&E, statutory, procurement) into templates; `ModuleGate` gating of tabs/views; i18n keys for module labels (en/hi/te).
+- Phase 2: **plugin registry** — ✅ Done (see v4 Phase 2 below).
+- Phase 3: per-industry module surface — ✅ Done (see v4 Phase 3 below).
 
 ---
 
@@ -340,7 +340,66 @@ The route surface of the Phase 1 module system: a **plugin catalog** (`src/plugi
 - **Plugin catalog vs nav-config**: both still exist; the catalog owns module→route, nav-config owns capability/segment/module gating for the sidebar. Deriving nav `modules` from the catalog is a possible later cleanup (deferred).
 
 ### Next Phase
-- Phase 3: per-industry module surface — map existing C1–D registers (consultancy billing, drawings/FF&E, statutory, procurement) into the segment templates; `ModuleGate` gating of tabs/views; i18n keys for module labels (en/hi/te).
+- Phase 3: per-industry module surface — ✅ Done (see v4 Phase 3 below).
+
+---
+
+## v4 Phase 3 — Per-Industry Module Surface (Complete, 2026-08-06)
+
+### Goal
+Make the existing C1–D feature registers surface per-industry through the Phase 1 module system: (1) verify segment templates (`INDUSTRY_TEMPLATES`) match register reality, (2) gate module-specific tabs/views with `<ModuleGate>`, (3) add `module.*` i18n labels in en/hi/te. No schema change.
+
+### Done (all verified)
+- **`TabDef.moduleId?: ModuleId`** added to `src/features/project/tabs-config.ts` (26 tabs mapped): site_ops→fieldops/safety/inspections/punchlist; design→drawings/ffe; consultancy→phases/time/deliverables/reviews/utilization/billing; finance→budget/ledger/invoices/rabills; procurement→po/materials; compliance→statutory/compliance; people→attendance/labour. Ungated (always visible): overview/team/milestones/tasks/updates/issues/rfi/changeorders/estimate/map/boq/gantt/messages/handover.
+- **`visibleTabs()` / `isTabVisible()`** now accept a `moduleEnabled` predicate (5th gate, orthogonal to capability/plan/segment/project-type); `tabModuleId(id)` resolves a tab→module. `DetailView.tsx` reads `useModules()` and drops tabs whose module is off (null config → show, back-compat).
+- **`DetailView.tsx`** — tab-content render wrapped in `<ModuleGate module={tabModuleId(activeId)}>` for module-owned tabs; Overview "Registers strip" count chips also module-gated (`isTabVisible` already covers them). Tab defs' `projectTypes`/`planFeature`/`requires` gates left intact (ModuleGate is additive defense-in-depth).
+- **i18n** — 13 `module.*` label keys per locale added to `src/i18n/{en,hi,te}.json` (alpha-only ASCII keys, matching the migration 155 CHECK id set); `OnboardingView` reads `t(\`module.${m.id}.label\`)`.
+- **Tests** — `tests/project/tabsConfig.test.ts` extended (+77): every tab that should be ModuleGate-wrapped is (moduleId present on 26), gating predicate works with moduleEnabled, `tabModuleId` round-trips, ungated tab set verified. Also touched: `OnboardingView.tsx` (+4), `OverviewTab.tsx` (+4).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` green (files/tests grew: baseline 114 files/1454 tests → +tabsConfig suite).
+- Commit `664e674` (v4 Phase 3).
+
+### Notes / Follow-ups
+- Module ownership per tab documented in `docs/MODULES.md` §3 table (three-place consistency rule: migration 155 CHECK ↔ registry.ts ↔ i18n).
+- `/rabills` remains the known nav-gated-but-viewless gap (from Phase 2, unchanged).
+
+---
+
+## Sprint 2 DPR — Real Submit Pipeline + Foundation (Complete, 2026-08-06)
+
+### Goal
+Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agreed in `docs/SPRINT_2_ARCHITECTURE.md`: compose → voice → geotagged photo → submit → history → detail → retry, with offline queue, live BuildNow badge, and a shared real Meta Cloud API client. Real Bhashini/AWS transcription + BuildNow API access stay blocked on founder-provided API keys (provider-agnostic shells remain, mock adapter real).
+
+### Done (commits `124ac31`, `28cdf0e`, `c2f6949`)
+- **Real submit pipeline** (`124ac31`): `src/app/dprSubmit.ts` (379 ln — optimistic submit, photo/voice upload to storage, offline enqueue, delivery-log insert, BuildNow badge state); `src/app/dprQueries.ts` extended; `src/features/dpr/DPRDetailView.tsx` (208 ln new) + `PhotoGeotagCapture.tsx` (215 ln new, EXIF → device GPS → Hyderabad bbox); `src/lib/dprOfflineSync.ts` (drain/useOfflineSync); `DPRComposer.tsx` fully wired; route `/dpr/history` + catalog entry; migration **157** `scripts/supabase/157_dpr_media_bucket.sql` — private `dpr-media` bucket (15 MB, id=name) + 4 storage RLS policies (read/insert org-member minus client-ish roles, update org-member, delete managers+orgadmin incl. `has_project_role`), path `<org_id>/<date>/<sha256>.<ext>` using the validated `storage.foldername(name)[1] IN (user_org_ids()::text)` pattern from 145.
+- **Shared Meta client + i18n** (`28cdf0e`): `supabase/functions/_shared/whatsapp_client.ts` (123 ln — real Meta Cloud API send text+template, `normalizeNumber`, token validation + rate-limit guard); `whatsapp-send` refactored to reuse it (83 ln removed) + `whatsapp_dpr_send` stub `sendViaMetaCloudApi` replaced with real body-composition send; `src/features/dpr/OfflineQueueBanner.tsx` standalone i18n banner; `VoiceNoteRecorder`/`DPRComposer`/`DPRHistoryView`/`DPRDetailView` i18n-wired via `useT()` (+composer language select driven by `voice.language.*`); `retryOk` boolean replaces brittle `startsWith("Send ok")`; ~71 new i18n keys per locale (`dpr.offline/recorder/history/detail` + 19 `dpr.composer.*`); i18n parity test extended to `dpr`/`voice`/`buildnow` flat + `dpr.*` deep; `tests/dpr/offlineQueueBanner.test.tsx`.
+- **CI fix** (`c2f6949`): dropped unused React import in OfflineQueueBanner test (TS6133).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (8.8s) · `vitest` **118 files / 1502 tests pass** · `npm run smoke` **233 checks** (smoke marker added for new `/dpr/history` view + plugin-catalog scan).
+- **Live DB**: migration **157** NOT yet applied live (pending in Phase F — `v4-db`). No prod deploy yet for this Sprint 2 work.
+
+### Notes / Follow-ups
+- EF internals (voice_transcribe retry/cache/idempotency, whatsapp_dpr_send idempotency/quota, buildnow_anchor api/scrape) still lack unit tests — **Phase B sub-task**.
+- DPR view/component tests (DPRComposer/VoiceNoteRecorder/PhotoGeotag/Detail/History renders) still missing — **Phase B sub-task**.
+- `VoiceConfidenceBar.tsx` is dead code (never imported) — cleanup candidate.
+- Full status + execution log in `docs/SPRINT_2_DPR_RESEARCH.md`.
+
+---
+
+## Phase 6 — Mobile/Responsive (Partial, 2026-08-06)
+
+### Done
+- Commit `a986b8a` — DPR history row `flex-wrap` + audio `max-w-full` (prevents ~360px overflow). Single targeted fix only.
+
+### Remaining (next sub-tasks, per `v4-phase6` agent scope)
+- CalendarGrid mobile layout (stack/scroll on small screens)
+- Board stacked column under breakpoint
+- Tabs overflow indicator (`overflow-x-auto` / `whitespace-nowrap`)
+- Top-20 file/content cell overflow wrap
+- Optional `xs:` breakpoint decision (add to tailwind.config.js only if a concrete case needs it)
+- Landing nav mobile hamburger behavior
 
 
 
