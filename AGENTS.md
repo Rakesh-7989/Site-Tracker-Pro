@@ -330,7 +330,7 @@ The route surface of the Phase 1 module system: a **plugin catalog** (`src/plugi
 
 ### Verification
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (10.05s) · `vitest` **114 files / 1454 tests pass** (+15).
-- Commit `TBD` (v4 Phase 2).
+- Commit `a4b0e7d` (v4 Phase 2).
 
 ### Notes / Follow-ups
 - **Option A kept**: router stays static, all module routes always in the tree; `<ModuleGuard>` gates at render time using the active org's `enabled_modules`. No `enabledModules` at build time → chunks are always emitted, but only loaded on navigation (unchanged from Phase 1). A future Option B (dynamic router built after auth loads) can reuse `createPluginRoutes({ enabledModules })`.
