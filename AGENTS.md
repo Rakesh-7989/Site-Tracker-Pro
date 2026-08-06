@@ -311,5 +311,35 @@ First slice of the "One Platform, Multiple Industry Modules" strategy: an org-le
 - Phase 2: **plugin registry** — lazy `import()` module map (`src/plugins/`) wired to `enabled_modules` (runtime dynamic imports per Q8 decision: single build, per-company module loading, matches existing React.lazy router pattern; avoid static+dynamic import mixing e.g. `supabase.ts`).
 - Phase 3: per-industry module surface — map existing C1–D registers (consultancy billing, drawings/FF&E, statutory, procurement) into templates; `ModuleGate` gating of tabs/views; i18n keys for module labels (en/hi/te).
 
+---
+
+## v4 Phase 2 — Plugin Registry (Complete, 2026-08-06)
+
+### Goal
+The route surface of the Phase 1 module system: a **plugin catalog** (`src/plugins/`) that is the single source of truth for "which module owns which route", wired into the static router via `createPluginRoutes()` + a route-level `<ModuleGuard>` (Option A: static router kept, each module-gated route element wrapped in ModuleGuard; nav gating from Phase 1 remains the primary gate, ModuleGuard is defense-in-depth for direct URL access).
+
+### Done (all verified)
+- **`src/plugins/`** (new):
+  - `types.ts` (`PluginDef`, `PluginRoute` (`path`, `modules` ANY-of, `lazy` factory, optional `stubId`), `PluginLazy` — type-only, zero runtime imports).
+  - `catalog.ts` — `PLUGIN_CATALOG`: 9 plugins owning 24 routes, lazy `import()` factories moved verbatim from the old hardcoded router (clients→`/client`; site_ops→`/dpr` `/dpr/history` `/handover`(also clients) `/measurement-book`; procurement→`/vendors` `/procurement` `/pos` `/material-prices` `/equipment` `/vendor`; finance→`/revenue`; insights→`/analytics` `/forecast`; consultancy→`/utilization`; compliance→`/compliance`; people→`/worklogs` `/hierarchy`; kiosks→`/kiosk/labour` `/kiosk/site` `/kiosk/ar` `/kiosk/snapshot` (stub-gated)). Helpers `pluginRoutes()` (flat) + `routeModules(plugin, route)` (route.modules ?? owning module).
+  - `ModuleGuard.tsx` — route-level guard: renders children iff ANY required module is enabled for the active org (null `enabled_modules` → render, back-compat); disabled → `<AccessDenied>` card. Optional `fallback` prop.
+  - `router.tsx` — `createPluginRoutes({ enabledModules? })`: converts catalog → `RouteObject[]`, each wrapped in `<ModuleGuard>`; stub-gated routes additionally wrapped in `<StubGuard>`; optional `enabledModules` pre-filter (used by tests; future dynamic router).
+  - `index.ts` barrel.
+- **`src/app/router.tsx`** — module-gated routes replaced with `...createPluginRoutes()` spread in the shell children; the module-gated lazy imports moved to the catalog; non-module lazy views (org/admin/account/calendar/search/messages/pm/activity/audit/digest/delegations) stay hardcoded. NOTE: the pre-existing `/delegations` route was restored after being briefly dropped in the refactor.
+- **Tests** — new `tests/plugins/catalog.test.ts` (structure: unique paths, valid module ids, owning-module coverage, `routeModules` fallback; nav-config parity: every module-gated nav item resolves to a catalog route or known non-route `/rabills` (no view yet, pre-existing gap), every nav module gate ∈ plugin owners). New `tests/plugins/router.test.ts` (`createPluginRoutes`: route count == catalog; `enabledModules:null` back-compat; ANY-of pre-filter keeps procurement routes + drops non-procurement; handover present when only clients enabled). Updated `tests/app/router.test.ts` — lazy-import scan now covers router.tsx + catalog.ts; module-gated path assertions moved to the catalog; asserts router.tsx spreads `createPluginRoutes()`.
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (10.05s) · `vitest` **114 files / 1454 tests pass** (+15).
+- Commit `TBD` (v4 Phase 2).
+
+### Notes / Follow-ups
+- **Option A kept**: router stays static, all module routes always in the tree; `<ModuleGuard>` gates at render time using the active org's `enabled_modules`. No `enabledModules` at build time → chunks are always emitted, but only loaded on navigation (unchanged from Phase 1). A future Option B (dynamic router built after auth loads) can reuse `createPluginRoutes({ enabledModules })`.
+- **`/rabills`**: nav-gated by `finance` but has no view/component — not in the catalog (known gap, documented in catalog.test.ts).
+- **`/delegations`**: non-module nav item (`org:approvals:manage`); route restored in router.tsx during the Phase 2 refactor.
+- **Plugin catalog vs nav-config**: both still exist; the catalog owns module→route, nav-config owns capability/segment/module gating for the sidebar. Deriving nav `modules` from the catalog is a possible later cleanup (deferred).
+
+### Next Phase
+- Phase 3: per-industry module surface — map existing C1–D registers (consultancy billing, drawings/FF&E, statutory, procurement) into the segment templates; `ModuleGate` gating of tabs/views; i18n keys for module labels (en/hi/te).
+
 
 

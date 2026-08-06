@@ -8,6 +8,12 @@
 // recharts-heavy Analytics view) is React.lazy() so it is NOT in the initial
 // bundle. ShellLayout wraps <Outlet/> in <Suspense>, so lazy routes get a
 // spinner while their chunk loads.
+//
+// Module-gated routes (v4 Phase 2): the shell children spread
+// `...createPluginRoutes()` from the plugin catalog (src/plugins). Each such
+// route is wrapped in <ModuleGuard> so direct URL access to a module the active
+// org hasn't enabled renders AccessDenied. The catalog is the single source of
+// truth for module→route ownership; non-module routes below stay hardcoded.
 
 import { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
@@ -31,21 +37,17 @@ import { RoleDashboard } from "@/features/dashboards/RoleDashboard";
 import { ProjectsListView } from "@/features/shell/ProjectsListView";
 import { CreateProjectView } from "@/features/shell/CreateProjectView";
 
-// ── Lazy: loaded on navigation (keeps the initial bundle lean) ──────────────
+// ── Plugin catalog: module-gated lazy routes (Phase 2) ─────────────────────
+import { createPluginRoutes } from "@/plugins";
+
+// ── Lazy (non-module): loaded on navigation (keeps the initial bundle lean) ─
 const DetailView = lazy(() => import("@/features/project/DetailView").then(m => ({ default: m.DetailView })));
-const DPRComposer = lazy(() => import("@/features/dpr/DPRComposer").then(m => ({ default: m.DPRComposer })));
-const DPRHistoryView = lazy(() => import("@/features/dpr/DPRHistoryView").then(m => ({ default: m.DPRHistoryView })));
-const VendorsView = lazy(() => import("@/features/org/VendorsView").then(m => ({ default: m.VendorsView })));
 const CalendarView = lazy(() => import("@/features/org/CalendarView").then(m => ({ default: m.CalendarView })));
-const AnalyticsView = lazy(() => import("@/features/org/AnalyticsView").then(m => ({ default: m.AnalyticsView })));
 const GlobalSearchView = lazy(() => import("@/features/org/GlobalSearchView").then(m => ({ default: m.GlobalSearchView })));
-const CrossProjectPOsView = lazy(() => import("@/features/org/CrossProjectPOsView").then(m => ({ default: m.CrossProjectPOsView })));
 const NotificationsView = lazy(() => import("@/features/org/NotificationsView").then(m => ({ default: m.NotificationsView })));
 const MessagesView = lazy(() => import("@/features/org/MessagesView").then(m => ({ default: m.MessagesView })));
-const ClientPortalView = lazy(() => import("@/features/org/ClientPortalView").then(m => ({ default: m.ClientPortalView })));
 const HelpView = lazy(() => import("@/features/org/HelpView").then(m => ({ default: m.HelpView })));
 const PMView = lazy(() => import("@/features/org/PMView").then(m => ({ default: m.PMView })));
-const VendorPortalView = lazy(() => import("@/features/org/VendorPortalView").then(m => ({ default: m.VendorPortalView })));
 const OrgActivityView = lazy(() => import("@/features/org/OrgActivityView").then(m => ({ default: m.OrgActivityView })));
 const OrgDashboardView = lazy(() => import("@/features/org/OrgDashboardView").then(m => ({ default: m.OrgDashboardView })));
 const OrgMembersView = lazy(() => import("@/features/org/OrgMembersView").then(m => ({ default: m.OrgMembersView })));
@@ -72,23 +74,8 @@ const PlatformAuditView = lazy(() => import("@/features/admin/PlatformAuditView"
 const PlatformUsageView = lazy(() => import("@/features/admin/PlatformUsageView").then(m => ({ default: m.PlatformUsageView })));
 const PlatformSupportView = lazy(() => import("@/features/admin/PlatformSupportView").then(m => ({ default: m.PlatformSupportView })));
 const PlatformSettingsView = lazy(() => import("@/features/admin/PlatformSettingsView").then(m => ({ default: m.PlatformSettingsView })));
-const LabourKioskView = lazy(() => import("@/features/kiosk/LabourKioskView").then(m => ({ default: m.LabourKioskView })));
-const SiteWallKioskView = lazy(() => import("@/features/kiosk/SiteWallKioskView").then(m => ({ default: m.SiteWallKioskView })));
-const ARDrawingOverlayView = lazy(() => import("@/features/kiosk/ARDrawingOverlayView").then(m => ({ default: m.ARDrawingOverlayView })));
-const DailySnapshotView = lazy(() => import("@/features/kiosk/DailySnapshotView").then(m => ({ default: m.DailySnapshotView })));
-const HierarchyView = lazy(() => import("@/features/org/HierarchyView").then(m => ({ default: m.HierarchyView })));
-const MaterialPricesView = lazy(() => import("@/features/org/MaterialPricesView").then(m => ({ default: m.MaterialPricesView })));
-const ForecastView = lazy(() => import("@/features/org/ForecastView").then(m => ({ default: m.ForecastView })));
 const DelegationsView = lazy(() => import("@/features/org/DelegationsView").then(m => ({ default: m.DelegationsView })));
-const UtilizationView = lazy(() => import("@/features/org/UtilizationView").then(m => ({ default: m.UtilizationView })));
-const RevenueView = lazy(() => import("@/features/org/RevenueView").then(m => ({ default: m.RevenueView })));
-const ProcurementView = lazy(() => import("@/features/org/ProcurementView").then(m => ({ default: m.ProcurementView })));
-const ComplianceView = lazy(() => import("@/features/org/ComplianceView").then(m => ({ default: m.ComplianceView })));
 const DigestManagementView = lazy(() => import("@/features/org/DigestManagementView").then(m => ({ default: m.DigestManagementView })));
-const HandoverPacketView = lazy(() => import("@/features/handover/HandoverPacketView").then(m => ({ default: m.HandoverPacketView })));
-const WorklogsView = lazy(() => import("@/features/handover/WorklogsView").then(m => ({ default: m.WorklogsView })));
-const EquipmentView = lazy(() => import("@/features/handover/EquipmentView").then(m => ({ default: m.EquipmentView })));
-const MeasurementBookView = lazy(() => import("@/features/handover/MeasurementBookView").then(m => ({ default: m.MeasurementBookView })));
 const PlatformBrandingView = lazy(() => import("@/features/admin/PlatformBrandingView").then(m => ({ default: m.PlatformBrandingView })));
 const PlatformAuditLogV2View = lazy(() => import("@/features/admin/PlatformAuditLogV2View").then(m => ({ default: m.PlatformAuditLogV2View })));
 const PlatformFeatureFlagsView = lazy(() => import("@/features/admin/PlatformFeatureFlagsView").then(m => ({ default: m.PlatformFeatureFlagsView })));
@@ -118,34 +105,18 @@ export const router = createBrowserRouter([
       { path: "projects/new", element: <CreateProjectView /> },
       { path: "projects/:id", element: <DetailView /> },
       { path: "projects/:id/:tab", element: <DetailView /> },
-      { path: "dpr", element: <DPRComposer /> },
-      { path: "dpr/history", element: <DPRHistoryView /> },
-      { path: "vendors", element: <VendorsView /> },
       { path: "calendar", element: <CalendarView /> },
-      { path: "analytics", element: <AnalyticsView /> },
-      { path: "utilization", element: <UtilizationView /> },
-      { path: "revenue", element: <RevenueView /> },
-      { path: "procurement", element: <ProcurementView /> },
       { path: "search", element: <GlobalSearchView /> },
-      { path: "pos", element: <CrossProjectPOsView /> },
       { path: "notifications", element: <NotificationsView /> },
       { path: "messages", element: <MessagesView /> },
-      { path: "client", element: <ClientPortalView /> },
       { path: "help", element: <HelpView /> },
       { path: "pm", element: <PMView /> },
-      { path: "vendor", element: <VendorPortalView /> },
       { path: "activity", element: <OrgActivityView /> },
       { path: "audit", element: <OrgActivityView /> },
-      { path: "hierarchy", element: <HierarchyView /> },
-      { path: "material-prices", element: <MaterialPricesView /> },
-      { path: "forecast", element: <ForecastView /> },
       { path: "delegations", element: <DelegationsView /> },
-      { path: "compliance", element: <ComplianceView /> },
       { path: "digest", element: <DigestManagementView /> },
-      { path: "handover", element: <HandoverPacketView /> },
-      { path: "worklogs", element: <WorklogsView /> },
-      { path: "equipment", element: <EquipmentView /> },
-      { path: "measurement-book", element: <MeasurementBookView /> },
+      // Module-gated routes (Phase 2) — see src/plugins/catalog.ts
+      ...createPluginRoutes(),
       { path: "org", element: <OrgDashboardView /> },
       { path: "org/members", element: <OrgMembersView /> },
       { path: "org/roles", element: <OrgRolesView /> },
@@ -173,10 +144,6 @@ export const router = createBrowserRouter([
       { path: "admin/audit-v2", element: <StubGuard stubId="admin-audit-log"><RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformAuditLogV2View /></RequireStaffArea></StubGuard> },
       { path: "settings/security", element: <SecurityView /> },
       { path: "settings/profile", element: <ProfileView /> },
-      { path: "kiosk/labour", element: <StubGuard stubId="kiosk-labour"><LabourKioskView /></StubGuard> },
-      { path: "kiosk/site", element: <StubGuard stubId="kiosk-site"><SiteWallKioskView /></StubGuard> },
-      { path: "kiosk/ar", element: <StubGuard stubId="ar-overlay"><ARDrawingOverlayView /></StubGuard> },
-      { path: "kiosk/snapshot", element: <StubGuard stubId="snapshot"><DailySnapshotView /></StubGuard> },
     ],
   },
   // Public catch-all 404 (works signed-out too).
