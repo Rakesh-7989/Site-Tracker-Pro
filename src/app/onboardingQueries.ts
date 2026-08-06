@@ -1,6 +1,7 @@
 // SiteTrack Pro — org onboarding queries.
 
 import type { CompanySegment, ProjectType } from "@/auth";
+import type { EnabledModules } from "@/modules";
 
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -10,6 +11,8 @@ export interface OrgDetails {
   contact_email: string;
   /** Company segment (migration 134); null until the owner picks one. */
   segment: CompanySegment | null;
+  /** Enabled product modules (migration 155); null = not configured yet. */
+  enabled_modules: EnabledModules;
 }
 
 /** Gets the current user's org id and details. */
@@ -22,17 +25,19 @@ export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; or
     if (omErr) return { ok: false, error: String(omErr.message ?? omErr) };
     if (!om?.org_id) return { ok: false, error: "No org membership." };
     const { data: org } = await client.from("organizations")
-      .select("id, name, contact_email, segment").eq("id", om.org_id).maybeSingle();
+      .select("id, name, contact_email, segment, enabled_modules").eq("id", om.org_id).maybeSingle();
     return { ok: true, data: { orgId: om.org_id, org: org ?? null } };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
 export async function updateOrg(
   client: any, orgId: string, name: string, contactEmail: string, segment?: CompanySegment | null,
+  enabledModules?: EnabledModules,
 ): Promise<PResult<void>> {
   try {
     const patch: Record<string, unknown> = { name: name.trim(), contact_email: contactEmail.trim() };
     if (segment) patch.segment = segment;
+    if (enabledModules !== undefined) patch.enabled_modules = enabledModules;
     const { error } = await client.from("organizations")
       .update(patch).eq("id", orgId);
     if (error) return { ok: false, error: String(error.message ?? error) };

@@ -6,6 +6,7 @@ import { Card, Button, Spinner } from "@/components/ui/atoms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
 import { SEGMENTS, defaultProjectTypeFor, segmentProjectTypes, type CompanySegment } from "@/auth";
 import type { ProjectType } from "@/auth";
+import { MODULES, CORE_MODULE, templateModules, isRecommendedForSegment, type ModuleId } from "@/modules";
 import { useT } from "@/i18n/I18nProvider";
 
 
@@ -23,6 +24,7 @@ export function OnboardingView(): JSX.Element {
   const [orgName, setOrgName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [segment, setSegment] = useState<CompanySegment | null>(null);
+  const [enabledModules, setEnabledModules] = useState<ModuleId[]>([]);
 
   // Step 2
   const [inviteName, setInviteName] = useState("");
@@ -54,6 +56,11 @@ export function OnboardingView(): JSX.Element {
         setSegment(res.data.org.segment);
         setProjType(defaultProjectTypeFor(res.data.org.segment));
       }
+      if (res.data.org.enabled_modules) {
+        setEnabledModules(res.data.org.enabled_modules);
+      } else if (res.data.org.segment) {
+        setEnabledModules([...templateModules(res.data.org.segment)]);
+      }
     }
     setLoading(false);
   }, []);
@@ -63,13 +70,24 @@ export function OnboardingView(): JSX.Element {
   const pickSegment = (s: CompanySegment) => {
     setSegment(s);
     setProjType(defaultProjectTypeFor(s));
+    setEnabledModules([...templateModules(s)]);
+  };
+
+  const toggleModule = (id: ModuleId) => {
+    if (id === CORE_MODULE) return; // projects is always on
+    setEnabledModules(prev =>
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id],
+    );
   };
 
   const saveOrg = async () => {
     if (!orgName.trim()) { alert("Org name required"); return; }
     if (!segment) { alert("Please select what your company does"); return; }
+    const modules = enabledModules.includes(CORE_MODULE)
+      ? enabledModules
+      : [CORE_MODULE, ...enabledModules];
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, segment);
+    await updateOrg(client, orgId, orgName, contactEmail, segment, modules);
     setStep(2);
   };
 
@@ -163,6 +181,37 @@ export function OnboardingView(): JSX.Element {
                   })}
                 </div>
               </div>
+              {segment && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-fg-primary block">Modules</label>
+                    <span className="text-[10px] text-fg-tertiary">Pre-selected for your industry — toggle any on or off</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {MODULES.map(m => {
+                      const on = enabledModules.includes(m.id);
+                      const recommended = isRecommendedForSegment(segment, m.id);
+                      const locked = m.id === CORE_MODULE;
+                      return (
+                        <button key={m.id} type="button" disabled={locked} onClick={() => toggleModule(m.id)}
+                          className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition text-left ${on ? "border-accent bg-accent-tint" : "border-default"}`}>
+                          <span className={`w-4 h-4 grid place-items-center rounded border transition text-[10px] ${on ? "bg-accent border-accent text-white" : "border-fg-tertiary/50"}`}>
+                            {on ? "✓" : ""}
+                          </span>
+                          <span className="flex-1">
+                            <span className="flex items-center gap-2 text-sm font-semibold text-fg-primary">
+                              {m.label}
+                              {recommended && <span className="text-[9px] font-bold uppercase tracking-wide text-accent bg-accent-tint px-1.5 py-0.5 rounded-full">Recommended</span>}
+                              {locked && <span className="text-[9px] font-bold uppercase tracking-wide text-fg-tertiary px-1.5 py-0.5 rounded-full">Always on</span>}
+                            </span>
+                            <span className="block text-[11px] text-fg-tertiary leading-snug">{m.description}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end pt-2"><Button onClick={saveOrg}>Continue</Button></div>
             </div>
           )}

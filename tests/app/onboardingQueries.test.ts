@@ -69,6 +69,13 @@ describe("updateOrg", () => {
     expect(c.calls.map(x => x.table)).toContain("organizations");
     expect(c.calls.map(x => x.table)).not.toContain("orgs");
   });
+
+  it("includes enabled_modules in the patch when provided (migration 155)", async () => {
+    const c = mockClient({ organizations: () => ({ data: null, error: null }) });
+    const res = await updateOrg(c as never, "o-1", "Firm", "a@b", "architecture", ["projects", "design", "finance"]);
+    expect(res.ok).toBe(true);
+    expect(c.calls.map(x => x.table)).toContain("organizations");
+  });
 });
 
 describe("createProject", () => {

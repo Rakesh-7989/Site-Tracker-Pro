@@ -6,6 +6,7 @@
 import { describe, it, expect } from "vitest";
 import { buildNav, groupNav, NAV_CATALOG } from "@/app/nav-config";
 import type { AuthSession, CompanySegment } from "@/auth";
+import type { ModuleId } from "@/modules";
 
 function session(overrides: Partial<AuthSession>): AuthSession {
   return {
@@ -237,5 +238,63 @@ describe("buildNav — segment gating (v4 C0)", () => {
   it("items without a segments field always pass the gate", () => {
     const catalog = [{ to: "/open", label: "Open", icon: "home" as const }];
     expect(buildNav(segOrg(null), catalog).map(n => n.to)).toContain("/open");
+  });
+});
+
+describe("buildNav — module gating (v4 Phase 1)", () => {
+  const modItem = (modules: ModuleId[]) => ({
+    to: "/module-gated",
+    label: "Module Gated",
+    icon: "lock" as const,
+    requires: "project:create" as const,
+    modules,
+  });
+  const modOrg = (enabledModules: string[] | null | undefined): AuthSession => ({
+    user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
+    orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: "architecture", enabledModules: enabledModules as never, isAdmin: true, joinedAt: "2026-01-01" }],
+    activeOrgId: "o-1",
+    projectMemberships: [],
+  });
+
+  it("a module-gated item shows only when at least one required module is enabled", () => {
+    const catalog = [modItem(["design", "consultancy"])];
+    expect(buildNav(modOrg(["design", "finance"]), catalog).map(n => n.to)).toContain("/module-gated");
+    expect(buildNav(modOrg(["site_ops"]), catalog).map(n => n.to)).not.toContain("/module-gated");
+  });
+
+  it("null / missing enabled_modules (legacy org) shows module-gated items (back-compat)", () => {
+    const catalog = [modItem(["design"])];
+    expect(buildNav(modOrg(null), catalog).map(n => n.to)).toContain("/module-gated");
+    expect(buildNav(modOrg(undefined), catalog).map(n => n.to)).toContain("/module-gated");
+  });
+
+  it("items without a modules field always pass the module gate", () => {
+    const catalog = [{ to: "/open", label: "Open", icon: "home" as const, requires: "project:create" as const }];
+    expect(buildNav(modOrg(["site_ops"]), catalog).map(n => n.to)).toContain("/open");
+  });
+
+  it("a gated org hides procurement/site_ops/insights nav but keeps Dashboard + design-free items", () => {
+    const nav = buildNav(modOrg(["projects", "design"]));
+    const paths = nav.map(n => n.to);
+    expect(paths).toContain("/dashboard");
+    expect(paths).not.toContain("/procurement");
+    expect(paths).not.toContain("/vendors");
+    expect(paths).not.toContain("/pos");
+    expect(paths).not.toContain("/dpr");
+    expect(paths).not.toContain("/forecast");
+    expect(paths).not.toContain("/rabills");
+  });
+
+  it("catalog /client is gated by the clients module", () => {
+    // share:client:portal is held by the client identity role only.
+    const clientOrg = (m: string[]): AuthSession => ({
+      user: { id: "u", email: "c@x", name: "C", identityRole: "client", isStaff: false },
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: "architecture", enabledModules: m as never, isAdmin: false, joinedAt: "2026-01-01" }],
+      activeOrgId: "o-1",
+      projectMemberships: [],
+    });
+    const mk = (m: string[]) => buildNav(clientOrg(m)).map(n => n.to);
+    expect(mk(["projects", "clients"])).toContain("/client");
+    expect(mk(["projects", "design"])).not.toContain("/client");
   });
 });

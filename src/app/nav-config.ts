@@ -10,6 +10,7 @@ import { capabilitiesAnywhere } from "@/auth";
 import type { Capability } from "@/auth";
 import type { CompanySegment } from "@/auth";
 import type { IconName } from "@/components/ui/icons";
+import type { ModuleId } from "@/modules";
 
 export interface NavItem {
   /** Route path (relative to the shell root). */
@@ -50,6 +51,14 @@ export interface NavItem {
    * segment (legacy orgs), segment-gated items stay hidden.
    */
   segments?: ReadonlyArray<CompanySegment>;
+  /**
+   * v4 module gate (migration 155). When set, the item requires AT LEAST ONE
+   * of these modules to be enabled on the active org. Orthogonal to
+   * `requires`/`segments` — all must pass. Absent = no module gate. When the
+   * active org hasn't configured enabled_modules (legacy org), module-gated
+   * items stay visible (back-compat).
+   */
+  modules?: ReadonlyArray<ModuleId>;
 }
 
 /**
@@ -63,31 +72,31 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/search", label: "Search", icon: "search", group: "Workspace" },
   { to: "/notifications", label: "Notifications", icon: "bell", group: "Workspace" },
   { to: "/messages", label: "Messages", icon: "msgcircle", group: "Workspace" },
-    { to: "/client", label: "Client Portal", icon: "shield", requires: "share:client:portal", group: "Workspace", segments: ["architecture", "interior", "multiple"] },
+    { to: "/client", label: "Client Portal", icon: "shield", requires: "share:client:portal", group: "Workspace", segments: ["architecture", "interior", "multiple"], modules: ["clients"] },
   { to: "/pm", label: "PM Dashboard", icon: "hardhat", requires: "project:create", group: "Workspace" },
-  { to: "/vendor", label: "Vendor Portal", icon: "truck", requires: "po:create", group: "Workspace" },
+  { to: "/vendor", label: "Vendor Portal", icon: "truck", requires: "po:create", group: "Workspace", modules: ["procurement"] },
   { to: "/projects/new", label: "New Project", icon: "plus", requires: "project:create", group: "Workspace" },
 
-  { to: "/dpr", label: "Daily Reports", icon: "clipboard", requires: "dpr:view", group: "Field" },
-  { to: "/compliance", label: "Compliance", icon: "shield", requires: "compliance:view", group: "Field" },
+  { to: "/dpr", label: "Daily Reports", icon: "clipboard", requires: "dpr:view", group: "Field", modules: ["site_ops"] },
+  { to: "/compliance", label: "Compliance", icon: "shield", requires: "compliance:view", group: "Field", modules: ["compliance"] },
   { to: "/digest", label: "Digest Subs", icon: "bell", requires: "digest:subscribe", group: "Field" },
-  { to: "/handover", label: "Handover Packet", icon: "doc", requires: "handover:view", group: "Field" },
-  { to: "/worklogs", label: "Worklogs", icon: "clipboard", requires: "labour:manage", group: "Field" },
-  { to: "/equipment", label: "Equipment", icon: "truck", requires: "material:add", group: "Field" },
-  { to: "/measurement-book", label: "Measurement Book", icon: "doc", requiresAny: ["boq:edit", "progress:edit"], group: "Field" },
+  { to: "/handover", label: "Handover Packet", icon: "doc", requires: "handover:view", group: "Field", modules: ["site_ops", "clients"] },
+  { to: "/worklogs", label: "Worklogs", icon: "clipboard", requires: "labour:manage", group: "Field", modules: ["people"] },
+  { to: "/equipment", label: "Equipment", icon: "truck", requires: "material:add", group: "Field", modules: ["procurement"] },
+  { to: "/measurement-book", label: "Measurement Book", icon: "doc", requiresAny: ["boq:edit", "progress:edit"], group: "Field", modules: ["site_ops"] },
 
-  { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement" },
-  { to: "/procurement", label: "Procurement", icon: "wallet", requires: "procurement:view", segments: ["architecture", "interior", "multiple"], group: "Procurement" },
-  { to: "/pos", label: "Purchase Orders", icon: "doc", requiresAny: ["po:create", "material:add"], group: "Procurement" },
-  { to: "/rabills", label: "RA Bills", icon: "wallet", requires: "rabill:create", group: "Procurement" },
-   { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "material:price:view", group: "Procurement" },
-   { to: "/hierarchy", label: "Hierarchy", icon: "building", requiresAny: ["project:create", "budget:view"], group: "Planning" },
-   { to: "/forecast", label: "Cost Forecast", icon: "barChart", requires: "budget:view", group: "Insights" },
+  { to: "/vendors", label: "Vendors", icon: "truck", requires: "vendor:manage", group: "Procurement", modules: ["procurement"] },
+  { to: "/procurement", label: "Procurement", icon: "wallet", requires: "procurement:view", segments: ["architecture", "interior", "multiple"], group: "Procurement", modules: ["procurement"] },
+  { to: "/pos", label: "Purchase Orders", icon: "doc", requiresAny: ["po:create", "material:add"], group: "Procurement", modules: ["procurement"] },
+  { to: "/rabills", label: "RA Bills", icon: "wallet", requires: "rabill:create", group: "Procurement", modules: ["finance"] },
+   { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "material:price:view", group: "Procurement", modules: ["procurement"] },
+   { to: "/hierarchy", label: "Hierarchy", icon: "building", requiresAny: ["project:create", "budget:view"], group: "Planning", modules: ["people"] },
+   { to: "/forecast", label: "Cost Forecast", icon: "barChart", requires: "budget:view", group: "Insights", modules: ["insights"] },
    { to: "/delegations", label: "Delegations", icon: "users", requires: "org:approvals:manage", group: "Org Admin" },
 
-  { to: "/analytics", label: "Analytics", icon: "barChart", requires: "budget:view", group: "Insights" },
-  { to: "/utilization", label: "Utilization", icon: "trend", requires: "utilization:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights" },
-  { to: "/revenue", label: "Revenue", icon: "wallet", requires: "revenue:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights" },
+  { to: "/analytics", label: "Analytics", icon: "barChart", requires: "budget:view", group: "Insights", modules: ["insights"] },
+  { to: "/utilization", label: "Utilization", icon: "trend", requires: "utilization:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights", modules: ["consultancy"] },
+  { to: "/revenue", label: "Revenue", icon: "wallet", requires: "revenue:view", segments: ["consultancy", "architecture", "multiple"], group: "Insights", modules: ["finance"] },
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },
   { to: "/audit", label: "Audit Log", icon: "shield", requires: "audit:read", group: "Insights" },
 
@@ -121,10 +130,10 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/settings/security", label: "Security", icon: "lock", group: "Account" },
   { to: "/help", label: "Help Guide", icon: "info", group: "Account" },
 
-  { to: "/kiosk/labour", label: "Labour Kiosk", icon: "users", group: "Kiosks", stubId: "kiosk-labour" },
-  { to: "/kiosk/site", label: "Site Wall", icon: "dashboard", group: "Kiosks", stubId: "kiosk-site" },
-  { to: "/kiosk/ar", label: "AR Overlay", icon: "camera", group: "Kiosks", stubId: "ar-overlay" },
-  { to: "/kiosk/snapshot", label: "Daily Snapshot", icon: "barChart", group: "Kiosks", stubId: "snapshot" },
+  { to: "/kiosk/labour", label: "Labour Kiosk", icon: "users", group: "Kiosks", stubId: "kiosk-labour", modules: ["kiosks"] },
+  { to: "/kiosk/site", label: "Site Wall", icon: "dashboard", group: "Kiosks", stubId: "kiosk-site", modules: ["kiosks"] },
+  { to: "/kiosk/ar", label: "AR Overlay", icon: "camera", group: "Kiosks", stubId: "ar-overlay", modules: ["kiosks"] },
+  { to: "/kiosk/snapshot", label: "Daily Snapshot", icon: "barChart", group: "Kiosks", stubId: "snapshot", modules: ["kiosks"] },
 ];
 
 /**
@@ -166,6 +175,10 @@ export function buildNav(session: AuthSession | null, catalog: NavItem[] = NAV_C
   // Active org's segment (migration 134) — segment-gated nav items resolve
   // against this. Legacy orgs (null segment) hide segment-gated items.
   const activeSegment = session.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
+
+  // Active org's enabled modules (migration 155) — module-gated nav items
+  // resolve against this. Legacy orgs (null config) show module-gated items.
+  const activeModules = session.orgs.find(o => o.orgId === session.activeOrgId)?.enabledModules ?? null;
 
   // Client-specific sidebar: group client-visible items under "Client" group
   // This provides a cleaner, role-appropriate sidebar for clients
@@ -209,7 +222,8 @@ export function buildNav(session: AuthSession | null, catalog: NavItem[] = NAV_C
     (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))) &&
     (!item.area || !isMember || areas.length === 0 || areas.includes(item.area)) &&
     (!item.stubId || isStaff) &&
-    (!item.segments || (activeSegment !== null && item.segments.includes(activeSegment)));
+    (!item.segments || (activeSegment !== null && item.segments.includes(activeSegment))) &&
+    (!item.modules || activeModules === null || item.modules.some(m => activeModules.includes(m)));
   });
 }
 

@@ -14,6 +14,7 @@
 import type { IdentityRole, ProjectTierRole, ProjectType, ConstructionIndustry } from "./roles";
 import type { Capability } from "./capabilities";
 import type { CompanySegment } from "./segmentConfig";
+import type { EnabledModules } from "@/modules/types";
 
 /** Canonical user identity. */
 export interface AuthUser {
@@ -56,6 +57,12 @@ export interface OrgMembership {
    * that haven't picked a segment yet — treat as "all segments".
    */
   segment: CompanySegment | null;
+  /**
+   * Which product modules the org has switched on (migration 155). Absent /
+   * null = not configured yet → every module is treated as enabled
+   * (back-compat with pre-module orgs).
+   */
+  enabledModules?: EnabledModules;
   isAdmin: boolean;
   joinedAt: string;   // ISO timestamp
 }

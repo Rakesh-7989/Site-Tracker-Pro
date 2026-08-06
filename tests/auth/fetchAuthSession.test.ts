@@ -72,6 +72,28 @@ describe("normalizeOrgMembership", () => {
     expect(r!.segment).toBe("consultancy");
   });
 
+  it("normalizes enabled_modules from the organizations join (migration 155)", () => {
+    const r = normalizeOrgMembership({
+      org_id: "o-1",
+      organizations: { id: "o-1", name: "Firm", slug: "firm", segment: "architecture", enabled_modules: ["projects", "design", "bogus", "design", "finance"] },
+    });
+    expect(r!.enabledModules).toEqual(["projects", "design", "finance"]);
+  });
+
+  it("missing / empty enabled_modules → null (not configured)", () => {
+    const noField = normalizeOrgMembership({
+      org_id: "o-1",
+      organizations: { id: "o-1", name: "Firm", slug: "firm" },
+    });
+    expect(noField!.enabledModules).toBeNull();
+
+    const empty = normalizeOrgMembership({
+      org_id: "o-1",
+      organizations: { id: "o-1", name: "Firm", slug: "firm", enabled_modules: [] },
+    });
+    expect(empty!.enabledModules).toBeNull();
+  });
+
   it("coerces unknown / legacy-null segment to null (never rejects the row)", () => {
     const unknown = normalizeOrgMembership({
       org_id: "o-1",
