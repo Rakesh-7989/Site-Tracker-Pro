@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/atoms";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
+import { BrandingEffect } from "./BrandingEffect";
 import { SubscriptionBanner } from "@/features/org/SubscriptionBanner";
 import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -71,6 +72,7 @@ function GatedShell(): JSX.Element {
          main content each scroll on their own (min-h-0 lets the flex children
          actually shrink so their overflow-y-auto kicks in). */
       <div className="h-screen flex flex-col bg-panel overflow-hidden">
+        <BrandingEffect />
         <ImpersonationBanner />
         <TopBar onMenuToggle={() => setMobileOpen(v => !v)} />
         <SubscriptionBanner />

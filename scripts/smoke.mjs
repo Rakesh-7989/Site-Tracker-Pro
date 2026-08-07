@@ -55,6 +55,9 @@ const app = [
   read("src/app/designWorkflowQueries.ts"),
   read("src/features/pwa/PwaChrome.tsx"),
   read("src/lib/pwa.ts"),
+  read("src/features/shell/BrandingEffect.tsx"),
+  read("src/features/shell/useOrgBranding.ts"),
+  read("src/features/shell/brandingCss.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -157,6 +160,8 @@ const vite = read("vite.config.js");
   "crmQueries",
   "crmRollup",
   "PwaChrome",
+  "BrandingEffect",
+  "resolveShellBranding",
   "registerServiceWorker",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 

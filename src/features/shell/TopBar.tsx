@@ -9,12 +9,15 @@ import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { GlobalSearch } from "./GlobalSearch";
 import { useConnectionStatus } from "@/lib/useConnectionStatus";
+import { useOrgBranding } from "./useOrgBranding";
 
 export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Element {
   const { session } = useAuth();
   const { orgs, activeOrg, switchOrg } = useOrgSwitcher();
   const t = useT();
   const { online, pendingOps, conn } = useConnectionStatus();
+  const brand = useOrgBranding(activeOrg?.orgId);
+  const displayName = activeOrg?.orgName ?? (orgs.length <= 1 ? brand.tagline : "SiteTrack Pro");
 
   const onSignOut = async () => {
     try {
@@ -32,8 +35,19 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         <button onClick={onMenuToggle} className="lg:hidden p-1.5 -ml-1 rounded-lg text-fg-secondary hover:bg-secondary transition" aria-label="Toggle navigation menu">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <div className="w-8 h-8 rounded-lg bg-accent text-white grid place-items-center font-bold text-sm">S</div>
-        <span className="font-display font-bold text-fg-primary text-sm tracking-tight">SiteTrack Pro</span>
+        <div className="w-8 h-8 rounded-lg bg-accent text-white grid place-items-center font-bold text-sm overflow-hidden flex-shrink-0">
+          {brand.logoUrl ? (
+            <img src={brand.logoUrl} alt={displayName} className="h-full w-full object-cover" />
+          ) : (
+            (displayName[0] ?? "S").toUpperCase()
+          )}
+        </div>
+        <div className="min-w-0">
+          <div className="font-display font-bold text-fg-primary text-sm tracking-tight truncate">{displayName}</div>
+          {orgs.length <= 1 && brand.hasCustom && (
+            <div className="text-[10px] text-fg-tertiary truncate">{brand.tagline}</div>
+          )}
+        </div>
         <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-accent bg-accent-tint px-1.5 py-0.5 rounded">v3</span>
 
         {/* Offline / queue pill */}
