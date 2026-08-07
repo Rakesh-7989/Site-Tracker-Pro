@@ -49,6 +49,8 @@ const app = [
   read("src/app/crossRaQueries.ts"),
   read("src/features/org/CrmView.tsx"),
   read("src/app/crmQueries.ts"),
+  read("src/features/project/RiskSignalsCard.tsx"),
+  read("src/app/riskQueries.ts"),
   read("src/features/pwa/PwaChrome.tsx"),
   read("src/lib/pwa.ts"),
 ].join("\n");
@@ -72,6 +74,8 @@ const vite = read("vite.config.js");
   "signature",
   "Electronic signature",
   "computeRiskScore",
+  "computeRiskSignals",
+  "RiskSignalsCard",
   "fetchLLMInsight",
   "buildUpiDeepLink",
   "queueOpAdd",

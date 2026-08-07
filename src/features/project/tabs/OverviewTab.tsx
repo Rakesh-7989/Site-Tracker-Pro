@@ -27,6 +27,7 @@ import { listStatutoryApprovals, isExpiring } from "@/app/statutoryQueries";
 import { listPOs } from "@/app/financeQueries";
 import { isTabVisible } from "@/features/project/tabs-config";
 import { localDateISO } from "@/lib/dateLocal";
+import { RiskSignalsCard } from "@/features/project/RiskSignalsCard";
 
 type RegisterCounts = { drawings: number; ffe: number; statutory: number; po: number };
 
@@ -136,6 +137,9 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
 
       {/* Statutory expiry hotspot (v4 D6) */}
       {visible("statutory") && <StatutoryExpiryAlert projectId={project.id} />}
+
+      {/* Deterministic risk signals (v4 Phase D) */}
+      <RiskSignalsCard project={project} />
 
       {/* Membership summary */}
       <Card className="p-5">
