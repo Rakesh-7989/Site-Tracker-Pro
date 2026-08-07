@@ -97,24 +97,24 @@ Creates the lead→meeting→quotation→agreement pipeline as a first-class mod
 | C3 | `InspectionsTab` (already exists for site_ops — add consultancy variant) or `AuditTab` + `ReportsTab` for consultancy project types; plan cap `audit_reports` |
 | C4 | i18n + tests + nav/none (tab-level only) |
 
-### Phase D — AI analytics depth (delay + risk, cost prediction)
+### Phase D — AI analytics depth (delay + risk, cost prediction)  ✅ COMPLETE (2026-08-07)
 | Sub-task | Change scope |
 | --- | --- |
-| D1 | `src/app/riskQueries.ts` — pure `computeRiskSignals(projectData)` (schedule slip vs milestone dates, budget burn vs earned value, open high-severity issues, RFI lag) → { riskScore, signals[], delayProbability } — deterministic, testable, no external AI |
-| D2 | `RiskTab` or extend OverviewTab with a "Risk signals" card + `/analytics` forecast panel integration |
-| D3 | tests (pure math across fixture data) + i18n |
+| D1 | ✅ `src/app/riskQueries.ts` — pure `computeRiskSignals(projectData)` (schedule slip vs milestone dates, budget burn vs earned value, open high-severity issues, RFI lag) → { riskScore, signals[], delayProbability } — deterministic, testable, no external AI |
+| D2 | ✅ RiskSignalsCard on OverviewTab (`src/features/project/RiskSignalsCard.tsx` + tabs/OverviewTab) |
+| D3 | ✅ `tests/app/dRisk.test.ts` (14) — commit `259f1d7` |
 
-### Phase E — Architecture design-workflow lifecycle
+### Phase E — Architecture design-workflow lifecycle  ✅ COMPLETE (2026-08-07)
 | Sub-task | Change scope |
 | --- | --- |
-| E1 | `src/app/designWorkflow.ts` — pure stage model (requirements → concept → floorplan → elevation → 3d → client review → approved) on top of existing `drawings` register; `nextStage`, `canAdvance`, stage gates |
-| E2 | DrawingsTab stage stepper + approval action; wire to existing `drawings.status` |
-| E3 | tests + i18n |
+| E1 | ✅ `src/app/designWorkflow.ts` — pure stage model (requirements → concept → floorplan → elevation → 3d → client review → approved) on top of existing `drawings` register; `nextStage`, `canAdvance`, stage gates — commit `e0baba3` |
+| E2 | ✅ DrawingsTab stage stepper + approval action; wire to existing `drawings.status` — commit `7386042` (persisted per-project, migration 165) |
+| E3 | ✅ tests + i18n — Opt3 per-drawing stage (migration 166, commit `4dfbd1b`) |
 
-### Phase F — White-label / per-industry apps (decision required at start)
+### Phase F — White-label / per-industry apps  ✅ COMPLETE (2026-08-07)
 | Sub-task | Change scope |
 | --- | --- |
-| F0 | Hosting decision: single app + branded theme per org vs subdomain routing. DEPENDS on Product Owner sign-off (cost/ops). Default plan: per-org branding (logo/colors already have tokens) surfaced in shell + dynamic page title; subdomains deferred. |
+| F0 | ✅ Per-org branding (logo/colors already have tokens) surfaced in shell + dynamic page title — BrandingEffect/useOrgBranding/brandingCss (`src/features/shell/`), commit `63e9387`. Subdomains deferred. |
 
 ## 6. Testing Loop (agentic, per phase AND a final full pass)
 - Each sub-task's Verify gate (above).
