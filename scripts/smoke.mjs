@@ -45,6 +45,8 @@ const app = [
   read("src/features/org/DownloadAuditView.tsx"),
   read("src/features/org/MonthlyStatementView.tsx"),
   read("src/app/downloadAuditQueries.ts"),
+  read("src/features/org/CrossRaBillsView.tsx"),
+  read("src/app/crossRaQueries.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -136,6 +138,9 @@ const vite = read("vite.config.js");
   "monthlyStatementTotals",
   "monthlyStatementPdf",
   "downloadMonthlyStatementPdf",
+  "CrossRaBillsView",
+  "crossRaQueries",
+  "crossRaRollup",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

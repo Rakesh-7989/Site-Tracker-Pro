@@ -51,9 +51,8 @@ describe("plugin catalog structure", () => {
 describe("plugin catalog ↔ nav-config parity (Phase 2 alignment)", () => {
   it("every module-gated nav item resolves to a catalog route (or is a known non-route)", () => {
     const catalogPaths = new Set(pluginRoutes().map(r => r.path));
-    // /rabills is module-gated in nav-config but has no standalone view/component
-    // yet (pre-existing gap) — it cannot be a lazy route.
-    const KNOWN_NON_ROUTE = new Set(["rabills"]);
+    // All module-gated nav items now resolve to a catalog route.
+    const KNOWN_NON_ROUTE = new Set<string>();
     const gated = NAV_CATALOG.filter(n => n.modules && n.modules.length > 0);
     for (const item of gated) {
       const path = item.to.replace(/^\//, "");
