@@ -23,7 +23,8 @@ export type ModuleId =
   | "compliance"
   | "people"
   | "insights"
-  | "kiosks";
+  | "kiosks"
+  | "crm";
 
 /** Static metadata for a module. */
 export interface ModuleDef {

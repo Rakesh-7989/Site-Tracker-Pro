@@ -62,6 +62,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
     "ffe:manage", "statutory:manage", "procurement:view",
+    "crm:view", "crm:manage",
   ),
   promoter: arr(
     // Paying firm owner — sees finances + DPR digests + handover packets.
@@ -91,6 +92,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
     "ffe:manage", "statutory:manage", "procurement:view",
+    "crm:view",
     "export:pdf", "export:csv",
   ),
   prospector: arr(
@@ -101,6 +103,8 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "vendor:manage", "vendor:select", // Curates + picks vendor leads during prospecting.
     "message:send", "whatsapp:send",  // Communicate with vendor leads / stakeholders.
     "export:pdf", "export:csv",
+    "crm:view", "crm:manage",        // Owner of the lead pipeline (create/update leads,
+                                     // meetings, quotations, agreements).
   ),
   // pm absorbs the former project_head role (founder consolidation
   // 2026-06-04): gains export:csv on top of its own set.
@@ -137,6 +141,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
     "procurement:view",
+    "crm:view",
     "export:pdf", "export:csv",
   ),
 

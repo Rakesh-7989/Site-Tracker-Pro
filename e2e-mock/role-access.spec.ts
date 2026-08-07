@@ -26,6 +26,7 @@ test.describe("Role-access · mocked Supabase session", () => {
     await expect(navLink(page, "Dashboard")).toBeVisible({ timeout: 10000 });
     await expect(navLink(page, "Projects")).toBeVisible();
     await expect(navLink(page, "Org Home")).toBeVisible();
+    await expect(navLink(page, "Pipeline")).toBeVisible();   // orgadmin holds crm:view
 
     // Not in the orgadmin capability set:
     await expect(navLink(page, "Platform")).not.toBeVisible();

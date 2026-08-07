@@ -356,7 +356,8 @@
     "compliance": { "label": "Compliance & NOC", "desc": "Statutory approvals / NOC register and RERA / GST / EPFO filings." },
     "people": { "label": "People & HR", "desc": "Attendance, labour, worklogs, leave and the org hierarchy." },
     "insights": { "label": "Analytics & Insights", "desc": "Analytics, cost forecast, utilization, revenue and activity feeds." },
-    "kiosks": { "label": "Kiosks & AR", "desc": "Labour kiosk, site wall, AR drawing overlay and daily snapshot." }
+    "kiosks": { "label": "Kiosks & AR", "desc": "Labour kiosk, site wall, AR drawing overlay and daily snapshot." },
+    "crm": { "label": "CRM & Sales", "desc": "Lead pipeline, meetings, quotations and agreements (prospecting to signed client)." }
   },
   "overviewTab": {
     "settings": "Settings",

@@ -60,6 +60,8 @@ export const FEATURE_LABEL: Record<string, string> = {
   "revenue:view": "View revenue & billing rollups",
   "ffe:manage": "Manage FF&E schedules & moodboards", "statutory:manage": "Manage statutory approvals / NOC register",
   "procurement:view": "View & compare vendor quotes",
+  "crm:view": "View the sales pipeline (leads, meetings, quotations)",
+  "crm:manage": "Create / update leads, meetings, quotations & agreements",
 };
 
 /** Founder-readable label for a capability (falls back to a humanized id). */

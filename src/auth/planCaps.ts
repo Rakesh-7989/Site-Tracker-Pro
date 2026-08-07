@@ -23,7 +23,9 @@ export type PlanFeature =
   | "time_tracking" | "fee_billing" | "deliverables" | "review_rounds"
   | "statutory" | "utilization" | "ffe" | "procurement"
   // v4 Phase C2 — consultancy retainer & hourly billing
-  | "rate_cards" | "time_approval" | "retainer_billing" | "hourly_billing";
+  | "rate_cards" | "time_approval" | "retainer_billing" | "hourly_billing"
+  // v4 Phase A — CRM & Sales (lead pipeline)
+  | "crm";
 
 /** Numeric plan limits (null = unlimited). */
 export type PlanLimit = "users_max" | "projects_max" | "projects_ceiling" | "storage_gb" | "audit_days";
@@ -60,6 +62,7 @@ export const FEATURE_MIN_PLAN: Record<PlanFeature, string> = {
   time_tracking: "pro", fee_billing: "pro", deliverables: "pro", review_rounds: "pro",
   ffe: "pro", statutory: "business", utilization: "business", procurement: "business",
   rate_cards: "pro", time_approval: "pro", retainer_billing: "pro", hourly_billing: "pro",
+  crm: "business",
 };
 
 /** Human labels for upsell cards. */
@@ -80,6 +83,7 @@ export const PLAN_FEATURE_LABEL: Record<PlanFeature, string> = {
   ffe: "FF&E schedules & moodboards", procurement: "Procurement & vendor quotes",
   rate_cards: "Project rate cards", time_approval: "Time-entry approval workflow",
   retainer_billing: "Monthly retainer billing", hourly_billing: "Hourly billing from time logs",
+  crm: "Sales pipeline (CRM & leads)",
 };
 
 export const PLAN_RANK: Record<string, number> = { free: 0, basic: 1, pro: 2, business: 3, enterprise: 4, custom: 4 };

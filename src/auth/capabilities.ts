@@ -124,6 +124,10 @@ export const CAPABILITIES = [
   "statutory:manage",     // manage statutory approvals / NOC register
   "procurement:view",     // view + compare vendor quotes for spec'd items
 
+  // ── CRM & Sales (v4 Phase A: lead pipeline) ───────────────────────────────
+  "crm:view",             // view the org lead pipeline (leads, meetings, quotations)
+  "crm:manage",           // create/update leads + meetings + quotations + agreements
+
   // ── Communications ───────────────────────────────────────────────────────
   "message:send",
   "notification:configure",

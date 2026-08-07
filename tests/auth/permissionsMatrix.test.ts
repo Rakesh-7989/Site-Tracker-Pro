@@ -485,3 +485,51 @@ describe("Separation of duties — no self-approval", () => {
     }
   });
 });
+
+// ── v4 Phase A — CRM & Sales capabilities (2026-08-07) ────────────────────────
+// crm:view = see the org pipeline; crm:manage = create/update leads + meetings +
+// quotations + agreements. Sales/BD (prospector) owns the pipeline; orgadmin
+// manages; pm + project_admin see read-only context.
+const CRM_MANAGE_ROLES = ["prospector", "orgadmin"] as const;
+const CRM_VIEW_ONLY = ["pm", "project_admin"] as const;
+
+describe("v4 A — CRM capability assignment (identity tier)", () => {
+  for (const role of CRM_MANAGE_ROLES) {
+    it(`${role} holds crm:view + crm:manage`, () => {
+      const caps = identityCapabilities(role);
+      expect(caps).toContain("crm:view" as never);
+      expect(caps).toContain("crm:manage" as never);
+    });
+  }
+  for (const role of CRM_VIEW_ONLY) {
+    it(`${role} holds crm:view but not crm:manage`, () => {
+      const caps = identityCapabilities(role);
+      expect(caps).toContain("crm:view" as never);
+      expect(caps).not.toContain("crm:manage" as never);
+    });
+  }
+  it("project contributors / clients hold no CRM caps", () => {
+    for (const role of [...C1_CONTRIBUTOR_ROLES, "client", "vendor", "sub_contractor", "superadmin"] as const) {
+      // superadmin holds everything by construction — exclude from the deny check.
+      if (role === "superadmin") continue;
+      const caps = identityCapabilities(role);
+      expect(caps, `role=${role}`).not.toContain("crm:view" as never);
+      expect(caps, `role=${role}`).not.toContain("crm:manage" as never);
+    }
+  });
+});
+
+describe("v4 A — no dead capabilities", () => {
+  it("crm:view + crm:manage are granted to at least one identity role", () => {
+    for (const cap of ["crm:view", "crm:manage"] as const) {
+      const granted = IDENTITY_ROLES.some(r => identityCapabilities(r).includes(cap as never));
+      expect(granted, `cap=${cap}`).toBe(true);
+    }
+  });
+  it("crm:view + crm:manage are denied to at least one identity role", () => {
+    for (const cap of ["crm:view", "crm:manage"] as const) {
+      const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
+      expect(denied, `cap=${cap}`).toBe(true);
+    }
+  });
+});

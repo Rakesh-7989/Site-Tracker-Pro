@@ -104,6 +104,13 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
       { path: "kiosk/snapshot", stubId: "snapshot", lazy: () => import("@/features/kiosk/DailySnapshotView").then(m => ({ default: m.DailySnapshotView })) },
     ],
   },
+  {
+    moduleId: "crm",
+    label: "CRM & Sales",
+    routes: [
+      { path: "crm", lazy: () => import("@/features/org/CrmView").then(m => ({ default: m.CrmView })) },
+    ],
+  },
 ];
 
 /** Flat list of every catalog route. */
