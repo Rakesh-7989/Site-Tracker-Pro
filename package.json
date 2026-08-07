@@ -44,6 +44,7 @@
     "test:unit:watch": "vitest",
     "test:e2e": "npx playwright test",
     "test:e2e:install": "playwright install chromium",
+    "test:e2e:mock": "npx playwright test --config=playwright.mock.config.ts",
     "test:ef": "node scripts/test-ef-harness.mjs",
     "test:rls": "node scripts/test-self-service-rls.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",

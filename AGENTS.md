@@ -526,3 +526,27 @@ Phase 6 fully shipped (matches work-board).
 
 
 
+
+
+## Playwright Mocked Role-Access E2E (Complete, 2026-08-07)
+
+### Goal
+Credential-free, CI-runnable role-access coverage that renders the REAL v3 router + shell (not just unit-tested RBAC logic): per identity role, assert nav gating + <AccessDenied> on forbidden routes. The pre-existing e2e suites either hit live prod with hard-coded creds (e2e/, playwright.config.ts) or rely on VITE_BACKEND=local which disables Supabase entirely (	ests/e2e/, playwright.config.js) — neither runs in CI.
+
+### How it works (e2e-mock/ + playwright.mock.config.ts)
+- Boots local Vite in DEFAULT supabase mode (no VITE_BACKEND=local) so getSupabaseClient() returns a real client — the app hydrates the real authenticated shell.
+- e2e-mock/mockSupabase.ts:
+  - seedSession() plants a fake session in localStorage under sb-<ref>-auth-token (<ref> = bundled PUBLIC_SUPABASE_URL subdomain). supabase-js uth.getSession() reads it with ZERO network when the shape is valid (ccess_token/efresh_token/far-future expires_at) + user.{id,email}. Verified against @supabase/auth-js v2 source.
+  - mockSupabase() page.routes **://<ref>.supabase.co/**, answering the REST tables etchAuthSession() queries (profiles, org_members, project_members, staff_area_grants, + empty ole_capability_overrides/org_member_roles/org_role_capabilities) with per-role canned rows. pc/set_tenant_context failure is already swallowed in-app.
+  - openMockedApp() = seed + route-mock + goto.
+- e2e-mock/role-access.spec.ts: 6 tests (orgadmin, pm, client, superadmin; AccessDenied on /admin + /org).
+- scripts/e2e-mock-server.mjs: Vite dev server on port 5176 (E2E_MOCK_PORT).
+
+### Commands
+- 
+pm run test:e2e:mock — run the mocked suite (chromium only; 	est:e2e stays the live suite).
+
+### Key gotchas (learned)
+- Segment-gated nav items (/client, /procurement, /ffe) require the org to have a non-null segment — legacy orgs (null) hide them. Mock orgs must set segment (e.g. "multiple") or those nav assertions fail.
+- <AccessDenied> heading text is exactly "Access Restricted" — assert on that, not a loose /access/i.
+- The files live outside 	sconfig include (like e2e/) so Playwright transpiles them; ESLint only covers scripts/*.mjs from this set.
