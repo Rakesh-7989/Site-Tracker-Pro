@@ -8,7 +8,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DiffView } from "@/features/shared/DiffView";
-import { listDrawings, createDrawing, setDrawingStatus, setDrawingPreviewUrl, deleteDrawing, type Drawing, type DrawingStatus } from "@/app/designQueries";
+import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, type Drawing, type DrawingStatus } from "@/app/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
   drawingObjectPath, formatBytes, type DrawingFileRef,
@@ -91,7 +91,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
     if (!title.trim() || !session) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createDrawing(c, { projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", releasedBy: session.user.id }), {
-      apply: () => setRows(prev => [{ id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null, designStage: "concept" }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setTitle(""); setRev("Rev A");
@@ -213,6 +213,14 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                     : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}
+                  {canEdit && (
+                    <Select
+                      className="w-auto text-xs"
+                      value={r.designStage || "concept"}
+                      onChange={e => { const v = e.target.value; void run(`stg-${r.id}`, c => setDrawingStage(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: r.designStage } : x)) }); }}
+                      options={DESIGN_STAGES.map(s => ({ value: s, label: DESIGN_STAGE_LABEL[s] }))}
+                    />
+                  )}
                   {canEdit && (
                     <>
                       <Button size="sm" variant="secondary" onClick={() => openPicker(r.id)} disabled={uploading === r.id}>

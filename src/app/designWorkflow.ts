@@ -35,6 +35,8 @@ export interface DesignWorkflowDrawing {
   revision?: string | null;
   status?: string | null;
   releaseDate?: string | null;
+  /** Per-drawing persisted stage (Opt3) — preferred over title/type inference. */
+  designStage?: DesignStageId | null;
 }
 
 /** Nth index of a stage in DESIGN_STAGES (0-based). Unknown → 0. */
@@ -98,8 +100,9 @@ export function computeDesignStage(drawings: DesignWorkflowDrawing[]): DesignSta
   return reached;
 }
 
-/** Per-drawing stage anchor (title keyword first, then type, else concept). */
+/** Per-drawing stage anchor: persisted designStage wins, else title keyword, else type, else concept. */
 export function drawingStage(d: DesignWorkflowDrawing): DesignStageId {
+  if (d.designStage && DESIGN_STAGES.includes(d.designStage)) return d.designStage;
   const title = String(d.title ?? "");
   for (const a of TITLE_ANCHORS) {
     if (a.re.test(title)) return a.stage;

@@ -45,7 +45,7 @@ describe("listRaBills", () => {
 describe("listDrawings", () => {
   it("maps + coerces status", async () => {
     const r = await listDrawings(mockClient({ data: [{ id: "1", title: "GF plan", type: "architectural", revision: "Rev B", status: "weird", release_date: "2026-06-01" }], error: null }), "p");
-    expect(r.ok && r.data[0]).toMatchObject({ title: "GF plan", revision: "Rev B", status: "current" });
+    expect(r.ok && r.data[0]).toMatchObject({ title: "GF plan", revision: "Rev B", status: "current", designStage: "concept" });
   });
 });
 

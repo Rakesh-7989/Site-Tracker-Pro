@@ -27,13 +27,15 @@ export interface Drawing {
   releaseDate: string | null;
   storagePath: string | null;
   previewUrl: string | null;
+  /** Per-drawing design-workflow stage (Phase E Opt3, migration 166). */
+  designStage: string;
 }
 const asDw = oneOf<DrawingStatus>(["current", "superseded"], "current");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listDrawings(client: any, projectId: string): Promise<Result<Drawing[]>> {
   try {
-    const { data, error } = await client.from("drawings").select("id, project_id, title, type, revision, status, release_date, storage_path, preview_url").eq("project_id", projectId).order("release_date", { ascending: false });
+    const { data, error } = await client.from("drawings").select("id, project_id, title, type, revision, status, release_date, storage_path, preview_url, design_stage").eq("project_id", projectId).order("release_date", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id),
@@ -45,6 +47,7 @@ export async function listDrawings(client: any, projectId: string): Promise<Resu
       releaseDate: r.release_date == null ? null : String(r.release_date),
       storagePath: r.storage_path == null ? null : String(r.storage_path),
       previewUrl: r.preview_url == null ? null : String(r.preview_url),
+      designStage: String(r.design_stage ?? "concept"),
     })));
   } catch (e) { return er(e); }
 }
@@ -57,6 +60,8 @@ export async function createDrawing(client: any, input: { projectId: string; tit
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const setDrawingStatus = (client: any, id: string, status: DrawingStatus) => upd(client, "drawings", id, { status });
+/** Persist a per-drawing design-workflow stage (Phase E Opt3, migration 166). */
+export const setDrawingStage = (client: any, id: string, designStage: string) => upd(client, "drawings", id, { design_stage: designStage });
 /** Persist the preferred raster preview file path (migration 150) for the D2 diff overlay. */
 export const setDrawingPreviewUrl = (client: any, id: string, previewUrl: string | null) => upd(client, "drawings", id, { preview_url: previewUrl });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

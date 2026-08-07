@@ -10,6 +10,7 @@ import {
   isStageReached,
   isApprovedSignal,
   type DesignWorkflowDrawing,
+  type DesignStageId,
 } from "@/app/designWorkflow";
 
 const dw = (over: Partial<DesignWorkflowDrawing>): DesignWorkflowDrawing => ({
@@ -83,5 +84,22 @@ describe("isStageReached / isApprovedSignal", () => {
     const rows = [dw({ title: "Elevation" })];
     expect(isStageReached(rows, "concept")).toBe(true);
     expect(isStageReached(rows, "3d")).toBe(false);
+  });
+});
+
+describe("Phase E Opt3 — per-drawing persisted stage", () => {
+  it("prefers a persisted designStage over title/type inference", () => {
+    expect(drawingStage(dw({ title: "GF plan", designStage: "elevation" }))).toBe("elevation");
+    expect(drawingStage(dw({ title: "3D render", designStage: "concept" }))).toBe("concept");
+  });
+
+  it("falls back to inference when designStage is absent/invalid", () => {
+    expect(drawingStage(dw({ title: "Elevation" }))).toBe("elevation");
+    expect(drawingStage(dw({ title: "Elevation", designStage: "nonsense" as DesignStageId }))).toBe("elevation");
+  });
+
+  it("reaches a stage from a persisted stage even without keywords", () => {
+    const rows = [dw({ title: "Untitled", type: "structural", designStage: "approved" })];
+    expect(computeDesignStage(rows)).toBe("approved");
   });
 });
