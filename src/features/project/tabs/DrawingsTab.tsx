@@ -17,6 +17,8 @@ import { logDownloadEvent } from "@/app/downloadAuditQueries";
 import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
 import { resolveDiffPair } from "@/app/drawingDiffSources";
 import type { DiffImageSource } from "@/features/shared/DiffView";
+import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
+import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
@@ -48,6 +50,15 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
   const { busy, run } = useAction(reload, setError);
+
+  // Phase E Opt2: persisted workflow stage stepper.
+  const [flow, setFlow] = useState<DesignStageId | null>(null);
+  const loadFlow = useCallback(async () => {
+    const client = await getClient(); if (!client) return;
+    const res = await getDesignWorkflow(client, projectId);
+    if (res.ok) setFlow(res.data?.stage ?? null);
+  }, [projectId]);
+  useEffect(() => { void loadFlow(); }, [loadFlow]);
 
   const pairs = diffPairs(rows);
 
@@ -146,6 +157,40 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {fileError && <Alert variant="danger">{fileError}</Alert>}
+      {flow && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+            <div>
+              <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Design workflow</h3>
+              <div className="mt-0.5 text-sm text-fg-secondary">Stage: <span className="font-semibold text-fg-primary">{DESIGN_STAGE_LABEL[flow]}</span></div>
+            </div>
+            {canEdit && (
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="secondary" onClick={() => void run("adv-flow", c => advanceDesignWorkflow(c, projectId), { apply: () => setFlow(prev => prev ? DESIGN_STAGES[Math.min(DESIGN_STAGES.indexOf(prev) + 1, DESIGN_STAGES.length - 1)] : "requirements"), rollback: () => void loadFlow() })} disabled={busy === "adv-flow" || flow === "approved"}>
+                  {busy === "adv-flow" ? <Spinner size={14} /> : "Advance"}
+                </Button>
+                <Button size="sm" onClick={() => void run("appr-flow", c => approveDesignWorkflow(c, projectId, session?.user.id ?? ""), { apply: () => setFlow("approved"), rollback: () => void loadFlow() })} disabled={busy === "appr-flow" || flow === "approved"}>
+                  {busy === "appr-flow" ? <Spinner size={14} /> : "Approve"}
+                </Button>
+              </div>
+            )}
+          </div>
+          <ol className="flex items-center gap-1 overflow-x-auto">
+            {DESIGN_STAGES.map((s, i) => {
+              const reached = DESIGN_STAGES.indexOf(flow) >= i;
+              return (
+                <li key={s} className="flex items-center gap-1 flex-shrink-0">
+                  <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${reached ? "bg-accent-tint text-accent" : "bg-bg-secondary text-fg-tertiary"}`}>
+                    <span className={`grid h-4 w-4 place-items-center rounded-full text-[9px] ${reached ? "bg-accent text-white" : "bg-elevated text-fg-tertiary"}`}>{i + 1}</span>
+                    {DESIGN_STAGE_LABEL[s]}
+                  </span>
+                  {i < DESIGN_STAGES.length - 1 && <span className={`h-px w-3 ${reached && DESIGN_STAGES.indexOf(flow) > i ? "bg-accent" : "bg-border"}`} />}
+                </li>
+              );
+            })}
+          </ol>
+        </Card>
+      )}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Title</span><Input className="mt-1" placeholder="e.g. Ground floor plan" value={title} onChange={e => setTitle(e.target.value)} /></div>
