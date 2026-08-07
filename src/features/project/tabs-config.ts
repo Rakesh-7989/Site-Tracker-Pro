@@ -81,6 +81,10 @@ export const TAB_CATALOG: readonly TabDef[] = [
   // Architecture (v4 D3) — FF&E schedule register for design/interior fit-out.
   { id: "ffe",          label: "FF&E",          icon: "hardhat",    requires: "ffe:manage", projectTypes: ["design", "interior"], planFeature: "ffe", moduleId: "design" },
 
+  // Interior (v4 Phase B) — mood boards + rooms/installations for interior fit-out.
+  { id: "moodboards",   label: "Mood Boards",   icon: "image",      requires: "ffe:manage", projectTypes: ["design", "interior"], planFeature: "ffe", moduleId: "design" },
+  { id: "rooms",        label: "Rooms",         icon: "home",       requires: "ffe:manage", projectTypes: ["design", "interior"], planFeature: "ffe", moduleId: "design" },
+
   // Architecture (v4 D4) — statutory approvals / NOC register (design + built).
   { id: "statutory",    label: "Statutory",     icon: "shield",     requires: "statutory:manage", projectTypes: ["design", "interior", "construction"], planFeature: "statutory", moduleId: "compliance" },
 

@@ -440,3 +440,52 @@ describe("tab module ownership (v4 Phase 3)", () => {
     expect(tabModuleId("nope")).toBeUndefined();
   });
 });
+
+describe("v4 Phase B — interior tabs (moodboards + rooms)", () => {
+  const proPlan = () => true;
+
+  it("manager roles holding ffe:manage see both interior tabs on design + interior projects", () => {
+    for (const role of ["design_head", "consultant_head", "project_admin", "orgadmin"] as const) {
+      const caps = capsFor(baseSession(role));
+      expect(caps.has("ffe:manage"), `role=${role}`).toBe(true);
+      for (const type of ["design", "interior"] as const) {
+        const ids = visibleTabs(caps, type, proPlan).map(t => t.id);
+        expect(ids, `role=${role} type=${type}`).toContain("moodboards");
+        expect(ids, `role=${role} type=${type}`).toContain("rooms");
+      }
+    }
+  });
+
+  it("interior tabs never appear on construction projects (project-type gate)", () => {
+    const caps = capsFor(baseSession("design_head"));
+    const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
+    expect(ids).not.toContain("moodboards");
+    expect(ids).not.toContain("rooms");
+  });
+
+  it("pm (no ffe:manage) does not see the interior tabs", () => {
+    const caps = capsFor(baseSession("pm"));
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("moodboards");
+    expect(ids).not.toContain("rooms");
+  });
+
+  it("client does not see the interior tabs", () => {
+    const caps = capsFor(baseSession("client"));
+    const ids = visibleTabs(caps, "design", proPlan).map(t => t.id);
+    expect(ids).not.toContain("moodboards");
+    expect(ids).not.toContain("rooms");
+  });
+
+  it("interior tabs hide on a Basic plan (plan-feature gate reuses ffe)", () => {
+    const caps = capsFor(baseSession("design_head"));
+    const ids = visibleTabs(caps, "design", () => false).map(t => t.id);
+    expect(ids).not.toContain("moodboards");
+    expect(ids).not.toContain("rooms");
+  });
+
+  it("interior tabs are owned by the design module", () => {
+    expect(tabModuleId("moodboards")).toBe("design");
+    expect(tabModuleId("rooms")).toBe("design");
+  });
+});

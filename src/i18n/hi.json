@@ -372,7 +372,7 @@
     "gantt": "गैंट",
     "messages": "संदेश",
     "phases": "चरण", "time": "समय", "deliverables": "डिलिवरेबल्स", "reviews": "समीक्षाएं",
-    "billing": "बिलिंग", "ffe": "FF&E", "statutory": "वैधानिक"
+    "billing": "बिलिंग", "ffe": "FF&E", "statutory": "वैधानिक", "moodboards": "मूड बोर्ड", "rooms": "कमरे"
   },
   "projType": {
     "construction": "निर्माण",
