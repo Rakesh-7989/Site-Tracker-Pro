@@ -1,146 +1,166 @@
-// SiteTrack Pro — Consultancy reports tab (v4 Phase C).
-// Site visit / recommendation / milestone-review audit reports for
-// consultant/design projects (migration 163). create/edit/publish/delete →
-// audit:manage (plan gated by PlanFeature "audit_reports" at the tab level).
+// SiteTrack Pro — v4 Phase C: consultancy reports tab.
+// Draft → published → archived lifecycle with period + content.
 
-import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
-import { useCan, useOrgSwitcher } from "@/auth";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Card, Button, Input, Textarea, Select, FormField, Badge, Alert, Spinner,
+} from "@/components/ui";
+import { useT } from "@/i18n/I18nProvider";
+import { useCan } from "@/auth";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { Input, Select, Textarea } from "@/components/ui/forms";
 import {
   listReports, upsertReport, setReportStatus, deleteReport,
-  REP_KIND_LABEL, REP_STATUS_LABEL,
   type ConsultancyReport, type ReportKind, type ReportStatus,
 } from "@/app/consultancyAuditQueries";
+import { getClient } from "@/lib/supabase";
 
-const KIND_OPTS = [
-  { value: "site_visit", label: "Site visit" },
-  { value: "recommendation", label: "Recommendation" },
-  { value: "milestone_review", label: "Milestone review" },
-] as const;
+const STATUS_TONE: Record<ReportStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  draft: "neutral", published: "success", archived: "neutral",
+};
+const KIND_LABEL: Record<ReportKind, string> = {
+  site_visit: "Site Visit", recommendation: "Recommendation", milestone_review: "Milestone Review",
+};
 
-const statusTone = (s: ReportStatus): "neutral" | "success" | "warning" =>
-  s === "published" ? "success" : s === "archived" ? "warning" : "neutral";
-
-export function ReportsTab({ projectId }: { projectId: string }): JSX.Element {
-  const { activeOrg } = useOrgSwitcher();
-  const can = useCan("audit:manage", { orgId: activeOrg?.orgId, projectId });
+export function ReportsTab({ projectId }: { projectId: string }) {
+  const t = useT();
+  const canManage = useCan("audit:manage", { projectId });
   const [rows, setRows] = useState<ConsultancyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<ConsultancyReport | null>(null);
+  const [form, setForm] = useState({
+    kind: "site_visit" as ReportKind, title: "", summary: "", content: "", status: "draft" as ReportStatus,
+    periodFrom: "", periodTo: "",
+  });
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const client = await getClient(); if (!client) { setError(t("audit.backendError")); setLoading(false); return; }
     const res = await listReports(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [projectId]);
+  }, [projectId, t]);
   useEffect(() => { void reload(); }, [reload]);
-  const { busy, run } = useAction(reload, setError);
+
+  const { run } = useAction(reload, setError);
+
+  const submit = async () => {
+    if (!form.title.trim()) return;
+    await run(editing ? "edit" : "add", (c: any) => upsertReport(c, {
+      id: editing?.id ?? null, projectId, kind: form.kind, title: form.title.trim(),
+      summary: form.summary.trim() || null, content: form.content.trim() || null,
+      status: form.status, periodFrom: form.periodFrom || null, periodTo: form.periodTo || null,
+    }));
+    setCreating(false); setEditing(null); setForm({ kind: "site_visit", title: "", summary: "", content: "", status: "draft", periodFrom: "", periodTo: "" });
+  };
+
+  const toggle = async (r: ConsultancyReport) => {
+    const next: ReportStatus | null = r.status === "draft" ? "published" : r.status === "published" ? "archived" : null;
+    if (!next) return;
+    await run(`s-${r.id}`, (c: any) => setReportStatus(c, r.id, next));
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm(t("audit.deleteReport"))) return;
+    await run(`d-${id}`, (c: any) => deleteReport(c, id));
+  };
+
+  if (loading) return <Spinner size={22} />;
+  if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">Consultancy reports</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
-      {can && <NewReportCard projectId={projectId} busy={busy} run={run} onDone={() => setOpenId(null)} />}
-
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No reports yet.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <ReportCard key={r.id} r={r} can={can} busy={busy} run={run} open={openId === r.id} onToggle={() => setOpenId(openId === r.id ? null : r.id)} />
-          ))}</div>}
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function NewReportCard({ projectId, busy, run, onDone }: { projectId: string; busy: string | null; run: (k: string, fn: (c: any) => Promise<any>, opts: { apply: () => void; rollback: () => void }) => Promise<void>; onDone: () => void }): JSX.Element {
-  const [kind, setKind] = useState<ReportKind>("site_visit");
-  const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
-  const [content, setContent] = useState("");
-
-  const add = () => {
-    if (!title.trim()) return;
-    void run("add", c => upsertReport(c, { projectId, kind, title: title.trim(), summary: summary.trim() || null, content: content.trim() || null }), {
-      apply: () => { setTitle(""); setSummary(""); setContent(""); onDone(); },
-      rollback: () => { setTitle(title); },
-    });
-  };
-
-  return (
-    <Card className="p-3 space-y-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">New report</div>
-      <div className="flex gap-2 flex-wrap">
-        <Select className="w-auto" value={kind} onChange={e => setKind(e.target.value as ReportKind)} options={KIND_OPTS as unknown as { value: string; label: string }[]} />
-        <Input className="flex-1 min-w-[200px]" placeholder="Report title" value={title} onChange={e => setTitle(e.target.value)} />
-      </div>
-      <Textarea className="w-full" rows={2} placeholder="Summary (one-liner)" value={summary} onChange={e => setSummary(e.target.value)} />
-      <Textarea className="w-full" rows={3} placeholder="Findings / recommendations" value={content} onChange={e => setContent(e.target.value)} />
-      <div className="flex justify-end">
-        <Button onClick={add} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Save draft"}</Button>
-      </div>
-    </Card>
-  );
-}
-
-interface Props {
-  r: ConsultancyReport;
-  can: boolean;
-  busy: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  run: (k: string, fn: (c: any) => Promise<any>, opts: { apply: () => void; rollback: () => void }) => Promise<void>;
-  open: boolean;
-  onToggle: () => void;
-}
-
-function ReportCard({ r, can, busy, run, open, onToggle }: Props): JSX.Element {
-  const [summary, setSummary] = useState(r.summary ?? "");
-  const [content, setContent] = useState(r.content ?? "");
-
-  const save = () => {
-    void run(`save-${r.id}`, c => upsertReport(c, { id: r.id, projectId: r.projectId, kind: r.kind, title: r.title, summary: summary.trim() || null, content: content.trim() || null, status: r.status }), {
-      apply: () => undefined,
-      rollback: () => { setSummary(r.summary ?? ""); setContent(r.content ?? ""); },
-    });
-  };
-
-  return (
-    <Card className="p-3">
-      <div className="flex items-center justify-between gap-3">
-        <button onClick={onToggle} className="text-left min-w-0">
-          <div className="text-sm font-semibold text-fg-primary truncate">{r.title}</div>
-          <div className="text-[11px] text-fg-tertiary">{REP_KIND_LABEL[r.kind]}{r.createdAt ? ` · ${r.createdAt.slice(0, 10)}` : ""}</div>
-        </button>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge tone={statusTone(r.status)}>{REP_STATUS_LABEL[r.status]}</Badge>
-          {can && r.status === "draft" && (
-            <Button size="sm" onClick={() => void run(`pub-${r.id}`, c => setReportStatus(c, r.id, "published"), { apply: () => undefined, rollback: () => undefined })} disabled={busy === `pub-${r.id}`}>Publish</Button>
-          )}
-          {can && r.status === "published" && (
-            <Button size="sm" variant="ghost" onClick={() => void run(`arc-${r.id}`, c => setReportStatus(c, r.id, "archived"), { apply: () => undefined, rollback: () => undefined })} disabled={busy === `arc-${r.id}`}>Archive</Button>
-          )}
-          {can && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteReport(c, r.id), { apply: () => undefined, rollback: () => undefined })}><Icon name="trash" size={14} className="text-error" /></Button>}
-        </div>
-      </div>
-
-      {open && (
-        <div className="mt-2 space-y-2 border-t border-border pt-3">
-          {r.summary && <div className="text-sm text-fg-secondary">{r.summary}</div>}
-          {r.content && <div className="text-sm whitespace-pre-wrap text-fg-primary">{r.content}</div>}
-          {can && (
-            <>
-              <Textarea className="w-full" rows={2} placeholder="Summary" value={summary} onChange={e => setSummary(e.target.value)} />
-              <Textarea className="w-full" rows={4} placeholder="Findings / recommendations" value={content} onChange={e => setContent(e.target.value)} />
-              <div className="flex justify-end">
-                <Button size="sm" onClick={save} disabled={busy === `save-${r.id}`}>{busy === `save-${r.id}` ? <Spinner size={14} /> : "Save"}</Button>
-              </div>
-            </>
-          )}
+      {canManage && (
+        <div className="flex justify-end">
+          <Button onClick={() => { setEditing(null); setForm({ kind: "site_visit", title: "", summary: "", content: "", status: "draft", periodFrom: "", periodTo: "" }); setCreating(true); }}>
+            {t("audit.newReport")}
+          </Button>
         </div>
       )}
-    </Card>
+
+      {rows.length === 0 && !creating ? (
+        <Card className="p-8 text-center">
+          <div className="text-4xl mb-2">📄</div>
+          <h3 className="font-display text-lg font-bold text-fg-primary">{t("audit.emptyReportTitle")}</h3>
+          <p className="text-fg-secondary text-sm mt-1">{t("audit.emptyReportDesc")}</p>
+        </Card>
+      ) : (
+        rows.map(r => (
+          <Card key={r.id} className="overflow-hidden">
+            <div className="p-4 border-b border-default flex flex-wrap items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-fg-primary truncate">{r.title}</span>
+                  <Badge tone="neutral">{KIND_LABEL[r.kind]}</Badge>
+                  <Badge tone={STATUS_TONE[r.status]}>{t(`audit.reportStatus.${r.status}`)}</Badge>
+                </div>
+                <div className="text-[11px] text-fg-tertiary mt-1 flex flex-wrap gap-4">
+                  {r.periodFrom && <span>{t("audit.periodFrom", { date: r.periodFrom })}</span>}
+                  {r.periodTo && <span>{t("audit.periodTo", { date: r.periodTo })}</span>}
+                  <span>{t("audit.createdBy", { name: r.createdBy ?? "—" })}</span>
+                </div>
+                {r.summary && <div className="text-sm text-fg-secondary mt-2 line-clamp-2">{r.summary}</div>}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {canManage && r.status !== "archived" && (
+                  <Button size="sm" onClick={() => void toggle(r)}>
+                    {t("audit.advance", { next: t(`audit.reportStatus.${r.status === "draft" ? "published" : "archived"}`) })}
+                  </Button>
+                )}
+                {canManage && (
+                  <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setForm({ kind: r.kind, title: r.title, summary: r.summary ?? "", content: r.content ?? "", status: r.status, periodFrom: r.periodFrom ?? "", periodTo: r.periodTo ?? "" }); setCreating(true); }}>
+                    {t("audit.edit")}
+                  </Button>
+                )}
+                {canManage && (
+                  <Button size="sm" variant="danger" onClick={() => void remove(r.id)}>{t("audit.delete")}</Button>
+                )}
+              </div>
+            </div>
+            {r.content && (
+              <div className="p-4 bg-elevated border-t border-default text-sm text-fg-primary whitespace-pre-wrap">
+                {r.content}
+              </div>
+            )}
+          </Card>
+        ))
+      )}
+
+      {creating && (
+        <Card className="p-4 border-accent">
+          <h4 className="font-display text-base font-bold text-fg-primary mb-3">{editing ? t("audit.editReport") : t("audit.newReport")}</h4>
+          <div className="space-y-3">
+            <FormField label={t("audit.fieldKind")} htmlFor="rp-kind">
+              <Select value={form.kind} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(f => ({ ...f, kind: e.target.value as ReportKind }))}
+                options={["site_visit", "recommendation", "milestone_review"].map(k => ({ value: k, label: KIND_LABEL[k as ReportKind] }))} />
+            </FormField>
+            <FormField label={t("audit.fieldTitle")} htmlFor="rp-title">
+              <Input value={form.title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, title: e.target.value }))} placeholder={t("audit.titlePlaceholder")} />
+            </FormField>
+            <FormField label={t("audit.fieldSummary")} htmlFor="rp-summary">
+              <Textarea rows={2} value={form.summary} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm(f => ({ ...f, summary: e.target.value }))} placeholder={t("audit.summaryPlaceholder")} />
+            </FormField>
+            <FormField label={t("audit.fieldContent")} htmlFor="rp-content">
+              <Textarea rows={6} value={form.content} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm(f => ({ ...f, content: e.target.value }))} placeholder={t("audit.contentPlaceholder")} />
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label={t("audit.fieldPeriodFrom")} htmlFor="rp-from">
+                <Input type="date" value={form.periodFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, periodFrom: e.target.value }))} />
+              </FormField>
+              <FormField label={t("audit.fieldPeriodTo")} htmlFor="rp-to">
+                <Input type="date" value={form.periodTo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, periodTo: e.target.value }))} />
+              </FormField>
+            </div>
+            <FormField label={t("audit.fieldStatus")} htmlFor="rp-status">
+              <Select value={form.status} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(f => ({ ...f, status: e.target.value as ReportStatus }))}
+                options={["draft", "published", "archived"].map(s => ({ value: s, label: t(`audit.reportStatus.${s}`) }))} />
+            </FormField>
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => { setCreating(false); setEditing(null); }}>{t("audit.cancel")}</Button>
+            <Button onClick={submit} disabled={!form.title.trim()}>{t("audit.save")}</Button>
+          </div>
+        </Card>
+      )}
+    </div>
   );
 }

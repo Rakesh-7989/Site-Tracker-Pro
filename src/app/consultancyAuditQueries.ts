@@ -1,8 +1,7 @@
-// SiteTrack Pro — Consultancy inspection/audit module (v4 Phase C).
-// DB: inspection_checklists / inspection_results / consultancy_reports
-// (migration 163). RLS: read = project member; insert/update/delete = managers
-// + org admin (mirrors 152_statutory_approvals). UI gating via the
-// audit:manage capability + PlanFeature "audit_reports" at the tab level.
+// SiteTrack Pro — v4 Phase C1-C3: consultancy inspection/audit + reports.
+// DB: inspection_checklists / inspection_results / consultancy_reports (migration 163).
+// RLS: read = project member; insert/update = managers + org admin (audit:manage).
+// UI gating: audit:manage capability + planFeature "audit_reports" at tab level.
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -10,13 +9,9 @@ const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Erro
 const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: String(e.message ?? e) });
 const oneOf = <T extends string>(vals: readonly T[], fb: T) => (v: unknown): T => (vals.includes(v as T) ? (v as T) : fb);
 
-// ── Inspection checklists ────────────────────────────────────────────────────
+// ── Checklists ─────────────────────────────────────────────────────────────────
 export type ChecklistKind = "site_visit" | "design_review" | "quality_audit" | "other";
-export const CHECKLIST_KINDS: readonly ChecklistKind[] = ["site_visit", "design_review", "quality_audit", "other"];
 export type ChecklistStatus = "draft" | "in_progress" | "passed" | "failed" | "cancelled";
-export const CHECKLIST_STATUSES: readonly ChecklistStatus[] = ["draft", "in_progress", "passed", "failed", "cancelled"];
-const asKind = oneOf<ChecklistKind>(CHECKLIST_KINDS, "other");
-const asStatus = oneOf<ChecklistStatus>(CHECKLIST_STATUSES, "draft");
 
 export interface InspectionChecklist {
   id: string;
@@ -24,11 +19,14 @@ export interface InspectionChecklist {
   kind: ChecklistKind;
   title: string;
   status: ChecklistStatus;
-  createdByName: string | null;
+  createdBy: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
-const CL_SELECT = "id, project_id, kind, title, status, created_by, created_at";
+const CHECKLIST_SELECT = "id, project_id, kind, title, status, created_by, created_at, updated_at";
+const asKind = oneOf<ChecklistKind>(["site_visit", "design_review", "quality_audit", "other"], "site_visit");
+const asStatus = oneOf<ChecklistStatus>(["draft", "in_progress", "passed", "failed", "cancelled"], "draft");
 
 function mapChecklist(r: Record<string, unknown>): InspectionChecklist {
   return {
@@ -37,8 +35,9 @@ function mapChecklist(r: Record<string, unknown>): InspectionChecklist {
     kind: asKind(r.kind),
     title: String(r.title ?? ""),
     status: asStatus(r.status),
-    createdByName: r.created_by == null ? null : String(r.created_by),
+    createdBy: r.created_by == null ? null : String(r.created_by),
     createdAt: String(r.created_at ?? ""),
+    updatedAt: String(r.updated_at ?? ""),
   };
 }
 
@@ -47,7 +46,7 @@ export async function listChecklists(client: any, projectId: string): Promise<Re
   try {
     const { data, error } = await client
       .from("inspection_checklists")
-      .select(CL_SELECT)
+      .select(CHECKLIST_SELECT)
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     if (error) return dbe(error);
@@ -64,8 +63,12 @@ export async function upsertChecklist(client: any, input: {
   status?: ChecklistStatus;
 }): Promise<Result<{ id: string }>> {
   try {
-    const row: Record<string, unknown> = { project_id: input.projectId, kind: input.kind, title: input.title };
-    if (input.status) row.status = input.status;
+    const row: Record<string, unknown> = {
+      project_id: input.projectId,
+      kind: input.kind,
+      title: input.title,
+      status: input.status ?? "draft",
+    };
     if (input.id) {
       const { error } = await client.from("inspection_checklists").update(row).eq("id", input.id);
       if (error) return dbe(error);
@@ -95,30 +98,32 @@ export async function deleteChecklist(client: any, id: string): Promise<Result<{
   } catch (e) { return er(e); }
 }
 
-// ── Inspection results ────────────────────────────────────────────────────────
-export type ResultMark = "pass" | "fail" | "na";
-export const RESULT_MARKS: readonly ResultMark[] = ["pass", "fail", "na"];
-const asMark = oneOf<ResultMark>(RESULT_MARKS, "na");
+// ── Results ────────────────────────────────────────────────────────────────────
+export type ResultVerdict = "pass" | "fail" | "na";
+export const RESULT_VERDICTS: readonly ResultVerdict[] = ["pass", "fail", "na"];
+const asVerdict = oneOf<ResultVerdict>(RESULT_VERDICTS, "na");
 
 export interface InspectionResult {
   id: string;
   checklistId: string;
   item: string;
-  result: ResultMark;
+  result: ResultVerdict;
   note: string | null;
   sortOrder: number;
+  createdAt: string;
 }
 
-const RES_SELECT = "id, checklist_id, item, result, note, sort_order";
+const RESULT_SELECT = "id, checklist_id, item, result, note, sort_order, created_at";
 
 function mapResult(r: Record<string, unknown>): InspectionResult {
   return {
     id: String(r.id),
     checklistId: String(r.checklist_id ?? ""),
     item: String(r.item ?? ""),
-    result: asMark(r.result),
+    result: asVerdict(r.result),
     note: r.note == null ? null : String(r.note),
     sortOrder: Number(r.sort_order ?? 0),
+    createdAt: String(r.created_at ?? ""),
   };
 }
 
@@ -127,7 +132,7 @@ export async function listResults(client: any, checklistId: string): Promise<Res
   try {
     const { data, error } = await client
       .from("inspection_results")
-      .select(RES_SELECT)
+      .select(RESULT_SELECT)
       .eq("checklist_id", checklistId)
       .order("sort_order", { ascending: true });
     if (error) return dbe(error);
@@ -140,7 +145,7 @@ export async function upsertResult(client: any, input: {
   id?: string | null;
   checklistId: string;
   item: string;
-  result?: ResultMark;
+  result?: ResultVerdict;
   note?: string | null;
   sortOrder?: number;
 }): Promise<Result<{ id: string }>> {
@@ -164,6 +169,15 @@ export async function upsertResult(client: any, input: {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function setResultVerdict(client: any, id: string, result: ResultVerdict): Promise<Result<{ ok: true }>> {
+  try {
+    const { error } = await client.from("inspection_results").update({ result }).eq("id", id);
+    if (error) return dbe(error);
+    return ok({ ok: true });
+  } catch (e) { return er(e); }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deleteResult(client: any, id: string): Promise<Result<{ ok: true }>> {
   try {
     const { error } = await client.from("inspection_results").delete().eq("id", id);
@@ -172,13 +186,58 @@ export async function deleteResult(client: any, id: string): Promise<Result<{ ok
   } catch (e) { return er(e); }
 }
 
-// ── Consultancy reports ───────────────────────────────────────────────────────
+// Pure: checklist progress rollup
+export interface ChecklistProgress {
+  total: number;
+  passed: number;
+  failed: number;
+  na: number;
+  pct: number; // passed / (passed + failed) * 100, clamped 0–100; 0 when none decisive
+  overallStatus: ChecklistStatus; // derived from results: failed→failed, passed→passed, else in_progress
+}
+
+/** Test-compat alias: returns verdict/passPct instead of overallStatus/pct. */
+export interface ChecklistVerdict {
+  total: number;
+  passed: number;
+  failed: number;
+  na: number;
+  passPct: number;
+  verdict: "passed" | "failed" | "pending";
+}
+
+export function checklistProgress(results: Pick<InspectionResult, "result">[]): ChecklistProgress {
+  let passed = 0, failed = 0, na = 0;
+  for (const r of results) {
+    if (r.result === "pass") passed += 1;
+    else if (r.result === "fail") failed += 1;
+    else na += 1;
+  }
+  const decisive = passed + failed;
+  const pct = decisive === 0 ? 0 : Math.round((passed / decisive) * 100);
+  let overall: ChecklistStatus = "in_progress";
+  if (failed > 0) overall = "failed";
+  else if (decisive > 0 && failed === 0) overall = "passed";
+  return { total: results.length, passed, failed, na, pct, overallStatus: overall };
+}
+
+export function checklistVerdict(results: Pick<InspectionResult, "result">[]): ChecklistVerdict {
+  const base = checklistProgress(results);
+  let verdict: ChecklistVerdict["verdict"] = "pending";
+  if (base.failed > 0) verdict = "failed";
+  else if (base.passed + base.failed > 0) verdict = "passed";
+  return { total: base.total, passed: base.passed, failed: base.failed, na: base.na, passPct: base.pct, verdict };
+}
+
+export const CHECKLIST_STATUS_NEXT: Record<ChecklistStatus, ChecklistStatus | null> = {
+  draft: "in_progress", in_progress: "passed", passed: "passed", failed: "failed", cancelled: "draft",
+};
+
+// ── Reports ────────────────────────────────────────────────────────────────────
 export type ReportKind = "site_visit" | "recommendation" | "milestone_review";
-export const REPORT_KINDS: readonly ReportKind[] = ["site_visit", "recommendation", "milestone_review"];
 export type ReportStatus = "draft" | "published" | "archived";
-export const REPORT_STATUSES: readonly ReportStatus[] = ["draft", "published", "archived"];
-const asReportKind = oneOf<ReportKind>(REPORT_KINDS, "site_visit");
-const asReportStatus = oneOf<ReportStatus>(REPORT_STATUSES, "draft");
+const asReportKind = oneOf<ReportKind>(["site_visit", "recommendation", "milestone_review"], "site_visit");
+const asReportStatus = oneOf<ReportStatus>(["draft", "published", "archived"], "draft");
 
 export interface ConsultancyReport {
   id: string;
@@ -190,12 +249,12 @@ export interface ConsultancyReport {
   status: ReportStatus;
   periodFrom: string | null;
   periodTo: string | null;
-  createdByName: string | null;
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-const REP_SELECT = "id, project_id, kind, title, summary, content, status, period_from, period_to, created_by, created_at, updated_at";
+const REPORT_SELECT = "id, project_id, kind, title, summary, content, status, period_from, period_to, created_by, created_at, updated_at";
 
 function mapReport(r: Record<string, unknown>): ConsultancyReport {
   return {
@@ -208,9 +267,9 @@ function mapReport(r: Record<string, unknown>): ConsultancyReport {
     status: asReportStatus(r.status),
     periodFrom: r.period_from == null ? null : String(r.period_from),
     periodTo: r.period_to == null ? null : String(r.period_to),
-    createdByName: r.created_by == null ? null : String(r.created_by),
+    createdBy: r.created_by == null ? null : String(r.created_by),
     createdAt: String(r.created_at ?? ""),
-    updatedAt: String(r.updated_at ?? r.created_at ?? ""),
+    updatedAt: String(r.updated_at ?? ""),
   };
 }
 
@@ -219,7 +278,7 @@ export async function listReports(client: any, projectId: string): Promise<Resul
   try {
     const { data, error } = await client
       .from("consultancy_reports")
-      .select(REP_SELECT)
+      .select(REPORT_SELECT)
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     if (error) return dbe(error);
@@ -246,10 +305,10 @@ export async function upsertReport(client: any, input: {
       title: input.title,
       summary: input.summary ?? null,
       content: input.content ?? null,
+      status: input.status ?? "draft",
       period_from: input.periodFrom ?? null,
       period_to: input.periodTo ?? null,
     };
-    if (input.status) row.status = input.status;
     if (input.id) {
       const { error } = await client.from("consultancy_reports").update(row).eq("id", input.id);
       if (error) return dbe(error);
@@ -279,40 +338,12 @@ export async function deleteReport(client: any, id: string): Promise<Result<{ ok
   } catch (e) { return er(e); }
 }
 
-// ── Pure helpers ─────────────────────────────────────────────────────────────
-
-export interface ChecklistVerdict {
-  total: number;
-  passed: number;
-  failed: number;
-  na: number;
-  /** pct of decisive (pass+fail) items that passed; 0 when none decisive. */
-  passPct: number;
-  /** "passed" | "failed" | "pending" — checklist level verdict. */
-  verdict: "passed" | "failed" | "pending";
-}
-
-/** Roll up a checklist's results into a verdict. */
-export function checklistVerdict(results: Pick<InspectionResult, "result">[]): ChecklistVerdict {
-  let passed = 0;
-  let failed = 0;
-  let na = 0;
-  for (const r of results) {
-    if (r.result === "pass") passed += 1;
-    else if (r.result === "fail") failed += 1;
-    else na += 1;
-  }
-  const decisive = passed + failed;
-  const passPct = decisive === 0 ? 0 : Math.round((passed / decisive) * 100);
-  const verdict: ChecklistVerdict["verdict"] = decisive === 0 ? "pending" : failed > 0 ? "failed" : "passed";
-  return { total: results.length, passed, failed, na, passPct, verdict };
-}
-
-/** Suggested next checklist status from a verdict (terminal statuses stay put). */
-export const CL_STATUS_NEXT: Record<ChecklistStatus, ChecklistStatus> = {
-  draft: "in_progress", in_progress: "passed", passed: "passed", failed: "failed", cancelled: "draft",
+// Pure: next report status
+export const REPORT_STATUS_NEXT: Record<ReportStatus, ReportStatus | null> = {
+  draft: "published", published: "archived", archived: "archived",
 };
 
+// Label maps (for UI + tests)
 export const CL_KIND_LABEL: Record<ChecklistKind, string> = {
   site_visit: "Site visit", design_review: "Design review", quality_audit: "Quality audit", other: "Other",
 };
@@ -325,3 +356,6 @@ export const REP_KIND_LABEL: Record<ReportKind, string> = {
 export const REP_STATUS_LABEL: Record<ReportStatus, string> = {
   draft: "Draft", published: "Published", archived: "Archived",
 };
+
+// Alias for test compatibility
+export const CL_STATUS_NEXT = CHECKLIST_STATUS_NEXT;

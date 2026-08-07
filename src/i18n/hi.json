@@ -508,6 +508,51 @@
     "signLabel": "हस्ताक्षरित {date}",
     "byLabel": " द्वारा {name}"
   },
+  "audit": {
+    "backendError": "बैकएंड कॉन्फ़िगर नहीं है।",
+    "deleteResult": "इस परिणाम को हटाएँ?",
+    "deleteChecklist": "इस चेकलिस्ट को हटाएँ?",
+    "deleteReport": "इस रिपोर्ट को हटाएँ?",
+    "itemPlaceholder": "जैसे फ़ाउंडेशन रीबार स्पेसिंग",
+    "notePlaceholder": "वैकल्पिक नोट",
+    "addItem": "आइटम जोड़ें",
+    "noResults": "अभी तक कोई चेकलिस्ट आइटम नहीं।",
+    "verdict": {
+      "pass": "पास", "fail": "फेल", "na": "लागू नहीं"
+    },
+    "checklistStatus": {
+      "draft": "ड्राफ्ट", "in_progress": "प्रगति में", "passed": "पास", "failed": "फेल", "cancelled": "रद्द"
+    },
+    "advance": "आगे बढ़ें → {next}",
+    "newChecklist": "नई चेकलिस्ट",
+    "editChecklist": "चेकलिस्ट संपादित करें",
+    "fieldKind": "प्रकार",
+    "fieldTitle": "शीर्षक",
+    "titlePlaceholder": "जैसे साइट विज़िट #3",
+    "fieldStatus": "स्थिति",
+    "cancel": "रद्द करें",
+    "save": "सहेजें",
+    "delete": "हटाएँ",
+    "edit": "संपादित करें",
+    "emptyTitle": "अभी तक कोई चेकलिस्ट नहीं",
+    "emptyDesc": "अपनी पहली साइट विज़िट या डिज़ाइन रिव्यू चेकलिस्ट बनाएँ।",
+    "createdBy": "बनाया गया {name} द्वारा",
+    "fieldPeriodFrom": "अवधि से",
+    "fieldPeriodTo": "अवधि तक",
+    "fieldSummary": "सारांश",
+    "summaryPlaceholder": "संक्षिप्त सारांश",
+    "fieldContent": "सामग्री",
+    "contentPlaceholder": "पूरी रिपोर्ट सामग्री (मार्कडाउन समर्थित)",
+    "reportStatus": {
+      "draft": "ड्राफ्ट", "published": "प्रकाशित", "archived": "आर्काइव"
+    },
+    "newReport": "नई रिपोर्ट",
+    "editReport": "रिपोर्ट संपादित करें",
+    "emptyReportTitle": "अभी तक कोई रिपोर्ट नहीं",
+    "emptyReportDesc": "साइट विज़िट, अनुशंसा, या माइलस्टोन रिव्यू रिपोर्ट बनाएँ।",
+    "periodFrom": "{date} से",
+    "periodTo": "{date} तक"
+  },
   "overviewTab": {
     "settings": "सेटिंग्स",
     "team": "टीम",

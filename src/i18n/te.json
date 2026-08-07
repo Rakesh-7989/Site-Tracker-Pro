@@ -508,6 +508,51 @@
     "signLabel": "సంతకం {date}",
     "byLabel": " చేత {name}"
   },
+  "audit": {
+    "backendError": "బ్యాకెండ్ కాన్ఫిగర్ చేయబడలేదు.",
+    "deleteResult": "ఈ ఫలితాన్ని తొలగించాలా?",
+    "deleteChecklist": "ఈ చెక్లిస్ట్‌ని తొలగించాలా?",
+    "deleteReport": "ఈ రిపోర్ట్‌ని తొలగించాలా?",
+    "itemPlaceholder": "ఉదా. ఫౌండేషన్ రీబార్ స్పేస్",
+    "notePlaceholder": "ఐచ్ఛిక గమనిక",
+    "addItem": "ఆయిటం జోడించు",
+    "noResults": "ఇంకా చెక్లిస్ట్ ఆయిటమ్స్ లేవు.",
+    "verdict": {
+      "pass": "పాస్", "fail": "ఫెయిల్", "na": "అనువర్తనీయం కాదు"
+    },
+    "checklistStatus": {
+      "draft": "డ్రాఫ్ట్", "in_progress": "ప్రగతిలో", "passed": "పాస్", "failed": "ఫెయిల్", "cancelled": "రద్దు"
+    },
+    "advance": "ముందుకు → {next}",
+    "newChecklist": "కొత్త చెక్లిస్ట్",
+    "editChecklist": "చెక్లిస్ట్ సవరించు",
+    "fieldKind": "రకం",
+    "fieldTitle": "శీర్షిక",
+    "titlePlaceholder": "ఉదా. సైట్ విసిట్ #3",
+    "fieldStatus": "స్థితి",
+    "cancel": "రద్దు",
+    "save": "సేవ్",
+    "delete": "తొలగించు",
+    "edit": "సవరించు",
+    "emptyTitle": "ఇంకా చెక్లిస్ట్‌లు లేవు",
+    "emptyDesc": "మీ మొదటి సైట్ విసిట్ లేదా డిజైన్ రివ్యూ చెక్లిస్ట్ సృష్టించండి.",
+    "createdBy": "{name} ద్వారా సృష్టించబడింది",
+    "fieldPeriodFrom": "కాలం నుండి",
+    "fieldPeriodTo": "కాలం వరకు",
+    "fieldSummary": "సారాంశం",
+    "summaryPlaceholder": "చిన్న సారాంశం",
+    "fieldContent": "కంటెంట్",
+    "contentPlaceholder": "పూర్తి రిపోర్ట్ కంటెంట్ (మార్క్డౌన్ సపోర్టెడ్)",
+    "reportStatus": {
+      "draft": "డ్రాఫ్ట్", "published": "ప్రకటించబడింది", "archived": "ఆర్కైవ్"
+    },
+    "newReport": "కొత్త రిపోర్ట్",
+    "editReport": "రిపోర్ట్ సవరించు",
+    "emptyReportTitle": "ఇంకా రిపోర్ట్‌లు లేవు",
+    "emptyReportDesc": "సైట్ విసిట్, సలహా, లేదా మైలుస్టోన్ రివ్యూ రిపోర్ట్‌లు సృష్టించండి.",
+    "periodFrom": "{date} నుండి",
+    "periodTo": "{date} వరకు"
+  },
   "overviewTab": {
     "settings": "సెట్టింగ్‌లు",
     "team": "బృందం",

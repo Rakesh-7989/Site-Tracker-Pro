@@ -458,6 +458,51 @@
     "signLabel": "signed {date}",
     "byLabel": " by {name}"
   },
+  "audit": {
+    "backendError": "Backend not configured.",
+    "deleteResult": "Delete this result?",
+    "deleteChecklist": "Delete this checklist?",
+    "deleteReport": "Delete this report?",
+    "itemPlaceholder": "e.g. Foundation rebar spacing",
+    "notePlaceholder": "Optional note",
+    "addItem": "Add item",
+    "noResults": "No checklist items yet.",
+    "verdict": {
+      "pass": "Pass", "fail": "Fail", "na": "N/A"
+    },
+    "checklistStatus": {
+      "draft": "Draft", "in_progress": "In Progress", "passed": "Passed", "failed": "Failed", "cancelled": "Cancelled"
+    },
+    "advance": "Advance → {next}",
+    "newChecklist": "New checklist",
+    "editChecklist": "Edit checklist",
+    "fieldKind": "Type",
+    "fieldTitle": "Title",
+    "titlePlaceholder": "e.g. Site visit #3",
+    "fieldStatus": "Status",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "emptyTitle": "No checklists yet",
+    "emptyDesc": "Create your first site visit or design review checklist.",
+    "createdBy": "Created by {name}",
+    "fieldPeriodFrom": "Period from",
+    "fieldPeriodTo": "Period to",
+    "fieldSummary": "Summary",
+    "summaryPlaceholder": "Brief summary",
+    "fieldContent": "Content",
+    "contentPlaceholder": "Full report content (markdown supported)",
+    "reportStatus": {
+      "draft": "Draft", "published": "Published", "archived": "Archived"
+    },
+    "newReport": "New report",
+    "editReport": "Edit report",
+    "emptyReportTitle": "No reports yet",
+    "emptyReportDesc": "Create site visit, recommendation, or milestone review reports.",
+    "periodFrom": "From {date}",
+    "periodTo": "To {date}"
+  },
   "overviewTab": {
     "settings": "Settings",
     "team": "Team",

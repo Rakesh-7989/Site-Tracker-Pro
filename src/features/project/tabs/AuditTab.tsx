@@ -1,189 +1,226 @@
-// SiteTrack Pro — Consultancy inspection/audit tab (v4 Phase C).
-// Checklist-driven site visits / design reviews / quality audits for
-// consultant/design projects (migration 163). Each checklist carries result
-// line items (pass/fail/na); a verdict rolls them up. create/edit/delete →
-// audit:manage (plan gated by PlanFeature "audit_reports" at the tab level).
+// SiteTrack Pro — v4 Phase C: consultancy audit/inspection tab.
+// Checklists → per-item results (pass/fail/na) → auto progress rollup.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { getClient } from "@/lib/supabase";
-import { useCan, useOrgSwitcher } from "@/auth";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  Card, Button, Input, Select, FormField, Badge, Alert, Spinner,
+} from "@/components/ui";
+import { useT } from "@/i18n/I18nProvider";
+import { useCan } from "@/auth";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Badge, Spinner, Alert, Icon, ProgressBar } from "@/components/ui/atoms";
-import { Input, Select } from "@/components/ui/forms";
 import {
   listChecklists, upsertChecklist, setChecklistStatus, deleteChecklist,
-  listResults, upsertResult, deleteResult,
-  checklistVerdict, CL_STATUS_NEXT, CL_KIND_LABEL, CL_STATUS_LABEL,
-  type InspectionChecklist, type ChecklistKind, type ChecklistStatus,
-  type InspectionResult, type ResultMark,
+  listResults, upsertResult, setResultVerdict, deleteResult,
+  checklistProgress, CHECKLIST_STATUS_NEXT,
+  type InspectionChecklist, type ChecklistStatus, type ResultVerdict,
+  type InspectionResult, type ChecklistKind,
 } from "@/app/consultancyAuditQueries";
+import { getClient } from "@/lib/supabase";
 
-const KIND_OPTS = [
-  { value: "site_visit", label: "Site visit" },
-  { value: "design_review", label: "Design review" },
-  { value: "quality_audit", label: "Quality audit" },
-  { value: "other", label: "Other" },
-] as const;
+const STATUS_TONE: Record<ChecklistStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
+  draft: "neutral", in_progress: "info", passed: "success", failed: "danger", cancelled: "neutral",
+};
+const VERDICT_TONE: Record<ResultVerdict, "neutral" | "success" | "warning" | "danger"> = {
+  pass: "success", fail: "danger", na: "neutral",
+};
+const KIND_LABEL: Record<string, string> = {
+  site_visit: "Site Visit", design_review: "Design Review", quality_audit: "Quality Audit", other: "Other",
+};
 
-const MARK_OPTS = [
-  { value: "na", label: "N/A" },
-  { value: "pass", label: "Pass" },
-  { value: "fail", label: "Fail" },
-] as const;
-
-const markTone = (m: ResultMark): "neutral" | "success" | "danger" =>
-  m === "pass" ? "success" : m === "fail" ? "danger" : "neutral";
-
-const statusTone = (s: ChecklistStatus): "neutral" | "info" | "success" | "danger" =>
-  s === "passed" ? "success" : s === "failed" ? "danger" : s === "in_progress" ? "info" : "neutral";
-
-export function AuditTab({ projectId }: { projectId: string }): JSX.Element {
-  const { activeOrg } = useOrgSwitcher();
-  const can = useCan("audit:manage", { orgId: activeOrg?.orgId, projectId });
-  const [rows, setRows] = useState<InspectionChecklist[]>([]);
+function ResultsPanel({ checklistId, canManage }: { checklistId: string; canManage: boolean }) {
+  const t = useT();
+  const [rows, setRows] = useState<InspectionResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [kind, setKind] = useState<ChecklistKind>("site_visit");
-  const [title, setTitle] = useState("");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [item, setItem] = useState("");
+  const [note, setNote] = useState("");
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listChecklists(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [projectId]);
+    const client = await getClient(); if (!client) { setError(t("audit.backendError")); setLoading(false); return; }
+    const res = await listResults(client, checklistId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
+  }, [checklistId, t]);
   useEffect(() => { void reload(); }, [reload]);
-  const { busy, run } = useAction(reload, setError);
 
-  const add = () => {
-    if (!title.trim()) return;
-    void run("add", c => upsertChecklist(c, { projectId, kind, title: title.trim() }), {
-      apply: () => setRows(prev => [{ id: "tmp", projectId, kind, title: title.trim(), status: "draft", createdByName: null, createdAt: "" }, ...prev]),
-      rollback: () => setRows(prev => prev.filter(x => x.id !== "tmp" || x.title !== title.trim())),
-    });
-    setTitle("");
+  const { run } = useAction(reload, setError);
+
+  const add = async () => {
+    if (!item.trim()) return;
+    await run("add", c => upsertResult(c, { checklistId, item: item.trim(), note: note.trim() || null }));
+    setItem(""); setNote("");
   };
 
-  return (
-    <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">Inspections & audits</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
+  const toggle = async (r: InspectionResult) => {
+    const next = (r.result === "pass" ? "fail" : r.result === "fail" ? "na" : "pass") as ResultVerdict;
+    await run(`v-${r.id}`, c => setResultVerdict(c, r.id, next));
+  };
 
-      {can && (
-        <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span>
-            <Select className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as ChecklistKind)} options={KIND_OPTS as unknown as { value: string; label: string }[]} />
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Title</span>
-            <Input className="mt-1" placeholder="e.g. Interior fit-out site visit · Floor 2" value={title} onChange={e => setTitle(e.target.value)} />
-          </div>
-          <Button onClick={add} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add checklist"}</Button>
-        </Card>
+  const remove = async (id: string) => {
+    if (!confirm(t("audit.deleteResult"))) return;
+    await run(`d-${id}`, c => deleteResult(c, id));
+  };
+
+  const progress = useMemo(() => checklistProgress(rows), [rows]);
+
+  if (loading) return <Spinner size={18} />;
+  if (error) return <Alert variant="danger">{error}</Alert>;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-xs text-fg-secondary">
+        <span>Pass {progress.passed} · Fail {progress.failed} · N/A {progress.na} · {progress.pct}%</span>
+        <Badge tone={STATUS_TONE[progress.overallStatus]} className="ml-2">{t(`audit.checklistStatus.${progress.overallStatus}`)}</Badge>
+      </div>
+
+      {canManage && (
+        <div className="flex flex-wrap gap-2 items-end">
+          <FormField label={t("audit.fieldItem")} htmlFor="res-item">
+            <Input value={item} onChange={e => setItem(e.target.value)} placeholder={t("audit.itemPlaceholder")} className="w-48" />
+          </FormField>
+          <FormField label={t("audit.fieldNote")} htmlFor="res-note">
+            <Input value={note} onChange={e => setNote(e.target.value)} placeholder={t("audit.notePlaceholder")} className="w-48" />
+          </FormField>
+          <Button size="sm" onClick={add}>{t("audit.addItem")}</Button>
+        </div>
       )}
 
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No checklists yet.</div>
-        : <div className="space-y-2">{rows.map(cl => (
-            <ChecklistCard key={cl.id} cl={cl} can={can} busy={busy} run={run} open={openId === cl.id} onToggle={() => setOpenId(openId === cl.id ? null : cl.id)} />
-          ))}</div>}
+      {rows.length === 0 ? (
+        <div className="text-xs text-fg-tertiary py-4">{t("audit.noResults")}</div>
+      ) : (
+        rows.map(r => (
+          <div key={r.id} className="flex items-center justify-between gap-2 rounded-lg bg-elevated px-3 py-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm text-fg-primary truncate">{r.item}</div>
+              {r.note && <div className="text-[11px] text-fg-tertiary truncate">{r.note}</div>}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="cursor-pointer" onClick={() => canManage && void toggle(r)}>
+                <Badge tone={VERDICT_TONE[r.result as ResultVerdict]}>{t(`audit.verdict.${r.result}`)}</Badge>
+              </span>
+              {canManage && (
+                <Button size="sm" variant="ghost" onClick={() => void remove(r.id)}>{t("audit.delete")}</Button>
+              )}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }
 
-interface Props {
-  cl: InspectionChecklist;
-  can: boolean;
-  busy: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  run: (k: string, fn: (c: any) => Promise<any>, opts: { apply: () => void; rollback: () => void }) => Promise<void>;
-  open: boolean;
-  onToggle: () => void;
-}
+export function AuditTab({ projectId }: { projectId: string }) {
+  const t = useT();
+  const canManage = useCan("audit:manage", { projectId });
+  const [rows, setRows] = useState<InspectionChecklist[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<InspectionChecklist | null>(null);
+  const [form, setForm] = useState({ kind: "site_visit" as ChecklistKind, title: "", status: "draft" as ChecklistStatus });
 
-function ChecklistCard({ cl, can, busy, run, open, onToggle }: Props): JSX.Element {
-  const [rows, setRows] = useState<InspectionResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [item, setItem] = useState("");
+  const reload = useCallback(async () => {
+    setLoading(true); setError(null);
+    const client = await getClient(); if (!client) { setError(t("audit.backendError")); setLoading(false); return; }
+    const res = await listChecklists(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
+  }, [projectId, t]);
+  useEffect(() => { void reload(); }, [reload]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const client = await getClient(); if (!client) { setLoading(false); return; }
-    const res = await listResults(client, cl.id); if (res.ok) setRows(res.data); setLoading(false);
-  }, [cl.id]);
-  useEffect(() => { if (open) void load(); }, [open, load]);
+  const { run } = useAction(reload, setError);
 
-  const verdict = useMemo(() => checklistVerdict(rows), [rows]);
-
-  const add = () => {
-    if (!item.trim()) return;
-    void run(`res-${cl.id}`, c => upsertResult(c, { checklistId: cl.id, item: item.trim() }), {
-      apply: () => { setRows(prev => [...prev, { id: "tmp", checklistId: cl.id, item: item.trim(), result: "na", note: null, sortOrder: prev.length }]); setItem(""); },
-      rollback: () => setRows(prev => prev.filter(x => x.id !== "tmp")),
-    });
+  const submit = async () => {
+    if (!form.title.trim()) return;
+    await run(editing ? "edit" : "add", (c: any) => upsertChecklist(c, {
+      id: editing?.id ?? null, projectId, kind: form.kind, title: form.title.trim(), status: form.status,
+    }));
+    setCreating(false); setEditing(null); setForm({ kind: "site_visit", title: "", status: "draft" });
   };
 
-  const mark = (r: InspectionResult, m: ResultMark) => {
-    void run(`m-${r.id}`, c => upsertResult(c, { id: r.id, checklistId: cl.id, item: r.item, result: m, note: r.note, sortOrder: r.sortOrder }), {
-      apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, result: m } : x)),
-      rollback: () => setRows(prev => prev.map(x => x.id === r.id ? r : x)),
-    });
+  const toggle = async (c: InspectionChecklist) => {
+    const next = CHECKLIST_STATUS_NEXT[c.status]; if (!next) return;
+    await run(`s-${c.id}`, (c2: any) => setChecklistStatus(c2, c.id, next));
   };
+
+  const remove = async (id: string) => {
+    if (!confirm(t("audit.deleteChecklist"))) return;
+    await run(`d-${id}`, (c: any) => deleteChecklist(c, id));
+  };
+
+  if (loading) return <Spinner size={22} />;
+  if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <Card className="p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <button onClick={onToggle} className="text-left">
-            <div className="text-sm font-semibold text-fg-primary">{cl.title}</div>
-            <div className="text-[11px] text-fg-tertiary">{CL_KIND_LABEL[cl.kind]}{cl.createdAt ? ` · ${cl.createdAt.slice(0, 10)}` : ""}</div>
-          </button>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge tone={statusTone(cl.status)}>{CL_STATUS_LABEL[cl.status]}</Badge>
-          {can && cl.status !== "passed" && cl.status !== "failed" && (
-            <Button size="sm" variant="ghost" onClick={() => void run(`adv-${cl.id}`, c => setChecklistStatus(c, cl.id, CL_STATUS_NEXT[cl.status]), {
-              apply: () => undefined, rollback: () => undefined,
-            })} disabled={busy === `adv-${cl.id}`}>Next</Button>
-          )}
-          {can && <Button size="sm" variant="ghost" onClick={() => void run(`d-${cl.id}`, c => deleteChecklist(c, cl.id), { apply: () => undefined, rollback: () => undefined })}><Icon name="trash" size={14} className="text-error" /></Button>}
-        </div>
-      </div>
-
-      {open && (
-        <div className="mt-2 space-y-2 border-t border-border pt-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Results{loading ? "…" : ""}</div>
-            {rows.length > 0 && (
-              <div className="flex items-center gap-2">
-                <ProgressBar value={verdict.passPct} className="w-24" />
-                <span className="text-xs font-semibold text-fg-secondary">{verdict.passPct}% · {verdict.failed} fail</span>
-              </div>
-            )}
-          </div>
-
-          {rows.length === 0 && !loading && <div className="text-xs text-fg-tertiary">No results recorded.</div>}
-          {rows.map(r => (
-            <div key={r.id} className="flex items-center gap-2 text-sm">
-              <span className="flex-1 min-w-0 truncate text-fg-primary">{r.item}</span>
-              {can ? (
-                <Select className="w-auto text-xs" value={r.result} onChange={e => mark(r, e.target.value as ResultMark)} options={MARK_OPTS as unknown as { value: string; label: string }[]} />
-              ) : (
-                <Badge tone={markTone(r.result)}>{r.result.toUpperCase()}</Badge>
-              )}
-              {can && <Button size="sm" variant="ghost" onClick={() => void run(`dr-${r.id}`, c => deleteResult(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={13} className="text-error" /></Button>}
-            </div>
-          ))}
-
-          {can && (
-            <div className="flex gap-2">
-              <Input className="flex-1" placeholder="Add check item…" value={item} onChange={e => setItem(e.target.value)} onKeyDown={e => { if (e.key === "Enter") add(); }} />
-              <Button size="sm" onClick={add}>{busy === `res-${cl.id}` ? <Spinner size={14} /> : "Add"}</Button>
-            </div>
-          )}
+    <div className="space-y-4">
+      {canManage && (
+        <div className="flex justify-end">
+          <Button onClick={() => { setEditing(null); setForm({ kind: "site_visit", title: "", status: "draft" }); setCreating(true); }}>
+            {t("audit.newChecklist")}
+          </Button>
         </div>
       )}
-    </Card>
+
+      {rows.length === 0 && !creating ? (
+        <Card className="p-8 text-center">
+          <div className="text-4xl mb-2">📋</div>
+          <h3 className="font-display text-lg font-bold text-fg-primary">{t("audit.emptyTitle")}</h3>
+          <p className="text-fg-secondary text-sm mt-1">{t("audit.emptyDesc")}</p>
+        </Card>
+      ) : (
+        rows.map(c => (
+          <Card key={c.id} className="overflow-hidden">
+            <div className="p-4 border-b border-default flex flex-wrap items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-fg-primary truncate">{c.title}</span>
+                  <Badge tone="neutral">{KIND_LABEL[c.kind] ?? c.kind}</Badge>
+                  <Badge tone={STATUS_TONE[c.status]}>{t(`audit.checklistStatus.${c.status}`)}</Badge>
+                </div>
+                <div className="text-[11px] text-fg-tertiary mt-1">{t("audit.createdBy", { name: c.createdBy ?? "—" })}</div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {canManage && c.status !== "passed" && c.status !== "failed" && c.status !== "cancelled" && (
+                  <Button size="sm" onClick={() => void toggle(c)}>
+                    {t("audit.advance", { next: t(`audit.checklistStatus.${CHECKLIST_STATUS_NEXT[c.status]}`) })}
+                  </Button>
+                )}
+                {canManage && (
+                  <Button size="sm" variant="ghost" onClick={() => { setEditing(c); setForm({ kind: c.kind, title: c.title, status: c.status }); setCreating(true); }}>
+                    {t("audit.edit")}
+                  </Button>
+                )}
+                {canManage && (
+                  <Button size="sm" variant="danger" onClick={() => void remove(c.id)}>{t("audit.delete")}</Button>
+                )}
+              </div>
+            </div>
+            <ResultsPanel checklistId={c.id} canManage={canManage} />
+          </Card>
+        ))
+      )}
+
+      {creating && (
+        <Card className="p-4 border-accent">
+          <h4 className="font-display text-base font-bold text-fg-primary mb-3">{editing ? t("audit.editChecklist") : t("audit.newChecklist")}</h4>
+          <div className="space-y-3">
+            <FormField label={t("audit.fieldKind")} htmlFor="cl-kind">
+              <Select value={form.kind} onChange={e => setForm(f => ({ ...f, kind: e.target.value as typeof form.kind }))}
+                options={["site_visit", "design_review", "quality_audit", "other"].map(k => ({ value: k, label: KIND_LABEL[k] }))} />
+            </FormField>
+            <FormField label={t("audit.fieldTitle")} htmlFor="cl-title">
+              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder={t("audit.titlePlaceholder")} />
+            </FormField>
+            {editing && (
+              <FormField label={t("audit.fieldStatus")} htmlFor="cl-status">
+                <Select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as ChecklistStatus }))}
+                  options={["draft", "in_progress", "passed", "failed", "cancelled"].map(s => ({ value: s, label: t(`audit.checklistStatus.${s}`) }))} />
+              </FormField>
+            )}
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => { setCreating(false); setEditing(null); }}>{t("audit.cancel")}</Button>
+            <Button onClick={submit} disabled={!form.title.trim()}>{t("audit.save")}</Button>
+          </div>
+        </Card>
+      )}
+    </div>
   );
 }

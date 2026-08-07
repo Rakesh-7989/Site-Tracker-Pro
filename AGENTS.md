@@ -716,5 +716,45 @@ Replace the two ad-hoc, non-escaped CSV implementations (DailySnapshotView `r.jo
 
 ---
 
-## v5 Phase I — Apply migrations + push prod (Pending)
+## v5 Phase H1 — CRM per-owner pipeline view (Complete, 2026-08-07)
+
+### Goal
+Add per-owner breakdown to the org-wide CRM pipeline so managers can see pipeline value / win rates split by sales owner, and reassign leads between owners.
+
+### Done (all verified)
+- **`src/app/crmQueries.ts`**: `setLeadOwner(client, leadId, ownerId|null)`, `crmRollup.byOwner` breakdown (`count/open/pipelineValue/won/wonValue`), `listOrgLeads`/`createLead`/`updateLead` join `owner:owner_id(name)` for display.
+- **`src/features/org/CrmView.tsx`**: owner filter dropdown shows names (not raw IDs); LeadDrawer includes owner reassignment Select; owners Map built from `lead.ownerName`/`ownerId`.
+- **Tests**: `crmRollup` byOwner bucket tests (owner-level open/won/pipelineValue), owner join mapper, `setLeadOwner` update flow, error propagation.
+- **Smoke**: `setLeadOwner`, `crmRollup` markers added.
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 275 checks · `test:e2e:mock` 7/7.
+
+---
+
+## v5 Phase H2 — Quote→Agreement auto-conversion (Complete, 2026-08-07)
+
+### Goal
+One-tap conversion from an accepted quotation into a pending agreement, idempotent via a `quotation_id` FK on `lead_agreements`.
+
+### Done (all verified)
+- **Migration 172** `scripts/supabase/172_crm_agreement_from_quotation.sql`: `lead_agreements.quotation_id` FK + partial unique index (`uq_lead_agreements_quotation`) — one agreement per quotation.
+- **`src/app/crmQueries.ts`**: `getQuotation(id)`, `acceptQuotationAsAgreement(client, quotationId)` — fetches accepted quotation, creates/returns agreement with `quotation_id` link, rejects non-accepted.
+- **`src/features/org/CrmView.tsx`**: QuotationsPanel "Create Agreement" button now calls `acceptQuotationAsAgreement` (replaces inline `addAgreement`).
+- **Tests**: idempotency (returns existing when already converted), non-accepted rejection, not-found, error propagation, `getQuotation` null handling.
+- **Smoke**: `acceptQuotationAsAgreement`, `getQuotation` markers added.
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 275 checks · `test:e2e:mock` 7/7.
+- **Live DB apply**: `npm run db:apply` → 132 passed / 28 failed (28 = benign pre-existing). Migration 172 applied (NOTICE-verified).
+- **Live deploy**: `git push origin prod` (commit `9a01f15`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **200**.
+
+---
+
+## v5 Phase I — Apply migrations + push prod (Complete, 2026-08-07)
+
+### Done
+- Migration 172 applied live via `npm run db:apply` (132 passed / 28 failed — 28 benign pre-existing).
+- Pushed `prod` branch (commit `9a01f15`).
+- Vercel auto-deploy successful; live site https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
 
