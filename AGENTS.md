@@ -127,8 +127,8 @@ All custom palette classes (`ink-*`, `cream-*`, `safety-*`, `amber-*`, `emerald-
 - `Select-String -Pattern "ink-|cream-|safety-|amber-|emerald-|rose-|violet-|stone-" src/**/*.{ts,tsx}` → **0 matches** (intentional `bg-white` in toggle thumbs & tab badge overlay remain — 3 sites)
 - `npx tsc --noEmit` → **0 errors**
 
-## Phase 6 — Next (planned)
-- Mobile/responsive audit — CalendarGrid mobile layout, Board stacked column, Tabs overflow indicator, top-20 file content overflow, optional `xs:` breakpoint, landing nav
+## Phase 6 — Mobile/Responsive (Complete — see the "Phase 6 — Mobile/Responsive (Complete)" section below)
+- Mobile/responsive audit shipped: CalendarGrid `isMobile` list, Board stacked accordion, Tabs overflow indicator + fade, `xs:` 480px breakpoint, landing hamburger, `truncate`/`min-w-0` across cells.
 
 ---
 
@@ -511,18 +511,18 @@ Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agree
 
 ---
 
-## Phase 6 — Mobile/Responsive (Partial, 2026-08-06)
+## Phase 6 — Mobile/Responsive (Complete, 2026-08-06)
 
-### Done
-- Commit `a986b8a` — DPR history row `flex-wrap` + audio `max-w-full` (prevents ~360px overflow). Single targeted fix only.
+### Done (commits `a986b8a`, `c37de9c`, `1abbbce`)
+- **DPR history** (`a986b8a`) — row `flex-wrap` + audio `max-w-full` (prevents ~360px overflow).
+- **CalendarGrid** — `isMobile` (min-width 640px) renders a stacked date list instead of the grid.
+- **Board** — `isMobile` (min-width 768px) renders columns as a stacked accordion (`useMediaQuery`).
+- **Tabs** — `overflow-x-auto scrollbar-hide` + right-edge gradient fade when `canScrollRight`, keyboard nav (Arrow/Home/End).
+- **`xs:` breakpoint** — added `xs: "480px"` to `tailwind.config.js`.
+- **Landing nav hamburger** — `mobileNavOpen` toggles an overlay drawer on `sm:hidden`.
+- **Content wrap** — `truncate` / `min-w-0` across project tabs & dense cells.
 
-### Remaining (next sub-tasks, per `v4-phase6` agent scope)
-- CalendarGrid mobile layout (stack/scroll on small screens)
-- Board stacked column under breakpoint
-- Tabs overflow indicator (`overflow-x-auto` / `whitespace-nowrap`)
-- Top-20 file/content cell overflow wrap
-- Optional `xs:` breakpoint decision (add to tailwind.config.js only if a concrete case needs it)
-- Landing nav mobile hamburger behavior
+Phase 6 fully shipped (matches work-board).
 
 
 
