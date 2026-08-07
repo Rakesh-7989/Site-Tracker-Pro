@@ -407,6 +407,7 @@ Org-wide monthly financial statement across all member projects: invoices split 
 ### Notes / Follow-ups
 - RLS on all source tables is project-scoped, so the org rollup only surfaces projects the caller can already see — consistent with utilization/revenue.
 - The view provides a complete financial snapshot for the selected month; PDF export can be added as a separate feature (print CSS or client-side PDF generation).
+- **PDF export shipped** (2026-08-07, commit `d96545d`, prod live 200 OK): `src/app/monthlyStatementPdf.ts` — client-side A4 PDF via **jsPDF ^4.2** (new dep; no critical audit issues). `downloadMonthlyStatementPdf()` renders header (org + month label + generated timestamp), 5 summary cards (invoiced/MRR/expenses/RA/PO), a per-project 9-column table (8 numeric + name) with a totals row, and a footer note — all drawn with raw jsPDF text/fill APIs, no autotable dependency. `MonthlyStatementView` got a **Download PDF** button (disabled when no data). Tests `tests/app/monthlyStatementPdf.test.ts` (7: pdfRupees/pdfType/pdfMonthLabel helpers + A4 doc smoke).
 - All Phase D backlog candidates now complete: cross-project FF&E rollup, deliverable download audit, monthly statement.
 
 ---
