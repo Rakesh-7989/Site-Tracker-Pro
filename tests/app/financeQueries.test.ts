@@ -1,7 +1,7 @@
 // SiteTrack Pro — finance + attendance query tests (Batch 2/3).
 
 import { describe, it, expect } from "vitest";
-import { listPOs, listInvoices, listExpenses, fmtRupees } from "@/app/financeQueries";
+import { listPOs, listInvoices, listExpenses, fmtRupees, invoiceTaxBreakup } from "@/app/financeQueries";
 import { listAttendance } from "@/app/attendanceQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
@@ -16,6 +16,22 @@ describe("fmtRupees", () => {
   it("formats with the Indian locale + ₹", () => {
     expect(fmtRupees(1500000)).toBe("₹15,00,000");
     expect(fmtRupees(0)).toBe("₹0");
+  });
+});
+
+describe("invoiceTaxBreakup (ST-007)", () => {
+  it("computes gst/tds and net receivable", () => {
+    const b = invoiceTaxBreakup(100000, 18, 2);
+    expect(b.gstAmount).toBe(18000);
+    expect(b.tdsAmount).toBe(2000);
+    expect(b.netReceivable).toBe(116000); // 100000 + 18000 - 2000
+  });
+
+  it("rounds and clamps non-finite inputs to 0", () => {
+    expect(invoiceTaxBreakup(1500, 12.5, 2).gstAmount).toBe(188);
+    expect(invoiceTaxBreakup(NaN, 18, 2).gstAmount).toBe(0);
+    expect(invoiceTaxBreakup(1000, NaN, NaN).netReceivable).toBe(1000);
+    expect(invoiceTaxBreakup(0, 18, 2).netReceivable).toBe(0);
   });
 });
 

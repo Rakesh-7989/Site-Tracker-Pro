@@ -3,7 +3,8 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { listInvoices, createInvoice, setInvoiceStatus, deleteInvoice, fmtRupees, type Invoice, type InvoiceStatus } from "@/app/financeQueries";
+import { listInvoices, createInvoice, setInvoiceStatus, deleteInvoice, invoiceTaxBreakup, fmtRupees, type Invoice, type InvoiceStatus } from "@/app/financeQueries";
+import { ReceiptsPanel } from "./ReceiptsPanel";
 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
@@ -19,6 +20,9 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [no, setNo] = useState(""); const [amount, setAmount] = useState("");
+  const [gst, setGst] = useState("18"); const [tds, setTds] = useState("2");
+  const [openPay, setOpenPay] = useState<string | null>(null);
+  const tax = invoiceTaxBreakup(Number(amount) || 0, Number(gst) || 0, Number(tds) || 0);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -31,8 +35,8 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     const amt = Number(amount);
     if (!no.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
-    await run("add", c => createInvoice(c, { projectId, no: no.trim(), amount: amt }), {
-      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: 18, tds: 2, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10), source: null, periodFrom: null, periodTo: null, retainerId: null, phaseId: null, lines: [] }, ...prev]),
+    await run("add", c => createInvoice(c, { projectId, no: no.trim(), amount: amt, gst: Number(gst) || 0, tds: Number(tds) || 0 }), {
+      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: Number(gst) || 0, tds: Number(tds) || 0, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10), source: null, periodFrom: null, periodTo: null, retainerId: null, phaseId: null, lines: [] }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setNo(""); setAmount("");
@@ -41,22 +45,32 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
   const columns: Column<Invoice>[] = [
     {
       key: "detail", header: "Invoice", className: "flex-1 min-w-0",
-      render: r => (
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.amount)}</div>
-          <div className="text-[11px] text-fg-tertiary">{r.issuedDate ? `Issued ${r.issuedDate}` : ""} · GST {r.gst}% · TDS {r.tds}%</div>
-          {r.lines.length > 0 && (
-            <div className="mt-1.5 space-y-0.5">
-              {r.lines.map(l => (
-                <div key={l.id} className="flex items-center justify-between gap-2 text-[11px] text-fg-secondary">
-                  <span className="truncate">{l.description}{l.qty !== 1 ? ` × ${l.qty}` : ""}</span>
-                  <span className="font-mono text-fg-primary flex-shrink-0">{fmtRupees(l.amount)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ),
+      render: r => {
+        const b = invoiceTaxBreakup(r.amount, r.gst, r.tds);
+        return (
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.amount)}</div>
+            <div className="text-[11px] text-fg-tertiary">{r.issuedDate ? `Issued ${r.issuedDate}` : ""} · GST {r.gst}% · TDS {r.tds}%</div>
+            <div className="text-[11px] text-fg-secondary">GST {fmtRupees(b.gstAmount)} · TDS {fmtRupees(b.tdsAmount)} · <span className="text-fg-primary font-semibold">Net {fmtRupees(b.netReceivable)}</span></div>
+            <button className="text-[11px] text-accent font-semibold mt-0.5 hover:opacity-70" onClick={() => setOpenPay(openPay === r.id ? null : r.id)}>
+              {openPay === r.id ? "Hide payments ▾" : "Payments ▸"}
+            </button>
+            {r.lines.length > 0 && (
+              <div className="mt-1.5 space-y-0.5">
+                {r.lines.map(l => (
+                  <div key={l.id} className="flex items-center justify-between gap-2 text-[11px] text-fg-secondary">
+                    <span className="truncate">{l.description}{l.qty !== 1 ? ` × ${l.qty}` : ""}</span>
+                    <span className="font-mono text-fg-primary flex-shrink-0">{fmtRupees(l.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {openPay === r.id && (
+              <ReceiptsPanel projectId={projectId} targetType="invoice" targetId={r.id} summary={`Net ${fmtRupees(b.netReceivable)}`} />
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "status", header: "Status", className: "flex-shrink-0",
@@ -81,9 +95,13 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
       {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Invoice No</span><Input className="mt-1 w-32" placeholder="INV-001" value={no} onChange={e => setNo(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-32" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">GST %</span><Input className="mt-1 w-20" type="number" value={gst} onChange={e => setGst(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">TDS %</span><Input className="mt-1 w-20" type="number" value={tds} onChange={e => setTds(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
-          <span className="text-[11px] text-fg-tertiary ml-auto self-center">GST 18% · TDS 2% applied</span>
+          <div className="w-full text-[11px] text-fg-secondary">
+            GST {fmtRupees(tax.gstAmount)} · TDS {fmtRupees(tax.tdsAmount)} · <span className="text-fg-primary font-semibold">Net receivable {fmtRupees(tax.netReceivable)}</span>
+          </div>
         </Card>
       )}
       <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No invoices raised." />

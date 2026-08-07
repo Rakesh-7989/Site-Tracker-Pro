@@ -4,6 +4,7 @@ import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listRaBills, createRaBill, setRaBillStatus, deleteRaBill, raNetPayable, fmtRupees, type RaBill, type RaBillStatus } from "@/app/financeQueries";
+import { ReceiptsPanel } from "./ReceiptsPanel";
 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
@@ -18,6 +19,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [no, setNo] = useState(""); const [sub, setSub] = useState(""); const [scope, setScope] = useState(""); const [amount, setAmount] = useState(""); const [ret, setRet] = useState("5");
+  const [openPay, setOpenPay] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -41,9 +43,15 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "detail", header: "RA Bill", className: "flex-1 min-w-0",
       render: r => (
-        <div>
+        <div className="min-w-0">
           <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
           <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div>
+          <button className="text-[11px] text-accent font-semibold mt-0.5 hover:opacity-70" onClick={() => setOpenPay(openPay === r.id ? null : r.id)}>
+            {openPay === r.id ? "Hide payments ▾" : "Payments ▸"}
+          </button>
+          {openPay === r.id && (
+            <ReceiptsPanel projectId={projectId} targetType="ra_bill" targetId={r.id} summary={`Net ${fmtRupees(raNetPayable(r))}`} />
+          )}
         </div>
       ),
     },

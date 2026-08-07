@@ -96,6 +96,21 @@ export function invoiceLinesTotal(lines: InvoiceLine[]): number {
   return (lines ?? []).reduce((s, l) => s + (Number.isFinite(l.amount) ? l.amount : 0), 0);
 }
 
+/** GST/TDS tax computation for an invoice (ST-007). Pure + testable. */
+export interface InvoiceTaxBreakup {
+  gstAmount: number;
+  tdsAmount: number;
+  netReceivable: number; // amount + gst - tds
+}
+export function invoiceTaxBreakup(amount: number, gstPct: number, tdsPct: number): InvoiceTaxBreakup {
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const gst = Number.isFinite(gstPct) ? gstPct : 0;
+  const tds = Number.isFinite(tdsPct) ? tdsPct : 0;
+  const gstAmount = Math.round((safeAmount * gst) / 100);
+  const tdsAmount = Math.round((safeAmount * tds) / 100);
+  return { gstAmount, tdsAmount, netReceivable: safeAmount + gstAmount - tdsAmount };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listInvoices(client: any, projectId: string): Promise<Result<Invoice[]>> {
   try {
