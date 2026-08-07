@@ -658,3 +658,63 @@ Close the construction quality loop on the existing `inspections` register: when
 - The trigger runs SECURITY DEFINER so even a result recorded by a member outside the write set spawns the action; manual create/advance still require the inspection write roles.
 - Next: G3 (shift roster/overtime/wages/EPF-ESI, migration 169).
 
+---
+
+## v5 Phase G3 — Labour Wages: Shift Roster + Overtime + EPF/ESI (Complete, 2026-08-07)
+
+### Goal
+Deepen construction workforce tracking beyond the existing `labour_register`/`attendance` (which already had `wage`, `epf`, `esi` columns — see 01_schema.sql:280-281 — but never surfaced them): add **overtime** on attendance rows, a project-scoped **shift roster** (day/night/general/special), surface EPF/ESI on the Labour tab, and a client-side **wages estimate** that folds attendance into a gross/OT/EPF/ESI/net slip. No new capability/plan gate.
+
+### Done (commit `30048c0`, all verified)
+- **Migration 169** `scripts/supabase/169_shift_roster.sql`:
+  - `attendance.overtime numeric(5,2) not null default 0 check (overtime >= 0)`.
+  - `shift_roster` table (project_id, labour_id FK→labour_register set-null-able, worker_name snapshot, shift_date, shift_name CHECK day/night/general/special, start_time/end_time time, notes, created_by) + indexes. RLS mirrors attendance: read = member (`user_project_ids()`), insert = member, update/delete = pm+ set (`pm/project_admin/project_head/orgadmin/superadmin`). Grants DML authenticated, revoke anon.
+- **`src/app/shiftQueries.ts`** (new) — `ShiftName`, `ShiftRoster` + CRUD (`listShiftRoster`, `createShiftRoster`, `deleteShiftRoster`) + pure helpers: `SHIFT_LABEL`, `OVER_TIME_MULTIPLIER` (1.5), `SHIFT_BASE_HOURS` (8), `baseWage`, `overtimeAmount` (h × wage/8 × 1.5), `statutoryDeductions` (EPF 12% + ESI 0.75%), `wageSlip`, `attendanceTally` (present=1 / on_site_late=1 / half_day=0.5, sums OT).
+- **`attendanceQueries.ts`** — `AttendanceRow.overtime` selected+mapped; `createAttendance` accepts `overtime`.
+- **`siteAdminQueries.ts`** — `LabourEntry` gained `epf`/`esi`; `listLabour` selects them, `createLabour` inserts them.
+- **UI**: `AttendanceTab` — OT-hours input on the mark form + row chips (`+{n} OT`), and a **Shift roster** card (create date/shift/start/end + delete). `LabourTab` — EPF/ESI inputs + monthly **Wages estimate** card (`WageSummary`) folding attendance into gross/OT/EPF/ESI/net.
+- **Tests** — `tests/app/g3ShiftRoster.test.ts` (11).
+
+### Verification
+`npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (3.88s) · `vitest` **140 files / 1748 tests** (+1/+14) · `npm run smoke` **267 checks** (+4) · `test:e2e:mock` 7/7. Migration 169 pending live apply (phase-group cadence; grouped with 167/168 at Phase I).
+
+---
+
+## v5 Phase G4 — DPR PDF Export (Complete, 2026-08-07)
+
+### Goal
+Give the Sprint 2 DPR flow a printable/shareable artifact: a client-side **PDF** per DPR (jsPDF, same dep as monthlyStatementPdf.ts) + an **env-gated WhatsApp share** deep link. No schema change.
+
+### Done (commit `0abfa5e`, all verified)
+- **`src/app/dprPdf.ts`** (new) — `downloadDprPdf(row, orgName)` renders an A4 DPR: header (supervisor + date + status), bound-key/status/promoter summary rows, the transcript (wrapped), a "Photo & geotag" block (photo attached/coords/accuracy/taken-at), a "Media & anchor" block (voice sha256 / BuildNow hash / URL), and a footer. Pure helpers: `dprDateLabel`, `pdfStatusLabel`, `statusColor`, `shortHash`, `rowPairs`, `dprWhatsAppShareEnabled` (env gate: `VITE_DPR_PDF_WHATSAPP` 1/0, else dev), `waShareLink` (wa.me deep-link).
+- **`DPRDetailView.tsx`** — header gains a **Download PDF** button + a **Share** WhatsApp link when the env gate passes.
+- **Icon** — added `whatsapp` to `icons.tsx`.
+- **i18n** — `dpr.detail.downloadPdf` + `dpr.detail.shareWhatsApp` in en/hi/te.
+- **Tests** — `tests/app/g4DprPdf.test.ts` (9).
+
+### Verification
+`npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (5.69s) · `vitest` **141 files / 1757 tests** (+1/+9) · `npm run smoke` **269 checks** (+2) · `test:e2e:mock` 7/7. No DB change.
+
+### Notes / Follow-ups
+- WhatsApp share is a **wa.me deep-link** (text only) gated off in prod unless `VITE_DPR_PDF_WHATSAPP=1` — attaching the actual PDF file through Meta's documents API is a later optional enhancement (needs new EF + media upload).
+
+---
+
+## v5 Phase G5 — Generic CSV Exports (Complete, 2026-08-07)
+
+### Goal
+Replace the two ad-hoc, non-escaped CSV implementations (DailySnapshotView `r.join(",")`; PlatformAuditLogV2View manual Blob) with a **single reusable, testable CSV library**, then wire a new export onto a data-heavy org view (FF&E rollup). Lateral surface: `src/lib/genericCsv.ts`.
+
+### Done.
+- **`src/lib/genericCsv.ts`** (new) — `CSV_BOM`, `CsvColumn<K>`, pure `csvCell`, `buildCsv` (BOM + header + rows, CRLF, RFC-4180 via `escape.csvRow` + formula-injection defusal), `buildCsvRows` (plain cells), `csvDateStamp` (local YYYY-MM-DD), and `downloadCsv(filename, content, mime?)` (Blob + object URL + anchor).
+- **Refactors** — `DailySnapshotView` exportCSV → `buildCsvRows`+`downloadCsv`; `PlatformAuditLogV2View` → `triggerCsv`+`csvDateStamp` (no more UTC `split("T")` stamp; goldin), now properly escaped.
+- **New export** — `FfeRollupView` gains an **Export CSV** button (per-project columns: Project, Type, Entries, Committed, Procured, Progress %) via `buildCsv`+`downloadCsv`.
+- **Tests** — `tests/lib/genericCsv.test.ts` (8).
+
+### Verification
+`npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (3.07s) · `vitest` **142 files / 1765 tests** (+1/+8) · `npm run smoke` **271 checks** (+2).
+
+---
+
+## v5 Phase I — Apply migrations + push prod (Pending)
+
