@@ -15,10 +15,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getClient } from "@/lib/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
-import { Card, Spinner, Alert, AccessDenied, ProgressBar } from "@/components/ui/atoms";
+import { Card, Spinner, Alert, AccessDenied, ProgressBar, Button, Icon } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
 import { listOrgFfe, ffeOrgRollup, type FfeOrgRow, type FfeOrgProject } from "@/app/ffeQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
 
 export function FfeRollupView(): JSX.Element {
   return <PlanGate feature="ffe"><FfeRollupInner /></PlanGate>;
@@ -46,6 +47,22 @@ function FfeRollupInner(): JSX.Element {
   useEffect(() => { void reload(); }, [reload]);
 
   const rollup = useMemo(() => ffeOrgRollup(projects), [projects]);
+
+  const exportCsv = () => {
+    const cols: CsvColumn<string>[] = [
+      { key: "name", label: "Project" },
+      { key: "type", label: "Type" },
+      { key: "count", label: "Entries" },
+      { key: "committed", label: "Committed (INR)" },
+      { key: "procured", label: "Procured (INR)" },
+      { key: "progress", label: "Progress (%)" },
+    ];
+    const rows = rollup.byProject.map(p => ({
+      name: p.name, type: p.type ?? "", count: p.count, committed: p.committed, procured: p.procured,
+      progress: p.committed > 0 ? Math.round((p.procured / p.committed) * 100) : 0,
+    }));
+    downloadCsv(`ffe-rollup-${csvDateStamp()}.csv`, buildCsv(rows, cols));
+  };
 
   if (!canView) return <AccessDenied message="You don't have permission to view the FF&E rollup." />;
 
@@ -82,6 +99,9 @@ function FfeRollupInner(): JSX.Element {
         <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-warning mb-2">— Architecture · Procurement</div>
         <h1 className="font-display text-4xl font-light text-fg-primary tracking-editorial leading-none">FF&amp;E Rollup</h1>
         <p className="text-fg-secondary text-sm mt-2">Furniture, fixture &amp; equipment budget committed across design / interior projects, vs. what has actually been procured. Drill into a project to manage its schedule.</p>
+        <div className="mt-3">
+          <Button size="sm" variant="ghost" onClick={exportCsv} disabled={rollup.projects === 0} leftIcon={<Icon name="download" size={13} />}>Export CSV</Button>
+        </div>
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}

@@ -7,6 +7,7 @@ import { PlanGate } from "@/auth";
 
 
 import { getClient } from "@/lib/supabase";
+import { buildCsvRows, downloadCsv, csvDateStamp } from "@/lib/genericCsv";
 export function DailySnapshotView(): JSX.Element {
   return <PlanGate feature="kiosks"><DailySnapshotInner /></PlanGate>;
 }
@@ -56,14 +57,7 @@ function DailySnapshotInner(): JSX.Element {
       ["Open issues", snap.issues],
       ["RA bills", snap.raBills],
     ];
-    const csv = rows.map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `daily-snapshot-${selProject}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`daily-snapshot-${selProject}-${csvDateStamp()}.csv`, buildCsvRows(rows));
   };
 
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;

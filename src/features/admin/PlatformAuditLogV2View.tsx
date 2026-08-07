@@ -4,6 +4,7 @@ import { Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { exportAuditCsv } from "@/lib/audit";
 import { getClient } from "@/lib/supabase";
+import { downloadCsv as triggerCsv, csvDateStamp } from "@/lib/genericCsv";
 import {
   listAuditLog, getAuditActors, getAuditStats,
   type AuditLogRow, type AuditStats,
@@ -92,10 +93,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
 
   const filtered = auditLog;
   const downloadCsv = () => {
-    const csv = exportAuditCsv(filtered);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `audit_${new Date().toISOString().split("T")[0]}.csv`; a.click(); URL.revokeObjectURL(url);
+    triggerCsv(`audit_${csvDateStamp()}.csv`, exportAuditCsv(filtered));
   };
 
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
