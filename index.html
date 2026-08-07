@@ -18,20 +18,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Service worker REMOVED — the old cache-first SW served a stale app shell
-      // + JS chunks after every deploy, causing infinite "Loading…" hangs.
-      // Proactively unregister ANY previously-installed SW and clear its caches
-      // so returning visitors immediately get fresh code. public/sw.js is now a
-      // self-destruct stub that does the same for tabs still under the old SW.
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations()
-          .then((rs) => rs.forEach((r) => r.unregister()))
-          .catch(() => {});
-      }
-      if (window.caches && caches.keys) {
-        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
-      }
-    </script>
   </body>
 </html>

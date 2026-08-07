@@ -4,9 +4,11 @@ import { AppV3 } from "./app/AppV3";
 import { ErrorBoundary } from "./components/errorBoundary";
 
 import { initSentry } from "./lib/sentry";
+import { registerServiceWorker } from "./lib/pwa";
 import "./index.css";
 
 initSentry();
+registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

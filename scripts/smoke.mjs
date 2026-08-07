@@ -47,6 +47,8 @@ const app = [
   read("src/app/downloadAuditQueries.ts"),
   read("src/features/org/CrossRaBillsView.tsx"),
   read("src/app/crossRaQueries.ts"),
+  read("src/features/pwa/PwaChrome.tsx"),
+  read("src/lib/pwa.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -141,6 +143,8 @@ const vite = read("vite.config.js");
   "CrossRaBillsView",
   "crossRaQueries",
   "crossRaRollup",
+  "PwaChrome",
+  "registerServiceWorker",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

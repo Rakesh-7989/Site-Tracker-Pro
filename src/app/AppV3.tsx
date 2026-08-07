@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/auth";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ImpersonationProvider } from "@/features/admin/ImpersonationContext";
+import { PwaChrome } from "@/features/pwa/PwaChrome";
 import { router } from "./router";
 
 export function AppV3(): JSX.Element {
@@ -18,6 +19,7 @@ export function AppV3(): JSX.Element {
         <ImpersonationProvider>
             <RouterProvider router={router} />
             <Analytics />
+            <PwaChrome />
         </ImpersonationProvider>
       </AuthProvider>
     </I18nProvider>
