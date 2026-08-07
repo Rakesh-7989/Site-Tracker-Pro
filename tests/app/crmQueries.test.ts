@@ -5,8 +5,8 @@
 import { describe, it, expect } from "vitest";
 import {
   crmRollup, isOpenLead, LEAD_STAGE_NEXT, reopenLead, LEAD_STAGES, LEAD_SOURCES,
-  listOrgLeads, createLead,
-  type Lead, type LeadStage,
+  listOrgLeads, createLead, createProjectFromLead, acceptedQuote,
+  type Lead, type LeadStage, type LeadQuotation,
 } from "@/app/crmQueries";
 
 function lead(overrides: Partial<Lead> = {}): Lead {
@@ -168,5 +168,75 @@ describe("crmQueries createLead", () => {
     expect(res.ok).toBe(true);
     expect(inserts[0]).toMatchObject({ org_id: "o1", name: "X", source: "website", budget: 999, stage: "new" });
     if (res.ok) expect(res.data.stage).toBe("new");
+  });
+});
+
+describe("crmQueries acceptedQuote", () => {
+  function q(overrides: Partial<LeadQuotation> = {}): LeadQuotation {
+    return {
+      id: "q1", leadId: "l1", title: "Quote", amount: 100, status: "accepted",
+      validUntil: null, sentAt: null, createdBy: null, createdAt: "2026-08-01T00:00:00Z", ...overrides,
+    };
+  }
+
+  it("returns the highest-amount accepted quotation", () => {
+    const best = acceptedQuote([q({ id: "a", amount: 50, status: "accepted" }), q({ id: "b", amount: 80, status: "accepted" }), q({ id: "c", amount: 200, status: "sent" })]);
+    expect(best?.id).toBe("b");
+  });
+
+  it("returns null when no quotation is accepted", () => {
+    expect(acceptedQuote([q({ status: "draft" }), q({ status: "sent" }), q({ status: "rejected" })])).toBeNull();
+  });
+
+  it("returns null for an empty list", () => {
+    expect(acceptedQuote([])).toBeNull();
+  });
+});
+
+describe("crmQueries createProjectFromLead", () => {
+  it("creates a project then marks the lead won with the budget", async () => {
+    const updates: Array<Record<string, unknown>> = [];
+    const client = {
+      from: (t: string) => ({
+        insert: (body: Record<string, unknown>) => ({
+          select: () => ({
+            single: async () => {
+              if (t === "projects") return { error: null, data: { id: "p1", ...body, created_at: "2026-08-01T00:00:00Z", updated_at: "2026-08-01T00:00:00Z" } };
+              return { error: null, data: null };
+            },
+          }),
+        }),
+        update: (body: Record<string, unknown>) => {
+          updates.push(body);
+          return {
+            eq: () => ({
+              select: () => ({
+                single: async () => ({ error: null, data: { id: "l1" } }),
+              }),
+            }),
+          };
+        },
+      }),
+    };
+    const res = await createProjectFromLead(client as never, { orgId: "o1", leadId: "l1", name: "A — B", type: "construction", budget: 500_000 });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.data.projectId).toBe("p1");
+    expect(updates[0]).toMatchObject({ stage: "won", won_amount: 500_000 });
+  });
+
+  it("propagates createProject errors without touching the lead", async () => {
+    const client = {
+      from: (t: string) => ({
+        insert: () => ({
+          select: () => ({
+            single: async () => ({ error: t === "projects" ? { message: "boom" } : null, data: null }),
+          }),
+        }),
+      }),
+    };
+    const res = await createProjectFromLead(client as never, { orgId: "o1", leadId: "l1", name: "A", type: "construction", budget: 1 });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe("boom");
   });
 });

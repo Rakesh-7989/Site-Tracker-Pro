@@ -1,9 +1,11 @@
-﻿// SiteTrack Pro â€” CRM & Sales: org lead pipeline (v4 Phase A).
+﻿// SiteTrack Pro — CRM & Sales: org lead pipeline (v4 Phase A).
 // DB: leads / lead_meetings / lead_quotations / lead_agreements (migration 161).
-// ORG-scoped (org_id) â€” no project_id, since leads precede projects. RLS:
+// ORG-scoped (org_id) — no project_id, since leads precede projects. RLS:
 // read + insert/update = any org member; delete = managers (orgadmin, pm,
 // project_admin, superadmin). UI gating via the crm:view / crm:manage
 // capabilities + plan gate (PlanFeature "crm", Business+).
+
+import { createProject } from "./queries";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -11,7 +13,7 @@ const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Erro
 const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: String(e.message ?? e) });
 const oneOf = <T extends string>(vals: readonly T[], fb: T) => (v: unknown): T => (vals.includes(v as T) ? (v as T) : fb);
 
-// â”€â”€ Enums â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Enums ───────────────────────────────────────────────────────────────────
 export type LeadSource = "referral" | "website" | "walk_in" | "call" | "whatsapp" | "event" | "other";
 export const LEAD_SOURCES: readonly LeadSource[] = ["referral", "website", "walk_in", "call", "whatsapp", "event", "other"];
 
@@ -31,11 +33,12 @@ export type AgreementStatus = "pending" | "signed" | "rejected" | "cancelled";
 export const AGREEMENT_STATUSES: readonly AgreementStatus[] = ["pending", "signed", "rejected", "cancelled"];
 
 const asStage = oneOf<LeadStage>(LEAD_STAGES, "new");
+const asSource = oneOf<LeadSource>(LEAD_SOURCES, "other");
 const asMeeting = oneOf<MeetingOutcome>(MEETING_OUTCOMES, "pending");
 const asQuote = oneOf<QuoteStatus>(QUOTE_STATUSES, "draft");
 const asAgreement = oneOf<AgreementStatus>(AGREEMENT_STATUSES, "pending");
 
-// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Types ───────────────────────────────────────────────────────────────────
 export interface Lead {
   id: string;
   orgId: string;
@@ -90,7 +93,7 @@ export interface LeadAgreement {
   createdAt: string;
 }
 
-// â”€â”€ Pure helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Pure helpers ────────────────────────────────────────────────────────────
 
 /** A lead counts toward the "pipeline value" if it's not dead (lost). */
 export function isOpenLead(stage: LeadStage): boolean {
@@ -107,7 +110,7 @@ export const LEAD_STAGE_NEXT: Partial<Record<LeadStage, LeadStage>> = {
   agreement_signed: "won",
 };
 
-/** Reopen a closed lead back into the funnel (won â†’ new, lost â†’ new). */
+/** Reopen a closed lead back into the funnel (won → new, lost → new). */
 export function reopenLead(stage: LeadStage): LeadStage {
   return stage === "won" || stage === "lost" ? "new" : stage;
 }
@@ -117,10 +120,10 @@ export interface CrmRollup {
   open: number;
   won: number;
   lost: number;
-  pipelineValue: number; // Î£ budget of open leads
-  wonValue: number;      // Î£ won_amount of won leads
+  pipelineValue: number; // Σ budget of open leads
+  wonValue: number;      // Σ won_amount of won leads
   byStage: Record<LeadStage, number>;
-  conversionRate: number; // won / (won + lost), 0â€“100; 0 when none
+  conversionRate: number; // won / (won + lost), 0–100; 0 when none
 }
 
 /** Org-wide pipeline rollup. */
@@ -142,7 +145,7 @@ export function crmRollup(leads: Lead[]): CrmRollup {
   };
 }
 
-// â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Queries ─────────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listOrgLeads(client: any, orgId: string): Promise<Result<Lead[]>> {
   try {
@@ -159,7 +162,7 @@ export async function listOrgLeads(client: any, orgId: string): Promise<Result<L
       company: r.company == null ? null : String(r.company),
       phone: r.phone == null ? null : String(r.phone),
       email: r.email == null ? null : String(r.email),
-      source: r.source == null ? null : oneOf<LeadSource>(LEAD_SOURCES, "other")(r.source),
+source: r.source == null ? null : asSource(r.source),
       budget: r.budget == null ? null : Number(r.budget),
       stage: asStage(r.stage),
       notes: r.notes == null ? null : String(r.notes),
@@ -173,7 +176,7 @@ export async function listOrgLeads(client: any, orgId: string): Promise<Result<L
 }
 
 export interface LeadInput {
-  name: string;
+  name?: string;
   company?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -182,6 +185,8 @@ export interface LeadInput {
   stage?: LeadStage;
   notes?: string | null;
   ownerId?: string | null;
+  wonAmount?: number | null;
+  lostReason?: string | null;
 }
 
 /** Create a lead in the given org. */
@@ -212,6 +217,8 @@ export async function updateLead(client: any, leadId: string, patch: Partial<Lea
     if (patch.stage !== undefined) body.stage = patch.stage;
     if (patch.notes !== undefined) body.notes = patch.notes;
     if (patch.ownerId !== undefined) body.owner_id = patch.ownerId;
+    if (patch.wonAmount !== undefined) body.won_amount = patch.wonAmount;
+    if (patch.lostReason !== undefined) body.lost_reason = patch.lostReason;
     if (Object.keys(body).length === 0) return ok(null as unknown as Lead);
     const { data, error } = await client
       .from("leads")
@@ -246,7 +253,7 @@ function mapLead(r: any): Lead {
     company: r.company == null ? null : String(r.company),
     phone: r.phone == null ? null : String(r.phone),
     email: r.email == null ? null : String(r.email),
-    source: r.source == null ? null : oneOf<LeadSource>(LEAD_SOURCES, "other")(r.source),
+    source: r.source == null ? null : asSource(r.source),
     budget: r.budget == null ? null : Number(r.budget),
     stage: asStage(r.stage),
     notes: r.notes == null ? null : String(r.notes),
@@ -258,7 +265,7 @@ function mapLead(r: any): Lead {
   };
 }
 
-// â”€â”€ Meetings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Meetings ──────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listLeadMeetings(client: any, leadId: string): Promise<Result<LeadMeeting[]>> {
   try {
@@ -279,15 +286,15 @@ export async function listLeadMeetings(client: any, leadId: string): Promise<Res
 
 /** Create a meeting for a lead. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function addMeeting(client: any, leadId: string, m: { scheduledAt: string; agenda?: string | null; notes?: string | null }): Promise<Result<LeadMeeting>> {
+export async function addMeeting(client: any, leadId: string, m: { scheduledAt: string; agenda?: string | null; notes?: string | null }, outcome: MeetingOutcome = "pending"): Promise<Result<LeadMeeting>> {
   try {
     const { data, error } = await client
       .from("lead_meetings")
-      .insert({ lead_id: leadId, scheduled_at: m.scheduledAt, agenda: m.agenda ?? null, notes: m.notes ?? null, outcome: "pending" })
+      .insert({ lead_id: leadId, scheduled_at: m.scheduledAt, agenda: m.agenda ?? null, notes: m.notes ?? null, outcome })
       .select("id, lead_id, scheduled_at, agenda, outcome, notes, created_by, created_at")
       .single();
     if (error) return dbe(error);
-    return ok(meeting(data));
+    return ok(meetingRow(data));
   } catch (e) { return er(e); }
 }
 
@@ -302,7 +309,7 @@ export async function setMeetingOutcome(client: any, meetingId: string, outcome:
       .select("id, lead_id, scheduled_at, agenda, outcome, notes, created_by, created_at")
       .single();
     if (error) return dbe(error);
-    return ok(meeting(data));
+    return ok(meetingRow(data));
   } catch (e) { return er(e); }
 }
 
@@ -316,11 +323,11 @@ export async function deleteMeeting(client: any, meetingId: string): Promise<Res
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function meeting(r: any): LeadMeeting {
+function meetingRow(r: any): LeadMeeting {
   return { id: String(r.id), leadId: String(r.lead_id ?? ""), scheduledAt: String(r.scheduled_at ?? ""), agenda: r.agenda == null ? null : String(r.agenda), outcome: asMeeting(r.outcome), notes: r.notes == null ? null : String(r.notes), createdBy: r.created_by == null ? null : String(r.created_by), createdAt: String(r.created_at ?? "") };
 }
 
-// â”€â”€ Quotations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Quotations ────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listLeadQuotations(client: any, leadId: string): Promise<Result<LeadQuotation[]>> {
   try {
@@ -349,22 +356,24 @@ export async function addQuotation(client: any, leadId: string, q: { title?: str
       .select("id, lead_id, title, amount, status, valid_until, sent_at, created_by, created_at")
       .single();
     if (error) return dbe(error);
-    return ok(quotation(data));
+    return ok(quotationRow(data));
   } catch (e) { return er(e); }
 }
 
-/** Move a quotation draft â†’ sent â†’ accepted / rejected. */
+/** Move a quotation draft → sent → accepted / rejected. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function setQuoteStatus(client: any, quotId: string, status: QuoteStatus): Promise<Result<LeadQuotation>> {
   try {
+    const body: Record<string, unknown> = { status };
+    if (status === "sent") body.sent_at = new Date().toISOString();
     const { data, error } = await client
       .from("lead_quotations")
-      .update(status === "sent" ? { status, sent_at: new Date().toISOString() } : { status })
+      .update(body)
       .eq("id", quotId)
       .select("id, lead_id, title, amount, status, valid_until, sent_at, created_by, created_at")
       .single();
     if (error) return dbe(error);
-    return ok(quotation(data));
+    return ok(quotationRow(data));
   } catch (e) { return er(e); }
 }
 
@@ -378,11 +387,11 @@ export async function deleteQuotation(client: any, quotId: string): Promise<Resu
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function quotation(r: any): LeadQuotation {
+function quotationRow(r: any): LeadQuotation {
   return { id: String(r.id), leadId: String(r.lead_id ?? ""), title: r.title == null ? null : String(r.title), amount: Number(r.amount ?? 0), status: asQuote(r.status), validUntil: r.valid_until == null ? null : String(r.valid_until), sentAt: r.sent_at == null ? null : String(r.sent_at), createdBy: r.created_by == null ? null : String(r.created_by), createdAt: String(r.created_at ?? "") };
 }
 
-// â”€â”€ Agreements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Agreements ────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listLeadAgreements(client: any, leadId: string): Promise<Result<LeadAgreement[]>> {
   try {
@@ -411,7 +420,7 @@ export async function addAgreement(client: any, leadId: string, a: { title?: str
       .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, created_by, created_at")
       .single();
     if (error) return dbe(error);
-    return ok(agreement(data));
+    return ok(agreementRow(data));
   } catch (e) { return er(e); }
 }
 
@@ -429,7 +438,7 @@ export async function setAgreementStatus(client: any, agrId: string, status: Agr
       .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, created_by, created_at")
       .single();
     if (error) return dbe(error);
-    return ok(agreement(data));
+    return ok(agreementRow(data));
   } catch (e) { return er(e); }
 }
 
@@ -443,6 +452,40 @@ export async function deleteAgreement(client: any, agrId: string): Promise<Resul
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function agreement(data: any): LeadAgreement {
+function agreementRow(data: any): LeadAgreement {
   return { id: String(data.id), leadId: String(data.lead_id ?? ""), title: data.title == null ? null : String(data.title), amount: Number(data.amount ?? 0), status: asAgreement(data.status), signedAt: data.signed_at == null ? null : String(data.signed_at), signedBy: data.signed_by == null ? null : String(data.signed_by), notes: data.notes == null ? null : String(data.notes), createdBy: data.created_by == null ? null : String(data.created_by), createdAt: String(data.created_at ?? "") };
+}
+
+// ── Sales → project handoff (v4 A2) ─────────────────────────────────────────
+// When a lead is won and signed, the firm can open a real project seeded from
+// the lead's name/company + the accepted amount. This does the project insert
+// (reusing createProject from queries.ts) and, on success, advances the lead
+// to `won` with won_amount set. Gated by crm:manage + project:create.
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createProjectFromLead(client: any, input: {
+  orgId: string;
+  leadId: string;
+  name: string;
+  type: string;
+  budget: number;
+}): Promise<Result<{ projectId: string }>> {
+  try {
+    const r = await createProject(client, { orgId: input.orgId, name: input.name, type: input.type as never });
+    if (!r.ok) return { ok: false, error: r.error };
+    const projectId = r.data.id;
+    // Record the win + amount on the lead (RLS: org member update).
+    await updateLead(client, input.leadId, { stage: "won", wonAmount: input.budget });
+    return ok({ projectId });
+  } catch (e) { return er(e); }
+}
+
+/** The accepted quotation for a lead (highest amount, status accepted). */
+export function acceptedQuote(quotes: LeadQuotation[]): LeadQuotation | null {
+  let best: LeadQuotation | null = null;
+  for (const q of quotes) {
+    if (q.status !== "accepted") continue;
+    if (best === null || q.amount > best.amount) best = q;
+  }
+  return best;
 }

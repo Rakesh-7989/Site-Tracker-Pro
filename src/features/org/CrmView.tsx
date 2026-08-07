@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
+import { defaultProjectTypeFor } from "@/auth/segmentConfig";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Spinner, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
 import { Select, Input, Textarea, FormField } from "@/components/ui/forms";
@@ -24,9 +25,11 @@ import {
   listLeadMeetings, addMeeting, setMeetingOutcome, deleteMeeting,
   listLeadQuotations, addQuotation, setQuoteStatus,
   listLeadAgreements, addAgreement, setAgreementStatus,
+  createProjectFromLead, acceptedQuote,
   crmRollup, LEAD_STAGES, LEAD_SOURCES, LEAD_STAGE_NEXT,
   type Lead, type LeadSource, type LeadStage, type LeadMeeting, type LeadQuotation, type LeadAgreement,
 } from "@/app/crmQueries";
+import { useNavigate } from "react-router-dom";
 
 const STAGE_TONE: Record<LeadStage, "neutral" | "info" | "warning" | "success" | "danger"> = {
   new: "neutral", contacted: "info", meeting_scheduled: "info",
@@ -64,11 +67,14 @@ interface LeadInput {
 }
 
 function Pipeline({ orgId }: { orgId: string }): JSX.Element {
+  const navigate = useNavigate();
   const canManage = useCan("crm:manage", { orgId });
+  const { activeOrg } = useOrgSwitcher();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<Lead | null>(null);
 
@@ -81,13 +87,35 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
 
   const { run } = useAction(reload, setError);
   const rollup = useMemo(() => crmRollup(leads), [leads]);
-  const shown = filter === "all" ? leads : leads.filter(l => l.stage === filter);
+  const owners = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of leads) if (l.ownerId) s.add(l.ownerId);
+    return [...s];
+  }, [leads]);
+  const shown = (filter === "all" ? leads : leads.filter(l => l.stage === filter))
+    .filter(l => ownerFilter === "all" || l.ownerId === ownerFilter);
 
   const handleCreate = async (input: LeadInput) => {
     const client = await getClient(); if (!client) return;
     let done = false;
     await run("create", async c => { const r = await createLead(c, orgId, input); done = r.ok; return r; });
     if (done) setCreating(false);
+  };
+
+  const handleHandoff = async (lead: Lead) => {
+    const type = defaultProjectTypeFor(activeOrg?.segment) as string;
+    const client = await getClient(); if (!client) return;
+    let projectId: string | null = null;
+    await run("handoff", async c => {
+      const r = await createProjectFromLead(c, {
+        orgId, leadId: lead.id,
+        name: lead.company ? `${lead.name} — ${lead.company}` : lead.name,
+        type, budget: lead.wonAmount ?? lead.budget ?? 0,
+      });
+      if (r.ok) projectId = r.data.projectId;
+      return r;
+    });
+    if (projectId) navigate(`/projects/${projectId}`);
   };
 
   const handleAdvance = async (leadId: string, stage: LeadStage) => {
@@ -162,7 +190,9 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
         </Card>
       </div>
 
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-end gap-2 mb-6">
+        <Select className="w-48" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}
+          options={[{ value: "all", label: "All owners" }, ...owners.map(o => ({ value: o, label: `Owner ${o.slice(0, 8)}` }))]} />
         <Select className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
       </div>
 
@@ -191,6 +221,7 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
           onAdvance={handleAdvance}
           onMove={handleMove}
           onDelete={handleDelete}
+          onHandoff={handleHandoff}
         />
       )}
     </div>
@@ -238,10 +269,10 @@ function NewLeadModal({ onClose, onCreate }: { onClose: () => void; onCreate: (i
   );
 }
 
-function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete }: {
+function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onHandoff }: {
   lead: Lead; canManage: boolean; onClose: () => void;
   onAdvance: (id: string, s: LeadStage) => void; onMove: (id: string, s: LeadStage) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void; onHandoff: (lead: Lead) => void;
 }): JSX.Element {
   const [tab, setTab] = useState<"meetings" | "quotations" | "agreements">("meetings");
   const next = LEAD_STAGE_NEXT[lead.stage];
@@ -265,6 +296,9 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete }: {
         {lead.phone ? <span className="text-xs text-fg-secondary">{lead.phone}</span> : null}
         {lead.email ? <span className="text-xs text-fg-secondary">{lead.email}</span> : null}
         <div className="ml-auto flex items-center gap-2">
+          {canManage && lead.stage === "won" && (
+            <Button size="sm" onClick={() => onHandoff(lead)}>Create project</Button>
+          )}
           {canManage && lead.stage !== "won" && lead.stage !== "lost" && next && (
             <Button size="sm" onClick={() => onAdvance(lead.id, lead.stage)}>{`→ ${STAGE_LABEL[next]}`}</Button>
           )}
@@ -396,12 +430,24 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
     const client = await getClient(); if (!client) return;
     await setQuoteStatus(client, id, s); void reload();
   };
+  const accepted = canManage ? acceptedQuote(rows) : null;
+  const convert = async (q: LeadQuotation) => {
+    const client = await getClient(); if (!client) return;
+    const r = await addAgreement(client, leadId, { title: q.title ?? null, amount: q.amount, notes: "Auto-converted from accepted quotation." });
+    if (r.ok) { await setQuoteStatus(client, q.id, "superseded"); void reload(); }
+  };
 
   if (loading) return <Spinner size={18} />;
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
     <div className="space-y-3">
+      {canManage && accepted && (
+        <div className="rounded-lg bg-elevated border border-success px-3 py-2 flex items-center gap-2 text-xs">
+          <span className="text-success">Accepted quote {fmtRupees(accepted.amount)}{accepted.title ? ` · ${accepted.title}` : ""} — capture as an agreement?</span>
+          <Button size="sm" className="ml-auto" onClick={() => void convert(accepted)}>Create agreement</Button>
+        </div>
+      )}
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
           <FormField label="Title" htmlFor="q-title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Interior fit-out" className="w-44" /></FormField>
