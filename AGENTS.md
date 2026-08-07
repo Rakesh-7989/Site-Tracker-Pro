@@ -632,3 +632,29 @@ Close the construction procurement loop: a project-scoped **material request** r
 - **Self-cancel escape hatch**: the `mr_update` with-check allows `can_read_project` (any member) so a raiser can withdraw their own row, while forward status moves require the manager write gate. Delete stays manager-only.
 - Next: G2 (checklist inspections + corrective actions, migration 168), G3 (shift roster/overtime/wages/EPF-ESI, migration 169), then G4/G5.
 
+---
+
+## v5 Phase G2 — Construction Quality: Corrective Actions (Complete, 2026-08-07)
+
+### Goal
+Close the construction quality loop on the existing `inspections` register: when an inspection comes back **fail** or **conditional**, a corrective action auto-opens so the defect is tracked to closure (open → in_progress → resolved → verified) instead of getting lost. An org-wide rollup RPC surfaces open actions across projects. No new capability/plan gate — rides existing `inspection:create`.
+
+### Done (commit after 01693c1, all verified)
+- **Migration 168** `scripts/supabase/168_construction_quality.sql`:
+  - `corrective_actions` (project_id, inspection_id FK→inspections SET NULL, description, priority CHECK low/medium/high/critical, status CHECK open/in_progress/resolved/verified, assigned_to, due_date, opened_by, verified_by/verified_at) + indexes.
+  - **RLS project-scoped mirroring inspections**: read = member; insert/update/delete = `current_role_text() in ('pm','project_admin','project_head','orgadmin','superadmin','site_inspector','consultant','principal_consultant')`.
+  - **Auto-open trigger** `auto_open_corrective_action()` (SECURITY DEFINER, search_path=public) on `inspections` AFTER INSERT/UPDATE OF result → when result is fail/conditional, inserts a corrective action (description = scope or "type inspection"; priority high for fail / medium for conditional) unless one already exists (status <> verified). Grants DML to authenticated.
+  - **`org_corrective_actions(uuid)`** SECURITY DEFINER RPC — open (non-verified) corrective actions across an org's projects, member-gated.
+- **`src/app/qualityQueries.ts`** (new) — `CorrectiveAction` + CRUD (`listCorrectiveActions` w/ opened_by join, `createCorrectiveAction`, `setCorrectiveStatus` (stamps verified_by on verify), `deleteCorrectiveAction`) + pure helpers `CORRECTIVE_NEXT`, `CORRECTIVE_STATUS_LABEL`, `CORRECTIVE_PRIORITY_LABEL`, `correctiveRollup`.
+- **UI** — `InspectionsTab`: new **Corrective Actions** card (open/verified totals + critical/high/resolved chips, create form description/priority/assignee/due, per-row advance button walking the ladder + delete). Auto-opened actions from failed inspections appear here automatically on reload.
+- **Tests** — `tests/app/g2Quality.test.ts` (10: ladder, labels, rollup bucket + empty, list mapper w/ join + unknown coercion, create body, verified_by stamping only-on-verify, error surfaces).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (2.82s) · `npm run smoke` **263 checks** (was 259; +3 markers + migration 168 file) · `vitest` **139 files / 1737 tests pass** (+1 file / +10).
+- **NOT yet applied live** (168 pending — apply with `npm run db:apply` + push `prod` with the phase group).
+
+### Notes / Follow-ups
+- Auto-open is idempotent per inspection (skips when a non-verified action already exists) so re-recording a fail doesn't duplicate actions.
+- The trigger runs SECURITY DEFINER so even a result recorded by a member outside the write set spawns the action; manual create/advance still require the inspection write roles.
+- Next: G3 (shift roster/overtime/wages/EPF-ESI, migration 169).
+
