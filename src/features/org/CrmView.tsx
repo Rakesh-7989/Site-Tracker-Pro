@@ -21,11 +21,11 @@ import { Modal } from "@/components/ui/Modal";
 import { DataTable } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
 import {
-  listOrgLeads, createLead, updateLead, setLeadStage, deleteLead,
+  listOrgLeads, createLead, updateLead, setLeadStage, setLeadOwner, deleteLead,
   listLeadMeetings, addMeeting, setMeetingOutcome, deleteMeeting,
   listLeadQuotations, addQuotation, setQuoteStatus,
   listLeadAgreements, addAgreement, setAgreementStatus,
-  createProjectFromLead, acceptedQuote,
+  createProjectFromLead, acceptedQuote, acceptQuotationAsAgreement,
   crmRollup, LEAD_STAGES, LEAD_SOURCES, LEAD_STAGE_NEXT,
   type Lead, type LeadSource, type LeadStage, type LeadMeeting, type LeadQuotation, type LeadAgreement,
 } from "@/app/crmQueries";
@@ -92,9 +92,9 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
   const { run } = useAction(reload, setError);
   const rollup = useMemo(() => crmRollup(leads), [leads]);
   const owners = useMemo(() => {
-    const s = new Set<string>();
-    for (const l of leads) if (l.ownerId) s.add(l.ownerId);
-    return [...s];
+    const m = new Map<string, string>();
+    for (const l of leads) if (l.ownerId && !m.has(l.ownerId)) m.set(l.ownerId, l.ownerName ?? l.ownerId.slice(0, 8));
+    return [...m.entries()];
   }, [leads]);
   const shown = (filter === "all" ? leads : leads.filter(l => l.stage === filter))
     .filter(l => ownerFilter === "all" || l.ownerId === ownerFilter);
@@ -196,7 +196,7 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
 
       <div className="flex justify-end gap-2 mb-6">
         <Select className="w-48" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}
-          options={[{ value: "all", label: t("crm.ownersFilter") }, ...owners.map(o => ({ value: o, label: t("crm.ownerLabel", { id: o.slice(0, 8) }) }))]} />
+          options={[{ value: "all", label: t("crm.ownersFilter") }, ...owners.map(([id, name]) => ({ value: id, label: name }))]} />
         <Select className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS(t)} />
       </div>
 
@@ -226,6 +226,8 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
           onMove={handleMove}
           onDelete={handleDelete}
           onHandoff={handleHandoff}
+          owners={owners}
+          reload={reload}
         />
       )}
     </div>
@@ -274,10 +276,11 @@ function NewLeadModal({ onClose, onCreate }: { onClose: () => void; onCreate: (i
   );
 }
 
-function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onHandoff }: {
+function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onHandoff, owners, reload }: {
   lead: Lead; canManage: boolean; onClose: () => void;
   onAdvance: (id: string, s: LeadStage) => void; onMove: (id: string, s: LeadStage) => void;
   onDelete: (id: string) => void; onHandoff: (lead: Lead) => void;
+  owners: [string, string][]; reload: () => void;
 }): JSX.Element {
   const t = useT();
   const [tab, setTab] = useState<"meetings" | "quotations" | "agreements">("meetings");
@@ -311,6 +314,15 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onH
           {canManage && (
             <>
               <Select className="w-36" value={lead.stage} onChange={e => onMove(lead.id, e.target.value as LeadStage)} options={LEAD_STAGES.map(s => ({ value: s, label: stageLabel(t, s) }))} />
+              <Select className="w-36" value={lead.ownerId ?? ""} onChange={e => {
+                const v = e.target.value || null;
+                const doAssign = async () => {
+                  const client = await getClient();
+                  if (client) await setLeadOwner(client, lead.id, v);
+                  void reload();
+                };
+                void doAssign();
+              }} options={[{ value: "", label: t("crm.noOwner") }, ...owners.map(([id, name]) => ({ value: id, label: name }))]} />
               <Button size="sm" variant="danger" onClick={() => { if (confirm(t("crm.deleteLead"))) onDelete(lead.id); }}>{t("crm.delete")}</Button>
             </>
           )}
@@ -441,8 +453,8 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
   const accepted = canManage ? acceptedQuote(rows) : null;
   const convert = async (q: LeadQuotation) => {
     const client = await getClient(); if (!client) return;
-    const r = await addAgreement(client, leadId, { title: q.title ?? null, amount: q.amount, notes: t("crm.autoConvertedNotes") });
-    if (r.ok) { await setQuoteStatus(client, q.id, "superseded"); void reload(); }
+    const r = await acceptQuotationAsAgreement(client, q.id);
+    if (r.ok) { void reload(); }
   };
 
   if (loading) return <Spinner size={18} />;

@@ -166,6 +166,9 @@ const vite = read("vite.config.js");
   "CrmView",
   "crmQueries",
   "crmRollup",
+  "setLeadOwner",
+  "acceptQuotationAsAgreement",
+  "getQuotation",
   "listMaterialRequests",
   "requestTotals",
   "REQUEST_NEXT",
@@ -303,6 +306,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "scripts/supabase/167_material_requests_grn.sql",
   "scripts/supabase/168_construction_quality.sql",
   "scripts/supabase/169_shift_roster.sql",
+  "scripts/supabase/172_crm_agreement_from_quotation.sql",
   "docs/PRODUCTION_RLS.md",
   "docs/CASHFREE_ONBOARDING.md",
   // Session 16 — Feature-flag catalog system

@@ -51,6 +51,7 @@ export interface Lead {
   stage: LeadStage;
   notes: string | null;
   ownerId: string | null;
+  ownerName: string | null;
   wonAmount: number | null;
   lostReason: string | null;
   createdAt: string;
@@ -89,6 +90,7 @@ export interface LeadAgreement {
   signedAt: string | null;
   signedBy: string | null;
   notes: string | null;
+  quotationId: string | null;
   createdBy: string | null;
   createdAt: string;
 }
@@ -124,14 +126,23 @@ export interface CrmRollup {
   wonValue: number;      // Σ won_amount of won leads
   byStage: Record<LeadStage, number>;
   conversionRate: number; // won / (won + lost), 0–100; 0 when none
+  byOwner: Record<string, { count: number; open: number; pipelineValue: number; won: number; wonValue: number }>;
 }
 
 /** Org-wide pipeline rollup. */
 export function crmRollup(leads: Lead[]): CrmRollup {
   const byStage: Record<LeadStage, number> = { new: 0, contacted: 0, meeting_scheduled: 0, quotation_sent: 0, negotiating: 0, agreement_signed: 0, won: 0, lost: 0 };
+  const byOwner: CrmRollup["byOwner"] = {};
   let open = 0, won = 0, lost = 0, pipelineValue = 0, wonValue = 0;
   for (const l of leads) {
     byStage[l.stage] += 1;
+    if (l.ownerId) {
+      const o = byOwner[l.ownerId] ?? { count: 0, open: 0, pipelineValue: 0, won: 0, wonValue: 0 };
+      o.count += 1;
+      if (l.stage === "won") { o.won += 1; o.wonValue += Number(l.wonAmount ?? 0); }
+      else if (l.stage !== "lost") { o.open += 1; o.pipelineValue += Number(l.budget ?? 0); }
+      byOwner[l.ownerId] = o;
+    }
     if (l.stage === "won") { won += 1; wonValue += Number(l.wonAmount ?? 0); }
     else if (l.stage === "lost") { lost += 1; }
     else { open += 1; pipelineValue += Number(l.budget ?? 0); }
@@ -142,6 +153,7 @@ export function crmRollup(leads: Lead[]): CrmRollup {
     pipelineValue, wonValue,
     byStage,
     conversionRate: decided === 0 ? 0 : Math.round((won / decided) * 100),
+    byOwner,
   };
 }
 
@@ -149,9 +161,9 @@ export function crmRollup(leads: Lead[]): CrmRollup {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listOrgLeads(client: any, orgId: string): Promise<Result<Lead[]>> {
   try {
-    const { data, error } = await client
+const { data, error } = await client
       .from("leads")
-      .select("id, org_id, name, company, phone, email, source, budget, stage, notes, owner_id, won_amount, lost_reason, created_at, updated_at")
+      .select("id, org_id, name, company, phone, email, source, budget, stage, notes, owner_id, owner:owner_id(name), won_amount, lost_reason, created_at, updated_at")
       .eq("org_id", orgId)
       .order("created_at", { ascending: false });
     if (error) return dbe(error);
@@ -162,11 +174,12 @@ export async function listOrgLeads(client: any, orgId: string): Promise<Result<L
       company: r.company == null ? null : String(r.company),
       phone: r.phone == null ? null : String(r.phone),
       email: r.email == null ? null : String(r.email),
-source: r.source == null ? null : asSource(r.source),
+      source: r.source == null ? null : asSource(r.source),
       budget: r.budget == null ? null : Number(r.budget),
       stage: asStage(r.stage),
       notes: r.notes == null ? null : String(r.notes),
       ownerId: r.owner_id == null ? null : String(r.owner_id),
+      ownerName: ownerNameOf(r.owner),
       wonAmount: r.won_amount == null ? null : Number(r.won_amount),
       lostReason: r.lost_reason == null ? null : String(r.lost_reason),
       createdAt: String(r.created_at ?? ""),
@@ -196,7 +209,7 @@ export async function createLead(client: any, orgId: string, input: LeadInput): 
     const { data, error } = await client
       .from("leads")
       .insert({ org_id: orgId, name: input.name, company: input.company ?? null, phone: input.phone ?? null, email: input.email ?? null, source: input.source ?? null, budget: input.budget ?? null, stage: input.stage ?? "new", notes: input.notes ?? null, owner_id: input.ownerId ?? null })
-      .select("id, org_id, name, company, phone, email, source, budget, stage, notes, owner_id, won_amount, lost_reason, created_at, updated_at")
+      .select("id, org_id, name, company, phone, email, source, budget, stage, notes, owner_id, owner:owner_id(name), won_amount, lost_reason, created_at, updated_at")
       .single();
     if (error) return dbe(error);
     return ok(mapLead(data));
@@ -224,7 +237,7 @@ export async function updateLead(client: any, leadId: string, patch: Partial<Lea
       .from("leads")
       .update(body)
       .eq("id", leadId)
-      .select("id, org_id, name, company, phone, email, source, budget, stage, notes, owner_id, won_amount, lost_reason, created_at, updated_at")
+      .select("id, org_id, name, company, phone, email, source, budget, stage, notes, owner_id, owner:owner_id(name), won_amount, lost_reason, created_at, updated_at")
       .single();
     if (error) return dbe(error);
     return ok(mapLead(data));
@@ -237,6 +250,12 @@ export async function setLeadStage(client: any, leadId: string, stage: LeadStage
   return updateLead(client, leadId, { stage });
 }
 
+/** Reassign a lead's owner (null clears it). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function setLeadOwner(client: any, leadId: string, ownerId: string | null): Promise<Result<Lead>> {
+  return updateLead(client, leadId, { ownerId });
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deleteLead(client: any, leadId: string): Promise<Result<null>> {
   try {
@@ -244,6 +263,12 @@ export async function deleteLead(client: any, leadId: string): Promise<Result<nu
     if (error) return dbe(error);
     return ok(null);
   } catch (e) { return er(e); }
+}
+
+/** Extract a profile name from a Supabase nested join (`owner:owner_id(name)`). */
+function ownerNameOf(owner: unknown): string | null {
+  const name = (owner as { name?: unknown } | null)?.name;
+  return name == null ? null : String(name);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -258,6 +283,7 @@ function mapLead(r: any): Lead {
     stage: asStage(r.stage),
     notes: r.notes == null ? null : String(r.notes),
     ownerId: r.owner_id == null ? null : String(r.owner_id),
+    ownerName: ownerNameOf(r.owner),
     wonAmount: r.won_amount == null ? null : Number(r.won_amount),
     lostReason: r.lost_reason == null ? null : String(r.lost_reason),
     createdAt: String(r.created_at ?? ""),
@@ -377,6 +403,21 @@ export async function setQuoteStatus(client: any, quotId: string, status: QuoteS
   } catch (e) { return er(e); }
 }
 
+/** Fetch a single quotation by id (for conversion/move flows). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getQuotation(client: any, quotId: string): Promise<Result<LeadQuotation | null>> {
+  try {
+    const { data, error } = await client
+      .from("lead_quotations")
+      .select("id, lead_id, title, amount, status, valid_until, sent_at, created_by, created_at")
+      .eq("id", quotId)
+      .maybeSingle();
+    if (error) return dbe(error);
+    if (!data) return ok(null);
+    return ok(quotationRow(data));
+  } catch (e) { return er(e); }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deleteQuotation(client: any, quotId: string): Promise<Result<null>> {
   try {
@@ -397,7 +438,7 @@ export async function listLeadAgreements(client: any, leadId: string): Promise<R
   try {
     const { data, error } = await client
       .from("lead_agreements")
-      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, created_by, created_at")
+      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, quotation_id, created_by, created_at")
       .eq("lead_id", leadId)
       .order("created_at", { ascending: false });
     if (error) return dbe(error);
@@ -405,6 +446,7 @@ export async function listLeadAgreements(client: any, leadId: string): Promise<R
       id: String(r.id), leadId: String(r.lead_id ?? ""), title: r.title == null ? null : String(r.title),
       amount: Number(r.amount ?? 0), status: asAgreement(r.status), signedAt: r.signed_at == null ? null : String(r.signed_at),
       signedBy: r.signed_by == null ? null : String(r.signed_by), notes: r.notes == null ? null : String(r.notes),
+      quotationId: r.quotation_id == null ? null : String(r.quotation_id),
       createdBy: r.created_by == null ? null : String(r.created_by), createdAt: String(r.created_at ?? ""),
     })));
   } catch (e) { return er(e); }
@@ -412,12 +454,12 @@ export async function listLeadAgreements(client: any, leadId: string): Promise<R
 
 /** Create an agreement record (typically after a quotation is accepted). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function addAgreement(client: any, leadId: string, a: { title?: string | null; amount: number; notes?: string | null }): Promise<Result<LeadAgreement>> {
+export async function addAgreement(client: any, leadId: string, a: { title?: string | null; amount: number; notes?: string | null; quotationId?: string | null }): Promise<Result<LeadAgreement>> {
   try {
     const { data, error } = await client
       .from("lead_agreements")
-      .insert({ lead_id: leadId, title: a.title ?? null, amount: a.amount, notes: a.notes ?? null, status: "pending" })
-      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, created_by, created_at")
+      .insert({ lead_id: leadId, title: a.title ?? null, amount: a.amount, notes: a.notes ?? null, status: "pending", quotation_id: a.quotationId ?? null })
+      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, quotation_id, created_by, created_at")
       .single();
     if (error) return dbe(error);
     return ok(agreementRow(data));
@@ -435,7 +477,7 @@ export async function setAgreementStatus(client: any, agrId: string, status: Agr
       .from("lead_agreements")
       .update(body)
       .eq("id", agrId)
-      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, created_by, created_at")
+      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, quotation_id, created_by, created_at")
       .single();
     if (error) return dbe(error);
     return ok(agreementRow(data));
@@ -453,7 +495,7 @@ export async function deleteAgreement(client: any, agrId: string): Promise<Resul
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function agreementRow(data: any): LeadAgreement {
-  return { id: String(data.id), leadId: String(data.lead_id ?? ""), title: data.title == null ? null : String(data.title), amount: Number(data.amount ?? 0), status: asAgreement(data.status), signedAt: data.signed_at == null ? null : String(data.signed_at), signedBy: data.signed_by == null ? null : String(data.signed_by), notes: data.notes == null ? null : String(data.notes), createdBy: data.created_by == null ? null : String(data.created_by), createdAt: String(data.created_at ?? "") };
+  return { id: String(data.id), leadId: String(data.lead_id ?? ""), title: data.title == null ? null : String(data.title), amount: Number(data.amount ?? 0), status: asAgreement(data.status), signedAt: data.signed_at == null ? null : String(data.signed_at), signedBy: data.signed_by == null ? null : String(data.signed_by), notes: data.notes == null ? null : String(data.notes), quotationId: data.quotation_id == null ? null : String(data.quotation_id), createdBy: data.created_by == null ? null : String(data.created_by), createdAt: String(data.created_at ?? "") };
 }
 
 // ── Sales → project handoff (v4 A2) ─────────────────────────────────────────
@@ -488,4 +530,37 @@ export function acceptedQuote(quotes: LeadQuotation[]): LeadQuotation | null {
     if (best === null || q.amount > best.amount) best = q;
   }
   return best;
+}
+
+/**
+ * Convert an accepted quotation into an agreement with one tap. Returns the
+ * existing agreement when this quotation was already converted (idempotent via
+ * the partial-unique `uq_lead_agreements_quotation` index). Rejects quotations
+ * that are not `accepted`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function acceptQuotationAsAgreement(client: any, quotationId: string): Promise<Result<LeadAgreement>> {
+  try {
+    const q = await getQuotation(client, quotationId);
+    if (!q.ok) return { ok: false, error: q.error };
+    const quote = q.data;
+    if (!quote) return { ok: false, error: "Quotation not found." };
+    if (quote.status !== "accepted") {
+      return { ok: false, error: "Only an accepted quotation can be converted into an agreement." };
+    }
+    const existing = await client
+      .from("lead_agreements")
+      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, quotation_id, created_by, created_at")
+      .eq("quotation_id", quotationId)
+      .maybeSingle();
+    if (existing.error) return dbe(existing.error);
+    if (existing.data) return ok(agreementRow(existing.data));
+    const ins = await client
+      .from("lead_agreements")
+      .insert({ lead_id: quote.leadId, title: quote.title ?? null, amount: quote.amount, notes: null, status: "pending", quotation_id: quotationId })
+      .select("id, lead_id, title, amount, status, signed_at, signed_by, notes, quotation_id, created_by, created_at")
+      .single();
+    if (ins.error) return dbe(ins.error);
+    return ok(agreementRow(ins.data));
+  } catch (e) { return er(e); }
 }
