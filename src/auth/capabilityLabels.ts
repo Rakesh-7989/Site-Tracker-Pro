@@ -62,6 +62,7 @@ export const FEATURE_LABEL: Record<string, string> = {
   "procurement:view": "View & compare vendor quotes",
   "crm:view": "View the sales pipeline (leads, meetings, quotations)",
   "crm:manage": "Create / update leads, meetings, quotations & agreements",
+  "audit:manage": "Manage consultancy inspections, checklists & audit reports",
 };
 
 /** Founder-readable label for a capability (falls back to a humanized id). */

@@ -533,3 +533,32 @@ describe("v4 A — no dead capabilities", () => {
     }
   });
 });
+
+describe("v4 C - consultancy audit capability (audit:manage, identity tier)", () => {
+  it("manager + orgadmin roles hold audit:manage", () => {
+    for (const role of ["consultant_head", "design_head", "pm", "project_admin", "orgadmin"] as const) {
+      const caps = identityCapabilities(role);
+      expect(caps, `role=${role}`).toContain("audit:manage" as never);
+    }
+  });
+  it("contributors / clients / vendors hold no audit:manage", () => {
+    for (const role of [...C1_CONTRIBUTOR_ROLES, "client", "vendor", "sub_contractor", "prospector"] as const) {
+      const caps = identityCapabilities(role);
+      expect(caps, `role=${role}`).not.toContain("audit:manage" as never);
+    }
+  });
+  it("superadmin holds audit:manage (ALL by construction)", () => {
+    expect(identityCapabilities("superadmin")).toContain("audit:manage" as never);
+  });
+});
+
+describe("v4 C - no dead capability: audit:manage", () => {
+  it("audit:manage is granted to at least one identity role", () => {
+    const granted = IDENTITY_ROLES.some(r => identityCapabilities(r).includes("audit:manage" as never));
+    expect(granted).toBe(true);
+  });
+  it("audit:manage is denied to at least one identity role", () => {
+    const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes("audit:manage" as never));
+    expect(denied).toBe(true);
+  });
+});

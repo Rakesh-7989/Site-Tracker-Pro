@@ -78,6 +78,11 @@ export const TAB_CATALOG: readonly TabDef[] = [
   // retainer_billing / hourly_billing) inside BillingTab.
   { id: "billing",      label: "Billing",       icon: "wallet",     requiresAny: ["rate:manage", "retainer:manage", "billing:generate"], projectTypes: CONSULTANCY_TYPES, moduleId: "consultancy" },
 
+  // Consultancy inspection/audit (v4 Phase C) — inspection checklists + results
+  // + audit reports (site visit / recommendation) for consultant/design.
+  { id: "inspection",   label: "Inspection",    icon: "clipboard",  requires: "audit:manage", projectTypes: CONSULTANCY_TYPES, planFeature: "audit_reports", moduleId: "consultancy" },
+  { id: "reports",      label: "Reports",       icon: "doc",        requires: "audit:manage", projectTypes: CONSULTANCY_TYPES, planFeature: "audit_reports", moduleId: "consultancy" },
+
   // Architecture (v4 D3) — FF&E schedule register for design/interior fit-out.
   { id: "ffe",          label: "FF&E",          icon: "hardhat",    requires: "ffe:manage", projectTypes: ["design", "interior"], planFeature: "ffe", moduleId: "design" },
 

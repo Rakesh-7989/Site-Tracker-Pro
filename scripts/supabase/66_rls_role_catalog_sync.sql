@@ -154,6 +154,14 @@ GRANT SELECT ON public.role_catalog TO authenticated, anon;
 --   leads + meetings/quotes/agreements write  → crm:manage
 --   sales→project handoff (createProject)     → crm:manage + project:create
 --
+-- ── Capability ↔ RLS gate map (v4 Phase C consultancy audit, comment-only) ──
+-- 163 (consultancy_audits) is project-scoped: read = any project member
+-- (`user_project_ids()`); insert/update/delete = managers + orgadmin
+-- (pm/project_admin/design_head/consultant_head/superadmin). Policies are
+-- ROLE-BASED (no capability references); identifiers below are the
+-- capabilities in src/auth/capabilities.ts that gate the same actions in UI:
+--   inspection_checklists + results + consultancy_reports write → audit:manage
+--
 -- RLS gap note: invoices / retainers / rate_cards read gates are project
 -- membership-based; org-wide rollups (utilization/revenue) therefore only
 -- surface projects the caller is already a member of — by design.

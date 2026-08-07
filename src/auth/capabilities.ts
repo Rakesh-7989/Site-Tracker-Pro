@@ -128,6 +128,9 @@ export const CAPABILITIES = [
   "crm:view",             // view the org lead pipeline (leads, meetings, quotations)
   "crm:manage",           // create/update leads + meetings + quotations + agreements
 
+  // ── Consultancy audit (v4 Phase C: inspection checklists + reports) ─────
+  "audit:manage",         // create/edit checklists, results + consultancy reports
+
   // ── Communications ───────────────────────────────────────────────────────
   "message:send",
   "notification:configure",

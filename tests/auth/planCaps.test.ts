@@ -65,6 +65,12 @@ describe("FEATURE_MIN_PLAN + labels", () => {
     expect(hasPlanCap({ rate_cards: true }, "hourly_billing")).toBe(false);
     expect(hasPlanCap({ hourly_billing: true }, "hourly_billing")).toBe(true);
   });
+  it("v4 Phase C audit_reports resolves at Business with deny-by-default", () => {
+    expect(FEATURE_MIN_PLAN.audit_reports).toBe("business");
+    expect(PLAN_FEATURE_LABEL.audit_reports).toBeTruthy();
+    expect(hasPlanCap({ crm: true }, "audit_reports")).toBe(false);
+    expect(hasPlanCap({ audit_reports: true }, "audit_reports")).toBe(true);
+  });
   it("plan rank orders correctly", () => {
     expect(PLAN_RANK.basic).toBeLessThan(PLAN_RANK.pro);
     expect(PLAN_RANK.pro).toBeLessThan(PLAN_RANK.business);

@@ -489,3 +489,52 @@ describe("v4 Phase B — interior tabs (moodboards + rooms)", () => {
     expect(tabModuleId("rooms")).toBe("design");
   });
 });
+
+describe("v4 Phase C — consultancy inspection + reports tabs", () => {
+  const proPlan = () => true;
+  const basicPlan = () => false;
+  const C_TABS = ["inspection", "reports"] as const;
+
+  it("manager roles holding audit:manage see both tabs on consultant + design projects (Business plan)", () => {
+    for (const role of ["consultant_head", "pm", "project_admin", "orgadmin"] as const) {
+      const caps = capsFor(baseSession(role));
+      expect(caps.has("audit:manage"), `role=${role}`).toBe(true);
+      for (const type of ["consultant", "design"] as const) {
+        const ids = visibleTabs(caps, type, proPlan).map(t => t.id);
+        for (const tab of C_TABS) {
+          expect(ids, `role=${role} type=${type} tab=${tab}`).toContain(tab);
+        }
+      }
+    }
+  });
+
+  it("audit/reports tabs never appear on construction projects (project-type gate)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    const ids = visibleTabs(caps, "construction", proPlan).map(t => t.id);
+    for (const tab of C_TABS) expect(ids).not.toContain(tab);
+  });
+
+  it("contributors (consultant) do not hold audit:manage so don't see the tabs", () => {
+    const caps = capsFor(baseSession("consultant"));
+    expect(caps.has("audit:manage")).toBe(false);
+    const ids = visibleTabs(caps, "consultant", proPlan).map(t => t.id);
+    for (const tab of C_TABS) expect(ids).not.toContain(tab);
+  });
+
+  it("client does not see the audit tabs", () => {
+    const caps = capsFor(baseSession("client"));
+    const ids = visibleTabs(caps, "consultant", proPlan).map(t => t.id);
+    for (const tab of C_TABS) expect(ids).not.toContain(tab);
+  });
+
+  it("audit tabs hide on a Basic plan (plan-feature gate audit_reports)", () => {
+    const caps = capsFor(baseSession("consultant_head"));
+    const ids = visibleTabs(caps, "consultant", basicPlan).map(t => t.id);
+    for (const tab of C_TABS) expect(ids).not.toContain(tab);
+  });
+
+  it("audit/reports tabs are owned by the consultancy module", () => {
+    expect(tabModuleId("inspection")).toBe("consultancy");
+    expect(tabModuleId("reports")).toBe("consultancy");
+  });
+});
