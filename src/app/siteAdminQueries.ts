@@ -41,21 +41,21 @@ export async function createBoq(client: any, input: { projectId: string; descrip
 export const deleteBoq = (client: any, id: string) => del(client, "boq_items", id);
 
 // ── Labour register ─────────────────────────────────────────────────────────
-export interface LabourEntry { id: string; name: string; trade: string | null; wage: number | null; joined: string | null; aadhaarMasked: string | null; }
+export interface LabourEntry { id: string; name: string; trade: string | null; wage: number | null; joined: string | null; aadhaarMasked: string | null; epf: string | null; esi: string | null; }
 const maskAadhaar = (v: unknown): string | null => { const s = v == null ? "" : String(v).replace(/\s/g, ""); return s ? `•••• •••• ${s.slice(-4)}` : null; };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listLabour(client: any, projectId: string): Promise<Result<LabourEntry[]>> {
   try {
-    const { data, error } = await client.from("labour_register").select("id, name, trade, wage, joined, aadhaar").eq("project_id", projectId).order("joined", { ascending: false });
+    const { data, error } = await client.from("labour_register").select("id, name, trade, wage, joined, aadhaar, epf, esi").eq("project_id", projectId).order("joined", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), name: String(r.name ?? ""), trade: r.trade == null ? null : String(r.trade), wage: num(r.wage), joined: r.joined == null ? null : String(r.joined), aadhaarMasked: maskAadhaar(r.aadhaar) })));
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), name: String(r.name ?? ""), trade: r.trade == null ? null : String(r.trade), wage: num(r.wage), joined: r.joined == null ? null : String(r.joined), aadhaarMasked: maskAadhaar(r.aadhaar), epf: r.epf == null ? null : String(r.epf), esi: r.esi == null ? null : String(r.esi) })));
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createLabour(client: any, input: { projectId: string; name: string; trade?: string; wage?: number; aadhaar?: string; joined?: string }): Promise<Result<{ id: string }>> {
+export async function createLabour(client: any, input: { projectId: string; name: string; trade?: string; wage?: number; aadhaar?: string; epf?: string; esi?: string; joined?: string }): Promise<Result<{ id: string }>> {
   try {
-    const { data, error } = await client.from("labour_register").insert({ project_id: input.projectId, name: input.name, trade: input.trade || null, wage: input.wage ?? null, aadhaar: input.aadhaar || null, joined: input.joined || null }).select("id").single();
+    const { data, error } = await client.from("labour_register").insert({ project_id: input.projectId, name: input.name, trade: input.trade || null, wage: input.wage ?? null, aadhaar: input.aadhaar || null, epf: input.epf || null, esi: input.esi || null, joined: input.joined || null }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
 }
