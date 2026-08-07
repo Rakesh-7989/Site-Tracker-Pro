@@ -51,6 +51,7 @@ const app = [
   read("src/app/crmQueries.ts"),
   read("src/features/project/RiskSignalsCard.tsx"),
   read("src/app/riskQueries.ts"),
+  read("src/app/designWorkflow.ts"),
   read("src/features/pwa/PwaChrome.tsx"),
   read("src/lib/pwa.ts"),
 ].join("\n");
@@ -76,6 +77,7 @@ const vite = read("vite.config.js");
   "computeRiskScore",
   "computeRiskSignals",
   "RiskSignalsCard",
+  "computeDesignStage",
   "fetchLLMInsight",
   "buildUpiDeepLink",
   "queueOpAdd",
