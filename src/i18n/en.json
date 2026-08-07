@@ -119,11 +119,6 @@
       "en": "English",
       "auto": "Auto-detect"
     },
-    "confidence": {
-      "high": "High accuracy",
-      "medium": "Medium — review before sending",
-      "low": "Low — please re-record or edit text"
-    },
     "providerLabel": "Voice provider",
     "fallbackNotice": "Bhashini unavailable — used AWS for this clip."
   },

@@ -119,11 +119,6 @@
       "en": "English",
       "auto": "Automatic ga gurthinchadam"
     },
-    "confidence": {
-      "high": "Manchi accuracy",
-      "medium": "Medium — pampedi mundhu chudandi",
-      "low": "Takkuva accuracy — marala record cheyandi leda text edit cheyandi"
-    },
     "providerLabel": "Voice service",
     "fallbackNotice": "Bhashini available kavadam ledhu — AWS use chesaru ee clip ki."
   },

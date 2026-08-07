@@ -119,11 +119,6 @@
       "en": "English",
       "auto": "Apne aap pehchaan lega"
     },
-    "confidence": {
-      "high": "Achhi accuracy",
-      "medium": "Medium — bhejne se pehle dekh lo",
-      "low": "Kam accuracy — phir se record karo ya text edit karo"
-    },
     "providerLabel": "Voice service",
     "fallbackNotice": "Bhashini available nahi tha — is clip ke liye AWS use kiya."
   },
