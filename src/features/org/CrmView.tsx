@@ -30,6 +30,7 @@ import {
   type Lead, type LeadSource, type LeadStage, type LeadMeeting, type LeadQuotation, type LeadAgreement,
 } from "@/app/crmQueries";
 import { useNavigate } from "react-router-dom";
+import { useT } from "@/i18n/I18nProvider";
 
 const STAGE_TONE: Record<LeadStage, "neutral" | "info" | "warning" | "success" | "danger"> = {
   new: "neutral", contacted: "info", meeting_scheduled: "info",
@@ -37,22 +38,24 @@ const STAGE_TONE: Record<LeadStage, "neutral" | "info" | "warning" | "success" |
   won: "success", lost: "danger",
 };
 
-const STAGE_LABEL: Record<LeadStage, string> = {
-  new: "New", contacted: "Contacted", meeting_scheduled: "Meeting", quotation_sent: "Quoted",
-  negotiating: "Negotiating", agreement_signed: "Agreement", won: "Won", lost: "Lost",
-};
+function stageLabel(t: (k: string, v?: Record<string, string | number>) => string, s: LeadStage): string {
+  return t(`crm.stage.${s}`);
+}
 
-const FILTERS = [{ value: "all", label: "All stages" }, ...LEAD_STAGES.map(s => ({ value: s, label: STAGE_LABEL[s] }))];
+function FILTERS(t: (k: string, v?: Record<string, string | number>) => string) {
+  return [{ value: "all", label: t("crm.filterAllStages") }, ...LEAD_STAGES.map(s => ({ value: s, label: stageLabel(t, s) }))];
+}
 
 export function CrmView(): JSX.Element {
   return <PlanGate feature="crm"><CrmInner /></PlanGate>;
 }
 
 function CrmInner(): JSX.Element {
+  const t = useT();
   const { activeOrg } = useOrgSwitcher();
   const canView = useCan("crm:view", { orgId: activeOrg?.orgId });
-  if (!canView) return <AccessDenied message="You don't have permission to view the sales pipeline." />;
-  if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
+  if (!canView) return <AccessDenied message={t("crm.denied")} />;
+  if (!activeOrg) return <Alert variant="warning">{t("crm.selectOrg")}</Alert>;
   return <Pipeline orgId={activeOrg.orgId} />;
 }
 
@@ -67,6 +70,7 @@ interface LeadInput {
 }
 
 function Pipeline({ orgId }: { orgId: string }): JSX.Element {
+  const t = useT();
   const navigate = useNavigate();
   const canManage = useCan("crm:manage", { orgId });
   const { activeOrg } = useOrgSwitcher();
@@ -80,9 +84,9 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const client = await getClient(); if (!client) { setError(t("crm.backendError")); setLoading(false); return; }
     const res = await listOrgLeads(client, orgId); if (res.ok) setLeads(res.data); else setError(res.error); setLoading(false);
-  }, [orgId]);
+  }, [orgId, t]);
   useEffect(() => { void reload(); }, [reload]);
 
   const { run } = useAction(reload, setError);
@@ -135,7 +139,7 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
 
   const columns = [
     {
-      key: "lead", header: "Lead", className: "flex-1 min-w-0",
+      key: "lead", header: t("crm.colLead"), className: "flex-1 min-w-0",
       render: (l: Lead) => (
         <div>
           <div className="text-sm font-semibold text-fg-primary truncate">{l.name}</div>
@@ -146,45 +150,45 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
       ),
     },
     {
-      key: "contact", header: "Contact", hideOnMobile: true, className: "flex-shrink-0",
+      key: "contact", header: t("crm.colContact"), hideOnMobile: true, className: "flex-shrink-0",
       render: (l: Lead) => <span className="text-xs text-fg-secondary truncate">{l.phone ?? l.email ?? "—"}</span>,
     },
     {
-      key: "budget", header: "Budget", hideOnMobile: true, className: "flex-shrink-0",
+      key: "budget", header: t("crm.colBudget"), hideOnMobile: true, className: "flex-shrink-0",
       render: (l: Lead) => <span className="text-xs text-fg-secondary">{l.budget == null ? "—" : fmtRupees(l.budget)}</span>,
     },
     {
-      key: "stage", header: "Stage", className: "flex-shrink-0",
-      render: (l: Lead) => <Badge tone={STAGE_TONE[l.stage]}>{STAGE_LABEL[l.stage]}</Badge>,
+      key: "stage", header: t("crm.colStage"), className: "flex-shrink-0",
+      render: (l: Lead) => <Badge tone={STAGE_TONE[l.stage]}>{stageLabel(t, l.stage)}</Badge>,
     },
   ];
 
   return (
     <div className="p-4 md:p-10 max-w-6xl">
       <div className="mb-8 pb-3 border-b border-default">
-        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-warning mb-2">— Sales</div>
+        <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-warning mb-2">— {t("crm.eyebrow")}</div>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-4xl font-light text-fg-primary tracking-editorial leading-none">Pipeline</h1>
-            <p className="text-fg-secondary text-sm mt-2">Leads, quotations and agreements — from prospecting to signed client.</p>
+            <h1 className="font-display text-4xl font-light text-fg-primary tracking-editorial leading-none">{t("crm.title")}</h1>
+            <p className="text-fg-secondary text-sm mt-2">{t("crm.subtitle")}</p>
           </div>
-          {canManage && <Button onClick={() => setCreating(true)}>New lead</Button>}
+          {canManage && <Button onClick={() => setCreating(true)}>{t("crm.newLead")}</Button>}
         </div>
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
-        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">Leads</div><div className="font-display text-2xl font-bold text-fg-primary mt-1">{rollup.total}</div></Card>
-        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">Open</div><div className="font-display text-2xl font-bold text-fg-primary mt-1">{rollup.open}</div></Card>
-        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">Pipeline</div><div className="font-display text-2xl font-bold text-warning mt-1">{fmtRupees(rollup.pipelineValue)}</div></Card>
-        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">Won</div><div className="font-display text-2xl font-bold text-success mt-1">{fmtRupees(rollup.wonValue)}</div></Card>
-        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">Win rate</div><div className="font-display text-2xl font-bold text-fg-primary mt-1">{rollup.conversionRate}%</div></Card>
+        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("crm.statLeads")}</div><div className="font-display text-2xl font-bold text-fg-primary mt-1">{rollup.total}</div></Card>
+        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("crm.statOpen")}</div><div className="font-display text-2xl font-bold text-fg-primary mt-1">{rollup.open}</div></Card>
+        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("crm.statPipeline")}</div><div className="font-display text-2xl font-bold text-warning mt-1">{fmtRupees(rollup.pipelineValue)}</div></Card>
+        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("crm.statWon")}</div><div className="font-display text-2xl font-bold text-success mt-1">{fmtRupees(rollup.wonValue)}</div></Card>
+        <Card className="p-4"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("crm.statWinRate")}</div><div className="font-display text-2xl font-bold text-fg-primary mt-1">{rollup.conversionRate}%</div></Card>
         <Card className="p-4 flex flex-col justify-center">
-          <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">Stage split</div>
+          <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("crm.statStageSplit")}</div>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {LEAD_STAGES.map(s => (
-              <span key={s} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-elevated text-fg-secondary" title={STAGE_LABEL[s]}>{s.replace("_", " ")} · {rollup.byStage[s]}</span>
+              <span key={s} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-elevated text-fg-secondary" title={stageLabel(t, s)}>{s.replace("_", " ")} · {rollup.byStage[s]}</span>
             ))}
           </div>
         </Card>
@@ -192,8 +196,8 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
 
       <div className="flex justify-end gap-2 mb-6">
         <Select className="w-48" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}
-          options={[{ value: "all", label: "All owners" }, ...owners.map(o => ({ value: o, label: `Owner ${o.slice(0, 8)}` }))]} />
-        <Select className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
+          options={[{ value: "all", label: t("crm.ownersFilter") }, ...owners.map(o => ({ value: o, label: t("crm.ownerLabel", { id: o.slice(0, 8) }) }))]} />
+        <Select className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS(t)} />
       </div>
 
       {loading ? (
@@ -205,7 +209,7 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
             rows={shown}
             rowKey={l => l.id}
             variant="card"
-            emptyMessage={filter === "all" ? "No leads in the pipeline yet — add your first one." : `No leads at the "${STAGE_LABEL[filter as LeadStage]}" stage.`}
+            emptyMessage={filter === "all" ? t("crm.emptyAll") : t("crm.emptyStage", { stage: stageLabel(t, filter as LeadStage) })}
             onRowClick={l => setSelected(l)}
           />
         </div>
@@ -229,6 +233,7 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
 }
 
 function NewLeadModal({ onClose, onCreate }: { onClose: () => void; onCreate: (i: LeadInput) => void }): JSX.Element {
+  const t = useT();
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
@@ -245,25 +250,25 @@ function NewLeadModal({ onClose, onCreate }: { onClose: () => void; onCreate: (i
     });
   };
   return (
-    <Modal open onClose={onClose} title="New lead">
+    <Modal open onClose={onClose} title={t("crm.newLeadTitle")}>
       <div className="space-y-3">
-        <FormField label="Name *" htmlFor="lead-name"><Input value={name} onChange={e => setName(e.target.value)} placeholder="Client / contact" /></FormField>
-        <FormField label="Company" htmlFor="lead-company"><Input value={company} onChange={e => setCompany(e.target.value)} /></FormField>
+        <FormField label={t("crm.fieldName")} htmlFor="lead-name"><Input value={name} onChange={e => setName(e.target.value)} placeholder={t("crm.namePlaceholder")} /></FormField>
+        <FormField label={t("crm.fieldCompany")} htmlFor="lead-company"><Input value={company} onChange={e => setCompany(e.target.value)} /></FormField>
         <div className="grid grid-cols-2 gap-3">
-          <FormField label="Phone" htmlFor="lead-phone"><Input value={phone} onChange={e => setPhone(e.target.value)} /></FormField>
-          <FormField label="Email" htmlFor="lead-email"><Input value={email} onChange={e => setEmail(e.target.value)} /></FormField>
+          <FormField label={t("crm.fieldPhone")} htmlFor="lead-phone"><Input value={phone} onChange={e => setPhone(e.target.value)} /></FormField>
+          <FormField label={t("crm.fieldEmail")} htmlFor="lead-email"><Input value={email} onChange={e => setEmail(e.target.value)} /></FormField>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <FormField label="Source" htmlFor="lead-source">
+          <FormField label={t("crm.fieldSource")} htmlFor="lead-source">
             <Select value={source} onChange={e => setSource(e.target.value as LeadSource)} options={LEAD_SOURCES.map(s => ({ value: s, label: s.replace("_", " ") }))} />
           </FormField>
-          <FormField label="Budget (₹)" htmlFor="lead-budget"><Input type="number" value={budget} onChange={e => setBudget(e.target.value)} /></FormField>
+          <FormField label={t("crm.fieldBudget")} htmlFor="lead-budget"><Input type="number" value={budget} onChange={e => setBudget(e.target.value)} /></FormField>
         </div>
-        <FormField label="Notes" htmlFor="lead-notes"><Textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} /></FormField>
+        <FormField label={t("crm.fieldNotes")} htmlFor="lead-notes"><Textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} /></FormField>
       </div>
       <div className="mt-5 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button onClick={submit} disabled={!name.trim()}>Create</Button>
+        <Button variant="ghost" onClick={onClose}>{t("crm.cancel")}</Button>
+        <Button onClick={submit} disabled={!name.trim()}>{t("crm.create")}</Button>
       </div>
     </Modal>
   );
@@ -274,6 +279,7 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onH
   onAdvance: (id: string, s: LeadStage) => void; onMove: (id: string, s: LeadStage) => void;
   onDelete: (id: string) => void; onHandoff: (lead: Lead) => void;
 }): JSX.Element {
+  const t = useT();
   const [tab, setTab] = useState<"meetings" | "quotations" | "agreements">("meetings");
   const next = LEAD_STAGE_NEXT[lead.stage];
   const [name, setName] = useState(lead.name);
@@ -283,29 +289,29 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onH
   const rename = async () => {
     const v = name.trim(); if (!v || v === lead.name) return;
     setSaving(true); setMsg(null);
-    const client = await getClient(); if (!client) { setMsg("Backend not configured."); setSaving(false); return; }
+    const client = await getClient(); if (!client) { setMsg(t("crm.backendError")); setSaving(false); return; }
     const r = await updateLead(client, lead.id, { name: v });
-    setMsg(r.ok ? "Saved." : r.error); setSaving(false);
+    setMsg(r.ok ? t("crm.save") : r.error); setSaving(false);
   };
 
   return (
     <Modal open onClose={onClose} size="lg" title={lead.name} subtitle={lead.company ?? undefined}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Badge tone={STAGE_TONE[lead.stage]}>{STAGE_LABEL[lead.stage]}</Badge>
+        <Badge tone={STAGE_TONE[lead.stage]}>{stageLabel(t, lead.stage)}</Badge>
         {lead.budget ? <span className="text-xs text-fg-secondary">Budget {fmtRupees(lead.budget)}</span> : null}
         {lead.phone ? <span className="text-xs text-fg-secondary">{lead.phone}</span> : null}
         {lead.email ? <span className="text-xs text-fg-secondary">{lead.email}</span> : null}
         <div className="ml-auto flex items-center gap-2">
           {canManage && lead.stage === "won" && (
-            <Button size="sm" onClick={() => onHandoff(lead)}>Create project</Button>
+            <Button size="sm" onClick={() => onHandoff(lead)}>{t("crm.createProject")}</Button>
           )}
           {canManage && lead.stage !== "won" && lead.stage !== "lost" && next && (
-            <Button size="sm" onClick={() => onAdvance(lead.id, lead.stage)}>{`→ ${STAGE_LABEL[next]}`}</Button>
+            <Button size="sm" onClick={() => onAdvance(lead.id, lead.stage)}>{`→ ${stageLabel(t, next)}`}</Button>
           )}
           {canManage && (
             <>
-              <Select className="w-36" value={lead.stage} onChange={e => onMove(lead.id, e.target.value as LeadStage)} options={LEAD_STAGES.map(s => ({ value: s, label: STAGE_LABEL[s] }))} />
-              <Button size="sm" variant="danger" onClick={() => { if (confirm("Delete this lead?")) onDelete(lead.id); }}>Delete</Button>
+              <Select className="w-36" value={lead.stage} onChange={e => onMove(lead.id, e.target.value as LeadStage)} options={LEAD_STAGES.map(s => ({ value: s, label: stageLabel(t, s) }))} />
+              <Button size="sm" variant="danger" onClick={() => { if (confirm(t("crm.deleteLead"))) onDelete(lead.id); }}>{t("crm.delete")}</Button>
             </>
           )}
         </div>
@@ -315,16 +321,16 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onH
 
       {canManage && (
         <div className="mb-3 flex gap-2">
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Lead name" />
-          <Button size="sm" variant="ghost" onClick={() => void rename()} disabled={saving || !name.trim() || name.trim() === lead.name}>Save</Button>
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder={t("crm.renamePlaceholder")} />
+          <Button size="sm" variant="ghost" onClick={() => void rename()} disabled={saving || !name.trim() || name.trim() === lead.name}>{t("crm.save")}</Button>
         </div>
       )}
 
       <div className="flex gap-1 border-b border-default">
-        {(["meetings", "quotations", "agreements"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-2 text-xs font-semibold border-b-2 capitalize ${tab === t ? "border-accent text-fg-primary" : "border-transparent text-fg-tertiary"}`}>
-            {t}
+        {(["meetings", "quotations", "agreements"] as const).map(tt => (
+          <button key={tt} onClick={() => setTab(tt)}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 capitalize ${tab === tt ? "border-accent text-fg-primary" : "border-transparent text-fg-tertiary"}`}>
+            {t(`crm.tab${tt.charAt(0).toUpperCase()}${tt.slice(1)}`)}
           </button>
         ))}
       </div>
@@ -340,6 +346,7 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onH
 
 // ── Meetings ──────────────────────────────────────────────────────────────
 function MeetingsPanel({ leadId, canManage }: { leadId: string; canManage: boolean }): JSX.Element {
+  const t = useT();
   const [rows, setRows] = useState<LeadMeeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -348,9 +355,9 @@ function MeetingsPanel({ leadId, canManage }: { leadId: string; canManage: boole
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const client = await getClient(); if (!client) { setError(t("crm.backendError")); setLoading(false); return; }
     const res = await listLeadMeetings(client, leadId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [leadId]);
+  }, [leadId, t]);
   useEffect(() => { void reload(); }, [reload]);
 
   const add = async () => {
@@ -375,26 +382,26 @@ function MeetingsPanel({ leadId, canManage }: { leadId: string; canManage: boole
     <div className="space-y-3">
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
-          <FormField label="When" htmlFor="meet-when">
+          <FormField label={t("crm.fieldWhen")} htmlFor="meet-when">
             <Input type="datetime-local" value={sched} onChange={e => setSched(e.target.value)} className="w-52" />
           </FormField>
-          <FormField label="Agenda" htmlFor="meet-agenda">
-            <Input value={agenda} onChange={e => setAgenda(e.target.value)} placeholder="Purpose" className="w-56" />
+          <FormField label={t("crm.fieldAgenda")} htmlFor="meet-agenda">
+            <Input value={agenda} onChange={e => setAgenda(e.target.value)} placeholder={t("crm.agendaPlaceholder")} className="w-56" />
           </FormField>
-          <Button size="sm" onClick={() => void add()} disabled={!sched}>Add meeting</Button>
+          <Button size="sm" onClick={() => void add()} disabled={!sched}>{t("crm.addMeeting")}</Button>
         </div>
       )}
       {rows.length === 0 ? (
-        <div className="text-xs text-fg-tertiary py-4">No meetings yet.</div>
+        <div className="text-xs text-fg-tertiary py-4">{t("crm.noMeetings")}</div>
       ) : (
         rows.map(m => (
           <div key={m.id} className="flex items-center justify-between gap-2 rounded-lg bg-elevated px-3 py-2">
             <div className="min-w-0">
               <div className="text-sm text-fg-primary truncate">{new Date(m.scheduledAt).toLocaleString()} {m.agenda ? `· ${m.agenda}` : ""}</div>
-              <div className="text-[11px] text-fg-tertiary capitalize">{m.outcome}{m.notes ? ` — ${m.notes}` : ""}</div>
+              <div className="text-[11px] text-fg-tertiary capitalize">{t(`crm.meetingOutcome.${m.outcome}`)}{m.notes ? ` — ${m.notes}` : ""}</div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <Select className="w-28" value={m.outcome} onChange={e => void outcome(m.id, e.target.value as typeof m.outcome)} options={["pending", "done", "cancelled", "no_show"].map(o => ({ value: o, label: o.replace("_", " ") }))} />
+              <Select className="w-28" value={m.outcome} onChange={e => void outcome(m.id, e.target.value as typeof m.outcome)} options={(["pending", "done", "cancelled", "no_show"] as const).map(o => ({ value: o, label: t(`crm.meetingOutcome.${o}`) }))} />
               {canManage && <button onClick={() => void del(m.id)} className="text-xs text-error">✕</button>}
             </div>
           </div>
@@ -406,6 +413,7 @@ function MeetingsPanel({ leadId, canManage }: { leadId: string; canManage: boole
 
 // ── Quotations ────────────────────────────────────────────────────────────
 function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boolean }): JSX.Element {
+  const t = useT();
   const [rows, setRows] = useState<LeadQuotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -415,9 +423,9 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const client = await getClient(); if (!client) { setError(t("crm.backendError")); setLoading(false); return; }
     const res = await listLeadQuotations(client, leadId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [leadId]);
+  }, [leadId, t]);
   useEffect(() => { void reload(); }, [reload]);
 
   const add = async () => {
@@ -433,7 +441,7 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
   const accepted = canManage ? acceptedQuote(rows) : null;
   const convert = async (q: LeadQuotation) => {
     const client = await getClient(); if (!client) return;
-    const r = await addAgreement(client, leadId, { title: q.title ?? null, amount: q.amount, notes: "Auto-converted from accepted quotation." });
+    const r = await addAgreement(client, leadId, { title: q.title ?? null, amount: q.amount, notes: t("crm.autoConvertedNotes") });
     if (r.ok) { await setQuoteStatus(client, q.id, "superseded"); void reload(); }
   };
 
@@ -444,29 +452,29 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
     <div className="space-y-3">
       {canManage && accepted && (
         <div className="rounded-lg bg-elevated border border-success px-3 py-2 flex items-center gap-2 text-xs">
-          <span className="text-success">Accepted quote {fmtRupees(accepted.amount)}{accepted.title ? ` · ${accepted.title}` : ""} — capture as an agreement?</span>
-          <Button size="sm" className="ml-auto" onClick={() => void convert(accepted)}>Create agreement</Button>
+          <span className="text-success">{t("crm.acceptedQuoteBanner", { amount: fmtRupees(accepted.amount) })}{accepted.title ? ` · ${accepted.title}` : ""}</span>
+          <Button size="sm" className="ml-auto" onClick={() => void convert(accepted)}>{t("crm.createAgreement")}</Button>
         </div>
       )}
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
-          <FormField label="Title" htmlFor="q-title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Interior fit-out" className="w-44" /></FormField>
-          <FormField label="Amount (₹)" htmlFor="q-amount"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
-          <FormField label="Valid until" htmlFor="q-valid"><Input type="date" value={valid} onChange={e => setValid(e.target.value)} className="w-36" /></FormField>
-          <Button size="sm" onClick={() => void add()} disabled={amount === ""}>Add quotation</Button>
+          <FormField label={t("crm.fieldTitle")} htmlFor="q-title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t("crm.titlePlaceholder")} className="w-44" /></FormField>
+          <FormField label={t("crm.fieldAmount")} htmlFor="q-amount"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
+          <FormField label={t("crm.fieldValidUntil")} htmlFor="q-valid"><Input type="date" value={valid} onChange={e => setValid(e.target.value)} className="w-36" /></FormField>
+          <Button size="sm" onClick={() => void add()} disabled={amount === ""}>{t("crm.addQuotation")}</Button>
         </div>
       )}
       {rows.length === 0 ? (
-        <div className="text-xs text-fg-tertiary py-4">No quotations yet.</div>
+        <div className="text-xs text-fg-tertiary py-4">{t("crm.noQuotations")}</div>
       ) : (
         rows.map(q => (
           <div key={q.id} className="flex items-center justify-between gap-2 rounded-lg bg-elevated px-3 py-2">
             <div className="min-w-0">
-              <div className="text-sm text-fg-primary truncate">{q.title ?? "Quotation"} · {fmtRupees(q.amount)}</div>
-              <div className="text-[11px] text-fg-tertiary capitalize">{q.status}{q.validUntil ? ` · valid to ${q.validUntil}` : ""}</div>
+              <div className="text-sm text-fg-primary truncate">{q.title ?? t("crm.quotationTitle")} · {fmtRupees(q.amount)}</div>
+              <div className="text-[11px] text-fg-tertiary capitalize">{t(`crm.quoteStatus.${q.status}`)}{q.validUntil ? ` · valid to ${q.validUntil}` : ""}</div>
             </div>
             {canManage && (
-              <Select className="w-32 flex-shrink-0" value={q.status} onChange={e => void setStatus(q.id, e.target.value as typeof q.status)} options={["draft", "sent", "accepted", "rejected", "superseded"].map(s => ({ value: s, label: s }))} />
+              <Select className="w-32 flex-shrink-0" value={q.status} onChange={e => void setStatus(q.id, e.target.value as typeof q.status)} options={(["draft", "sent", "accepted", "rejected", "superseded"] as const).map(s => ({ value: s, label: t(`crm.quoteStatus.${s}`) }))} />
             )}
           </div>
         ))
@@ -477,6 +485,7 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
 
 // ── Agreements ────────────────────────────────────────────────────────────
 function AgreementsPanel({ leadId, canManage }: { leadId: string; canManage: boolean }): JSX.Element {
+  const t = useT();
   const [rows, setRows] = useState<LeadAgreement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -486,9 +495,9 @@ function AgreementsPanel({ leadId, canManage }: { leadId: string; canManage: boo
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const client = await getClient(); if (!client) { setError(t("crm.backendError")); setLoading(false); return; }
     const res = await listLeadAgreements(client, leadId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [leadId]);
+  }, [leadId, t]);
   useEffect(() => { void reload(); }, [reload]);
 
   const add = async () => {
@@ -509,25 +518,25 @@ function AgreementsPanel({ leadId, canManage }: { leadId: string; canManage: boo
     <div className="space-y-3">
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
-          <FormField label="Title" htmlFor="ag-title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Client agreement" className="w-44" /></FormField>
-          <FormField label="Amount (₹)" htmlFor="ag-amount"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
-          <Button size="sm" onClick={() => void add()} disabled={amount === ""}>Add agreement</Button>
+          <FormField label={t("crm.fieldTitle")} htmlFor="ag-title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t("crm.agreementPlaceholder")} className="w-44" /></FormField>
+          <FormField label={t("crm.fieldAmount")} htmlFor="ag-amount"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
+          <Button size="sm" onClick={() => void add()} disabled={amount === ""}>{t("crm.addAgreement")}</Button>
         </div>
       )}
       {rows.length === 0 ? (
-        <div className="text-xs text-fg-tertiary py-4">No agreements yet.</div>
+        <div className="text-xs text-fg-tertiary py-4">{t("crm.noAgreements")}</div>
       ) : (
         rows.map(a => (
           <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg bg-elevated px-3 py-2">
             <div className="min-w-0">
-              <div className="text-sm text-fg-primary truncate">{a.title ?? "Agreement"} · {fmtRupees(a.amount)}</div>
-              <div className="text-[11px] text-fg-tertiary capitalize">{a.status}{a.status === "signed" && a.signedAt ? ` · signed ${new Date(a.signedAt).toLocaleDateString()}` : ""}{a.signedBy ? ` by ${a.signedBy}` : ""}</div>
+              <div className="text-sm text-fg-primary truncate">{a.title ?? t("crm.agreementTitle")} · {fmtRupees(a.amount)}</div>
+              <div className="text-[11px] text-fg-tertiary capitalize">{t(`crm.agreementStatus.${a.status}`)}{a.status === "signed" && a.signedAt ? ` · ${t("crm.signLabel", { date: new Date(a.signedAt).toLocaleDateString() })}` : ""}{a.signedBy ? t("crm.byLabel", { name: a.signedBy }) : ""}</div>
             </div>
             {canManage && a.status !== "signed" && (
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <Input value={signer} onChange={e => setSigner(e.target.value)} placeholder="Signer" className="w-28" />
-                <Button size="sm" onClick={() => void setStatus(a.id, "signed", signer.trim() || undefined)}>Sign</Button>
-                {a.status === "pending" && <Button size="sm" variant="ghost" onClick={() => void setStatus(a.id, "rejected")}>Reject</Button>}
+                <Input value={signer} onChange={e => setSigner(e.target.value)} placeholder={t("crm.signerPlaceholder")} className="w-28" />
+                <Button size="sm" onClick={() => void setStatus(a.id, "signed", signer.trim() || undefined)}>{t("crm.sign")}</Button>
+                {a.status === "pending" && <Button size="sm" variant="ghost" onClick={() => void setStatus(a.id, "rejected")}>{t("crm.reject")}</Button>}
               </div>
             )}
           </div>

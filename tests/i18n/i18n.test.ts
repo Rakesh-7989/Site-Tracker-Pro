@@ -50,7 +50,7 @@ describe("locale meta + storage", () => {
 describe("bundle parity (nav/navGroup/shell must be key-identical across locales)", () => {
   const keysOf = (obj: Record<string, unknown>, ns: string): string[] =>
     Object.keys((obj[ns] ?? {}) as Record<string, unknown>).sort();
-  for (const ns of ["nav", "navGroup", "shell", "auth", "signup", "dash", "profile", "billing", "projTab", "projType", "overviewTab", "tasksTab"]) {
+  for (const ns of ["nav", "navGroup", "shell", "auth", "signup", "dash", "profile", "billing", "projTab", "projType", "overviewTab", "tasksTab", "crm"]) {
     it(`'${ns}' has the same keys in en/te/hi`, () => {
       const enK = keysOf(en as Record<string, unknown>, ns);
       expect(keysOf(te as Record<string, unknown>, ns)).toEqual(enK);
@@ -58,6 +58,19 @@ describe("bundle parity (nav/navGroup/shell must be key-identical across locales
       expect(enK.length).toBeGreaterThan(0);
     });
   }
+  it("'crm.*' nested keys are identical across locales", () => {
+    const deepKeys = (obj: Record<string, unknown>, prefix = ""): string[] =>
+      Object.entries(obj).flatMap(([k, v]) =>
+        v !== null && typeof v === "object" && !Array.isArray(v)
+          ? deepKeys(v as Record<string, unknown>, `${prefix}${k}.`)
+          : [`${prefix}${k}`],
+      );
+    const enCrm = (en as Record<string, unknown>).crm as Record<string, unknown>;
+    const enDeep = deepKeys(enCrm).sort();
+    expect(enDeep.length).toBeGreaterThan(0);
+    expect(deepKeys((te as Record<string, unknown>).crm as Record<string, unknown>).sort()).toEqual(enDeep);
+    expect(deepKeys((hi as Record<string, unknown>).crm as Record<string, unknown>).sort()).toEqual(enDeep);
+  });
 });
 
 describe("bundle parity (dpr/voice/buildnow namespaces across locales)", () => {
