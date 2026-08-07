@@ -23,14 +23,14 @@ async function del(client: any, table: string, id: string): Promise<Result<{ ok:
 
 // ── Purchase Orders ───────────────────────────────────────────────────────
 export type POStatus = "pending" | "approved" | "delivered" | "cancelled";
-export interface PurchaseOrder { id: string; poNo: string; items: string | null; amount: number; status: POStatus; deliveryDate: string | null; vendorId: string | null; vendorName: string | null; quoteId: string | null; quoteItem: string | null; }
+export interface PurchaseOrder { id: string; poNo: string; items: string | null; amount: number; status: POStatus; deliveryDate: string | null; vendorId: string | null; vendorName: string | null; quoteId: string | null; quoteItem: string | null; materialRequestId: string | null; materialRequestItem: string | null; }
 const asPO = oneOf<POStatus>(["pending", "approved", "delivered", "cancelled"], "pending");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listPOs(client: any, projectId: string): Promise<Result<PurchaseOrder[]>> {
   try {
     const { data, error } = await client.from("purchase_orders")
-      .select("id, po_no, items, amount, status, delivery_date, vendor_id, vendor:vendor_id(name), quote_id, quote:quote_id(item_name)")
+      .select("id, po_no, items, amount, status, delivery_date, vendor_id, vendor:vendor_id(name), quote_id, quote:quote_id(item_name), material_request_id, material_request:material_request_id(item)")
       .eq("project_id", projectId)
       .order("created_date", { ascending: false });
     if (error) return dbe(error);
@@ -39,13 +39,14 @@ export async function listPOs(client: any, projectId: string): Promise<Result<Pu
       amount: Number(r.amount ?? 0), status: asPO(r.status), deliveryDate: r.delivery_date == null ? null : String(r.delivery_date),
       vendorId: r.vendor_id == null ? null : String(r.vendor_id), vendorName: (r.vendor as { name?: unknown } | null)?.name == null ? null : String((r.vendor as { name?: unknown }).name),
       quoteId: r.quote_id == null ? null : String(r.quote_id), quoteItem: (r.quote as { item_name?: unknown } | null)?.item_name == null ? null : String((r.quote as { item_name?: unknown }).item_name),
+      materialRequestId: r.material_request_id == null ? null : String(r.material_request_id), materialRequestItem: (r.material_request as { item?: unknown } | null)?.item == null ? null : String((r.material_request as { item?: unknown }).item),
     })));
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createPO(client: any, input: { projectId: string; poNo: string; items?: string; amount: number; deliveryDate?: string | null; vendorId?: string | null; quoteId?: string | null }): Promise<Result<{ id: string }>> {
+export async function createPO(client: any, input: { projectId: string; poNo: string; items?: string; amount: number; deliveryDate?: string | null; vendorId?: string | null; quoteId?: string | null; materialRequestId?: string | null }): Promise<Result<{ id: string }>> {
   try {
-    const { data, error } = await client.from("purchase_orders").insert({ project_id: input.projectId, po_no: input.poNo, items: input.items || null, amount: input.amount, delivery_date: input.deliveryDate || null, vendor_id: input.vendorId || null, quote_id: input.quoteId || null }).select("id").single();
+    const { data, error } = await client.from("purchase_orders").insert({ project_id: input.projectId, po_no: input.poNo, items: input.items || null, amount: input.amount, delivery_date: input.deliveryDate || null, vendor_id: input.vendorId || null, quote_id: input.quoteId || null, material_request_id: input.materialRequestId || null }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
 }

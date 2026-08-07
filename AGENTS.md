@@ -601,7 +601,34 @@ First slice of the research's "Module 1: CRM & Sales" gap: an org-scoped lead pi
 - `git push origin prod` (7a55996..63e9387) → Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **200**.
 
 ### Notes / Follow-ups
-- Risk card reads project `budget` directly (projects table) — RLS member-scoped like the other feeds; no new capability/plan gate (rides Overview visibility).
+- Risk card reads project `budget` directly (projects table) - RLS member-scoped like the other feeds; no new capability/plan gate (rides Overview visibility).
 - Design-workflow stepper Advance/Approve gated by `canEdit` (drawings:upload) in DrawingsTab; backend RLS enforces manager/orgadmin/project-tier.
 - Branding is org-level only (project overrides exist in the table but are not surfaced in the shell); subdomain white-label deferred per plan F0.
+
+---
+
+## v5 Phase G1 — Material Request → PO → GRN → Inventory Chain (Complete, 2026-08-07)
+
+### Goal
+Close the construction procurement loop: a project-scoped **material request** register (requested → approved → ordered → received), a request→PO provenance link (mirroring quote_id), and an automatic **GRN** that posts each goods receipt into the inventory ledger so inward stock is never manually double-entered. No new capability/plan gate — rides existing `material:add` / `po:create` / `po:approve`.
+
+### Done (all verified)
+- **Migration 167** `scripts/supabase/167_material_requests_grn.sql`:
+  - `material_requests` (project_id, item, unit, qty CHECK > 0, need_date, reason, status CHECK requested/approved/ordered/received, requested_by FK, approved_by FK, po_id FK→purchase_orders SET NULL, notes, timestamps) + indexes.
+  - **RLS project-scoped**: read = member (`can_read_project`); insert = member (anyone can raise); update = manager gate with a self-cancel escape hatch (raiser may update own row via `can_read_project` while forwards are `can_write_project`); delete = manager gate (`can_write_project` covers org admin + project-tier manager via `has_project_role`).
+  - `purchase_orders.material_request_id` FK + partial index (request → PO provenance).
+  - **GRN trigger** `grn_post_inventory()` (SECURITY DEFINER, search_path=public) on `po_receipts` AFTER INSERT → inserts `inventory_transactions` **inward** row (material from linked request item, fallback to PO items; unit from request default `nos`; qty = receipt qty; source `po_receipt`; ref_no = PO no; po_id; recorded_by = receipt's received_by) and marks the linked request `received`. SECURITY DEFINER lets an org admin (outside the narrow architect/pm/contractor `write_inventory` set) still auto-post.
+- **`src/app/materialRequestQueries.ts`** (new) — `MaterialRequest` + CRUD (`listMaterialRequests` w/ requested_by/approved_by name joins, `createMaterialRequest`, `setMaterialRequestStatus` (stamps `approved_by` on approve), `deleteMaterialRequest`) + pure helpers `REQUEST_NEXT`, `REQUEST_STATUS_LABEL`, `requestTotals`, `isOpenRequest`.
+- **`src/app/financeQueries.ts`** — `PurchaseOrder` gained `materialRequestId/materialRequestItem`; `listPOs` joins `material_request:material_request_id(item)`; `createPO` accepts optional `materialRequestId`.
+- **UI** — `MaterialsTab`: new **Material Requests** card (open/received totals, status chips, create form item/unit/qty/need-by/reason, per-row advance button walking the ladder + delete). `POsTab`: create form gained **From request** select (open requests only); PO rows show `request "<item>"` provenance chip.
+- **Tests** — `tests/app/g1MaterialRequests.test.ts` (11: REQUEST_NEXT ladder, labels, isOpenRequest, requestTotals bucket + empty, list mapper w/ joins + coercion + unknown-status fallback + error, create insert body, setStatus stamps approved_by only-on-approve + error, delete error).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (2.99s) · `npm run smoke` **259 checks** (was 255; +3 markers `listMaterialRequests`/`requestTotals`/`REQUEST_NEXT` + migration 167 required-file) · `vitest` **138 files / 1727 tests pass** (+1 file / +11) · `npm run test:e2e:mock` **7/7**.
+- **NOT yet applied live** (migration 167 pending — apply with `npm run db:apply` + push `prod` when the phase group ships, matching the Phase F cadence).
+
+### Notes / Follow-ups
+- **GRN source of truth**: material/unit for the inventory row come from the linked request when present, else the PO's `items` free text (unit defaults `nos`). A receipt on a PO without a request still posts inventory (item = PO items) so partial deliveries are always captured.
+- **Self-cancel escape hatch**: the `mr_update` with-check allows `can_read_project` (any member) so a raiser can withdraw their own row, while forward status moves require the manager write gate. Delete stays manager-only.
+- Next: G2 (checklist inspections + corrective actions, migration 168), G3 (shift roster/overtime/wages/EPF-ESI, migration 169), then G4/G5.
 

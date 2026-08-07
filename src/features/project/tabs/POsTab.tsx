@@ -7,6 +7,7 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listPOs, createPO, setPOStatus, deletePO, fmtRupees, type PurchaseOrder, type POStatus } from "@/app/financeQueries";
 import { listVendors, type Vendor } from "@/app/vendorQueries";
 import { listPoReceipts, addPoReceipt, deletePoReceipt, deliveryProgress, openAmount, receiptAmount, type PoReceipt } from "@/app/poReceiptQueries";
+import { listMaterialRequests, isOpenRequest, type MaterialRequest } from "@/app/materialRequestQueries";
 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
@@ -20,9 +21,10 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
   const canApprove = useCan("po:approve", ctx);
   const [rows, setRows] = useState<PurchaseOrder[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [requests, setRequests] = useState<MaterialRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [poNo, setPoNo] = useState(""); const [items, setItems] = useState(""); const [amount, setAmount] = useState(""); const [dd, setDd] = useState(""); const [vendorId, setVendorId] = useState("");
+  const [poNo, setPoNo] = useState(""); const [items, setItems] = useState(""); const [amount, setAmount] = useState(""); const [dd, setDd] = useState(""); const [vendorId, setVendorId] = useState(""); const [reqId, setReqId] = useState("");
 
   // Goods-receipt panel.
   const [openPoId, setOpenPoId] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await listPOs(client, projectId); if (res.ok) setRows(res.data); else setError(res.error);
     if (orgId) { const v = await listVendors(client, orgId); if (v.ok) setVendors(v.data); }
+    const mr = await listMaterialRequests(client, projectId); if (mr.ok) setRequests(mr.data);
     setLoading(false);
   }, [projectId, orgId]);
   useEffect(() => { void reload(); }, [reload]);
@@ -53,11 +56,12 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
     if (!poNo.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
     const v = vendorId ? vendors.find(x => x.id === vendorId) : undefined;
-    await run("add", c => createPO(c, { projectId, poNo: poNo.trim(), items: items.trim() || undefined, amount: amt, deliveryDate: dd || null, vendorId: v?.id ?? null }), {
-      apply: () => setRows(prev => [{ id: tmpId, poNo: poNo.trim(), items: items.trim() || null, amount: amt, deliveryDate: dd || null, status: "pending" as POStatus, vendorId: v?.id ?? null, vendorName: v?.name ?? null, quoteId: null, quoteItem: null }, ...prev]),
+    const r = reqId ? requests.find(x => x.id === reqId) : undefined;
+    await run("add", c => createPO(c, { projectId, poNo: poNo.trim(), items: (r?.item || items.trim()) || undefined, amount: amt, deliveryDate: dd || null, vendorId: v?.id ?? null, materialRequestId: r?.id ?? null }), {
+      apply: () => setRows(prev => [{ id: tmpId, poNo: poNo.trim(), items: (r?.item || items.trim()) || null, amount: amt, deliveryDate: dd || null, status: "pending" as POStatus, vendorId: v?.id ?? null, vendorName: v?.name ?? null, quoteId: null, quoteItem: null, materialRequestId: r?.id ?? null, materialRequestItem: r?.item ?? null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
-    setPoNo(""); setItems(""); setAmount(""); setDd(""); setVendorId("");
+    setPoNo(""); setItems(""); setAmount(""); setDd(""); setVendorId(""); setReqId("");
   };
 
   const addReceipt = async (po: PurchaseOrder) => {
@@ -137,7 +141,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
       render: r => (
         <div>
           <div className="text-sm font-semibold text-fg-primary truncate">{r.poNo} · {fmtRupees(r.amount)}</div>
-          <div className="text-[11px] text-fg-tertiary truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`, r.vendorName && `vendor ${r.vendorName}`, r.quoteItem && `from quote "${r.quoteItem}"`].filter(Boolean).join(" · ") || "—"}</div>
+          <div className="text-[11px] text-fg-tertiary truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`, r.vendorName && `vendor ${r.vendorName}`, r.quoteItem && `from quote "${r.quoteItem}"`, r.materialRequestItem && `request "${r.materialRequestItem}"`].filter(Boolean).join(" · ") || "—"}</div>
         </div>
       ),
     },
@@ -176,6 +180,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Delivery</span><Input className="mt-1" type="date" value={dd} onChange={e => setDd(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span><Select className="mt-1 min-w-[140px]" value={vendorId} onChange={e => setVendorId(e.target.value)} options={[{ value: "", label: "Unassigned" }, ...vendors.map(v => ({ value: v.id, label: v.name }))]} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">From request</span><Select className="mt-1 min-w-[160px]" value={reqId} onChange={e => setReqId(e.target.value)} options={[{ value: "", label: "None" }, ...requests.filter(x => isOpenRequest(x.status)).map(r => ({ value: r.id, label: `${r.item}${r.unit ? ` (${r.unit})` : ""} · ${r.qty}` }))]} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !poNo.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Create"}</Button>
         </Card>
       )}
