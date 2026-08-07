@@ -459,7 +459,7 @@ The route surface of the Phase 1 module system: a **plugin catalog** (`src/plugi
 
 ### Notes / Follow-ups
 - **Option A kept**: router stays static, all module routes always in the tree; `<ModuleGuard>` gates at render time using the active org's `enabled_modules`. No `enabledModules` at build time → chunks are always emitted, but only loaded on navigation (unchanged from Phase 1). A future Option B (dynamic router built after auth loads) can reuse `createPluginRoutes({ enabledModules })`.
-- **`/rabills`**: nav-gated by `finance` but has no view/component — not in the catalog (known gap, documented in catalog.test.ts).
+- **`/rabills`**: former known gap (nav-gated by `finance`, no view) — **closed 2026-08-07 (commit `2febcbd`)** with org-wide `CrossRaBillsView` at `/rabills` via `src/app/crossRaQueries.ts`, added to the finance plugin catalog. Now resolves to a real route (catalog.test.ts `KNOWN_NON_ROUTE` emptied).
 - **`/delegations`**: non-module nav item (`org:approvals:manage`); route restored in router.tsx during the Phase 2 refactor.
 - **Plugin catalog vs nav-config**: both still exist; the catalog owns module→route, nav-config owns capability/segment/module gating for the sidebar. Deriving nav `modules` from the catalog is a possible later cleanup (deferred).
 
@@ -486,7 +486,7 @@ Make the existing C1–D feature registers surface per-industry through the Phas
 
 ### Notes / Follow-ups
 - Module ownership per tab documented in `docs/MODULES.md` §3 table (three-place consistency rule: migration 155 CHECK ↔ registry.ts ↔ i18n).
-- `/rabills` remains the known nav-gated-but-viewless gap (from Phase 2, unchanged).
+- `/rabills` nav-gated-but-viewless gap **closed 2026-08-07** (commit `2febcbd`) — now an org-wide RA bills rollup route (see the v4 Phase 2 section note).
 
 ---
 

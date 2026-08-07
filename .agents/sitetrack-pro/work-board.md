@@ -103,8 +103,9 @@ Total: **96 test files, 1251 tests** — all passing (lint 0, tsc 0, build 1187 
 | v4 Phase E5 — Monthly Statement | ✅ Complete | org-wide monthly financial rollup (invoices/MRR/expenses/RA/PO/time) at `/monthly-statement` (commit `5d1f2e7`, prod live 200 OK) |
 | Org-wide Utilization/Revenue Rollups | ✅ Complete | removed consultant/design restriction, now all project types supported (commit `de1e10e`, prod live 200 OK) |
 | Monthly Statement PDF Export | ✅ Complete | jsPDF client-side A4 PDF (header/summary cards/per-project table/totals) + Download PDF button (commit `d96545d`, prod live 200 OK) |
+| Cross-Project RA Bills Rollup | ✅ Complete | org-wide `/rabills` register (billed/net-payable/paid + status split), closes last-known nav→route gap (commit `2febcbd`, prod live 200 OK) |
 
-**Open / pending:** all Phase D/E backlog complete. Roadmap clear.
+**Open / pending:** all Phase D/E backlog + RA bills close. Roadmap clear.
 
 ## Dependencies / schema references
 
