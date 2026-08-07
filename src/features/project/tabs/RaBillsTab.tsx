@@ -1,9 +1,14 @@
-﻿import { useCallback, useEffect, useState } from "react";
+﻿// SiteTrack Pro — RA bills tab, extended to support measurement-book backing
+// (ST-019): an RA bill can be built from a selection of unlinked MB entries
+// (auto-computed amount), and each bill shows its linked MB rows.
+
+import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listRaBills, createRaBill, setRaBillStatus, deleteRaBill, raNetPayable, fmtRupees, type RaBill, type RaBillStatus } from "@/app/financeQueries";
+import { listUnlinkedMb, listMbForRa, unlinkMb, mbSelectionTotal, type RaMbEntry } from "@/app/mbRaQueries";
 import { ReceiptsPanel } from "./ReceiptsPanel";
 
 import { getClient } from "@/lib/supabase";
@@ -20,6 +25,12 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [no, setNo] = useState(""); const [sub, setSub] = useState(""); const [scope, setScope] = useState(""); const [amount, setAmount] = useState(""); const [ret, setRet] = useState("5");
   const [openPay, setOpenPay] = useState<string | null>(null);
+  const [openMb, setOpenMb] = useState<string | null>(null);
+
+  // MB-backed create: load unlinked MB entries, let the user pick some.
+  const [unlinked, setUnlinked] = useState<RaMbEntry[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [mbLoading, setMbLoading] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -28,31 +39,40 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
   const { busy, run } = useAction(reload, setError);
+
+  const loadUnlinked = useCallback(async () => {
+    if (!canCreate) return;
+    setMbLoading(true);
+    const client = await getClient(); if (!client) { setMbLoading(false); return; }
+    const res = await listUnlinkedMb(client, projectId);
+    if (res.ok) { setUnlinked(res.data); setSelected(prev => new Set([...prev].filter(id => res.data.some(m => m.id === id)))); }
+    setMbLoading(false);
+  }, [canCreate, projectId]);
+  useEffect(() => { void loadUnlinked(); }, [loadUnlinked]);
+
+  const toggle = (id: string) => setSelected(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const selRows = unlinked.filter(r => selected.has(r.id));
+  const selTotal = mbSelectionTotal(selRows);
+
   const add = async () => {
-    const amt = Number(amount);
+    const manualAmt = Number(amount);
+    const mbIds = [...selected];
+    const amt = mbIds.length ? selTotal : manualAmt;
     if (!no.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
-    await run("add", c => createRaBill(c, { projectId, no: no.trim(), subcontractor: sub.trim() || undefined, scope: scope.trim() || undefined, billAmount: amt, retentionPct: Number(ret) || 5 }), {
+    await run("add", c => createRaBill(c, { projectId, no: no.trim(), subcontractor: sub.trim() || undefined, scope: scope.trim() || undefined, billAmount: amt, retentionPct: Number(ret) || 5, mbIds }), {
       apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), subcontractor: sub.trim() || null, scope: scope.trim() || null, billAmount: amt, retentionPct: Number(ret) || 5, paidAmount: 0, billDate: null, status: "submitted" as RaBillStatus }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
-    setNo(""); setSub(""); setScope(""); setAmount("");
+    setNo(""); setSub(""); setScope(""); setAmount(""); setSelected(new Set());
+    void loadUnlinked();
   };
 
   const columns: Column<RaBill>[] = [
     {
       key: "detail", header: "RA Bill", className: "flex-1 min-w-0",
       render: r => (
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
-          <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div>
-          <button className="text-[11px] text-accent font-semibold mt-0.5 hover:opacity-70" onClick={() => setOpenPay(openPay === r.id ? null : r.id)}>
-            {openPay === r.id ? "Hide payments ▾" : "Payments ▸"}
-          </button>
-          {openPay === r.id && (
-            <ReceiptsPanel projectId={projectId} targetType="ra_bill" targetId={r.id} summary={`Net ${fmtRupees(raNetPayable(r))}`} />
-          )}
-        </div>
+        <RaRow r={r} canApprove={canApprove} openPay={openPay} setOpenPay={setOpenPay} openMb={openMb} setOpenMb={setOpenMb} projectId={projectId} run={run} />
       ),
     },
     {
@@ -76,15 +96,100 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
       <h2 className="font-display text-lg font-bold text-fg-primary">RA Bills</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {canCreate && (
-        <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Bill No</span><Input className="mt-1 w-24" placeholder="RA-1" value={no} onChange={e => setNo(e.target.value)} /></div>
-          <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Subcontractor</span><Input className="mt-1" value={sub} onChange={e => setSub(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Retention %</span><Input className="mt-1 w-20" type="number" value={ret} onChange={e => setRet(e.target.value)} /></div>
-          <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
+        <Card className="p-3 space-y-3">
+          <div className="flex gap-2 flex-wrap items-end">
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Bill No</span><Input className="mt-1 w-24" placeholder="RA-1" value={no} onChange={e => setNo(e.target.value)} /></div>
+            <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Subcontractor</span><Input className="mt-1" value={sub} onChange={e => setSub(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Retention %</span><Input className="mt-1 w-20" type="number" value={ret} onChange={e => setRet(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={selected.size ? String(selTotal) : amount} onChange={e => setAmount(e.target.value)} disabled={selected.size > 0} placeholder={selected.size ? "from MB" : undefined} /></div>
+            <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || (!selected.size && !amount)}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
+          </div>
+          <div className="border-t border-default pt-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Back from Measurement Book</span>
+              {mbLoading ? <Spinner size={12} /> : <button className="text-[11px] text-accent font-semibold hover:opacity-70" onClick={() => void loadUnlinked()}>Refresh</button>}
+            </div>
+            {unlinked.length === 0 ? (
+              <div className="text-[11px] text-fg-tertiary py-1">No unlinked MB entries.</div>
+            ) : (
+              <div className="mt-1 grid grid-cols-1 md:grid-cols-2 gap-1 max-h-48 overflow-y-auto">
+                {unlinked.map(m => (
+                  <label key={m.id} className="flex items-start gap-2 text-xs cursor-pointer hover:bg-bg-secondary rounded px-1 py-0.5">
+                    <input type="checkbox" checked={selected.has(m.id)} onChange={() => toggle(m.id)} className="mt-0.5 accent-accent" />
+                    <span className="min-w-0">
+                      <span className="text-fg-primary font-semibold">{m.mbNo}</span>
+                      {m.pageNo ? <span className="text-fg-tertiary"> / p.{m.pageNo}</span> : null}
+                      <span className="text-fg-secondary truncate block">{m.description}</span>
+                      <span className="text-fg-tertiary">{m.unit ? `${m.qty} ${m.unit}` : m.qty}{m.rate ? " @ " + fmtRupees(m.rate) : ""} = <span className="font-mono text-fg-primary">{fmtRupees(m.amount ?? 0)}</span></span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {selRows.length > 0 && (
+              <div className="text-[11px] text-fg-secondary mt-1">Selected {selRows.length} entries · Total <span className="font-mono text-fg-primary font-semibold">{fmtRupees(selTotal)}</span></div>
+            )}
+          </div>
         </Card>
       )}
       <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No RA bills." />
+    </div>
+  );
+}
+
+function MbRows({ raBillId, canApprove, run }: { raBillId: string; canApprove: boolean; run: ReturnType<typeof useAction>["run"] }): JSX.Element {
+  const [mb, setMb] = useState<RaMbEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const client = await getClient(); if (!client) { setLoading(false); return; }
+      const res = await listMbForRa(client, raBillId);
+      if (live) { if (res.ok) setMb(res.data); setLoading(false); }
+    })();
+    return () => { live = false; };
+  }, [raBillId]);
+  if (loading) return <div className="py-1"><Spinner size={14} /></div>;
+  if (mb.length === 0) return <div className="text-[11px] text-fg-tertiary py-1">No linked MB entries.</div>;
+  return (
+    <div className="mt-1.5 space-y-0.5">
+      {mb.map(m => (
+        <div key={m.id} className="flex items-center justify-between gap-2 text-[11px] text-fg-secondary">
+          <span className="truncate">{m.mbNo} · {m.description}</span>
+          <span className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="font-mono text-fg-primary">{fmtRupees(m.amount ?? 0)}</span>
+            {canApprove && (
+              <button className="text-error hover:opacity-70" onClick={() => void run(`u-${m.id}`, c => unlinkMb(c, m.id), { apply: () => setMb(prev => prev.filter(x => x.id !== m.id)) })}>
+                <Icon name="trash" size={12} />
+              </button>
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RaRow({ r, canApprove, openPay, setOpenPay, openMb, setOpenMb, projectId, run }: {
+  r: RaBill; canApprove: boolean; openPay: string | null; setOpenPay: (v: string | null) => void;
+  openMb: string | null; setOpenMb: (v: string | null) => void; projectId: string; run: ReturnType<typeof useAction>["run"];
+}): JSX.Element {
+  return (
+    <div className="min-w-0">
+      <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
+      <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div>
+      <div className="flex items-center gap-3 mt-0.5">
+        <button className="text-[11px] text-accent font-semibold hover:opacity-70" onClick={() => setOpenMb(openMb === r.id ? null : r.id)}>
+          {openMb === r.id ? "Hide MB ▾" : "MB backing ▸"}
+        </button>
+        <button className="text-[11px] text-accent font-semibold hover:opacity-70" onClick={() => setOpenPay(openPay === r.id ? null : r.id)}>
+          {openPay === r.id ? "Hide payments ▾" : "Payments ▸"}
+        </button>
+      </div>
+      {openPay === r.id && (
+        <ReceiptsPanel projectId={projectId} targetType="ra_bill" targetId={r.id} summary={`Net ${fmtRupees(raNetPayable(r))}`} />
+      )}
+      {openMb === r.id && <MbRows raBillId={r.id} canApprove={canApprove} run={run} />}
     </div>
   );
 }

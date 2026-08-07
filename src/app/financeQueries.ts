@@ -178,10 +178,17 @@ export async function listRaBills(client: any, projectId: string): Promise<Resul
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createRaBill(client: any, input: { projectId: string; no: string; subcontractor?: string; scope?: string; billAmount: number; retentionPct?: number }): Promise<Result<{ id: string }>> {
+export async function createRaBill(client: any, input: { projectId: string; no: string; subcontractor?: string; scope?: string; billAmount: number; retentionPct?: number; mbIds?: string[] }): Promise<Result<{ id: string }>> {
   try {
     const { data, error } = await client.from("ra_bills").insert({ project_id: input.projectId, no: input.no, subcontractor: input.subcontractor || null, scope: input.scope || null, bill_amount: input.billAmount, retention_pct: input.retentionPct ?? 5 }).select("id").single();
-    if (error) return dbe(error); return ok({ id: String(data.id) });
+    if (error) return dbe(error);
+    const id = String(data.id);
+    const mbIds = input.mbIds?.filter(Boolean);
+    if (mbIds && mbIds.length) {
+      const linkErr = await client.from("measurement_book").update({ ra_bill_id: id }).in("id", mbIds);
+      if (linkErr?.error) return dbe(linkErr.error);
+    }
+    return ok({ id });
   } catch (e) { return er(e); }
 }
 /** Net payable after retention = bill_amount * (1 - retention_pct/100). */
