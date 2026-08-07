@@ -143,6 +143,17 @@ GRANT SELECT ON public.role_catalog TO authenticated, anon;
 --   statutory_approvals (manager write)    → statutory:manage
 --   procurement compare view (org)         → procurement:view
 --
+-- ── Capability ↔ RLS gate map (v4 Phase A CRM, comment-only) ──────────────
+-- 161 (crm_leads) is org-scoped: read/insert/update = any org member
+-- (`user_org_ids()`), delete = managers (orgadmin/pm/project_admin/superadmin).
+-- Policies are ROLE-BASED (no capability references); the identifiers below
+-- are the capabilities in src/auth/capabilities.ts that gate the same
+-- actions in the UI — kept as comments (step 4 of the capabilities.ts
+-- checklist):
+--   leads read / pipeline view (org)          → crm:view
+--   leads + meetings/quotes/agreements write  → crm:manage
+--   sales→project handoff (createProject)     → crm:manage + project:create
+--
 -- RLS gap note: invoices / retainers / rate_cards read gates are project
 -- membership-based; org-wide rollups (utilization/revenue) therefore only
 -- surface projects the caller is already a member of — by design.
