@@ -134,6 +134,8 @@ const vite = read("vite.config.js");
   "logDownloadEvent",
   "MonthlyStatementView",
   "monthlyStatementTotals",
+  "monthlyStatementPdf",
+  "downloadMonthlyStatementPdf",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

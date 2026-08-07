@@ -5,11 +5,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useOrgSwitcher, useCan } from "@/auth";
-import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { Card, Spinner, Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
 import { listOrgMonthlyStatement, monthlyStatementTotals, type MonthlyStatementRow } from "@/app/monthlyStatementQueries";
+import { downloadMonthlyStatementPdf } from "@/app/monthlyStatementPdf";
 import { currentMonthRange } from "@/lib/dateLocal";
 
 const FILTER_OPTIONS = [
@@ -53,6 +54,16 @@ function MonthlyStatementInner(): JSX.Element {
   const totals = useMemo(() => monthlyStatementTotals(rows), [rows]);
   const shown = filter === "all" ? rows : rows.filter(r => r.type === filter);
 
+  const handleExport = () => {
+    if (rows.length === 0) return;
+    downloadMonthlyStatementPdf({
+      orgName: activeOrg?.orgName ?? "Organization",
+      month,
+      rows,
+      totals,
+    });
+  };
+
   if (!canView) return <AccessDenied message="You don't have permission to view the monthly statement." />;
 
   const columns: Column<MonthlyStatementRow>[] = [
@@ -90,6 +101,9 @@ function MonthlyStatementInner(): JSX.Element {
       <div className="flex flex-wrap gap-3 items-end mb-6">
         <Select className="w-48" value={month} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMonth(e.target.value)} options={generateMonthOptions(12)} />
         <Select className="w-48" value={filter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilter(e.target.value)} options={FILTER_OPTIONS} />
+        <Button variant="primary" onClick={handleExport} disabled={rows.length === 0}>
+          Download PDF
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
