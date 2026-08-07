@@ -549,3 +549,28 @@ Credential-free, CI-runnable role-access coverage that renders the REAL v3 route
 - Segment-gated nav items (`/client`, `/procurement`, `/ffe`) require the org to have a non-null `segment` - legacy orgs (null) hide them. Mock orgs must set `segment` (e.g. `"multiple"`) or those nav assertions fail.
 - <AccessDenied> heading text is exactly "Access Restricted" - assert on that, not a loose `/access/i`.
 - The files live outside `tsconfig` `include` (like `e2e/`) so Playwright transpiles them; ESLint only covers `scripts/*.mjs` from this set.
+
+---
+
+## v4 Phase A — CRM & Sales Lead Pipeline (Complete, 2026-08-07)
+
+### Goal
+First slice of the research's "Module 1: CRM & Sales" gap: an org-scoped lead pipeline — **Lead → Meeting → Quotation → Agreement → Client** — for all four segments (pre-sales is cross-industry). Gated by plan feature `crm` (Business+), capability `crm:view`/`crm:manage`, and module `crm` (all segment templates now include it).
+
+### Done (commit `f62f848`, all verified)
+- **Migration 161** `scripts/supabase/161_crm_leads.sql` — `leads` (stage CHECK: new/contacted/meeting_scheduled/quotation_sent/negotiating/agreement_signed/won/lost, source CHECK, budget/won_amount ≥ 0), `lead_meetings` (outcome CHECK), `lead_quotations` (status CHECK), `lead_agreements` (status CHECK). **Org-scoped** (no project_id — leads precede projects). RLS: read/insert/update = any org member (`user_org_ids()`), delete = managers (orgadmin/pm/project_admin/superadmin); child tables gate via their lead's org. Grants DML to authenticated, revoke anon. **Also** drops + re-adds the 155 `enabled_modules` CHECK to admit the new `crm` module id (JS source of truth stays `src/modules/registry.ts`).
+- **Capabilities** — `crm:view` (see pipeline), `crm:manage` (create/update leads + meetings/quotes/agreements). Grants (identity): orgadmin + prospector manage; pm + project_admin view; contributors/client/vendor/sub_contractor none. Labels added. `66_rls_role_catalog_sync.sql` comment sync is the pending follow-up for the capabilities checklist (RLS is role-based so no code change).
+- **Plan feature** `crm` (Business+, min plan "business", label "Sales pipeline (CRM & leads)") in `planCaps.ts`.
+- **Module** `crm` added to `src/modules/types.ts` (ModuleId), `registry.ts` (MODULES + all 4 INDUSTRY_TEMPLATES), i18n `module.crm.*` in en/hi/te.
+- **`src/app/crmQueries.ts`** — `listOrgLeads` / `createLead` / `updateLead` / `setLeadStage` / `deleteLead` + meetings/quotes/agreements CRUD; pure helpers `crmRollup` (total/open/won/lost/pipelineValue/wonValue/byStage/conversionRate), `isOpenLead`, `LEAD_STAGE_NEXT`, `reopenLead`; org-scoped select (no project indirection).
+- **`src/features/org/CrmView.tsx`** at `/crm` — `<PlanGate feature="crm">` + `useCan("crm:view")` AccessDenied; funnel stat cards (Leads/Open/Pipeline/Won/Win rate/stage split), stage filter, New-lead modal, lead drawer with Meetings/Quotations/Agreements panels (add + advance + sign/delete, each `crm:manage`-gated). Nav item "Pipeline" under a new **Sales** group (`requires: "crm:view"`, `modules: ["crm"]`, cross-segment). Plugin catalog `crm` plugin owns the route.
+- **Tests** — `tests/app/crmQueries.test.ts` (13: enums, isOpenLead, LEAD_STAGE_NEXT, reopenLead, crmRollup totals/conversion/empty-buckets/null-budget, listOrgLeads mapper + unknown coercion + error, createLead insert body). `tests/auth/permissionsMatrix.test.ts` CRM block (manage roles, view-only roles, deny list, no-dead-caps).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean (15.71s) · `vitest` **131 files / 1614 tests pass** (+5 / +28) · `npm run smoke` **249 checks** (was 239; +10 incl. CrmView/crmQueries/crmRollup markers + source files) · `npm run test:e2e:mock` **6/6** (orgadmin test now asserts the **Pipeline** nav link renders through the real router with a mocked crm:view session).
+- **NOT yet applied live** (migration 161 pending — apply with `npm run db:apply` + push `prod` when this phase group ships, matching the Phase F live-deploy cadence).
+
+### Notes / Follow-ups
+- RLS write is "any org member" (not manager-only) for insert/update — the UI gates writes behind `crm:manage`; delete is manager-only (matches procurement_quotes posture). If a stricter write gate is wanted later, add `is_orgadmin()` / role checks to the insert/update policies.
+- Leads are deliberately **not** tied to projects (they precede project creation); when a won lead becomes a project, the sales→project handoff can be a follow-up sub-task (A6 candidate).
+- Candidate next sub-tasks (needs user go): sales→project handoff (create project from a won lead), per-owner pipeline view, quotation→agreement auto-conversion, CRM i18n (`crm.*` keys in en/hi/te), then Phase B (interior module surface).
