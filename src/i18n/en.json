@@ -97,6 +97,8 @@
     },
     "detail": {
       "backToHistory": "â† Back to history",
+      "downloadPdf": "Download PDF",
+      "shareWhatsApp": "Share",
       "notFound": "DPR not found.",
       "siteUpdate": "Site update",
       "noTranscript": "No transcript recorded.",

@@ -97,6 +97,8 @@
     },
     "detail": {
       "backToHistory": "← History ki vellandi",
+      "downloadPdf": "PDF download cheyandi",
+      "shareWhatsApp": "Share",
       "notFound": "DPR dorakatledhu.",
       "siteUpdate": "Site update",
       "noTranscript": "Transcript record avvaledhu.",

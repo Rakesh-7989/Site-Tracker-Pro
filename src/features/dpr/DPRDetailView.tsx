@@ -12,6 +12,7 @@ import { Card, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { useT } from "@/i18n/I18nProvider";
 import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
 import { invokeSendDpr } from "@/app/dprSubmit";
+import { downloadDprPdf, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
 import { getClient } from "@/lib/supabase";
 import { DPRStatusBadge } from "./DPRStatusBadge";
 import { BuildNowBadge } from "./BuildNowBadge";
@@ -115,6 +116,14 @@ export function DPRDetailView(): JSX.Element {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Link to="/dpr/history" className="text-xs font-semibold text-accent hover:text-accent-2">{t("dpr.detail.backToHistory")}</Link>
         <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={() => void downloadDprPdf(row, activeOrg.orgName)} leftIcon={<Icon name="download" size={12} />}>
+            {t("dpr.detail.downloadPdf")}
+          </Button>
+          {dprWhatsAppShareEnabled({ VITE_DPR_PDF_WHATSAPP: import.meta.env.VITE_DPR_PDF_WHATSAPP as string | undefined, DEV: import.meta.env.DEV }) && (
+            <a href={waShareLink(row.promoterPhone, `DPR ${fmtDateTime(row.createdAt)} · ${row.transcript?.slice(0, 120) ?? "Site update"}`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-success hover:opacity-80">
+              <Icon name="whatsapp" size={13} />{t("dpr.detail.shareWhatsApp")}
+            </a>
+          )}
           <DPRStatusBadge status={row.status} lang={lang} size="sm" attempts={row.attempts} />
           {row.language && <span className="text-[11px] font-mono text-fg-tertiary">{row.language.toUpperCase()}</span>}
         </div>

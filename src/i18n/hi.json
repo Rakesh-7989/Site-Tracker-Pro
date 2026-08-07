@@ -97,6 +97,8 @@
     },
     "detail": {
       "backToHistory": "← History mein wapas",
+      "downloadPdf": "PDF download karo",
+      "shareWhatsApp": "Share",
       "notFound": "DPR nahi mili.",
       "siteUpdate": "Site update",
       "noTranscript": "Koi transcript record nahi hua.",
