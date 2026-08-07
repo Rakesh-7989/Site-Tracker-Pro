@@ -78,7 +78,8 @@ describe("query mappers", () => {
     expect(inserted).toMatchObject({ project_id: "proj", item: "Cement", unit: "bag", qty: 50, status: "requested", need_date: "2026-08-20", reason: "slab" });
   });
   it("setMaterialRequestStatus updates status + stamps approved_by only on approve", async () => {
-    let patch: Record<string, unknown> | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let patch: any = null;
     const client: any = { from: () => ({ update: (p: unknown) => { patch = p as Record<string, unknown>; return { eq: async () => ({ data: null, error: null }) }; } }) };
     await setMaterialRequestStatus(client, "1", "approved", "u1");
     expect(patch).toMatchObject({ status: "approved", approved_by: "u1" });
