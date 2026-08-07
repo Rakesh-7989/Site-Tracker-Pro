@@ -52,11 +52,12 @@ test.describe("Role-access · mocked Supabase session", () => {
     await expect(page.getByRole("heading", { name: "Access Restricted" })).toBeVisible({ timeout: 10000 });
   });
 
-  test("client — sees Client Portal, not New Project", async ({ page }) => {
+  test("client — sees Client Portal, not New Project or Pipeline", async ({ page }) => {
     await openAs(page, "client");
     await expect(navLink(page, "Dashboard")).toBeVisible({ timeout: 10000 });
     await expect(navLink(page, "Client Portal")).toBeVisible();
     await expect(navLink(page, "New Project")).not.toBeVisible();
+    await expect(navLink(page, "Pipeline")).not.toBeVisible();   // client lacks crm:view + crm plan
     await expect(navLink(page, "Platform")).not.toBeVisible();
   });
 
@@ -68,5 +69,10 @@ test.describe("Role-access · mocked Supabase session", () => {
   test("pm — blocked on /org (org admin route) renders AccessDenied", async ({ page }) => {
     await openAs(page, "pm", "/org");
     await expect(page.getByRole("heading", { name: "Access Restricted" })).toBeVisible({ timeout: 10000 });
+  });
+
+  test("client — /crm blocked (no crm plan cap) renders plan-gated card", async ({ page }) => {
+    await openAs(page, "client", "/crm");
+    await expect(page.getByText("This feature is available on the Business plan and above.")).toBeVisible({ timeout: 10000 });
   });
 });
