@@ -11,6 +11,7 @@ export interface Vendor {
   phone: string | null;
   gst: string | null;
   rating: number | null;
+  profile_id: string | null;
 }
 
 const num = (v: unknown): number | null => (v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
@@ -18,12 +19,12 @@ const num = (v: unknown): number | null => (v == null || v === "" ? null : Numbe
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listVendors(client: any, orgId: string): Promise<VResult<Vendor[]>> {
   try {
-    const { data, error } = await client.from("vendors").select("id, name, category, contact, phone, gst, rating").eq("org_id", orgId).order("name", { ascending: true });
+    const { data, error } = await client.from("vendors").select("id, name, category, contact, phone, gst, rating, profile_id").eq("org_id", orgId).order("name", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), name: String(r.name ?? ""), category: r.category == null ? null : String(r.category),
       contact: r.contact == null ? null : String(r.contact), phone: r.phone == null ? null : String(r.phone),
-      gst: r.gst == null ? null : String(r.gst), rating: num(r.rating),
+      gst: r.gst == null ? null : String(r.gst), rating: num(r.rating), profile_id: r.profile_id == null ? null : String(r.profile_id),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
@@ -48,4 +49,20 @@ export async function setVendorRating(client: any, id: string, rating: number): 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deleteVendor(client: any, id: string): Promise<VResult<{ ok: true }>> {
   try { const { error } = await client.from("vendors").delete().eq("id", id); if (error) return { ok: false, error: String(error.message ?? error) }; return { ok: true, data: { ok: true } }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateVendorProfile(client: any, vendorId: string, input: { name?: string; category?: string | null; contact?: string | null; phone?: string | null; gst?: string | null }): Promise<VResult<{ ok: true }>> {
+  try {
+    const patch: Record<string, unknown> = {};
+    if (input.name !== undefined) patch.name = input.name;
+    if (input.category !== undefined) patch.category = input.category;
+    if (input.contact !== undefined) patch.contact = input.contact;
+    if (input.phone !== undefined) patch.phone = input.phone;
+    if (input.gst !== undefined) patch.gst = input.gst;
+    if (Object.keys(patch).length === 0) return { ok: true, data: { ok: true } };
+    const { error } = await client.from("vendors").update(patch).eq("id", vendorId);
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { ok: true } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }

@@ -34,7 +34,7 @@ function Inner({ orgId, canManage }: { orgId: string; canManage: boolean }): JSX
     if (!name.trim()) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createVendor(c, { orgId, name: name.trim(), category: category.trim() || undefined, phone: phone.trim() || undefined, gst: gst.trim() || undefined }), {
-      apply: () => setRows(prev => [{ id: tmpId, name: name.trim(), category: category.trim() || null, phone: phone.trim() || null, gst: gst.trim() || null, contact: null, rating: null }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, name: name.trim(), category: category.trim() || null, phone: phone.trim() || null, gst: gst.trim() || null, contact: null, rating: null, profile_id: null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setName(""); setCategory(""); setPhone(""); setGst("");

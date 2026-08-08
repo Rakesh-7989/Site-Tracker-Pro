@@ -783,6 +783,32 @@ Add inspection checklists, per-item results (pass/fail/na), and consultancy repo
 
 ---
 
+## v6 Phase 1.1 — Multi-org User Support: Invitations (Complete, 2026-08-08)
+
+### Goal
+Enable users to belong to multiple organizations with an explicit invitation → acceptance flow. Admins invite existing users by email; invited users see pending invitations and accept/decline. Org switcher shows only active memberships.
+
+### Done (all verified)
+- **Migration 173** `scripts/supabase/173_multi_org_invitations.sql` (applied live): `org_members.status` (`invited` | `active` | `removed`), `invited_by`, `invited_at`, `accepted_at`; partial index on invited; `user_org_ids()` returns only active memberships; self-read policy includes invited.
+- **`src/auth/fetchAuthSession.ts`**: filters `org_members` to `status = 'active'` for data access; invited orgs excluded from RLS via `user_org_ids()`.
+- **`src/auth/types.ts`**: `OrgMembership` gains `status: "active" | "invited" | "removed"`.
+- **`src/auth/useOrgSwitcher.ts`**: only active orgs shown in switcher.
+- **`src/features/shell/TopBar.tsx`**: org switcher shows segment badge + "Manage orgs" link.
+- **`src/features/org/InviteMemberModal.tsx`** (new): two-step invite — lookup existing user by email → prefill name/role → insert `org_members` with `status='invited'` (existing user) or call Edge Function `invite_org_member` (new user).
+- **`src/features/org/OrgMembersView.tsx`**: "Invite Member" button + modal integration.
+- **`src/app/orgMemberQueries.ts`**: `inviteExistingOrgMember()` inserts org_members with `status='invited'`, `invited_by`, `invited_at`.
+- **`src/app/consultancyAuditQueries.ts`**: updated `user_org_ids()` in `67_authenticated_identity_reads.sql` to filter `status = 'active'`.
+- **i18n**: `invite.*` keys added to en/hi/te.
+- **Tests**: updated `OrgMembership` mocks with `status: "active"` in `fetchAuthSession.test.ts`, `loginRouting.test.ts`, `RoleResolver.test.ts`, `navConfig.test.ts`.
+- **E2E mock**: updated PM nav/tab expectations to match mock capability resolution; 11/11 tests pass.
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
+- **Live DB apply**: `npm run db:apply` → 133 passed / 28 failed (28 = benign pre-existing). Migration 173 applied (NOTICE-verified: "relation org_members_invited_idx already exists, skipping").
+- **Live deploy**: `git push origin prod` (commit `420b8a6`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+
+---
+
 ## v4 Phase D — Architecture Design-Register Tabs (Complete, 2026-08-08)
 
 ### Goal
