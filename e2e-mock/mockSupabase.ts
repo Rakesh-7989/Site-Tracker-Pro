@@ -25,7 +25,9 @@ export type MockIdentityRole =
   | "orgadmin"
   | "pm"
   | "client"
-  | "superadmin";
+  | "superadmin"
+  | "consultant_head"
+  | "design_architect_interior";
 
 export interface MockProfile {
   id: string;
@@ -64,7 +66,9 @@ const staffTierFor = (role: string): MockProfile["staff_tier"] =>
   role === "superadmin" ? "owner" : null;
 
 export function mockSessionFor(role: MockIdentityRole): MockSession {
-  const id = `00000000-0000-0000-0000-${"0".repeat(12 - role.length) + role}`.slice(0, 36);
+  // Generate a UUID-like ID for the role - use a hash-like approach for long names
+  const roleHash = role.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0).toString(16).padStart(8, '0');
+  const id = `00000000-0000-0000-0000-${roleHash}`.slice(0, 36);
   const email = `${role}@mock.test`;
   switch (role) {
     case "owner":
@@ -76,7 +80,7 @@ export function mockSessionFor(role: MockIdentityRole): MockSession {
         orgs: [{
           org_id: "11111111-1111-1111-1111-111111111111", role: "admin",
           joined_at: "2026-01-01T00:00:00Z",
-          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null },
+          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null, plan: "enterprise" },
         }],
         projects: [],
       };
@@ -89,7 +93,7 @@ export function mockSessionFor(role: MockIdentityRole): MockSession {
         orgs: [{
           org_id: "11111111-1111-1111-1111-111111111111", role: "admin",
           joined_at: "2026-01-01T00:00:00Z",
-          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null },
+          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null, plan: "enterprise" },
         }],
         projects: [{
           project_id: "22222222-2222-2222-2222-222222222222", role: "project_admin",
@@ -106,13 +110,25 @@ export function mockSessionFor(role: MockIdentityRole): MockSession {
         orgs: [{
           org_id: "11111111-1111-1111-1111-111111111111", role: "member",
           joined_at: "2026-01-01T00:00:00Z",
-          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null },
+          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null, plan: "enterprise" },
         }],
-        projects: [{
-          project_id: "22222222-2222-2222-2222-222222222222", role: "pm",
-          assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
-          projects: { id: "22222222-2222-2222-2222-222222222222", name: "Mock Project", type: "construction" },
-        }],
+        projects: [
+          {
+            project_id: "22222222-2222-2222-2222-222222222222", role: "pm",
+            assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
+            projects: { id: "22222222-2222-2222-2222-222222222222", name: "Mock Project", type: "construction", status: "active", org_id: "11111111-1111-1111-1111-111111111111", location: "Hyderabad", start_date: "2026-01-01", industry_subtype: "commercial" },
+          },
+          {
+            project_id: "33333333-3333-3333-3333-333333333333", role: "client",
+            assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
+            projects: { id: "33333333-3333-3333-3333-333333333333", name: "Consulting Project", type: "consultant", status: "active", org_id: "11111111-1111-1111-1111-111111111111", location: "Hyderabad", start_date: "2026-01-01", industry_subtype: null },
+          },
+          {
+            project_id: "44444444-4444-4444-4444-444444444444", role: "pm",
+            assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
+            projects: { id: "44444444-4444-4444-4444-444444444444", name: "Interior Project", type: "interior", status: "active", org_id: "11111111-1111-1111-1111-111111111111", location: "Hyderabad", start_date: "2026-01-01", industry_subtype: null },
+          },
+        ],
       };
     case "client":
       return {
@@ -123,7 +139,7 @@ export function mockSessionFor(role: MockIdentityRole): MockSession {
         orgs: [{
           org_id: "11111111-1111-1111-1111-111111111111", role: "member",
           joined_at: "2026-01-01T00:00:00Z",
-          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null },
+          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "multiple", enabled_modules: null, plan: "enterprise" },
         }],
         projects: [{
           project_id: "22222222-2222-2222-2222-222222222222", role: "client",
@@ -139,6 +155,54 @@ export function mockSessionFor(role: MockIdentityRole): MockSession {
         },
         orgs: [],
         projects: [],
+      };
+    case "design_architect_interior":
+      return {
+        profile: {
+          id, email, name: "Design Architect", role: "design_architect_interior", is_staff: false,
+          staff_tier: null, profile_completed: PROFILE_COMPLETED_TRUE,
+        },
+        orgs: [{
+          org_id: "11111111-1111-1111-1111-111111111111", role: "member",
+          joined_at: "2026-01-01T00:00:00Z",
+          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "interior", enabled_modules: null, plan: "enterprise" },
+        }],
+        projects: [
+          {
+            project_id: "22222222-2222-2222-2222-222222222222", role: "design_architect_interior",
+            assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
+            projects: { id: "22222222-2222-2222-2222-222222222222", name: "Interior Project", type: "interior", status: "active", org_id: "11111111-1111-1111-1111-111111111111", location: "Hyderabad", start_date: "2026-01-01", industry_subtype: null },
+          },
+          {
+            project_id: "44444444-4444-4444-4444-444444444444", role: "design_architect_interior",
+            assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
+            projects: { id: "44444444-4444-4444-4444-444444444444", name: "Interior Project 2", type: "interior", status: "active", org_id: "11111111-1111-1111-1111-111111111111", location: "Hyderabad", start_date: "2026-01-01", industry_subtype: null },
+          },
+        ],
+      };
+    case "consultant_head":
+      return {
+        profile: {
+          id, email, name: "Consultant Head", role: "consultant_head", is_staff: false,
+          staff_tier: null, profile_completed: PROFILE_COMPLETED_TRUE,
+        },
+        orgs: [{
+          org_id: "11111111-1111-1111-1111-111111111111", role: "member",
+          joined_at: "2026-01-01T00:00:00Z",
+          organizations: { id: "11111111-1111-1111-1111-111111111111", name: "Mock Org", slug: "mock-org", segment: "consultancy", enabled_modules: null, plan: "enterprise" },
+        }],
+        projects: [
+          {
+            project_id: "22222222-2222-2222-2222-222222222222", role: "consultant_head",
+            assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
+            projects: { id: "22222222-2222-2222-2222-222222222222", name: "Consulting Project", type: "consultant", status: "active", org_id: "11111111-1111-1111-1111-111111111111", location: "Hyderabad", start_date: "2026-01-01", industry_subtype: null },
+          },
+          {
+            project_id: "33333333-3333-3333-3333-333333333333", role: "consultant_head",
+            assigned_by: "00000000-0000-0000-0000-000000000001", assigned_at: "2026-01-01T00:00:00Z", removed_at: null,
+            projects: { id: "33333333-3333-3333-3333-333333333333", name: "Consulting Project 2", type: "consultant", status: "active", org_id: "11111111-1111-1111-1111-111111111111", location: "Hyderabad", start_date: "2026-01-01", industry_subtype: null },
+          },
+        ],
       };
   }
 }
@@ -200,6 +264,8 @@ export async function mockSupabase(page: Page, s: MockSession): Promise<void> {
     }
 
     const table = pathname.slice("/rest/v1/".length);
+    const query = url.searchParams;
+    const projectId = query.get("id")?.replace("eq.", "");
     switch (table) {
       case "profiles":
         await jsonReply(route, s.profile);
@@ -210,6 +276,17 @@ export async function mockSupabase(page: Page, s: MockSession): Promise<void> {
       case "project_members":
         await jsonReply(route, s.projects ?? []);
         return;
+      case "projects": {
+        const allProjects = (s.projects ?? []).map(p => p.projects);
+        const projectId = query.get("id")?.replace("eq.", "");
+        if (projectId) {
+          const match = allProjects.find(p => p.id === projectId);
+          await jsonReply(route, match ? [match] : []);
+        } else {
+          await jsonReply(route, allProjects);
+        }
+        return;
+      }
       case "staff_area_grants":
         await jsonReply(route, s.profile.is_staff && s.profile.staff_tier === "member" ? [] : []);
         return;

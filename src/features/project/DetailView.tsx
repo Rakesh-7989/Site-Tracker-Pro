@@ -17,7 +17,7 @@ import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
 import { useModules, ModuleGate } from "@/modules";
-import { visibleTabs, tabModuleId, DEFAULT_TAB } from "./tabs-config";
+import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { RequestProjectAccess } from "./RequestProjectAccess";
@@ -121,51 +121,63 @@ export function DetailView(): JSX.Element {
     return <RequestProjectAccess projectId={project.id} projectName={project.name} />;
   }
 
-  // Resolve the active tab: requested → if visible use it, else default.
-  const activeId = tab && tabs.some(tb => tb.id === tab) ? tab : DEFAULT_TAB;
+  // Resolve the active tab: requested → if visible use it in tab bar,
+  // but always render the requested tab content so AccessDenied can trigger.
+  const requestedId = (tab ?? DEFAULT_TAB) as string;
+  const isVisibleTab = tabs.some(tb => tb.id === requestedId);
+  const activeId = isVisibleTab ? requestedId : DEFAULT_TAB;
   const activeModule = tabModuleId(activeId);
 
   const tabContent = (
     <div>
-      {activeId === "overview" && <OverviewTab project={project} members={members} />}
-      {activeId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
-      {activeId === "milestones" && <MilestonesTab projectId={project.id} />}
-      {activeId === "tasks" && <TasksTab projectId={project.id} />}
-      {activeId === "updates" && <UpdatesTab projectId={project.id} />}
-      {activeId === "issues" && <IssuesTab projectId={project.id} />}
-      {activeId === "materials" && <MaterialsTab projectId={project.id} />}
-      {activeId === "safety" && <SafetyTab projectId={project.id} />}
-      {activeId === "inspections" && <InspectionsTab projectId={project.id} />}
-      {activeId === "punchlist" && <PunchTab projectId={project.id} />}
-      {activeId === "attendance" && <AttendanceTab projectId={project.id} />}
-      {activeId === "po" && <POsTab projectId={project.id} />}
-      {activeId === "invoices" && <InvoicesTab projectId={project.id} />}
-      {activeId === "budget" && <BudgetTab projectId={project.id} />}
-      {activeId === "rabills" && <RaBillsTab projectId={project.id} />}
-      {activeId === "ledger" && <LedgerTab projectId={project.id} />}
-      {activeId === "drawings" && <DrawingsTab projectId={project.id} />}
-      {activeId === "rfi" && <RfiTab projectId={project.id} />}
-      {activeId === "changeorders" && <ChangeOrdersTab projectId={project.id} />}
-      {activeId === "estimate" && <EstimateTab projectId={project.id} />}
-      {activeId === "map" && <MapTab project={project} />}
-      {activeId === "boq" && <BoqTab projectId={project.id} />}
-      {activeId === "labour" && <LabourTab projectId={project.id} />}
-      {activeId === "compliance" && <ComplianceTab projectId={project.id} orgId={project.orgId} />}
-      {activeId === "fieldops" && <FieldOpsTab projectId={project.id} />}
-      {activeId === "gantt" && <GanttTab projectId={project.id} />}
-      {activeId === "approvals" && <ApprovalsTab projectId={project.id} />}
-      {activeId === "messages" && <MessagesTab projectId={project.id} />}
-      {activeId === "phases" && <PhasesTab projectId={project.id} />}
-      {activeId === "time" && <TimeTab projectId={project.id} />}
-      {activeId === "deliverables" && <DeliverablesTab projectId={project.id} />}
-      {activeId === "reviews" && <ReviewRoundsTab projectId={project.id} />}
-      {activeId === "billing" && <BillingTab projectId={project.id} />}
-      {activeId === "ffe" && <FfeTab projectId={project.id} />}
-      {activeId === "statutory" && <StatutoryTab projectId={project.id} />}
-      {activeId === "moodboards" && <MoodBoardsTab projectId={project.id} />}
-      {activeId === "rooms" && <RoomsTab projectId={project.id} />}
-      {activeId === "inspection" && <AuditTab projectId={project.id} />}
-      {activeId === "reports" && <ReportsTab projectId={project.id} />}
+      {/* Render requested tab content (even if not visible in tab bar) so AccessDenied triggers */}
+      {requestedId === "overview" && <OverviewTab project={project} members={members} />}
+      {requestedId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
+      {requestedId === "milestones" && <MilestonesTab projectId={project.id} />}
+      {requestedId === "tasks" && <TasksTab projectId={project.id} />}
+      {requestedId === "updates" && <UpdatesTab projectId={project.id} />}
+      {requestedId === "issues" && <IssuesTab projectId={project.id} />}
+      {requestedId === "materials" && <MaterialsTab projectId={project.id} />}
+      {requestedId === "safety" && <SafetyTab projectId={project.id} />}
+      {requestedId === "inspections" && <InspectionsTab projectId={project.id} />}
+      {requestedId === "punchlist" && <PunchTab projectId={project.id} />}
+      {requestedId === "attendance" && <AttendanceTab projectId={project.id} />}
+      {requestedId === "po" && <POsTab projectId={project.id} />}
+      {requestedId === "invoices" && <InvoicesTab projectId={project.id} />}
+      {requestedId === "budget" && <BudgetTab projectId={project.id} />}
+      {requestedId === "rabills" && <RaBillsTab projectId={project.id} />}
+      {requestedId === "ledger" && <LedgerTab projectId={project.id} />}
+      {requestedId === "drawings" && <DrawingsTab projectId={project.id} />}
+      {requestedId === "rfi" && <RfiTab projectId={project.id} />}
+      {requestedId === "changeorders" && <ChangeOrdersTab projectId={project.id} />}
+      {requestedId === "estimate" && <EstimateTab projectId={project.id} />}
+      {requestedId === "map" && <MapTab project={project} />}
+      {requestedId === "boq" && <BoqTab projectId={project.id} />}
+      {requestedId === "labour" && <LabourTab projectId={project.id} />}
+      {requestedId === "compliance" && <ComplianceTab projectId={project.id} orgId={project.orgId} />}
+      {requestedId === "fieldops" && <FieldOpsTab projectId={project.id} />}
+      {requestedId === "gantt" && <GanttTab projectId={project.id} />}
+      {requestedId === "approvals" && <ApprovalsTab projectId={project.id} />}
+      {requestedId === "messages" && <MessagesTab projectId={project.id} />}
+      {requestedId === "phases" && <PhasesTab projectId={project.id} />}
+      {requestedId === "time" && <TimeTab projectId={project.id} />}
+      {requestedId === "deliverables" && <DeliverablesTab projectId={project.id} />}
+      {requestedId === "reviews" && <ReviewRoundsTab projectId={project.id} />}
+      {requestedId === "billing" && <BillingTab projectId={project.id} />}
+      {requestedId === "ffe" && <FfeTab projectId={project.id} />}
+      {requestedId === "statutory" && <StatutoryTab projectId={project.id} />}
+      {requestedId === "moodboards" && <MoodBoardsTab projectId={project.id} />}
+      {requestedId === "rooms" && <RoomsTab projectId={project.id} />}
+      {requestedId === "inspection" && <AuditTab projectId={project.id} />}
+      {requestedId === "reports" && <ReportsTab projectId={project.id} />}
+      {/* Fallback for unknown tabs */}
+      {requestedId !== "overview" && !REAL_TABS.has(requestedId) && (
+        <div className="p-8 text-center">
+          <div className="text-4xl mb-2">🚧</div>
+          <h3 className="font-display text-lg font-bold text-fg-primary">Tab not implemented</h3>
+          <p className="text-fg-secondary text-sm mt-1">The "{requestedId}" tab is not yet built.</p>
+        </div>
+      )}
     </div>
   );
 

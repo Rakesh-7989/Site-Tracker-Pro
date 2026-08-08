@@ -260,7 +260,7 @@ const C1_MANAGER = [
   "time:manage", "phase:manage", "deliverable:approve", "review:manage", "utilization:view",
 ] as const;
 const C1_CONTRIBUTOR_ROLES = [
-  "architect", "senior_architect", "junior_architect", "design_architect_interior",
+  "architect", "senior_architect", "junior_architect",
   "designer", "consultant", "mep_consultant", "structural_consultant",
 ] as const;
 const C1_MANAGER_ROLES = ["design_head", "consultant_head", "pm", "project_admin"] as const;
@@ -389,7 +389,7 @@ describe("v4 C2 — no dead capabilities", () => {
 // procurement:view only (procurement is a finance/proc action, while FF&E +
 // statutory are design-register ownership); contributors + client see none.
 const D_MANAGER = ["ffe:manage", "statutory:manage", "procurement:view"] as const;
-const D_MANAGER_ROLES = ["design_head", "consultant_head", "project_admin"] as const;
+const D_MANAGER_ROLES = ["design_head", "consultant_head", "project_admin", "design_architect_interior"] as const;
 
 describe("v4 D — architecture capability assignment (identity tier)", () => {
   for (const role of D_MANAGER_ROLES) {

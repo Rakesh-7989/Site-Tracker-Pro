@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Spinner, Alert, Badge } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert, Badge, AccessDenied } from "@/components/ui/atoms";
 import { Input, Textarea } from "@/components/ui/forms";
 import { listMoodBoards, upsertMoodBoard, deleteMoodBoard, type MoodBoard } from "@/app/interiorQueries";
 
@@ -17,6 +17,8 @@ const EMPTY = { title: "", theme: "", mediaUrl: "", notes: "" };
 export function MoodBoardsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("ffe:manage", { orgId: activeOrg?.orgId, projectId });
+
+  if (!canManage) return <AccessDenied />;
 
   const [rows, setRows] = useState<MoodBoard[]>([]);
   const [loading, setLoading] = useState(true);

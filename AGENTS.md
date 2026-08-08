@@ -758,3 +758,26 @@ One-tap conversion from an accepted quotation into a pending agreement, idempote
 - Pushed `prod` branch (commit `9a01f15`).
 - Vercel auto-deploy successful; live site https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
 
+---
+
+## v4 Phase C1-C3 — Consultancy Inspection/Audit + Reports (Complete, 2026-08-08)
+
+### Goal
+Add inspection checklists, per-item results (pass/fail/na), and consultancy reports (site visit / recommendation / milestone review) for consultant/design projects. Gated by `audit:manage` capability + `audit_reports` plan feature + `consultancy` module.
+
+### Done (all verified)
+- **Migration 163** `scripts/supabase/163_consultancy_audits.sql` (applied live): `inspection_checklists`, `inspection_results`, `consultancy_reports` tables with project-scoped RLS (read = member, write = managers + org admin).
+- **`src/app/consultancyAuditQueries.ts`**: full CRUD + pure helpers (`checklistProgress`, `checklistVerdict`, `CHECKLIST_STATUS_NEXT`, `REPORT_STATUS_NEXT`, label maps `CL_KIND_LABEL`, `CL_STATUS_LABEL`, `REP_KIND_LABEL`, `REP_STATUS_LABEL`).
+- **`src/features/project/tabs/AuditTab.tsx`**: checklist CRUD, per-item results with clickable pass/fail/na badges, auto progress rollup (passed/failed/na counts + pct + overall status).
+- **`src/features/project/tabs/ReportsTab.tsx`**: report CRUD with kind (site_visit/recommendation/milestone_review), period_from/to, summary/content, draft→published→archived lifecycle.
+- **Tabs-config**: `inspection` + `reports` tabs gated by `audit:manage` + `planFeature: audit_reports` + `moduleId: consultancy`, projectTypes `consultant`/`design`.
+- **DetailView.tsx**: wired both tabs.
+- **i18n**: `audit.*` keys added to en/hi/te (titles, fields, verdicts, statuses, empty states).
+- **Tests**: `tests/app/cAudit.test.ts` (16 pass: verdict rollup, status transitions, query mappers, label maps).
+- **Smoke**: 9 new markers for consultancyAuditQueries functions.
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 143 files / 1794 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 7/7.
+- **Live DB apply**: `npm run db:apply` → 133 passed / 28 failed (28 = benign pre-existing). Migration 163 applied (NOTICE-verified).
+- **Live deploy**: `git push origin prod` (commit `7be5cb2`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **200**.
+

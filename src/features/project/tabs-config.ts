@@ -190,3 +190,13 @@ export function tabById(tabId: string): TabDef | undefined {
 export function tabModuleId(tabId: string): ModuleId | undefined {
   return tabById(tabId)?.moduleId;
 }
+
+/** Set of tab IDs that have real implementations (not placeholders). */
+export const REAL_TABS: ReadonlySet<string> = new Set([
+  "overview", "team", "milestones", "tasks", "updates", "issues", "punchlist", "drawings",
+  "rfi", "changeorders", "boq", "estimate", "fieldops", "materials", "attendance", "labour",
+  "safety", "inspections", "map", "boq", "gantt", "approvals", "messages",
+  "phases", "time", "deliverables", "reviews", "billing",
+  "ffe", "statutory", "moodboards", "rooms", "inspection", "reports",
+  "po", "invoices", "budget", "rabills", "ledger", "compliance",
+]);

@@ -193,6 +193,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "boq:edit",
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
+    "ffe:manage", "statutory:manage", "procurement:view",
   ),
   design_head: arr(
     "activity:view",
@@ -388,6 +389,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "boq:edit",
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
+    "ffe:manage", "statutory:manage", "procurement:view",
   ),
   design_head: arr(
     "drawings:upload", "drawings:edit", "drawings:release", "drawings:markup",

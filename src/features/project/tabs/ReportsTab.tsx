@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Card, Button, Input, Textarea, Select, FormField, Badge, Alert, Spinner,
+  Card, Button, Input, Textarea, Select, FormField, Badge, Alert, Spinner, AccessDenied,
 } from "@/components/ui";
 import { useT } from "@/i18n/I18nProvider";
 import { useCan } from "@/auth";
@@ -24,6 +24,9 @@ const KIND_LABEL: Record<ReportKind, string> = {
 export function ReportsTab({ projectId }: { projectId: string }) {
   const t = useT();
   const canManage = useCan("audit:manage", { projectId });
+
+  if (!canManage) return <AccessDenied />;
+
   const [rows, setRows] = useState<ConsultancyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Card, Button, Input, Select, FormField, Badge, Alert, Spinner,
+  Card, Button, Input, Select, FormField, Badge, Alert, Spinner, AccessDenied,
 } from "@/components/ui";
 import { useT } from "@/i18n/I18nProvider";
 import { useCan } from "@/auth";
@@ -111,6 +111,9 @@ function ResultsPanel({ checklistId, canManage }: { checklistId: string; canMana
 export function AuditTab({ projectId }: { projectId: string }) {
   const t = useT();
   const canManage = useCan("audit:manage", { projectId });
+
+  if (!canManage) return <AccessDenied />;
+
   const [rows, setRows] = useState<InspectionChecklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

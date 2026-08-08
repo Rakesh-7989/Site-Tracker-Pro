@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import {
   listInteriorRooms, upsertRoom, setRoomFinishStatus, deleteRoom,
@@ -94,6 +94,8 @@ function Installations({ roomId, canManage }: { roomId: string; canManage: boole
 export function RoomsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("ffe:manage", { orgId: activeOrg?.orgId, projectId });
+
+  if (!canManage) return <AccessDenied />;
 
   const [rows, setRows] = useState<InteriorRoom[]>([]);
   const [loading, setLoading] = useState(true);
