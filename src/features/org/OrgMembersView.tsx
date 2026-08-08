@@ -19,6 +19,7 @@ import { RoleGrid } from "./RoleGrid";
 import { MemberTableView } from "./MemberTableView";
 import { AssignMemberModal } from "./AssignMemberModal";
 import { ManageCustomRolesModal } from "./ManageCustomRolesModal";
+import { InviteMemberModal } from "./InviteMemberModal";
 
 type ViewMode = "grid" | "list";
 
@@ -63,6 +64,7 @@ function OrgMembersInner({
 
   const [assignRole, setAssignRole] = useState<string | null>(null);
   const [manageRolesFor, setManageRolesFor] = useState<{ occupant: RoleOccupant } | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -145,6 +147,9 @@ function OrgMembersInner({
           >
             List
           </Button>
+          <Button size="sm" onClick={() => setInviteOpen(true)}>
+            Invite Member
+          </Button>
         </div>
       </div>
 
@@ -197,6 +202,14 @@ function OrgMembersInner({
         assignedRoleLabels={manageRolesFor ? members.find(m => m.profileId === manageRolesFor.occupant.profileId)?.customRoles ?? [] : []}
         onReload={() => void reload()}
         onError={setError}
+      />
+
+      <InviteMemberModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        orgId={orgId}
+        orgName={orgName}
+        onInvited={reload}
       />
     </div>
   );

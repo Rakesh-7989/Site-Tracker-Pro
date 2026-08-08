@@ -117,6 +117,7 @@ export function normalizeOrgMembership(row: Record<string, unknown> | null): Org
     enabledModules: normalizeModules(orgNested?.enabled_modules ?? row.enabled_modules),
     isAdmin: Boolean(row.is_admin) || rowRole === "admin",
     joinedAt: String(row.joined_at ?? new Date().toISOString()),
+    status: String(row.status ?? "active") as "active" | "invited" | "removed",
   };
 }
 
@@ -174,7 +175,10 @@ export function buildAuthSession(
   projectRows: ReadonlyArray<Record<string, unknown> | null>,
   preferredOrgId: string | null,
 ): AuthSession {
-  const orgs = orgRows.map(normalizeOrgMembership).filter((m): m is OrgMembership => m !== null);
+  const orgs = orgRows
+    .map(normalizeOrgMembership)
+    .filter((m): m is OrgMembership => m !== null)
+    .filter(m => m.status === "active"); // only active memberships grant data access
   const projectMemberships = projectRows
     .map(normalizeProjectMembership)
     .filter((m): m is ProjectMembership => m !== null);

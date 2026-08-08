@@ -65,6 +65,11 @@ export interface OrgMembership {
   enabledModules?: EnabledModules;
   isAdmin: boolean;
   joinedAt: string;   // ISO timestamp
+  /**
+   * Invitation status (migration 173). Only 'active' memberships grant
+   * data access via RLS; 'invited' are pending acceptance; 'removed' are soft-deleted.
+   */
+  status: "active" | "invited" | "removed";
 }
 
 /**

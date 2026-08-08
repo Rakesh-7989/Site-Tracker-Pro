@@ -146,8 +146,8 @@ describe("normalizeProjectMembership", () => {
 
 describe("pickActiveOrgId", () => {
   const orgs = [
-    { orgId: "o-1", orgName: "A", orgSlug: "a", segment: null, isAdmin: true, joinedAt: "2026-01-01" },
-    { orgId: "o-2", orgName: "B", orgSlug: "b", segment: null, isAdmin: false, joinedAt: "2026-01-01" },
+    { orgId: "o-1", orgName: "A", orgSlug: "a", segment: null, isAdmin: true, joinedAt: "2026-01-01", status: "active" as const },
+    { orgId: "o-2", orgName: "B", orgSlug: "b", segment: null, isAdmin: false, joinedAt: "2026-01-01", status: "active" as const },
   ];
   it("honors preferred when it matches a membership", () => {
     expect(pickActiveOrgId(orgs, "o-2")).toBe("o-2");

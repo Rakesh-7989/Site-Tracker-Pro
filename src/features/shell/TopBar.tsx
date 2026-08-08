@@ -93,18 +93,29 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Org switcher — only shown when the user belongs to 2+ orgs */}
+        {/* Org switcher — only shown when the user belongs to 2+ active orgs */}
         {orgs.length > 1 && (
-          <select
-            value={activeOrg?.orgId ?? ""}
-            onChange={e => switchOrg(e.target.value)}
-            className="text-xs border border-default rounded-lg px-2 py-1.5 bg-panel text-fg-primary outline-none focus:border-accent"
-            aria-label={t("shell.switchOrg")}
-          >
-            {orgs.map(o => (
-              <option key={o.orgId} value={o.orgId}>{o.orgName}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={activeOrg?.orgId ?? ""}
+              onChange={e => switchOrg(e.target.value)}
+              className="text-xs border border-default rounded-lg px-2 py-1.5 bg-panel text-fg-primary outline-none focus:border-accent pr-6"
+              aria-label={t("shell.switchOrg")}
+            >
+              {orgs.map(o => (
+                <option key={o.orgId} value={o.orgId}>
+                  {o.orgName} {o.segment && `· ${o.segment}`}
+                </option>
+              ))}
+            </select>
+            <Link
+              to="/settings/orgs"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-fg-tertiary hover:text-fg-primary"
+              title={t("shell.manageOrgs")}
+            >
+              {t("shell.manageOrgs")}
+            </Link>
+          </div>
         )}
         {orgs.length === 1 && activeOrg && (
           <span className="text-xs text-fg-secondary font-medium hidden sm:inline">{activeOrg.orgName}</span>

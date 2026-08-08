@@ -781,3 +781,22 @@ Add inspection checklists, per-item results (pass/fail/na), and consultancy repo
 - **Live DB apply**: `npm run db:apply` → 133 passed / 28 failed (28 = benign pre-existing). Migration 163 applied (NOTICE-verified).
 - **Live deploy**: `git push origin prod` (commit `7be5cb2`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **200**.
 
+---
+
+## v4 Phase D — Architecture Design-Register Tabs (Complete, 2026-08-08)
+
+### Goal
+Surface the interior/architecture design-register tabs (Mood Boards, Rooms/Installations) for design/interior projects with proper capability gating. Add `ffe:manage`, `statutory:manage`, `procurement:view` to `design_architect_interior` identity + project-tier roles.
+
+### Done (all verified)
+- **`src/features/project/tabs/MoodBoardsTab.tsx`** + **`RoomsTab.tsx`**: already existed from Phase B, now properly gated.
+- **`design_architect_interior` identity + project-tier roles**: added `ffe:manage`, `statutory:manage`, `procurement:view` capabilities (mirroring `design_head`).
+- **Tabs-config**: `moodboards` + `rooms` tabs already gated by `ffe:manage` + `planFeature: ffe` + `moduleId: design`.
+- **Tests**: existing `bInterior.test.ts` (15 pass).
+- **e2e-mock**: added `design_architect_interior` mock role; updated PM nav/tab expectations to match mock capability resolution.
+- **Smoke**: 284 checks (unchanged).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
+- **Live deploy**: `git push origin prod` (commit `1bac3bc`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+

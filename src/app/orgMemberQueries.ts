@@ -76,7 +76,37 @@ export async function addOrgMember(
     const { error } = await client
       .from("org_members")
       .upsert(
-        { org_id: input.orgId, profile_id: input.profileId, role: input.role, removed_at: null },
+        { org_id: input.orgId, profile_id: input.profileId, role: input.role, removed_at: null, status: "active" },
+        { onConflict: "org_id,profile_id" },
+      );
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { ok: true } };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * Invite an existing user to the org by inserting an org_members row
+ * with status='invited'. The user must accept the invitation to become active.
+ */
+export async function inviteExistingOrgMember(
+  client: any,
+  input: { orgId: string; profileId: string; role: string; invitedBy: string },
+): Promise<MResult<{ ok: true }>> {
+  try {
+    const { error } = await client
+      .from("org_members")
+      .upsert(
+        {
+          org_id: input.orgId,
+          profile_id: input.profileId,
+          role: input.role,
+          removed_at: null,
+          status: "invited",
+          invited_by: input.invitedBy,
+          invited_at: new Date().toISOString(),
+        },
         { onConflict: "org_id,profile_id" },
       );
     if (error) return { ok: false, error: String(error.message ?? error) };

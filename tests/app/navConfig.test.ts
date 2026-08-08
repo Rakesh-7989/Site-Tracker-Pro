@@ -50,7 +50,7 @@ describe("buildNav", () => {
   it("orgadmin with admin org tier sees New Project + Members + Billing + Custom Roles", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: null, isAdmin: true, joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: null, isAdmin: true, joinedAt: "2026-01-01", status: "active" as const }],
     }));
     const paths = nav.map(n => n.to);
     expect(paths).toContain("/projects/new");
@@ -143,7 +143,7 @@ describe("buildNav", () => {
   it("org-tier admin sees /vendors (e.g. a PM granted org admin via membership)", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "PM", identityRole: "pm", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: null, isAdmin: true, joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: null, isAdmin: true, joinedAt: "2026-01-01", status: "active" as const }],
     }));
     expect(nav.map(n => n.to)).toContain("/vendors");
   });
@@ -168,7 +168,7 @@ describe("buildNav", () => {
     const mk = (role: "pm" | "design_head" | "consultant_head" | "designer", segment: "architecture" | "interior" | "multiple" | "construction" | "consultancy" | null) =>
       buildNav(session({
         user: { id: "u", email: "a@b", name: role, identityRole: role, isStaff: false },
-        orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment, isAdmin: false, joinedAt: "2026-01-01" }],
+        orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment, isAdmin: false, joinedAt: "2026-01-01", status: "active" as const }],
         activeOrgId: "o-1",
         projectMemberships: [],
       })).map(n => n.to);
@@ -211,7 +211,7 @@ describe("buildNav — segment gating (v4 C0)", () => {
   });
   const segOrg = (segment: CompanySegment | null): AuthSession => ({
     user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
-    orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment, isAdmin: true, joinedAt: "2026-01-01" }],
+    orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment, isAdmin: true, joinedAt: "2026-01-01", status: "active" as const }],
     activeOrgId: "o-1",
     projectMemberships: [],
   });
@@ -251,7 +251,7 @@ describe("buildNav — module gating (v4 Phase 1)", () => {
   });
   const modOrg = (enabledModules: string[] | null | undefined): AuthSession => ({
     user: { id: "u", email: "a@b", name: "O", identityRole: "orgadmin", isStaff: false },
-    orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: "architecture", enabledModules: enabledModules as never, isAdmin: true, joinedAt: "2026-01-01" }],
+    orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: "architecture", enabledModules: enabledModules as never, isAdmin: true, joinedAt: "2026-01-01", status: "active" as const }],
     activeOrgId: "o-1",
     projectMemberships: [],
   });
@@ -289,7 +289,7 @@ describe("buildNav — module gating (v4 Phase 1)", () => {
     // share:client:portal is held by the client identity role only.
     const clientOrg = (m: string[]): AuthSession => ({
       user: { id: "u", email: "c@x", name: "C", identityRole: "client", isStaff: false },
-      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: "architecture", enabledModules: m as never, isAdmin: false, joinedAt: "2026-01-01" }],
+      orgs: [{ orgId: "o-1", orgName: "Demo", orgSlug: "d", segment: "architecture", enabledModules: m as never, isAdmin: false, joinedAt: "2026-01-01", status: "active" as const }],
       activeOrgId: "o-1",
       projectMemberships: [],
     });

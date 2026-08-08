@@ -46,6 +46,7 @@ AS $$
   SELECT COALESCE(array_agg(org_id), '{}')
   FROM public.org_members
   WHERE profile_id = auth.uid()
+    AND status = 'active'
     AND removed_at IS NULL
 $$;
 
@@ -59,11 +60,11 @@ CREATE POLICY profiles_self_read ON public.profiles
   FOR SELECT
   USING (id = auth.uid());
 
--- ── 4. org_members: read own memberships ────────────────────────────────────
+-- ── 4. org_members: read own memberships (active + invited, not removed) ────────────────────────────────────
 DROP POLICY IF EXISTS org_members_self_read ON public.org_members;
 CREATE POLICY org_members_self_read ON public.org_members
   FOR SELECT
-  USING (profile_id = auth.uid());
+  USING (profile_id = auth.uid() AND status IN ('active','invited'));
 
 -- ── 5. organizations: read orgs I'm an active member of ─────────────────────
 DROP POLICY IF EXISTS organizations_member_read ON public.organizations;
