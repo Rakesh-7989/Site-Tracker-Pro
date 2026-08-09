@@ -167,15 +167,15 @@ export const deleteExpense = (client: any, id: string) => del(client, "expenses"
 
 // ── RA Bills (running account) ────────────────────────────────────────────
 export type RaBillStatus = "submitted" | "approved" | "paid" | "rejected";
-export interface RaBill { id: string; no: string; subcontractor: string | null; scope: string | null; billAmount: number; retentionPct: number; paidAmount: number; status: RaBillStatus; billDate: string | null; }
+export interface RaBill { id: string; no: string; subcontractor: string | null; scope: string | null; billAmount: number; retentionPct: number; paidAmount: number; status: RaBillStatus; billDate: string | null; retentionReleased: boolean; retentionReleasedAt: string | null; }
 const asRa = oneOf<RaBillStatus>(["submitted", "approved", "paid", "rejected"], "submitted");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listRaBills(client: any, projectId: string): Promise<Result<RaBill[]>> {
   try {
-    const { data, error } = await client.from("ra_bills").select("id, no, subcontractor, scope, bill_amount, retention_pct, paid_amount, status, bill_date").eq("project_id", projectId).order("bill_date", { ascending: false });
+    const { data, error } = await client.from("ra_bills").select("id, no, subcontractor, scope, bill_amount, retention_pct, paid_amount, status, bill_date, retention_released, retention_released_at").eq("project_id", projectId).order("bill_date", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), no: String(r.no ?? ""), subcontractor: r.subcontractor == null ? null : String(r.subcontractor), scope: r.scope == null ? null : String(r.scope), billAmount: Number(r.bill_amount ?? 0), retentionPct: Number(r.retention_pct ?? 0), paidAmount: Number(r.paid_amount ?? 0), status: asRa(r.status), billDate: r.bill_date == null ? null : String(r.bill_date) })));
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), no: String(r.no ?? ""), subcontractor: r.subcontractor == null ? null : String(r.subcontractor), scope: r.scope == null ? null : String(r.scope), billAmount: Number(r.bill_amount ?? 0), retentionPct: Number(r.retention_pct ?? 0), paidAmount: Number(r.paid_amount ?? 0), status: asRa(r.status), billDate: r.bill_date == null ? null : String(r.bill_date), retentionReleased: Boolean(r.retention_released), retentionReleasedAt: r.retention_released_at == null ? null : String(r.retention_released_at) })));
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

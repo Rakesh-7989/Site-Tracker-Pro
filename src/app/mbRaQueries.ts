@@ -135,3 +135,28 @@ export async function listMbDriftsForRa(client: any, raBillId: string): Promise<
     })) };
   } catch (e) { return er(e); }
 }
+
+/** Trigger scheduled recalc of all approved/paid RA bills from MB. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function recalcAllRaBillsFromMb(client: any): Promise<Result<{ raBillId: string; oldAmount: number; newAmount: number; delta: number }[]>> {
+  try {
+    const { data, error } = await client.rpc("recalc_all_ra_bills_from_mb");
+    if (error) return dbe(error);
+    return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      raBillId: String(r.ra_bill_id ?? ""),
+      oldAmount: Number(r.old_amount ?? 0),
+      newAmount: Number(r.new_amount ?? 0),
+      delta: Number(r.delta ?? 0),
+    })) };
+  } catch (e) { return er(e); }
+}
+
+/** Release retention for a paid RA bill. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function releaseRaRetention(client: any, raBillId: string): Promise<Result<{ ok: true }>> {
+  try {
+    const { error } = await client.rpc("release_ra_retention", { p_ra_bill_id: raBillId });
+    if (error) return dbe(error);
+    return { ok: true, data: { ok: true } };
+  } catch (e) { return er(e); }
+}

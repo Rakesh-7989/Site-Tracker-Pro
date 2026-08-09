@@ -9,7 +9,7 @@ import { Card, Button, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listRaBills, createRaBill, setRaBillStatus, deleteRaBill, raNetPayable, fmtRupees, type RaBill, type RaBillStatus } from "@/app/financeQueries";
-import { listUnlinkedMb, listMbForRa, unlinkMb, mbSelectionTotal, sumMbForRa, listMbDriftsForRa, type RaMbEntry, type MbSum, type MbDrift } from "@/app/mbRaQueries";
+import { listUnlinkedMb, listMbForRa, unlinkMb, mbSelectionTotal, sumMbForRa, listMbDriftsForRa, recalcAllRaBillsFromMb, releaseRaRetention, type RaMbEntry, type MbSum, type MbDrift } from "@/app/mbRaQueries";
 import { ReceiptsPanel } from "./ReceiptsPanel";
 
 import { getClient } from "@/lib/supabase";
@@ -41,6 +41,14 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
   useEffect(() => { void reload(); }, [reload]);
   const { busy, run } = useAction(reload, setError);
 
+  const handleRecalcAll = async () => {
+    const client = await getClient(); if (!client) return;
+    const res = await recalcAllRaBillsFromMb(client);
+    if (res.ok) {
+      void reload();
+    }
+  };
+
   const loadUnlinked = useCallback(async () => {
     if (!canCreate) return;
     setMbLoading(true);
@@ -62,7 +70,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
     if (!no.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createRaBill(c, { projectId, no: no.trim(), subcontractor: sub.trim() || undefined, scope: scope.trim() || undefined, billAmount: amt, retentionPct: Number(ret) || 5, mbIds }), {
-      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), subcontractor: sub.trim() || null, scope: scope.trim() || null, billAmount: amt, retentionPct: Number(ret) || 5, paidAmount: 0, billDate: null, status: "submitted" as RaBillStatus }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), subcontractor: sub.trim() || null, scope: scope.trim() || null, billAmount: amt, retentionPct: Number(ret) || 5, paidAmount: 0, billDate: null, status: "submitted" as RaBillStatus, retentionReleased: false, retentionReleasedAt: null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setNo(""); setSub(""); setScope(""); setAmount(""); setSelected(new Set());
@@ -73,7 +81,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "detail", header: "RA Bill", className: "flex-1 min-w-0",
       render: r => (
-        <RaRow r={r} canApprove={canApprove} openPay={openPay} setOpenPay={setOpenPay} openMb={openMb} setOpenMb={setOpenMb} projectId={projectId} run={run} />
+        <RaRow r={r} canApprove={canApprove} openPay={openPay} setOpenPay={setOpenPay} openMb={openMb} setOpenMb={setOpenMb} projectId={projectId} run={run} setRows={setRows} />
       ),
     },
     {
@@ -94,7 +102,14 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-lg font-bold text-fg-primary">RA Bills</h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display text-lg font-bold text-fg-primary">RA Bills</h2>
+        {canApprove && (
+          <Button size="sm" variant="ghost" onClick={handleRecalcAll}>
+            <Icon name="refresh" size={14} /> Recalculate All from MB
+          </Button>
+        )}
+      </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {canCreate && (
         <Card className="p-3 space-y-3">
@@ -233,14 +248,14 @@ function MbRows({ raBillId, canApprove, run }: { raBillId: string; canApprove: b
   );
 }
 
-function RaRow({ r, canApprove, openPay, setOpenPay, openMb, setOpenMb, projectId, run }: {
+function RaRow({ r, canApprove, openPay, setOpenPay, openMb, setOpenMb, projectId, run, setRows }: {
   r: RaBill; canApprove: boolean; openPay: string | null; setOpenPay: (v: string | null) => void;
-  openMb: string | null; setOpenMb: (v: string | null) => void; projectId: string; run: ReturnType<typeof useAction>["run"];
+  openMb: string | null; setOpenMb: (v: string | null) => void; projectId: string; run: ReturnType<typeof useAction>["run"]; setRows: React.Dispatch<React.SetStateAction<RaBill[]>>;
 }): JSX.Element {
   return (
     <div className="min-w-0">
       <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
-      <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret)</div>
+      <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(raNetPayable(r))} ({r.retentionPct}% ret){r.retentionReleased ? " · retention released" : ""}</div>
       <div className="flex items-center gap-3 mt-0.5">
         <button className="text-[11px] text-accent font-semibold hover:opacity-70" onClick={() => setOpenMb(openMb === r.id ? null : r.id)}>
           {openMb === r.id ? "Hide MB ▾" : "MB backing ▸"}
@@ -248,6 +263,11 @@ function RaRow({ r, canApprove, openPay, setOpenPay, openMb, setOpenMb, projectI
         <button className="text-[11px] text-accent font-semibold hover:opacity-70" onClick={() => setOpenPay(openPay === r.id ? null : r.id)}>
           {openPay === r.id ? "Hide payments ▾" : "Payments ▸"}
         </button>
+        {r.status === "paid" && !r.retentionReleased && canApprove && (
+          <Button size="sm" variant="ghost" onClick={() => void run(`ret-${r.id}`, c => releaseRaRetention(c, r.id), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, retentionReleased: true, retentionReleasedAt: new Date().toISOString(), paidAmount: x.billAmount } : x)) })}>
+            <Icon name="lock" size={12} className="mr-1" /> Release Retention
+          </Button>
+        )}
       </div>
       {openPay === r.id && (
         <ReceiptsPanel projectId={projectId} targetType="ra_bill" targetId={r.id} summary={`Net ${fmtRupees(raNetPayable(r))}`} />
