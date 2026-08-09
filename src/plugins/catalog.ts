@@ -45,6 +45,7 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
       { path: "material-prices", lazy: () => import("@/features/org/MaterialPricesView").then(m => ({ default: m.MaterialPricesView })) },
       { path: "equipment", lazy: () => import("@/features/handover/EquipmentView").then(m => ({ default: m.EquipmentView })) },
       { path: "vendor", lazy: () => import("@/features/org/VendorPortalView").then(m => ({ default: m.VendorPortalView })) },
+      { path: "vendor-scorecard", lazy: () => import("@/features/org/VendorScorecardView").then(m => ({ default: m.VendorScorecardView })) },
     ],
   },
   {

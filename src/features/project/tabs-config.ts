@@ -105,6 +105,7 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "budget",       label: "Budget",        icon: "barChart",  requires: "budget:view",     planFeature: "finance", moduleId: "finance" },
   { id: "ledger",       label: "Ledger",        icon: "wallet",    requires: "ledger:view",     planFeature: "finance", moduleId: "finance" },
   { id: "po",           label: "POs",           icon: "truck",     requires: "po:create",       planFeature: "finance", moduleId: "procurement" },
+  { id: "3way",         label: "3-Way Match",   icon: "refresh",   requires: "po:approve",      planFeature: "finance", moduleId: "procurement" },
   { id: "invoices",     label: "Invoices",      icon: "doc",       requires: "invoice:create",  planFeature: "finance", moduleId: "finance" },
   { id: "rabills",      label: "RA Bills",      icon: "wallet",    requires: "rabill:create",   planFeature: "finance", moduleId: "finance" },
 
@@ -198,5 +199,5 @@ export const REAL_TABS: ReadonlySet<string> = new Set([
   "safety", "inspections", "map", "boq", "gantt", "approvals", "messages",
   "phases", "time", "deliverables", "reviews", "billing",
   "ffe", "statutory", "moodboards", "rooms", "inspection", "reports",
-  "po", "invoices", "budget", "rabills", "ledger", "compliance",
+  "po", "3way", "invoices", "budget", "rabills", "ledger", "compliance",
 ]);
