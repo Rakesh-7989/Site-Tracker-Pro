@@ -1,14 +1,15 @@
 ﻿// SiteTrack Pro — RA bills tab, extended to support measurement-book backing
 // (ST-019): an RA bill can be built from a selection of unlinked MB entries
 // (auto-computed amount), and each bill shows its linked MB rows.
+// V6 Phase 2: MB-backed RA bills — recalculate from MB, drift detection.
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listRaBills, createRaBill, setRaBillStatus, deleteRaBill, raNetPayable, fmtRupees, type RaBill, type RaBillStatus } from "@/app/financeQueries";
-import { listUnlinkedMb, listMbForRa, unlinkMb, mbSelectionTotal, type RaMbEntry } from "@/app/mbRaQueries";
+import { listUnlinkedMb, listMbForRa, unlinkMb, mbSelectionTotal, sumMbForRa, listMbDriftsForRa, type RaMbEntry, type MbSum, type MbDrift } from "@/app/mbRaQueries";
 import { ReceiptsPanel } from "./ReceiptsPanel";
 
 import { getClient } from "@/lib/supabase";
@@ -139,7 +140,11 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
 
 function MbRows({ raBillId, canApprove, run }: { raBillId: string; canApprove: boolean; run: ReturnType<typeof useAction>["run"] }): JSX.Element {
   const [mb, setMb] = useState<RaMbEntry[]>([]);
+  const [drift, setDrift] = useState<MbDrift[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sum, setSum] = useState<MbSum | null>(null);
+  const [sumLoading, setSumLoading] = useState(false);
+
   useEffect(() => {
     let live = true;
     (async () => {
@@ -149,23 +154,81 @@ function MbRows({ raBillId, canApprove, run }: { raBillId: string; canApprove: b
     })();
     return () => { live = false; };
   }, [raBillId]);
+
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const client = await getClient(); if (!client) return;
+      const res = await listMbDriftsForRa(client, raBillId);
+      if (live) { if (res.ok) setDrift(res.data); }
+    })();
+    return () => { live = false; };
+  }, [raBillId]);
+
+  const handleRecalc = async () => {
+    const client = await getClient(); if (!client) return;
+    setSumLoading(true);
+    const res = await sumMbForRa(client, raBillId);
+    if (res.ok) setSum(res.data);
+    setSumLoading(false);
+  };
+
   if (loading) return <div className="py-1"><Spinner size={14} /></div>;
   if (mb.length === 0) return <div className="text-[11px] text-fg-tertiary py-1">No linked MB entries.</div>;
+
+  const hasDrifts = drift.length > 0;
+  const isBilled = mb.some(m => m.status === "billed");
+
   return (
     <div className="mt-1.5 space-y-0.5">
-      {mb.map(m => (
-        <div key={m.id} className="flex items-center justify-between gap-2 text-[11px] text-fg-secondary">
-          <span className="truncate">{m.mbNo} · {m.description}</span>
-          <span className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="font-mono text-fg-primary">{fmtRupees(m.amount ?? 0)}</span>
-            {canApprove && (
-              <button className="text-error hover:opacity-70" onClick={() => void run(`u-${m.id}`, c => unlinkMb(c, m.id), { apply: () => setMb(prev => prev.filter(x => x.id !== m.id)) })}>
-                <Icon name="trash" size={12} />
-              </button>
-            )}
-          </span>
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span className="text-fg-secondary">Linked MB entries ({mb.length})</span>
+        <div className="flex items-center gap-1.5">
+          {canApprove && !sumLoading && (
+            <Button size="sm" variant="ghost" onClick={handleRecalc}>
+              <Icon name="refresh" size={12} /> Recalc from MB
+            </Button>
+          )}
+          {sum && (
+            <span className="text-[10px] font-mono text-fg-primary bg-bg-secondary px-1.5 py-0.5 rounded">
+              MB total: {fmtRupees(sum.totalAmount)} · {sum.rowCount} rows
+            </span>
+          )}
         </div>
-      ))}
+      </div>
+
+      {hasDrifts && (
+        <div className="border-l-2 border-warning bg-warning-tint/20 p-1.5 rounded-r text-[10px] text-warning mb-1" role="alert">
+          <div className="font-semibold">⚠ Drift detected ({drift.length})</div>
+          {drift.slice(0, 3).map(d => (
+            <div key={d.id} className="truncate">{d.changedBy} · {d.changedAt.slice(0, 16)} · {d.mbId.slice(0, 8)}</div>
+          ))}
+          {drift.length > 3 && <div className="text-warning/70">+{drift.length - 3} more</div>}
+        </div>
+      )}
+
+      {isBilled && !hasDrifts && (
+        <div className="border-l-2 border-success bg-success-tint/20 p-1.5 rounded-r text-[10px] text-success mb-1">
+          All MB entries billed — no drift detected.
+        </div>
+      )}
+
+      <div className="space-y-0.5">
+        {mb.map(m => (
+          <div key={m.id} className="flex items-center justify-between gap-2 text-[11px] text-fg-secondary">
+            <span className="truncate">{m.mbNo} · {m.description}</span>
+            <span className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="font-mono text-fg-primary">{fmtRupees(m.amount ?? 0)}</span>
+              <Badge tone={m.status === "billed" ? "success" : m.status === "verified" ? "info" : "neutral"}>{m.status}</Badge>
+              {canApprove && (
+                <button className="text-error hover:opacity-70" onClick={() => void run(`u-${m.id}`, c => unlinkMb(c, m.id), { apply: () => setMb(prev => prev.filter(x => x.id !== m.id)) })}>
+                  <Icon name="trash" size={12} />
+                </button>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

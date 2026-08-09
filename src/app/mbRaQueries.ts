@@ -90,3 +90,48 @@ export async function unlinkMb(client: any, mbId: string): Promise<Result<{ ok: 
     return { ok: true, data: { ok: true } };
   } catch (e) { return er(e); }
 }
+
+/** Recalculate RA bill totals from linked MB entries via `sum_mb_for_ra` RPC. */
+export interface MbSum { totalQty: number; totalAmount: number; rowCount: number; }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function sumMbForRa(client: any, raBillId: string): Promise<Result<MbSum>> {
+  try {
+    const { data, error } = await client.rpc("sum_mb_for_ra", { p_ra_bill_id: raBillId });
+    if (error) return dbe(error);
+    const row = (data ?? [])[0] as { total_qty?: number; total_amount?: number; row_count?: number } | undefined;
+    return { ok: true, data: { totalQty: Number(row?.total_qty ?? 0), totalAmount: Number(row?.total_amount ?? 0), rowCount: Number(row?.row_count ?? 0) } };
+  } catch (e) { return er(e); }
+}
+
+/** Drift audit entry for an RA bill (from `audit_log_v2` when MB changes post-approval). */
+export interface MbDrift {
+  id: string;
+  mbId: string;
+  changedAt: string;
+  changedBy: string;
+  message: string;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listMbDriftsForRa(client: any, raBillId: string): Promise<Result<MbDrift[]>> {
+  try {
+    const { data, error } = await client.from("audit_log_v2")
+      .select("id, ts, actor_name, message, before, after, resource_id")
+      .eq("resource", "measurement_book")
+      .ilike("message", `%MB row % changed after RA ${raBillId} was %`)
+      .order("ts", { ascending: false });
+    if (error) return dbe(error);
+    return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      id: String(r.id),
+      mbId: String(r.resource_id ?? ""),
+      changedAt: String(r.ts ?? ""),
+      changedBy: String(r.actor_name ?? ""),
+      message: String(r.message ?? ""),
+      before: r.before as Record<string, unknown> ?? {},
+      after: r.after as Record<string, unknown> ?? {},
+    })) };
+  } catch (e) { return er(e); }
+}
