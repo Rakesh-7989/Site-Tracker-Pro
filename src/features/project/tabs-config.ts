@@ -108,6 +108,9 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "3way",         label: "3-Way Match",   icon: "refresh",   requires: "po:approve",      planFeature: "finance", moduleId: "procurement" },
   { id: "invoices",     label: "Invoices",      icon: "doc",       requires: "invoice:create",  planFeature: "finance", moduleId: "finance" },
   { id: "rabills",      label: "RA Bills",      icon: "wallet",    requires: "rabill:create",   planFeature: "finance", moduleId: "finance" },
+  { id: "pnl",          label: "P&L",           icon: "wallet",    requires: "budget:view",     planFeature: "finance", moduleId: "finance" },
+  { id: "wip",          label: "WIP Aging",     icon: "activity",  requires: "budget:view",     planFeature: "finance", moduleId: "finance" },
+  { id: "budgetChange", label: "Budget Changes",icon: "refresh",   requires: "budget:edit",     planFeature: "finance", moduleId: "finance" },
 
     // Approvals + compliance (Pro+)
     {
@@ -200,4 +203,5 @@ export const REAL_TABS: ReadonlySet<string> = new Set([
   "phases", "time", "deliverables", "reviews", "billing",
   "ffe", "statutory", "moodboards", "rooms", "inspection", "reports",
   "po", "3way", "invoices", "budget", "rabills", "ledger", "compliance",
+  "pnl", "wip", "budgetChange",
 ]);

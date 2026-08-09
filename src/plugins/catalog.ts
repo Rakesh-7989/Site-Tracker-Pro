@@ -64,6 +64,7 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
       { path: "rabills", lazy: () => import("@/features/org/CrossRaBillsView").then(m => ({ default: m.CrossRaBillsView })) },
       { path: "invoices", lazy: () => import("@/features/org/CrossInvoicesView").then(m => ({ default: m.CrossInvoicesView })) },
       { path: "monthly-statement", modules: ["finance"], lazy: () => import("@/features/org/MonthlyStatementView").then(m => ({ default: m.MonthlyStatementView })) },
+      { path: "org-financials", lazy: () => import("@/features/org/OrgFinancialView").then(m => ({ default: m.OrgFinancialView })) },
     ],
   },
   {
