@@ -41,3 +41,38 @@ export async function markAllRead(client: any): Promise<NResult<{ ok: true }>> {
 export async function unreadCount(client: any): Promise<number> {
   try { const { data, error } = await client.rpc("unread_notification_count"); if (error) return 0; return Number(data) || 0; } catch { return 0; }
 }
+
+// Payment notification kinds
+export const PAYMENT_NOTIFICATION_KINDS = [
+  "payment_received",
+  "payment_overdue",
+  "invoice_paid",
+  "ra_bill_paid",
+  "status_changed",
+] as const;
+export type PaymentNotificationKind = typeof PAYMENT_NOTIFICATION_KINDS[number];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listPaymentNotifications(client: any, limit = 50): Promise<NResult<Notification[]>> {
+  try {
+    const { data, error } = await client.from("notifications")
+      .select("id, kind, title, body, link, read_at, created_at")
+      .in("kind", PAYMENT_NOTIFICATION_KINDS)
+      .order("created_at", { ascending: false }).limit(limit);
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      id: String(r.id), kind: String(r.kind ?? ""), title: String(r.title ?? ""),
+      body: r.body == null ? null : String(r.body), link: r.link == null ? null : String(r.link),
+      readAt: r.read_at == null ? null : String(r.read_at), createdAt: String(r.created_at ?? ""),
+    })) };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function checkOverduePayments(client: any): Promise<NResult<{ ok: true }>> {
+  try {
+    const { error } = await client.rpc("check_overdue_payments");
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { ok: true } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}

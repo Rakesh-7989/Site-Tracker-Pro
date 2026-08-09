@@ -831,11 +831,32 @@ Enhance the existing Vendor Portal (`/vendor`) so vendors can: (1) submit quotes
 ### Verification
 - `npm run lint` clean (errors only in temp fix script) · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
 - **Live DB apply**: `npm run db:apply` → 134 passed / 28 failed (28 = benign pre-existing). Migration 174 applied (NOTICE-verified: "relation purchase_orders_invoice_idx already exists, skipping").
-- **Live deploy**: `git push origin prod` (commit `3d574f8`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+- **Live deploy**: `git push origin prod` (commit `3157b4c`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
 
 ---
 
-## v4 Phase D — Architecture Design-Register Tabs (Complete, 2026-08-08)
+## v6 Phase 1.3 — Payment Status Visibility: CrossInvoicesView (Complete, 2026-08-08)
+
+### Goal
+Add org-wide invoice register with payment reconciliation: net receivable, received amount, outstanding, payment status badges (Paid/Partial/Pending/Overdue), and invoice reference links. Mirrors CrossRaBillsView pattern for invoices.
+
+### Done (all verified)
+- **`src/app/crossInvoiceQueries.ts`**: full CRUD + pure helpers (`crossInvoiceRollup`, `paymentStatusFrom`, `netReceivable`, `paymentStatusLabel`), payment aggregation from `payments` table.
+- **`src/features/org/CrossInvoicesView.tsx`**: org-wide invoice register with filters (status, payment status, search), stat cards (total/net/received/outstanding), payment status badges, invoice reference links.
+- **Tabs-config + nav-config**: `/invoices` route gated by `invoice:create` + `planFeature: finance` + `moduleId: finance`.
+- **Plugin catalog**: added `invoices` route to `finance` plugin.
+- **i18n**: `invoices.*` keys added to en/hi/te (titles, fields, status labels, payment status labels).
+- **Tests**: `tests/app/navConfig.test.ts` updated with `invoice:create` capability check.
+- **E2E mock**: existing 11/11 tests pass (no new tests needed for this view yet).
+
+### Verification
+- `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
+- **Live DB apply**: `npm run db:apply` → 133 passed / 28 failed (28 = benign pre-existing). Migration 174 already applied.
+- **Live deploy**: `git push origin prod` (commit `3157b4c`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+
+---
+
+## v6 Phase 1.2 — Vendor Portal Enhancements (Complete, 2026-08-08)
 
 ### Goal
 Surface the interior/architecture design-register tabs (Mood Boards, Rooms/Installations) for design/interior projects with proper capability gating. Add `ffe:manage`, `statutory:manage`, `procurement:view` to `design_architect_interior` identity + project-tier roles.

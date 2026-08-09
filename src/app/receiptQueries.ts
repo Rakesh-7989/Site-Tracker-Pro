@@ -111,3 +111,46 @@ export function reconcileRaBill(bill: { billAmount: number; retentionPct?: numbe
   const received = receipts.reduce((s, r) => s + (r.amount || 0), 0);
   return { net, received, outstanding: Math.max(0, net - received) };
 }
+
+/** Payment event types for timeline. */
+export type PaymentEventKind = "payment_received" | "status_changed" | "payment_method_updated" | "reference_updated";
+
+/** A payment timeline event (receipt or status change). */
+export interface PaymentTimelineEvent {
+  id: string;
+  kind: PaymentEventKind;
+  description: string;
+  amount: number | null;
+  method: string | null;
+  reference: string | null;
+  oldStatus: string | null;
+  newStatus: string | null;
+  createdAt: string;
+  createdByName: string | null;
+}
+
+/** Fetch chronological payment timeline for an invoice or RA bill. */
+export async function listPaymentTimeline(client: Client, projectId: string, targetType: ReceiptTarget, targetId: string): Promise<PayResult<PaymentTimelineEvent[]>> {
+  try {
+    const { data, error } = await client.from("payment_events")
+      .select("id, kind, description, amount, method, reference, old_status, new_status, created_at, created_by(name)")
+      .eq("project_id", projectId)
+      .eq("target_type", targetType)
+      .eq("target_id", targetId)
+      .order("created_at", { ascending: true });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    const events = ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      id: String(r.id),
+      kind: r.kind as PaymentEventKind,
+      description: String(r.description ?? ""),
+      amount: r.amount == null ? null : Number(r.amount),
+      method: r.method == null ? null : String(r.method),
+      reference: r.reference == null ? null : String(r.reference),
+      oldStatus: r.old_status == null ? null : String(r.old_status),
+      newStatus: r.new_status == null ? null : String(r.new_status),
+      createdAt: String(r.created_at ?? ""),
+      createdByName: (r.created_by as { name?: string } | null)?.name ?? null,
+    }));
+    return { ok: true, data: events };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
