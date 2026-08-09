@@ -71,6 +71,7 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
     routes: [
       { path: "analytics", lazy: () => import("@/features/org/AnalyticsView").then(m => ({ default: m.AnalyticsView })) },
       { path: "forecast", lazy: () => import("@/features/org/ForecastView").then(m => ({ default: m.ForecastView })) },
+      { path: "cross-analytics", lazy: () => import("@/features/org/CrossAnalyticsView").then(m => ({ default: m.CrossAnalyticsView })) },
     ],
   },
   {

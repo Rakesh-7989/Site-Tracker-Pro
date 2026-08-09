@@ -103,6 +103,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/rabills", label: "RA Bills", icon: "wallet", requires: "rabill:create", group: "Insights", modules: ["finance"] },
   { to: "/monthly-statement", label: "Monthly Statement", icon: "doc", requiresAny: ["budget:view", "revenue:view"], group: "Insights", modules: ["finance"] },
   { to: "/invoices", label: "Invoices", icon: "doc", requires: "invoice:create", group: "Insights", modules: ["finance"] },
+  { to: "/cross-analytics", label: "Cross-Project Analytics", icon: "barChart", requiresAny: ["budget:view", "revenue:view"], group: "Insights", modules: ["insights"] },
   { to: "/activity", label: "Activity", icon: "activity", requires: "activity:view", group: "Insights" },
   { to: "/audit", label: "Audit Log", icon: "shield", requires: "audit:read", group: "Insights" },
 
