@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { listPMProjects, listPMNotifications, type ProjectBrief, type NotifBrief } from "@/app/pmQueries";
+import { memberProjectScope } from "@/app/queries";
 import { useSession } from "@/auth/OrganizationContext";
 
 
@@ -31,7 +32,7 @@ export function PMView(): JSX.Element {
       setError(null);
       const client = await getClient();
       if (!client) { setError("Backend not configured."); setLoading(false); return; }
-      const [pRes, nRes] = await Promise.all([listPMProjects(client, orgId), listPMNotifications(client)]);
+      const [pRes, nRes] = await Promise.all([listPMProjects(client, orgId, memberProjectScope(session)), listPMNotifications(client)]);
       if (pRes.ok) setProjects(pRes.data); else setError(pRes.error);
       if (nRes.ok) setNotifs(nRes.data); else setError(nRes.error);
       setLoading(false);

@@ -1,13 +1,21 @@
 // SiteTrack Pro — PM Dashboard queries.
 
+import type { MemberProjectScope } from "./queries";
+
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface ProjectBrief { id: string; name: string; location: string | null; status: string; progress: number; }
 export interface NotifBrief { id: string; title: string; body: string; }
 
-export async function listPMProjects(client: any, orgId: string): Promise<PResult<ProjectBrief[]>> {
+export async function listPMProjects(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<PResult<ProjectBrief[]>> {
   try {
-    const { data, error } = await client.from("projects").select("id, name, location, status, progress").eq("org_id", orgId).order("name");
+    let query = client.from("projects").select("id, name, location, status, progress").eq("org_id", orgId);
+    if (scope.mode === "member") {
+      // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
+      if (scope.projectIds.length === 0) return { ok: true, data: [] };
+      query = query.in("id", scope.projectIds);
+    }
+    const { data, error } = await query.order("name");
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: (data ?? []).map((r: any) => ({ id: r.id, name: r.name, location: r.location, status: r.status, progress: r.progress ?? 0 })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }

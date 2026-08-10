@@ -1006,3 +1006,42 @@ PM + Client Portal brief queries were broken.
   valid** (`body` / `read_at` resolve). No migration required.
 - `vitest tests/app + ClientDashboard` → 63 files / 538 tests · lint + `tsc`
   clean.
+
+---
+
+## Feature — Members see only THEIR assigned projects (2026-08-10)
+
+### Requirement (user)
+In an org, any given team member should only see the projects **assigned to
+them** in the UI. Projects they're not assigned to must be hidden (no dangling
+data reaching their client).
+
+### Model
+The user↔project link lives in `project_members(profile_id, project_id, role,
+removed_at)`; an active assignment is `removed_at IS NULL`. The hydrated
+`session.projectMemberships` (fetchAuthSession) already carries exactly those
+active rows at boot — it is the "my projects" source of truth (also used by
+DetailView gating).
+
+### Fix (query-layer, server-side filter)
+- `src/app/queries.ts` — new `MemberProjectScope` (`{mode:"all"}` | `{mode:
+  "member", projectIds}`) + pure `memberProjectScope(session)`: org admins
+  (identityRole `orgadmin`/`superadmin`, or `isAdmin` on the active org) get
+  `mode:"all"` — everyone else gets the project ids from
+  `session.projectMemberships`. `listProjectsForOrg()` gained an optional
+  `scope` param that appends `.in("id", ids)` (with an empty-set short-circuit
+  returning `[]`, since PostgREST ignores `IN ()`).
+- `src/app/pmQueries.ts` — `listPMProjects()` gained the same optional `scope`.
+- `src/features/shell/ProjectsListView.tsx` (`/projects`) + `src/features/org/
+  PMView.tsx` (`/pm`) pass `memberProjectScope(session)`.
+
+Scope applied to the two browse surfaces (`/projects` + `/pm`). Org-rollup
+views (Revenue/Utilization/MonthlyStatement/CrossInvoices…) deliberately
+untouched — their child-table RLS is already project-membership gated, and
+their capability gates are manager-only; can be member-scoped later on request.
+
+### Verify
+- `tests/app/queries.test.ts` (+6 memberProjectScope + scoped list tests),
+  new `tests/app/pmScoped.test.ts` (4) — 18/18.
+- Full gate: lint clean · `tsc --noEmit` clean · vitest **143 files / 1792
+  tests** · smoke **304 checks** · e2e-mock **11/11**.

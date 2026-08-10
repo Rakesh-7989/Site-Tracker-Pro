@@ -5,7 +5,7 @@
 // unrelated columns can't break the list. Each returns a discriminated
 // {ok} result instead of throwing.
 
-import type { ProjectType, ProjectTierRole, ConstructionIndustry } from "@/auth";
+import type { ProjectType, ProjectTierRole, ConstructionIndustry, AuthSession } from "@/auth";
 import { isProjectTierRole } from "@/auth";
 
 export interface ProjectSummary {
@@ -36,17 +36,52 @@ export type QueryResult<T> =
   | { ok: false; error: string };
 
 /**
+ * Member-scoped project-list filter. `mode: "all"` = org admins / superadmins
+ * operate org-/platform-wide and see every project; `mode: "member"` = the list
+ * is restricted to the user's ACTIVE project_members rows (`removed_at IS
+ * NULL`), i.e. the projects assigned to them.
+ */
+export type MemberProjectScope =
+  | { mode: "all" }
+  | { mode: "member"; projectIds: string[] };
+
+/**
+ * Derive the project-list scope from the hydrated session. Org admins and
+ * superadmins see every project in the org; everyone else sees only the
+ * projects they have an active project_members row for.
+ */
+export function memberProjectScope(session: AuthSession): MemberProjectScope {
+  const isOrgWide =
+    session.user.identityRole === "superadmin" ||
+    session.user.identityRole === "orgadmin" ||
+    session.orgs.some((o) => o.orgId === session.activeOrgId && o.isAdmin);
+  if (isOrgWide) return { mode: "all" };
+  return { mode: "member", projectIds: session.projectMemberships.map((m) => m.projectId) };
+}
+
+/**
  * List projects for an org. Returns [] gracefully when org has none.
  * The client is the Supabase JS client (passed in so this stays testable).
+ * When `scope.mode === "member"`, rows are filtered server-side to the user's
+ * assigned projects so unassigned ones never reach the client.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listProjectsForOrg(client: any, orgId: string): Promise<QueryResult<ProjectSummary[]>> {
+export async function listProjectsForOrg(
+  client: any,
+  orgId: string,
+  scope: MemberProjectScope = { mode: "all" },
+): Promise<QueryResult<ProjectSummary[]>> {
   try {
-    const { data, error } = await client
+    let query = client
       .from("projects")
       .select("id, name, type, status, location, industry_subtype")
-      .eq("org_id", orgId)
-      .order("name", { ascending: true });
+      .eq("org_id", orgId);
+    if (scope.mode === "member") {
+      // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
+      if (scope.projectIds.length === 0) return { ok: true, data: [] };
+      query = query.in("id", scope.projectIds);
+    }
+    const { data, error } = await query.order("name", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
     const rows = (data ?? []) as Array<Record<string, unknown>>;
     const projects: ProjectSummary[] = rows.map(r => ({

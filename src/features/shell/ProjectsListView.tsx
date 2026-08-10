@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useOrgSwitcher, useCan, RequireCapability } from "@/auth";
-import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
+import { useSession } from "@/auth/OrganizationContext";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { Card, Button, Icon, Spinner, Badge } from "@/components/ui/atoms";
 
 type LoadState =
@@ -26,6 +27,7 @@ const TYPE_TONE: Record<string, "neutral" | "info" | "success" | "warning"> = {
 
 export function ProjectsListView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const orgCtx = activeOrg ? { orgId: activeOrg.orgId } : {};
   const canCreate = useCan("project:create", orgCtx);
   const [state, setState] = useState<LoadState>({ kind: "loading" });
@@ -39,7 +41,7 @@ export function ProjectsListView(): JSX.Element {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client = await (mod as any).getSupabaseClient();
       if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }
-      const res = await listProjectsForOrg(client, activeOrg.orgId);
+      const res = await listProjectsForOrg(client, activeOrg.orgId, memberProjectScope(session));
       if (cancelled) return;
       if (res.ok) setState({ kind: "ready", projects: res.data });
       else setState({ kind: "error", message: res.error });
