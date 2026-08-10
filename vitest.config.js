@@ -16,6 +16,28 @@ export default mergeConfig(
       exclude: ['tests/e2e/**', 'tests/_gen/**', 'node_modules/**'],
       reporters: 'default',
       setupFiles: ['./tests/setup.ts'],
+      // Coverage scope = the logic layers the unit suite targets (query
+      // factories, RBAC/auth, libs, module/plugin catalogs). Views are covered
+      // by smoke + e2e, not jsdom unit coverage. Thresholds = measured baseline
+      // (2026-08-10) so CI trends coverage up instead of red-flagging existing code.
+      coverage: {
+        provider: 'v8',
+        include: [
+          'src/app/**/*.ts',
+          'src/auth/**/*.ts',
+          'src/lib/**/*.ts',
+          'src/modules/**/*.ts',
+          'src/plugins/**/*.ts',
+        ],
+        reporter: ['text', 'html', 'json-summary'],
+        reportsDirectory: 'coverage',
+        thresholds: {
+          lines: 50,
+          functions: 50,
+          statements: 48,
+          branches: 38,
+        },
+      },
     },
   }),
 )

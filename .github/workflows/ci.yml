@@ -21,3 +21,45 @@ jobs:
       - run: npm run build
       - run: npm run smoke
       - run: npm run test:unit
+
+  # The CI-runnable mocked role-access suite (real router + shell, mocked
+  # Supabase session/REST). Runs in parallel with the unit gate.
+  e2e-mock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run mocked role-access suite
+        run: npm run test:e2e:mock
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-mock-report
+          path: test-results/
+          retention-days: 7
+
+  # Coverage on the logic layers (src/app, src/auth, src/lib, src/modules,
+  # src/plugins). Thresholds = measured baseline (2026-08-10) — green today,
+  # fails if coverage drops.
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:unit:coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7

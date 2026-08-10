@@ -1,0 +1,49 @@
+name: Nightly Regression
+
+# Scheduled regression run against the production surface. Runs the full
+# static gate + smoke + unit + mocked e2e, then probes the LIVE site + Supabase
+# health. Failures appear as a failing check on prod so the owner is notified.
+on:
+  schedule:
+    - cron: "30 2 * * *" # 02:30 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-regression
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Smoke
+        run: npm run smoke
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Mocked role-access e2e
+        run: npm run test:e2e:mock
+      - name: Live uptime probe (frontend + Supabase health)
+        run: npm run uptime
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-results
+          path: |
+            test-results/
+            coverage/
+          retention-days: 14

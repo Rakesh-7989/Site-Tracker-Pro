@@ -914,3 +914,27 @@ Logged in as any org-leadership role, the sidebar showed **PM Dashboard** (/pm).
 
 ### Verify
 - `npx vitest run tests/app/navConfig.test.ts` 28/28 · `tests/auth/permissionsMatrix.test.ts` 93/93 · `npx tsc --noEmit` clean · `npx eslint` clean.
+
+---
+
+## QA/Testing Infrastructure Upgrade (2026-08-10)
+
+### Goal
+Give every feature a repeatable, layered test story and automate the regression cadence (per the new `docs/QA_PLAYBOOK.md` + `docs/MANUAL_QA_GARCH.md`).
+
+### Done (all verified)
+- **Docs** — `docs/QA_PLAYBOOK.md` (suites table, 5-tier recipe, per-feature test map, regression cadence, infra gap log) + `docs/MANUAL_QA_GARCH.md` (G-Arch 22-role manual sign-in checklist + workflow sweeps).
+- **CI (`ci.yml`)** — now 3 parallel jobs on push/PR to main/prod:
+  - `test` (unchanged: lint → typecheck → build → smoke → unit)
+  - `e2e-mock` (new: playwright chromium + `test:e2e:mock` — the previously-unused CI-runnable role-access suite)
+  - `coverage` (new: `test:unit:coverage` with thresholds + html/json-summary artifact)
+- **Coverage** — added `@vitest/coverage-v8` (+`test:unit:coverage` script). Scope = logic layers (`src/app`,`src/auth`,`src/lib`,`src/modules`,`src/plugins`). Baseline measured: lines 53.65 / stmts 50.68 / funcs 52.41 / branches 41.07. Thresholds set just under baseline (50/48/50/38) so CI is green today and fails on any drop.
+- **Nightly regression (`nightly.yml`)** — cron 02:30 UTC + `workflow_dispatch`: lint → typecheck → build → smoke → unit → e2e-mock → **live uptime probe** (`npm run uptime`); artifacts uploaded; failures = red check on prod.
+- `.gitignore` — `coverage/` added.
+
+### Verify
+- Fresh-start gate from clean `npm ci`: `npm test` → **142 files / 1779 tests** + lint/typecheck/build/smoke all green.
+- `npm run test:unit:coverage` → thresholds met (green).
+- `npm run test:e2e:mock` → **11/11**.
+- All 4 workflows parse as valid YAML (`js-yaml` check).
+- No critical `npm audit` findings (7 high transitive — within accepted policy; only critical blocks CI).
