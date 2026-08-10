@@ -3,7 +3,7 @@
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface ProjectBrief { id: string; name: string; location: string | null; status: string; progress: number; client_email: string | null; type: string; }
-export interface NotificationBrief { id: string; title: string; message: string; read: boolean; }
+export interface NotificationBrief { id: string; title: string; body: string; read: boolean; }
 
 export async function listClientProjects(client: any, email: string): Promise<PResult<ProjectBrief[]>> {
   try {
@@ -19,10 +19,10 @@ export async function listClientProjects(client: any, email: string): Promise<PR
 export async function listClientNotifications(client: any): Promise<PResult<NotificationBrief[]>> {
   try {
     const { data, error } = await client.from("notifications")
-      .select("id, title, message, read")
+      .select("id, title, body, read_at")
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: (data ?? []).map((r: any) => ({ id: r.id, title: r.title ?? "", message: r.message ?? "", read: r.read ?? false })) };
+    return { ok: true, data: (data ?? []).map((r: any) => ({ id: r.id, title: r.title ?? "", body: r.body ?? "", read: r.read_at != null })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }

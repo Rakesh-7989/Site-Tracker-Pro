@@ -71,7 +71,7 @@ export function PMView(): JSX.Element {
                 </div>
                 <div>
                   <div className="font-semibold text-fg-primary text-sm">{n.title}</div>
-                  <p className="text-fg-secondary text-xs mt-0.5">{n.message}</p>
+                  <p className="text-fg-secondary text-xs mt-0.5">{n.body}</p>
                 </div>
               </Card>
             ))}

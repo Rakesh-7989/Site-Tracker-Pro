@@ -74,7 +74,7 @@ export function ClientPortalView(): JSX.Element {
           {unread.map(n => (
             <div key={n.id} className="py-2 border-t border-accent first:border-0">
               <div className="font-semibold text-accent-2 text-xs">{n.title}</div>
-              <div className="text-accent text-xs mt-0.5">{n.message}</div>
+              <div className="text-accent text-xs mt-0.5">{n.body}</div>
             </div>
           ))}
         </Card>

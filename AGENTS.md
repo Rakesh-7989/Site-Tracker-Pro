@@ -974,3 +974,35 @@ used correct names, so only the read side was broken.
   resolves).
 - `vitest tests/app/dprQueries.test.ts tests/dpr` → 80/80 · lint + `tsc` clean ·
   smoke 304.
+
+---
+
+## Fix — "column notifications.message does not exist" (2026-08-10)
+
+### Root cause
+Two notification read paths queried columns that don't exist on the live
+`notifications` table (verified against `information_schema` — real columns are
+`id, user_id, project_id, org_id, kind, title, body, link, read_at,
+delivered_at, created_at`):
+
+- `listPMNotifications` (`pmQueries.ts`) — `select("id, title, message")`,
+  mapper `message`.
+- `listClientNotifications` (`clientPortalQueries.ts`) — `select("id, title,
+  message, read")` — both `message` AND `read` are wrong (content column is
+  `body`; read state is `read_at`, null = unread).
+
+`notificationQueries.ts` already used the correct `body`/`read_at` — only the
+PM + Client Portal brief queries were broken.
+
+### Fix (frontend only — no schema change)
+- `src/app/pmQueries.ts` — `NotifBrief.message` → `body`; select/map `body`.
+- `src/app/clientPortalQueries.ts` — `NotificationBrief.message` → `body`;
+  select `id, title, body, read_at`; `read` derived from `read_at != null`.
+- `PMView.tsx` + `ClientPortalView.tsx` — render `n.body`.
+
+### Verify
+- Live PostgREST probe (anon): **old selects → 400 `column
+  notifications.message does not exist`** (reproduces the bug); **new selects →
+  valid** (`body` / `read_at` resolve). No migration required.
+- `vitest tests/app + ClientDashboard` → 63 files / 538 tests · lint + `tsc`
+  clean.
