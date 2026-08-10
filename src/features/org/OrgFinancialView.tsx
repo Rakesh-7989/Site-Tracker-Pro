@@ -3,6 +3,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Badge, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
@@ -19,6 +21,7 @@ const HEALTH_LABEL: Record<"green" | "amber" | "red", string> = {
 
 export function OrgFinancialView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const ctx = { orgId: activeOrg?.orgId };
   const canView = useCan("budget:view", ctx);
 
@@ -31,8 +34,8 @@ export function OrgFinancialView(): JSX.Element {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const [pRes, cRes] = await Promise.all([
-      getOrgProjectKPIs(client, ctx.orgId ?? ""),
-      getOrgCashFlowForecast(client, ctx.orgId ?? "", 6),
+      getOrgProjectKPIs(client, ctx.orgId ?? "", memberProjectScope(session)),
+      getOrgCashFlowForecast(client, ctx.orgId ?? "", 6, memberProjectScope(session)),
     ]);
     if (pRes.ok) setProjects(pRes.data); else setError(pRes.error);
     if (cRes.ok) setCashFlow(cRes.data);

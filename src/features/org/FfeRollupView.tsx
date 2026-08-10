@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getClient } from "@/lib/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Spinner, Alert, AccessDenied, ProgressBar, Button, Icon } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
@@ -27,6 +29,7 @@ export function FfeRollupView(): JSX.Element {
 
 function FfeRollupInner(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const canView = useCan("ffe:manage", { orgId: activeOrg?.orgId });
   const navigate = useNavigate();
 
@@ -39,7 +42,7 @@ function FfeRollupInner(): JSX.Element {
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
     if (!activeOrg?.orgId) { setError("No active organization."); setLoading(false); return; }
-    const res = await listOrgFfe(client, activeOrg.orgId);
+    const res = await listOrgFfe(client, activeOrg.orgId, memberProjectScope(session));
     if (res.ok) setProjects(res.data); else setError(res.error);
     setLoading(false);
   }, [activeOrg?.orgId]);

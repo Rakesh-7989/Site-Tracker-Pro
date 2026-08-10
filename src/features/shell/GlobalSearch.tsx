@@ -5,6 +5,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@/components/ui/atoms";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useAuth } from "@/auth";
+import { memberProjectScope } from "@/app/queries";
 
 interface SearchResult {
   type: "project" | "milestone" | "issue" | "vendor";
@@ -14,6 +16,7 @@ interface SearchResult {
 }
 
 export function GlobalSearch(): JSX.Element {
+  const { session } = useAuth();
   const [q, setQ] = useState("");
   const [show, setShow] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -27,10 +30,15 @@ export function GlobalSearch(): JSX.Element {
       const mod = await import("../../lib/supabase");
       const client = await mod.getSupabaseClient();
       if (!client) { setResults([]); return; }
+      if (!session) { setResults([]); return; }
       const pat = `%${query.trim()}%`;
+      const scope = memberProjectScope(session);
+
+      let projectQ = client.from("projects").select("id, name, location").ilike("name", pat).limit(5);
+      if (scope.mode === "member" && scope.projectIds.length > 0) projectQ = projectQ.in("id", scope.projectIds);
 
       const [projectsRes, milestonesRes, issuesRes] = await Promise.all([
-        client.from("projects").select("id, name, location").ilike("name", pat).limit(5),
+        projectQ,
         client.from("milestones").select("id, title, project_id, projects!inner(name)").ilike("title", pat).limit(5),
         client.from("issues").select("id, title, project_id, projects!inner(name)").ilike("title", pat).limit(5),
       ]);
@@ -51,7 +59,7 @@ export function GlobalSearch(): JSX.Element {
     } catch {
       setResults([]);
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     const timer = setTimeout(() => { if (q.trim()) doSearch(q); }, 200);

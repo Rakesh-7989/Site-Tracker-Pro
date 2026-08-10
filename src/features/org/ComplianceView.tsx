@@ -1,7 +1,8 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
 import { Alert, Spinner } from "@/components/ui/atoms";
-import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
   checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus,
@@ -17,6 +18,7 @@ export function ComplianceView(): JSX.Element {
 }
 
 function Inner({ orgId }: { orgId: string }): JSX.Element {
+  const session = useSession();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState("");
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       setLoading(true);
       const client = await getClient();
       if (!client) { setLoading(false); return; }
-      const res = await listProjectsForOrg(client, orgId);
+      const res = await listProjectsForOrg(client, orgId, memberProjectScope(session));
       if (cancelled) return;
       if (res.ok) {
         setProjects(res.data);

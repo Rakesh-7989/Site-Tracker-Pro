@@ -4,6 +4,7 @@
 
 import { raNetPayable } from "./financeQueries";
 import { netReceivable } from "./crossInvoiceQueries";
+import type { MemberProjectScope } from "./queries";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -116,13 +117,18 @@ export function orgKPIRollup(projects: ProjectKPIs[]): OrgKPIRollup {
 // ── Query Mappers ──────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listProjectsWithBudget(client: any, orgId: string): Promise<Result<ProjectBrief[]>> {
+export async function listProjectsWithBudget(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<ProjectBrief[]>> {
   try {
-    const { data, error } = await client
+    let q = client
       .from("projects")
       .select("id, name, type, budget")
-      .eq("org_id", orgId)
-      .in("type", [...PROJECT_TYPES]);
+      .eq("org_id", orgId);
+    if (scope.mode === "member") {
+      // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
+      if (scope.projectIds.length === 0) return ok([]);
+      q = q.in("id", scope.projectIds);
+    }
+    const { data, error } = await q.in("type", [...PROJECT_TYPES]);
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), name: String(r.name ?? ""), type: r.type == null ? null : String(r.type),
@@ -132,10 +138,10 @@ export async function listProjectsWithBudget(client: any, orgId: string): Promis
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getOrgProjectKPIs(client: any, orgId: string): Promise<Result<ProjectKPIs[]>> {
+export async function getOrgProjectKPIs(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<ProjectKPIs[]>> {
   try {
     // 1. Projects with budgets
-    const projectsRes = await listProjectsWithBudget(client, orgId);
+    const projectsRes = await listProjectsWithBudget(client, orgId, scope);
     if (!projectsRes.ok) return projectsRes;
     if (projectsRes.data.length === 0) return ok([]);
     const ids = projectsRes.data.map(p => p.id);
@@ -283,9 +289,9 @@ export interface CashFlowForecastRow {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getOrgCashFlowForecast(client: any, orgId: string, months = 6): Promise<Result<CashFlowForecastRow[]>> {
+export async function getOrgCashFlowForecast(client: any, orgId: string, months = 6, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CashFlowForecastRow[]>> {
   try {
-    const projectsRes = await listProjectsWithBudget(client, orgId);
+    const projectsRes = await listProjectsWithBudget(client, orgId, scope);
     if (!projectsRes.ok) return projectsRes;
     if (projectsRes.data.length === 0) return ok([]);
     const ids = projectsRes.data.map(p => p.id);
@@ -395,11 +401,11 @@ export interface ExecDashboard {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getExecDashboard(client: any, orgId: string): Promise<Result<ExecDashboard>> {
+export async function getExecDashboard(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<ExecDashboard>> {
   try {
     const [kpisRes, cashFlowRes] = await Promise.all([
-      getOrgProjectKPIs(client, orgId),
-      getOrgCashFlowForecast(client, orgId, 6),
+      getOrgProjectKPIs(client, orgId, scope),
+      getOrgCashFlowForecast(client, orgId, 6, scope),
     ]);
     if (!kpisRes.ok) return kpisRes;
     if (!cashFlowRes.ok) return cashFlowRes;
@@ -411,7 +417,7 @@ export async function getExecDashboard(client: any, orgId: string): Promise<Resu
     const atRiskProjects = kpis.filter(p => p.health === "red").sort((a, b) => a.netCashFlow - b.netCashFlow).slice(0, 5);
 
     // Quick counts for alerts
-    const projectsRes = await listProjectsWithBudget(client, orgId);
+    const projectsRes = await listProjectsWithBudget(client, orgId, scope);
     let overdueInvoices = 0, overdueRA = 0, pendingApprovals = 0;
     if (projectsRes.ok && projectsRes.data.length > 0) {
       const ids = projectsRes.data.map(p => p.id);

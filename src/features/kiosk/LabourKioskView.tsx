@@ -4,6 +4,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
 import { PlanGate } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 
 
 import { getClient } from "@/lib/supabase";
@@ -19,6 +21,7 @@ export function LabourKioskView(): JSX.Element {
 }
 
 function LabourKioskInner(): JSX.Element {
+  const session = useSession();
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
   const [logs, setLogs] = useState<Array<{ id: string; date: string; badge: string; name: string; trade: string; in_time: string; out_time: string | null; hours: number }>>([]);
@@ -45,14 +48,20 @@ function LabourKioskInner(): JSX.Element {
     if (!uid) { setLoading(false); return; }
     const { data: om } = await client.from("org_members").select("org_id").eq("profile_id", uid).limit(1).maybeSingle();
     if (!om?.org_id) { setLoading(false); return; }
-    const { data: pjs } = await client.from("projects").select("id, name").eq("org_id", om.org_id).eq("status", "active");
+    const scope = memberProjectScope(session);
+    let q = client.from("projects").select("id, name").eq("org_id", om.org_id).eq("status", "active");
+    if (scope.mode === "member") {
+      if (scope.projectIds.length === 0) { setProjects([]); setLoading(false); return; }
+      q = q.in("id", scope.projectIds);
+    }
+    const { data: pjs } = await q;
     const pList = pjs ?? [];
     setProjects(pList);
     if (pList.length) setSelProject(pList[0].id);
     const { data: l } = await client.from("labour").select("*").order("in_time", { ascending: false }).limit(100);
     setLogs(l ?? []);
     setLoading(false);
-  }, []);
+  }, [session]);
 
   useEffect(() => { void load(); }, [load]);
 

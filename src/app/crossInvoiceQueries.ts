@@ -1,6 +1,8 @@
 // SiteTrack Pro — Org-wide invoice rollup with payment reconciliation.
 // Mirrors CrossRaBillsView + crossRaQueries pattern for invoices.
 
+import type { MemberProjectScope } from "./queries";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -78,10 +80,16 @@ export function crossInvoiceRollup(invoices: CrossInvoice[]): CrossInvoiceRollup
 // ── Query mappers ─────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgInvoices(client: any, orgId: string): Promise<Result<CrossInvoice[]>> {
+export async function listOrgInvoices(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CrossInvoice[]>> {
   try {
     // Fetch projects in org first
-    const projRes = await client.from("projects").select("id").eq("org_id", orgId);
+    let projQ = client.from("projects").select("id").eq("org_id", orgId);
+    if (scope.mode === "member") {
+      // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
+      if (scope.projectIds.length === 0) return ok([]);
+      projQ = projQ.in("id", scope.projectIds);
+    }
+    const projRes = await projQ;
     if (projRes.error) return dbe(projRes.error);
     const projectIds = (projRes.data ?? []).map((p: any) => p.id);
     if (projectIds.length === 0) return ok([]);
@@ -130,7 +138,7 @@ export async function listOrgInvoices(client: any, orgId: string): Promise<Resul
 // ── Org-wide rollup ──────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgInvoicesWithPayments(client: any, orgId: string): Promise<Result<CrossInvoice[]>> {
+export async function listOrgInvoicesWithPayments(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CrossInvoice[]>> {
   // Reuse listOrgInvoices - it already includes payment aggregation
-  return listOrgInvoices(client, orgId);
+  return listOrgInvoices(client, orgId, scope);
 }

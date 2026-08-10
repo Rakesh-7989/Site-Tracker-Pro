@@ -7,6 +7,8 @@ import { Input, Select, FormField } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
 import { useCan } from "@/auth";
 import { useOrgSwitcher } from "@/auth/useOrgSwitcher";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import {
   listOrgInvoicesWithPayments,
   crossInvoiceRollup,
@@ -63,6 +65,7 @@ export function CrossInvoicesView(): JSX.Element {
   const t = useT();
   const canView = useCan("invoice:create", { orgId: useOrgSwitcher().activeOrg?.orgId ?? "" });
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const [invoices, setInvoices] = useState<CrossInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +76,7 @@ export function CrossInvoicesView(): JSX.Element {
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listOrgInvoicesWithPayments(client, activeOrg!.orgId);
+    const res = await listOrgInvoicesWithPayments(client, activeOrg!.orgId, memberProjectScope(session));
     if (res.ok) setInvoices(res.data); else setError(res.error);
     setLoading(false);
   }, [activeOrg]);

@@ -8,6 +8,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { DiffView, type DiffImageSource } from "@/features/shared/DiffView";
 import { listDrawings, type Drawing } from "@/app/designQueries";
 import { diffPairs } from "@/lib/drawingDiffPair";
@@ -20,6 +22,7 @@ export function ARDrawingOverlayView(): JSX.Element {
 }
 
 function ARDrawingOverlayInner(): JSX.Element {
+  const session = useSession();
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
   const [rows, setRows] = useState<Drawing[]>([]);
@@ -36,12 +39,18 @@ function ARDrawingOverlayInner(): JSX.Element {
     if (!uid) { setLoading(false); return; }
     const { data: om } = await client.from("org_members").select("org_id").eq("profile_id", uid).limit(1).maybeSingle();
     if (!om?.org_id) { setLoading(false); return; }
-    const { data: pjs } = await client.from("projects").select("id, name").eq("org_id", om.org_id).eq("status", "active");
+    const scope = memberProjectScope(session);
+    let q = client.from("projects").select("id, name").eq("org_id", om.org_id).eq("status", "active");
+    if (scope.mode === "member") {
+      if (scope.projectIds.length === 0) { setProjects([]); setLoading(false); return; }
+      q = q.in("id", scope.projectIds);
+    }
+    const { data: pjs } = await q;
     const pList = pjs ?? [];
     setProjects(pList);
     if (pList.length) setSelProject(pList[0].id);
     setLoading(false);
-  }, []);
+  }, [session]);
 
   useEffect(() => { void load(); }, [load]);
 

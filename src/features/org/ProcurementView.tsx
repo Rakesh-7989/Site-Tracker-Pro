@@ -14,6 +14,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Select, Input } from "@/components/ui/forms";
@@ -43,6 +45,7 @@ export function ProcurementView(): JSX.Element {
 
 function ProcurementInner(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const canView = useCan("procurement:view", { orgId: activeOrg?.orgId });
   const orgId = activeOrg?.orgId ?? "";
 
@@ -68,7 +71,7 @@ function ProcurementInner(): JSX.Element {
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
     if (!orgId) { setError("No active organization."); setLoading(false); return; }
     const [projRes, quoteRes, vendorRes] = await Promise.all([
-      listOrgProjects(client, orgId),
+      listOrgProjects(client, orgId, undefined, memberProjectScope(session)),
       listOrgQuotes(client, orgId),
       listVendors(client, orgId),
     ]);

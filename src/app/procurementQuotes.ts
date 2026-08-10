@@ -6,6 +6,8 @@
 // UI gating via the procurement:view capability + plan gate (PlanFeature
 // "procurement", Business+).
 
+import type { MemberProjectScope } from "./queries";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -297,10 +299,15 @@ export async function deleteQuote(client: any, id: string): Promise<Result<{ ok:
 export interface OrgProjectBrief { id: string; name: string; type: string | null; }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgProjects(client: any, orgId: string, types?: readonly string[]): Promise<Result<OrgProjectBrief[]>> {
+export async function listOrgProjects(client: any, orgId: string, types?: readonly string[], scope: MemberProjectScope = { mode: "all" }): Promise<Result<OrgProjectBrief[]>> {
   try {
     let q = client.from("projects").select("id, name, type").eq("org_id", orgId);
     if (types && types.length > 0) q = q.in("type", [...types]);
+    if (scope.mode === "member") {
+      // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
+      if (scope.projectIds.length === 0) return ok([]);
+      q = q.in("id", scope.projectIds);
+    }
     const { data, error } = await q.order("name", { ascending: true });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({

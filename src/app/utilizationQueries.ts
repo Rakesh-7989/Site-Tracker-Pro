@@ -16,6 +16,7 @@
 import { committedFee, type FeePhase } from "./phaseQueries";
 import { APPROVAL_STATUSES, type TimeEntry } from "./timeQueries";
 import { PROJECT_TYPES } from "@/auth/roles";
+import type { MemberProjectScope } from "./queries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
@@ -52,13 +53,18 @@ export interface UtilizationPhaseRow {
 const CONSULTANCY_TYPES = PROJECT_TYPES;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listProjectsByType(client: any, orgId: string, types: readonly string[] = CONSULTANCY_TYPES): Promise<Result<ProjectBrief[]>> {
+export async function listProjectsByType(client: any, orgId: string, types: readonly string[] = CONSULTANCY_TYPES, scope: MemberProjectScope = { mode: "all" }): Promise<Result<ProjectBrief[]>> {
   try {
-    const { data, error } = await client
+    let q = client
       .from("projects")
       .select("id, name, type")
-      .eq("org_id", orgId)
-      .in("type", [...types]);
+      .eq("org_id", orgId);
+    if (scope.mode === "member") {
+      // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
+      if (scope.projectIds.length === 0) return ok([]);
+      q = q.in("id", scope.projectIds);
+    }
+    const { data, error } = await q.in("type", [...types]);
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), name: String(r.name ?? ""), type: r.type == null ? null : String(r.type),
@@ -84,9 +90,9 @@ export function computeUtilization(p: ProjectBrief, phases: FeePhase[], entries:
  * (filters by project id list), then computes rows locally.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getOrgUtilization(client: any, orgId: string): Promise<Result<UtilizationRow[]>> {
+export async function getOrgUtilization(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<UtilizationRow[]>> {
   try {
-    const projects = await listProjectsByType(client, orgId);
+    const projects = await listProjectsByType(client, orgId, CONSULTANCY_TYPES, scope);
     if (!projects.ok) return projects;
     if (projects.data.length === 0) return ok([]);
     const ids = projects.data.map(p => p.id);
@@ -223,9 +229,9 @@ export async function getProjectUtilizationByPhase(client: any, projectId: strin
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getOrgUtilizationByPhase(client: any, orgId: string): Promise<Result<UtilizationPhaseRow[]>> {
+export async function getOrgUtilizationByPhase(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<UtilizationPhaseRow[]>> {
   try {
-    const projects = await listProjectsByType(client, orgId);
+    const projects = await listProjectsByType(client, orgId, CONSULTANCY_TYPES, scope);
     if (!projects.ok) return projects;
     if (projects.data.length === 0) return ok([]);
     const ids = projects.data.map(p => p.id);

@@ -8,6 +8,8 @@
 // self + member; no update/delete. So the org rollup only surfaces downloads
 // from projects the caller can already see.
 
+import type { MemberProjectScope } from "./queries";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -69,12 +71,18 @@ export async function logDownloadEvent(client: any, input: DownloadEventInput): 
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgProjectsBrief(client: any, orgId: string): Promise<Result<ProjectBrief[]>> {
+export async function listOrgProjectsBrief(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<ProjectBrief[]>> {
   try {
-    const { data, error } = await client
+    let q = client
       .from("projects")
       .select("id, name, type")
       .eq("org_id", orgId);
+    if (scope.mode === "member") {
+      // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
+      if (scope.projectIds.length === 0) return ok([]);
+      q = q.in("id", scope.projectIds);
+    }
+    const { data, error } = await q;
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), name: String(r.name ?? ""), type: r.type == null ? null : String(r.type),
@@ -90,9 +98,9 @@ const DOWNLOAD_SELECT = "id, project_id, register, ref_id, file_name, file_path,
  * names for whichever users appear, before decorating with the pure helper.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgDownloadEvents(client: any, orgId: string, limit = 200): Promise<Result<DecoratedDownloadEvent[]>> {
+export async function listOrgDownloadEvents(client: any, orgId: string, limit = 200, scope: MemberProjectScope = { mode: "all" }): Promise<Result<DecoratedDownloadEvent[]>> {
   try {
-    const projectsRes = await listOrgProjectsBrief(client, orgId);
+    const projectsRes = await listOrgProjectsBrief(client, orgId, scope);
     if (!projectsRes.ok) return projectsRes;
     if (projectsRes.data.length === 0) return ok([]);
     const ids = projectsRes.data.map(p => p.id);

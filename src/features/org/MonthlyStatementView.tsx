@@ -5,6 +5,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useOrgSwitcher, useCan } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Spinner, Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
@@ -27,6 +29,7 @@ export function MonthlyStatementView(): JSX.Element {
 
 function MonthlyStatementInner(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const ctx = { orgId: activeOrg?.orgId };
   const canView = useCan("budget:view", ctx) || useCan("revenue:view", ctx);
 
@@ -44,7 +47,7 @@ function MonthlyStatementInner(): JSX.Element {
     const range = currentMonthRange();
     const monthStart = month ? `${month}-01` : range.from;
     const monthEnd = month ? `${month}-${new Date(Number(month.slice(0,4)), Number(month.slice(5)), 0).getDate()}` : range.to;
-    const res = await listOrgMonthlyStatement(client, activeOrg.orgId, monthStart, monthEnd);
+    const res = await listOrgMonthlyStatement(client, activeOrg.orgId, monthStart, monthEnd, memberProjectScope(session));
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
   }, [activeOrg?.orgId, month]);

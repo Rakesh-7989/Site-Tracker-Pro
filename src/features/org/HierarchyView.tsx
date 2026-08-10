@@ -1,8 +1,9 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
   listBlocks, listFloors, listUnits,
@@ -34,6 +35,7 @@ export function HierarchyView(): JSX.Element {
 }
 
 function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: string) => void }): JSX.Element {
+  const session = useSession();
   const canCreate = user?.identityRole !== "client";
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [blocks, setBlocks] = useState<Record<string, any[]>>({});
@@ -60,7 +62,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
       setLoading(true);
       const client = await getClient();
       if (!client) { setLoading(false); return; }
-      const res = await listProjectsForOrg(client, orgId);
+      const res = await listProjectsForOrg(client, orgId, memberProjectScope(session));
       if (cancelled) return;
       if (res.ok) {
         setProjects(res.data);

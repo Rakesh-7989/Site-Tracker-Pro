@@ -4,6 +4,7 @@
 // via the ffe:manage capability + plan gate (PlanFeature "ffe").
 
 import { listProjectsByType } from "./utilizationQueries";
+import type { MemberProjectScope } from "./queries";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -139,9 +140,9 @@ export interface FfeOrgProject {
  * member, so this only surfaces projects the caller can already see.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgFfe(client: any, orgId: string): Promise<Result<FfeOrgProject[]>> {
+export async function listOrgFfe(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<FfeOrgProject[]>> {
   try {
-    const projectsRes = await listProjectsByType(client, orgId, FFE_PROJECT_TYPES);
+    const projectsRes = await listProjectsByType(client, orgId, FFE_PROJECT_TYPES, scope);
     if (!projectsRes.ok) return projectsRes;
     if (projectsRes.data.length === 0) return ok([]);
     const ids = projectsRes.data.map(p => p.id);

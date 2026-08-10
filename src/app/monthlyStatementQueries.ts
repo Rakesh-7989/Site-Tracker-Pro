@@ -5,6 +5,7 @@
 // UtilizationView org-rollup pattern (project list once, then .in fetches).
 
 import { listProjectsByType } from "./utilizationQueries";
+import type { MemberProjectScope } from "./queries";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -160,12 +161,16 @@ export async function listOrgMonthlyStatement(
   client: any,
   orgId: string,
   monthStart: string, // YYYY-MM-DD
-  monthEnd: string    // YYYY-MM-DD
+  monthEnd: string,   // YYYY-MM-DD
+  scope: MemberProjectScope = { mode: "all" }
 ): Promise<Result<MonthlyStatementRow[]>> {
   try {
-    const projectsRes = await listProjectsByType(client, orgId, [
-      "consultant", "design", "construction", "interior"
-    ]);
+    const projectsRes = await listProjectsByType(
+      client,
+      orgId,
+      ["consultant", "design", "construction", "interior"],
+      scope,
+    );
     if (!projectsRes.ok) return projectsRes;
     if (projectsRes.data.length === 0) return ok([]);
     const ids = projectsRes.data.map(p => p.id);

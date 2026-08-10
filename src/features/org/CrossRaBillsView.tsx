@@ -10,6 +10,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrgSwitcher, useCan } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Spinner, Badge, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
@@ -37,6 +39,7 @@ export function CrossRaBillsView(): JSX.Element {
 
 function Inner({ orgId }: { orgId: string }): JSX.Element {
   const navigate = useNavigate();
+  const session = useSession();
   const [rows, setRows] = useState<CrossRaBill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +48,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await getOrgRaBills(client, orgId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
+    const res = await getOrgRaBills(client, orgId, memberProjectScope(session)); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [orgId]);
   useEffect(() => { void reload(); }, [reload]);
 

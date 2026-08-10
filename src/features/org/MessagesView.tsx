@@ -6,6 +6,7 @@ import { useAuth } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { listMessages, postMessage, type Message } from "@/app/messageQueries";
+import { memberProjectScope } from "@/app/queries";
 
 import { getClient } from "@/lib/supabase";
 interface ProjectBrief {
@@ -34,9 +35,16 @@ export function MessagesView(): JSX.Element {
   useEffect(() => {
     (async () => {
       setError(null);
+      if (!session) { setLoading(false); return; }
       const client = await getClient();
       if (!client) { setError("Backend not configured."); setLoading(false); return; }
-      const { data, error: e } = await client.from("projects").select("id, name").order("name");
+      const scope = memberProjectScope(session);
+      let q = client.from("projects").select("id, name").order("name");
+      if (scope.mode === "member") {
+        if (scope.projectIds.length === 0) { setProjects([]); setPid(""); setLoading(false); return; }
+        q = q.in("id", scope.projectIds);
+      }
+      const { data, error: e } = await q;
       if (e) { setError(String(e.message ?? e)); } else {
         const list: ProjectBrief[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name }));
         setProjects(list);
@@ -44,7 +52,7 @@ export function MessagesView(): JSX.Element {
       }
       setLoading(false);
     })();
-  }, [pid]);
+  }, [pid, session]);
 
   const reload = useCallback(async (projectId: string) => {
     if (!projectId) return;

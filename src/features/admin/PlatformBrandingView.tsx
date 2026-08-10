@@ -1,7 +1,8 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
-import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
   getOrgBranding, listProjectBrandings,
@@ -21,6 +22,7 @@ export function PlatformBrandingView(): JSX.Element {
 }
 
 function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
+  const session = useSession();
   const [level, setLevel] = useState<"org" | "project">("org");
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState("");
@@ -54,7 +56,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
       const client = await getClient();
       if (!client) { setLoading(false); return; }
       const [pRes] = await Promise.all([
-        listProjectsForOrg(client, orgId),
+        listProjectsForOrg(client, orgId, memberProjectScope(session)),
       ]);
       if (cancelled) return;
       if (pRes.ok) {

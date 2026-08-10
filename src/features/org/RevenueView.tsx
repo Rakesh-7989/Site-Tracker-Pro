@@ -12,6 +12,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useOrgSwitcher, useCan } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
@@ -24,6 +26,7 @@ import type { Retainer } from "@/app/retainerQueries";
 
 export function RevenueView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const canView = useCan("revenue:view", { orgId: activeOrg?.orgId });
 
   const [projects, setProjects] = useState<ProjectBrief[]>([]);
@@ -37,7 +40,7 @@ export function RevenueView(): JSX.Element {
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
     if (!activeOrg?.orgId) { setError("No active organization."); setLoading(false); return; }
-    const projectsRes = await listProjectsByType(client, activeOrg.orgId);
+    const projectsRes = await listProjectsByType(client, activeOrg.orgId, undefined, memberProjectScope(session));
     if (!projectsRes.ok) { setError(projectsRes.error); setLoading(false); return; }
     const ids = projectsRes.data.map(p => p.id);
     const [invRes, retRes] = await Promise.all([listOrgInvoices(client, ids), listOrgRetainers(client, ids)]);

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select, Textarea } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
@@ -28,6 +30,7 @@ export function HandoverPacketView(): JSX.Element {
   const [activeTab, setActiveTab] = useState<Tab>("punch");
 
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
 
@@ -35,7 +38,13 @@ export function HandoverPacketView(): JSX.Element {
     if (!activeOrg?.orgId) return;
     const client = await getClient();
     if (!client) return;
-    const { data } = await client.from("projects").select("id, name").eq("org_id", activeOrg.orgId);
+    const scope = memberProjectScope(session);
+    let q = client.from("projects").select("id, name").eq("org_id", activeOrg.orgId);
+    if (scope.mode === "member") {
+      if (scope.projectIds.length === 0) { setProjects([]); return; }
+      q = q.in("id", scope.projectIds);
+    }
+    const { data } = await q;
     const pList = data ?? [];
     setProjects(pList);
     if (pList.length) setSelProject(pList[0].id);

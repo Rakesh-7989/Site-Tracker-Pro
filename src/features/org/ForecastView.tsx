@@ -1,7 +1,8 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { listProjectsForOrg, type ProjectSummary } from "@/app/queries";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
   getProjectForecastDetail, getBoqForProject, getRaBillsForProject,
@@ -30,6 +31,7 @@ export function ForecastView(): JSX.Element {
 }
 
 function Inner({ orgId }: { orgId: string }): JSX.Element {
+  const session = useSession();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -48,7 +50,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       setLoading(true);
       const client = await getClient();
       if (!client) { setLoading(false); return; }
-      const res = await listProjectsForOrg(client, orgId);
+      const res = await listProjectsForOrg(client, orgId, memberProjectScope(session));
       if (cancelled) return;
       if (res.ok) {
         setProjects(res.data);

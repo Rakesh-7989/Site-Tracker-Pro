@@ -14,6 +14,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useOrgSwitcher, useCan } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Spinner, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
@@ -33,6 +35,7 @@ function fmtDate(iso: string): string {
 
 export function DownloadAuditView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const ctx = { orgId: activeOrg?.orgId };
   const canDeliver = useCan("deliverable:manage", ctx);
   const canApprove = useCan("deliverable:approve", ctx);
@@ -49,7 +52,7 @@ export function DownloadAuditView(): JSX.Element {
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
     if (!activeOrg?.orgId) { setError("No active organization."); setLoading(false); return; }
-    const res = await listOrgDownloadEvents(client, activeOrg.orgId);
+    const res = await listOrgDownloadEvents(client, activeOrg.orgId, 200, memberProjectScope(session));
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
   }, [activeOrg?.orgId]);

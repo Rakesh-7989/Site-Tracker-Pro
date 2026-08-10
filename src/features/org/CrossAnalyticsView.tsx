@@ -4,6 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Badge, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
@@ -24,6 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 export function CrossAnalyticsView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
+  const session = useSession();
   const ctx = { orgId: activeOrg?.orgId };
   const canView = useCan("budget:view", ctx) || useCan("revenue:view", ctx);
 
@@ -34,7 +37,7 @@ export function CrossAnalyticsView(): JSX.Element {
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await getExecDashboard(client, ctx.orgId ?? "");
+    const res = await getExecDashboard(client, ctx.orgId ?? "", memberProjectScope(session));
     if (res.ok) setDashboard(res.data); else setError(res.error);
     setLoading(false);
   }, [ctx.orgId]);

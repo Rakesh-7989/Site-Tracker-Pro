@@ -8,6 +8,7 @@
 
 import { listProjectsByType } from "./utilizationQueries";
 import { raNetPayable, type RaBillStatus } from "./financeQueries";
+import type { MemberProjectScope } from "./queries";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const errbox = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -56,9 +57,9 @@ export function crossRaRollup(rows: CrossRaBill[]): CrossRaTotals {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getOrgRaBills(client: any, orgId: string): Promise<Result<CrossRaBill[]>> {
+export async function getOrgRaBills(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CrossRaBill[]>> {
   try {
-    const projectsRes = await listProjectsByType(client, orgId);
+    const projectsRes = await listProjectsByType(client, orgId, undefined, scope);
     if (!projectsRes.ok) return projectsRes;
     if (projectsRes.data.length === 0) return { ok: true, data: [] };
     const ids = projectsRes.data.map(p => p.id);

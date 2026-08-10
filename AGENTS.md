@@ -1045,3 +1045,56 @@ their capability gates are manager-only; can be member-scoped later on request.
   new `tests/app/pmScoped.test.ts` (4) — 18/18.
 - Full gate: lint clean · `tsc --noEmit` clean · vitest **143 files / 1792
   tests** · smoke **304 checks** · e2e-mock **11/11**.
+
+---
+
+## Feature — Member-scoped visibility extended to org rollups + dropdowns (2026-08-11)
+
+### Requirement (user)
+Same rule as the /projects + /pm pass, applied EVERYWHERE: non-admin org members
+see only projects **assigned to them**; org admins (identityRole
+`orgadmin`/`superadmin`, or `isAdmin` on the active org) keep full visibility.
+Unassigned projects must never reach their client.
+
+### Fix (server-side filter via the existing `memberProjectScope(session)`)
+- **Query layer** — every org-rollup helper gained an optional
+  `scope: MemberProjectScope = { mode: "all" }` last param (default `"all"` keeps
+  every existing caller + test unchanged) that appends `.in("id", ids)` and
+  short-circuits to `ok([])` on an empty set (PostgREST ignores `IN ()`):
+  - `utilizationQueries.ts`: `listProjectsByType`, `getOrgUtilization`,
+    `getOrgUtilizationByPhase`.
+  - `crossRaQueries.ts`: `getOrgRaBills`.
+  - `ffeQueries.ts`: `listOrgFfe`.
+  - `monthlyStatementQueries.ts`: `listOrgMonthlyStatement`.
+  - `crossInvoiceQueries.ts`: `listOrgInvoices` (+ `WithPayments` reuses it).
+  - `downloadAuditQueries.ts`: `listOrgProjectsBrief`, `listOrgDownloadEvents`.
+  - `crossAnalyticsQueries.ts`: `listProjectsWithBudget`, `getOrgProjectKPIs`,
+    `getOrgCashFlowForecast`, `getExecDashboard`.
+  - `procurementQuotes.ts`: `listOrgProjects`.
+- **Rollup views** — `UtilizationView`, `RevenueView`, `CrossRaBillsView`,
+  `FfeRollupView`, `MonthlyStatementView`, `CrossInvoicesView`,
+  `DownloadAuditView`, `ProcurementView`, `CrossAnalyticsView`,
+  `OrgFinancialView`: each adds `useSession()` (from
+  `@/auth/OrganizationContext`) and passes `memberProjectScope(session)` to its
+  org query.
+- **Dropdowns / ops pickers** — planning (`ForecastView`, `HierarchyView`,
+  `ComplianceView`, `PlatformBrandingView`), handover (`WorklogsView`,
+  `HandoverPacketView`, `MeasurementBookView`, `EquipmentView` — renamed local
+  `liveSession` where the file already destructures `session` from `useAuth`),
+  kiosk (`LabourKioskView`, `SiteWallKioskView`, `DailySnapshotView`,
+  `ARDrawingOverlayView`), plus `GlobalSearch` + `MessagesView`. Inline
+  `from("projects").select(...)` pickers apply the same `.in("id")` +
+  empty-guard pattern; `MessagesView`/`GlobalSearch` null-guard `session`
+  before `memberProjectScope`.
+- **Deliberately untouched** (already member-gated by RLS or email-scoped):
+  RPC-backed rollups (`org_analytics`, `org_purchase_orders`, `org_calendar`),
+  `crmQueries.listOrgLeads`, `listClientProjects`.
+
+### Verify
+- New `tests/app/scopeRollups.test.ts` (15) — empty member scope short-circuits
+  before any child-table fetch (utilization/ra-bills/ffe/monthly/invoices/
+  download/analytics/procurement/exec-dashboard), non-empty scope issues
+  `.in("id")` and maps rows, and `mode:"all"` (admin) regression-locks to no
+  `.in("id")`.
+- Full gate: `npm run lint` clean (0 errors) · `tsc --noEmit` clean · vitest
+  **144 files / 1807 tests** · smoke **304 checks** · e2e-mock **11/11**.

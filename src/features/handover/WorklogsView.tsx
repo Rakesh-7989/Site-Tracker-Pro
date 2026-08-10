@@ -3,6 +3,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
+import { useSession } from "@/auth/OrganizationContext";
+import { memberProjectScope } from "@/app/queries";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { listWorklogs, createWorklog, deleteWorklog, type Worklog } from "@/app/siteOpsQueries";
@@ -13,6 +15,7 @@ export function WorklogsView(): JSX.Element {
   const canView = useCan("labour:manage");
   const canEdit = useCan("attendance:mark");
   const { activeOrg } = useOrgSwitcher();
+  const liveSession = useSession();
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
   const [rows, setRows] = useState<Worklog[]>([]);
@@ -27,7 +30,13 @@ export function WorklogsView(): JSX.Element {
     if (!activeOrg?.orgId) return;
     const client = await getClient();
     if (!client) return;
-    const { data } = await client.from("projects").select("id, name").eq("org_id", activeOrg.orgId);
+    const scope = memberProjectScope(liveSession);
+    let q = client.from("projects").select("id, name").eq("org_id", activeOrg.orgId);
+    if (scope.mode === "member") {
+      if (scope.projectIds.length === 0) { setProjects([]); return; }
+      q = q.in("id", scope.projectIds);
+    }
+    const { data } = await q;
     const pList = data ?? [];
     setProjects(pList);
     if (pList.length) setSelProject(pList[0].id);
