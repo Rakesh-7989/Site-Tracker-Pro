@@ -30,3 +30,4 @@ stats.json
 debug*.png
 debug*.spec.ts
 e2e/debug*.spec.ts
+GARCHITECTS_CREDENTIALS.md
