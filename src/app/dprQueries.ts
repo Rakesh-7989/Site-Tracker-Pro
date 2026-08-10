@@ -41,24 +41,24 @@ export interface DprDeliveryLogRow {
 
 export type MResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-const SELECT = "id, org_id, project_id, transcript, voice_url, voice_audio_sha256, photo_url, photo_taken_at, lat, lon, photo_accuracy_metres, status, promoter_phone, supervisor_name, language, client_token, attempts, failure_reason, meta_message_id, buildnow_anchor_url, buildnow_anchor_hash, buildnow_synced_at, created_at, sent_at";
+const SELECT = "id, org_id, project_id, transcript_text, voice_audio_url, voice_audio_sha256, photo_url, photo_taken_at, photo_lat, photo_lon, photo_accuracy_metres, status, promoter_phone_e164, supervisor:supervisor_user_id(name), language, client_token, attempts, failure_reason, meta_message_id, buildnow_anchor_url, buildnow_anchor_hash, buildnow_synced_at, created_at, sent_at";
 
 function mapRow(r: any): DprMessageRow {
   return {
     id: String(r.id),
     orgId: String(r.org_id),
     projectId: r.project_id ? String(r.project_id) : null,
-    transcript: r.transcript ?? null,
-    voiceUrl: r.voice_url ?? null,
+    transcript: r.transcript_text ?? null,
+    voiceUrl: r.voice_audio_url ?? null,
     voiceSha256: r.voice_audio_sha256 ?? null,
     photoUrl: r.photo_url ?? null,
     photoTakenAt: r.photo_taken_at ?? null,
-    lat: r.lat ?? null,
-    lon: r.lon ?? null,
+    lat: r.photo_lat == null ? null : Number(r.photo_lat),
+    lon: r.photo_lon == null ? null : Number(r.photo_lon),
     photoAccuracyMetres: r.photo_accuracy_metres ?? null,
     status: (r.status ?? "queued") as DprStatus,
-    promoterPhone: String(r.promoter_phone ?? ""),
-    supervisorName: r.supervisor_name ?? null,
+    promoterPhone: String(r.promoter_phone_e164 ?? ""),
+    supervisorName: r.supervisor?.name ?? null,
     language: r.language ?? null,
     clientToken: String(r.client_token ?? ""),
     attempts: typeof r.attempts === "number" ? r.attempts : 0,

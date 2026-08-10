@@ -938,3 +938,39 @@ Give every feature a repeatable, layered test story and automate the regression 
 - `npm run test:e2e:mock` → **11/11**.
 - All 4 workflows parse as valid YAML (`js-yaml` check).
 - No critical `npm audit` findings (7 high transitive — within accepted policy; only critical blocks CI).
+
+---
+
+## Fix — DPR read path crashes: "column dpr_messages.transcript does not exist" (2026-08-10)
+
+### Root cause
+The `dprQueries.ts` `.select()` string used column names that don't exist on the
+live `dpr_messages` table (verified against `information_schema`):
+`transcript` (real: `transcript_text`), `voice_url` (`voice_audio_url`),
+`lat`/`lon` (`photo_lat`/`photo_lon`), `promoter_phone`
+(`promoter_phone_e164`), plus `supervisor_name` (only `supervisor_user_id` FK
+exists) and `attempts`/`sent_at` (never added to the schema). PostgREST threw
+`PGRST204` on the first bad column — the live DPR History/Detail views were
+completely broken. The insert path (`buildDprPayload` + the EF upsert) already
+used correct names, so only the read side was broken.
+
+### Fix
+- **Migration 181** `scripts/supabase/181_dpr_attempts_sent_at.sql` — add
+  `dpr_messages.attempts int not null default 0` + `sent_at timestamptz`;
+  backfill from `dpr_delivery_log`; `dpr_delivery_log_after_insert` trigger
+  keeps both in sync as the whatsapp_dpr_send EF logs each attempt.
+- **`src/app/dprQueries.ts`** — SELECT + `mapRow` rewritten to the real column
+  names; `supervisorName` now read via the `profiles` embed
+  `supervisor:supervisor_user_id(name)` (same pattern as `owner:owner_id(name)`
+  in crmQueries).
+- **`tests/app/dprQueries.test.ts`** — mock row updated to the real column
+  names; assertions extended (supervisorName + transcript).
+
+### Verify
+- Applied **only migration 181** live (temp runner): columns present + functional
+  trigger probe → attempts=2, sent_at set, rows cleaned.
+- Live PostgREST probe: **old SELECT → 400 `column dpr_messages.transcript does
+  not exist` (reproduces the bug)**; **new SELECT → valid** (no PGRST204; embed
+  resolves).
+- `vitest tests/app/dprQueries.test.ts tests/dpr` → 80/80 · lint + `tsc` clean ·
+  smoke 304.
