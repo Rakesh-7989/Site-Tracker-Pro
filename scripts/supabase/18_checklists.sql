@@ -31,9 +31,11 @@ create index if not exists idx_checklist_project_status on checklist_items(proje
 
 alter table checklist_items enable row level security;
 
+drop policy if exists checklist_read on checklist_items;
 create policy checklist_read on checklist_items for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists checklist_write on checklist_items;
 create policy checklist_write on checklist_items for all
   using (project_id in (select user_project_ids()))
   with check (project_id in (select user_project_ids()));

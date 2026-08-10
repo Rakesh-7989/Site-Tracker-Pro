@@ -34,6 +34,7 @@ create index if not exists idx_whatsapp_meta on whatsapp_log(meta_message_id) wh
 alter table whatsapp_log enable row level security;
 
 -- Tenants can read their own org's logs (orgadmin + finance + super).
+drop policy if exists whatsapp_log_read on whatsapp_log;
 create policy whatsapp_log_read on whatsapp_log for select
   using (
     is_superadmin()

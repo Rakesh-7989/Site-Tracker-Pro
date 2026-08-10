@@ -16,8 +16,10 @@ create table if not exists teams (
 );
 create index if not exists idx_teams_project on teams(project_id) where active = true;
 alter table teams enable row level security;
+drop policy if exists teams_read on teams;
 create policy teams_read on teams for select
   using (project_id in (select user_project_ids()));
+drop policy if exists teams_write on teams;
 create policy teams_write on teams for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (
@@ -67,11 +69,14 @@ create unique index if not exists uniq_attendance_staff_day
   on attendance(project_id, profile_id, date)
   where attendee_kind = 'staff' and profile_id is not null;
 alter table attendance enable row level security;
+drop policy if exists attendance_read on attendance;
 create policy attendance_read on attendance for select
   using (project_id in (select user_project_ids()));
+drop policy if exists attendance_insert on attendance;
 create policy attendance_insert on attendance for insert
   with check (project_id in (select user_project_ids()));
 -- Edits restricted to PM+ (correcting kiosk errors).
+drop policy if exists attendance_update on attendance;
 create policy attendance_update on attendance for update
   using (project_id in (select user_project_ids())
          and current_role_text() in (
@@ -100,10 +105,13 @@ create table if not exists worklogs (
 create index if not exists idx_worklogs_project_date on worklogs(project_id, date desc);
 create index if not exists idx_worklogs_user_date on worklogs(profile_id, date desc);
 alter table worklogs enable row level security;
+drop policy if exists worklogs_read on worklogs;
 create policy worklogs_read on worklogs for select
   using (project_id in (select user_project_ids()));
+drop policy if exists worklogs_insert_self on worklogs;
 create policy worklogs_insert_self on worklogs for insert
   with check (project_id in (select user_project_ids()) and profile_id = auth.uid());
+drop policy if exists worklogs_edit_self on worklogs;
 create policy worklogs_edit_self on worklogs for update
   using (profile_id = auth.uid() or is_orgadmin())
   with check (profile_id = auth.uid() or is_orgadmin());

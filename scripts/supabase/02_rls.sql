@@ -68,51 +68,65 @@ alter table activity_log enable row level security;
 alter table attachments enable row level security;
 
 -- ============================================================================
--- READ POLICIES — project-scoped
+-- READ POLICIES — project-scoped (idempotent via DROP IF EXISTS)
 -- ============================================================================
 
+drop policy if exists read_projects on projects;
 create policy read_projects on projects for select
   using (id in (select user_project_ids()));
 
+drop policy if exists read_milestones on milestones;
 create policy read_milestones on milestones for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_tasks on tasks;
 create policy read_tasks on tasks for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_updates on site_updates;
 create policy read_updates on site_updates for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_issues on issues;
 create policy read_issues on issues for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_materials on materials;
 create policy read_materials on materials for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_inventory on inventory_transactions;
 create policy read_inventory on inventory_transactions for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_boq on boq_items;
 create policy read_boq on boq_items for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_pos on purchase_orders;
 create policy read_pos on purchase_orders for select
   using (project_id in (select user_project_ids())
-         and current_role_text() != 'client');  -- clients never see POs
+         and current_role_text() != 'client');
 
+drop policy if exists read_invoices on invoices;
 create policy read_invoices on invoices for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_ra_bills on ra_bills;
 create policy read_ra_bills on ra_bills for select
   using (project_id in (select user_project_ids())
-         and current_role_text() != 'client');  -- clients never see RA bills
+         and current_role_text() != 'client');
 
+drop policy if exists read_labour on labour_register;
 create policy read_labour on labour_register for select
   using (project_id in (select user_project_ids())
-         and current_role_text() in ('architect','pm'));  -- PII restricted
+         and current_role_text() in ('architect','pm'));
 
+drop policy if exists read_activity on activity_log;
 create policy read_activity on activity_log for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists read_attachments on attachments;
 create policy read_attachments on attachments for select
   using (project_id in (select user_project_ids()));
 
@@ -120,85 +134,104 @@ create policy read_attachments on attachments for select
 -- DRAWING READ — released_current rule (mirrors App.jsx isReleasedCurrentDrawing)
 -- ============================================================================
 
+drop policy if exists read_drawings_architect on drawings;
 create policy read_drawings_architect on drawings for select
   using (current_role_text() = 'architect'
          and project_id in (select user_project_ids()));
 
+drop policy if exists read_drawings_role on drawings;
 create policy read_drawings_role on drawings for select
   using (status = 'current'
          and current_role_text() = any (released_to)
          and project_id in (select user_project_ids()));
 
 -- ============================================================================
--- WRITE POLICIES — role-gated
+-- WRITE POLICIES — role-gated (idempotent via DROP IF EXISTS)
 -- ============================================================================
 
+drop policy if exists create_project_architect on projects;
 create policy create_project_architect on projects for insert
   with check (current_role_text() = 'architect' or is_superadmin());
 
+drop policy if exists update_project_architect on projects;
 create policy update_project_architect on projects for update
   using ((current_role_text() = 'architect' and id in (select user_project_ids()))
          or is_superadmin());
 
 -- Super admin admin-only tables ----------------------------------------------
+drop policy if exists admin_orgs on organizations;
 create policy admin_orgs on organizations for all
   using (is_superadmin())
   with check (is_superadmin());
 
+drop policy if exists admin_org_members on org_members;
 create policy admin_org_members on org_members for all
   using (is_superadmin() or profile_id = auth.uid())
   with check (is_superadmin());
 
+drop policy if exists admin_profiles_read on profiles;
 create policy admin_profiles_read on profiles for select
   using (is_superadmin() or id = auth.uid() or exists (
     select 1 from project_members pm
     where pm.profile_id = profiles.id and pm.project_id in (select user_project_ids())
   ));
 
+drop policy if exists write_milestones on milestones;
 create policy write_milestones on milestones for all
   using (current_role_text() in ('architect','pm')
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_tasks on tasks;
 create policy write_tasks on tasks for all
   using (current_role_text() in ('architect','pm','contractor')
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_updates on site_updates;
 create policy write_updates on site_updates for insert
   with check (current_role_text() in ('architect','pm','contractor')
               and project_id in (select user_project_ids()));
 
+drop policy if exists write_issues on issues;
 create policy write_issues on issues for insert
   with check (current_role_text() in ('architect','pm','contractor')
               and project_id in (select user_project_ids()));
 
+drop policy if exists resolve_issues on issues;
 create policy resolve_issues on issues for update
   using (current_role_text() in ('architect','pm')
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_drawings_architect on drawings;
 create policy write_drawings_architect on drawings for all
   using (current_role_text() = 'architect'
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_inventory on inventory_transactions;
 create policy write_inventory on inventory_transactions for all
   using (current_role_text() in ('architect','pm','contractor')
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_boq on boq_items;
 create policy write_boq on boq_items for all
   using (current_role_text() in ('architect','pm')
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_pos on purchase_orders;
 create policy write_pos on purchase_orders for all
   using (current_role_text() in ('architect','pm')
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_invoices on invoices;
 create policy write_invoices on invoices for all
   using (current_role_text() = 'architect'
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_ra_bills on ra_bills;
 create policy write_ra_bills on ra_bills for all
   using (current_role_text() in ('architect','contractor')
          and project_id in (select user_project_ids()));
 
+drop policy if exists write_labour on labour_register;
 create policy write_labour on labour_register for all
   using (current_role_text() in ('architect','pm')
          and project_id in (select user_project_ids()));

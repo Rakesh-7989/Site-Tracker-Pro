@@ -25,6 +25,7 @@ create index if not exists idx_cf_events_sub on cashfree_events(subscription_id)
 alter table cashfree_events enable row level security;
 
 -- Read-only for org members + super-admin (forensic visibility).
+drop policy if exists cf_events_read on cashfree_events;
 create policy cf_events_read on cashfree_events for select
   using (is_superadmin() or org_id = user_org_id());
 

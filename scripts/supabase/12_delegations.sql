@@ -36,6 +36,7 @@ create index if not exists idx_delegations_to on delegations(to_user, resource)
 
 alter table delegations enable row level security;
 
+drop policy if exists delegations_read on delegations;
 create policy delegations_read on delegations for select
   using (
     is_superadmin()
@@ -43,6 +44,7 @@ create policy delegations_read on delegations for select
   );
 
 -- Only the delegator can create OR revoke; org_admin can override.
+drop policy if exists delegations_write on delegations;
 create policy delegations_write on delegations for all
   using (
     is_superadmin()

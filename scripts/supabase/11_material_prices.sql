@@ -28,9 +28,11 @@ create index if not exists idx_material_prices_vendor on material_prices(vendor_
 
 alter table material_prices enable row level security;
 
+drop policy if exists material_prices_read on material_prices;
 create policy material_prices_read on material_prices for select
   using (is_superadmin() or org_id = user_org_id());
 
+drop policy if exists material_prices_write on material_prices;
 create policy material_prices_write on material_prices for all
   using ((is_orgadmin() and org_id = user_org_id())
          or current_role_text() in ('pm','project_admin','project_head')

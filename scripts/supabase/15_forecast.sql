@@ -29,9 +29,11 @@ create index if not exists idx_forecast_project_recent
 
 alter table forecast enable row level security;
 
+drop policy if exists forecast_read on forecast;
 create policy forecast_read on forecast for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists forecast_insert on forecast;
 create policy forecast_insert on forecast for insert
   with check (
     current_role_text() in (

@@ -36,6 +36,7 @@ create index if not exists idx_compliance_expires on compliance(expires_at) wher
 
 alter table compliance enable row level security;
 
+drop policy if exists compliance_read on compliance;
 create policy compliance_read on compliance for select
   using (
     is_superadmin()
@@ -43,6 +44,7 @@ create policy compliance_read on compliance for select
     or project_id in (select user_project_ids())
   );
 
+drop policy if exists compliance_write on compliance;
 create policy compliance_write on compliance for all
   using (
     is_superadmin()

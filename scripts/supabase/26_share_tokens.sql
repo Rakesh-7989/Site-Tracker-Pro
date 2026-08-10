@@ -38,10 +38,12 @@ create index if not exists idx_share_tokens_active
 alter table share_tokens enable row level security;
 
 -- Org members can read their org's tokens (to revoke / audit).
+drop policy if exists share_tokens_read on share_tokens;
 create policy share_tokens_read on share_tokens for select
   using (is_superadmin() or org_id = user_org_id());
 
 -- Only orgadmin / project owners create tokens.
+drop policy if exists share_tokens_write on share_tokens;
 create policy share_tokens_write on share_tokens for all
   using (
     is_superadmin()

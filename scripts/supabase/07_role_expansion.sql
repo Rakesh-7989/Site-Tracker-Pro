@@ -9,6 +9,19 @@
 -- 1. Drop + recreate the role check constraint
 -- ============================================================================
 
+-- First, sanitize any invalid role values in existing data
+-- (unknown/typos → default to 'client' so constraint passes)
+update public.profiles
+set role = 'client'
+where role not in (
+  'superadmin','orgadmin','architect','pm','contractor','client',
+  'project_admin','prospector',
+  'project_head','mep_consultant','site_engineer',
+  'civil_engineer','site_inspector',
+  'interior_designer','design_architect_interior','designer','consultant',
+  'sub_contractor'
+);
+
 alter table profiles drop constraint if exists profiles_role_check;
 alter table profiles add constraint profiles_role_check
   check (role in (

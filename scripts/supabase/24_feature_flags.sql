@@ -26,7 +26,9 @@ create table if not exists platform_feature_flags (
 );
 
 alter table platform_feature_flags enable row level security;
+drop policy if exists pff_read on platform_feature_flags;
 create policy pff_read on platform_feature_flags for select using (true);
+drop policy if exists pff_write on platform_feature_flags;
 create policy pff_write on platform_feature_flags for all
   using (is_superadmin())
   with check (is_superadmin());
@@ -45,8 +47,10 @@ create table if not exists org_feature_flags (
 create index if not exists idx_off_org on org_feature_flags(org_id);
 
 alter table org_feature_flags enable row level security;
+drop policy if exists off_read on org_feature_flags;
 create policy off_read on org_feature_flags for select
   using (is_superadmin() or org_id = user_org_id());
+drop policy if exists off_write on org_feature_flags;
 create policy off_write on org_feature_flags for all
   using (is_superadmin() or (is_orgadmin() and org_id = user_org_id()))
   with check (is_superadmin() or (is_orgadmin() and org_id = user_org_id()));
@@ -65,8 +69,10 @@ create table if not exists ops_toggles (
 create index if not exists idx_ops_toggles_org on ops_toggles(org_id);
 
 alter table ops_toggles enable row level security;
+drop policy if exists ops_read on ops_toggles;
 create policy ops_read on ops_toggles for select
   using (is_superadmin() or org_id = user_org_id());
+drop policy if exists ops_write on ops_toggles;
 create policy ops_write on ops_toggles for all
   using (is_superadmin() or (is_orgadmin() and org_id = user_org_id())
          or (org_id = user_org_id()))                       -- any org member can flip simple state keys

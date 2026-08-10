@@ -51,15 +51,18 @@ create index if not exists idx_units_floor on units(floor_id);
 create index if not exists idx_units_status on units(status);
 
 -- ============================================================================
--- 4. RLS
+-- 4. RLS (idempotent via DROP IF EXISTS)
 -- ============================================================================
 
 alter table blocks enable row level security;
 alter table floors enable row level security;
 alter table units  enable row level security;
 
+drop policy if exists blocks_read on blocks;
 create policy blocks_read on blocks for select
   using (project_id in (select user_project_ids()));
+
+drop policy if exists blocks_write on blocks;
 create policy blocks_write on blocks for all
   using (
     current_role_text() in ('architect','pm','orgadmin','project_admin','project_head','superadmin')
@@ -70,8 +73,11 @@ create policy blocks_write on blocks for all
     and project_id in (select user_project_ids())
   );
 
+drop policy if exists floors_read on floors;
 create policy floors_read on floors for select
   using (block_id in (select id from blocks where project_id in (select user_project_ids())));
+
+drop policy if exists floors_write on floors;
 create policy floors_write on floors for all
   using (
     current_role_text() in ('architect','pm','orgadmin','project_admin','project_head','superadmin')
@@ -82,6 +88,7 @@ create policy floors_write on floors for all
     and block_id in (select id from blocks where project_id in (select user_project_ids()))
   );
 
+drop policy if exists units_read on units;
 create policy units_read on units for select
   using (
     floor_id in (
@@ -89,6 +96,8 @@ create policy units_read on units for select
        where b.project_id in (select user_project_ids())
     )
   );
+
+drop policy if exists units_write on units;
 create policy units_write on units for all
   using (
     current_role_text() in ('architect','pm','orgadmin','project_admin','project_head','superadmin')

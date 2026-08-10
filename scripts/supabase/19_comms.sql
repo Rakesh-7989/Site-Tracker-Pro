@@ -18,8 +18,10 @@ create table if not exists messages (
 create index if not exists idx_messages_project_time on messages(project_id, created_at desc);
 create index if not exists idx_messages_thread on messages(thread_id) where thread_id is not null;
 alter table messages enable row level security;
+drop policy if exists messages_read on messages;
 create policy messages_read on messages for select
   using (project_id in (select user_project_ids()));
+drop policy if exists messages_insert on messages;
 create policy messages_insert on messages for insert
   with check (project_id in (select user_project_ids()) and sender_id = auth.uid());
 -- Edits forbidden after send (immutable comm); deletes only by sender within 60s (app-enforced).
@@ -47,11 +49,14 @@ create table if not exists comments (
 create index if not exists idx_comments_entity on comments(entity_type, entity_id, created_at);
 create index if not exists idx_comments_parent on comments(parent_id) where parent_id is not null;
 alter table comments enable row level security;
+drop policy if exists comments_read on comments;
 create policy comments_read on comments for select
   using (project_id in (select user_project_ids()) and deleted_at is null);
+drop policy if exists comments_insert on comments;
 create policy comments_insert on comments for insert
   with check (project_id in (select user_project_ids()) and author_id = auth.uid());
 -- Only author can edit/soft-delete (handled by orgadmin override above).
+drop policy if exists comments_edit_self on comments;
 create policy comments_edit_self on comments for update
   using (author_id = auth.uid() or is_orgadmin())
   with check (author_id = auth.uid() or is_orgadmin());
@@ -76,13 +81,16 @@ create index if not exists idx_notifications_user_unread on notifications(user_i
   where read_at is null;
 create index if not exists idx_notifications_user_time on notifications(user_id, created_at desc);
 alter table notifications enable row level security;
+drop policy if exists notifications_read on notifications;
 create policy notifications_read on notifications for select
   using (user_id = auth.uid() or is_superadmin());
+drop policy if exists notifications_mark_read on notifications;
 create policy notifications_mark_read on notifications for update
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 -- Inserts come from system (Edge Functions via service_role) or app code;
 -- direct insert allowed for cross-user mentions inside a project the actor can see.
+drop policy if exists notifications_insert on notifications;
 create policy notifications_insert on notifications for insert
   with check (
     is_superadmin()

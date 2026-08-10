@@ -29,9 +29,11 @@ create index if not exists idx_snapshots_project_date
 
 alter table daily_snapshots enable row level security;
 
+drop policy if exists snapshots_read on daily_snapshots;
 create policy snapshots_read on daily_snapshots for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists snapshots_insert on daily_snapshots;
 create policy snapshots_insert on daily_snapshots for insert
   with check (
     current_role_text() in (

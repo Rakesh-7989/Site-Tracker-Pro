@@ -38,6 +38,7 @@ create index if not exists idx_branding_project on branding(project_id) where pr
 
 alter table branding enable row level security;
 
+drop policy if exists branding_read on branding;
 create policy branding_read on branding for select
   using (
     is_superadmin()
@@ -45,6 +46,7 @@ create policy branding_read on branding for select
     or project_id in (select user_project_ids())
   );
 
+drop policy if exists branding_write on branding;
 create policy branding_write on branding for all
   using (
     is_superadmin()

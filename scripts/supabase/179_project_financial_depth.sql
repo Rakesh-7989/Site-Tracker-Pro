@@ -182,14 +182,12 @@ BEGIN
   SELECT COALESCE(SUM(po.amount), 0) INTO v_ac
   FROM public.purchase_orders po
   WHERE po.project_id = p_project_id
-    AND po.status NOT IN ('cancelled', 'rejected')
-  ON CONFLICT DO NOTHING;
+    AND po.status NOT IN ('cancelled', 'rejected');
 
   SELECT COALESCE(SUM(r.paid_amount), 0) INTO v_ac
   FROM public.ra_bills r
   WHERE r.project_id = p_project_id
-    AND r.status IN ('approved', 'paid')
-  ON CONFLICT DO NOTHING;
+    AND r.status IN ('approved', 'paid');
 
   -- Cost Variance (CV) = EV - AC
   -- Schedule Variance (SV) = EV - PV
@@ -255,10 +253,9 @@ BEGIN
   FROM public.purchase_orders
   WHERE project_id = p_project_id AND status NOT IN ('cancelled', 'rejected');
 
-  SELECT COALESCE(SUM(paid_amount), 0) INTO v_ac
+  SELECT COALESCE(SUM(paid_amount), 0) INTO v_committed
   FROM public.ra_bills
-  WHERE project_id = p_project_id AND status IN ('approved', 'paid')
-  ON CONFLICT DO NOTHING;
+  WHERE project_id = p_project_id AND status IN ('approved', 'paid');
 
   v_ac := v_ac + v_committed;
 

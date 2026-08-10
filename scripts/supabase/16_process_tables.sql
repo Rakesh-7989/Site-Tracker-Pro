@@ -25,8 +25,10 @@ create table if not exists rfi (
 );
 create index if not exists idx_rfi_project_status on rfi(project_id, status);
 alter table rfi enable row level security;
+drop policy if exists rfi_read on rfi;
 create policy rfi_read on rfi for select
   using (project_id in (select user_project_ids()));
+drop policy if exists rfi_write on rfi;
 create policy rfi_write on rfi for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (
@@ -61,8 +63,10 @@ create table if not exists change_orders (
 );
 create index if not exists idx_co_project_status on change_orders(project_id, status);
 alter table change_orders enable row level security;
+drop policy if exists co_read on change_orders;
 create policy co_read on change_orders for select
   using (project_id in (select user_project_ids()));
+drop policy if exists co_write on change_orders;
 create policy co_write on change_orders for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (
@@ -94,8 +98,10 @@ create table if not exists inspections (
 );
 create index if not exists idx_inspections_project_date on inspections(project_id, scheduled_date desc);
 alter table inspections enable row level security;
+drop policy if exists inspections_read on inspections;
 create policy inspections_read on inspections for select
   using (project_id in (select user_project_ids()));
+drop policy if exists inspections_write on inspections;
 create policy inspections_write on inspections for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (
@@ -129,8 +135,10 @@ create table if not exists safety (
 create index if not exists idx_safety_project_date on safety(project_id, incident_date desc);
 create index if not exists idx_safety_severity on safety(severity);
 alter table safety enable row level security;
+drop policy if exists safety_read on safety;
 create policy safety_read on safety for select
   using (project_id in (select user_project_ids()));
+drop policy if exists safety_write on safety;
 create policy safety_write on safety for all
   using (project_id in (select user_project_ids()))
   with check (project_id in (select user_project_ids()));

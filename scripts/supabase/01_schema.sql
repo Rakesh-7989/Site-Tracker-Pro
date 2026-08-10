@@ -234,8 +234,11 @@ create table if not exists purchase_orders (
 );
 
 -- Now we can add the FK from inventory_transactions.po_id
-alter table inventory_transactions
-  add constraint fk_inventory_po foreign key (po_id) references purchase_orders(id) on delete set null;
+do $$ begin
+  alter table inventory_transactions
+    add constraint fk_inventory_po foreign key (po_id) references purchase_orders(id) on delete set null;
+exception when duplicate_object then null;
+end $$;
 
 -- ============================================================================
 -- BILLING

@@ -32,9 +32,11 @@ create index if not exists idx_audit_anchors_recent on audit_anchors(anchored_at
 alter table audit_anchors enable row level security;
 
 -- Tenants need to see anchors for their org's compliance reports.
+drop policy if exists audit_anchors_read on audit_anchors;
 create policy audit_anchors_read on audit_anchors for select using (true);
 
 -- Only superadmin / cron / EF (via service_role) can write.
+drop policy if exists audit_anchors_write on audit_anchors;
 create policy audit_anchors_write on audit_anchors for all
   using (is_superadmin())
   with check (is_superadmin());

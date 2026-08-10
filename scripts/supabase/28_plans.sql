@@ -47,7 +47,9 @@ on conflict (id) do nothing;
 create index if not exists idx_organizations_plan on organizations(plan);
 
 alter table plans enable row level security;
+drop policy if exists plans_read on plans;
 create policy plans_read on plans for select using (true);   -- public — pricing page reads
+drop policy if exists plans_write on plans;
 create policy plans_write on plans for all
   using (is_superadmin())
   with check (is_superadmin());

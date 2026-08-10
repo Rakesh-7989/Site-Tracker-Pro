@@ -27,8 +27,10 @@ create table if not exists equipment (
 );
 create index if not exists idx_equipment_project_status on equipment(project_id, status);
 alter table equipment enable row level security;
+drop policy if exists equipment_read on equipment;
 create policy equipment_read on equipment for select
   using (project_id in (select user_project_ids()));
+drop policy if exists equipment_write on equipment;
 create policy equipment_write on equipment for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (
@@ -61,8 +63,10 @@ create table if not exists diary (
 );
 create index if not exists idx_diary_project_date on diary(project_id, date desc);
 alter table diary enable row level security;
+drop policy if exists diary_read on diary;
 create policy diary_read on diary for select
   using (project_id in (select user_project_ids()));
+drop policy if exists diary_write on diary;
 create policy diary_write on diary for all
   using (project_id in (select user_project_ids()))
   with check (project_id in (select user_project_ids()));
@@ -90,8 +94,10 @@ create table if not exists expenses (
 create index if not exists idx_expenses_project_date on expenses(project_id, expense_date desc);
 create index if not exists idx_expenses_project_category on expenses(project_id, category);
 alter table expenses enable row level security;
+drop policy if exists expenses_read on expenses;
 create policy expenses_read on expenses for select
   using (project_id in (select user_project_ids()));
+drop policy if exists expenses_write on expenses;
 create policy expenses_write on expenses for all
   using (project_id in (select user_project_ids()))
   with check (project_id in (select user_project_ids()));

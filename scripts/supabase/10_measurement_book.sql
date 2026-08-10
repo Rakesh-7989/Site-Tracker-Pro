@@ -41,9 +41,11 @@ create index if not exists idx_mb_ra on measurement_book(ra_bill_id);
 -- Append-only: revoke direct UPDATE/DELETE; corrections go via a new row + cancel.
 alter table measurement_book enable row level security;
 
+drop policy if exists mb_read on measurement_book;
 create policy mb_read on measurement_book for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists mb_insert on measurement_book;
 create policy mb_insert on measurement_book for insert
   with check (
     current_role_text() in (
@@ -54,6 +56,7 @@ create policy mb_insert on measurement_book for insert
   );
 
 -- Allow verification (status flip) but not data mutation. Enforce in app + RPC.
+drop policy if exists mb_verify_update on measurement_book;
 create policy mb_verify_update on measurement_book for update
   using (
     current_role_text() in ('pm','project_head','project_admin','orgadmin','superadmin')

@@ -34,6 +34,7 @@ create index if not exists idx_billing_external on billing_history(provider, ext
 
 alter table billing_history enable row level security;
 
+drop policy if exists billing_read on billing_history;
 create policy billing_read on billing_history for select
   using (
     is_superadmin()
@@ -61,6 +62,7 @@ create index if not exists idx_usage_org_metric on usage_metrics(org_id, metric,
 
 alter table usage_metrics enable row level security;
 
+drop policy if exists usage_read on usage_metrics;
 create policy usage_read on usage_metrics for select
   using (is_superadmin() or org_id = user_org_id());
 

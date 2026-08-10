@@ -12,12 +12,37 @@
 --      uses a unique name so they coexist with the original ones.
 
 -- ============================================================================
--- 1. Extend the role enum to include orgadmin
+-- 1. Extend the role enum to include orgadmin + all v2 roles (matches 07_role_expansion)
 -- ============================================================================
+
+-- First, sanitize any invalid role values in existing data
+-- (unknown/typos → default to 'client' so constraint passes)
+update public.profiles
+set role = 'client'
+where role not in (
+  'superadmin','orgadmin','architect','pm','contractor','client',
+  'project_admin','prospector',
+  'project_head','mep_consultant','site_engineer',
+  'civil_engineer','site_inspector',
+  'interior_designer','design_architect_interior','designer','consultant',
+  'sub_contractor'
+);
 
 alter table profiles drop constraint if exists profiles_role_check;
 alter table profiles add constraint profiles_role_check
-  check (role in ('superadmin','orgadmin','architect','pm','contractor','client'));
+  check (role in (
+    -- v1 (6)
+    'superadmin', 'orgadmin', 'architect', 'pm', 'contractor', 'client',
+    -- v2 org additions
+    'project_admin', 'prospector',
+    -- v2 construction-discipline additions
+    'project_head', 'mep_consultant', 'site_engineer',
+    'civil_engineer', 'site_inspector',
+    -- v2 design / consultant additions
+    'interior_designer', 'design_architect_interior', 'designer', 'consultant',
+    -- v2 contractor sub-tier
+    'sub_contractor'
+  ));
 
 -- ============================================================================
 -- 2. Helper functions
@@ -167,39 +192,47 @@ alter table audit_log_v2        enable row level security;
 alter table subscriptions       enable row level security;
 
 -- ============================================================================
--- 5. Policies for new tables
+-- 5. Policies for new tables (idempotent via DROP IF EXISTS)
 --    Pattern: orgadmin or superadmin can do anything inside their own org;
 --    other roles can READ if they're part of the org, but can NOT write.
 -- ============================================================================
 
 -- Org integrations -----------------------------------------------------------
+drop policy if exists org_integrations_read on org_integrations;
 create policy org_integrations_read on org_integrations for select
   using (is_superadmin() or org_id = user_org_id());
 
+drop policy if exists org_integrations_write on org_integrations;
 create policy org_integrations_write on org_integrations for all
   using ((is_orgadmin() and org_id = user_org_id()) or is_superadmin())
   with check ((is_orgadmin() and org_id = user_org_id()) or is_superadmin());
 
 -- Templates ------------------------------------------------------------------
+drop policy if exists templates_read on templates;
 create policy templates_read on templates for select
   using (is_superadmin() or org_id = user_org_id());
 
+drop policy if exists templates_write on templates;
 create policy templates_write on templates for all
   using ((is_orgadmin() and org_id = user_org_id()) or is_superadmin())
   with check ((is_orgadmin() and org_id = user_org_id()) or is_superadmin());
 
 -- Approval chains ------------------------------------------------------------
+drop policy if exists approval_chains_read on approval_chains;
 create policy approval_chains_read on approval_chains for select
   using (is_superadmin() or org_id = user_org_id());
 
+drop policy if exists approval_chains_write on approval_chains;
 create policy approval_chains_write on approval_chains for all
   using ((is_orgadmin() and org_id = user_org_id()) or is_superadmin())
   with check ((is_orgadmin() and org_id = user_org_id()) or is_superadmin());
 
 -- Notification rules ---------------------------------------------------------
+drop policy if exists notification_rules_read on notification_rules;
 create policy notification_rules_read on notification_rules for select
   using (is_superadmin() or org_id = user_org_id());
 
+drop policy if exists notification_rules_write on notification_rules;
 create policy notification_rules_write on notification_rules for all
   using ((is_orgadmin() and org_id = user_org_id()) or is_superadmin())
   with check ((is_orgadmin() and org_id = user_org_id()) or is_superadmin());
@@ -208,6 +241,7 @@ create policy notification_rules_write on notification_rules for all
 -- Reads: anyone in the org (orgadmin sees everything, others scoped). Writes
 -- go through a SECURITY DEFINER function only — direct INSERT/UPDATE/DELETE
 -- is revoked.
+drop policy if exists audit_log_v2_read_org on audit_log_v2;
 create policy audit_log_v2_read_org on audit_log_v2 for select
   using (
     is_superadmin()
@@ -248,57 +282,69 @@ end;
 $$;
 
 -- Subscriptions --------------------------------------------------------------
+drop policy if exists subscriptions_read on subscriptions;
 create policy subscriptions_read on subscriptions for select
   using (is_superadmin() or org_id = user_org_id());
 
 -- Only superadmin can directly edit subscriptions; the Cashfree webhook
 -- handler uses service_role which bypasses RLS, so this is safe.
+drop policy if exists subscriptions_write on subscriptions;
 create policy subscriptions_write on subscriptions for all
   using (is_superadmin())
   with check (is_superadmin());
 
 -- ============================================================================
--- 6. Org-admin overlays on EXISTING tables
+-- 6. Org-admin overlays on EXISTING tables (idempotent via DROP IF EXISTS)
 --    Org admins can do everything an architect can — within their own org.
 -- ============================================================================
 
+drop policy if exists orgadmin_create_project on projects;
 create policy orgadmin_create_project on projects for insert
   with check (is_orgadmin()
               and org_id = user_org_id());
 
+drop policy if exists orgadmin_update_project on projects;
 create policy orgadmin_update_project on projects for update
   using (is_orgadmin() and org_id = user_org_id());
 
 -- Org admins can write to org_members (invite + role change inside their org).
+drop policy if exists orgadmin_org_members on org_members;
 create policy orgadmin_org_members on org_members for all
   using (is_orgadmin() and org_id = user_org_id())
   with check (is_orgadmin() and org_id = user_org_id());
 
 -- Allow orgadmin to do everything an architect does on per-project tables.
+drop policy if exists orgadmin_milestones on milestones;
 create policy orgadmin_milestones on milestones for all
   using (is_orgadmin() and project_id in (select user_project_ids()))
   with check (is_orgadmin() and project_id in (select user_project_ids()));
 
+drop policy if exists orgadmin_tasks on tasks;
 create policy orgadmin_tasks on tasks for all
   using (is_orgadmin() and project_id in (select user_project_ids()))
   with check (is_orgadmin() and project_id in (select user_project_ids()));
 
+drop policy if exists orgadmin_drawings on drawings;
 create policy orgadmin_drawings on drawings for all
   using (is_orgadmin() and project_id in (select user_project_ids()))
   with check (is_orgadmin() and project_id in (select user_project_ids()));
 
+drop policy if exists orgadmin_pos on purchase_orders;
 create policy orgadmin_pos on purchase_orders for all
   using (is_orgadmin() and project_id in (select user_project_ids()))
   with check (is_orgadmin() and project_id in (select user_project_ids()));
 
+drop policy if exists orgadmin_invoices on invoices;
 create policy orgadmin_invoices on invoices for all
   using (is_orgadmin() and project_id in (select user_project_ids()))
   with check (is_orgadmin() and project_id in (select user_project_ids()));
 
+drop policy if exists orgadmin_ra_bills on ra_bills;
 create policy orgadmin_ra_bills on ra_bills for all
   using (is_orgadmin() and project_id in (select user_project_ids()))
   with check (is_orgadmin() and project_id in (select user_project_ids()));
 
+drop policy if exists orgadmin_labour on labour_register;
 create policy orgadmin_labour on labour_register for all
   using (is_orgadmin() and project_id in (select user_project_ids()))
   with check (is_orgadmin() and project_id in (select user_project_ids()));

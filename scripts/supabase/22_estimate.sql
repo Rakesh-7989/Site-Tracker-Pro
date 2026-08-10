@@ -27,9 +27,11 @@ create index if not exists idx_estimate_status on estimate(status);
 
 alter table estimate enable row level security;
 
+drop policy if exists estimate_read on estimate;
 create policy estimate_read on estimate for select
   using (project_id in (select user_project_ids()));
 
+drop policy if exists estimate_write on estimate;
 create policy estimate_write on estimate for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (

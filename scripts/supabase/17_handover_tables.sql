@@ -25,8 +25,10 @@ create table if not exists punch (
 create index if not exists idx_punch_project_status on punch(project_id, status);
 create index if not exists idx_punch_unit on punch(unit_id) where unit_id is not null;
 alter table punch enable row level security;
+drop policy if exists punch_read on punch;
 create policy punch_read on punch for select
   using (project_id in (select user_project_ids()));
+drop policy if exists punch_write on punch;
 create policy punch_write on punch for all
   using (project_id in (select user_project_ids()))
   with check (project_id in (select user_project_ids()));
@@ -54,8 +56,10 @@ create table if not exists submittals (
 );
 create index if not exists idx_submittals_project_status on submittals(project_id, status);
 alter table submittals enable row level security;
+drop policy if exists submittals_read on submittals;
 create policy submittals_read on submittals for select
   using (project_id in (select user_project_ids()));
+drop policy if exists submittals_write on submittals;
 create policy submittals_write on submittals for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (
@@ -91,8 +95,10 @@ create table if not exists permits (
 create index if not exists idx_permits_project_kind on permits(project_id, kind);
 create index if not exists idx_permits_valid_until on permits(valid_until) where valid_until is not null;
 alter table permits enable row level security;
+drop policy if exists permits_read on permits;
 create policy permits_read on permits for select
   using (project_id in (select user_project_ids()));
+drop policy if exists permits_write on permits;
 create policy permits_write on permits for all
   using (project_id in (select user_project_ids())
          and current_role_text() in (
