@@ -47,7 +47,7 @@ test.describe("Phase 3 — Role visibility", () => {
     await expect(navLink(page, "Projects")).toBeVisible();
 
     // PM-specific
-    await expect(navLink(page, "PM Dashboard")).toBeVisible();
+    await expect(navLink(page, "PM Dashboard")).not.toBeVisible();   // nav item removed entirely
     await expect(navLink(page, "New Project")).toBeVisible();
     await expect(navLink(page, "Purchase Orders")).toBeVisible();
 

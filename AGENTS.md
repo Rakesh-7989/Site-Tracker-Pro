@@ -873,3 +873,44 @@ Surface the interior/architecture design-register tabs (Mood Boards, Rooms/Insta
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
 - **Live deploy**: `git push origin prod` (commit `1bac3bc`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
 
+---
+
+## G Architects Role Seed — One User per Role + Demo Project (Complete, 2026-08-10)
+
+### Goal
+Seed the live "G Architects" org with **one user per identity role**, create **one construction project**, and grant **every construction-valid role** project membership — a full-role demo tenant. Data-only change (no migration, no deploy).
+
+### Decisions (user-confirmed)
+- **Scope**: all 22 identity roles → 22 auth users (`profiles.role` CHECK set).
+- **Project**: single **`construction`** project "G Arch Demo Villa" (id `55419fbe-2cc2-4ddd-a2b1-d9219f2af159`).
+- **Project access**: only the 12 construction-valid roles. `promoter`, `prospector`, `orgadmin`, `vendor`, `superadmin` + pure design/consultancy roles (`design_head`, `design_architect_interior`, `consultant_head`, `consultant`, `designer`) cannot hold a `project_members` row on a construction project — blocked by the live `project_members_role_by_type_trigger` (migration 155) and the `project_members_role_check`. They still get users + org membership.
+- **superadmin** is platform-only: no org/project row (org_members CHECK has no superadmin; superadmin is cross-tenant).
+
+### Tooling
+- **`scripts/seed-garchitects-roles.mjs`** (new, idempotent, mirrors `create-test-users.mjs`): upserts auth.users (+ identities), profiles, org_members (`status='active'`), the project (by name), and project_members. `--dry-run` prints the roster. Uses `session_replication_role='replica'` to bypass the `handle_new_signup` auto-org trigger + plan-limit triggers. Writes **`GARCHITECTS_CREDENTIALS.md`** (gitignored) with full creds.
+
+### Verification (all pass)
+- Counts: 22 users / 22 identities / 22 profiles · 21 org members (all but superadmin) · **12 project members** on G Arch Demo Villa · G Architects org total = 24 members (21 new + pre-existing RAKESH/Rajesh/Sai Chandu).
+- **Real GoTrue password sign-in** (POST `/auth/v1/token?grant_type=password`) → **HTTP 200** for orgadmin, pm, architect, client, site_inspector, contractor, superadmin — proves bcrypt cost 10 + identity rows work.
+- `npx eslint scripts/seed-garchitects-roles.mjs` clean. No migration, no `prod` push needed.
+
+### Notes
+- Emails use RFC 2606 reserved TLD: `garch.<role>@sitetrack.test` (e.g. `garch.architect@sitetrack.test`). Passwords in the gitignored creds doc.
+- Roles without project access still see the org surface (nav/dashboards) but not the demo project — expected given the DB type-gate. To give those roles project access later, add a `design` or `consultant` project (covers design_head/consultant_head/consultant/designer) — the seed script is a template.
+
+
+---
+
+## Fix — PM Dashboard nav shown for all roles (2026-08-10)
+
+### Problem
+Logged in as any org-leadership role, the sidebar showed **PM Dashboard** (/pm). Root cause: `nav-config.ts` gated it with `requires: "project:create"` — a capability held by orgadmin, prospector, pm, superadmin — so it leaked to non-PM roles.
+
+### Fix (user-confirmed: remove entirely — not even for pm)
+- `src/app/nav-config.ts` — **removed** the `/pm` "PM Dashboard" nav item from the catalog entirely. The `/pm` route + PM landing (`RoleDashboard` → `/pm`) stay intact (PMs still auto-land there after login); only the sidebar link is gone.
+- `tests/app/navConfig.test.ts` — test locks this: `/pm` not present in `buildNav` output for **any** role (pm/orgadmin/prospector/project_admin/client/superadmin).
+- `e2e-mock/role-access.spec.ts` — dropped the pm "PM Dashboard visible" assertion.
+- `e2e/qa-roles.spec.ts` — pm block now asserts `PM Dashboard` `not.toBeVisible()` (orgadmin/client blocks already asserted absence).
+
+### Verify
+- `npx vitest run tests/app/navConfig.test.ts` 28/28 · `tests/auth/permissionsMatrix.test.ts` 93/93 · `npx tsc --noEmit` clean · `npx eslint` clean.

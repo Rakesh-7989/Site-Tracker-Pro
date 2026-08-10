@@ -125,6 +125,16 @@ describe("buildNav", () => {
     expect(paths).not.toContain("/org/members");
   });
 
+  it("PM Dashboard (/pm) is NOT in the nav catalog for any role (removed from sidebar)", () => {
+    const mk = (identityRole: "pm" | "orgadmin" | "prospector" | "project_admin" | "client" | "superadmin") =>
+      buildNav(session({
+        user: { id: "u", email: "a@b", name: identityRole, identityRole, isStaff: identityRole === "superadmin" },
+      })).map(n => n.to);
+    for (const role of ["pm", "orgadmin", "prospector", "project_admin", "client", "superadmin"] as const) {
+      expect(mk(role)).not.toContain("/pm");
+    }
+  });
+
   // Vendor directory access: org admins (orgadmin / org-tier admin) + prospector + superadmin only.
   it("orgadmin sees /vendors", () => {
     const nav = buildNav(session({

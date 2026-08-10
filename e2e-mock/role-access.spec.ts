@@ -38,7 +38,6 @@ test.describe("Role-access · mocked Supabase session", () => {
     await openAs(page, "pm");
     await expect(navLink(page, "Dashboard")).toBeVisible({ timeout: 10000 });
     await expect(navLink(page, "Projects")).toBeVisible();
-    await expect(navLink(page, "PM Dashboard")).toBeVisible();
     await expect(navLink(page, "New Project")).toBeVisible();
     await expect(navLink(page, "Client Portal")).toBeVisible();
 
