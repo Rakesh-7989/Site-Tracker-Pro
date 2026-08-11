@@ -20,6 +20,7 @@ export interface ModalProps {
   children: ReactNode;
   title?: string;
   subtitle?: string;
+  action?: ReactNode;
   size?: ModalSize;
   showCloseButton?: boolean;
   closeOnOverlay?: boolean;
@@ -36,6 +37,7 @@ export function Modal({
   children,
   title,
   subtitle,
+  action,
   size = "md",
   showCloseButton = true,
   closeOnOverlay = true,
@@ -115,9 +117,10 @@ export function Modal({
         {(title || showCloseButton) && (
           <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-0 md:px-6 md:pt-6">
             <div className="min-w-0">
-              {title && <h3 className="font-display font-semibold text-fg-primary text-lg leading-tight">{title}</h3>}
+              {title && <h3 className="font-display font-semibold text-fg-primary text-lg leading-tight truncate">{title}</h3>}
               {subtitle && <p className="text-sm text-fg-secondary mt-1">{subtitle}</p>}
             </div>
+            {action && <div className="flex items-center gap-2 flex-shrink-0 pl-3">{action}</div>}
             {showCloseButton && (
               <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-xl hover:bg-elevated text-fg-tertiary hover:text-fg-primary transition flex-shrink-0 -mr-1 -mt-1">
                 <Icon name="x" size={18} />

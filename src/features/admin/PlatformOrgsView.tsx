@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied, type IconName } from "@/components/ui/atoms";
+import { Modal } from "@/components/ui/Modal";
 import { FormField, Input, Select } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
 import { createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, adminDeleteOrg, adminSetSubscriptionStatus, getOrgSubscription, type AssignablePlan, type PlatformOrg, type OrgSubscriptionInfo } from "@/app/platformAdminQueries";
@@ -261,17 +262,19 @@ function Inner(): JSX.Element {
         variant="card"
         pagination={{ page, hasNext, busy: loading, onPrev: () => setPage(p => Math.max(0, p - 1)), onNext: () => setPage(p => p + 1) }}
       />
-      {manageOrg && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-24 bg-black/30" onClick={onCloseManage}>
-          <div className="w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}><Card padding="md" title={<h2 className="font-display font-bold text-fg-primary truncate">{manageOrg.name}</h2>} action={<div className="flex items-center gap-2 flex-shrink-0">
-            <Badge tone={planTone(manageOrg.plan)}>{PLAN_LABEL[manageOrg.plan] ?? manageOrg.plan}</Badge>
-            {manageSubLoading ? <Spinner size={12} /> : manageSub?.status ? (
-              <Badge tone={subTone(manageSub.status)}>{manageSub.status}</Badge>
-            ) : <Badge tone="neutral">no subscription</Badge>}
-            <button onClick={onCloseManage} className="text-fg-tertiary hover:text-fg-primary p-1" aria-label="Close">
-              <Icon name="x" size={18} />
-            </button>
-          </div>}>
+      <Modal
+        open={!!manageOrg}
+        onClose={onCloseManage}
+        title={manageOrg?.name ?? ""}
+        size="lg"
+        action={<div className="flex items-center gap-2">
+          {manageOrg && <Badge tone={planTone(manageOrg.plan)}>{PLAN_LABEL[manageOrg.plan] ?? manageOrg.plan}</Badge>}
+          {manageSubLoading ? <Spinner size={12} /> : manageSub?.status ? (
+            <Badge tone={subTone(manageSub.status)}>{manageSub.status}</Badge>
+          ) : <Badge tone="neutral">no subscription</Badge>}
+        </div>}
+      >
+        {manageOrg && (<>
           <div className="space-y-4">
             {manageSub && !manageSubLoading && (
               <div className="text-[11px] text-fg-secondary flex gap-4">
@@ -324,10 +327,8 @@ function Inner(): JSX.Element {
               </div>
             )}
           </div>
-          </Card>
-          </div>
-        </div>
-      )}
+        </>)}
+      </Modal>
     </div>
   );
 }
