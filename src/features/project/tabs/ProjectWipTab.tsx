@@ -145,25 +145,15 @@ export function ProjectWipView({ projectId }: { projectId: string }): JSX.Elemen
         </Card>
       </div>
 
-      <Card className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Total Unbilled: {fmtRupees(totalUnbilled)}</div>
-          <div className="flex gap-2">
-            <Badge tone={wip.filter(e => e.agingDays > 120).length > 0 ? "danger" : wip.filter(e => e.agingDays > 90).length > 0 ? "warning" : "success"}>
-              {wip.filter(e => e.agingDays > 120).length > 0 ? "Critical" : wip.filter(e => e.agingDays > 90).length > 0 ? "Aging" : "Healthy"}
-            </Badge>
-          </div>
-        </div>
+      <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Total Unbilled: {fmtRupees(totalUnbilled)}</div>} action={<Badge tone={wip.filter(e => e.agingDays > 120).length > 0 ? "danger" : wip.filter(e => e.agingDays > 90).length > 0 ? "warning" : "success"}>
+        {wip.filter(e => e.agingDays > 120).length > 0 ? "Critical" : wip.filter(e => e.agingDays > 90).length > 0 ? "Aging" : "Healthy"}
+      </Badge>}>
 
         {/* Add/Edit Form */}
         {(showForm || editingId) && (
-          <Card className="p-3 mb-4 bg-bg-secondary border-l-2 border-accent">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-fg-primary">{editingId ? "Edit WIP Entry" : "New WIP Entry"}</h4>
-              <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }}>
-                <Icon name="x" size={14} />
-              </Button>
-            </div>
+          <Card padding="sm" className="mb-4 bg-bg-secondary border-l-2 border-accent" title={<h4 className="font-semibold text-fg-primary">{editingId ? "Edit WIP Entry" : "New WIP Entry"}</h4>} action={<Button size="sm" variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }}>
+            <Icon name="x" size={14} />
+          </Button>}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary block mb-1">Category</label>

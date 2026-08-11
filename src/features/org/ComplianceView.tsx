@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { Alert, Spinner } from "@/components/ui/atoms";
+import { Alert, Spinner, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
@@ -99,7 +99,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
             </div>
             <div className="flex gap-2">
               <input value={row.val} onChange={e => row.setVal(e.target.value)} placeholder={row.placeholder} className="flex-1 p-3 border border-default rounded-xl text-sm outline-none focus:border-accent" />
-              <button onClick={() => runCheck(row.key)} disabled={busy || !row.val.trim()} className="px-4 py-3 bg-ink text-cream font-bold rounded-xl text-sm tracking-wide disabled:opacity-50">{busy ? "Checking..." : "Verify"}</button>
+              <Button variant="dark" onClick={() => runCheck(row.key)} disabled={busy || !row.val.trim()}>{busy ? "Checking..." : "Verify"}</Button>
             </div>
           </div>);
         })}

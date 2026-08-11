@@ -89,16 +89,12 @@ export function ThreeWayMatchingView({ projectId }: { projectId: string }): JSX.
       </Card>
 
       {selectedReceipt && (
-        <Card className="p-3 border-l-2 border-accent">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <div className="font-semibold text-fg-primary">Match Receipt: {selectedReceipt.id.slice(0, 8)}</div>
-              <div className="text-sm text-fg-secondary">PO: {selectedReceipt.poId.slice(0, 8)} · Amount: {fmtRupees(selectedReceipt.amount)} · Remaining: {fmtRupees(selectedReceipt.amount - selectedReceipt.matchedAmount)}</div>
-            </div>
-            <Button size="sm" variant="ghost" onClick={() => setSelectedReceipt(null)}>
-              <Icon name="x" size={14} />
-            </Button>
-          </div>
+        <Card padding="sm" className="border-l-2 border-accent" title={<div>
+          <div className="font-semibold text-fg-primary">Match Receipt: {selectedReceipt.id.slice(0, 8)}</div>
+          <div className="text-sm text-fg-secondary">PO: {selectedReceipt.poId.slice(0, 8)} · Amount: {fmtRupees(selectedReceipt.amount)} · Remaining: {fmtRupees(selectedReceipt.amount - selectedReceipt.matchedAmount)}</div>
+        </div>} action={<Button size="sm" variant="ghost" onClick={() => setSelectedReceipt(null)}>
+          <Icon name="x" size={14} />
+        </Button>}>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>

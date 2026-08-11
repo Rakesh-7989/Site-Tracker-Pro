@@ -38,8 +38,7 @@ export function SiteSupervisorDashboard(): JSX.Element {
       </Link>
 
       {/* What the supervisor can do */}
-      <Card className="p-5">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-3">Your project assignments</h3>
+      <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Your project assignments</h3>}>
         {session.projectMemberships.length === 0 ? (
           <div className="text-sm text-fg-secondary">You're not assigned to a project yet. Ask your PM to add you.</div>
         ) : (

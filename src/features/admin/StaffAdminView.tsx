@@ -80,9 +80,10 @@ function UpiSettingsCard(): JSX.Element {
     if (a.ok && b.ok) { setSaved(true); setTimeout(() => setSaved(false), 2500); } else setErr((a.ok ? b : a).ok ? "" : "Save failed.");
   };
   return (
-    <Card className="p-5">
+    <Card padding="lg" title={<div>
       <div className="font-semibold text-fg-primary">Payment UPI</div>
-      <div className="text-[13px] text-fg-secondary mt-0.5 mb-3">The UPI ID customers pay to (used for the QR on payment pages). Zero gateway fees.</div>
+      <div className="text-[13px] text-fg-secondary mt-0.5">The UPI ID customers pay to (used for the QR on payment pages). Zero gateway fees.</div>
+    </div>}>
       {err && <div className="mb-2 text-[12px] text-error">{err}</div>}
       {saved && <div className="mb-2 text-[12px] text-success">✅ Saved.</div>}
       <div className="grid sm:grid-cols-2 gap-2">
@@ -195,9 +196,10 @@ export function StaffAdminView(): JSX.Element {
       <UpiSettingsCard />
 
       {/* Generate invite */}
-      <Card className="p-5">
+      <Card padding="lg" title={<div>
         <div className="font-semibold text-fg-primary">Invite a staff member</div>
-        <div className="text-[13px] text-fg-secondary mt-0.5 mb-3">One-time link. After someone joins with it, it's spent automatically.</div>
+        <div className="text-[13px] text-fg-secondary mt-0.5">One-time link. After someone joins with it, it's spent automatically.</div>
+      </div>}>
         <div className="flex items-end gap-2 flex-wrap">
           <label className="flex-1 min-w-[200px]">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">Invitee email (optional)</span>
@@ -232,8 +234,7 @@ export function StaffAdminView(): JSX.Element {
       ) : (
         <>
           {/* Staff hierarchy */}
-          <Card className="p-5">
-            <div className="font-semibold text-fg-primary mb-3">Staff team ({staff.length})</div>
+          <Card padding="lg" title={<div className="font-semibold text-fg-primary">Staff team ({staff.length})</div>}>
             <div className="space-y-2">
               {staff.map(m => (
                 <div key={m.id} className="py-2 border-b border-default last:border-0">
@@ -252,8 +253,7 @@ export function StaffAdminView(): JSX.Element {
           </Card>
 
           {/* Invites */}
-          <Card className="p-5">
-            <div className="font-semibold text-fg-primary mb-3">Invites</div>
+          <Card padding="lg" title={<div className="font-semibold text-fg-primary">Invites</div>}>
             <div className="space-y-2">
               {invites.map(inv => {
                 const st = inviteStatus(inv);

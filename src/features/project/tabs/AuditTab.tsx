@@ -201,8 +201,7 @@ export function AuditTab({ projectId }: { projectId: string }) {
       )}
 
       {creating && (
-        <Card className="p-4 border-accent">
-          <h4 className="font-display text-base font-bold text-fg-primary mb-3">{editing ? t("audit.editChecklist") : t("audit.newChecklist")}</h4>
+        <Card padding="md" className="border-accent" title={<h4 className="font-display text-base font-bold text-fg-primary">{editing ? t("audit.editChecklist") : t("audit.newChecklist")}</h4>}>
           <div className="space-y-3">
             <FormField label={t("audit.fieldKind")} htmlFor="cl-kind">
               <Select value={form.kind} onChange={e => setForm(f => ({ ...f, kind: e.target.value as typeof form.kind }))}

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, AccessDenied, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
+import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { requestPlanUpgrade } from "@/app/upgradeQueries";
 import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, PLAN_SEATS, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/orgAdminQueries";
@@ -81,14 +82,10 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !overview ? <div className="text-sm text-fg-secondary">{t("billing.noData")}</div> : (
         <>
           {/* â”€â”€ Plan card â”€â”€ */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.currentPlan")}</div>
-                <div className="text-xl font-display font-bold text-fg-primary">{PLAN_LABEL[overview.plan] ?? overview.plan}</div>
-              </div>
-              {sub && <Badge tone={subTone(sub.status)}>{sub.status}</Badge>}
-            </div>
+          <Card padding="lg" title={<div>
+            <div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.currentPlan")}</div>
+            <div className="text-xl font-display font-bold text-fg-primary">{PLAN_LABEL[overview.plan] ?? overview.plan}</div>
+          </div>} action={sub && <Badge tone={subTone(sub.status)}>{sub.status}</Badge>}>
             {billing?.alerts && billing.alerts.length > 0 && (
               <div className="mt-3 space-y-1.5">
                 {billing.alerts.map((a, i) => (
@@ -106,37 +103,33 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
           </Card>
 
           {/* â”€â”€ Seat usage â”€â”€ */}
-          <Card className="p-5 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-fg-primary">{t("billing.seats")}</span>
-              <span className={over ? "text-error font-semibold" : "text-fg-secondary"}>{used} {seats != null ? `/ ${seats}` : t("billing.unlimited")}</span>
-            </div>
+          <Card padding="lg" title={<span className="font-semibold text-fg-primary">{t("billing.seats")}</span>} action={<span className={over ? "text-error font-semibold" : "text-fg-secondary"}>{used} {seats != null ? `/ ${seats}` : t("billing.unlimited")}</span>}>
+            <div className="space-y-2">
             {seats != null && (
               <div className="h-2 rounded-full bg-secondary overflow-hidden">
                 <div className={`h-full rounded-full ${over ? "bg-error" : pct > 80 ? "bg-accent" : "bg-success"}`} style={{ width: `${pct}%` }} />
               </div>
             )}
             {over && <div className="text-[11px] text-error">{t("billing.overLimit")}</div>}
+            </div>
           </Card>
 
           {/* â”€â”€ Subscription details â”€â”€ */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.subscription")}</div>
-              {sub && ["active", "trial"].includes(sub.status) && (
-                <Button size="sm" variant="ghost" onClick={() => { setAction({ kind: "cancel" }); setActionResult(null); }}>
-                  Cancel
-                </Button>
-              )}
-              {sub && ["paused", "cancelled"].includes(sub.status) && (
-                <Button size="sm" variant="primary" onClick={() => performAction("active")}>
-                  Reactivate
-                </Button>
-              )}
-              {sub && sub.status === "past_due" && (
-                <span className="text-[11px] text-fg-tertiary">Contact support to resolve payment</span>
-              )}
-            </div>
+          <Card padding="lg" title={<div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.subscription")}</div>} action={<div className="flex items-center gap-2">
+            {sub && ["active", "trial"].includes(sub.status) && (
+              <Button size="sm" variant="ghost" onClick={() => { setAction({ kind: "cancel" }); setActionResult(null); }}>
+                Cancel
+              </Button>
+            )}
+            {sub && ["paused", "cancelled"].includes(sub.status) && (
+              <Button size="sm" variant="primary" onClick={() => performAction("active")}>
+                Reactivate
+              </Button>
+            )}
+            {sub && sub.status === "past_due" && (
+              <span className="text-[11px] text-fg-tertiary">Contact support to resolve payment</span>
+            )}
+          </div>}>
             {sub ? (
               <dl className="grid grid-cols-2 gap-y-2 text-sm">
                 <dt className="text-fg-secondary">{t("billing.status")}</dt>
@@ -155,38 +148,29 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
           </Card>
 
           {/* â”€â”€ Cancel confirmation modal â”€â”€ */}
-          {action && (
-            <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/30" onClick={() => { setAction(null); setActionResult(null); }}>
-              <div className="w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}><Card className="p-5 space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-display font-bold text-fg-primary">Cancel subscription</h3>
-                  <button onClick={() => { setAction(null); setActionResult(null); }} className="text-fg-tertiary hover:text-fg-primary p-1">
-                    <Icon name="x" size={18} />
-                  </button>
-                </div>
-                <p className="text-sm text-fg-secondary">Are you sure you want to cancel your subscription? You will lose access to paid features at the end of the billing period.</p>
-                {actionResult && <Alert variant={actionResult.ok ? "success" : "danger"}>{actionResult.message}</Alert>}
-                <div className="flex gap-2 flex-wrap">
-                  {actionResult?.ok ? (
-                    <Button size="sm" onClick={() => { setAction(null); setActionResult(null); }}>Done</Button>
-                  ) : (
-                    <>
-                      <Button size="sm" variant="danger" loading={actionBusy}
-                        onClick={() => void performAction("cancel")}>
-                        {actionBusy ? "Cancelling..." : "Yes, cancel subscription"}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => { setAction(null); setActionResult(null); }} disabled={actionBusy}>Keep active</Button>
-                    </>
-                  )}
-                </div>
-              </Card>
-              </div>
+          <Modal open={!!action} onClose={() => { setAction(null); setActionResult(null); }} size="sm" title="Cancel subscription" footer={
+            <div className="flex gap-2 flex-wrap">
+              {actionResult?.ok ? (
+                <Button size="sm" onClick={() => { setAction(null); setActionResult(null); }}>Done</Button>
+              ) : (
+                <>
+                  <Button size="sm" variant="danger" loading={actionBusy}
+                    onClick={() => void performAction("cancel")}>
+                    {actionBusy ? "Cancelling..." : "Yes, cancel subscription"}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setAction(null); setActionResult(null); }} disabled={actionBusy}>Keep active</Button>
+                </>
+              )}
             </div>
-          )}
+          }>
+            <div className="space-y-4">
+              <p className="text-sm text-fg-secondary">Are you sure you want to cancel your subscription? You will lose access to paid features at the end of the billing period.</p>
+              {actionResult && <Alert variant={actionResult.ok ? "success" : "danger"}>{actionResult.message}</Alert>}
+            </div>
+          </Modal>
 
           {/* â”€â”€ Billing history â”€â”€ */}
-          <Card className="p-5">
-            <div className="text-xs text-fg-tertiary uppercase tracking-wider mb-3">{t("billing.billingHistory")}</div>
+          <Card padding="lg" title={<div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.billingHistory")}</div>}>
           <DataTable columns={BILLING_COLUMNS} rows={billing?.billingHistory ?? []} rowKey={r => r.id} emptyMessage={t("billing.noHistory")} />
           </Card>
 
@@ -231,14 +215,10 @@ function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan
   };
 
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <div className="font-semibold text-fg-primary">{t("billing.upgradeTitle")}</div>
-          <div className="text-[13px] text-fg-secondary mt-0.5">{t("billing.upgradeSub")}</div>
-        </div>
-        {!open && !done && <Button onClick={() => setOpen(true)} leftIcon={<Icon name="trend" size={15} />}>{t("billing.requestUpgrade")}</Button>}
-      </div>
+    <Card padding="md" title={<div>
+      <div className="font-semibold text-fg-primary">{t("billing.upgradeTitle")}</div>
+      <div className="text-[13px] text-fg-secondary mt-0.5">{t("billing.upgradeSub")}</div>
+    </div>} action={!open && !done && <Button onClick={() => setOpen(true)} leftIcon={<Icon name="trend" size={15} />}>{t("billing.requestUpgrade")}</Button>}>
 
       {done && <div className="mt-3 rounded-lg bg-success-tint border border-success p-3 text-[13px] text-success">{t("billing.requestSent")}</div>}
 

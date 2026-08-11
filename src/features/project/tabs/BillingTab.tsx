@@ -151,11 +151,8 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
         <>
           {canRates && (
             <PlanGate feature="rate_cards">
-              <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-fg-primary">Rate cards</h3>
-                  <Badge tone="info">{rateCards.length} set</Badge>
-                </div>
+              <Card padding="md" title={<h3 className="font-semibold text-fg-primary">Rate cards</h3>} action={<Badge tone="info">{rateCards.length} set</Badge>}>
+                <div className="space-y-3">
                 <div className="grid gap-2 sm:grid-cols-5 items-end">
                   <div>
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Member</span>
@@ -191,17 +188,15 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
                     ))}
                   </div>
                 )}
+                </div>
               </Card>
             </PlanGate>
           )}
 
           {canRetainers && (
             <PlanGate feature="retainer_billing">
-              <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-fg-primary">Monthly retainers</h3>
-                  <Badge tone="success">{retainers.filter(r => r.status === "active").length} active</Badge>
-                </div>
+              <Card padding="md" title={<h3 className="font-semibold text-fg-primary">Monthly retainers</h3>} action={<Badge tone="success">{retainers.filter(r => r.status === "active").length} active</Badge>}>
+                <div className="space-y-3">
                 <div className="grid gap-2 sm:grid-cols-4 items-end">
                   <div>
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Title</span>
@@ -257,17 +252,15 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
                     })}
                   </div>
                 )}
+                </div>
               </Card>
             </PlanGate>
           )}
 
           {canGenerate && (
             <PlanGate feature="hourly_billing">
-              <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-fg-primary">Hourly billing</h3>
-                  <span className="text-sm text-fg-secondary">approved + unbilled only</span>
-                </div>
+              <Card padding="md" title={<h3 className="font-semibold text-fg-primary">Hourly billing</h3>} action={<span className="text-sm text-fg-secondary">approved + unbilled only</span>}>
+                <div className="space-y-3">
                 <div className="grid gap-2 sm:grid-cols-3 items-end">
                   <div>
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">From</span>
@@ -293,13 +286,14 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
                     ))}
                   </div>
                 )}
+                </div>
               </Card>
             </PlanGate>
           )}
 
           {generated.length > 0 && (
-            <Card className="p-4 space-y-2">
-              <h3 className="font-semibold text-fg-primary">Generated invoices</h3>
+            <Card padding="md" title={<h3 className="font-semibold text-fg-primary">Generated invoices</h3>}>
+              <div className="space-y-2">
               <div className="space-y-1.5">
                 {generated.map(i => (
                   <div key={i.id}>
@@ -323,6 +317,7 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
                     )}
                   </div>
                 ))}
+              </div>
               </div>
             </Card>
           )}

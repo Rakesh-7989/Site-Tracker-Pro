@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useAuth, useCan } from "@/auth";
 import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { Switch } from "@/components/ui/Switch";
 import { getClient } from "@/lib/supabase";
 import { FEATURE_CATALOG, FEATURE_GROUPS } from "@/lib/orgFeatureFlags";
 import { listPlatformFlags, upsertPlatformFlag, type PlatformFlagRow } from "@/app/platformFlagQueries";
@@ -139,10 +140,7 @@ function FeatureFlagsInner({ userId }: { userId: string }): JSX.Element {
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
                           {busy && <Spinner size={14} />}
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={eff.enabled} disabled={busy} onChange={() => toggle(f.id, eff.enabled)} />
-                            <div className="w-9 h-5 bg-bg-secondary peer-checked:bg-accent rounded-full peer after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
-                          </label>
+                          <Switch checked={eff.enabled} disabled={busy} onChange={() => toggle(f.id, eff.enabled)} />
                         </div>
                       </div>
                       <div className="px-3 pb-3 flex flex-wrap items-center gap-4">

@@ -331,24 +331,20 @@ function ProcurementInner(): JSX.Element {
                 const expandedOpen = expanded[ffeEntry.id];
                 const scoreOf = (q: ProcurementQuote) => scoreQuote(q, list.filter(x => x.id !== q.id), vendorRating(q.vendorId)).score;
                 return (
-                  <Card key={ffeEntry.id} className="p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-fg-primary">{ffeEntry.name}</span>
-                          {ffeEntry.code && <Badge tone="neutral">{ffeEntry.code}</Badge>}
-                        </div>
-                        <div className="text-[11px] text-fg-tertiary">{ffeEntry.qty} × {fmtRupees(ffeEntry.unitCost)} spec'd{ffeEntry.spaceOrRoom ? ` · ${ffeEntry.spaceOrRoom}` : ""}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="secondary" onClick={() => setFormFfeId(formFfeId === ffeEntry.id ? null : ffeEntry.id)}>
-                          {formFfeId === ffeEntry.id ? "Cancel" : "+ Quote"}
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setExpanded(x => ({ ...x, [ffeEntry.id]: !x[ffeEntry.id] }))}>
-                          {expandedOpen ? "Hide quotes" : `Quotes (${list.length})`}
-                        </Button>
-                      </div>
+                  <Card key={ffeEntry.id} padding="md" title={<div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-fg-primary">{ffeEntry.name}</span>
+                      {ffeEntry.code && <Badge tone="neutral">{ffeEntry.code}</Badge>}
                     </div>
+                    <div className="text-[11px] text-fg-tertiary">{ffeEntry.qty} × {fmtRupees(ffeEntry.unitCost)} spec'd{ffeEntry.spaceOrRoom ? ` · ${ffeEntry.spaceOrRoom}` : ""}</div>
+                  </div>} action={<div className="flex items-center gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => setFormFfeId(formFfeId === ffeEntry.id ? null : ffeEntry.id)}>
+                      {formFfeId === ffeEntry.id ? "Cancel" : "+ Quote"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setExpanded(x => ({ ...x, [ffeEntry.id]: !x[ffeEntry.id] }))}>
+                      {expandedOpen ? "Hide quotes" : `Quotes (${list.length})`}
+                    </Button>
+                  </div>}>
                     {formFfeId === ffeEntry.id && quoteForm(ffeEntry)}
                     {expandedOpen && (
                       <div className="mt-3 space-y-2">

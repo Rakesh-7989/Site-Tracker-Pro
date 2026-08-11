@@ -61,8 +61,7 @@ export function PlatformBillingView(): JSX.Element {
           <div className="text-3xl font-light text-fg-primary">{trial.length} / {orgs.filter(o => o.status === "suspended").length}</div>
         </Card>
       </div>
-      <Card className="p-6">
-        <h2 className="font-bold text-lg mb-4">Revenue by plan</h2>
+      <Card padding="lg" title={<h2 className="font-bold text-lg">Revenue by plan</h2>}>
         <div className="space-y-4">
           {byPlan.map(p => {
             const share = totalMRR ? Math.round((p.mrr / totalMRR) * 100) : 0;

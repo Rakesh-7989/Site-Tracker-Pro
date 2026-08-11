@@ -368,8 +368,7 @@ function GenerateSection({ projectId, orgId }: { projectId: string; orgId: strin
         {error && <Alert variant="danger">{error}</Alert>}
         <Button onClick={() => void generate()} disabled={loading}>{loading ? <Spinner size={14} /> : "Generate Packet"}</Button>
         {manifest && (
-          <Card className="p-4">
-            <h3 className="font-display text-sm font-bold text-fg-primary mb-2">Manifest Output</h3>
+          <Card padding="md" title={<h3 className="font-display text-sm font-bold text-fg-primary">Manifest Output</h3>}>
             <pre className="text-xs font-mono text-fg-secondary whitespace-pre-wrap max-h-64 overflow-auto bg-bg-secondary rounded-lg p-3">{manifest}</pre>
           </Card>
         )}
@@ -411,10 +410,11 @@ function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: s
   };
 
   return (
-    <Card className="p-4">
-      <h3 className="font-display text-sm font-bold text-fg-primary mb-2">Sign Handover Packet</h3>
-      <p className="text-xs text-fg-secondary mb-4">Please provide your signature to finalize the handover packet. This signature will be recorded and included in the final handover packet.
+    <Card padding="md" title={<div>
+      <h3 className="font-display text-sm font-bold text-fg-primary">Sign Handover Packet</h3>
+      <p className="text-xs text-fg-secondary">Please provide your signature to finalize the handover packet. This signature will be recorded and included in the final handover packet.
       </p>
+    </div>}>
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
       <Textarea
         placeholder="Type your signature here..."

@@ -1517,9 +1517,73 @@ Select optgroup:
   clean · build clean (7.95s) · vitest **151 files / 1902 tests pass** (+1
   file / +15) · smoke **309 checks** · e2e-mock **11/11**.
 
-### Next (Batch I)
-Phase 4 batch candidates: Select group/optgroup backfill on remaining vendor
-pickers, remaining Card header call sites (~44), Button size/variant coverage
-audit, remaining props-parity gaps. Remaining raw selects stay intentional
-(TopBar, LanguageSwitcher, VendorsView star rating). Candidate next sub-task
+### Batch I (ready to ship, 2026-08-11)
+Card header call-site sweep — the remaining ~44 in-body `<Card className="p-N">` +
+heading-div sites migrated onto the `title`/`action`/`padding` API (30 card sites /
+15 files this batch, 62 total across Phase 4):
+- **DPR**: `DPRComposer` (Voice quality badge action, Photo hyderabad badge action,
+  Preview), `DPRDetailView` (Transcript, Photo, Voice sha256, BuildNow anchor,
+  Delivery-log retry action).
+- **Org**: `ClientPortalView` (New Updates bell title, accent-tint), `CrossAnalyticsView`
+  (By Type / Cash Flow / Top Projects / At-Risk `border-l-2 border-error`),
+  `OrgFinancialView` (Cash Flow / Projects), `DigestManagementView` (Dispatch
+  History — the subscription row stays a clickable data-row card), `ResearchLibraryView`
+  (Collections + Add action), `VendorPortalView` (Submit a quote, Vendor Profile),
+  `ProcurementView` (FF&E group header — name/spec title + Quote/Hide action),
+  `VendorScorecardView` (detail modal title + close action).
+- **Admin/dashboards**: `StaffAdminView` (Payment UPI, Invite a staff member,
+  Staff team, Invites — 4 real cards), `PlatformBillingView` (Revenue by plan),
+  `PlatformOrgsView` (manage-org modal title + plan/sub badges/close action),
+  `SiteSupervisorDashboard` (project assignments), `HandoverPacketView` (Manifest
+  Output, Sign Handover Packet).
+- **Fix**: `DrawingsTab` design-workflow Card — the `action` attr `)}` was missing
+  the closing `>` of the Card opening tag (parser broke at the `<ol>`); restored a
+  dropped `{DESIGN_STAGES.map(...)}` line.
+- **Intentionally skipped** (data-row cards — one entity per card with inline
+  status selects/actions): DeliverablesTab:216, DrawingsTab:205, FfeTab:227,
+  ReviewRoundsTab:129, RoomsTab:210, StatutoryTab:181, ProcurementView quote
+  rows (267/377), DigestManagement subscription row (82).
+
+### Verify (Batch I)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (7.34s) · vitest **151 files / 1902 tests pass** · smoke
+  **309 checks**. Not yet committed/pushed.
+
+### Batch J (ready to ship, 2026-08-11)
+Button variant/size coverage audit + raw-CTA migration — the remaining hand-rolled
+solid CTAs moved onto `<Button>`:
+- **New `dark` variant** (`atoms.tsx`) — `bg-ink text-cream hover:opacity-95 border
+  border-transparent`, matching the `Select dark` skin. Completes the solid-surface
+  set: primary (accent) / secondary (panel) / ghost / danger (error) / gold / dark
+  (ink). All size/loading/disabled semantics shared.
+- **Migrated 4 hand-rolled CTAs → `<Button>`**:
+  - `ComplianceView` Verify → `variant="dark"` (keeps the busy-label swap).
+  - `PlatformAuditLogV2View` Export CSV → `variant="dark"` + `leftIcon="download"`
+    (dropped the now-unused `Icon` import).
+  - `PlatformSupportView` Send reply → primary (default); ticket Close →
+    `variant="secondary" size="sm"`.
+- **Vendor optgroups**: audited — no remaining work. Only 2 multi-vendor pickers
+  exist (`POsTab`, `ProcurementView`), both already on `vendorOptionGroups`;
+  `VendorPortalView`'s quote picker is a single-company select by design.
+- **Intentionally kept raw** (grep-audited, 2 solid CTAs remain): `LabourKioskView`
+  Clock in (kiosk dark theme, bespoke `py-5 rounded-2xl` sizing) and `PwaChrome`
+  Reload (floating micro-chrome, `px-3 py-1`). Plus the existing intentional set:
+  icon-only x/trash/chevron, Badge-wrapped status-advance buttons, capability
+  toggle pills (CustomRolesPanel/ManageCustomRolesModal), OnboardingView chips,
+  PlatformBrandingView segmented toggle + color swatches, CalendarGrid nav,
+  HierarchyView tree controls, VendorsView star rating, link-as-button `<Link>`s
+  (AcceptInviteView/OrgRegisterView/PlanGate).
+- **Tests** — new `tests/components/uiBatchJ.test.tsx` (6): dark surface classes,
+  leftIcon slot, disabled dimming, loading spinner + aria-busy, spinner sized to
+  button size, and a 6-variant regression lock.
+
+### Verify (Batch J)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (7.78s) · vitest **152 files / 1908 tests pass** (+1 file / +6) ·
+  smoke **309 checks**. Not yet committed/pushed.
+
+### Next (Batch K)
+Phase 4 batch candidates: remaining props-parity gaps on library components,
+responsive/overflow polish on the migrated Card headers, or start Phase 5
+(data-intensive views: tables, charts, kanban, calendar). Candidate next sub-task
 (needs user go).

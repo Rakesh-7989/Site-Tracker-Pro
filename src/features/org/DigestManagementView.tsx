@@ -94,8 +94,7 @@ export function DigestManagementView(): JSX.Element {
                     </div>
                   </Card>
                   {expandedId === s.id && (
-                    <Card className="p-3 mt-1 border-t border-border">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-fg-secondary mb-2">Dispatch History</h4>
+                    <Card padding="sm" className="mt-1 border-t border-border" title={<h4 className="text-xs font-bold uppercase tracking-wider text-fg-secondary">Dispatch History</h4>}>
                       {dispLoading ? <Spinner size={14} />
                         : dispatches.length === 0 ? <div className="text-xs text-fg-tertiary">No dispatches yet.</div>
                         : <div className="space-y-1">{dispatches.map(d => (

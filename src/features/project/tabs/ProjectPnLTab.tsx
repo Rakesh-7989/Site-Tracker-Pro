@@ -142,11 +142,7 @@ export function ProjectPnLView({ projectId }: { projectId: string }): JSX.Elemen
 
       {/* WIP Aging Summary */}
       {wipBuckets && wipBuckets.total > 0 && (
-        <Card className="p-3 border-l-2 border-warning">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-warning">⚠ WIP Aging ({wip.length} entries · {fmtRupees(wipBuckets.total)} unbilled)</div>
-            <Badge tone="warning">{wipBuckets.over120 > 0 ? "Over 120 days" : wipBuckets.days91_120 > 0 ? "91-120 days" : "Current"}</Badge>
-          </div>
+        <Card padding="sm" className="border-l-2 border-warning" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-warning">⚠ WIP Aging ({wip.length} entries · {fmtRupees(wipBuckets.total)} unbilled)</div>} action={<Badge tone="warning">{wipBuckets.over120 > 0 ? "Over 120 days" : wipBuckets.days91_120 > 0 ? "91-120 days" : "Current"}</Badge>}>
           <div className="grid grid-cols-5 gap-2 text-sm">
             <div className="text-center"><div className="text-success font-bold">{fmtRupees(wipBuckets.current)}</div><div className="text-xs text-fg-tertiary">0-30 days</div></div>
             <div className="text-center"><div className="text-info font-bold">{fmtRupees(wipBuckets.days31_60)}</div><div className="text-xs text-fg-tertiary">31-60 days</div></div>

@@ -249,15 +249,12 @@ export function DPRComposer(): JSX.Element {
       </Card>
 
       {/* Voice */}
-      <Card className="p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepVoice")}</h3>
-          {draft.voice.status === "done" && quality !== null && (
-            <Badge tone={quality ? "success" : "warning"}>
-              {Math.round((draft.voice.confidence ?? 0) * 100)}% {quality ? t("dpr.composer.qualityGood") : t("dpr.composer.qualityLow")}
-            </Badge>
-          )}
-        </div>
+      <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepVoice")}</h3>} action={draft.voice.status === "done" && quality !== null && (
+        <Badge tone={quality ? "success" : "warning"}>
+          {Math.round((draft.voice.confidence ?? 0) * 100)}% {quality ? t("dpr.composer.qualityGood") : t("dpr.composer.qualityLow")}
+        </Badge>
+      )}>
+        <div className="space-y-3">
         {draft.voice.status === "idle" && (
           <VoiceNoteRecorder
             onRecorded={onRecorded}
@@ -274,22 +271,21 @@ export function DPRComposer(): JSX.Element {
           </FormField>
         )}
         {draft.voice.status === "error" && <Alert variant="danger" icon={<Icon name="alert" size={14} />}>{draft.voice.error}</Alert>}
+        </div>
       </Card>
 
       {/* Photo */}
-      <Card className="p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepPhoto")}</h3>
-          {draft.photo.status === "added" && draft.photo.withinHyderabad === true && <Badge tone="success">{t("dpr.composer.hyderabadVerified")}</Badge>}
-          {draft.photo.status === "added" && draft.photo.withinHyderabad === false && <Badge tone="warning">{t("dpr.composer.outsideHyderabad")}</Badge>}
-        </div>
+      <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepPhoto")}</h3>} action={<div className="flex items-center gap-2">
+        {draft.photo.status === "added" && draft.photo.withinHyderabad === true && <Badge tone="success">{t("dpr.composer.hyderabadVerified")}</Badge>}
+        {draft.photo.status === "added" && draft.photo.withinHyderabad === false && <Badge tone="warning">{t("dpr.composer.outsideHyderabad")}</Badge>}
+      </div>}>
         <PhotoGeotagCapture onCapture={onPhotoCapture} />
       </Card>
 
       {/* Preview + submit */}
       {preview && (
-        <Card className="p-5 space-y-3">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepPreview")}</h3>
+        <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepPreview")}</h3>}>
+          <div className="space-y-3">
           <div className="rounded-xl bg-success-tint border border-default p-3 text-sm text-fg-primary whitespace-pre-line leading-relaxed">{preview}</div>
           <div className="space-y-1.5">
             {checklist.map(c => (
@@ -305,6 +301,7 @@ export function DPRComposer(): JSX.Element {
           {promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null && (
             <p className="text-xs text-error text-center">{t("dpr.composer.enterValidNumber")}</p>
           )}
+          </div>
         </Card>
       )}
     </div>

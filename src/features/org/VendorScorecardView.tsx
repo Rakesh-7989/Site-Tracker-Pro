@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Badge, Spinner, Alert, Icon, Button, ProgressBar } from "@/components/ui/atoms";
+import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
 import { listVendorPerformance, recomputeAllVendorPerformance, vendorPerformanceTier, type VendorPerformance } from "@/app/advancedProcurementQueries";
@@ -121,16 +122,12 @@ export function VendorScorecardView(): JSX.Element {
       </Card>
 
       {/* Vendor Detail Modal */}
-      {selectedVendor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-lg font-bold text-fg-primary">Vendor Scorecard Detail</h3>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedVendor(null)}>
-                <Icon name="x" size={18} />
-              </Button>
-            </div>
-
+      <Modal open={!!selectedVendor} onClose={() => setSelectedVendor(null)} title="Vendor Scorecard Detail" size="xl" className="max-w-2xl" footer={
+        <div className="flex justify-end gap-2">
+          <Button onClick={() => setSelectedVendor(null)}>Close</Button>
+        </div>
+      }>
+        {selectedVendor && (<>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <Card className="p-3 text-center">
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Overall Score</div>
@@ -187,12 +184,8 @@ export function VendorScorecardView(): JSX.Element {
               </Card>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t border-default">
-              <Button onClick={() => setSelectedVendor(null)}>Close</Button>
-            </div>
-          </Card>
-        </div>
-      )}
+        </>)}
+        </Modal>
     </div>
   );
 }

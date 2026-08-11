@@ -52,9 +52,10 @@ export function PlatformSettingsView(): JSX.Element {
       <h1 className="text-2xl font-black text-fg-primary mb-1">System Settings</h1>
       <p className="text-fg-tertiary text-sm mb-6">Platform-wide operational toggles</p>
 
-      <Card className="p-6 mb-6">
-        <h2 className="font-bold text-lg mb-1">Operational toggles</h2>
-        <p className="text-xs text-fg-tertiary mb-4">Control which surfaces are available across all orgs.</p>
+      <Card padding="lg" className="mb-6" title={<div>
+        <h2 className="font-bold text-lg">Operational toggles</h2>
+        <p className="text-xs text-fg-tertiary">Control which surfaces are available across all orgs.</p>
+      </div>}>
         <div className="space-y-2">
           {OPS_TOGGLES.map(t => {
             const enabled = toggles[t.key] ?? false;

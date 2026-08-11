@@ -58,32 +58,26 @@ export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.El
   if (!result) return <></>;
   if (result.score === 0) {
     return (
-      <Card className="p-5">
-        <div className="flex items-center gap-2">
-          <Icon name="check" size={15} className="text-success" />
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Risk signals</h3>
-          <Badge tone="success">Low</Badge>
-        </div>
-        <div className="mt-2 text-sm text-fg-secondary">No active risk signals detected.</div>
+      <Card padding="lg" title={<div className="flex items-center gap-2">
+        <Icon name="check" size={15} className="text-success" />
+        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Risk signals</h3>
+      </div>} action={<Badge tone="success">Low</Badge>}>
+        <div className="text-sm text-fg-secondary">No active risk signals detected.</div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Icon name="alert" size={15} className="text-warning" />
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Risk signals</h3>
-          <Badge tone={LEVEL_TONE[result.level]}>{result.level}</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <ProgressBar value={result.score} color={result.level === "critical" ? "red" : result.level === "high" ? "red" : "orange"} className="w-24" />
-          <span className="text-sm font-bold text-fg-primary">{result.score}/100</span>
-        </div>
-      </div>
+    <Card padding="lg" title={<div className="flex items-center gap-2">
+      <Icon name="alert" size={15} className="text-warning" />
+      <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Risk signals</h3>
+      <Badge tone={LEVEL_TONE[result.level]}>{result.level}</Badge>
+    </div>} action={<div className="flex items-center gap-2">
+      <ProgressBar value={result.score} color={result.level === "critical" ? "red" : result.level === "high" ? "red" : "orange"} className="w-24" />
+      <span className="text-sm font-bold text-fg-primary">{result.score}/100</span>
+    </div>}>
 
-      <div className="mt-2 text-xs text-fg-secondary">
+      <div className="text-xs text-fg-secondary">
         {Math.round(result.delayProbability * 100)}% estimated delay probability
         {result.delayDays > 0 ? ` · ~${result.delayDays} day${result.delayDays === 1 ? "" : "s"} late` : ""}
       </div>

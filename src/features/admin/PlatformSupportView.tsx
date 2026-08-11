@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
-import { Spinner, AccessDenied } from "@/components/ui/atoms";
+import { Spinner, AccessDenied, Button } from "@/components/ui/atoms";
 import { listSupportTickets, listOrgsBrief, updateSupportTicket, type Ticket } from "@/app/platformSupportQueries";
 
 
@@ -90,7 +90,7 @@ export function PlatformSupportView(): JSX.Element {
                   <div className="font-bold text-lg">{ticket.subject}</div>
                   <div className="text-xs text-fg-tertiary">{orgs[ticket.org_id] || "—"} · {ticket.from} · {fmtTime(ticket.created)}</div>
                 </div>
-                {ticket.status !== "closed" && <button onClick={close} className="px-3 py-1.5 bg-bg-secondary text-xs font-bold rounded-lg hover:bg-elevated">Close</button>}
+                {ticket.status !== "closed" && <Button variant="secondary" size="sm" onClick={close}>Close</Button>}
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="bg-bg-secondary rounded-xl p-4">
@@ -107,7 +107,7 @@ export function PlatformSupportView(): JSX.Element {
               {ticket.status !== "closed" && (
                 <div className="p-4 border-t border-default">
                   <textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Type reply..." className="w-full p-3 border border-default rounded-xl text-sm resize-none h-24 mb-3" />
-                  <button onClick={sendReply} className="px-5 py-2 bg-accent text-white font-bold rounded-xl text-sm">Send reply</button>
+                  <Button onClick={sendReply}>Send reply</Button>
                 </div>
               )}
             </>

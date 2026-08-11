@@ -158,23 +158,19 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {fileError && <Alert variant="danger">{fileError}</Alert>}
       {flow && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-            <div>
-              <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Design workflow</h3>
-              <div className="mt-0.5 text-sm text-fg-secondary">Stage: <span className="font-semibold text-fg-primary">{DESIGN_STAGE_LABEL[flow]}</span></div>
-            </div>
-            {canEdit && (
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="secondary" onClick={() => void run("adv-flow", c => advanceDesignWorkflow(c, projectId), { apply: () => setFlow(prev => prev ? DESIGN_STAGES[Math.min(DESIGN_STAGES.indexOf(prev) + 1, DESIGN_STAGES.length - 1)] : "requirements"), rollback: () => void loadFlow() })} disabled={busy === "adv-flow" || flow === "approved"}>
-                  {busy === "adv-flow" ? <Spinner size={14} /> : "Advance"}
+        <Card padding="md" title={<div>
+          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Design workflow</h3>
+          <div className="mt-0.5 text-sm text-fg-secondary">Stage: <span className="font-semibold text-fg-primary">{DESIGN_STAGE_LABEL[flow]}</span></div>
+        </div>} action={canEdit && (
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="secondary" onClick={() => void run("adv-flow", c => advanceDesignWorkflow(c, projectId), { apply: () => setFlow(prev => prev ? DESIGN_STAGES[Math.min(DESIGN_STAGES.indexOf(prev) + 1, DESIGN_STAGES.length - 1)] : "requirements"), rollback: () => void loadFlow() })} disabled={busy === "adv-flow" || flow === "approved"}>
+              {busy === "adv-flow" ? <Spinner size={14} /> : "Advance"}
                 </Button>
                 <Button size="sm" onClick={() => void run("appr-flow", c => approveDesignWorkflow(c, projectId, session?.user.id ?? ""), { apply: () => setFlow("approved"), rollback: () => void loadFlow() })} disabled={busy === "appr-flow" || flow === "approved"}>
                   {busy === "appr-flow" ? <Spinner size={14} /> : "Approve"}
                 </Button>
               </div>
-            )}
-          </div>
+          )}>
           <ol className="flex items-center gap-1 overflow-x-auto">
             {DESIGN_STAGES.map((s, i) => {
               const reached = DESIGN_STAGES.indexOf(flow) >= i;

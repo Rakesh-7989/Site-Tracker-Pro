@@ -216,11 +216,7 @@ function Library({ orgId }: { orgId: string }): JSX.Element {
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-[280px_1fr] gap-6">
-        <Card className="p-4 h-fit">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("research.collectionsTitle")}</div>
-            {canManage && <button onClick={() => setCreatingColl(true)} className="text-xs text-accent">+ {t("research.addCollection")}</button>}
-          </div>
+        <Card padding="md" className="h-fit" title={<div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-tertiary">{t("research.collectionsTitle")}</div>} action={canManage && <button onClick={() => setCreatingColl(true)} className="text-xs text-accent">+ {t("research.addCollection")}</button>}>
           {collections.length === 0 ? (
             <div className="text-xs text-fg-tertiary py-4">{t("research.noCollections")}</div>
           ) : (

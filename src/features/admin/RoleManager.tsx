@@ -168,8 +168,7 @@ function RoleManagerInner({ session }: { session: AuthSession }): JSX.Element {
 
       {/* Capability grid */}
       {!loading && groups.map(group => (
-        <Card key={group.key} className="p-4">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-3">{group.label}</h3>
+        <Card key={group.key} padding="md" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{group.label}</h3>}>
           <div className="space-y-1.5">
             {group.capabilities.map(cap => {
               const cur = stateOf(cap);

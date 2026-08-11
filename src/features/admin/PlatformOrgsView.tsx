@@ -263,20 +263,16 @@ function Inner(): JSX.Element {
       />
       {manageOrg && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-24 bg-black/30" onClick={onCloseManage}>
-          <div className="w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}><Card className="p-5 space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display font-bold text-fg-primary truncate">{manageOrg.name}</h2>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge tone={planTone(manageOrg.plan)}>{PLAN_LABEL[manageOrg.plan] ?? manageOrg.plan}</Badge>
-                {manageSubLoading ? <Spinner size={12} /> : manageSub?.status ? (
-                  <Badge tone={subTone(manageSub.status)}>{manageSub.status}</Badge>
-                ) : <Badge tone="neutral">no subscription</Badge>}
-              </div>
-              <button onClick={onCloseManage} className="text-fg-tertiary hover:text-fg-primary p-1" aria-label="Close">
-                <Icon name="x" size={18} />
-              </button>
-            </div>
-
+          <div className="w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}><Card padding="md" title={<h2 className="font-display font-bold text-fg-primary truncate">{manageOrg.name}</h2>} action={<div className="flex items-center gap-2 flex-shrink-0">
+            <Badge tone={planTone(manageOrg.plan)}>{PLAN_LABEL[manageOrg.plan] ?? manageOrg.plan}</Badge>
+            {manageSubLoading ? <Spinner size={12} /> : manageSub?.status ? (
+              <Badge tone={subTone(manageSub.status)}>{manageSub.status}</Badge>
+            ) : <Badge tone="neutral">no subscription</Badge>}
+            <button onClick={onCloseManage} className="text-fg-tertiary hover:text-fg-primary p-1" aria-label="Close">
+              <Icon name="x" size={18} />
+            </button>
+          </div>}>
+          <div className="space-y-4">
             {manageSub && !manageSubLoading && (
               <div className="text-[11px] text-fg-secondary flex gap-4">
                 {manageSub.provider && <span>Provider: {manageSub.provider}</span>}
@@ -327,6 +323,7 @@ function Inner(): JSX.Element {
                 </div>
               </div>
             )}
+          </div>
           </Card>
           </div>
         </div>

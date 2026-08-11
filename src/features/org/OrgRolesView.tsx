@@ -50,24 +50,21 @@ function PlanRoleSummary({ plan, loading }: { plan: string | null; loading: bool
   const customRoles = planSupportsCustomRoles(effectivePlan);
 
   return (
-    <Card className="p-4 space-y-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Plan role defaults</h2>
-          <div className="text-sm text-fg-primary mt-1">
-            {loading ? (
-              <span className="inline-flex items-center gap-2"><Spinner size={13} /> Checking active plan...</span>
-            ) : (
-              <span><b>{plan ? displayPlanLabel(effectivePlan) : "Plan unavailable"}</b> controls which standard roles and paid feature groups are exposed.</span>
-            )}
-          </div>
-        </div>
-        <Badge tone={customRoles ? "success" : "warning"}>{customRoles ? "Custom roles unlocked" : "Custom roles locked"}</Badge>
+    <Card padding="md" title={<div>
+      <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Plan role defaults</h2>
+      <div className="text-sm text-fg-primary mt-1">
+        {loading ? (
+          <span className="inline-flex items-center gap-2"><Spinner size={13} /> Checking active plan...</span>
+        ) : (
+          <span><b>{plan ? displayPlanLabel(effectivePlan) : "Plan unavailable"}</b> controls which standard roles and paid feature groups are exposed.</span>
+        )}
       </div>
-
+    </div>} action={<Badge tone={customRoles ? "success" : "warning"}>{customRoles ? "Custom roles unlocked" : "Custom roles locked"}</Badge>}>
+      <div className="space-y-3">
       <SummaryRow label="Identity roles" values={identityRoles} max={10} />
       <SummaryRow label="Project roles" values={projectRoles} max={10} />
       <SummaryRow label="Feature groups" values={features} max={8} />
+      </div>
     </Card>
   );
 }

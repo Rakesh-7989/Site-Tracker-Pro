@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
-import { Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Spinner, Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { exportAuditCsv } from "@/lib/audit";
@@ -107,7 +107,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           <h1 className="font-display text-4xl font-light text-fg-primary tracking-editorial leading-none">Audit Log</h1>
           <p className="text-fg-secondary text-sm mt-2">Immutable append-only record · {stats.total} entries · {stats.recent} in last 7 days.</p>
         </div>
-        <button onClick={downloadCsv} disabled={filtered.length === 0} className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-cream font-bold rounded-xl text-sm tracking-wide disabled:opacity-50"><Icon name="download" size={14} />Export CSV</button>
+        <Button variant="dark" onClick={downloadCsv} disabled={filtered.length === 0} leftIcon="download">Export CSV</Button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <div className="bg-bg-primary rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Total</div><div className="font-display text-2xl font-bold text-fg-primary">{stats.total}</div></div>

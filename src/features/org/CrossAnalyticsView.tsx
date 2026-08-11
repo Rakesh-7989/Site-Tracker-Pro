@@ -134,8 +134,7 @@ export function CrossAnalyticsView(): JSX.Element {
       </div>
 
       {/* By Type Breakdown */}
-      <Card className="p-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary mb-2">By Project Type</div>
+      <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">By Project Type</div>}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {Object.entries(kpis.byType).map(([type, v]) => (
             <div key={type} className="p-2 bg-bg-secondary rounded">
@@ -149,27 +148,18 @@ export function CrossAnalyticsView(): JSX.Element {
       </Card>
 
       {/* Cash Flow Forecast */}
-      <Card className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">6-Month Cash Flow Forecast</div>
-        </div>
+      <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">6-Month Cash Flow Forecast</div>}>
         <DataTable columns={cashFlowColumns} rows={cashFlow} rowKey={r => r.period} emptyMessage="No forecast data." />
       </Card>
 
       {/* Top Projects by Revenue */}
-      <Card className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Top Projects by Revenue</div>
-        </div>
+      <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Top Projects by Revenue</div>}>
         <DataTable columns={projectColumns} rows={topProjects} rowKey={r => r.projectId} emptyMessage="No projects." />
       </Card>
 
       {/* At-Risk Projects */}
       {atRiskProjects.length > 0 && (
-        <Card className="p-3 border-l-2 border-error">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-error">⚠ At-Risk Projects ({atRiskProjects.length})</div>
-          </div>
+        <Card padding="sm" className="border-l-2 border-error" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-error">⚠ At-Risk Projects ({atRiskProjects.length})</div>}>
           <DataTable columns={projectColumns} rows={atRiskProjects} rowKey={r => r.projectId} emptyMessage="No at-risk projects." />
         </Card>
       )}

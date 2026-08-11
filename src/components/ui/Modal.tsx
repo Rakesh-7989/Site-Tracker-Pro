@@ -119,7 +119,7 @@ export function Modal({
               {subtitle && <p className="text-sm text-fg-secondary mt-1">{subtitle}</p>}
             </div>
             {showCloseButton && (
-              <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-elevated text-fg-tertiary hover:text-fg-primary transition flex-shrink-0 -mr-1 -mt-1">
+              <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-xl hover:bg-elevated text-fg-tertiary hover:text-fg-primary transition flex-shrink-0 -mr-1 -mt-1">
                 <Icon name="x" size={18} />
               </button>
             )}

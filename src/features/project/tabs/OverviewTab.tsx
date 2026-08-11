@@ -117,8 +117,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
 
       {/* Registers cross-link strip (v4 D6) */}
       {registerChips.length > 0 && (
-        <Card className="p-5">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-3">Registers</h3>
+        <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Registers</h3>}>
           {loading ? (
             <div className="grid place-items-center py-3"><Spinner size={18} /></div>
           ) : (
@@ -142,8 +141,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
       <RiskSignalsCard project={project} />
 
       {/* Membership summary */}
-      <Card className="p-5">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-3">{t("overviewTab.teamComposition")}</h3>
+      <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("overviewTab.teamComposition")}</h3>}>
         {members.length === 0 ? (
           <div className="text-sm text-fg-secondary">{t("overviewTab.noMembers")}</div>
         ) : (

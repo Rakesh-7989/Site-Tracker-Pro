@@ -225,9 +225,10 @@ export function VendorPortalView(): JSX.Element {
 
       {tab === "quotes" && (
         <div className="space-y-4">
-          <Card className="p-4">
-            <h2 className="font-bold text-fg-primary text-base mb-1">Submit a quote</h2>
-            <p className="text-xs text-fg-tertiary mb-3">Your quote lands in the org's procurement register as "requested"; a manager attaches it to a spec'd item and can raise a PO against it.</p>
+          <Card padding="md" title={<div>
+            <h2 className="font-bold text-fg-primary text-base">Submit a quote</h2>
+            <p className="text-xs text-fg-tertiary">Your quote lands in the org's procurement register as "requested"; a manager attaches it to a spec'd item and can raise a PO against it.</p>
+          </div>}>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 items-end">
               <div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span>
@@ -291,8 +292,7 @@ export function VendorPortalView(): JSX.Element {
 
       {tab === "profile" && (
         <div className="space-y-4">
-          <Card className="p-6">
-            <h2 className="font-bold text-fg-primary text-lg mb-4">Vendor Profile</h2>
+          <Card padding="lg" title={<h2 className="font-bold text-fg-primary text-lg">Vendor Profile</h2>}>
             {profileError && <Alert variant="danger">{profileError}</Alert>}
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label="Vendor Name" htmlFor="v-name">

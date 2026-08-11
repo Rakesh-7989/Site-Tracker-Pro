@@ -67,10 +67,9 @@ export function ClientPortalView(): JSX.Element {
       </div>
 
       {unread.length > 0 && (
-        <Card className="mb-8 border-accent bg-accent-tint p-5">
-          <h3 className="font-bold text-accent-2 text-sm mb-3 flex items-center gap-2">
-            <Icon name="bell" size={16} className="text-accent" />{unread.length} New Updates
-          </h3>
+        <Card padding="lg" className="mb-8 border-accent bg-accent-tint" title={<h3 className="font-bold text-accent-2 text-sm flex items-center gap-2">
+          <Icon name="bell" size={16} className="text-accent" />{unread.length} New Updates
+        </h3>}>
           {unread.map(n => (
             <div key={n.id} className="py-2 border-t border-accent first:border-0">
               <div className="font-semibold text-accent-2 text-xs">{n.title}</div>

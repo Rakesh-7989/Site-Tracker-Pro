@@ -101,11 +101,7 @@ export function ReviewRoundsTab({ projectId }: { projectId: string }): JSX.Eleme
       </Card>
 
       {selectedId && (
-        <Card className="p-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-sm font-semibold text-fg-primary">{selected?.title}</div>
-            {selected && <Badge tone={selected.status === "issued" ? "success" : "info"}>{selected.status}</Badge>}
-          </div>
+        <Card padding="sm" title={<div className="text-sm font-semibold text-fg-primary">{selected?.title}</div>} action={selected && <Badge tone={selected.status === "issued" ? "success" : "info"}>{selected.status}</Badge>}>
           {selected?.dueDate && <div className="text-[11px] text-fg-tertiary">Due {selected.dueDate}</div>}
         </Card>
       )}

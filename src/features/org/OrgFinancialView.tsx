@@ -146,18 +146,12 @@ export function OrgFinancialView(): JSX.Element {
       </Card>
 
       {/* Cash Flow Forecast */}
-      <Card className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">6-Month Cash Flow Forecast</div>
-        </div>
+      <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">6-Month Cash Flow Forecast</div>}>
         <DataTable columns={cashFlowColumns} rows={cashFlow} rowKey={r => r.period} emptyMessage="No forecast data." />
       </Card>
 
       {/* Project Table */}
-      <Card className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Projects ({projects.length})</div>
-        </div>
+      <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Projects ({projects.length})</div>}>
         <DataTable columns={projectColumns} rows={projects} rowKey={p => p.projectId} emptyMessage="No projects." />
       </Card>
     </div>

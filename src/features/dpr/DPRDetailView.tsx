@@ -132,8 +132,8 @@ export function DPRDetailView(): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
 
       {/* Transcript */}
-      <Card className="p-5 space-y-2">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.siteUpdate")}</h3>
+      <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.siteUpdate")}</h3>}>
+        <div className="space-y-2">
         {row.transcript ? (
           <p className="text-sm text-fg-primary whitespace-pre-line leading-relaxed">{row.transcript}</p>
         ) : (
@@ -145,12 +145,13 @@ export function DPRDetailView(): JSX.Element {
           <span>{t("dpr.history.toPhone", { phone: row.promoterPhone })}</span>
           {row.metaMessageId && <span className="font-mono">Meta {row.metaMessageId.slice(0, 12)}…</span>}
         </div>
+        </div>
       </Card>
 
       {/* Photo */}
       {row.photoUrl && (
-        <Card className="p-5 space-y-2">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.sitePhoto")}</h3>
+        <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.sitePhoto")}</h3>}>
+          <div className="space-y-2">
           <a href={row.photoUrl} target="_blank" rel="noopener noreferrer" className="block">
             <img src={row.photoUrl} alt="Site photo" className="rounded-xl max-h-72 w-full object-cover border border-default bg-secondary" />
           </a>
@@ -161,40 +162,40 @@ export function DPRDetailView(): JSX.Element {
               {row.photoAccuracyMetres != null && <span>±{row.photoAccuracyMetres}m</span>}
             </div>
           )}
+          </div>
         </Card>
       )}
 
       {/* Voice */}
       {row.voiceUrl && (
-        <Card className="p-5 space-y-2">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.voiceNote")}</h3>
+        <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.voiceNote")}</h3>}>
+          <div className="space-y-2">
           <audio src={row.voiceUrl} controls className="w-full" />
           {row.voiceSha256 && <p className="text-[10px] font-mono text-fg-tertiary break-all">sha256:{row.voiceSha256}</p>}
+          </div>
         </Card>
       )}
 
       {/* BuildNow anchor */}
       {(row.buildnowAnchorUrl || row.buildnowAnchorHash) && (
-        <Card className="p-5 space-y-2">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.buildnowAnchor")}</h3>
+        <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.buildnowAnchor")}</h3>}>
+          <div className="space-y-2">
           <div className="flex items-center gap-2">
             <BuildNowBadge metadata={buildnowMeta ?? undefined} lang={lang} size="sm" showLink={false} />
             {row.buildnowSyncedAt && <span className="text-[11px] text-fg-tertiary">{t("dpr.detail.syncedAt", { time: fmtDateTime(row.buildnowSyncedAt) })}</span>}
           </div>
           {row.buildnowAnchorHash && <p className="text-[10px] font-mono text-fg-tertiary break-all">{row.buildnowAnchorHash}</p>}
+          </div>
         </Card>
       )}
 
       {/* Delivery log + retry */}
-      <Card className="p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.deliveryAttempts")}</h3>
-          {row.status === "failed" && (
-            <Button size="sm" onClick={() => void onRetry()} loading={retrying} leftIcon={<Icon name="refresh" size={12} />}>
-              {t("dpr.detail.retrySend")}
-            </Button>
-          )}
-        </div>
+      <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.deliveryAttempts")}</h3>} action={row.status === "failed" && (
+        <Button size="sm" onClick={() => void onRetry()} loading={retrying} leftIcon={<Icon name="refresh" size={12} />}>
+          {t("dpr.detail.retrySend")}
+        </Button>
+      )}>
+        <div className="space-y-3">
         {retryMsg && <Alert variant={retryOk ? "success" : "danger"}>{retryMsg}</Alert>}
         {log.length === 0 ? (
           <p className="text-xs text-fg-tertiary">{t("dpr.detail.noAttempts")}</p>
@@ -215,6 +216,7 @@ export function DPRDetailView(): JSX.Element {
             ))}
           </ol>
         )}
+        </div>
       </Card>
     </div>
   );

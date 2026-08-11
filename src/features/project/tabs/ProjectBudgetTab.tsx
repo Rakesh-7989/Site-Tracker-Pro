@@ -125,10 +125,7 @@ export function ProjectBudgetView({ projectId }: { projectId: string }): JSX.Ele
 
       {/* Pending Approvals */}
       {pendingApproval.length > 0 && (
-        <Card className="p-3 border-l-2 border-warning">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-warning">⏳ Pending Approvals ({pendingApproval.length})</div>
-          </div>
+        <Card padding="sm" className="border-l-2 border-warning" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-warning">⏳ Pending Approvals ({pendingApproval.length})</div>}>
           <DataTable columns={[
             { key: "changeType", header: "Type", className: "text-center", render: c => <Badge tone={c.changeType === "increase" ? "success" : c.changeType === "decrease" ? "danger" : c.changeType === "reallocate" ? "warning" : "info"}>{c.changeType}</Badge> },
             { key: "category", header: "Category", className: "text-center", render: c => <Badge tone="info">{c.category}</Badge> },
@@ -170,13 +167,9 @@ export function ProjectBudgetView({ projectId }: { projectId: string }): JSX.Ele
 
       {/* Request Change Form */}
       {showForm && canEdit && (
-        <Card className="p-3 mb-4 bg-bg-secondary border-l-2 border-accent">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="font-semibold text-fg-primary">Request Budget Change</h4>
-            <Button size="sm" variant="ghost" onClick={() => { setShowForm(false); resetForm(); }}>
-              <Icon name="x" size={14} />
-            </Button>
-          </div>
+        <Card padding="sm" className="mb-4 bg-bg-secondary border-l-2 border-accent" title={<h4 className="font-semibold text-fg-primary">Request Budget Change</h4>} action={<Button size="sm" variant="ghost" onClick={() => { setShowForm(false); resetForm(); }}>
+          <Icon name="x" size={14} />
+        </Button>}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary block mb-1">Type</label>

@@ -88,8 +88,7 @@ function WageSummary({ labour, attendance }: { labour: LabourEntry[]; attendance
   }
   const net = Math.max(0, gross - epf - esi);
   return (
-    <Card className="p-3">
-      <h3 className="text-sm font-bold text-fg-primary mb-2">Wages estimate</h3>
+    <Card padding="sm" title={<h3 className="text-sm font-bold text-fg-primary">Wages estimate</h3>}>
       {gross === 0 ? <div className="text-xs text-fg-secondary">No workers with a daily wage + attendance yet.</div> : (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
           <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Gross</div><div className="text-fg-primary font-semibold">{fmtRupees(gross)}</div></div>

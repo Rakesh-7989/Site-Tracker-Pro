@@ -18,7 +18,7 @@ export { roleMeta, allRoleMeta, type RoleMeta, type AccentColor } from "./role-m
 export { statusColors, type StatusColors } from "./status";
 
 // ── Button ──────────────────────────────────────────────────────────────────
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "gold";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "gold" | "dark";
 type ButtonSize = "sm" | "md" | "lg";
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
@@ -27,6 +27,7 @@ const BTN_VARIANT: Record<ButtonVariant, string> = {
   ghost: "bg-transparent hover:bg-elevated text-fg-primary border border-transparent",
   danger: "bg-error hover:bg-error-dark text-inverse border border-transparent",
   gold: "bg-gradient-gold text-white hover:opacity-95 shadow-editorial-deep border border-transparent",
+  dark: "bg-ink text-cream hover:opacity-95 border border-transparent",
 };
 const BTN_SIZE: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-xs gap-1.5 rounded-md",
@@ -107,9 +108,9 @@ export function Card({ children, className, title, action, padding = "none", div
   return (
     <div className={cn("bg-panel rounded-2xl border border-default shadow-card", className)}>
       {title != null && (
-        <div className={cn("flex items-center justify-between gap-3", CARD_HEAD_PAD[padding], divide && "border-b border-default")}>
+        <div className={cn("flex flex-wrap items-center justify-between gap-x-3 gap-y-2", CARD_HEAD_PAD[padding], divide && "border-b border-default")}>
           <div className="min-w-0">{title}</div>
-          {action != null && <div className="flex-shrink-0">{action}</div>}
+          {action != null && <div className="ml-auto flex-shrink-0">{action}</div>}
         </div>
       )}
       <div className={CARD_PAD[padding]}>{children}</div>
@@ -197,6 +198,10 @@ export interface AlertProps {
   children: ReactNode;
   variant?: AlertVariant;
   icon?: ReactNode;
+  /** Right-aligned slot (action links, buttons…). */
+  action?: ReactNode;
+  /** Show a built-in dismiss "×" (aria-label "Dismiss"). */
+  onDismiss?: () => void;
   className?: string;
 }
 
@@ -209,7 +214,7 @@ const ALERT: Record<AlertVariant, { bg: string; text: string; bar: string }> = {
   accent: { bg: "bg-accent-tint", text: "text-accent-2", bar: "var(--st-accent)" },
 };
 
-export function Alert({ children, variant = "neutral", icon, className }: AlertProps): JSX.Element {
+export function Alert({ children, variant = "neutral", icon, action, onDismiss, className }: AlertProps): JSX.Element {
   const v = ALERT[variant];
   return (
     <div
@@ -218,10 +223,21 @@ export function Alert({ children, variant = "neutral", icon, className }: AlertP
         v.bg, v.text, className,
       )}
       style={{ boxShadow: `inset 3px 0 0 0 ${v.bar}` }}
-      role="status"
+      role={variant === "danger" ? "alert" : "status"}
     >
       {icon && <span className="flex-shrink-0 mt-0.5">{icon}</span>}
       <div className="leading-snug">{children}</div>
+      {action && <span className="ml-auto flex-shrink-0">{action}</span>}
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="ml-auto flex-shrink-0 p-0.5 -m-0.5 rounded-md hover:opacity-70 transition"
+        >
+          <Icon name="x" size={14} />
+        </button>
+      )}
     </div>
   );
 }

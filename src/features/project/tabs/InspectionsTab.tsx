@@ -92,16 +92,13 @@ export function InspectionsTab({ projectId }: { projectId: string }): JSX.Elemen
               </div>
             </Card>))}</div>}
 
-      <Card className="p-4 space-y-3 border border-default bg-elevated">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Corrective actions</div>
-            <div className="text-sm font-semibold text-fg-primary">{rollup.open + rollup.inProgress} open · {rollup.verified} verified</div>
-          </div>
-          <div className="flex gap-4 text-[11px] text-fg-secondary">
-            <span>Critical {rollup.critical}</span><span>High {rollup.high}</span><span>Resolved {rollup.resolved}</span>
-          </div>
-        </div>
+      <Card padding="md" className="border border-default bg-elevated" title={<div>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Corrective actions</div>
+        <div className="text-sm font-semibold text-fg-primary">{rollup.open + rollup.inProgress} open · {rollup.verified} verified</div>
+      </div>} action={<div className="flex gap-4 text-[11px] text-fg-secondary">
+        <span>Critical {rollup.critical}</span><span>High {rollup.high}</span><span>Resolved {rollup.resolved}</span>
+      </div>}>
+        <div className="space-y-3">
         {canEdit && (
           <div className="flex gap-2 flex-wrap items-end">
             <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="e.g. re-level 3rd floor slab rebar" value={caDesc} onChange={e => setCaDesc(e.target.value)} /></div>
@@ -140,6 +137,7 @@ export function InspectionsTab({ projectId }: { projectId: string }): JSX.Elemen
             ))}
           </div>
         )}
+        </div>
       </Card>
     </div>
   );

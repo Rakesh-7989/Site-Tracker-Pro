@@ -129,8 +129,7 @@ export function ReportsTab({ projectId }: { projectId: string }) {
       )}
 
       {creating && (
-        <Card className="p-4 border-accent">
-          <h4 className="font-display text-base font-bold text-fg-primary mb-3">{editing ? t("audit.editReport") : t("audit.newReport")}</h4>
+        <Card padding="md" className="border-accent" title={<h4 className="font-display text-base font-bold text-fg-primary">{editing ? t("audit.editReport") : t("audit.newReport")}</h4>}>
           <div className="space-y-3">
             <FormField label={t("audit.fieldKind")} htmlFor="rp-kind">
               <Select value={form.kind} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm(f => ({ ...f, kind: e.target.value as ReportKind }))}

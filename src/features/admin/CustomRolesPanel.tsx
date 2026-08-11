@@ -100,11 +100,7 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Custom Roles (this org)</h3>
-        {!draft && <Button size="sm" variant="secondary" onClick={startNew}><Icon name="plus" size={14} /> New role</Button>}
-      </div>
+    <Card padding="md" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Custom Roles (this org)</h3>} action={!draft && <Button size="sm" variant="secondary" onClick={startNew}><Icon name="plus" size={14} /> New role</Button>}>
 
       {error && <Alert variant="danger">{error}</Alert>}
 
