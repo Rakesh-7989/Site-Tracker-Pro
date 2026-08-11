@@ -86,11 +86,13 @@ export function PasswordInput({ invalid = false, className, ...rest }: Omit<Inpu
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   invalid?: boolean;
   options: ReadonlyArray<{ value: string; label: string }>;
+  /** Compact filter-row style (bg-bg-secondary, tighter padding). */
+  compact?: boolean;
 }
 
-export function Select({ invalid = false, options, className, ...rest }: SelectProps): JSX.Element {
+export function Select({ invalid = false, options, compact = false, className, ...rest }: SelectProps): JSX.Element {
   return (
-    <select className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, className)} {...rest}>
+    <select className={cn(FIELD_BASE, compact ? "px-3 py-1.5 bg-bg-secondary text-xs" : "px-3.5 py-2.5 bg-bg-primary", invalid ? FIELD_ERR : FIELD_OK, className)} {...rest}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );

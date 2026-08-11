@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
-import { Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Alert, Icon, AccessDenied, Button } from "@/components/ui/atoms";
 import { delegationStatus } from "@/lib/delegations";
 import { getClient } from "@/lib/supabase";
 import {
@@ -85,7 +85,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
           <h1 className="font-display text-2xl md:text-4xl font-light text-fg-primary tracking-editorial leading-none">Approval Delegation</h1>
           <p className="text-fg-secondary text-sm mt-2">Site visit lo unnappudu approvals ni another person ki auto-route cheyandi. Audit trail keeps both original + delegate names.</p>
         </div>
-        <button onClick={() => setShow(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide"><Icon name="plus" size={14} />Delegate</button>
+        <Button variant="gold" leftIcon={<Icon name="plus" size={14} />} onClick={() => setShow(true)}>Delegate</Button>
       </div>
       {show && <div className="bg-panel rounded-2xl p-6 mb-5 shadow-editorial border-default">
         <div className="flex justify-between mb-4">        <h3 className="font-display font-semibold text-fg-primary text-base md:text-lg tracking-editorial">New delegation</h3><button onClick={() => setShow(false)}><Icon name="x" size={18} /></button></div>
@@ -96,7 +96,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
           <input type="date" value={nd.end} onChange={e => setNd(p => ({ ...p, end: e.target.value }))} className="p-3 border border-default rounded-xl text-sm outline-none focus:border-accent" />
         </div>
         <input value={nd.reason} onChange={e => setNd(p => ({ ...p, reason: e.target.value }))} placeholder="Reason (e.g. site visit Vizag)" className="w-full p-3 border border-default rounded-xl text-sm outline-none focus:border-accent mb-3" />
-        <button onClick={create} className="px-6 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide">Create delegation</button>
+        <Button variant="gold" onClick={create}>Create delegation</Button>
       </div>}
       <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
         {myDelegations.length === 0 ? <div className="p-12 text-center text-fg-secondary"><Icon name="users" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No delegations yet.</p></div> : myDelegations.map(d => {

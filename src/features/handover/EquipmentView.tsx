@@ -103,9 +103,7 @@ export function EquipmentView(): JSX.Element {
         <>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-fg-secondary">Project</label>
-            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-3 py-1.5 bg-bg-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent">
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            <Select compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
           {canEdit && selProject && (

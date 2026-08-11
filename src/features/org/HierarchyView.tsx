@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
@@ -147,7 +147,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
         <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-warning-tint flex items-center justify-center"><Icon name="folder" size={24} className="text-warning" /></div>
         <div className="font-display text-xl font-semibold text-fg-primary tracking-editorial mb-2">No projects to organise yet</div>
         <p className="text-fg-secondary text-sm max-w-md mx-auto leading-relaxed mb-5">Create a project first, then come back here to add blocks, floors and units. Useful for high-rises, townships and gated communities.</p>
-        {canCreate && <button onClick={() => nav("/projects/new")} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep transition-all"><Icon name="plus" size={14} />Create your first project</button>}
+        {canCreate && <Button variant="gold" onClick={() => nav("/projects/new")} leftIcon={<Icon name="plus" size={14} />}>Create your first project</Button>}
       </div>
     </div>
   );
@@ -173,7 +173,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
       <div className="bg-panel rounded-2xl p-6 shadow-editorial border-default">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-lg md:text-xl font-semibold text-fg-primary tracking-editorial">{proj?.name || "—"} structure</h2>
-          {canCreate && <button onClick={addBlock} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-gold text-white font-bold rounded-xl text-xs tracking-wide"><Icon name="plus" size={12} />Add block</button>}
+          {canCreate && <Button size="sm" variant="gold" onClick={addBlock} leftIcon={<Icon name="plus" size={12} />}>Add block</Button>}
         </div>
         {tree.length === 0 && <div className="text-center py-10 text-fg-secondary"><Icon name="building" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No blocks yet. Add the first one to start.</p></div>}
         <div className="space-y-2">

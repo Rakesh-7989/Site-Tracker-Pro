@@ -21,7 +21,7 @@ export function Checkbox({ checked, onChange, label, disabled, error, className,
         disabled && "opacity-50 cursor-not-allowed",
       )}>
         <div className={cn(
-          "w-4.5 h-4.5 rounded-md border-2 flex items-center justify-center transition shrink-0",
+          "w-4 h-4 rounded-md border-2 flex items-center justify-center transition shrink-0",
           checked
             ? "bg-accent border-accent"
             : "bg-bg-primary border-default hover:border-fg-tertiary",

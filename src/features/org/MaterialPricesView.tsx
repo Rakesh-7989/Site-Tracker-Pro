@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { PlanGate } from "@/auth";
-import { Icon } from "@/components/ui/atoms";
+import { Icon, Button } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { COMMODITIES, fetchQuotes, bestQuote, savings, type QuoteResult } from "@/lib/materialPrices";
 
@@ -74,7 +74,7 @@ function MaterialPricesInner(): JSX.Element {
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary mb-1.5 block">Grade</label><select value={grade} onChange={e => setGrade(e.target.value)} className="w-full p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent">{grades.map((g: string) => <option key={g} value={g}>{g}</option>)}</select></div>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary mb-1.5 block">Qty ({(COMMODITIES as any)[commodity]?.unit})</label><input type="number" min="1" value={qty} onChange={e => setQty(Number(e.target.value))} className="w-full p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent" /></div>
             <div><label className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary mb-1.5 block">Location hint</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="South India / Pune…" className="w-full p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent" /></div>
-            <div className="flex items-end"><button onClick={fetch} disabled={loading} className="w-full px-4 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide disabled:opacity-60">{loading ? "Fetching…" : "Compare prices"}</button></div>
+            <div className="flex items-end"><Button fullWidth variant="gold" onClick={fetch} disabled={loading}>{loading ? "Fetching…" : "Compare prices"}</Button></div>
           </div>
           {quotes.length > 0 && <>
             {sav > 0 && best && <div className="mb-5 bg-success-tint border-l-4 border-success rounded-r-2xl p-4 flex items-center gap-4 shadow-editorial"><div className="w-10 h-10 bg-success-tint rounded-xl flex items-center justify-center"><Icon name="wallet" size={18} className="text-success" /></div><div className="flex-1"><div className="font-display font-semibold text-fg-primary text-base tracking-editorial">Save ₹{sav.toLocaleString("en-IN", { maximumFractionDigits: 0 })} by choosing {best.vendor}</div><div className="text-success text-xs mt-1">Lowest total landed cost across {quotes.length} vendors today.</div></div></div>}

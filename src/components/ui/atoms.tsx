@@ -18,7 +18,7 @@ export { roleMeta, allRoleMeta, type RoleMeta, type AccentColor } from "./role-m
 export { statusColors, type StatusColors } from "./status";
 
 // ── Button ──────────────────────────────────────────────────────────────────
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "gold";
 type ButtonSize = "sm" | "md" | "lg";
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
@@ -26,6 +26,7 @@ const BTN_VARIANT: Record<ButtonVariant, string> = {
   secondary: "bg-panel hover:bg-elevated text-fg-primary border border-default hover:border-stronger",
   ghost: "bg-transparent hover:bg-elevated text-fg-primary border border-transparent",
   danger: "bg-error hover:bg-error-dark text-inverse border border-transparent",
+  gold: "bg-gradient-gold text-white hover:opacity-95 shadow-editorial-deep border border-transparent",
 };
 const BTN_SIZE: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-xs gap-1.5 rounded-md",

@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
@@ -115,7 +115,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-panel border border-default rounded-xl text-sm font-semibold outline-none focus:border-accent">{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
       </div>
       <div className="mb-5 flex items-center gap-3 flex-wrap">
-            <button onClick={runForecast} disabled={busy} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-gold text-white font-bold rounded-xl text-sm tracking-wide hover:shadow-editorial-deep disabled:opacity-60"><Icon name="zap" size={14} />{busy ? "Forecasting..." : cached ? "Re-forecast" : "Run forecast"}</button>
+            <Button variant="gold" onClick={runForecast} disabled={busy} leftIcon={<Icon name="zap" size={14} />}>{busy ? "Forecasting..." : cached ? "Re-forecast" : "Run forecast"}</Button>
             {cached && <span className="text-[11px] text-fg-secondary">Last run {fmtTime(cached.generated_at)}</span>}
           </div>
           {cached ? (<>
