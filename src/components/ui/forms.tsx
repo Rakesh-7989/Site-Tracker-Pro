@@ -12,7 +12,8 @@ import { Icon } from "./icons";
 
 const FIELD_BASE =
   "w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none bg-bg-primary transition " +
-  "focus:ring-2 focus:ring-[rgba(var(--st-accent-rgb),0.15)]";
+  "focus:ring-2 focus:ring-[rgba(var(--st-accent-rgb),0.15)] " +
+  "disabled:opacity-50 disabled:cursor-not-allowed";
 const FIELD_OK = "border-default focus:border-[var(--st-accent)]";
 const FIELD_ERR = "border-error focus:border-[var(--st-error)]";
 const INPUT_BASE = FIELD_BASE.replace("w-full ", "");
@@ -24,15 +25,18 @@ export interface FormFieldProps {
   error?: string | null;
   hint?: string;
   optional?: boolean;
+  /** Render a red asterisk on the label (required field). */
+  required?: boolean;
   children: ReactNode;
   className?: string;
 }
 
-export function FormField({ label, htmlFor, error, hint, optional, children, className }: FormFieldProps): JSX.Element {
+export function FormField({ label, htmlFor, error, hint, optional, required, children, className }: FormFieldProps): JSX.Element {
   return (
     <div className={className}>
       <label htmlFor={htmlFor} className="text-[10px] font-semibold tracking-[0.18em] uppercase text-fg-secondary block mb-1.5">
         {label}
+        {required && <span className="text-error" aria-hidden="true"> *</span>}
         {optional && <span className="text-fg-tertiary normal-case tracking-normal"> (optional)</span>}
       </label>
       {children}
@@ -139,6 +143,7 @@ export function Select({ invalid = false, options, groups, compact = false, fit 
         className={cn(
           "px-4 py-2.5 rounded-xl text-sm bg-ink text-cream border border-accent/30 outline-none transition",
           "focus:ring-2 focus:ring-[rgba(var(--st-accent-rgb),0.15)] focus:border-accent",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
           className,
         )}
         {...rest}

@@ -225,19 +225,19 @@ function Inner(): JSX.Element {
             <div className="space-y-3">
               <p className="text-sm font-semibold text-fg-primary">Create a new organization with admin user</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <FormField label="Organization name *" htmlFor="create-org-name">
+                <FormField label="Organization name" required htmlFor="create-org-name">
                   <Input id="create-org-name" value={createOrgName} onChange={e => setCreateOrgName(e.target.value)} placeholder="e.g. G Architects" disabled={creating} />
                 </FormField>
-                <FormField label="Plan *" htmlFor="create-org-plan">
+                <FormField label="Plan" required htmlFor="create-org-plan">
                   <Select id="create-org-plan" value={createPlan} onChange={e => setCreatePlan(e.target.value as AssignablePlan)} options={PLAN_OPTIONS} disabled={creating} />
                 </FormField>
-                <FormField label="Admin email *" htmlFor="create-admin-email">
+                <FormField label="Admin email" required htmlFor="create-admin-email">
                   <Input id="create-admin-email" type="email" value={createAdminEmail} onChange={e => setCreateAdminEmail(e.target.value)} placeholder="admin@example.com" disabled={creating} />
                 </FormField>
-                <FormField label="Admin phone *" htmlFor="create-admin-phone">
+                <FormField label="Admin phone" required htmlFor="create-admin-phone">
                   <Input id="create-admin-phone" value={createAdminPhone} onChange={e => setCreateAdminPhone(e.target.value)} placeholder="+91 98765 43210" disabled={creating} />
                 </FormField>
-                <FormField label="Admin name (optional)" htmlFor="create-admin-name">
+                <FormField label="Admin name" optional htmlFor="create-admin-name">
                   <Input id="create-admin-name" value={createAdminName} onChange={e => setCreateAdminName(e.target.value)} placeholder="e.g. Rakesh" disabled={creating} />
                 </FormField>
               </div>
@@ -302,7 +302,7 @@ function Inner(): JSX.Element {
                    manageAction === "hold" ? `Mark "${manageOrg.name}" as past-due for payment?` :
                    manageAction === "reactivate" ? `Reactivate subscription for "${manageOrg.name}"?` : ""}
                 </div>
-                <FormField label="Reason *" htmlFor="manage-reason">
+                <FormField label="Reason" required htmlFor="manage-reason">
                   <textarea id="manage-reason" value={manageReason} onChange={e => setManageReason(e.target.value)}
                     className="w-full px-3 py-2 border border-default rounded-lg text-sm bg-bg-primary min-h-[80px] resize-y"
                     placeholder="Explain why this action is being taken\u2026" disabled={manageBusy} />
