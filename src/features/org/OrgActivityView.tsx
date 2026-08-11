@@ -3,7 +3,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Card, Badge, Alert, AccessDenied } from "@/components/ui/atoms";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { listOrgActivity, type OrgActivityRow } from "@/app/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,6 +27,47 @@ export function OrgActivityView(): JSX.Element {
   return <OrgActivityInner orgId={activeOrg.orgId} />;
 }
 
+export function ActivityFeed({ rows, loading, error }: { rows: OrgActivityRow[]; loading: boolean; error: string | null }): JSX.Element {
+  if (error) return <Alert variant="danger">{error}</Alert>;
+  if (loading) {
+    return (
+      <div role="status" aria-label="Loading activity" aria-busy="true" className="space-y-3">
+        {[0, 1, 2, 3, 4].map(r => (
+          <div key={r} className="bg-card rounded-2xl border border-default shadow-card p-3 flex items-start gap-3">
+            <span className="flex-shrink-0 mt-0.5"><Skeleton decorative height={20} width="w-14" /></span>
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton decorative height={12} width="w-2/3" />
+              <Skeleton decorative height={12} width="w-1/3" />
+            </div>
+            <span className="flex-shrink-0 mt-1"><Skeleton decorative height={12} width="w-16" /></span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (rows.length === 0) {
+    return <EmptyState compact icon="shield" title="No activity recorded yet" />;
+  }
+  return (
+    <Card className="divide-y divide-default">
+      {rows.map(r => (
+        <div key={r.id} className="p-3 flex items-start gap-3">
+          <Badge tone={ACTION_TONE[r.action] ?? "neutral"}>{r.action || "·"}</Badge>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm text-fg-primary">
+              <span className="font-semibold">{r.actorName}</span>
+              {r.actorRole && <span className="text-fg-tertiary"> ({r.actorRole})</span>}
+              {" "}<span className="text-fg-secondary">{r.resource}{r.resourceId ? ` #${r.resourceId.slice(0, 8)}` : ""}</span>
+            </div>
+            {r.message && <div className="text-[12px] text-fg-secondary truncate">{r.message}</div>}
+          </div>
+          <div className="text-[11px] text-fg-tertiary flex-shrink-0 whitespace-nowrap">{fmtTs(r.ts)}</div>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 function OrgActivityInner({ orgId }: { orgId: string }): JSX.Element {
   const [rows, setRows] = useState<OrgActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,28 +83,7 @@ function OrgActivityInner({ orgId }: { orgId: string }): JSX.Element {
   return (
     <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Activity</h1>
-      {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
-        : rows.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-fg-secondary"><Icon name="shield" size={22} className="mx-auto text-fg-tertiary mb-2" />No activity recorded yet.</Card>
-        ) : (
-          <Card className="divide-y divide-default">
-            {rows.map(r => (
-              <div key={r.id} className="p-3 flex items-start gap-3">
-                <Badge tone={ACTION_TONE[r.action] ?? "neutral"}>{r.action || "·"}</Badge>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm text-fg-primary">
-                    <span className="font-semibold">{r.actorName}</span>
-                    {r.actorRole && <span className="text-fg-tertiary"> ({r.actorRole})</span>}
-                    {" "}<span className="text-fg-secondary">{r.resource}{r.resourceId ? ` #${r.resourceId.slice(0, 8)}` : ""}</span>
-                  </div>
-                  {r.message && <div className="text-[12px] text-fg-secondary truncate">{r.message}</div>}
-                </div>
-                <div className="text-[11px] text-fg-tertiary flex-shrink-0 whitespace-nowrap">{fmtTs(r.ts)}</div>
-              </div>
-            ))}
-          </Card>
-        )}
+      <ActivityFeed rows={rows} loading={loading} error={error} />
     </div>
   );
 }
