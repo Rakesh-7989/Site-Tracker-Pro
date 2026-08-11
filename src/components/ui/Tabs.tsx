@@ -14,7 +14,22 @@ export interface TabsProps {
   activeTab: string;
   onChange: (tabId: string) => void;
   variant?: "underline" | "pills";
+  /** Base id for WAI-ARIA tab wiring. When provided, each tab button gets
+   *  `id="{id}-tab-{tabId}"` + `aria-controls="{id}-panel-{tabId}"`, and the
+   *  consumer renders a matching panel using `tabPanelId(id, tabId)`.
+   *  Without it the buttons render no id/aria-controls (back-compat). */
+  id?: string;
   className?: string;
+}
+
+/** Stable DOM id for a tab button (WAI-ARIA). */
+export function tabButtonId(baseId: string, tabId: string): string {
+  return `${baseId}-tab-${tabId}`;
+}
+
+/** Stable DOM id for a tab's panel — pair with `tabButtonId` for `aria-labelledby`. */
+export function tabPanelId(baseId: string, tabId: string): string {
+  return `${baseId}-panel-${tabId}`;
 }
 
 const TAB_ACTIVE: Record<string, string> = {
@@ -45,8 +60,9 @@ function seekEnabledEdge(tabs: Tab[], dir: 1 | -1): number {
   return -1;
 }
 
-export function Tabs({ tabs, activeTab, onChange, variant = "underline", className }: TabsProps): JSX.Element {
+export function Tabs({ tabs, activeTab, onChange, variant = "underline", id, className }: TabsProps): JSX.Element {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
@@ -60,6 +76,11 @@ export function Tabs({ tabs, activeTab, onChange, variant = "underline", classNa
     return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
   }, []);
 
+  const activate = useCallback((tabId: string) => {
+    onChange(tabId);
+    buttonRefs.current[tabId]?.focus();
+  }, [onChange]);
+
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     const idx = tabs.findIndex(t => t.id === activeTab);
     let nextIdx = idx;
@@ -70,8 +91,8 @@ export function Tabs({ tabs, activeTab, onChange, variant = "underline", classNa
     else return;
     e.preventDefault();
     const next = tabs[nextIdx];
-    if (next && !next.disabled) onChange(next.id);
-  }, [tabs, activeTab, onChange]);
+    if (next && !next.disabled) activate(next.id);
+  }, [tabs, activeTab, activate]);
 
   return (
     <div className="relative">
@@ -88,13 +109,18 @@ export function Tabs({ tabs, activeTab, onChange, variant = "underline", classNa
       >
         {tabs.map(tab => {
           const isActive = tab.id === activeTab;
+          const buttonId = id ? tabButtonId(id, tab.id) : undefined;
           return (
             <button
               key={tab.id}
+              ref={(el) => { buttonRefs.current[tab.id] = el; }}
               role="tab"
+              id={buttonId}
+              aria-controls={id ? tabPanelId(id, tab.id) : undefined}
               aria-selected={isActive}
               aria-disabled={tab.disabled || undefined}
-              onClick={() => { if (!tab.disabled) onChange(tab.id); }}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => { if (!tab.disabled) activate(tab.id); }}
               disabled={tab.disabled}
               className={cn(
                 "relative inline-flex items-center gap-2 text-sm font-medium transition-all",

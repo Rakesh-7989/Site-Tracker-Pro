@@ -8,11 +8,12 @@
 //
 // URL: /projects/:id/:tab?  (defaults to overview)
 
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 import { useAuth, resolveCapabilities } from "@/auth";
 import { Card, Icon, Spinner, Badge } from "@/components/ui/atoms";
+import { Tabs, tabButtonId, tabPanelId } from "@/components/ui/Tabs";
 import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
@@ -67,19 +68,6 @@ export function DetailView(): JSX.Element {
   const { session } = useAuth();
   const { can: planCan } = usePlanCaps();
   const { isEnabled: moduleEnabled } = useModules();
-  const tabBarRef = useRef<HTMLDivElement>(null);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  useEffect(() => {
-    const el = tabBarRef.current;
-    if (!el) return;
-    const check = () => setCanScrollRight(el.scrollWidth > el.clientWidth && el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-    check();
-    el.addEventListener("scroll", check);
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
-  }, []);
   const { state, reload } = useProject(id);
 
   // Resolve the user's capabilities for THIS project's context.
@@ -99,6 +87,13 @@ export function DetailView(): JSX.Element {
     const activeSegment = session?.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
     return visibleTabs(caps, state.project.type, planCan, activeSegment, undefined, moduleEnabled);
   }, [caps, state, planCan, session, moduleEnabled]);
+
+  // The Tabs component's items (i18n label + icon ReactNode).
+  const tabItems = useMemo(() => tabs.map(tb => ({
+    id: tb.id,
+    label: t(`projTab.${tb.id}`),
+    icon: <Icon name={tb.icon} size={15} />,
+  })), [tabs, t]);
 
   if (state.kind === "loading") {
     return <div className="grid place-items-center py-20 text-accent"><Spinner size={26} /></div>;
@@ -183,6 +178,8 @@ export function DetailView(): JSX.Element {
     </div>
   );
 
+  const baseId = `proj-tabs-${project.id}`;
+
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
       {/* Breadcrumb + title */}
@@ -196,33 +193,26 @@ export function DetailView(): JSX.Element {
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="relative mb-5">
-        <div ref={tabBarRef} className="border-b border-default overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1 min-w-max">
-          {tabs.map(tb => (
-            <button
-              key={tb.id}
-              onClick={() => navigate(`/projects/${project.id}/${tb.id}`)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 -mb-px transition ${
-                tb.id === activeId
-                  ? "border-accent text-accent-2 font-semibold"
-                  : "border-transparent text-fg-secondary hover:text-fg-primary"
-              }`}
-            >
-              <Icon name={tb.icon} size={15} />
-              {t(`projTab.${tb.id}`)}
-            </button>
-          ))}
-        </div>
-      </div>
-      {canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none bg-gradient-to-l from-bg-primary to-transparent" />
-      )}
+      {/* Tab bar (WAI-ARIA tabs — buttons get id/aria-controls, roving tabindex) */}
+      <div className="mb-5">
+        <Tabs
+          id={baseId}
+          tabs={tabItems}
+          activeTab={activeId}
+          onChange={(tid) => navigate(`/projects/${project.id}/${tid}`)}
+        />
       </div>
 
       {/* Tab content (module-gated at render time as defense-in-depth) */}
-      {activeModule ? <ModuleGate module={activeModule}>{tabContent}</ModuleGate> : tabContent}
+      <div
+        id={tabPanelId(baseId, activeId)}
+        role="tabpanel"
+        aria-labelledby={tabButtonId(baseId, activeId)}
+        tabIndex={0}
+        className="outline-none"
+      >
+        {activeModule ? <ModuleGate module={activeModule}>{tabContent}</ModuleGate> : tabContent}
+      </div>
     </div>
   );
 }

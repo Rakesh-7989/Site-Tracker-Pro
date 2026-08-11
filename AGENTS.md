@@ -1424,9 +1424,42 @@ Board keyboard-move a11y (deferred from Batch C):
   clean · build clean · vitest **148 files / 1875 tests pass** (+1 file / +5)
   · smoke **309 checks** · live 200.
 
-### Next (Batch F)
-Phase 4 batch candidates: Tabs `aria-controls`/`id` + `aria-labelledby`
-panel wiring (needs a consuming view, e.g. project DetailView tabs);
-Button/Card/Input/Select/Dialog props-parity audit across `src/features`;
+### Batch F (shipped 2026-08-11, pushed `prod`, live 200)
+Tabs WAI-ARIA wiring — closes the Batch C deferral by giving the Tabs component
+real `tab` semantics and migrating the app's biggest tab surface onto it:
+- **`src/components/ui/Tabs.tsx`** — new `id` prop (base id). When provided,
+  each tab button gets `id="{id}-tab-{tabId}"` + `aria-controls="{id}-panel-{tabId}"`.
+  **Roving tabindex** (active `0`, inactive `-1` — proper ARIA tabs pattern,
+  applied even without `id`) and **focus-follow**: Arrow/Home/End now move
+  focus to the newly activated tab button (previously only activation
+  changed). New exported helpers `tabButtonId(baseId, tabId)` /
+  `tabPanelId(baseId, tabId)` so consumers render a matching
+  `role="tabpanel"` + `aria-labelledby`. Without `id` the buttons render no
+  id/aria-controls (back-compat). Keyboard nav/disabled-skip unchanged.
+- **`src/features/project/DetailView.tsx`** — the 30+ inline project tab
+  buttons (which had **zero** tab semantics — no `role=tab`, `aria-selected`,
+  `aria-controls`, or keyboard nav) migrated to the `<Tabs id={`proj-tabs-${project.id}`}>`
+  component. Tab items now carry i18n labels + icons; duplicated
+  scroll/fade logic removed (Tabs owns it). Tab content is wrapped in a
+  `role="tabpanel"` div with `id={tabPanelId(baseId, activeId)}` +
+  `aria-labelledby={tabButtonId(baseId, activeId)}` + `tabIndex={0}` so each
+  tab's `aria-controls` resolves to its panel. `useRef/useState/useEffect`
+  imports dropped (no longer needed).
+- **Tests** — new `tests/components/uiBatchF.test.tsx` (6): id-helper
+  round-trips; buttons get id/aria-controls/roving tabindex + correct
+  `aria-selected`; arrow key moves focus to the activated tab; tablist
+  role/orientation; no-id back-compat (no id/aria-controls, roving tabindex
+  still applies); consumer-side panel pairing (aria-controls resolves to the
+  rendered tabpanel, the DetailView pattern).
+
+### Verify (Batch F)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit`
+  clean · build clean (7.76s) · vitest **149 files / 1881 tests pass** (+1
+  file / +6) · smoke **309 checks** · live 200.
+
+### Next (Batch G)
+Phase 4 batch candidates: Button/Card/Input/Select/Dialog props-parity audit
+across `src/features` (Button variant/size coverage, Card padding/action
+slots, Input label/prefix/suffix, Dialog size, Select group/optgroup);
 remaining raw selects stay intentional (TopBar, LanguageSwitcher,
 VendorsView star rating). Candidate next sub-task (needs user go).
