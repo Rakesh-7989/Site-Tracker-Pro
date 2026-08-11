@@ -1606,3 +1606,39 @@ Phase 4 batch candidates: remaining props-parity gaps on library components,
 responsive/overflow polish on the migrated Card headers, or start Phase 5
 (data-intensive views: tables, charts, kanban, calendar). Candidate next sub-task
 (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 4: Batch L — Library a11y + props-parity (Complete, 2026-08-11)
+
+### Batch L (shipped 2026-08-11, commit `a58e785`, pushed `prod`, live 200)
+Audit of the remaining library components (all 0–1 consumers, verified via
+component tests like Batch E's Board):
+- **Dialog** — confirm button now uses `<Button loading={confirmLoading}>`
+  (Batch G consistency): real spinner + `aria-busy` + disabled, replacing the
+  hand-rolled `"Processing..."` label swap. Cancel stays `disabled` during load.
+- **DropdownMenu** (`RoleCard` is the only consumer) — menu-semantics + keyboard:
+  `role="menu"` popup, `role="menuitem"` items, `aria-haspopup="menu"` +
+  `aria-expanded` injected onto the trigger via `cloneElement` (original onClick
+  preserved; non-element triggers render a focusable `role="button"` span),
+  **Esc-to-close**, **Arrow/Home/End focus navigation** (wraps, skips disabled)
+  on the wrapper's keydown, outside-mousedown close unchanged.
+- **Tooltip** — added `group-focus-within:opacity-100` so keyboard focus (Tab
+  into the trigger) reveals the tooltip, not just hover.
+- **ChartCard** — migrated the inline `className="p-4 md:p-5"` override to the
+  Batch H `<Card padding="md">` API; dropped the now-unused `cn` import.
+- **Tests** — new `tests/components/uiBatchL.test.tsx` (13: Dialog loading
+  spinner/aria-busy/disabled + label-kept + idle; DropdownMenu Esc, outside
+  click, aria on trigger, menuitem roles, Arrow wrap both ways, Home/End,
+  ArrowDown-opens; Tooltip focus-within class; ChartCard title/action/loading/
+  empty/children).
+
+### Verify (Batch L)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (7.41s) · vitest **154 files / 1926 tests pass** (+1 file / +13)
+  · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Batch M)
+Phase 4 batch candidates: responsive/overflow polish on the migrated Card
+headers, remaining props-parity gaps, or start Phase 5 (data-intensive views:
+tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
