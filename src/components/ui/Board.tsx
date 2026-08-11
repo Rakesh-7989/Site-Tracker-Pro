@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { EmptyState } from "./EmptyState";
 import type { IconName } from "./icons";
 import { Icon } from "./icons";
-import { Spinner } from "./atoms";
+import { Skeleton } from "./Skeleton";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export interface BoardColumn {
@@ -99,8 +99,41 @@ export function Board({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Spinner size={24} />
+      <div
+        role="status"
+        aria-label="Loading board"
+        aria-busy="true"
+        className={cn(isMobile ? "space-y-3" : "flex gap-4 overflow-x-auto", className)}
+      >
+        {columns.map(col => isMobile ? (
+          <div key={col.id} className="rounded-2xl bg-elevated border border-default px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Skeleton decorative height={12} width="w-24" />
+              <span className="ml-auto"><Skeleton decorative height={16} width="w-6" variant="circle" /></span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {[0, 1].map(r => (
+                <div key={r} className="bg-card rounded-xl border border-default p-3 space-y-2">
+                  <Skeleton decorative height={12} width="w-5/6" />
+                  <Skeleton decorative height={12} width="w-2/3" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div key={col.id} className="flex-1 min-w-[260px] max-w-[360px] rounded-2xl bg-elevated border border-default p-2 space-y-2">
+            <div className="flex items-center gap-2 px-2 py-1">
+              <Skeleton decorative height={12} width="w-24" />
+              <span className="ml-auto"><Skeleton decorative height={16} width="w-6" variant="circle" /></span>
+            </div>
+            {[0, 1, 2].map(r => (
+              <div key={r} className="bg-card rounded-xl border border-default p-3 space-y-2">
+                <Skeleton decorative height={12} width="w-5/6" />
+                <Skeleton decorative height={12} width="w-2/3" />
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     );
   }
