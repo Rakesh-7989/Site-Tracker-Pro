@@ -1547,7 +1547,7 @@ heading-div sites migrated onto the `title`/`action`/`padding` API (30 card site
 ### Verify (Batch I)
 - lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
   · build clean (7.34s) · vitest **151 files / 1902 tests pass** · smoke
-  **309 checks**. Not yet committed/pushed.
+  **309 checks**. Committed with Batch J in `6cf8bf6` (pushed `prod`, live 200).
 
 ### Batch J (ready to ship, 2026-08-11)
 Button variant/size coverage audit + raw-CTA migration — the remaining hand-rolled
@@ -1580,9 +1580,28 @@ solid CTAs moved onto `<Button>`:
 ### Verify (Batch J)
 - lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
   · build clean (7.78s) · vitest **152 files / 1908 tests pass** (+1 file / +6) ·
-  smoke **309 checks**. Not yet committed/pushed.
+  smoke **309 checks**. Committed with Batch I in `6cf8bf6` (pushed `prod`, live 200).
 
-### Next (Batch K)
+### Batch K (shipped 2026-08-11, pushed `prod`, live 200)
+- **Modal `action` header slot** (`Modal.tsx`) — new optional `action?: ReactNode`
+  rendered between the title block and the built-in close button (props-parity with
+  Card's `action`); long titles now `truncate` (min-w-0 header, flex-shrink-0 action).
+- **Last raw fixed-overlay modal migrated to `<Modal>`** — `PlatformOrgsView` manage-org
+  dialog (was `fixed inset-0 bg-black/30` + nested click-stop): now `open={!!manageOrg}`,
+  `size="lg"`, plan/subscription badges moved into the `action` slot, gains Esc-to-close,
+  focus trap/restore, and body scroll lock. Body null-narrowed via `{manageOrg && (<>…</>)}`.
+- Sweep confirmed no other raw modals remain in `src/features` (only drawer backdrops in
+  Sidebar/LandingView + BottomNav keep `fixed inset-0` for layout, not modal semantics).
+- **Tests** — new `tests/components/uiBatchK.test.tsx` (5: action between title and close,
+  close coexists with action, title truncate, open=false renders null with action, no empty
+  wrapper when omitted).
+
+### Verify (Batch K)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean · build
+  clean (6.11s) · vitest **153 files / 1913 tests pass** (+1 file / +5) · smoke **309
+  checks** · e2e-mock **11/11** · live 200.
+
+### Next (Batch L)
 Phase 4 batch candidates: remaining props-parity gaps on library components,
 responsive/overflow polish on the migrated Card headers, or start Phase 5
 (data-intensive views: tables, charts, kanban, calendar). Candidate next sub-task
