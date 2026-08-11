@@ -1268,5 +1268,39 @@ plan features — no new capabilities.
 ### Notes / Follow-ups
 - Temp runners (`apply-183.mjs`, `verify-183.mjs`, `apply-175.mjs`) stay out
   of commits.
-- Option 3 backlog **complete**. Next candidates (needs user go): Option 4 =
-  frontend redesign Phase 4 (component library consistency).
+- Option 3 backlog **complete**.
+
+---
+
+## Option 4 — Frontend Redesign Phase 4: Component Library Consistency (In Progress, 2026-08-11)
+
+### Batch A (commit `b4c43dd`, pushed `prod`, live 200)
+- **Checkbox fix** — `w-4.5 h-4.5` was an invalid Tailwind spacing class
+  (no `4.5` step in the default scale; confirmed 0 CSS emitted for it in the
+  build). The checkbox box rendered 0-sized/invisible until checked. Now
+  `w-4 h-4` (16px), verified `.w-4` present in built CSS.
+- **Button `gold` variant** — new variant = the existing `bg-gradient-gold`
+  CTA treatment (which was duplicated inline in 8+ files as raw `<button>`
+  with no focus-ring/disabled semantics). Migrated 6 raw gradient-gold CTAs →
+  `<Button variant="gold">`: DelegationsView x2, ForecastView, HierarchyView
+  x2, MaterialPricesView. (2 other `bg-gradient-gold` uses in ClientShareView
+  are decorative `<div>`s — kept.)
+- **Select `compact` prop** — filter-row style (`bg-bg-secondary`, tighter
+  padding); `size` prop impossible (collides with the native HTML select
+  `size` attr). Migrated 4 handover project filter `<select>`s →
+  `<Select compact>`: WorklogsView, EquipmentView, MeasurementBookView,
+  HandoverPacketView.
+
+### Verify (Batch A)
+- lint clean · `tsc --noEmit` clean · build clean (8.6s) · vitest
+  **145 files / 1848 tests pass** · smoke **309 checks** · e2e-mock **11/11**
+  · live https://sitetrack-rakesh.vercel.app **200**.
+
+### Next (Batch B, needs user go)
+Remaining raw `<select>` filter rows (Delegations/Hierarchy/Forecast/
+Compliance/PlatformAudit*/OrgBilling/Onboarding etc. use a `p-2.5/3
+border-default rounded-xl` variant — could become a second Select preset),
+kiosk dark-theme selects (intentionally raw), Dialog/Modal consistency
+review, Tabs/Board/CalendarGrid prop review, DataTable rowKey API.
+Candidate next sub-task (needs user go): push `prod` deploy cadence for each
+Batch.
