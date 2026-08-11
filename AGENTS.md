@@ -1941,8 +1941,11 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
   · build clean (5.88s) · vitest **167 files / 2000 tests pass** (+2 files /
   +6) · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 5J)
-Data-intensive candidates: Board drag-move parity (DnD parity with the keyboard
-moves from Batch E), a Pager alignment/empty-page pass on the dense tables, or
-Phase 6 (mobile/responsive audit of the dense tables). Candidate next sub-task
-(needs user go).
+### Phase 5J — Board DnD ARIA + Pager edge cases (Complete, commit `3f4a5e8`, pushed `prod`, live 200)
+- **Board drag ARIA parity** — desktop draggable items now have `role="button"`, `tabIndex={0}`, `aria-grabbed` (mirrors keyboard MoveControls). Column drop zones gain `aria-dropeffect="move"`. `onDragStart`/`onDragEnd` update `aria-grabbed` state. Mobile accordion view intentionally lacks drag (no change).
+- **Pager `totalPages=0` fix** — no longer shows "Page 1 of 0"; disables both prev/next. `totalPages` edge cases handled: last-page disable, `hasNext` fallback when undefined.
+- **Tests** — new `tests/components/uiPhase5J_board.test.tsx` (2: ARIA attrs + MoveControls labels) + `tests/components/uiPhase5J.test.tsx` (5: totalPages=0, last page, hasNext fallback, busy flag).
+- **Verify** — lint clean · tsc clean · build clean (7.92s) · vitest **169 files / 2007 tests** (+2 files / +7) · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 5K)
+Data-intensive candidates: Phase 6 mobile/responsive audit of the dense tables, Board mobile drag replacement (long-press → reorder), or ChartCard responsive legend on remaining chart consumers. Candidate next sub-task (needs user go).
