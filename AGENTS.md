@@ -1829,8 +1829,82 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
   · build clean (4.53s) · vitest **156 files / 1969 tests pass** (+7) · smoke
   **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 5B)
-Data-intensive candidates: ChartCard empty/loading polish + responsive legend,
-CalendarGrid weekend/month nav polish, Board drag-move parity, or DataTable
-`dense` row variant + pagination alignment. Candidate next sub-task (needs
-user go).
+### Phase 5B — Board structural loading skeleton (Complete, commit `2ef20de`, pushed `prod`, live 200)
+- **Board loading → structural skeletons** — the old centered `<Spinner>` is
+  replaced by skeleton columns that mirror the real board: on desktop
+  (`min-width: 640px`) flex columns with a column-title bar + count chip + 3
+  card skeletons each; on mobile a stacked list (2 rows per column). The whole
+  loading state wraps in ONE `role="status" aria-label="Loading board"`
+  `aria-busy` region (clean screen-reader story). No layout jump while data
+  fetches.
+- **Tests** — new `tests/components/uiPhase5B.test.tsx` (2: single status
+  region + skeleton bars, empty state suppressed while loading; matchMedia
+  stub for Board).
+
+### Phase 5C — CalendarGrid a11y (Complete, commit `8b50bb4`, pushed `prod`, live 200)
+- **Nav buttons** — CalendarHeader prev/next now carry `aria-label="Previous
+  month"` / `"Next month"` (plus the existing icon arrow).
+- **Event buttons** — both the desktop grid day cells and the mobile day-list
+  event buttons gained a `focus-visible:ring-2 ring-[var(--st-accent)]` focus
+  ring (keyboard-visible focus was previously invisible).
+- **Tests** — new `tests/components/uiPhase5C.test.tsx` (4: nav aria-labels +
+  prev/next fire, desktop + mobile event buttons carry the focus ring).
+
+### Phase 5D — UI ChartCard promoted into AnalyticsView (Complete, commit `70b0779`, pushed `prod`, live 200)
+- **ChartCard `footer` slot** (`ChartCard.tsx`) — new optional `footer?:
+  ReactNode` rendered below the chart body (legends/footnotes). Back-compat:
+  omitted = unchanged.
+- **AnalyticsView refactor** — the shadowed local `ChartCard` (bar-only, no
+  states) is deleted; the view now uses the UI `ChartCard` everywhere
+  (`height`/`empty`/`emptyMessage`/`footer`). The pie legend moved into the
+  new `footer` slot as a shared `ChartLegend`; bar charts keep the shared
+  `Bars` helper. Milestones/Tasks status cards now get proper empty states
+  (previously a blank canvas on zero data).
+- **Tests** — new `tests/components/uiPhase5D.test.tsx` (5: footer slot +
+  omitted, empty message + children hidden, error state, loading state).
+
+### Phase 5E — OrgActivityView feed skeleton + compact empty state (Complete, commit `0c86a7a`, pushed `prod`, live 200)
+- **`ActivityFeed` exported** (`OrgActivityView.tsx`) — the feed body (loading /
+  empty / rows / error) is extracted from the view into a standalone exported
+  component (testable without auth/org context).
+- **Loading → structural skeleton** — the centered `<Spinner>` is replaced by
+  5 skeleton rows mirroring the real feed row (badge chip + two text lines +
+  timestamp), wrapped in ONE `role="status" aria-label="Loading activity"`
+  `aria-busy` region.
+- **Empty state** — the hand-rolled `<Card>` + icon is replaced by
+  `<EmptyState compact icon="shield" title="No activity recorded yet" />`.
+- **Error short-circuit** — an error now renders the `<Alert>` alone (was:
+  error + empty state together).
+- **Tests** — new `tests/components/uiPhase5E.test.tsx` (5: single status
+  region while loading, compact empty state, row content (badge/actor/
+  resource/message/timestamp), error alert hides rows, message line omitted
+  when null).
+
+### Phase 5F — DataTable `dense` variant + wired into 10 data-heavy views (Complete, commit `a9dc44e`, pushed `prod`, live 200)
+- **DataTable `dense` prop** — tighter rows for data-dense surfaces. Card
+  variant rows (plain + clickable) `p-2.5` (was `p-3`); table variant
+  `th py-2` / `td py-2` (was `py-2.5` / `py-3`); the loading skeleton matches
+  the chosen density. Critically, the padding classes are **replaced** via
+  `dense ? "p-2.5" : "p-3"` — never appended — to avoid the Phase-4 Batch B
+  Tailwind width-order conflict (both classes would emit and fight).
+- **Consumers** — `dense` wired into the org-rollup + heavy tables:
+  `DownloadAuditView`, `MonthlyStatementView`, `RevenueView`,
+  `UtilizationView` (rollup + phase drill-down), `CrossInvoicesView`,
+  `CrossRaBillsView`, `CrossProjectPOsView`, `FfeRollupView`, `CrmView`
+  (leads), `PlatformAuditLogV2View` (200-row cap).
+- **Tests** — new `tests/components/uiPhase5F.test.tsx` (9: dense p-2.5 vs
+  default p-3 on card rows/clickable/skeleton, table th/td dense vs default +
+  dense skeleton, content + empty-state back-compat; token-based class
+  assertions — `"gap-3"` contains the substring `"p-3"`).
+
+### Verify (Phase 5B–F)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (4.84s) · vitest **165 files / 1994 tests pass** (+9 files /
+  +38) · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 5G)
+Data-intensive candidates: ChartCard empty/loading polish + responsive legend
+on the remaining chart consumers, CalendarGrid weekend/month nav polish, Board
+drag-move parity (DnD parity with the keyboard moves), or more `dense` wiring
+into per-project tabs (BOQ/POs/RaBills/Invoices). Candidate next sub-task
+(needs user go).
