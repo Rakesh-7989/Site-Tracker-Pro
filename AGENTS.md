@@ -1768,3 +1768,33 @@ Phase 4 batch candidates: remaining props-parity gaps (Alert `title` +
 per-variant default icon are the last untouched surface), or start Phase 5
 (data-intensive views: tables, charts, kanban, calendar). Candidate next
 sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 4: Batch Q — Alert title + StatCard icon (Complete, 2026-08-11)
+
+### Batch Q (shipped 2026-08-11, commit `551c9ea`, pushed `prod`, live 200)
+- **Alert `title` prop** (`atoms.tsx`) — new optional `title?: string` renders a
+  bold title line (`font-semibold`) above the message; content wrapper gained
+  `min-w-0 flex-1` so long text wraps beside the action/dismiss slots. Back-compat:
+  omitted = unchanged. Wired into `SecurityView` 2FA warning
+  (`title="Enable two-factor authentication"`).
+- **StatCard `icon` accepts ReactNode** — `icon?: IconName | ReactNode`
+  (props-parity with Button `leftIcon`); string → built-in `Icon`, node →
+  rendered as-is. All 10 existing string-name consumers unchanged.
+- **Tests** — new `tests/components/uiBatchQ.test.tsx` (6: Alert title line above
+  message / no title when omitted / action+dismiss coexist with title; StatCard
+  string icon → svg, ReactNode icon → node, no icon → no tile).
+
+### Verify (Batch Q)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (5.39s) · vitest **156 files / 1962 tests pass** (+6) · smoke
+  **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Batch R)
+Phase 4 library surface is now fully covered (Button/Card/Badge/Alert/Avatar/
+ProgressBar/StatCard/Tile/Spinner + Modal/Dialog/Tooltip/DropdownMenu/Tabs/
+CalendarGrid/Board/DataTable/forms/Pager/Skeleton/EmptyState/Breadcrumbs/Checkbox/
+Switch/LanguageSwitcher). Recommended next: start **Phase 5 — data-intensive
+views** (tables, charts, kanban, calendar) or close the last consumer-level
+props-parity odds and ends. Candidate next sub-task (needs user go).
