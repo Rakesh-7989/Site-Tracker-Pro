@@ -98,7 +98,7 @@ export function CalendarGrid({ year, month, events = [], renderDay, className }:
                         key={ei}
                         onClick={ev.onClick}
                         className={cn(
-                          "block w-full text-left rounded-lg px-3 py-2 text-sm font-medium leading-snug transition-colors",
+                          "block w-full text-left rounded-lg px-3 py-2 text-sm font-medium leading-snug transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]",
                           ev.color ? "" : "bg-accent-tint text-accent-2",
                         )}
                         style={ev.color ? { backgroundColor: hexToRgba(ev.color, 0.12), color: ev.color } : undefined}
@@ -151,7 +151,7 @@ export function CalendarGrid({ year, month, events = [], renderDay, className }:
                               key={ei}
                               onClick={ev.onClick}
                               className={cn(
-                                "block w-full text-left truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight",
+                                "block w-full text-left truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]",
                                 ev.color ? "" : "text-accent-2",
                               )}
                               style={ev.color ? { backgroundColor: hexToRgba(ev.color, 0.12), color: ev.color } : undefined}
@@ -190,13 +190,13 @@ export interface CalendarHeaderProps {
 export function CalendarHeader({ year, month, onPrev, onNext, className }: CalendarHeaderProps): JSX.Element {
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <button onClick={onPrev} className="p-1.5 rounded-lg hover:bg-elevated text-fg-secondary transition-colors">
+      <button onClick={onPrev} aria-label="Previous month" className="p-1.5 rounded-lg hover:bg-elevated text-fg-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]">
         <Icon name="arrow" size={16} />
       </button>
       <h3 className="font-display font-semibold text-fg-primary text-base">
         {MONTH_LABELS[month]} {year}
       </h3>
-      <button onClick={onNext} className="p-1.5 rounded-lg hover:bg-elevated text-fg-secondary transition-colors rotate-180">
+      <button onClick={onNext} aria-label="Next month" className="p-1.5 rounded-lg hover:bg-elevated text-fg-secondary transition-colors rotate-180 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]">
         <Icon name="arrow" size={16} />
       </button>
     </div>
