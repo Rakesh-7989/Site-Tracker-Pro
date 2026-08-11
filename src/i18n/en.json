@@ -522,7 +522,9 @@
     "quotationTitle": "Quotation",
     "agreementTitle": "Agreement",
     "signLabel": "signed {date}",
-    "byLabel": " by {name}"
+    "byLabel": " by {name}",
+    "budgetLabel": "Budget {amount}",
+    "validTo": "valid to {date}"
   },
   "audit": {
     "backendError": "Backend not configured.",

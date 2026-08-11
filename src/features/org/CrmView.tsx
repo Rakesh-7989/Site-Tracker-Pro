@@ -301,7 +301,7 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onH
     <Modal open onClose={onClose} size="lg" title={lead.name} subtitle={lead.company ?? undefined}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Badge tone={STAGE_TONE[lead.stage]}>{stageLabel(t, lead.stage)}</Badge>
-        {lead.budget ? <span className="text-xs text-fg-secondary">Budget {fmtRupees(lead.budget)}</span> : null}
+        {lead.budget ? <span className="text-xs text-fg-secondary">{t("crm.budgetLabel", { amount: fmtRupees(lead.budget) })}</span> : null}
         {lead.phone ? <span className="text-xs text-fg-secondary">{lead.phone}</span> : null}
         {lead.email ? <span className="text-xs text-fg-secondary">{lead.email}</span> : null}
         <div className="ml-auto flex items-center gap-2">
@@ -483,7 +483,7 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
           <div key={q.id} className="flex items-center justify-between gap-2 rounded-lg bg-elevated px-3 py-2">
             <div className="min-w-0">
               <div className="text-sm text-fg-primary truncate">{q.title ?? t("crm.quotationTitle")} · {fmtRupees(q.amount)}</div>
-              <div className="text-[11px] text-fg-tertiary capitalize">{t(`crm.quoteStatus.${q.status}`)}{q.validUntil ? ` · valid to ${q.validUntil}` : ""}</div>
+              <div className="text-[11px] text-fg-tertiary capitalize">{t(`crm.quoteStatus.${q.status}`)}{q.validUntil ? ` · ${t("crm.validTo", { date: q.validUntil })}` : ""}</div>
             </div>
             {canManage && (
               <Select className="w-32 flex-shrink-0" value={q.status} onChange={e => void setStatus(q.id, e.target.value as typeof q.status)} options={(["draft", "sent", "accepted", "rejected", "superseded"] as const).map(s => ({ value: s, label: t(`crm.quoteStatus.${s}`) }))} />

@@ -572,7 +572,9 @@
     "quotationTitle": "कोटेशन",
     "agreementTitle": "समझौता",
     "signLabel": "हस्ताक्षरित {date}",
-    "byLabel": " द्वारा {name}"
+    "byLabel": " द्वारा {name}",
+    "budgetLabel": "बजट {amount}",
+    "validTo": "{date} तक मान्य"
   },
   "audit": {
     "backendError": "बैकएंड कॉन्फ़िगर नहीं है।",

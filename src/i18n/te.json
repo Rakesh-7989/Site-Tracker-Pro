@@ -620,7 +620,9 @@
     "quotationTitle": "కోటేషన్",
     "agreementTitle": "ఒప్పందం",
     "signLabel": "సంతకం {date}",
-    "byLabel": " చేత {name}"
+    "byLabel": " చేత {name}",
+    "budgetLabel": "బడ్జెట్ {amount}",
+    "validTo": "{date} వరకు చెల్లుతుంది"
   },
   "audit": {
     "backendError": "బ్యాకెండ్ కాన్ఫిగర్ చేయబడలేదు.",
