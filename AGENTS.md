@@ -1403,8 +1403,30 @@ Modal focus management + kiosk-dark select unification:
   clean · build clean (6.22s) · vitest **147 files / 1870 tests pass** (+1 file
   / +6) · smoke **309 checks** · live 200.
 
-### Next (Batch E)
-Phase 4 batch candidates: Button/Card/Input/Select/Dialog props-parity audit
-across `src/features`; Tabs aria-controls/id wiring; Board drag a11y
-(keyboard move alternative for `onItemMove`). Candidate next sub-task (needs
-user go).
+### Batch E (shipped 2026-08-11, pushed `prod`, live 200)
+Board keyboard-move a11y (deferred from Batch C):
+- **Board.tsx** — when `onItemMove` is provided, every item card now renders a
+  move-control footer: **"Move to {next column}" / "Move to {previous
+  column}"** icon buttons (chevron; left one rotated 180°) with `aria-label` +
+  `title`, disabled at the first/last column. Works in the **desktop drag
+  layout AND the mobile accordion** (previously mobile had no move path at
+  all). Drag-and-drop unchanged. No UI when `onItemMove` is absent.
+- Note: `<Board` currently has **zero consumers** in `src/` — library-level
+  a11y; verified via component tests.
+- **Tests** — new `tests/components/uiBatchE.test.tsx` (5): controls render
+  with `onItemMove` (scoped to each item card — "Move to Doing" legitimately
+  appears on two items); click calls `onItemMove(itemId, from, to)`; first/last
+  column buttons disabled; controls absent without `onItemMove`; mobile
+  accordion move works.
+
+### Verify (Batch E)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit`
+  clean · build clean · vitest **148 files / 1875 tests pass** (+1 file / +5)
+  · smoke **309 checks** · live 200.
+
+### Next (Batch F)
+Phase 4 batch candidates: Tabs `aria-controls`/`id` + `aria-labelledby`
+panel wiring (needs a consuming view, e.g. project DetailView tabs);
+Button/Card/Input/Select/Dialog props-parity audit across `src/features`;
+remaining raw selects stay intentional (TopBar, LanguageSwitcher,
+VendorsView star rating). Candidate next sub-task (needs user go).

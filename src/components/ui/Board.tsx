@@ -30,6 +30,49 @@ export interface BoardProps {
   className?: string;
 }
 
+function MoveControls({
+  onItemMove,
+  itemId,
+  fromColumn,
+  columnId,
+  columns,
+}: {
+  onItemMove?: (itemId: string, fromColumn: string, toColumn: string) => void;
+  itemId: string;
+  fromColumn: string;
+  columnId: string;
+  columns: BoardColumn[];
+}): JSX.Element | null {
+  if (!onItemMove) return null;
+  const idx = columns.findIndex(c => c.id === columnId);
+  const prev = idx > 0 ? columns[idx - 1] : null;
+  const next = idx >= 0 && idx < columns.length - 1 ? columns[idx + 1] : null;
+  return (
+    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-default">
+      <button
+        type="button"
+        disabled={!prev}
+        aria-label={prev ? `Move to ${prev.title}` : "Move left"}
+        title={prev ? `Move to ${prev.title}` : "Move left"}
+        onClick={() => prev && onItemMove(itemId, fromColumn, prev.id)}
+        className="p-1 rounded-md hover:bg-elevated text-fg-tertiary hover:text-fg-primary transition disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <Icon name="chevron" size={14} className="rotate-180" />
+      </button>
+      <button
+        type="button"
+        disabled={!next}
+        aria-label={next ? `Move to ${next.title}` : "Move right"}
+        title={next ? `Move to ${next.title}` : "Move right"}
+        onClick={() => next && onItemMove(itemId, fromColumn, next.id)}
+        className="p-1 rounded-md hover:bg-elevated text-fg-tertiary hover:text-fg-primary transition disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <Icon name="chevron" size={14} />
+      </button>
+    </div>
+  );
+}
+
 export function Board({
   columns,
   items,
@@ -104,6 +147,7 @@ export function Board({
                       className="bg-card rounded-xl border border-default p-3"
                     >
                       {item.content}
+                      <MoveControls onItemMove={onItemMove} itemId={item.id} fromColumn={item.columnId} columnId={item.columnId} columns={columns} />
                     </div>
                   ))}
                 </div>
@@ -167,6 +211,7 @@ export function Board({
                   )}
                 >
                   {item.content}
+                  <MoveControls onItemMove={onItemMove} itemId={item.id} fromColumn={item.columnId} columnId={item.columnId} columns={columns} />
                 </div>
               ))}
             </div>
