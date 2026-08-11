@@ -1798,3 +1798,39 @@ CalendarGrid/Board/DataTable/forms/Pager/Skeleton/EmptyState/Breadcrumbs/Checkbo
 Switch/LanguageSwitcher). Recommended next: start **Phase 5 — data-intensive
 views** (tables, charts, kanban, calendar) or close the last consumer-level
 props-parity odds and ends. Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 5: Data-Intensive Views (In Progress, 2026-08-11)
+
+### Phase 5A — DataTable loading skeletons + sticky header (Complete, commit `57251f8`, pushed `prod`, live 200)
+- **Skeleton `decorative` prop** (`Skeleton.tsx`) — new optional `decorative`
+  drops the `role="status"`/`aria-label="Loading"` for bulk/decorative usage (the
+  wrapper announces instead). Default unchanged.
+- **DataTable loading → structural skeletons** — the old centered `<Spinner>`
+  is replaced by skeleton rows that mirror the real table/card structure:
+  - table variant: real column headers + 4 skeleton cells per row
+    (varied widths, `hideOnMobile` respected);
+  - card variant: 4 skeleton cards.
+  The whole loading state wraps in ONE `role="status" aria-label="Loading rows"`
+  (clean screen-reader story), and the `Pager` still renders during loading.
+  No layout jump while data fetches.
+- **DataTable `maxHeight` prop** (table variant) — a CSS length (e.g. `"360px"`)
+  caps the scroll container (`overflow-y-auto` added) and makes the `<thead>`
+  `sticky top-0 bg-panel z-10` while rows scroll. Additive; header stays
+  non-sticky without it.
+- **Tests** — new `tests/components/uiPhase5A.test.tsx` (7: card skeleton bars +
+  single status region, table headers + ≥8 skeleton cells, pager during loading,
+  maxHeight overflow+sticky, no-maxHeight non-sticky, Skeleton decorative
+  drops role/label, default keeps them).
+
+### Verify (Phase 5A)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (4.53s) · vitest **156 files / 1969 tests pass** (+7) · smoke
+  **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 5B)
+Data-intensive candidates: ChartCard empty/loading polish + responsive legend,
+CalendarGrid weekend/month nav polish, Board drag-move parity, or DataTable
+`dense` row variant + pagination alignment. Candidate next sub-task (needs
+user go).
