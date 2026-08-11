@@ -109,6 +109,7 @@ export function Board({
   if (totalItems === 0) {
     return (
       <EmptyState
+        compact
         title={emptyMessage ?? "No items"}
         icon={emptyIcon}
       />

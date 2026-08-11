@@ -108,7 +108,7 @@ export function DataTable<T>({
   }
 
   if (rows.length === 0) {
-    return <EmptyState icon={emptyIcon} title={emptyMessage} />;
+    return <EmptyState compact icon={emptyIcon} title={emptyMessage} />;
   }
 
   if (variant === "table") {
