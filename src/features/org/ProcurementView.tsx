@@ -21,7 +21,7 @@ import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/
 import { Select, Input } from "@/components/ui/forms";
 import { fmtRupees } from "@/app/financeQueries";
 import { createPO } from "@/app/financeQueries";
-import { listVendors, type Vendor } from "@/app/vendorQueries";
+import { listVendors, vendorOptionGroups, type Vendor } from "@/app/vendorQueries";
 import { listFfeEntries, type FfeEntry } from "@/app/ffeQueries";
 import {
   listOrgProjects, listOrgQuotes, upsertQuote, attachQuote, setQuoteStatus, deleteQuote,
@@ -210,7 +210,8 @@ function ProcurementInner(): JSX.Element {
       <div>
         <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span>
         <Select className="mt-1" value={form.vendorId}
-          options={[{ value: "", label: "— Select vendor —" }, ...vendors.map(v => ({ value: v.id, label: v.name }))]}
+          options={[{ value: "", label: "— Select vendor —" }]}
+          groups={vendorOptionGroups(vendors)}
           onChange={e => setForm(f => ({ ...f, vendorId: e.target.value }))} />
       </div>
       <div>
@@ -219,7 +220,7 @@ function ProcurementInner(): JSX.Element {
       </div>
       <div>
         <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit price (₹)</span>
-        <Input className="mt-1" type="number" min={0} value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} />
+        <Input className="mt-1" type="number" min={0} prefix="₹" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} />
       </div>
       <div>
         <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span>

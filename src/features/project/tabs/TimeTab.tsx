@@ -139,11 +139,11 @@ export function TimeTab({ projectId }: { projectId: string }): JSX.Element {
               </div>
               <div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</span>
-                <Input className="mt-1" type="number" min={0.25} max={24} step={0.25} placeholder="4.5" value={hours} onChange={e => setHours(e.target.value)} />
+                <Input className="mt-1" type="number" min={0.25} max={24} step={0.25} placeholder="4.5" value={hours} onChange={e => setHours(e.target.value)} suffix="h" />
               </div>
               <div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate (₹/h)</span>
-                <Input className="mt-1" type="number" min={0} placeholder={rateHint != null ? String(rateHint) : "2000"} value={rate} onChange={e => setRate(e.target.value)} />
+                <Input className="mt-1" type="number" min={0} prefix="₹" placeholder={rateHint != null ? String(rateHint) : "2000"} value={rate} onChange={e => setRate(e.target.value)} />
               </div>
               <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-3">
                 <label className="flex items-center gap-1.5 text-sm text-fg-secondary cursor-pointer">
@@ -168,8 +168,8 @@ export function TimeTab({ projectId }: { projectId: string }): JSX.Element {
                 <div className="flex-1 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 items-end">
                   <Input type="date" value={editDate} onChange={x => setEditDate(x.target.value)} />
                   <Input value={editActivity} onChange={x => setEditActivity(x.target.value)} placeholder="Activity" />
-                  <Input type="number" min={0.25} max={24} step={0.25} value={editHours} onChange={x => setEditHours(x.target.value)} placeholder="Hours" />
-                  <Input type="number" min={0} value={editRate} onChange={x => setEditRate(x.target.value)} placeholder="Rate (₹/h)" />
+                  <Input type="number" min={0.25} max={24} step={0.25} value={editHours} onChange={x => setEditHours(x.target.value)} placeholder="Hours" suffix="h" />
+                  <Input type="number" min={0} value={editRate} onChange={x => setEditRate(x.target.value)} prefix="₹" suffix="/h" />
                   <label className="flex items-center gap-1.5 text-sm text-fg-secondary cursor-pointer">
                     <input type="checkbox" className="accent-[var(--st-accent)]" checked={editBillable} onChange={x => setEditBillable(x.target.checked)} />
                     Billable

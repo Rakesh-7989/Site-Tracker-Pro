@@ -96,8 +96,8 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Invoice No</span><Input fit className="mt-1 w-32" placeholder="INV-001" value={no} onChange={e => setNo(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input fit className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">GST %</span><Input fit className="mt-1 w-20" type="number" value={gst} onChange={e => setGst(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">TDS %</span><Input fit className="mt-1 w-20" type="number" value={tds} onChange={e => setTds(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">GST %</span><Input fit className="mt-1 w-20" type="number" suffix="%" value={gst} onChange={e => setGst(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">TDS %</span><Input fit className="mt-1 w-20" type="number" suffix="%" value={tds} onChange={e => setTds(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
           <div className="w-full text-[11px] text-fg-secondary">
             GST {fmtRupees(tax.gstAmount)} · TDS {fmtRupees(tax.tdsAmount)} · <span className="text-fg-primary font-semibold">Net receivable {fmtRupees(tax.netReceivable)}</span>

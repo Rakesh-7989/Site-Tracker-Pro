@@ -86,12 +86,33 @@ export function Button({
 export interface CardProps {
   children: ReactNode;
   className?: string;
+  /** Optional header title — rendered in a padded row above the body. Pass styled JSX. */
+  title?: ReactNode;
+  /** Optional right-aligned slot beside `title` (buttons, badges, counts…). */
+  action?: ReactNode;
+  /** Body (and header) padding. Default "none" keeps the bare Card unchanged. */
+  padding?: "none" | "sm" | "md" | "lg";
+  /** Divider under the header. Default true (only meaningful with `title`). */
+  divide?: boolean;
 }
 
-export function Card({ children, className }: CardProps): JSX.Element {
+const CARD_PAD: Record<NonNullable<CardProps["padding"]>, string> = {
+  none: "", sm: "p-3", md: "p-4", lg: "p-5",
+};
+const CARD_HEAD_PAD: Record<NonNullable<CardProps["padding"]>, string> = {
+  none: "px-4 py-3", sm: "px-3 py-2.5", md: "px-4 py-3", lg: "px-5 py-4",
+};
+
+export function Card({ children, className, title, action, padding = "none", divide = true }: CardProps): JSX.Element {
   return (
     <div className={cn("bg-panel rounded-2xl border border-default shadow-card", className)}>
-      {children}
+      {title != null && (
+        <div className={cn("flex items-center justify-between gap-3", CARD_HEAD_PAD[padding], divide && "border-b border-default")}>
+          <div className="min-w-0">{title}</div>
+          {action != null && <div className="flex-shrink-0">{action}</div>}
+        </div>
+      )}
+      <div className={CARD_PAD[padding]}>{children}</div>
     </div>
   );
 }

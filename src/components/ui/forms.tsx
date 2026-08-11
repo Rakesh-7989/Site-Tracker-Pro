@@ -47,27 +47,38 @@ export function FormField({ label, htmlFor, error, hint, optional, children, cla
 }
 
 // ── Input ───────────────────────────────────────────────────────────────────
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "prefix"> {
   invalid?: boolean;
   leftIcon?: ReactNode;
+  /** Icon rendered inside the field's right edge. */
+  rightIcon?: ReactNode;
+  /** Text adornment inside the field's left edge (e.g. "₹", "%"). */
+  prefix?: ReactNode;
+  /** Text adornment inside the field's right edge (e.g. "/h", "nos"). */
+  suffix?: ReactNode;
   /** Drop the `w-full` so an explicit width class actually applies (see Select#fit). */
   fit?: boolean;
 }
 
-export function Input({ invalid = false, leftIcon, fit = false, className, ...rest }: InputProps): JSX.Element {
-  if (leftIcon) {
-    return (
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none">{leftIcon}</span>
-        <input className={cn(fit ? INPUT_BASE : FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "pl-10", className)} {...rest} />
-      </div>
-    );
+export function Input({ invalid = false, leftIcon, rightIcon, prefix, suffix, fit = false, className, ...rest }: InputProps): JSX.Element {
+  if (!leftIcon && !rightIcon && !prefix && !suffix) {
+    return <input className={cn(fit ? INPUT_BASE : FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, className)} {...rest} />;
   }
-  return <input className={cn(fit ? INPUT_BASE : FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, className)} {...rest} />;
+  const padL = leftIcon ? "pl-10" : prefix ? "pl-9" : "";
+  const padR = rightIcon ? "pr-10" : suffix ? "pr-9" : "";
+  return (
+    <div className="relative">
+      {leftIcon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none flex items-center">{leftIcon}</span>}
+      {prefix && <span className="absolute left-9 top-1/2 -translate-y-1/2 text-fg-secondary pointer-events-none text-sm whitespace-nowrap">{prefix}</span>}
+      {suffix && <span className="absolute right-9 top-1/2 -translate-y-1/2 text-fg-secondary pointer-events-none text-sm whitespace-nowrap">{suffix}</span>}
+      {rightIcon && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none flex items-center">{rightIcon}</span>}
+      <input className={cn(fit ? INPUT_BASE : FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, padL, padR, className)} {...rest} />
+    </div>
+  );
 }
 
 // ── PasswordInput (with show/hide toggle) ───────────────────────────────────
-export function PasswordInput({ invalid = false, className, ...rest }: Omit<InputProps, "type" | "leftIcon">): JSX.Element {
+export function PasswordInput({ invalid = false, className, ...rest }: Omit<InputProps, "type" | "leftIcon" | "rightIcon" | "prefix" | "suffix" | "fit">): JSX.Element {
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
@@ -86,9 +97,16 @@ export function PasswordInput({ invalid = false, className, ...rest }: Omit<Inpu
 }
 
 // ── Select ──────────────────────────────────────────────────────────────────
+export interface SelectGroup {
+  label: string;
+  options: ReadonlyArray<{ value: string; label: string }>;
+}
+
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   invalid?: boolean;
   options: ReadonlyArray<{ value: string; label: string }>;
+  /** Optgroups — when provided, rendered as <optgroup> blocks after `options`. */
+  groups?: ReadonlyArray<SelectGroup>;
   /** Compact filter-row style (bg-bg-secondary, tighter padding). */
   compact?: boolean;
   /**
@@ -107,8 +125,14 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 const SELECT_BASE = FIELD_BASE.replace("w-full ", "");
 
-export function Select({ invalid = false, options, compact = false, fit = false, dark = false, className, ...rest }: SelectProps): JSX.Element {
-  const opts = options.map(o => <option key={o.value} value={o.value}>{o.label}</option>);
+const renderOptions = (options: ReadonlyArray<{ value: string; label: string }>) =>
+  options.map(o => <option key={o.value} value={o.value}>{o.label}</option>);
+
+export function Select({ invalid = false, options, groups, compact = false, fit = false, dark = false, className, ...rest }: SelectProps): JSX.Element {
+  const opts = renderOptions(options);
+  const optgroups = groups?.map(g => (
+    <optgroup key={g.label} label={g.label}>{renderOptions(g.options)}</optgroup>
+  ));
   if (dark) {
     return (
       <select
@@ -120,12 +144,14 @@ export function Select({ invalid = false, options, compact = false, fit = false,
         {...rest}
       >
         {opts}
+        {optgroups}
       </select>
     );
   }
   return (
     <select className={cn(SELECT_BASE, compact ? "px-3 py-1.5 bg-bg-secondary text-xs" : "px-3.5 py-2.5 bg-bg-primary", !fit && "w-full", invalid ? FIELD_ERR : FIELD_OK, className)} {...rest}>
       {opts}
+      {optgroups}
     </select>
   );
 }

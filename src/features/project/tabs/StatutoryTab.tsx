@@ -156,7 +156,7 @@ export function StatutoryTab({ projectId }: { projectId: string }): JSX.Element 
           </div>
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Fee</span>
-            <Input className="mt-1" type="number" min={0} value={form.cost} onChange={e => set("cost")(e.target.value)} />
+            <Input className="mt-1" type="number" min={0} prefix="₹" value={form.cost} onChange={e => set("cost")(e.target.value)} />
           </div>
           <div className="flex gap-2 items-end">
             <Button className="flex-1" onClick={() => void save()} disabled={busy === "add" || busy === "edit" || !form.title.trim()}>

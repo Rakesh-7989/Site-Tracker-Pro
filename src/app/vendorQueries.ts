@@ -16,6 +16,23 @@ export interface Vendor {
 
 const num = (v: unknown): number | null => (v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 
+/**
+ * Group vendor options by category for `<Select groups>` optgroup rendering.
+ * Uncategorised vendors fall into an "Other" group; groups sort by label.
+ */
+export function vendorOptionGroups(vendors: ReadonlyArray<{ id: string; name: string; category: string | null }>): ReadonlyArray<{ label: string; options: ReadonlyArray<{ value: string; label: string }> }> {
+  const map = new Map<string, Array<{ value: string; label: string }>>();
+  for (const v of vendors) {
+    const group = v.category?.trim() ? v.category.trim() : "Other";
+    const arr = map.get(group) ?? [];
+    arr.push({ value: v.id, label: v.name });
+    map.set(group, arr);
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([label, options]) => ({ label, options }));
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listVendors(client: any, orgId: string): Promise<VResult<Vendor[]>> {
   try {

@@ -115,7 +115,7 @@ export function ReceiptsPanel({ projectId, targetType, targetId, summary }: {
         <>
           {canPay && (
             <div className="flex gap-1.5 flex-wrap items-center mb-2">
-              <Input fit className="w-24" type="number" placeholder="₹" value={amount} onChange={e => setAmount(e.target.value)} />
+              <Input fit className="w-24" type="number" prefix="₹" value={amount} onChange={e => setAmount(e.target.value)} />
               <Select fit className="w-auto text-xs" value={method} onChange={e => setMethod(e.target.value as "bank" | "cash" | "upi" | "cheque" | "other")} options={METHODS} />
               <Input fit className="w-32" type="date" value={receiptDate} onChange={e => setReceiptDate(e.target.value)} />
               <Input fit className="w-36 flex-1 min-w-[120px]" placeholder="Ref / note" value={reference} onChange={e => setReference(e.target.value)} />

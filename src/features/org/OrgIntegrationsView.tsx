@@ -31,21 +31,19 @@ function ProviderCard({ meta, configured, onSave, onClear, busy }: {
   const [vals, setVals] = useState<Record<string, string>>({});
   const submit = () => { const cfg: Record<string, string> = {}; for (const [k] of meta.fields) { const v = (vals[k] ?? "").trim(); if (v) cfg[k] = v; } if (Object.keys(cfg).length) { onSave(cfg); setOpen(false); setVals({}); } };
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-accent-tint text-accent grid place-items-center"><Icon name={meta.icon as IconName} size={18} /></div>
-          <div><div className="font-semibold text-fg-primary">{meta.label}</div><div className="text-[11px] text-fg-tertiary">{meta.help}</div></div>
-        </div>
-        <Badge tone={configured ? "success" : "neutral"}>{configured ? "Connected" : "Not set"}</Badge>
+    <Card padding="md" title={
+      <div className="flex items-center gap-2">
+        <div className="w-9 h-9 rounded-lg bg-accent-tint text-accent grid place-items-center"><Icon name={meta.icon as IconName} size={18} /></div>
+        <div><div className="font-semibold text-fg-primary">{meta.label}</div><div className="text-[11px] text-fg-tertiary">{meta.help}</div></div>
       </div>
+    } action={<Badge tone={configured ? "success" : "neutral"}>{configured ? "Connected" : "Not set"}</Badge>}>
       {!open ? (
-        <div className="mt-3 flex gap-2">
+        <div className="flex gap-2">
           <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>{configured ? "Reconfigure" : "Connect"}</Button>
           {configured && <Button size="sm" variant="ghost" onClick={onClear} disabled={busy}>Disconnect</Button>}
         </div>
       ) : (
-        <div className="mt-3 space-y-2">
+        <div className="space-y-2">
           {meta.fields.map(([k, label]) => (
             <label key={k} className="block"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{label}</span>
               <Input className="mt-1" type={SECRET_FIELDS.has(k) ? "password" : "text"} autoComplete="off" value={vals[k] ?? ""} onChange={e => setVals(s => ({ ...s, [k]: e.target.value }))} /></label>

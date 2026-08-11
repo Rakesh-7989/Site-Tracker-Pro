@@ -193,7 +193,7 @@ export function FfeTab({ projectId }: { projectId: string }): JSX.Element {
             </div>
             <div>
               <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit cost</span>
-              <Input className="mt-1" type="number" min={0} value={form.unitCost} onChange={e => set("unitCost")(e.target.value)} />
+              <Input className="mt-1" type="number" min={0} prefix="₹" value={form.unitCost} onChange={e => set("unitCost")(e.target.value)} />
             </div>
           </div>
           <div>

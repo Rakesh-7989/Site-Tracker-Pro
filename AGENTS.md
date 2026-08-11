@@ -1478,8 +1478,48 @@ Props-parity audit — Spinner usage cleanup + Button `loading` + Dialog `size`:
   clean · build clean (6.88s) · vitest **150 files / 1887 tests pass** (+1
   file / +6) · smoke **309 checks** · e2e-mock **11/11**.
 
-### Next (Batch H)
-Phase 4 batch candidates: Card padding/action slots, Input
-label/prefix/suffix, Select group/optgroup, remaining props-parity gaps.
-Remaining raw selects stay intentional (TopBar, LanguageSwitcher,
-VendorsView star rating). Candidate next sub-task (needs user go).
+### Batch H (ready to ship, 2026-08-11)
+Props-parity audit — Card title/action/padding, Input prefix/suffix/rightIcon,
+Select optgroup:
+- **Card** (`atoms.tsx`) — new `title` (header row, styled JSX ok) + `action`
+  (right-aligned slot) + `padding` (`"none"|"sm"|"md"|"lg"`, default `"none"`
+  keeps the bare Card identical) + `divide` (header divider, default true).
+  Header gets its own padded row + `border-b` when `title` is given; body wraps
+  in the padding class. Migrated 3 header-in-Card call sites to the API:
+  `AttendanceTab` (Shift roster), `OrgIntegrationsView` (ProviderCard —
+  icon+label title, Connected badge action), `MaterialsTab` (material requests
+  — totals title + count action, `space-y-3` moved into the body wrapper).
+- **Input** (`forms.tsx`) — new `rightIcon`, `prefix` (left text adornment e.g.
+  `₹`), `suffix` (right text adornment e.g. `/h`, `%`). Adornments render in a
+  relative wrapper with pointer-events-none spans and shift the input's
+  `pl-9`/`pr-9`/`pl-10`/`pr-10` padding; `fit` still works. `InputProps` now
+  `Omit<InputHTMLAttributes,"prefix">` (native `prefix` attr clash).
+  `PasswordInput` excludes the adornment props. Migrated ~10 money/unit inputs:
+  `TimeTab` (rate `₹` prefix, hours + `h` suffix, editRate `₹`+`/h`, editHours
+  + `h`), `ProcurementView`/`VendorPortalView` unit price `₹`, `FfeTab`
+  unitCost `₹`, `StatutoryTab` cost `₹`, `InvoicesTab` GST/TDS `%` suffix,
+  `RaBillsTab` retention `%`, `ReceiptsPanel` amount `₹` (replaces the
+  `placeholder="₹"` hack), `WorklogsView` hours + `h`.
+- **Select** (`forms.tsx`) — new `groups?: ReadonlyArray<{ label, options }>`
+  renders native `<optgroup>` blocks after `options` (placeholder option can
+  stay a plain `options` entry — valid sibling HTML). Back-compat: no `groups`
+  = unchanged. Migrated the two real multi-vendor selects to category
+  optgroups via a new pure `vendorOptionGroups(vendors)` in `vendorQueries.ts`
+  (uncategorised → "Other", groups sorted): `ProcurementView` quote form,
+  `POsTab` create-PO form.
+- **Tests** — new `tests/components/uiBatchH.test.tsx` (13: Card bare/padding/
+  title+action+divider/divide-off/className; Input prefix/suffix/rightIcon/
+  fit/plain-back-compat; Select flat/optgroup/optgroup-dark) +
+  `tests/app/vendorQueries.test.ts` extended (+2 `vendorOptionGroups`).
+
+### Verify (Batch H)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit`
+  clean · build clean (7.95s) · vitest **151 files / 1902 tests pass** (+1
+  file / +15) · smoke **309 checks** · e2e-mock **11/11**.
+
+### Next (Batch I)
+Phase 4 batch candidates: Select group/optgroup backfill on remaining vendor
+pickers, remaining Card header call sites (~44), Button size/variant coverage
+audit, remaining props-parity gaps. Remaining raw selects stay intentional
+(TopBar, LanguageSwitcher, VendorsView star rating). Candidate next sub-task
+(needs user go).

@@ -69,16 +69,17 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
       <h2 className="font-display text-lg font-bold text-fg-primary">Materials</h2>
       {error && <Alert variant="danger">{error}</Alert>}
 
-      <Card className="p-4 space-y-3 border border-default bg-elevated">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Material requests</div>
-            <div className="text-sm font-semibold text-fg-primary">{totals.open} open · {totals.received} received</div>
-          </div>
-          <div className="flex gap-4 text-[11px] text-fg-secondary">
-            <span>Requested {totals.requested}</span><span>Approved {totals.approved}</span><span>Ordered {totals.ordered}</span><span>Received {totals.received}</span>
-          </div>
+      <Card padding="md" className="border border-default bg-elevated" title={
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Material requests</div>
+          <div className="text-sm font-semibold text-fg-primary">{totals.open} open · {totals.received} received</div>
         </div>
+      } action={
+        <div className="flex gap-4 text-[11px] text-fg-secondary">
+          <span>Requested {totals.requested}</span><span>Approved {totals.approved}</span><span>Ordered {totals.ordered}</span><span>Received {totals.received}</span>
+        </div>
+      }>
+        <div className="space-y-3">
         {canEdit && (
           <div className="flex gap-2 flex-wrap items-end">
             <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Item</span><Input className="mt-1" placeholder="e.g. River sand" value={rm} onChange={e => setRm(e.target.value)} /></div>
@@ -117,6 +118,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
             ))}
           </div>
         )}
+        </div>
       </Card>
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">

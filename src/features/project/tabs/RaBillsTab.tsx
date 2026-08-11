@@ -116,7 +116,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
           <div className="flex gap-2 flex-wrap items-end">
             <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Bill No</span><Input fit className="mt-1 w-24" placeholder="RA-1" value={no} onChange={e => setNo(e.target.value)} /></div>
             <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Subcontractor</span><Input className="mt-1" value={sub} onChange={e => setSub(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Retention %</span><Input fit className="mt-1 w-20" type="number" value={ret} onChange={e => setRet(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Retention %</span><Input fit className="mt-1 w-20" type="number" suffix="%" value={ret} onChange={e => setRet(e.target.value)} /></div>
             <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input fit className="mt-1 w-28" type="number" value={selected.size ? String(selTotal) : amount} onChange={e => setAmount(e.target.value)} disabled={selected.size > 0} placeholder={selected.size ? "from MB" : undefined} /></div>
             <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || (!selected.size && !amount)}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
           </div>

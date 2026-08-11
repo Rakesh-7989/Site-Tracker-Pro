@@ -5,7 +5,7 @@ import { ProgressBar } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listPOs, createPO, setPOStatus, deletePO, fmtRupees, type PurchaseOrder, type POStatus } from "@/app/financeQueries";
-import { listVendors, type Vendor } from "@/app/vendorQueries";
+import { listVendors, vendorOptionGroups, type Vendor } from "@/app/vendorQueries";
 import { listPoReceipts, addPoReceipt, deletePoReceipt, deliveryProgress, openAmount, receiptAmount, type PoReceipt } from "@/app/poReceiptQueries";
 import { listMaterialRequests, isOpenRequest, type MaterialRequest } from "@/app/materialRequestQueries";
 
@@ -179,7 +179,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Items</span><Input className="mt-1" placeholder="e.g. 100 bags cement" value={items} onChange={e => setItems(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input fit className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Delivery</span><Input className="mt-1" type="date" value={dd} onChange={e => setDd(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span><Select className="mt-1 min-w-[140px]" value={vendorId} onChange={e => setVendorId(e.target.value)} options={[{ value: "", label: "Unassigned" }, ...vendors.map(v => ({ value: v.id, label: v.name }))]} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span><Select className="mt-1 min-w-[140px]" value={vendorId} onChange={e => setVendorId(e.target.value)} options={[{ value: "", label: "Unassigned" }]} groups={vendorOptionGroups(vendors)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">From request</span><Select className="mt-1 min-w-[160px]" value={reqId} onChange={e => setReqId(e.target.value)} options={[{ value: "", label: "None" }, ...requests.filter(x => isOpenRequest(x.status)).map(r => ({ value: r.id, label: `${r.item}${r.unit ? ` (${r.unit})` : ""} · ${r.qty}` }))]} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !poNo.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Create"}</Button>
         </Card>

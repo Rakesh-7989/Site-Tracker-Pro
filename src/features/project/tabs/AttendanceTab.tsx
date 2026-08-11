@@ -64,8 +64,7 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteAttendance(c, r.id))}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>
             </Card>))}</div>}
-      <Card className="p-3">
-        <div className="flex items-center justify-between mb-2"><h3 className="text-sm font-bold text-fg-primary">Shift roster</h3>{shifts.length > 0 && <span className="text-xs text-fg-secondary">{shifts.length} scheduled</span>}</div>
+      <Card padding="sm" title={<h3 className="text-sm font-bold text-fg-primary">Shift roster</h3>} action={shifts.length > 0 ? <span className="text-xs text-fg-secondary">{shifts.length} scheduled</span> : undefined}>
         {canEdit && (
           <div className="flex gap-2 flex-wrap items-end mb-2">
             <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Worker</span><Input className="mt-1" placeholder="Name" value={worker} onChange={e => setWorker(e.target.value)} /></div>
