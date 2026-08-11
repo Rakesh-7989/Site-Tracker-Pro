@@ -126,7 +126,7 @@ function MonthlyStatementInner(): JSX.Element {
         </Card>
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-          <DataTable columns={columns} rows={shown} rowKey={r => r.projectId} />
+          <DataTable dense columns={columns} rows={shown} rowKey={r => r.projectId} />
         </div>
       )}
     </div>

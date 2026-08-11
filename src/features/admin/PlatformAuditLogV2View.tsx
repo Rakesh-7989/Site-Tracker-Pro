@@ -122,7 +122,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         <Select value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} options={[{ value: "", label: "All resources" }, ...["project", "drawing", "boq", "ra_bill", "mb", "po", "invoice", "issue", "rfi", "change_order", "user", "org", "subscription", "comment", "unit", "block", "floor"].map(r => ({ value: r, label: r }))]} />
       </div>
       <div className="bg-bg-primary rounded-2xl overflow-hidden shadow-editorial border-default">
-        <DataTable columns={COLUMNS} rows={filtered.slice(0, 200)} rowKey={r => r.id} emptyMessage={auditLog.length === 0 ? "No audit entries yet." : "No entries match the filters."} />
+        <DataTable dense columns={COLUMNS} rows={filtered.slice(0, 200)} rowKey={r => r.id} emptyMessage={auditLog.length === 0 ? "No audit entries yet." : "No entries match the filters."} />
         {filtered.length > 200 && <div className="px-5 py-3 text-[11px] text-fg-secondary text-center italic">Showing first 200 — refine filters or export CSV for the full set.</div>}
       </div>
     </div>

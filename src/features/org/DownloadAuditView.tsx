@@ -137,7 +137,7 @@ export function DownloadAuditView(): JSX.Element {
         </Card>
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-          <DataTable columns={columns} rows={shown} rowKey={r => r.id} />
+          <DataTable dense columns={columns} rows={shown} rowKey={r => r.id} />
         </div>
       )}
     </div>

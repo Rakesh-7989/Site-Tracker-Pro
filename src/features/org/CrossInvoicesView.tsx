@@ -147,6 +147,7 @@ export function CrossInvoicesView(): JSX.Element {
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-border">
           <DataTable
+            dense
             columns={columns}
             rows={filtered}
             rowKey={r => r.id}

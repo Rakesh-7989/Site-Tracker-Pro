@@ -64,6 +64,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         </div>
       )}
       <DataTable
+        dense
         columns={columns}
         rows={shown}
         rowKey={po => po.id}

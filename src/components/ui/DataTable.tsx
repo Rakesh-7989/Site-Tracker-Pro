@@ -34,6 +34,8 @@ export interface DataTableProps<T> {
   /** Accessible name for the `<table>` (table variant) — aids screen readers. */
   ariaLabel?: string;
   variant?: "card" | "table";
+  /** Tighter row padding + smaller cell text for dense/data-heavy surfaces. */
+  dense?: boolean;
   onRowClick?: (row: T) => void;
   pagination?: PagerProps;
   /** Cap the table body height (a CSS length, e.g. "360px" or "24rem") — makes the table header sticky while rows scroll. Table variant only. */
@@ -43,7 +45,7 @@ export interface DataTableProps<T> {
 
 const SKELETON_WIDTHS = ["w-full", "w-3/4", "w-1/2", "w-5/6"];
 
-function LoadingSkeleton({ columns, variant }: { columns: Column<unknown>[]; variant: "card" | "table" }): JSX.Element {
+function LoadingSkeleton({ columns, variant, dense }: { columns: Column<unknown>[]; variant: "card" | "table"; dense: boolean }): JSX.Element {
   if (variant === "table") {
     return (
       <table className="w-full text-sm">
@@ -51,7 +53,8 @@ function LoadingSkeleton({ columns, variant }: { columns: Column<unknown>[]; var
           <tr className="border-b border-default">
             {columns.map(col => (
               <th key={col.key} scope="col" className={cn(
-                "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3 py-2.5",
+                "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3",
+                dense ? "py-2" : "py-2.5",
                 col.hideOnMobile && "hidden md:table-cell",
               )}>
                 {col.header}
@@ -63,7 +66,7 @@ function LoadingSkeleton({ columns, variant }: { columns: Column<unknown>[]; var
           {[0, 1, 2, 3].map(r => (
             <tr key={r}>
               {columns.map((col, ci) => (
-                <td key={col.key} className={cn("px-3 py-3", col.hideOnMobile && "hidden md:table-cell")}>
+                <td key={col.key} className={cn("px-3", dense ? "py-2" : "py-3", col.hideOnMobile && "hidden md:table-cell")}>
                   <Skeleton decorative height={12} width={SKELETON_WIDTHS[ci % SKELETON_WIDTHS.length]} />
                 </td>
               ))}
@@ -77,7 +80,7 @@ function LoadingSkeleton({ columns, variant }: { columns: Column<unknown>[]; var
   return (
     <div className="space-y-2">
       {[0, 1, 2, 3].map(r => (
-        <div key={r} className="bg-card rounded-2xl border border-default shadow-card p-3 flex items-center justify-between gap-3">
+        <div key={r} className={cn("bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3", dense ? "p-2.5" : "p-3")}>
           {columns.map((col, ci) => (
             <div key={col.key} className={cn("min-w-0 flex-1", col.hideOnMobile && "hidden md:block")}>
               <Skeleton decorative height={14} width={SKELETON_WIDTHS[ci % SKELETON_WIDTHS.length]} />
@@ -112,6 +115,7 @@ export function DataTable<T>({
   emptyIcon = "inbox",
   ariaLabel,
   variant = "card",
+  dense = false,
   onRowClick,
   pagination,
   maxHeight,
@@ -143,7 +147,7 @@ export function DataTable<T>({
   if (loading) {
     return (
       <div role="status" aria-label="Loading rows" className={cn(className)}>
-        <LoadingSkeleton columns={columns as Column<unknown>[]} variant={variant} />
+        <LoadingSkeleton columns={columns as Column<unknown>[]} variant={variant} dense={dense} />
         {pagination && (
           <div className="mt-3 flex items-center justify-center">
             <Pager {...pagination} />
@@ -176,7 +180,8 @@ export function DataTable<T>({
               <tr className={cn("border-b border-default", maxHeight && "sticky top-0 z-10 bg-panel")}>
                 {columns.map(col => (
                   <th key={col.key} scope="col" className={cn(
-                    "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3 py-2.5",
+                    "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3",
+                    dense ? "py-2" : "py-2.5",
                     col.hideOnMobile && "hidden md:table-cell",
                     col.sortable && "cursor-pointer select-none hover:text-fg-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]",
                     col.className,
@@ -206,7 +211,8 @@ export function DataTable<T>({
                 >
                   {columns.map(col => (
                     <td key={col.key} className={cn(
-                      "px-3 py-3 text-fg-primary",
+                      "px-3 text-fg-primary",
+                      dense ? "py-2" : "py-3",
                       col.hideOnMobile && "hidden md:table-cell",
                       col.className,
                     )}>
@@ -249,7 +255,7 @@ export function DataTable<T>({
             <button
               key={resolveRowKey(row, rowKey, index)}
               onClick={() => onRowClick(row)}
-              className="w-full text-left bg-card rounded-2xl border border-default shadow-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:shadow-hover transition-shadow"
+              className={cn("w-full text-left bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3 cursor-pointer hover:shadow-hover transition-shadow", dense ? "p-2.5" : "p-3")}
             >
               {rowContent}
             </button>
@@ -259,7 +265,7 @@ export function DataTable<T>({
         return (
           <div
             key={resolveRowKey(row, rowKey, index)}
-            className="bg-card rounded-2xl border border-default shadow-card p-3 flex items-center justify-between gap-3"
+            className={cn("bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3", dense ? "p-2.5" : "p-3")}
           >
             {rowContent}
           </div>

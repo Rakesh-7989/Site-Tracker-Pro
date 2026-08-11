@@ -155,7 +155,7 @@ function UtilizationInner(): JSX.Element {
        ) : (
          <div className="space-y-6">
            <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-             <DataTable columns={columns} rows={rows} rowKey={r => r.projectId} />
+              <DataTable dense columns={columns} rows={rows} rowKey={r => r.projectId} />
            </div>
 
            {selectedProjectId && (
@@ -170,7 +170,7 @@ function UtilizationInner(): JSX.Element {
                  <Card className="p-6 text-center text-sm text-fg-secondary">No phases or billable time logged for this project.</Card>
                ) : (
                  <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-                   <DataTable columns={phaseColumns} rows={phases} rowKey={r => `${r.projectId}-${r.phaseId}`} />
+                    <DataTable dense columns={phaseColumns} rows={phases} rowKey={r => `${r.projectId}-${r.phaseId}`} />
                  </div>
                )}
              </div>

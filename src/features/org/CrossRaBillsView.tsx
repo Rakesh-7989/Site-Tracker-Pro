@@ -120,6 +120,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-border">
           <DataTable
+            dense
             columns={columns}
             rows={shown}
             rowKey={r => r.id}

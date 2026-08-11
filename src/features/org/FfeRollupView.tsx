@@ -162,7 +162,7 @@ function FfeRollupInner(): JSX.Element {
         </Card>
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-          <DataTable columns={columns} rows={rollup.byProject} rowKey={r => r.projectId}
+          <DataTable dense columns={columns} rows={rollup.byProject} rowKey={r => r.projectId}
             onRowClick={r => navigate(`/projects/${r.projectId}/ffe`)} />
         </div>
       )}

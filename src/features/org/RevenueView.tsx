@@ -147,7 +147,7 @@ export function RevenueView(): JSX.Element {
         </Card>
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-          <DataTable columns={columns} rows={rows} rowKey={r => r.projectId} />
+          <DataTable dense columns={columns} rows={rows} rowKey={r => r.projectId} />
         </div>
       )}
     </div>
