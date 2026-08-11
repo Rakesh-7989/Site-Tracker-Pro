@@ -1214,7 +1214,59 @@ button on won leads in LeadDrawer, with tests in `tests/app/crmQueries.test.ts`
 vitest **145 files / 1848 tests** · `npm run smoke` **309 checks** ·
 live https://sitetrack-rakesh.vercel.app **200**.
 
-### Next candidates (needs user go)
-Option 3 = consultancy C3 drill-downs (per-phase utilization, deliverable
-storage); Option 4 = frontend redesign Phase 4 (component library
-consistency).
+---
+
+## v4 Option 3 — Consultancy C3 Drill-Downs (Complete, 2026-08-11)
+
+### Goal
+Close the consultancy C3 backlog: a real **project-level Utilization** tab
+(was a dead placeholder in the tab catalog), restore the billing RPC
+hardening that migration 146 accidentally dropped, and deepen the
+Deliverables + Time tab edit surfaces. All gated by existing
+`utilization:view` / `deliverable:manage` / `time:manage` capabilities +
+plan features — no new capabilities.
+
+### Done (commit `ff6042f`, pushed `prod`, live 200)
+- **H2 — UtilizationTab** (`src/features/project/tabs/UtilizationTab.tsx`,
+  new): per-phase fee-vs-effort drill-down for one project via
+  `getProjectUtilizationByPhase` — 4 stat cards (committed fee / billable
+  hours / billed value / utilization % with variance remaining) + a per-phase
+  `DataTable` (fee, hours, billed, util% bar; ≥100% warning, ≥80% success).
+  Registered in `REAL_TABS` (`tabs-config.ts`) + wired in `DetailView.tsx`
+  (render + import). Read-only; the tab is already plan+capability gated by
+  the existing `utilization` TabDef.
+- **H1 — migration 183** `scripts/supabase/183_billing_rpc_hardening_fix.sql`:
+  `generate_hourly_invoice` + `generate_retainer_invoice` re-created with the
+  **143 hardening merged back into the 146 line-item bodies** — the
+  `has_project_role('pm','project_admin','design_head','consultant_head')`
+  project-tier gate and the retainer `start_date`/`end_date` period bounds had
+  been dropped when 146 re-created the RPCs (regression: project-tier managers
+  saw Generate buttons but got 42501; cron bounds unenforced). Idempotent
+  CREATE OR REPLACE, no schema/grants change. **Applied live + verified via
+  pg**: both RPCs gate=true + line items=true; retainer bounds=true.
+- **H3/M4 — TimeTab edit fix**: the edit form no longer wipes `phaseId` on
+  save (was sending `phaseId: null` via stale state); edit now covers date,
+  hours, activity, **rate**, **billable toggle**, notes, phase (4-col grid +
+  billable checkbox). Optimistic update/rollback covers all fields.
+- **H5 — Deliverables approve/reject**: status ladder buttons (move to
+  in_review/approve/reject) per deliverable, `deliverable:approve`-gated.
+- **M3 — Deliverable owner + edit**: create form gains an **Owner** select
+  (`listProjectMembers`, unassigned default); each row has an inline **Edit**
+  form (title/doc-type/phase/due/owner) + Save/Cancel, and delete is hidden
+  while editing. Optimistic updates resolve `ownerName` from members.
+
+### Verification
+- `npm run lint` clean (0 errors) · `npx tsc --noEmit` clean · `npm run build`
+  clean (30.9s) · vitest **145 files / 1848 tests pass** · `npm run smoke`
+  **309 checks** · `npm run test:e2e:mock` **11/11**.
+- **Live DB**: migration 183 applied (temp runner `scripts/apply-183.mjs`,
+  stays out of commits like apply-175); verified via pg — project-tier gate,
+  retainer bounds, and line-item emission all present on both RPCs.
+- **Live deploy**: `git push origin prod` (`f13c49c..ff6042f`); Vercel
+  auto-deploy; live https://sitetrack-rakesh.vercel.app **200**.
+
+### Notes / Follow-ups
+- Temp runners (`apply-183.mjs`, `verify-183.mjs`, `apply-175.mjs`) stay out
+  of commits.
+- Option 3 backlog **complete**. Next candidates (needs user go): Option 4 =
+  frontend redesign Phase 4 (component library consistency).
