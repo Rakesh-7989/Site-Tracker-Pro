@@ -1741,3 +1741,30 @@ Phase 4 batch candidates: responsive/overflow polish on the migrated Card
 headers (mostly done via the Batch O truncate), remaining props-parity gaps, or
 start Phase 5 (data-intensive views: tables, charts, kanban, calendar).
 Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 4: Batch P — EmptyState compact variant (Complete, 2026-08-11)
+
+### Batch P (shipped 2026-08-11, commit `0620cdb`, pushed `prod`, live 200)
+- **EmptyState `compact` prop** (`EmptyState.tsx`) — new optional `compact`:
+  `py-8` (was `py-16`), smaller icon tile (`w-10 h-10` + 18px icon vs `w-14 h-14`
+  + 24px), `text-sm` title + `text-[12px]` message. Default unchanged
+  (back-compat). Added for tight/data-dense contexts.
+- **Wired into both data-dense consumers** — `DataTable` (empty rows) and
+  `Board` (no items) now render the compact empty state, so every empty table
+  /board in the app lost the excessive `py-16` whitespace.
+- **Tests** — new `tests/components/uiBatchP.test.tsx` (5: default spacious vs
+  compact classes on root + title, action slot kept, DataTable empty → `.py-8`
+  no `.py-16`, Board empty → `.py-8` no `.py-16`; matchMedia stub for Board).
+
+### Verify (Batch P)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (3.68s) · vitest **156 files / 1956 tests pass** (+5) · smoke
+  **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Batch Q)
+Phase 4 batch candidates: remaining props-parity gaps (Alert `title` +
+per-variant default icon are the last untouched surface), or start Phase 5
+(data-intensive views: tables, charts, kanban, calendar). Candidate next
+sub-task (needs user go).
