@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { EmptyState } from "./EmptyState";
@@ -83,7 +83,7 @@ export function Board({
   className,
 }: BoardProps): JSX.Element {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
-  const dragItem = useRef<string | null>(null);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const isMobile = !useMediaQuery("(min-width: 768px)");
   const [expandedCols, setExpandedCols] = useState<Set<string>>(new Set(columns.length ? [columns[0].id] : []));
 
@@ -199,27 +199,28 @@ export function Board({
         const colItems = getItems(col.id);
         const isOver = dragOverCol === col.id;
         return (
-          <div
-            key={col.id}
-            className={cn(
-              "flex-1 min-w-[260px] max-w-[360px] rounded-2xl bg-elevated border border-default flex flex-col",
-              isOver && "border-accent bg-accent-tint",
-            )}
-            onDragOver={e => { e.preventDefault(); setDragOverCol(col.id); }}
-            onDragLeave={() => setDragOverCol(null)}
-            onDrop={e => {
-              e.preventDefault();
-              const id = dragItem.current;
-              dragItem.current = null;
-              setDragOverCol(null);
-              if (id && onItemMove) {
-                const item = items.find(i => i.id === id);
-                if (item && item.columnId !== col.id) {
-                  onItemMove(id, item.columnId, col.id);
+<div
+              key={col.id}
+              className={cn(
+                "flex-1 min-w-[260px] max-w-[360px] rounded-2xl bg-elevated border border-default flex flex-col",
+                isOver && "border-accent bg-accent-tint",
+              )}
+              onDragOver={e => { e.preventDefault(); setDragOverCol(col.id); }}
+              onDragLeave={() => setDragOverCol(null)}
+              onDrop={e => {
+                e.preventDefault();
+                const id = draggedItemId;
+                setDraggedItemId(null);
+                setDragOverCol(null);
+                if (id && onItemMove) {
+                  const item = items.find(i => i.id === id);
+                  if (item && item.columnId !== col.id) {
+                    onItemMove(id, item.columnId, col.id);
+                  }
                 }
-              }
-            }}
-          >
+              }}
+              aria-dropeffect="move"
+            >
             <div className={cn(
               "flex items-center gap-2 px-4 py-3 border-b border-default",
             )}>
@@ -237,7 +238,11 @@ export function Board({
                 <div
                   key={item.id}
                   draggable
-                  onDragStart={() => { dragItem.current = item.id; }}
+                  tabIndex={0}
+                  role="button"
+                  aria-grabbed={draggedItemId === item.id}
+                  onDragStart={() => { setDraggedItemId(item.id); }}
+                  onDragEnd={() => { setDraggedItemId(null); }}
                   className={cn(
                     "bg-card rounded-xl border border-default p-3 cursor-grab active:cursor-grabbing",
                     "hover:shadow-hover hover:border-default transition-all",
