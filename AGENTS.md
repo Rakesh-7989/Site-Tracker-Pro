@@ -1171,10 +1171,10 @@ via `<AccessDenied>`/`useCan` + module `research` via the plugin route
   research_documents/research_collections + 4 on collection_documents
   (incl. the new UPDATE); `research-docs` bucket private 50 MB + 4 storage
   policies; feature caps basic=false / pro/business/enterprise/custom=true.
-- **Not yet committed/pushed** — commit the research bundle (researchQueries.ts
-  + RESEARCH_MODULE_PLAN.md + ResearchLibraryView + migration 182 + wiring +
-  tests). `scripts/apply-175.mjs` stays out of this commit (temp runner for the
-  unrelated 175). Push `prod` when shipping.
+- **Shipped** (commit `d1e1476`, pushed `prod`, live 200) — full research bundle
+  (researchQueries.ts + RESEARCH_MODULE_PLAN.md + ResearchLibraryView +
+  migration 182 + wiring + tests). `scripts/apply-175.mjs` stays OUT of commits
+  (temp runner for the unrelated 175).
 
 ### Notes / Follow-ups
 - Research write RLS is "any org member" (like CRM 161 insert/update) — the UI
@@ -1186,3 +1186,35 @@ via `<AccessDenied>`/`useCan` + module `research` via the plugin route
 - Next backlog candidates: CRM sales→project handoff, per-owner pipeline is
   done (H1), quotation→agreement auto-conversion is done (H2), CRM i18n;
   consultancy C3 drill-downs; frontend redesign Phase 4 (component library).
+
+---
+
+## v5 Phase H3 — CRM sales→project handoff (Complete, 2026-08-11)
+
+### Goal
+Deep-dive of the CRM backlog confirmed the handoff was ALREADY shipped during
+Phase A/H (not a new build): `createProjectFromLead` (`crmQueries.ts:508`,
+reuses `createProject` + marks the lead `won` with `won_amount`), wired into
+CrmView `handleHandoff` (creates from the won lead's name/company + accepted
+amount, navigates to `/projects/{id}`), surfaced as the **Create project**
+button on won leads in LeadDrawer, with tests in `tests/app/crmQueries.test.ts`
+(handoff body + error paths). Only the CRM i18n gap remained.
+
+### Done (commit `f13c49c`, pushed `prod`, live 200)
+- **Last 2 hardcoded ui strings in CrmView localized**: lead-drawer
+  `Budget {amount}` → `crm.budgetLabel`; quotation meta `valid to {date}` →
+  `crm.validTo`.
+- **Keys added to all 3 locales** (en/hi/te) — `crm.*` now 88 keys, deep-key
+  parity still enforced by `tests/i18n/i18n.test.ts` (25 tests, green).
+- CRM backlog **complete**: per-owner pipeline (H1) + quote→agreement
+  auto-conversion (H2) + sales→project handoff + full `crm.*` i18n.
+
+### Verify
+`npm run lint` 0 errors · `npx tsc --noEmit` clean · `npm run build` clean ·
+vitest **145 files / 1848 tests** · `npm run smoke` **309 checks** ·
+live https://sitetrack-rakesh.vercel.app **200**.
+
+### Next candidates (needs user go)
+Option 3 = consultancy C3 drill-downs (per-phase utilization, deliverable
+storage); Option 4 = frontend redesign Phase 4 (component library
+consistency).
