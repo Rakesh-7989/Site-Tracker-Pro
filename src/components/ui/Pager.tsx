@@ -22,13 +22,16 @@ export interface PagerProps {
 
 export function Pager({ page, hasNext, onPrev, onNext, busy = false, totalPages, className }: PagerProps): JSX.Element {
   const canGoPrev = page > 0 && !busy;
-  const canGoNext = (totalPages !== undefined ? page < totalPages - 1 : hasNext) && !busy;
+  const canGoNext = (totalPages !== undefined
+    ? page < Math.max(totalPages, 1) - 1
+    : hasNext) && !busy;
+  const showTotal = totalPages !== undefined && totalPages > 0;
 
   return (
     <nav role="navigation" aria-label="Pagination" className={cn("flex items-center justify-center gap-3 pt-1", className)}>
       <Button size="sm" variant="secondary" disabled={!canGoPrev} onClick={onPrev} aria-label="Previous page"><Icon name="chevron" size={14} className="rotate-180" /> Prev</Button>
       <span className="text-[12px] text-fg-secondary tabular-nums" aria-current="page">
-        {totalPages !== undefined ? `Page ${page + 1} of ${totalPages}` : `Page ${page + 1}`}
+        {showTotal ? `Page ${page + 1} of ${totalPages}` : `Page ${page + 1}`}
       </span>
       <Button size="sm" variant="secondary" disabled={!canGoNext} onClick={onNext} aria-label="Next page">Next <Icon name="chevron" size={14} /></Button>
     </nav>
