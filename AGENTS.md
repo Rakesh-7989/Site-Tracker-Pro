@@ -1902,9 +1902,47 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
   · build clean (4.84s) · vitest **165 files / 1994 tests pass** (+9 files /
   +38) · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 5G)
-Data-intensive candidates: ChartCard empty/loading polish + responsive legend
-on the remaining chart consumers, CalendarGrid weekend/month nav polish, Board
-drag-move parity (DnD parity with the keyboard moves), or more `dense` wiring
-into per-project tabs (BOQ/POs/RaBills/Invoices). Candidate next sub-task
+### Phase 5G — AnalyticsView structural loading skeleton (Complete, commit `d9fec42`, pushed `prod`, live 200)
+- **`AnalyticsSkeleton` exported** (`AnalyticsView.tsx`) — the centered
+  `<Spinner>` is replaced by a structural skeleton: 4 stat-card skeletons +
+  4 chart-card skeletons (2×2), wrapped in ONE `role="status"
+  aria-label="Loading analytics"` `aria-busy` region. Exportable so it's
+  testable without auth/org context (same pattern as `ActivityFeed` in 5E).
+- **Tests** — new `tests/components/uiPhase5G.test.tsx` (3: single status
+  region + skeleton bars + no spinner svg, 4 stat + 4 chart skeleton cards,
+  no nested "Loading" announcements).
+
+### Phase 5H — CalendarGrid weekend tint (Complete, commit `56ee01b`, pushed `prod`, live 200)
+- **Desktop grid** — the Sun/Sat column headers and the day numbers of weekend
+  days render `text-error` (red), the standard calendar convention; "today"
+  keeps the accent chip. Weekday columns untouched.
+- **Mobile list** — the day-of-week label of weekend event days tints
+  `text-error`; weekday labels untouched.
+- New pure helper `isWeekend(date)` (dow 0 or 6).
+- **Tests** — new `tests/components/uiPhase5H.test.tsx` (3: Sun/Sat header
+  tint + Mon not, weekend day numbers tinted + weekdays not, mobile weekend
+  label tinted + weekday not).
+
+### Phase 5I — `dense` wired into the remaining 33 DataTable usages (Complete, commit `a92aeb1`, pushed `prod`, live 200)
+- Every remaining `<DataTable>` in the app now passes `dense` (25 files, 33
+  usages): per-project tabs (BOQ, Invoices, POs, RA bills, Budget ×2, P&L,
+  WIP, 3-Way Matching, Utilization), handover (Equipment, Measurement Book,
+  Handover Packet ×3), admin (Platform Audit, Platform Users, Signup
+  Requests, Upgrade Requests, Platform Orgs), and org (Org Billing,
+  Org Financial ×2, Cross Analytics ×3, Global Search, Material Prices,
+  Research Library, Vendors, Vendor Scorecard). Combined with the 5F batch,
+  **every DataTable consumer in the app is now dense**. Applied mechanically
+  (dense as first prop; single-line insert + multi-line first-prop line).
+- Tests: covered by the existing `uiPhase5F` dense-variant suite (no new
+  tests — consumers already render through the same DataTable).
+
+### Verify (Phase 5G–I)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (5.88s) · vitest **167 files / 2000 tests pass** (+2 files /
+  +6) · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 5J)
+Data-intensive candidates: Board drag-move parity (DnD parity with the keyboard
+moves from Batch E), a Pager alignment/empty-page pass on the dense tables, or
+Phase 6 (mobile/responsive audit of the dense tables). Candidate next sub-task
 (needs user go).
