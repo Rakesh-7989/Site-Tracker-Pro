@@ -50,9 +50,7 @@ export function Dialog({
       {children && <div className="mb-4">{children}</div>}
       <div className="flex items-center gap-3 justify-center pt-2">
         <Button variant="secondary" onClick={onClose} disabled={confirmLoading}>{cancelLabel}</Button>
-        <Button variant={VARIANT_BTN[variant]} onClick={onConfirm} disabled={confirmLoading}>
-          {confirmLoading ? "Processing..." : confirmLabel}
-        </Button>
+        <Button variant={VARIANT_BTN[variant]} onClick={onConfirm} loading={confirmLoading}>{confirmLabel}</Button>
       </div>
     </Modal>
   );

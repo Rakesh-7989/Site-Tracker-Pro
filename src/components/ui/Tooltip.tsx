@@ -29,7 +29,7 @@ export function Tooltip({ content, children, position = "top", className }: Tool
     <div className="relative group inline-flex">
       {children}
       <div className={cn(
-        "absolute z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity",
+        "absolute z-50 pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity",
         POSITION[position],
         className,
       )}>

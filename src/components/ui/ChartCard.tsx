@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
 import { Card, Spinner } from "./atoms";
 import { Icon } from "./icons";
 
@@ -29,7 +28,7 @@ export function ChartCard({
   className,
 }: ChartCardProps): JSX.Element {
   return (
-    <Card className={cn("p-4 md:p-5", className)}>
+    <Card padding="md" className={className}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary">{title}</div>
