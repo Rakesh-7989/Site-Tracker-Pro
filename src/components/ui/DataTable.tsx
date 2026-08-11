@@ -31,6 +31,8 @@ export interface DataTableProps<T> {
   error?: string | null;
   emptyMessage?: string;
   emptyIcon?: IconName;
+  /** Accessible name for the `<table>` (table variant) — aids screen readers. */
+  ariaLabel?: string;
   variant?: "card" | "table";
   onRowClick?: (row: T) => void;
   pagination?: PagerProps;
@@ -58,6 +60,7 @@ export function DataTable<T>({
   error,
   emptyMessage = "No data found",
   emptyIcon = "inbox",
+  ariaLabel,
   variant = "card",
   onRowClick,
   pagination,
@@ -112,16 +115,18 @@ export function DataTable<T>({
     return (
       <div className={cn(className)}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label={ariaLabel}>
             <thead>
               <tr className="border-b border-default">
                 {columns.map(col => (
                   <th key={col.key} scope="col" className={cn(
                     "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3 py-2.5",
                     col.hideOnMobile && "hidden md:table-cell",
-                    col.sortable && "cursor-pointer select-none hover:text-fg-primary transition-colors",
+                    col.sortable && "cursor-pointer select-none hover:text-fg-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]",
                     col.className,
-                  )} onClick={col.sortable ? () => handleSort(col.key) : undefined} aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}>
+                  )} onClick={col.sortable ? () => handleSort(col.key) : undefined} aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                    aria-label={col.sortable ? `Sort by ${col.header}` : undefined} tabIndex={col.sortable ? 0 : undefined} role={col.sortable ? "button" : undefined}
+                    onKeyDown={col.sortable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort(col.key); } } : undefined}>
                     <span className="inline-flex items-center">
                       {col.header}
                       {col.sortable && <SortIcon direction={sortKey === col.key ? sortDir : null} />}
