@@ -215,7 +215,7 @@ function Inner(): JSX.Element {
 
       {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
         : <Card className="overflow-hidden">
-            <DataTable columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No ${filter === "all" ? "" : filter} requests.`} />
+            <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No ${filter === "all" ? "" : filter} requests.`} />
           </Card>}
     </div>
   );

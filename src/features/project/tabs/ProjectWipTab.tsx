@@ -190,7 +190,7 @@ export function ProjectWipView({ projectId }: { projectId: string }): JSX.Elemen
         )}
 
         {/* WIP Table */}
-        <DataTable columns={[
+        <DataTable dense columns={[
           { key: "category", header: "Category", className: "text-center", render: e => <Badge tone={e.category === "labor" ? "info" : e.category === "material" ? "success" : e.category === "equipment" ? "warning" : "neutral"}>{e.category}</Badge> },
           { key: "description", header: "Description", className: "flex-1 min-w-0", render: e => <span className="truncate">{e.description ?? "—"}</span> },
           { key: "amount", header: "Amount", className: "text-right font-mono text-sm", render: e => fmtRupees(e.amount) },

@@ -116,7 +116,7 @@ export function EquipmentView(): JSX.Element {
               <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
             </Card>
           )}
-          <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No equipment registered." />
+          <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No equipment registered." />
         </>
       )}
     </div>

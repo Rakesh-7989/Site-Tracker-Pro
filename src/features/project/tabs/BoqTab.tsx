@@ -84,7 +84,7 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add" || !desc.trim() || !qty || !rate}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No BOQ items yet." />
+      <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No BOQ items yet." />
     </div>
   );
 }

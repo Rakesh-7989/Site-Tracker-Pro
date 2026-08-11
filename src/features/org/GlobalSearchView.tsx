@@ -68,6 +68,7 @@ export function GlobalSearchView(): JSX.Element {
         : loading ? <div className="grid place-items-center py-8"><Spinner size={22} /></div>
         : hits.length === 0 && searched ? <div className="text-sm text-fg-tertiary text-center py-8">No matches for &ldquo;{q.trim()}&rdquo;.</div>
         : <DataTable
+            dense
             columns={columns}
             rows={hits}
             rowKey={h => `${h.kind}-${h.id}`}

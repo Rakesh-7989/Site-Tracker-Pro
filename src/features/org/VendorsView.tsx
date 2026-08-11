@@ -83,6 +83,7 @@ function Inner({ orgId, canManage }: { orgId: string; canManage: boolean }): JSX
       )}
       {!loading && rows.length > 0 && <Input placeholder="Search vendors\u2026" value={q} onChange={e => setQ(e.target.value)} />}
       <DataTable
+        dense
         columns={columns}
         rows={shown}
         rowKey={v => v.id}

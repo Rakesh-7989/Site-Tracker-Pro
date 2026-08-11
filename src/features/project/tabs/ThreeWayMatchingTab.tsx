@@ -81,7 +81,7 @@ export function ThreeWayMatchingView({ projectId }: { projectId: string }): JSX.
         {unmatched.length === 0 ? (
           <div className="text-center py-4 text-fg-tertiary">All receipts matched ✓</div>
         ) : (
-          <DataTable columns={columns} rows={unmatched} rowKey={r => r.id} onRowClick={r => {
+          <DataTable dense columns={columns} rows={unmatched} rowKey={r => r.id} onRowClick={r => {
             setSelectedReceipt(r);
             setMatchAmount(String(r.amount - r.matchedAmount));
           }} emptyMessage="No unmatched receipts." />

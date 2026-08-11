@@ -140,7 +140,7 @@ export function MeasurementBookView(): JSX.Element {
               </div>
             </Card>
           )}
-          <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No entries." />
+          <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No entries." />
         </>
       )}
     </div>

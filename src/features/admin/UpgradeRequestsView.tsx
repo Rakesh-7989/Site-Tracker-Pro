@@ -121,7 +121,7 @@ export function UpgradeRequestsView(): JSX.Element {
 
       {loading ? <div className="grid place-items-center py-12 text-accent"><Spinner size={24} /></div>
         : <Card className="overflow-hidden">
-            <DataTable columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No upgrade requests ${page > 0 ? "on this page." : "yet."}`} />
+            <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No upgrade requests ${page > 0 ? "on this page." : "yet."}`} />
           </Card>}
       {rows.length > 0 && <Pager page={page} hasNext={rows.length === UPGRADE_PAGE_SIZE} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />}
     </div>

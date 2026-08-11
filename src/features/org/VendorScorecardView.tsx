@@ -118,7 +118,7 @@ export function VendorScorecardView(): JSX.Element {
 
       {/* Vendor Table */}
       <Card className="p-3">
-        <DataTable columns={columns} rows={vendors} rowKey={v => v.id} emptyMessage="No vendor performance data." onRowClick={v => setSelectedVendor(v)} />
+        <DataTable dense columns={columns} rows={vendors} rowKey={v => v.id} emptyMessage="No vendor performance data." onRowClick={v => setSelectedVendor(v)} />
       </Card>
 
       {/* Vendor Detail Modal */}

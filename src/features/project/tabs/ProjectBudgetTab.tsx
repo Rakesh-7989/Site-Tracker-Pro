@@ -126,7 +126,7 @@ export function ProjectBudgetView({ projectId }: { projectId: string }): JSX.Ele
       {/* Pending Approvals */}
       {pendingApproval.length > 0 && (
         <Card padding="sm" className="border-l-2 border-warning" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-warning">⏳ Pending Approvals ({pendingApproval.length})</div>}>
-          <DataTable columns={[
+          <DataTable dense columns={[
             { key: "changeType", header: "Type", className: "text-center", render: c => <Badge tone={c.changeType === "increase" ? "success" : c.changeType === "decrease" ? "danger" : c.changeType === "reallocate" ? "warning" : "info"}>{c.changeType}</Badge> },
             { key: "category", header: "Category", className: "text-center", render: c => <Badge tone="info">{c.category}</Badge> },
             { key: "fromCategory", header: "From", className: "text-center", render: c => c.fromCategory ? <Badge tone="neutral">{c.fromCategory}</Badge> : <span className="text-fg-tertiary">—</span> },
@@ -204,7 +204,7 @@ export function ProjectBudgetView({ projectId }: { projectId: string }): JSX.Ele
       {/* All Changes History */}
       <Card className="p-3">
         <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary mb-2">Change History ({changes.length})</div>
-        <DataTable columns={[
+        <DataTable dense columns={[
           { key: "changeType", header: "Type", className: "text-center", render: c => <Badge tone={c.changeType === "increase" ? "success" : c.changeType === "decrease" ? "danger" : c.changeType === "reallocate" ? "warning" : "info"}>{c.changeType}</Badge> },
           { key: "category", header: "Category", className: "text-center", render: c => <Badge tone="info">{c.category}</Badge> },
           { key: "fromCategory", header: "From", className: "text-center", render: c => c.fromCategory ? <Badge tone="neutral">{c.fromCategory}</Badge> : <span className="text-fg-tertiary">—</span> },

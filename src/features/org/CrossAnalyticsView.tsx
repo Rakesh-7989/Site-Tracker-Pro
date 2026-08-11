@@ -149,18 +149,18 @@ export function CrossAnalyticsView(): JSX.Element {
 
       {/* Cash Flow Forecast */}
       <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">6-Month Cash Flow Forecast</div>}>
-        <DataTable columns={cashFlowColumns} rows={cashFlow} rowKey={r => r.period} emptyMessage="No forecast data." />
+        <DataTable dense columns={cashFlowColumns} rows={cashFlow} rowKey={r => r.period} emptyMessage="No forecast data." />
       </Card>
 
       {/* Top Projects by Revenue */}
       <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Top Projects by Revenue</div>}>
-        <DataTable columns={projectColumns} rows={topProjects} rowKey={r => r.projectId} emptyMessage="No projects." />
+        <DataTable dense columns={projectColumns} rows={topProjects} rowKey={r => r.projectId} emptyMessage="No projects." />
       </Card>
 
       {/* At-Risk Projects */}
       {atRiskProjects.length > 0 && (
         <Card padding="sm" className="border-l-2 border-error" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-error">⚠ At-Risk Projects ({atRiskProjects.length})</div>}>
-          <DataTable columns={projectColumns} rows={atRiskProjects} rowKey={r => r.projectId} emptyMessage="No at-risk projects." />
+          <DataTable dense columns={projectColumns} rows={atRiskProjects} rowKey={r => r.projectId} emptyMessage="No at-risk projects." />
         </Card>
       )}
     </div>

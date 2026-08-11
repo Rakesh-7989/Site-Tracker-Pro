@@ -148,7 +148,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
           </div>
         </Card>
       )}
-      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No RA bills." />
+      <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No RA bills." />
     </div>
   );
 }

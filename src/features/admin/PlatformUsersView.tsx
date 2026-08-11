@@ -64,6 +64,7 @@ function Inner(): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       <Input placeholder="Search by name or email\u2026" value={q} onChange={e => setQ(e.target.value)} />
       <div className="overflow-x-auto"><DataTable
+        dense
         columns={columns}
         rows={rows}
         rowKey={u => u.id}

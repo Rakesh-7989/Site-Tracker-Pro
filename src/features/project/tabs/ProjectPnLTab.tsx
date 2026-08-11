@@ -157,7 +157,7 @@ export function ProjectPnLView({ projectId }: { projectId: string }): JSX.Elemen
       {wip.length > 0 && (
         <Card className="p-3">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary mb-2">WIP Detail ({wip.length})</div>
-          <DataTable columns={[
+          <DataTable dense columns={[
             { key: "category", header: "Category", className: "text-center", render: e => <Badge tone={e.category === "labor" ? "info" : e.category === "material" ? "success" : "warning"}>{e.category}</Badge> },
             { key: "description", header: "Description", className: "flex-1 min-w-0", render: e => <span className="truncate">{e.description ?? "—"}</span> },
             { key: "amount", header: "Amount", className: "text-right font-mono text-sm", render: e => fmtRupees(e.amount) },

@@ -104,7 +104,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
           </div>
         </Card>
       )}
-      <DataTable columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No invoices raised." />
+      <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} loading={loading} error={error} emptyMessage="No invoices raised." />
     </div>
   );
 }

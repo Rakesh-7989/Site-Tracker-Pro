@@ -109,7 +109,7 @@ export function UtilizationTab({ projectId }: { projectId: string }): JSX.Elemen
       </div>
 
       <Card className="overflow-hidden">
-        <DataTable columns={columns} rows={rows} rowKey={r => r.phaseId} emptyMessage="No fee phases or billable time logged yet." />
+        <DataTable dense columns={columns} rows={rows} rowKey={r => r.phaseId} emptyMessage="No fee phases or billable time logged yet." />
       </Card>
     </div>
   );

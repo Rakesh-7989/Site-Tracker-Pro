@@ -65,7 +65,7 @@ export function PlatformAuditView(): JSX.Element {
         <Select fit className="w-44" value={filterType} onChange={e => setFilterType(e.target.value)} options={[{ value: "all", label: "All types" }, ...types.map(t => ({ value: t, label: t }))]} />
       </div>
       <Card className="overflow-hidden">
-        <DataTable columns={COLUMNS} rows={filtered} rowKey={r => r.id} emptyMessage="No events." />
+        <DataTable dense columns={COLUMNS} rows={filtered} rowKey={r => r.id} emptyMessage="No events." />
       </Card>
     </div>
   );

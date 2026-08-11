@@ -171,7 +171,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
 
           {/* â”€â”€ Billing history â”€â”€ */}
           <Card padding="lg" title={<div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.billingHistory")}</div>}>
-          <DataTable columns={BILLING_COLUMNS} rows={billing?.billingHistory ?? []} rowKey={r => r.id} emptyMessage={t("billing.noHistory")} />
+          <DataTable dense columns={BILLING_COLUMNS} rows={billing?.billingHistory ?? []} rowKey={r => r.id} emptyMessage={t("billing.noHistory")} />
           </Card>
 
           {/* â”€â”€ Request upgrade card â”€â”€ */}

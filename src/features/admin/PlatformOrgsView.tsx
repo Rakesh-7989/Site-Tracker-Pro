@@ -253,6 +253,7 @@ function Inner(): JSX.Element {
       )}
       <Input placeholder="Search by name or slug\u2026" value={q} onChange={e => setQ(e.target.value)} />
       <DataTable
+        dense
         columns={columns}
         rows={rows}
         rowKey={o => o.id}

@@ -80,7 +80,7 @@ function MaterialPricesInner(): JSX.Element {
           {quotes.length > 0 && <>
             {sav > 0 && best && <div className="mb-5 bg-success-tint border-l-4 border-success rounded-r-2xl p-4 flex items-center gap-4 shadow-editorial"><div className="w-10 h-10 bg-success-tint rounded-xl flex items-center justify-center"><Icon name="wallet" size={18} className="text-success" /></div><div className="flex-1"><div className="font-display font-semibold text-fg-primary text-base tracking-editorial">Save ₹{sav.toLocaleString("en-IN", { maximumFractionDigits: 0 })} by choosing {best.vendor}</div><div className="text-success text-xs mt-1">Lowest total landed cost across {quotes.length} vendors today.</div></div></div>}
             <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-              <DataTable columns={columns} rows={quotes} rowKey={r => r.vendor_id} />
+              <DataTable dense columns={columns} rows={quotes} rowKey={r => r.vendor_id} />
             </div>
           </>}
           {quotes.length === 0 && !loading && <div className="bg-panel rounded-2xl p-12 text-center" style={{ border: "1px dashed var(--st-line)" }}><div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-warning-tint flex items-center justify-center"><Icon name="truck" size={24} className="text-warning" /></div><div className="font-display text-lg font-semibold text-fg-primary tracking-editorial mb-2">Pick commodity + grade + qty to fetch live quotes</div><p className="text-fg-secondary text-sm max-w-md mx-auto">Steel: JSW · Tata · Essar. Cement: UltraTech · ACC · Ambuja. More vendors via API on request.</p></div>}

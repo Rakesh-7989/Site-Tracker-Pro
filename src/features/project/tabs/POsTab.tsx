@@ -185,6 +185,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
         </Card>
       )}
       <DataTable
+        dense
         columns={columns}
         rows={rows}
         rowKey={r => r.id}
