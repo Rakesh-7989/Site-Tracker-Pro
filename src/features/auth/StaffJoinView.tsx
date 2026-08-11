@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
-import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
+import { Card, Button, Icon } from "@/components/ui/atoms";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authLib(): Promise<any> {
@@ -109,7 +109,7 @@ export function StaffJoinView(): JSX.Element {
             className="w-full pl-10 pr-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel" />
         </div>
 
-        <Button fullWidth size="lg" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={16} /> : null}>
+        <Button fullWidth size="lg" loading={busy} onClick={submit}>
           {busy ? "Creating your account…" : "Join & continue"}
         </Button>
         <p className="text-[11px] text-fg-tertiary text-center mt-3">Already have an account? <Link to="/staff/login" className="text-accent font-semibold">Staff sign in</Link></p>

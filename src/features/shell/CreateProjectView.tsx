@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useOrgSwitcher, useCan, CONSTRUCTION_INDUSTRIES, CONSTRUCTION_INDUSTRY_LABEL, segmentProjectTypes, defaultProjectTypeFor, type ProjectType, type ConstructionIndustry } from "@/auth";
 import { createProject } from "@/app/queries";
-import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
+import { Card, Button, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 
 const TYPE_LABEL: Record<ProjectType, string> = {
@@ -112,7 +112,7 @@ export function CreateProjectView(): JSX.Element {
           )}
 
           <div className="flex gap-2 pt-1">
-            <Button type="submit" size="lg" disabled={busy} leftIcon={busy ? <Spinner size={16} /> : <Icon name="check" size={16} />}>
+            <Button type="submit" size="lg" loading={busy} leftIcon={<Icon name="check" size={16} />}>
               {busy ? "Creating…" : "Create project"}
             </Button>
             <Button type="button" variant="secondary" size="lg" onClick={() => navigate("/projects")}>Cancel</Button>

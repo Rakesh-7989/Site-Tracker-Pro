@@ -1457,9 +1457,29 @@ real `tab` semantics and migrating the app's biggest tab surface onto it:
   clean · build clean (7.76s) · vitest **149 files / 1881 tests pass** (+1
   file / +6) · smoke **309 checks** · live 200.
 
-### Next (Batch G)
-Phase 4 batch candidates: Button/Card/Input/Select/Dialog props-parity audit
-across `src/features` (Button variant/size coverage, Card padding/action
-slots, Input label/prefix/suffix, Dialog size, Select group/optgroup);
-remaining raw selects stay intentional (TopBar, LanguageSwitcher,
+### Batch G (ready to ship, 2026-08-11)
+Props-parity audit — Spinner usage cleanup + Button `loading` + Dialog `size`:
+- **Dead Spinner-usage cleanup** (3 files): `StaffJoinView`, `CreateProjectView`,
+  `LoginScreenV3` previously hand-rolled `<Spinner>`-in-Button loading states
+  that went dead (spinner + aria-busy lost). Replaced with the proper
+  `<Button loading>` + `<Alert>` semantics; orphaned `Spinner` imports removed.
+- **Button `loading`** — verified the existing loading behavior (inline spinner
+  in place of `leftIcon`, `disabled`, `aria-busy="true"`, spinner sized to the
+  button size via the `size`→`Spinner size` mapping) with new component tests.
+- **Dialog `size`** — verified `size` forwards to the underlying Modal
+  (`max-w-sm` default, `max-w-lg` for `lg`).
+- **Tests** — new `tests/components/uiBatchG.test.tsx` (6): Button loading
+  spinner/disabled/aria-busy + leftIcon swap, idle default (not busy/disabled,
+  leftIcon kept), explicit `disabled` respected, spinner sized to button size;
+  Dialog default `sm` + `lg` size forwarding.
+
+### Verify (Batch G)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit`
+  clean · build clean (6.88s) · vitest **150 files / 1887 tests pass** (+1
+  file / +6) · smoke **309 checks** · e2e-mock **11/11**.
+
+### Next (Batch H)
+Phase 4 batch candidates: Card padding/action slots, Input
+label/prefix/suffix, Select group/optgroup, remaining props-parity gaps.
+Remaining raw selects stay intentional (TopBar, LanguageSwitcher,
 VendorsView star rating). Candidate next sub-task (needs user go).

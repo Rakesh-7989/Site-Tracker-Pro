@@ -190,7 +190,7 @@ export function DPRDetailView(): JSX.Element {
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.detail.deliveryAttempts")}</h3>
           {row.status === "failed" && (
-            <Button size="sm" onClick={() => void onRetry()} disabled={retrying} leftIcon={retrying ? <Spinner size={12} /> : <Icon name="refresh" size={12} />}>
+            <Button size="sm" onClick={() => void onRetry()} loading={retrying} leftIcon={<Icon name="refresh" size={12} />}>
               {t("dpr.detail.retrySend")}
             </Button>
           )}

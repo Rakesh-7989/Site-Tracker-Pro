@@ -112,7 +112,7 @@ export function ResetPasswordView(): JSX.Element {
                 className="w-full pl-10 pr-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
               />
             </div>
-            <Button fullWidth size="lg" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={16} /> : null}>
+            <Button fullWidth size="lg" loading={busy} onClick={submit}>
               {busy ? "Saving…" : "Set new password"}
             </Button>
           </div>

@@ -317,8 +317,7 @@ function Inner(): JSX.Element {
                   ) : (
                     <>
                       <Button size="sm" variant={manageAction === "delete" ? "danger" : "primary"}
-                        disabled={manageBusy || !manageReason.trim()}
-                        leftIcon={manageBusy ? <Spinner size={14} /> : undefined}
+                        loading={manageBusy} disabled={!manageReason.trim()}
                         onClick={() => void onConfirmManage()}>
                         {manageBusy ? "Processing\u2026" : "Confirm"}
                       </Button>

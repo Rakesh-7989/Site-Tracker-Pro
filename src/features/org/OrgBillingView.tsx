@@ -171,7 +171,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
                     <Button size="sm" onClick={() => { setAction(null); setActionResult(null); }}>Done</Button>
                   ) : (
                     <>
-                      <Button size="sm" variant="danger" disabled={actionBusy} leftIcon={actionBusy ? <Spinner size={14} /> : undefined}
+                      <Button size="sm" variant="danger" loading={actionBusy}
                         onClick={() => void performAction("cancel")}>
                         {actionBusy ? "Cancelling..." : "Yes, cancel subscription"}
                       </Button>
@@ -254,7 +254,7 @@ function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan
             <input value={note} onChange={e => setNote(e.target.value)} placeholder={t("billing.notePlaceholder")} className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm bg-panel" />
           </label>
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={submit} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? t("billing.sending") : t("billing.sendRequest")}</Button>
+            <Button onClick={submit} loading={busy}>{busy ? t("billing.sending") : t("billing.sendRequest")}</Button>
             <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>{t("billing.cancel")}</Button>
           </div>
         </div>

@@ -89,7 +89,7 @@ function UpiSettingsCard(): JSX.Element {
         <input value={upi} onChange={e => setUpi(e.target.value)} placeholder="yourname@okhdfcbank" className="px-3 py-2.5 border border-default rounded-lg text-sm bg-bg-primary" />
         <input value={payee} onChange={e => setPayee(e.target.value)} placeholder="Payee name (e.g. Rakesh Boyapati)" className="px-3 py-2.5 border border-default rounded-lg text-sm bg-bg-primary" />
       </div>
-      <Button className="mt-3" disabled={busy} onClick={save} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? "Saving..." : "Save UPI"}</Button>
+      <Button className="mt-3" loading={busy} onClick={save}>{busy ? "Saving..." : "Save UPI"}</Button>
     </Card>
   );
 }
@@ -208,7 +208,7 @@ export function StaffAdminView(): JSX.Element {
             <Select fit className="w-40" value={inviteTier} onChange={e => setInviteTier(e.target.value as "member" | "head")}
               options={[{ value: "member", label: "As Member" }, { value: "head", label: "As Head" }]} />
           )}
-          <Button onClick={onEmailInvite} disabled={busy || !inviteEmail} leftIcon={busy ? <Spinner size={15} /> : <Icon name="mail" size={15} />}>
+          <Button onClick={onEmailInvite} loading={busy} disabled={!inviteEmail} leftIcon={<Icon name="mail" size={15} />}>
             Email invite
           </Button>
           <Button variant="secondary" onClick={onGenerate} disabled={busy}>Just get a link</Button>

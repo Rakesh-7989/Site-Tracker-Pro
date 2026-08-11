@@ -108,7 +108,7 @@ export function ProfileCompleteView(): JSX.Element {
           </div>
         </div>
 
-        <Button fullWidth size="lg" className="mt-5" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={16} /> : null}>
+        <Button fullWidth size="lg" className="mt-5" loading={busy} onClick={submit}>
           {busy ? "Saving..." : "Save & enter workspace"}
         </Button>
       </Card>

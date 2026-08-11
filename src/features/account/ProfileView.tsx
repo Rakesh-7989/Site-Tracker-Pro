@@ -140,7 +140,7 @@ export function ProfileView(): JSX.Element {
               </label>
             </div>
             <div className="flex gap-2 pt-1">
-              <Button onClick={save} disabled={busy} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? t("profile.saving") : t("profile.save")}</Button>
+              <Button onClick={save} loading={busy}>{busy ? t("profile.saving") : t("profile.save")}</Button>
               <Button variant="secondary" onClick={() => setEditing(false)} disabled={busy}>{t("profile.cancel")}</Button>
             </div>
           </div>

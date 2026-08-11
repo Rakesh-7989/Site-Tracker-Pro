@@ -38,13 +38,18 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
+  /** Show an inline spinner in place of `leftIcon`, disable the button, and set `aria-busy`. */
+  loading?: boolean;
   leftIcon?: IconName | ReactNode;
   rightIcon?: IconName | ReactNode;
   children: ReactNode;
 }
 
+const BTN_LOADING_SIZE: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };
+
 export function Button({
   variant = "primary", size = "md", fullWidth = false,
+  loading = false, disabled,
   leftIcon, rightIcon, children, className, type, ...rest
 }: ButtonProps): JSX.Element {
   const renderIcon = (icon: IconName | ReactNode | undefined, defaultSize: number) => {
@@ -58,6 +63,8 @@ export function Button({
   return (
     <button
       type={type ?? "button"}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={cn(
         "inline-flex items-center justify-center font-semibold tracking-tight transition-all",
         "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -66,7 +73,9 @@ export function Button({
       )}
       {...rest}
     >
-      {renderIcon(leftIcon, 16)}
+      {loading
+        ? <span className="flex-shrink-0"><Spinner size={BTN_LOADING_SIZE[size]} /></span>
+        : renderIcon(leftIcon, 16)}
       <span>{children}</span>
       {renderIcon(rightIcon, 16)}
     </button>

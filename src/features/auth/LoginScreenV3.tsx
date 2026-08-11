@@ -17,7 +17,7 @@ import {
   writeStoredLoginLane,
   type LoginLane,
 } from "@/auth";
-import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
+import { Card, Button, Icon } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { getMfaChallenge, verifyMfa } from "@/auth/mfa";
@@ -223,7 +223,7 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
                   <Icon name="alert" size={15} className="text-error mt-0.5" /> {status.msg}
                 </div>
               )}
-              <Button fullWidth size="lg" className="mt-3" disabled={busy} onClick={onSubmitMfa} leftIcon={busy ? <Spinner size={16} /> : null}>
+              <Button fullWidth size="lg" className="mt-3" loading={busy} onClick={onSubmitMfa}>
                 {busy ? t("auth.verifying") : t("auth.verifyContinue")}
               </Button>
             </div>
@@ -293,9 +293,8 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
           )}
 
           <Button
-            fullWidth size="lg" disabled={busy}
+            fullWidth size="lg" loading={busy}
             onClick={method === "password" ? onPasswordLogin : onMagicLink}
-            leftIcon={busy ? <Spinner size={16} /> : null}
           >
             {busy ? t("auth.pleaseWait") : method === "password" ? t("auth.signIn") : t("auth.sendMagic")}
           </Button>

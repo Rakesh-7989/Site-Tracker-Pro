@@ -298,8 +298,8 @@ export function DPRComposer(): JSX.Element {
               </div>
             ))}
           </div>
-          <Button fullWidth size="lg" onClick={() => void onSubmit()} disabled={submitting || normalizeE164(promoterPhone) == null}
-            leftIcon={submitting ? <Spinner size={16} /> : <Icon name="send" size={16} />}>
+          <Button fullWidth size="lg" onClick={() => void onSubmit()} loading={submitting} disabled={normalizeE164(promoterPhone) == null}
+            leftIcon={<Icon name="send" size={16} />}>
             {submitting ? t("dpr.composer.sendingCta") : t("dpr.composer.sendCta")}
           </Button>
           {promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null && (

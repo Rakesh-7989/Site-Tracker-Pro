@@ -89,7 +89,7 @@ export function PayView(): JSX.Element {
         <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">After paying, enter your UPI transaction ID (UTR)</span>
           <input value={utr} onChange={e => setUtr(e.target.value)} placeholder="12-digit UTR / reference no." className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel" />
         </label>
-        <Button fullWidth className="mt-3" disabled={busy} onClick={submit} leftIcon={busy ? <Spinner size={15} /> : null}>{busy ? "Submitting..." : "I've paid — submit reference"}</Button>
+        <Button fullWidth className="mt-3" loading={busy} onClick={submit}>{busy ? "Submitting..." : "I've paid — submit reference"}</Button>
         <p className="text-[11px] text-fg-tertiary text-center mt-2">We verify every payment manually before activating your workspace.</p>
       </div>
     </Frame>
