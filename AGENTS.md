@@ -1642,3 +1642,33 @@ component tests like Batch E's Board):
 Phase 4 batch candidates: responsive/overflow polish on the migrated Card
 headers, remaining props-parity gaps, or start Phase 5 (data-intensive views:
 tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 4: Batch M — DataTable a11y (Complete, 2026-08-11)
+
+### Batch M (shipped 2026-08-11, commit `dd929a5`, pushed `prod`, live 200)
+- **DataTable sort headers keyboard-accessible** (table variant) — a sortable
+  `<th>` is now a real interactive control: `tabIndex={0}` + `role="button"` +
+  `aria-label="Sort by {header}"` + `aria-sort` (already present) + a
+  `focus-visible` accent ring, and **Enter / Space activate the sort** (same
+  toggle-first/direction flip as click). Non-sortable headers stay plain.
+- **DataTable `ariaLabel` prop** — applied to the `<table>` element for screen
+  readers (table variant). Back-compat: omitted = no label.
+- Note: all current DataTable consumers use the default `variant="card"`
+  (no table headers), so this is library-level a11y for the table variant —
+  verified via component tests (Batch E Board pattern).
+- **Tests** — new `tests/components/uiBatchM.test.tsx` (7: sortable th has
+  tabIndex/role/sort-label, Enter sorts ascending, Space sorts, direction
+  toggle + aria-sort, non-sortable th stays plain, table aria-label applied +
+  omitted).
+
+### Verify (Batch M)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (7.25s) · vitest **155 files / 1933 tests pass** (+1 file / +7)
+  · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Batch N)
+Phase 4 batch candidates: responsive/overflow polish on the migrated Card
+headers, remaining props-parity gaps, or start Phase 5 (data-intensive views:
+tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
