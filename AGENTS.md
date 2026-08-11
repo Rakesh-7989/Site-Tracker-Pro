@@ -1672,3 +1672,38 @@ tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
 Phase 4 batch candidates: responsive/overflow polish on the migrated Card
 headers, remaining props-parity gaps, or start Phase 5 (data-intensive views:
 tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 4: Batch N — Form-state parity + Pager (Complete, 2026-08-11)
+
+### Batch N (shipped 2026-08-11, commit `fca2d0f`, pushed `prod`, live 200)
+- **Disabled styling on every form field** (`forms.tsx`) — `FIELD_BASE` gained
+  `disabled:opacity-50 disabled:cursor-not-allowed` (matches the Button `disabled`
+  treatment; previously disabled Input/Select/Textarea looked identical to enabled
+  ones). Covers Input, Textarea, PasswordInput, compact + light Select via
+  FIELD_BASE, plus the kiosk `dark` Select variant explicitly.
+- **FormField `required` prop** — new optional `required?: boolean` renders a red
+  asterisk (`<span className="text-error" aria-hidden="true"> *</span>`) after the
+  label, completing the pair with the existing `optional` hint. Back-compat: no
+  `required`/`optional` = bare label.
+- **PlatformOrgsView form migration** — the hand-rolled `"*"`/`"(optional)"` label
+  text on the create-org (4 required + 1 optional) and manage-org Reason fields →
+  the new `required`/`optional` props. Grep confirms zero remaining
+  `label="…*"`/`(optional)` hand-rolled markers in `src/`.
+- **Pager chevron icons** (`Pager.tsx`) — `← Prev` / `Next →` text arrows replaced
+  with `<Icon name="chevron">` (left one `rotate-180`); aria-labels and the
+  Page X of Y label unchanged.
+- **Tests** — new `tests/components/uiBatchN.test.tsx` (9: FormField required
+  asterisk aria-hidden / optional hint / no-marker; Input/Select-light/Select-dark/
+  Textarea disabled classes; Pager prev+next chevron svg).
+
+### Verify (Batch N)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean ·
+  build clean (7.12s) · vitest **156 files / 1942 tests pass** (+1 file / +9) ·
+  smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Batch O)
+Phase 4 batch candidates: responsive/overflow polish on the migrated Card
+headers, remaining props-parity gaps, or start Phase 5 (data-intensive views:
+tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
