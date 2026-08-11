@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { useOrgSwitcher } from "@/auth";
 import { Card, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { ChartCard } from "@/components/ui/ChartCard";
 import { fmtRupees } from "@/app/financeQueries";
 import { getOrgAnalytics, toBars, type OrgAnalytics } from "@/app/analyticsQueries";
 
@@ -18,25 +19,30 @@ function Stat({ label, value }: { label: string; value: string }): JSX.Element {
   return <Card className="p-4"><div className="text-2xl font-display font-bold text-fg-primary">{value}</div><div className="text-xs text-fg-secondary mt-0.5">{label}</div></Card>;
 }
 
-function ChartCard({ title, rows, color }: { title: string; rows: Array<{ name: string; value: number }>; color: string }): JSX.Element {
-  const empty = rows.every(r => r.value === 0);
+function Bars({ rows, color }: { rows: Array<{ name: string; value: number }>; color: string }): JSX.Element {
   return (
-    <Card className="p-4">
-      <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary mb-2">{title}</div>
-      {empty ? <div className="h-40 grid place-items-center text-sm text-fg-tertiary">No data yet</div> : (
-        <div style={{ width: "100%", height: 160 }}>
-          <ResponsiveContainer>
-            <BarChart data={rows} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--st-border)" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip cursor={{ fill: "var(--st-bg-elevated)" }} />
-              <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-    </Card>
+    <ResponsiveContainer>
+      <BarChart data={rows} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--st-border)" vertical={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+        <Tooltip cursor={{ fill: "var(--st-bg-elevated)" }} />
+        <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+function ChartLegend({ rows }: { rows: Array<{ name: string; value: number }> }): JSX.Element {
+  return (
+    <div className="flex flex-wrap gap-2 justify-center">
+      {rows.map((r, i) => (
+        <span key={r.name} className="text-[11px] text-fg-secondary flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+          {r.name} ({r.value})
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -59,6 +65,9 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   useEffect(() => { void reload(); }, [reload]);
 
   const pie = a ? toBars(a.projectsByStatus, STATUS_ORDER).filter(r => r.value > 0) : [];
+  const milestoneBars = a ? toBars(a.milestoneStatus, PROG_ORDER) : [];
+  const taskBars = a ? toBars(a.taskStatus, PROG_ORDER) : [];
+  const barsEmpty = (rows: Array<{ name: string; value: number }>) => rows.every(r => r.value === 0);
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -74,29 +83,31 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3">
-            <Card className="p-4">
-              <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary mb-2">Projects by status</div>
-              {pie.length === 0 ? <div className="h-40 grid place-items-center text-sm text-fg-tertiary">No projects yet</div> : (
-                <div style={{ width: "100%", height: 160 }}>
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={pie} dataKey="value" nameKey="name" innerRadius={42} outerRadius={64} paddingAngle={2}>
-                        {pie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2 justify-center mt-1">
-                {pie.map((r, i) => <span key={r.name} className="text-[11px] text-fg-secondary flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />{r.name} ({r.value})</span>)}
-              </div>
-            </Card>
-            <ChartCard title="Milestones by status" rows={toBars(a.milestoneStatus, PROG_ORDER)} color="var(--st-warning)" />
+            <ChartCard
+              title="Projects by status"
+              height={160}
+              empty={pie.length === 0}
+              emptyMessage="No projects yet"
+              footer={<ChartLegend rows={pie} />}
+            >
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={pie} dataKey="value" nameKey="name" innerRadius={42} outerRadius={64} paddingAngle={2}>
+                    {pie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
+            <ChartCard title="Milestones by status" height={160} empty={barsEmpty(milestoneBars)} emptyMessage="No data yet">
+              <Bars rows={milestoneBars} color="var(--st-warning)" />
+            </ChartCard>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3">
-            <ChartCard title="Tasks by status" rows={toBars(a.taskStatus, PROG_ORDER)} color="var(--st-indigo)" />
+            <ChartCard title="Tasks by status" height={160} empty={barsEmpty(taskBars)} emptyMessage="No data yet">
+              <Bars rows={taskBars} color="var(--st-indigo)" />
+            </ChartCard>
             <Card className="p-4">
               <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary mb-3">Finance</div>
               <div className="space-y-2">

@@ -11,6 +11,8 @@ export interface ChartCardProps {
   emptyMessage?: string;
   error?: string;
   action?: ReactNode;
+  /** Optional slot below the chart body (legends, footnotes…). */
+  footer?: ReactNode;
   height?: number;
   className?: string;
 }
@@ -24,6 +26,7 @@ export function ChartCard({
   emptyMessage = "No data yet",
   error,
   action,
+  footer,
   height = 200,
   className,
 }: ChartCardProps): JSX.Element {
@@ -61,6 +64,8 @@ export function ChartCard({
           {children}
         </div>
       )}
+
+      {footer && <div className="mt-2">{footer}</div>}
     </Card>
   );
 }
