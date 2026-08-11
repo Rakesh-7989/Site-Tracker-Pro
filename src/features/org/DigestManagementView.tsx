@@ -70,8 +70,8 @@ export function DigestManagementView(): JSX.Element {
           {canEdit && (
             <Card className="p-3 flex gap-2 flex-wrap items-end">
               <div className="flex-1 min-w-[200px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Phone (E.164)</span><Input className="mt-1" placeholder="+919876543210" value={phone} onChange={e => setPhone(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1 w-40" placeholder="Ravi" value={name} onChange={e => setName(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Language</span><Select className="mt-1 w-auto" value={lang} onChange={e => setLang(e.target.value as DigestLang)} options={LANG_OPTS} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input fit className="mt-1 w-40" placeholder="Ravi" value={name} onChange={e => setName(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Language</span><Select fit className="mt-1 w-auto" value={lang} onChange={e => setLang(e.target.value as DigestLang)} options={LANG_OPTS} /></div>
               <Button onClick={() => void add()} disabled={busy === "add" || !phone.trim()}>{busy === "add" ? <Spinner size={14} /> : "Subscribe"}</Button>
             </Card>
           )}

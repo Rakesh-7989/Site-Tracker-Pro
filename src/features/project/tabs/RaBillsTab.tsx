@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — RA bills tab, extended to support measurement-book backing
+// SiteTrack Pro — RA bills tab, extended to support measurement-book backing
 // (ST-019): an RA bill can be built from a selection of unlinked MB entries
 // (auto-computed amount), and each bill shows its linked MB rows.
 // V6 Phase 2: MB-backed RA bills — recalculate from MB, drift detection.
@@ -87,7 +87,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "status", header: "Status", className: "flex-shrink-0",
       render: r => canApprove ? (
-        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as RaBillStatus; void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, v, v === "paid" ? raNetPayable(r) : undefined), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as RaBillStatus; void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, v, v === "paid" ? raNetPayable(r) : undefined), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
       ) : <span className="text-xs text-fg-secondary">{r.status}</span>,
     },
     ...(canCreate ? [{
@@ -114,10 +114,10 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
       {canCreate && (
         <Card className="p-3 space-y-3">
           <div className="flex gap-2 flex-wrap items-end">
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Bill No</span><Input className="mt-1 w-24" placeholder="RA-1" value={no} onChange={e => setNo(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Bill No</span><Input fit className="mt-1 w-24" placeholder="RA-1" value={no} onChange={e => setNo(e.target.value)} /></div>
             <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Subcontractor</span><Input className="mt-1" value={sub} onChange={e => setSub(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Retention %</span><Input className="mt-1 w-20" type="number" value={ret} onChange={e => setRet(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={selected.size ? String(selTotal) : amount} onChange={e => setAmount(e.target.value)} disabled={selected.size > 0} placeholder={selected.size ? "from MB" : undefined} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Retention %</span><Input fit className="mt-1 w-20" type="number" value={ret} onChange={e => setRet(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input fit className="mt-1 w-28" type="number" value={selected.size ? String(selTotal) : amount} onChange={e => setAmount(e.target.value)} disabled={selected.size > 0} placeholder={selected.size ? "from MB" : undefined} /></div>
             <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || (!selected.size && !amount)}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
           </div>
           <div className="border-t border-default pt-2">

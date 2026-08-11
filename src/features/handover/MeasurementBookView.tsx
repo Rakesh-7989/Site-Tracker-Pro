@@ -104,7 +104,7 @@ export function MeasurementBookView(): JSX.Element {
     {
       key: "status", header: "Status", className: "flex-shrink-0",
       render: r => canEdit ? (
-        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MbStatus; void run(`s-${r.id}`, c => setMbStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
+        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MbStatus; void run(`s-${r.id}`, c => setMbStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
       ) : <span className="text-xs text-fg-secondary">{r.status}</span>,
     },
   ];
@@ -117,25 +117,25 @@ export function MeasurementBookView(): JSX.Element {
         <>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-fg-secondary">Project</label>
-            <Select compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
+            <Select fit compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
             {rows.length > 0 && <span className="text-sm text-fg-secondary ml-auto">Total: ₹{totalAmount.toLocaleString("en-IN")}</span>}
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
           {canEdit && selProject && (
             <Card className="p-3 space-y-3">
               <div className="flex gap-2 flex-wrap items-end">
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">MB No.</span><Input className="mt-1 w-28" placeholder="MB-001" value={mbNo} onChange={e => setMbNo(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Page</span><Input className="mt-1 w-20" type="number" placeholder="1" value={pageNo} onChange={e => setPageNo(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">MB No.</span><Input fit className="mt-1 w-28" placeholder="MB-001" value={mbNo} onChange={e => setMbNo(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Page</span><Input fit className="mt-1 w-20" type="number" placeholder="1" value={pageNo} onChange={e => setPageNo(e.target.value)} /></div>
                 <div className="flex-1 min-w-[200px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="RCC slab" value={desc} onChange={e => setDesc(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input className="mt-1 w-32" placeholder="Tower A" value={location} onChange={e => setLocation(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input fit className="mt-1 w-32" placeholder="Tower A" value={location} onChange={e => setLocation(e.target.value)} /></div>
               </div>
               <div className="flex gap-2 flex-wrap items-end">
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Select className="mt-1 w-auto" value={unit} onChange={e => setUnit(e.target.value)} options={UNIT_OPTS} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">L</span><Input className="mt-1 w-20" type="number" placeholder="0" value={len} onChange={e => setLen(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">B</span><Input className="mt-1 w-20" type="number" placeholder="0" value={br} onChange={e => setBr(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">D</span><Input className="mt-1 w-20" type="number" placeholder="0" value={dep} onChange={e => setDep(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input className="mt-1 w-24" type="number" placeholder="10.5" value={qty} onChange={e => setQty(e.target.value)} /></div>
-                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate</span><Input className="mt-1 w-28" type="number" placeholder="4500" value={rate} onChange={e => setRate(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Select fit className="mt-1 w-auto" value={unit} onChange={e => setUnit(e.target.value)} options={UNIT_OPTS} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">L</span><Input fit className="mt-1 w-20" type="number" placeholder="0" value={len} onChange={e => setLen(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">B</span><Input fit className="mt-1 w-20" type="number" placeholder="0" value={br} onChange={e => setBr(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">D</span><Input fit className="mt-1 w-20" type="number" placeholder="0" value={dep} onChange={e => setDep(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input fit className="mt-1 w-24" type="number" placeholder="10.5" value={qty} onChange={e => setQty(e.target.value)} /></div>
+                <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate</span><Input fit className="mt-1 w-28" type="number" placeholder="4500" value={rate} onChange={e => setRate(e.target.value)} /></div>
                 <Button onClick={() => void add()} disabled={busy === "add" || !mbNo.trim() || !desc.trim() || !qty.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
               </div>
             </Card>

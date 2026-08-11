@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
+// SiteTrack Pro — project Issues tab (v3 port, Batch 1, DB-wired to `issues`).
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -68,7 +68,7 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
             <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Issue</span>
               <Input className="mt-1" placeholder="e.g. Water seepage in basement" value={title} onChange={e => setTitle(e.target.value)} /></div>
             <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Severity</span>
-              <Select className="mt-1 w-auto" value={severity} onChange={e => setSeverity(e.target.value as IssueSeverity)}
+              <Select fit className="mt-1 w-auto" value={severity} onChange={e => setSeverity(e.target.value as IssueSeverity)}
                 options={[{ value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} /></div>
             <Button onClick={() => void add()} disabled={busy === "add" || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
           </div>

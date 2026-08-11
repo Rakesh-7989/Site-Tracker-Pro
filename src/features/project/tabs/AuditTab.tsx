@@ -75,10 +75,10 @@ function ResultsPanel({ checklistId, canManage }: { checklistId: string; canMana
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
           <FormField label={t("audit.fieldItem")} htmlFor="res-item">
-            <Input value={item} onChange={e => setItem(e.target.value)} placeholder={t("audit.itemPlaceholder")} className="w-48" />
+            <Input fit value={item} onChange={e => setItem(e.target.value)} placeholder={t("audit.itemPlaceholder")} className="w-48" />
           </FormField>
           <FormField label={t("audit.fieldNote")} htmlFor="res-note">
-            <Input value={note} onChange={e => setNote(e.target.value)} placeholder={t("audit.notePlaceholder")} className="w-48" />
+            <Input fit value={note} onChange={e => setNote(e.target.value)} placeholder={t("audit.notePlaceholder")} className="w-48" />
           </FormField>
           <Button size="sm" onClick={add}>{t("audit.addItem")}</Button>
         </div>

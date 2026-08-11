@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
@@ -77,10 +77,10 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Item description</span><Input className="mt-1" placeholder="e.g. M25 RCC for columns" value={desc} onChange={e => setDesc(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Input className="mt-1 w-20" placeholder="cum" value={unit} onChange={e => setUnit(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input className="mt-1 w-20" type="number" value={qty} onChange={e => setQty(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate ₹</span><Input className="mt-1 w-24" type="number" value={rate} onChange={e => setRate(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Category</span><Select className="mt-1 w-28" value={cat} onChange={e => setCat(e.target.value as BoqCategory)} options={CAT_OPTS} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Input fit className="mt-1 w-20" placeholder="cum" value={unit} onChange={e => setUnit(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input fit className="mt-1 w-20" type="number" value={qty} onChange={e => setQty(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate ₹</span><Input fit className="mt-1 w-24" type="number" value={rate} onChange={e => setRate(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Category</span><Select fit className="mt-1 w-28" value={cat} onChange={e => setCat(e.target.value as BoqCategory)} options={CAT_OPTS} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !desc.trim() || !qty || !rate}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}

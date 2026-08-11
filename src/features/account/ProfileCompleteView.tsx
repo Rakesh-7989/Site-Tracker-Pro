@@ -10,6 +10,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { completeMyProfile } from "@/app/profileQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,9 +103,7 @@ export function ProfileCompleteView(): JSX.Element {
               <input value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Hyderabad" className={inputCls} />
             </Field>
             <Field label="Preferred language">
-              <select value={language} onChange={e => setLanguage(e.target.value)} className={inputCls}>
-                {LANGS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-              </select>
+              <Select value={language} onChange={e => setLanguage(e.target.value)} options={LANGS.map(l => ({ value: l.value, label: l.label }))} />
             </Field>
           </div>
         </div>

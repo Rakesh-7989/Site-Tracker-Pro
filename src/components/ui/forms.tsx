@@ -15,6 +15,7 @@ const FIELD_BASE =
   "focus:ring-2 focus:ring-[rgba(var(--st-accent-rgb),0.15)]";
 const FIELD_OK = "border-default focus:border-[var(--st-accent)]";
 const FIELD_ERR = "border-error focus:border-[var(--st-error)]";
+const INPUT_BASE = FIELD_BASE.replace("w-full ", "");
 
 // ── FormField (label + error wrapper) ───────────────────────────────────────
 export interface FormFieldProps {
@@ -49,18 +50,20 @@ export function FormField({ label, htmlFor, error, hint, optional, children, cla
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;
   leftIcon?: ReactNode;
+  /** Drop the `w-full` so an explicit width class actually applies (see Select#fit). */
+  fit?: boolean;
 }
 
-export function Input({ invalid = false, leftIcon, className, ...rest }: InputProps): JSX.Element {
+export function Input({ invalid = false, leftIcon, fit = false, className, ...rest }: InputProps): JSX.Element {
   if (leftIcon) {
     return (
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary pointer-events-none">{leftIcon}</span>
-        <input className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "pl-10", className)} {...rest} />
+        <input className={cn(fit ? INPUT_BASE : FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, "pl-10", className)} {...rest} />
       </div>
     );
   }
-  return <input className={cn(FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, className)} {...rest} />;
+  return <input className={cn(fit ? INPUT_BASE : FIELD_BASE, invalid ? FIELD_ERR : FIELD_OK, className)} {...rest} />;
 }
 
 // ── PasswordInput (with show/hide toggle) ───────────────────────────────────
@@ -88,11 +91,20 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: ReadonlyArray<{ value: string; label: string }>;
   /** Compact filter-row style (bg-bg-secondary, tighter padding). */
   compact?: boolean;
+  /**
+   * Drop the `w-full` from FIELD_BASE so an explicit width class (w-56, w-48,
+   * w-auto…) actually applies. Tailwind emits `.w-full` AFTER every numeric
+   * `w-*` utility, so leaving w-full on an element silently wins over any
+   * className override.
+   */
+  fit?: boolean;
 }
 
-export function Select({ invalid = false, options, compact = false, className, ...rest }: SelectProps): JSX.Element {
+const SELECT_BASE = FIELD_BASE.replace("w-full ", "");
+
+export function Select({ invalid = false, options, compact = false, fit = false, className, ...rest }: SelectProps): JSX.Element {
   return (
-    <select className={cn(FIELD_BASE, compact ? "px-3 py-1.5 bg-bg-secondary text-xs" : "px-3.5 py-2.5 bg-bg-primary", invalid ? FIELD_ERR : FIELD_OK, className)} {...rest}>
+    <select className={cn(SELECT_BASE, compact ? "px-3 py-1.5 bg-bg-secondary text-xs" : "px-3.5 py-2.5 bg-bg-primary", !fit && "w-full", invalid ? FIELD_ERR : FIELD_OK, className)} {...rest}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );

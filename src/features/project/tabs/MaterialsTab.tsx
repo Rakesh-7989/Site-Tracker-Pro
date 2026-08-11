@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Materials tab (v3 port, Batch 2, DB-wired).
+// SiteTrack Pro — project Materials tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -82,8 +82,8 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
         {canEdit && (
           <div className="flex gap-2 flex-wrap items-end">
             <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Item</span><Input className="mt-1" placeholder="e.g. River sand" value={rm} onChange={e => setRm(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Input className="mt-1 w-16" placeholder="cft" value={runit} onChange={e => setRunit(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input className="mt-1 w-24" type="number" min={0} value={rqty} onChange={e => setRqty(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Input fit className="mt-1 w-16" placeholder="cft" value={runit} onChange={e => setRunit(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input fit className="mt-1 w-24" type="number" min={0} value={rqty} onChange={e => setRqty(e.target.value)} /></div>
             <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Needed by</span><Input className="mt-1" type="date" value={rdd} onChange={e => setRdd(e.target.value)} /></div>
             <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Reason</span><Input className="mt-1" value={rreason} onChange={e => setRreason(e.target.value)} placeholder="e.g. slab pour next week" /></div>
             <Button onClick={() => void addRequest()} disabled={busy === "req" || !rm.trim() || !(Number(rqty) > 0)}>{busy === "req" ? <Spinner size={14} /> : "Request"}</Button>
@@ -121,8 +121,8 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Material</span><Input className="mt-1" placeholder="e.g. TMT 12mm" value={m} onChange={e => setM(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input className="mt-1 w-24" placeholder="5 ton" value={qty} onChange={e => setQty(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Supplier</span><Input className="mt-1 w-32" value={sup} onChange={e => setSup(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input fit className="mt-1 w-24" placeholder="5 ton" value={qty} onChange={e => setQty(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Supplier</span><Input fit className="mt-1 w-32" value={sup} onChange={e => setSup(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Delivery</span><Input className="mt-1" type="date" value={dd} onChange={e => setDd(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !m.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
@@ -134,7 +134,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
               <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.material}</div>
                 <div className="text-[11px] text-fg-tertiary">{[r.quantity, r.supplier, r.deliveryDate && `due ${r.deliveryDate}`].filter(Boolean).join(" · ") || "—"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MaterialStatus; void run(`s-${r.id}`, c => setMaterialStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={ST} />
+                {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MaterialStatus; void run(`s-${r.id}`, c => setMaterialStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={ST} />
                   : <span className="text-xs text-fg-secondary">{r.status}</span>}
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteMaterial(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>

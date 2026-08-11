@@ -8,6 +8,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner, Badge } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { getMyProfile, completeMyProfile } from "@/app/profileQueries";
 import { useT } from "@/i18n/I18nProvider";
 
@@ -135,7 +136,7 @@ export function ProfileView(): JSX.Element {
             <div className="grid sm:grid-cols-2 gap-3">
               <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.city")}</span><input value={city} onChange={e => setCity(e.target.value)} className={`mt-1 ${inputCls}`} /></label>
               <label className="block"><span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("profile.prefLanguage")}</span>
-                <select value={language} onChange={e => setLanguage(e.target.value)} className={`mt-1 ${inputCls}`}>{Object.entries(LANGS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                <Select className="mt-1" value={language} onChange={e => setLanguage(e.target.value)} options={Object.entries(LANGS).map(([v, l]) => ({ value: v, label: l }))} />
               </label>
             </div>
             <div className="flex gap-2 pt-1">

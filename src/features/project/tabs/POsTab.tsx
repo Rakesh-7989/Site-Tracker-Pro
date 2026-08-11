@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { ProgressBar } from "@/components/ui/atoms";
@@ -122,9 +122,9 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
 
         {canApprove && (
           <div className="flex gap-2 flex-wrap items-end">
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Date</span><Input className="mt-1 w-32" type="date" value={rcvDate} onChange={e => setRcvDate(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input className="mt-1 w-20" type="number" min={1} value={rcvQty} onChange={e => setRcvQty(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit ₹</span><Input className="mt-1 w-28" type="number" min={0} value={rcvPrice} onChange={e => setRcvPrice(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Date</span><Input fit className="mt-1 w-32" type="date" value={rcvDate} onChange={e => setRcvDate(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input fit className="mt-1 w-20" type="number" min={1} value={rcvQty} onChange={e => setRcvQty(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit ₹</span><Input fit className="mt-1 w-28" type="number" min={0} value={rcvPrice} onChange={e => setRcvPrice(e.target.value)} /></div>
             <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Notes</span><Input className="mt-1" value={rcvNotes} onChange={e => setRcvNotes(e.target.value)} placeholder="e.g. delivery chalan 441" /></div>
             <Button size="sm" disabled={busy === `r-${po.id}` || !(Number(rcvPrice) >= 0) || !(Number(rcvQty) >= 1)} onClick={() => void addReceipt(po)}>
               {busy === `r-${po.id}` ? <Spinner size={12} /> : "Add receipt"}
@@ -148,7 +148,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "status", header: "Status", className: "flex-shrink-0",
       render: r => canApprove ? (
-        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as POStatus; void run(`s-${r.id}`, c => setPOStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as POStatus; void run(`s-${r.id}`, c => setPOStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
       ) : <span className="text-xs text-fg-secondary">{r.status}</span>,
     },
     {
@@ -175,9 +175,9 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">PO No</span><Input className="mt-1 w-28" placeholder="PO-001" value={poNo} onChange={e => setPoNo(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">PO No</span><Input fit className="mt-1 w-28" placeholder="PO-001" value={poNo} onChange={e => setPoNo(e.target.value)} /></div>
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Items</span><Input className="mt-1" placeholder="e.g. 100 bags cement" value={items} onChange={e => setItems(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input fit className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Delivery</span><Input className="mt-1" type="date" value={dd} onChange={e => setDd(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span><Select className="mt-1 min-w-[140px]" value={vendorId} onChange={e => setVendorId(e.target.value)} options={[{ value: "", label: "Unassigned" }, ...vendors.map(v => ({ value: v.id, label: v.name }))]} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">From request</span><Select className="mt-1 min-w-[160px]" value={reqId} onChange={e => setReqId(e.target.value)} options={[{ value: "", label: "None" }, ...requests.filter(x => isOpenRequest(x.status)).map(r => ({ value: r.id, label: `${r.item}${r.unit ? ` (${r.unit})` : ""} · ${r.qty}` }))]} /></div>

@@ -63,7 +63,7 @@ export function HandoverPacketView(): JSX.Element {
         <>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-fg-secondary">Project</label>
-            <Select compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
+            <Select fit compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
           </div>
           <nav className="flex gap-1 border-b border-border">
             {(["punch", "submittals", "permits", "generate"] as Tab[]).map(t => (
@@ -145,7 +145,7 @@ function PunchList({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "status", header: "Status", className: "flex-shrink-0",
       render: r => canEdit ? (
-        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
       ) : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>,
     },
     ...(canEdit ? [{
@@ -167,10 +167,10 @@ function PunchList({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input className="mt-1 w-32" placeholder="Unit 4B" value={loc} onChange={e => setLoc(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input fit className="mt-1 w-32" placeholder="Unit 4B" value={loc} onChange={e => setLoc(e.target.value)} /></div>
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Defect</span><Input className="mt-1" placeholder="e.g. Paint chipped" value={defect} onChange={e => setDefect(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Trade</span><Input className="mt-1 w-28" placeholder="finishing" value={trade} onChange={e => setTrade(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Severity</span><Select className="mt-1 w-auto" value={sev} onChange={e => setSev(e.target.value as PunchSeverity)} options={SEV} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Trade</span><Input fit className="mt-1 w-28" placeholder="finishing" value={trade} onChange={e => setTrade(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Severity</span><Select fit className="mt-1 w-auto" value={sev} onChange={e => setSev(e.target.value as PunchSeverity)} options={SEV} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !loc.trim() || !defect.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
@@ -225,7 +225,7 @@ function SubmittalsList({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "status", header: "Status", className: "flex-shrink-0",
       render: r => canEdit ? (
-        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SubmittalStatus; void run(`s-${r.id}`, c => setSubmittalStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={SUBMITTAL_STATUS_OPTS} />
+        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SubmittalStatus; void run(`s-${r.id}`, c => setSubmittalStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={SUBMITTAL_STATUS_OPTS} />
       ) : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>,
     },
     ...(canEdit ? [{
@@ -244,8 +244,8 @@ function SubmittalsList({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">No.</span><Input className="mt-1 w-24" placeholder="S-001" value={no} onChange={e => setNo(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Select className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value as SubmittalType)} options={SUBMITTAL_TYPE_OPTS} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">No.</span><Input fit className="mt-1 w-24" placeholder="S-001" value={no} onChange={e => setNo(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Select fit className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value as SubmittalType)} options={SUBMITTAL_TYPE_OPTS} /></div>
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Title</span><Input className="mt-1" placeholder="Drawing revision" value={title} onChange={e => setTitle(e.target.value)} /></div>
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="Optional notes" value={desc} onChange={e => setDesc(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
@@ -301,7 +301,7 @@ function PermitsList({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "status", header: "Status", className: "flex-shrink-0",
       render: r => canEdit ? (
-        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PermitStatus; void run(`s-${r.id}`, c => setPermitStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={PERMIT_STATUS_OPTS} />
+        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PermitStatus; void run(`s-${r.id}`, c => setPermitStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={PERMIT_STATUS_OPTS} />
       ) : <Badge tone="neutral">{r.status.replace("_", " ")}</Badge>,
     },
     ...(canEdit ? [{
@@ -320,7 +320,7 @@ function PermitsList({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as PermitKind)} options={PERMIT_KIND_OPTS} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select fit className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as PermitKind)} options={PERMIT_KIND_OPTS} /></div>
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Ref no.</span><Input className="mt-1" placeholder="e.g. ENV-001" value={refNo} onChange={e => setRefNo(e.target.value)} /></div>
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Authority</span><Input className="mt-1" placeholder="e.g. EPA" value={authority} onChange={e => setAuthority(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add permit"}</Button>

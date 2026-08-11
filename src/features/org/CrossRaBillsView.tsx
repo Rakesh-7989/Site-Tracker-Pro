@@ -95,7 +95,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="flex justify-end mb-6">
-        <Select className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
+        <Select fit className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">

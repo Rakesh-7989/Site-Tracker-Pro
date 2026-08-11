@@ -195,9 +195,9 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
       </div>
 
       <div className="flex justify-end gap-2 mb-6">
-        <Select className="w-48" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}
+        <Select fit className="w-48" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}
           options={[{ value: "all", label: t("crm.ownersFilter") }, ...owners.map(([id, name]) => ({ value: id, label: name }))]} />
-        <Select className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS(t)} />
+        <Select fit className="w-44" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS(t)} />
       </div>
 
       {loading ? (
@@ -313,8 +313,8 @@ function LeadDrawer({ lead, canManage, onClose, onAdvance, onMove, onDelete, onH
           )}
           {canManage && (
             <>
-              <Select className="w-36" value={lead.stage} onChange={e => onMove(lead.id, e.target.value as LeadStage)} options={LEAD_STAGES.map(s => ({ value: s, label: stageLabel(t, s) }))} />
-              <Select className="w-36" value={lead.ownerId ?? ""} onChange={e => {
+              <Select fit className="w-36" value={lead.stage} onChange={e => onMove(lead.id, e.target.value as LeadStage)} options={LEAD_STAGES.map(s => ({ value: s, label: stageLabel(t, s) }))} />
+              <Select fit className="w-36" value={lead.ownerId ?? ""} onChange={e => {
                 const v = e.target.value || null;
                 const doAssign = async () => {
                   const client = await getClient();
@@ -395,10 +395,10 @@ function MeetingsPanel({ leadId, canManage }: { leadId: string; canManage: boole
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
           <FormField label={t("crm.fieldWhen")} htmlFor="meet-when">
-            <Input type="datetime-local" value={sched} onChange={e => setSched(e.target.value)} className="w-52" />
+            <Input fit type="datetime-local" value={sched} onChange={e => setSched(e.target.value)} className="w-52" />
           </FormField>
           <FormField label={t("crm.fieldAgenda")} htmlFor="meet-agenda">
-            <Input value={agenda} onChange={e => setAgenda(e.target.value)} placeholder={t("crm.agendaPlaceholder")} className="w-56" />
+            <Input fit value={agenda} onChange={e => setAgenda(e.target.value)} placeholder={t("crm.agendaPlaceholder")} className="w-56" />
           </FormField>
           <Button size="sm" onClick={() => void add()} disabled={!sched}>{t("crm.addMeeting")}</Button>
         </div>
@@ -413,7 +413,7 @@ function MeetingsPanel({ leadId, canManage }: { leadId: string; canManage: boole
               <div className="text-[11px] text-fg-tertiary capitalize">{t(`crm.meetingOutcome.${m.outcome}`)}{m.notes ? ` — ${m.notes}` : ""}</div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <Select className="w-28" value={m.outcome} onChange={e => void outcome(m.id, e.target.value as typeof m.outcome)} options={(["pending", "done", "cancelled", "no_show"] as const).map(o => ({ value: o, label: t(`crm.meetingOutcome.${o}`) }))} />
+              <Select fit className="w-28" value={m.outcome} onChange={e => void outcome(m.id, e.target.value as typeof m.outcome)} options={(["pending", "done", "cancelled", "no_show"] as const).map(o => ({ value: o, label: t(`crm.meetingOutcome.${o}`) }))} />
               {canManage && <button onClick={() => void del(m.id)} className="text-xs text-error">✕</button>}
             </div>
           </div>
@@ -470,9 +470,9 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
       )}
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
-          <FormField label={t("crm.fieldTitle")} htmlFor="q-title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t("crm.titlePlaceholder")} className="w-44" /></FormField>
-          <FormField label={t("crm.fieldAmount")} htmlFor="q-amount"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
-          <FormField label={t("crm.fieldValidUntil")} htmlFor="q-valid"><Input type="date" value={valid} onChange={e => setValid(e.target.value)} className="w-36" /></FormField>
+          <FormField label={t("crm.fieldTitle")} htmlFor="q-title"><Input fit value={title} onChange={e => setTitle(e.target.value)} placeholder={t("crm.titlePlaceholder")} className="w-44" /></FormField>
+          <FormField label={t("crm.fieldAmount")} htmlFor="q-amount"><Input fit type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
+          <FormField label={t("crm.fieldValidUntil")} htmlFor="q-valid"><Input fit type="date" value={valid} onChange={e => setValid(e.target.value)} className="w-36" /></FormField>
           <Button size="sm" onClick={() => void add()} disabled={amount === ""}>{t("crm.addQuotation")}</Button>
         </div>
       )}
@@ -486,7 +486,7 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
               <div className="text-[11px] text-fg-tertiary capitalize">{t(`crm.quoteStatus.${q.status}`)}{q.validUntil ? ` · ${t("crm.validTo", { date: q.validUntil })}` : ""}</div>
             </div>
             {canManage && (
-              <Select className="w-32 flex-shrink-0" value={q.status} onChange={e => void setStatus(q.id, e.target.value as typeof q.status)} options={(["draft", "sent", "accepted", "rejected", "superseded"] as const).map(s => ({ value: s, label: t(`crm.quoteStatus.${s}`) }))} />
+              <Select fit className="w-32 flex-shrink-0" value={q.status} onChange={e => void setStatus(q.id, e.target.value as typeof q.status)} options={(["draft", "sent", "accepted", "rejected", "superseded"] as const).map(s => ({ value: s, label: t(`crm.quoteStatus.${s}`) }))} />
             )}
           </div>
         ))
@@ -530,8 +530,8 @@ function AgreementsPanel({ leadId, canManage }: { leadId: string; canManage: boo
     <div className="space-y-3">
       {canManage && (
         <div className="flex flex-wrap gap-2 items-end">
-          <FormField label={t("crm.fieldTitle")} htmlFor="ag-title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t("crm.agreementPlaceholder")} className="w-44" /></FormField>
-          <FormField label={t("crm.fieldAmount")} htmlFor="ag-amount"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
+          <FormField label={t("crm.fieldTitle")} htmlFor="ag-title"><Input fit value={title} onChange={e => setTitle(e.target.value)} placeholder={t("crm.agreementPlaceholder")} className="w-44" /></FormField>
+          <FormField label={t("crm.fieldAmount")} htmlFor="ag-amount"><Input fit type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-32" /></FormField>
           <Button size="sm" onClick={() => void add()} disabled={amount === ""}>{t("crm.addAgreement")}</Button>
         </div>
       )}
@@ -546,7 +546,7 @@ function AgreementsPanel({ leadId, canManage }: { leadId: string; canManage: boo
             </div>
             {canManage && a.status !== "signed" && (
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <Input value={signer} onChange={e => setSigner(e.target.value)} placeholder={t("crm.signerPlaceholder")} className="w-28" />
+                <Input fit value={signer} onChange={e => setSigner(e.target.value)} placeholder={t("crm.signerPlaceholder")} className="w-28" />
                 <Button size="sm" onClick={() => void setStatus(a.id, "signed", signer.trim() || undefined)}>{t("crm.sign")}</Button>
                 {a.status === "pending" && <Button size="sm" variant="ghost" onClick={() => void setStatus(a.id, "rejected")}>{t("crm.reject")}</Button>}
               </div>

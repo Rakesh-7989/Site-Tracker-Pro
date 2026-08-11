@@ -2,6 +2,7 @@
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
@@ -112,7 +113,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           <h1 className="font-display text-4xl font-light text-fg-primary tracking-editorial leading-none">Cost Forecast</h1>
           <p className="text-fg-secondary text-sm mt-2">Burn-rate analysis + AI narrative. Predicts probable overrun and schedule slip.</p>
         </div>
-        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-panel border border-default rounded-xl text-sm font-semibold outline-none focus:border-accent">{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+        <Select fit className="w-56" value={selProject || ""} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
       </div>
       <div className="mb-5 flex items-center gap-3 flex-wrap">
             <Button variant="gold" onClick={runForecast} disabled={busy} leftIcon={<Icon name="zap" size={14} />}>{busy ? "Forecasting..." : cached ? "Re-forecast" : "Run forecast"}</Button>

@@ -82,7 +82,7 @@ export function MemberTableView({
             <div className="text-[11px] text-fg-tertiary">{idLabel(m.identityRole)}{m.isAdmin ? " · Admin" : ""}</div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select
+            <Select fit
               className="w-auto text-xs"
               value={m.identityRole}
               onChange={e => {
@@ -120,7 +120,7 @@ export function MemberTableView({
             </span>
           ))}
           {assignable.length > 0 && (
-            <Select
+            <Select fit
               className="w-auto text-xs"
               value=""
               onChange={e => {

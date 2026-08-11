@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { exportAuditCsv } from "@/lib/audit";
 import { getClient } from "@/lib/supabase";
@@ -115,10 +116,10 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         <div className="bg-bg-primary rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Rejections</div><div className="font-display text-2xl font-bold text-error">{stats.byAction?.REJECT || 0}</div></div>
       </div>
       <div className="bg-bg-primary rounded-2xl p-4 mb-5 grid sm:grid-cols-4 gap-3 border-default">
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search actor / message / id..." className="p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent" />
-        <select value={actorFilter} onChange={e => setActorFilter(e.target.value)} className="p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent"><option value="">All actors</option>{actors.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
-        <select value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent"><option value="">All actions</option>{["CREATE", "UPDATE", "DELETE", "APPROVE", "REJECT", "RELEASE", "UPLOAD", "LOGIN", "IMPERSONATE", "EXPORT", "PAYMENT", "DELEGATE"].map(a => <option key={a} value={a}>{a}</option>)}</select>
-        <select value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} className="p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent"><option value="">All resources</option>{["project", "drawing", "boq", "ra_bill", "mb", "po", "invoice", "issue", "rfi", "change_order", "user", "org", "subscription", "comment", "unit", "block", "floor"].map(r => <option key={r} value={r}>{r}</option>)}</select>
+        <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Search actor / message / id..." />
+        <Select value={actorFilter} onChange={e => setActorFilter(e.target.value)} options={[{ value: "", label: "All actors" }, ...actors.map(u => ({ value: u.id, label: u.name }))]} />
+        <Select value={actionFilter} onChange={e => setActionFilter(e.target.value)} options={[{ value: "", label: "All actions" }, ...["CREATE", "UPDATE", "DELETE", "APPROVE", "REJECT", "RELEASE", "UPLOAD", "LOGIN", "IMPERSONATE", "EXPORT", "PAYMENT", "DELEGATE"].map(a => ({ value: a, label: a }))]} />
+        <Select value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} options={[{ value: "", label: "All resources" }, ...["project", "drawing", "boq", "ra_bill", "mb", "po", "invoice", "issue", "rfi", "change_order", "user", "org", "subscription", "comment", "unit", "block", "floor"].map(r => ({ value: r, label: r }))]} />
       </div>
       <div className="bg-bg-primary rounded-2xl overflow-hidden shadow-editorial border-default">
         <DataTable columns={COLUMNS} rows={filtered.slice(0, 200)} rowKey={r => r.id} emptyMessage={auditLog.length === 0 ? "No audit entries yet." : "No entries match the filters."} />

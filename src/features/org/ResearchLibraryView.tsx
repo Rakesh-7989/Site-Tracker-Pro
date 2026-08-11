@@ -265,11 +265,11 @@ function Library({ orgId }: { orgId: string }): JSX.Element {
         <div className="min-w-0">
           <div className="flex flex-wrap gap-2 mb-4">
             <Input value={query} onChange={e => setQuery(e.target.value)} placeholder={t("research.searchPlaceholder")} className="flex-1 min-w-40" />
-            <Select className="w-40" value={category} onChange={e => setCategory(e.target.value)}
+            <Select fit className="w-40" value={category} onChange={e => setCategory(e.target.value)}
               options={[{ value: "all", label: t("research.filterAllCategories") }, ...CATEGORIES.map(c => ({ value: c, label: CATEGORY_LABELS[c] }))]} />
-            <Select className="w-40" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
+            <Select fit className="w-40" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
               options={[{ value: "all", label: t("research.filterAllSources") }, ...SOURCE_TYPES.map(s => ({ value: s, label: SOURCE_TYPE_LABELS[s] }))]} />
-            <Select className="w-36" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            <Select fit className="w-36" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
               options={[{ value: "all", label: t("research.filterAllStatuses") }, ...STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] }))]} />
           </div>
 
@@ -303,7 +303,7 @@ function Library({ orgId }: { orgId: string }): JSX.Element {
 
       {canManage && editing && (
         <div className="flex items-center gap-2 mt-4 justify-end">
-          <Select className="w-40" value={editing.status} onChange={e => void handleSetStatus(editing, e.target.value as DocumentStatus)}
+          <Select fit className="w-40" value={editing.status} onChange={e => void handleSetStatus(editing, e.target.value as DocumentStatus)}
             options={STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] }))} />
           <Button size="sm" variant="ghost" onClick={() => void handleDelete(editing)}>{t("research.deleteDocument")}</Button>
         </div>
@@ -374,7 +374,7 @@ function DocumentModal({ doc, onClose, onSave, t }: {
           <FormField label={t("research.fieldAuthors")} htmlFor="doc-authors"><Input value={authors} onChange={e => setAuthors(e.target.value)} placeholder="A, B" /></FormField>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <FormField label={t("research.fieldYear")} htmlFor="doc-year"><Input type="number" value={year} onChange={e => setYear(e.target.value)} className="w-28" /></FormField>
+          <FormField label={t("research.fieldYear")} htmlFor="doc-year"><Input fit type="number" value={year} onChange={e => setYear(e.target.value)} className="w-28" /></FormField>
           <FormField label={t("research.fieldPublisher")} htmlFor="doc-publisher"><Input value={publisher} onChange={e => setPublisher(e.target.value)} /></FormField>
         </div>
         <div className="grid grid-cols-2 gap-3">

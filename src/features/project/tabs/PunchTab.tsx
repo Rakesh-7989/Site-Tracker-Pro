@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Punch list tab (v3 port, Batch 2, DB-wired).
+// SiteTrack Pro — project Punch list tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -47,10 +47,10 @@ export function PunchTab({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input className="mt-1 w-32" placeholder="Unit 4B" value={loc} onChange={e => setLoc(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Input fit className="mt-1 w-32" placeholder="Unit 4B" value={loc} onChange={e => setLoc(e.target.value)} /></div>
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Defect</span><Input className="mt-1" placeholder="e.g. Paint chipped" value={defect} onChange={e => setDefect(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Trade</span><Input className="mt-1 w-28" placeholder="finishing" value={trade} onChange={e => setTrade(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Severity</span><Select className="mt-1 w-auto" value={sev} onChange={e => setSev(e.target.value as PunchSeverity)} options={SEV} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Trade</span><Input fit className="mt-1 w-28" placeholder="finishing" value={trade} onChange={e => setTrade(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Severity</span><Select fit className="mt-1 w-auto" value={sev} onChange={e => setSev(e.target.value as PunchSeverity)} options={SEV} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !loc.trim() || !defect.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
@@ -61,7 +61,7 @@ export function PunchTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity}</Badge>{r.location} — {r.defect}</div>
                 <div className="text-[11px] text-fg-tertiary">{r.trade ?? "—"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+                {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as PunchStatus; void run(`s-${r.id}`, c => setPunchStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>}
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePunch(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>

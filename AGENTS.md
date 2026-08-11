@@ -1296,11 +1296,47 @@ plan features — no new capabilities.
   **145 files / 1848 tests pass** · smoke **309 checks** · e2e-mock **11/11**
   · live https://sitetrack-rakesh.vercel.app **200**.
 
-### Next (Batch B, needs user go)
-Remaining raw `<select>` filter rows (Delegations/Hierarchy/Forecast/
-Compliance/PlatformAudit*/OrgBilling/Onboarding etc. use a `p-2.5/3
-border-default rounded-xl` variant — could become a second Select preset),
-kiosk dark-theme selects (intentionally raw), Dialog/Modal consistency
-review, Tabs/Board/CalendarGrid prop review, DataTable rowKey API.
-Candidate next sub-task (needs user go): push `prod` deploy cadence for each
-Batch.
+### Next (Batch B) — shipped 2026-08-11 (commit TBD, pushed `prod`, live 200)
+
+**Big find — `fit` prop + Tailwind width-order bug** (biggest win of Batch B):
+in the built CSS every numeric `w-*` utility is emitted BEFORE `.w-full`, so when
+both classes are on one element the LATER `.w-full` always wins. So every
+`<Select className="w-48/w-36/w-56/w-auto…">` in the app silently rendered
+**full-width** — incl. Batch A's `compact w-56` handover picks, the CRM filters,
+MonthlyStatement month pickers, ~90 more; inline table-cell status selects
+stretched their columns. Fix:
+- `src/components/ui/forms.tsx` — Select **and** Input gained a `fit` prop that
+  drops `w-full`. Verified CSS order empirically (`w-56@7472` vs `w-full@7667`
+  in the dist bundle) before committing to the approach.
+- Added `fit` to every Select/Input whose className carries a width class via a
+  quote/brace-aware tag tokenizer (handles `onChange={e => …}`): **158 tags /
+  43 files** (CrmView ×14, handover ×8, row-status `w-auto text-xs` selects in
+  Budget/Compliance/Inspections/Drawings/ChangeOrders/Materials/POs/Punch/
+  RaBills/Invoices/Attendance/Safety, ReceiptsPanel, RoomsTab, UpdatesTab,
+  SignupRequests, ResearchLibrary, MonthlyStatement, CrossProjectPOs,
+  CrossRaBills, MemberTable, OrgApprovals, OrgNotifications, DigestManagement,
+  TimeTab, CreateProjectView, …).
+
+**Batch B raw `<select>` → Select migrations** (16 files):
+- Admin: PlatformAuditLogV2 (search Input + 3 filters), PlatformAudit (fit),
+  PlatformBranding (project + theme), UpgradeRequests (assign cell pop using
+  `compact fit`), StaffAdminView (tier), SignupRequests (`fit`).
+- Org: MaterialPrices (commodity/grade), Compliance/Hierarchy/Forecast (header
+  picks `fit w-56`), Delegations (delegate/scope), OrgBilling (plan target),
+  Onboarding (project type), MessagesView (chat project), ResearchLibrary, etc.
+- Other: DailySnapshot (`fit w-48`), DPRHistory sort (`compact fit w-40`),
+  ProfileView/ProfileCompleteView (language), CreateProjectView (type +
+  industry).
+- Kept raw on purpose: kiosk dark-theme (SiteWall/Labour), TopBar org switcher,
+  LanguageSwitcher, VendorsView star rating (bg-transparent).
+- `min-w-36` → `min-w-[9rem]` (no `min-w-36` in Tailwind v3; verified emission).
+
+### Verify (Batch B)
+- lint clean (1 pre-existing coverage warning) · tsc clean · build clean (5.9s)
+  · vitest **145 files / 1848 tests pass** · smoke **309 checks** · live 200
+  · built CSS contains `.w-48/.w-56/.min-w-\[9rem\]` and `fit` now works.
+
+### Next (Batch C)
+Dialog/Modal consistency review, Tabs/Board/CalendarGrid prop review, DataTable
+rowKey API, remaining kiosk-dark raw selects (SiteWall/Labour) if a dark Select
+preset is wanted later. Candidate next sub-task (needs user go).

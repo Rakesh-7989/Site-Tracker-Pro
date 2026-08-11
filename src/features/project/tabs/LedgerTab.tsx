@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Inventory Ledger tab (v3 port, Batch 3, DB-wired).
+// SiteTrack Pro — project Inventory Ledger tab (v3 port, Batch 3, DB-wired).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -54,9 +54,9 @@ export function LedgerTab({ projectId }: { projectId: string }): JSX.Element {
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Material</span><Input className="mt-1" value={mat} onChange={e => setMat(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Input className="mt-1 w-20" placeholder="bag" value={unit} onChange={e => setUnit(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input className="mt-1 w-20" type="number" value={qty} onChange={e => setQty(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Direction</span><Select className="mt-1 w-auto" value={dir} onChange={e => setDir(e.target.value as LedgerDirection)} options={DIR} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit</span><Input fit className="mt-1 w-20" placeholder="bag" value={unit} onChange={e => setUnit(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span><Input fit className="mt-1 w-20" type="number" value={qty} onChange={e => setQty(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Direction</span><Select fit className="mt-1 w-auto" value={dir} onChange={e => setDir(e.target.value as LedgerDirection)} options={DIR} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !mat.trim() || !qty}>{busy === "add" ? <Spinner size={14} /> : "Record"}</Button>
         </Card>
       )}

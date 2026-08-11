@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Labour register tab (v3 port, DB-wired). Statutory
+// SiteTrack Pro — project Labour register tab (v3 port, DB-wired). Statutory
 // register; Aadhaar is shown masked (last 4 only) and RLS confines rows to the
 // project's org/members.
 
@@ -49,11 +49,11 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Worker name</span><Input className="mt-1" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Trade</span><Input className="mt-1 w-28" placeholder="Mason" value={trade} onChange={e => setTrade(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Daily wage ₹</span><Input className="mt-1 w-24" type="number" value={wage} onChange={e => setWage(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Aadhaar</span><Input className="mt-1 w-36" placeholder="optional" value={aadhaar} onChange={e => setAadhaar(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">EPF no.</span><Input className="mt-1 w-28" placeholder="optional" value={epf} onChange={e => setEpf(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">ESI no.</span><Input className="mt-1 w-28" placeholder="optional" value={esi} onChange={e => setEsi(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Trade</span><Input fit className="mt-1 w-28" placeholder="Mason" value={trade} onChange={e => setTrade(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Daily wage ₹</span><Input fit className="mt-1 w-24" type="number" value={wage} onChange={e => setWage(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Aadhaar</span><Input fit className="mt-1 w-36" placeholder="optional" value={aadhaar} onChange={e => setAadhaar(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">EPF no.</span><Input fit className="mt-1 w-28" placeholder="optional" value={epf} onChange={e => setEpf(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">ESI no.</span><Input fit className="mt-1 w-28" placeholder="optional" value={esi} onChange={e => setEsi(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}

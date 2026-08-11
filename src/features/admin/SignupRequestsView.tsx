@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCan, useAuth } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
@@ -171,7 +171,7 @@ function Inner(): JSX.Element {
     ...(canAssign ? [{
       key: "assigned" as const, header: "Staff", hideOnMobile: true, className: "flex-shrink-0",
       render: (r: SignupRequestRow) => (
-        <Select className="w-40" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
+        <Select fit className="w-40" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
           onChange={e => void assign(r, e.target.value)}
           options={[{ value: "", label: "— Unassigned —" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
       ),
@@ -191,7 +191,7 @@ function Inner(): JSX.Element {
           )}
           {rejecting === r.id && (
             <div className="flex gap-1 items-center">
-              <Input className="w-28" value={rejectNote} onChange={e => setRejectNote(e.target.value)} placeholder="Reason" />
+              <Input fit className="w-28" value={rejectNote} onChange={e => setRejectNote(e.target.value)} placeholder="Reason" />
               <Button size="sm" variant="secondary" onClick={() => void doReject(r)} disabled={busy === r.id}>Confirm</Button>
             </div>
           )}
@@ -208,7 +208,7 @@ function Inner(): JSX.Element {
       </Alert>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Signup requests</h1>
-        <Select className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
+        <Select fit className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {notice && <Alert variant="success">{notice}</Alert>}

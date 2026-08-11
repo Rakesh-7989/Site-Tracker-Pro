@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Change Orders tab (v3 port, Batch 4, DB-wired).
+// SiteTrack Pro — project Change Orders tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -50,8 +50,8 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
       {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="e.g. Add basement parking" value={desc} onChange={e => setDesc(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Cost ₹ Â±</span><Input className="mt-1 w-28" type="number" value={cost} onChange={e => setCost(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Days Â±</span><Input className="mt-1 w-20" type="number" value={days} onChange={e => setDays(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Cost ₹ Â±</span><Input fit className="mt-1 w-28" type="number" value={cost} onChange={e => setCost(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Days Â±</span><Input fit className="mt-1 w-20" type="number" value={days} onChange={e => setDays(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !desc.trim()}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
         </Card>
       )}
@@ -62,7 +62,7 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
               <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {r.description}</div>
                 <div className="text-[11px] text-fg-tertiary">{[r.costImpact != null && `${r.costImpact >= 0 ? "+" : ""}${fmtRupees(r.costImpact)}`, r.scheduleImpact != null && `${r.scheduleImpact >= 0 ? "+" : ""}${r.scheduleImpact}d`].filter(Boolean).join(" · ") || "no impact set"}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canApprove ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as CoStatus; void run(`s-${r.id}`, c => setCoStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+                {canApprove ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as CoStatus; void run(`s-${r.id}`, c => setCoStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-fg-secondary">{r.status}</span>}
                 {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteChangeOrder(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>

@@ -2,6 +2,7 @@
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
@@ -113,7 +114,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
           </div>
           {level === "org" ?
             <div className="w-full p-2.5 border border-default rounded-xl text-sm mb-4 bg-bg-secondary text-fg-primary">{user.org_name || "My Org"}</div> :
-            <select value={selProject} onChange={e => setSelProject(e.target.value)} className="w-full p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent mb-4">{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+            <Select value={selProject} onChange={e => setSelProject(e.target.value)} className="mb-4" options={projects.map(p => ({ value: p.id, label: p.name }))} />
           }
           <label className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary mb-1.5 block">Logo URL</label>
           <input value={current.logoUrl || ""} onChange={e => update({ logoUrl: e.target.value || null })} placeholder="https://yourbrand.com/logo.png" className="w-full p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent mb-3" />
@@ -122,7 +123,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
           <label className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary mb-1.5 block">Accent</label>
           <div className="flex gap-2 mb-3">{["amber", "blue", "emerald", "violet", "rose"].map(c => (<button key={c} onClick={() => update({ accent: c })} className={`w-9 h-9 rounded-full ${current.accent === c ? "ring-2 ring-offset-2 ring-[var(--st-text-primary)]" : ""}`} style={{ backgroundColor: accentToHex(c) }} title={c} />))}</div>
           <label className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary mb-1.5 block">Theme</label>
-          <select value={current.theme || ""} onChange={e => update({ theme: e.target.value || null })} className="w-full p-2.5 border border-default rounded-xl text-sm outline-none focus:border-accent mb-3"><option value="">(inherit)</option><option value="editorial">Editorial — Fraunces + cream</option><option value="operational">Operational — Inter + slate (site mode)</option></select>
+          <Select value={current.theme || ""} onChange={e => update({ theme: e.target.value || null })} className="mb-3" options={[{ value: "", label: "(inherit)" }, { value: "editorial", label: "Editorial — Fraunces + cream" }, { value: "operational", label: "Operational — Inter + slate (site mode)" }]} />
           {level === "project" && <button onClick={clearProject} className="text-[11px] font-bold text-error hover:text-error">Clear project override</button>}
         </div>
         <div className="bg-bg-primary rounded-2xl p-5 shadow-editorial border-default">

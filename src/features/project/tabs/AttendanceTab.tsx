@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Attendance tab (v3 port, Batch 2, DB-wired).
+// SiteTrack Pro — project Attendance tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -45,10 +45,10 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1" placeholder="Worker / staff name" value={name} onChange={e => setName(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as AttendeeKind)} options={KIND} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Status</span><Select className="mt-1 w-auto" value={status} onChange={e => setStatus(e.target.value as AttendanceStatus)} options={STT} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</span><Input className="mt-1 w-20" type="number" value={hours} onChange={e => setHours(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">OT hrs</span><Input className="mt-1 w-20" type="number" value={overtime} onChange={e => setOvertime(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select fit className="mt-1 w-auto" value={kind} onChange={e => setKind(e.target.value as AttendeeKind)} options={KIND} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Status</span><Select fit className="mt-1 w-auto" value={status} onChange={e => setStatus(e.target.value as AttendanceStatus)} options={STT} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</span><Input fit className="mt-1 w-20" type="number" value={hours} onChange={e => setHours(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">OT hrs</span><Input fit className="mt-1 w-20" type="number" value={overtime} onChange={e => setOvertime(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Mark"}</Button>
         </Card>
       )}
@@ -59,7 +59,7 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
               <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.attendeeName} <span className="text-[11px] text-fg-tertiary font-normal">· {r.kind}</span></div>
                 <div className="text-[11px] text-fg-tertiary">{r.date}{r.hours != null ? ` · ${r.hours}h` : ""}{r.overtime != null && r.overtime > 0 ? ` · +${r.overtime} OT` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setAttendanceStatus(c, r.id, e.target.value as AttendanceStatus))} options={STT} />
+                {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setAttendanceStatus(c, r.id, e.target.value as AttendanceStatus))} options={STT} />
                   : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>}
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteAttendance(c, r.id))}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>
@@ -69,10 +69,10 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
         {canEdit && (
           <div className="flex gap-2 flex-wrap items-end mb-2">
             <div className="flex-1 min-w-[120px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Worker</span><Input className="mt-1" placeholder="Name" value={worker} onChange={e => setWorker(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Date</span><Input className="mt-1 w-36" type="date" value={shiftDate} onChange={e => setShiftDate(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Shift</span><Select className="mt-1 w-auto" value={shiftName} onChange={e => setShiftName(e.target.value as ShiftName)} options={[{ value: "day", label: "Day" }, { value: "night", label: "Night" }, { value: "general", label: "General" }, { value: "special", label: "Special" }]} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">From</span><Input className="mt-1 w-24" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} /></div>
-            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">To</span><Input className="mt-1 w-24" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Date</span><Input fit className="mt-1 w-36" type="date" value={shiftDate} onChange={e => setShiftDate(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Shift</span><Select fit className="mt-1 w-auto" value={shiftName} onChange={e => setShiftName(e.target.value as ShiftName)} options={[{ value: "day", label: "Day" }, { value: "night", label: "Night" }, { value: "general", label: "General" }, { value: "special", label: "Special" }]} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">From</span><Input fit className="mt-1 w-24" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} /></div>
+            <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">To</span><Input fit className="mt-1 w-24" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} /></div>
             <Button onClick={() => void addShift()} disabled={busy === "shift" || !worker.trim()}>{busy === "shift" ? <Spinner size={14} /> : "Add"}</Button>
           </div>
         )}

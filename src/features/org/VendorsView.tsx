@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
@@ -75,9 +75,9 @@ function Inner({ orgId, canManage }: { orgId: string; canManage: boolean }): JSX
       {canManage && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor name</span><Input className="mt-1" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Sri Cement Traders" /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Category</span><Input className="mt-1 w-28" value={category} onChange={e => setCategory(e.target.value)} placeholder="Cement" /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Phone</span><Input className="mt-1 w-32" value={phone} onChange={e => setPhone(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">GSTIN</span><Input className="mt-1 w-36" value={gst} onChange={e => setGst(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Category</span><Input fit className="mt-1 w-28" value={category} onChange={e => setCategory(e.target.value)} placeholder="Cement" /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Phone</span><Input fit className="mt-1 w-32" value={phone} onChange={e => setPhone(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">GSTIN</span><Input fit className="mt-1 w-36" value={gst} onChange={e => setGst(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}

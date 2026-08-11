@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
 import { listDprMessages, type DprMessageRow, type DprStatus } from "@/app/dprQueries";
 import { DPRStatusBadge } from "./DPRStatusBadge";
@@ -62,11 +63,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
           <p className="text-sm text-fg-secondary mt-0.5">{t("dpr.history.summary", { total: rows.length, sent: sentCount, delivered: deliveredCount, failed: failedCount })}</p>
         </div>
         <div className="flex items-center gap-2">
-          <select className="text-xs border border-default rounded-lg px-2 py-1.5 bg-panel"
-            value={sort} onChange={e => setSort(e.target.value as "date" | "status")}>
-            <option value="date">{t("dpr.history.sortNewest")}</option>
-            <option value="status">{t("dpr.history.sortStatus")}</option>
-          </select>
+          <Select compact fit className="w-40" value={sort} onChange={e => setSort(e.target.value as "date" | "status")} options={[{ value: "date", label: t("dpr.history.sortNewest") }, { value: "status", label: t("dpr.history.sortStatus") }]} />
           <Link to="/dpr" className="text-sm font-semibold text-accent hover:text-accent-2">{t("dpr.history.newDpr")}</Link>
         </div>
       </div>

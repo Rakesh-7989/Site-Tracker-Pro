@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Org Templates (/org/templates). Org-shared project / BOQ /
+// SiteTrack Pro — Org Templates (/org/templates). Org-shared project / BOQ /
 // checklist templates. DB-wired (templates table, migration 78 bridge).
 
 import { useCallback, useEffect, useState } from "react";
@@ -52,7 +52,7 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
       <p className="text-sm text-fg-secondary -mt-2">Reusable project, BOQ &amp; checklist starting points shared across your org.</p>
       {error && <Alert variant="danger">{error}</Alert>}
       <Card className="p-3 flex gap-2 flex-wrap items-end">
-        <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select className="mt-1 w-32" value={kind} onChange={e => setKind(e.target.value as TemplateKind)} options={KIND_OPTS} /></div>
+        <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Kind</span><Select fit className="mt-1 w-32" value={kind} onChange={e => setKind(e.target.value as TemplateKind)} options={KIND_OPTS} /></div>
         <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1" placeholder="e.g. G+3 residential" value={name} onChange={e => setName(e.target.value)} /></div>
         <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="optional" value={desc} onChange={e => setDesc(e.target.value)} /></div>
         <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>

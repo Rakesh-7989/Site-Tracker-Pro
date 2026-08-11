@@ -138,7 +138,7 @@ export function CrossInvoicesView(): JSX.Element {
             options={paymentOptions} />
         </FormField>
         <FormField label="Search" htmlFor="search">
-          <Input id="search" placeholder="Search invoice no. or project…" value={search} onChange={e => setSearch(e.target.value)} className="w-64" />
+          <Input fit id="search" placeholder="Search invoice no. or project…" value={search} onChange={e => setSearch(e.target.value)} className="w-64" />
         </FormField>
       </div>
 

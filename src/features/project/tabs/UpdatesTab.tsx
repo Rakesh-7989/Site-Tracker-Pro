@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Updates / daily diary tab (v3 port, Batch 1,
+// SiteTrack Pro — project Updates / daily diary tab (v3 port, Batch 1,
 // DB-wired to `site_updates`).
 
 import { useCallback, useEffect, useState } from "react";
@@ -56,8 +56,8 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
         <Card className="p-3 space-y-2">
           <Textarea placeholder="Today's site notes..." value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
           <div className="flex gap-2 flex-wrap items-center">
-            <Input className="w-32" placeholder="Weather" value={weather} onChange={e => setWeather(e.target.value)} />
-            <Input className="w-28" type="number" placeholder="Workers" value={workers} onChange={e => setWorkers(e.target.value)} />
+            <Input fit className="w-32" placeholder="Weather" value={weather} onChange={e => setWeather(e.target.value)} />
+            <Input fit className="w-28" type="number" placeholder="Workers" value={workers} onChange={e => setWorkers(e.target.value)} />
             <Button className="ml-auto" onClick={() => void add()} disabled={busy === "add" || !notes.trim()}>{busy === "add" ? <Spinner size={14} /> : "Post update"}</Button>
           </div>
         </Card>

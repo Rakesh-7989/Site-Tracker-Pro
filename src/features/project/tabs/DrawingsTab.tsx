@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Drawings tab (v3 port, Batch 4, DB-wired).
+// SiteTrack Pro — project Drawings tab (v3 port, Batch 4, DB-wired).
 // v4 D1: storage-backed file register — attach/download/delete drawing files
 // via the shared `deliverables` bucket (path <project_id>/<drawing_id>/<file>).
 
@@ -194,8 +194,8 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Title</span><Input className="mt-1" placeholder="e.g. Ground floor plan" value={title} onChange={e => setTitle(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Select className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value)} options={[{ value: "architectural", label: "Architectural" }, { value: "structural", label: "Structural" }, { value: "mep", label: "MEP" }, { value: "interior", label: "Interior" }]} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Revision</span><Input className="mt-1 w-24" value={rev} onChange={e => setRev(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Select fit className="mt-1 w-auto" value={type} onChange={e => setType(e.target.value)} options={[{ value: "architectural", label: "Architectural" }, { value: "structural", label: "Structural" }, { value: "mep", label: "MEP" }, { value: "interior", label: "Interior" }]} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Revision</span><Input fit className="mt-1 w-24" value={rev} onChange={e => setRev(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Release"}</Button>
         </Card>
       )}
@@ -211,10 +211,10 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
                 <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
                   <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}</div></div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+                  {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                     : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}
                   {canEdit && (
-                    <Select
+                    <Select fit
                       className="w-auto text-xs"
                       value={r.designStage || "concept"}
                       onChange={e => { const v = e.target.value; void run(`stg-${r.id}`, c => setDrawingStage(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: r.designStage } : x)) }); }}
@@ -265,7 +265,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
       <Modal open={compareOpen} onClose={() => setCompareOpen(false)} size="full" title="Compare drawing revisions" subtitle={pairs[pairIndex] ? `${pairs[pairIndex].old.title} (${pairs[pairIndex].old.type})` : undefined}>
         {pairs.length > 0 ? (
           <div className="flex flex-col gap-3">
-            <Select
+            <Select fit
               className="w-full sm:w-auto"
               value={String(pairIndex)}
               onChange={e => { setPairIndex(Number(e.target.value)); setCompareImages({ oldImage: null, newImage: null }); }}

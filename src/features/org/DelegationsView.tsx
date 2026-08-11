@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Alert, Icon, AccessDenied, Button } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { delegationStatus } from "@/lib/delegations";
 import { getClient } from "@/lib/supabase";
 import {
@@ -90,8 +91,8 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
       {show && <div className="bg-panel rounded-2xl p-6 mb-5 shadow-editorial border-default">
         <div className="flex justify-between mb-4">        <h3 className="font-display font-semibold text-fg-primary text-base md:text-lg tracking-editorial">New delegation</h3><button onClick={() => setShow(false)}><Icon name="x" size={18} /></button></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-          <select value={nd.to_user_id} onChange={e => setNd(p => ({ ...p, to_user_id: e.target.value }))} className="p-3 border border-default rounded-xl text-sm outline-none focus:border-accent"><option value="">— Delegate to —</option>{otherUsers.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}</select>
-          <select value={nd.scope} onChange={e => setNd(p => ({ ...p, scope: e.target.value }))} className="p-3 border border-default rounded-xl text-sm outline-none focus:border-accent"><option value="all">All approvals</option><option value="ra_bills">RA Bills only</option><option value="drawings">Drawings only</option><option value="change_orders">Change Orders only</option><option value="expenses">Expenses only</option></select>
+          <Select value={nd.to_user_id} onChange={e => setNd(p => ({ ...p, to_user_id: e.target.value }))} options={[{ value: "", label: "— Delegate to —" }, ...otherUsers.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))]} />
+          <Select value={nd.scope} onChange={e => setNd(p => ({ ...p, scope: e.target.value }))} options={[{ value: "all", label: "All approvals" }, { value: "ra_bills", label: "RA Bills only" }, { value: "drawings", label: "Drawings only" }, { value: "change_orders", label: "Change Orders only" }, { value: "expenses", label: "Expenses only" }]} />
           <input type="date" value={nd.start} onChange={e => setNd(p => ({ ...p, start: e.target.value }))} className="p-3 border border-default rounded-xl text-sm outline-none focus:border-accent" />
           <input type="date" value={nd.end} onChange={e => setNd(p => ({ ...p, end: e.target.value }))} className="p-3 border border-default rounded-xl text-sm outline-none focus:border-accent" />
         </div>

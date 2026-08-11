@@ -2,6 +2,7 @@
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { Alert, Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
@@ -79,7 +80,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           <h1 className="font-display text-4xl font-light text-fg-primary tracking-editorial leading-none">Statutory Checks</h1>
           <p className="text-fg-secondary text-sm mt-2">RERA · GSTIN · EPFO — format validation + async portal verification.</p>
         </div>
-        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-panel border border-default rounded-xl text-sm font-semibold outline-none focus:border-accent">{visible.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+        <Select fit className="w-56" value={selProject || ""} onChange={e => setSelProject(e.target.value)} options={visible.map(p => ({ value: p.id, label: p.name }))} />
       </div>
       <div className="mb-6 bg-panel rounded-2xl p-5 flex items-center gap-4 shadow-editorial border-default">
         <span className={`w-3 h-3 rounded-full ${dotColor}`} /><div className="flex-1"><div className="font-display text-lg font-semibold text-fg-primary tracking-editorial">{status.label}</div><div className="text-[11px] text-fg-secondary">Project: {projects.find(p => p.id === selProject)?.name}</div></div>

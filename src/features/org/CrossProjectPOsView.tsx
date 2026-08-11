@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrgSwitcher } from "@/auth";
 import { Card, Badge, Alert } from "@/components/ui/atoms";
@@ -53,7 +53,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="font-display text-2xl font-bold text-fg-primary">Purchase orders</h1>
-        <Select className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
+        <Select fit className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {!loading && rows.length > 0 && (

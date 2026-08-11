@@ -94,7 +94,7 @@ function ARDrawingOverlayInner(): JSX.Element {
     <div className="min-h-screen bg-bg-primary p-6 md:p-10">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <h1 className="font-display text-3xl font-bold text-fg-primary">Drawing Comparison</h1>
-        <Select value={selProject} onChange={e => setSelProject(e.target.value)} className="w-auto text-sm" options={projects.map(p => ({ value: p.id, label: p.name }))} />
+        <Select fit value={selProject} onChange={e => setSelProject(e.target.value)} className="w-auto text-sm" options={projects.map(p => ({ value: p.id, label: p.name }))} />
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -107,7 +107,7 @@ function ARDrawingOverlayInner(): JSX.Element {
       ) : (
         <div className="mx-auto max-w-5xl rounded-3xl border border-default bg-card p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <Select value={String(pairIndex)} onChange={e => setPairIndex(Number(e.target.value))} className="w-full sm:w-auto text-sm" options={pairs.map((p, i) => ({ value: String(i), label: `${p.old.revision} → ${p.newer.revision} · ${p.old.title}` }))} />
+            <Select fit value={String(pairIndex)} onChange={e => setPairIndex(Number(e.target.value))} className="w-full sm:w-auto text-sm" options={pairs.map((p, i) => ({ value: String(i), label: `${p.old.revision} → ${p.newer.revision} · ${p.old.title}` }))} />
             {compareBusy && <Spinner size={14} />}
           </div>
           {compareImages.oldImage && compareImages.newImage ? (

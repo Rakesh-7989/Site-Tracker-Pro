@@ -102,8 +102,8 @@ function MonthlyStatementInner(): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="flex flex-wrap gap-3 items-end mb-6">
-        <Select className="w-48" value={month} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMonth(e.target.value)} options={generateMonthOptions(12)} />
-        <Select className="w-48" value={filter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilter(e.target.value)} options={FILTER_OPTIONS} />
+        <Select fit className="w-48" value={month} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMonth(e.target.value)} options={generateMonthOptions(12)} />
+        <Select fit className="w-48" value={filter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilter(e.target.value)} options={FILTER_OPTIONS} />
         <Button variant="primary" onClick={handleExport} disabled={rows.length === 0}>
           Download PDF
         </Button>

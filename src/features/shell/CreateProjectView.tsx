@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useOrgSwitcher, useCan, CONSTRUCTION_INDUSTRIES, CONSTRUCTION_INDUSTRY_LABEL, segmentProjectTypes, defaultProjectTypeFor, type ProjectType, type ConstructionIndustry } from "@/auth";
 import { createProject } from "@/app/queries";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 
 const TYPE_LABEL: Record<ProjectType, string> = {
   construction: "Construction",
@@ -84,24 +85,13 @@ export function CreateProjectView(): JSX.Element {
 
           <div>
             <label htmlFor="ptype" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Project type</label>
-            <select
-              id="ptype" value={type} onChange={e => setType(e.target.value as ProjectType)}
-              className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
-            >
-              {allowedTypes.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
-            </select>
+            <Select id="ptype" value={type} onChange={e => setType(e.target.value as ProjectType)} options={allowedTypes.map(t => ({ value: t, label: TYPE_LABEL[t] }))} />
           </div>
 
           {type === "construction" && (
             <div>
               <label htmlFor="pindustry" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Construction industry <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
-              <select
-                id="pindustry" value={industrySubtype} onChange={e => setIndustrySubtype(e.target.value as ConstructionIndustry | "")}
-                className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
-              >
-                <option value="">Any industry</option>
-                {CONSTRUCTION_INDUSTRIES.map(ind => <option key={ind} value={ind}>{CONSTRUCTION_INDUSTRY_LABEL[ind]}</option>)}
-              </select>
+              <Select id="pindustry" value={industrySubtype} onChange={e => setIndustrySubtype(e.target.value as ConstructionIndustry | "")} options={[{ value: "", label: "Any industry" }, ...CONSTRUCTION_INDUSTRIES.map(ind => ({ value: ind, label: CONSTRUCTION_INDUSTRY_LABEL[ind] }))]} />
             </div>
           )}
 

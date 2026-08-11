@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listUpgradeRequests, assignUpgradeRequest, setUpgradeStatus, type UpgradeRequest, type UpgradeStatus } from "@/app/upgradeQueries";
 import { listStaff, type StaffMember } from "@/app/staffQueries";
@@ -87,11 +88,8 @@ export function UpgradeRequestsView(): JSX.Element {
     ...(canAssign ? [{
       key: "assign" as const, header: "Assign", hideOnMobile: true, className: "flex-shrink-0",
       render: (r: UpgradeRequest) => (
-        <select className="text-sm border border-default rounded-lg px-2.5 py-2 bg-panel" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
-          onChange={e => void doAssign(r, e.target.value)}>
-          <option value="">\u2014 Assign to \u2014</option>
-          {staff.map(s => <option key={s.id} value={s.id}>{s.email || s.name}</option>)}
-        </select>
+        <Select compact fit className="min-w-[9rem]" value={r.assignedStaffId ?? ""} disabled={busy === r.id}
+          onChange={e => void doAssign(r, e.target.value)} options={[{ value: "", label: "\u2014 Assign to \u2014" }, ...staff.map(s => ({ value: s.id, label: s.email || s.name }))]} />
       ),
     }] : []),
     {

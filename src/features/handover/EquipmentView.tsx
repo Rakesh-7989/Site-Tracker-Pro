@@ -103,16 +103,16 @@ export function EquipmentView(): JSX.Element {
         <>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-fg-secondary">Project</label>
-            <Select compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
+            <Select fit compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
           {canEdit && selProject && (
             <Card className="p-3 flex gap-2 flex-wrap items-end">
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input className="mt-1 w-40" placeholder="Excavator 200" value={name} onChange={e => setName(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Asset no.</span><Input className="mt-1 w-28" placeholder="AST-001" value={assetNo} onChange={e => setAssetNo(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Input className="mt-1 w-28" placeholder="excavator" value={eqType} onChange={e => setEqType(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Ownership</span><Select className="mt-1 w-auto" value={ownership} onChange={e => setOwnership(e.target.value as EquipmentOwnership)} options={OWN_OPTS} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate/day</span><Input className="mt-1 w-28" type="number" placeholder="5000" value={rate} onChange={e => setRate(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Name</span><Input fit className="mt-1 w-40" placeholder="Excavator 200" value={name} onChange={e => setName(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Asset no.</span><Input fit className="mt-1 w-28" placeholder="AST-001" value={assetNo} onChange={e => setAssetNo(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Type</span><Input fit className="mt-1 w-28" placeholder="excavator" value={eqType} onChange={e => setEqType(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Ownership</span><Select fit className="mt-1 w-auto" value={ownership} onChange={e => setOwnership(e.target.value as EquipmentOwnership)} options={OWN_OPTS} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Rate/day</span><Input fit className="mt-1 w-28" type="number" placeholder="5000" value={rate} onChange={e => setRate(e.target.value)} /></div>
               <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
             </Card>
           )}

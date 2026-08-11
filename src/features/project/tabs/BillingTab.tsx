@@ -236,8 +236,8 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
                             )}
                             {r.status === "active" && (
                               <div className="mt-1.5 flex items-center gap-1.5">
-                                <Input className="h-8 w-32" type="date" value={p.from} onChange={e => setGenPeriod(prev => ({ ...prev, [r.id]: { from: e.target.value, to: prev[r.id]?.to ?? p.to } }))} />
-                                <Input className="h-8 w-32" type="date" value={p.to} onChange={e => setGenPeriod(prev => ({ ...prev, [r.id]: { from: prev[r.id]?.from ?? p.from, to: e.target.value } }))} />
+                                <Input fit className="h-8 w-32" type="date" value={p.from} onChange={e => setGenPeriod(prev => ({ ...prev, [r.id]: { from: e.target.value, to: prev[r.id]?.to ?? p.to } }))} />
+                                <Input fit className="h-8 w-32" type="date" value={p.to} onChange={e => setGenPeriod(prev => ({ ...prev, [r.id]: { from: prev[r.id]?.from ?? p.from, to: e.target.value } }))} />
                                 <Button size="sm" disabled={genBusy === `gr-${r.id}`} onClick={() => void genRetainer(r)}>{genBusy === `gr-${r.id}` ? <Spinner size={14} /> : "Generate"}</Button>
                               </div>
                             )}

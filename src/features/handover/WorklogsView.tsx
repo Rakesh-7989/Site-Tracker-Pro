@@ -79,14 +79,14 @@ export function WorklogsView(): JSX.Element {
         <>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-fg-secondary">Project</label>
-            <Select compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
+            <Select fit compact className="w-56" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
           </div>
           {error && <Alert variant="danger">{error}</Alert>}
           {canEdit && selProject && (
             <Card className="p-3 flex gap-2 flex-wrap items-end">
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Date</span><Input className="mt-1 w-36" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Date</span><Input fit className="mt-1 w-36" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
               <div className="flex-1 min-w-[160px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Activity</span><Input className="mt-1" placeholder="e.g. Slab pouring" value={activity} onChange={e => setActivity(e.target.value)} /></div>
-              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</span><Input className="mt-1 w-20" type="number" min="0.5" max="24" step="0.5" value={hours} onChange={e => setHours(e.target.value)} /></div>
+              <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</span><Input fit className="mt-1 w-20" type="number" min="0.5" max="24" step="0.5" value={hours} onChange={e => setHours(e.target.value)} /></div>
               <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Notes</span><Input className="mt-1" placeholder="Optional" value={notes} onChange={e => setNotes(e.target.value)} /></div>
               <Button onClick={() => void add()} disabled={busy === "add" || !activity.trim()}>{busy === "add" ? <Spinner size={14} /> : "Log"}</Button>
             </Card>

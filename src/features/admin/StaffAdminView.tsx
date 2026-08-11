@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import {
   createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
   staffJoinUrl, inviteStatus, listAllStaffAreas, setStaffAreas, STAFF_AREAS, STAFF_AREA_LABEL,
@@ -204,11 +205,8 @@ export function StaffAdminView(): JSX.Element {
               className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-bg-primary" />
           </label>
           {tier === "owner" && (
-            <select value={inviteTier} onChange={e => setInviteTier(e.target.value as "member" | "head")}
-              className="text-sm border border-default rounded-lg px-2.5 py-2.5 bg-bg-primary">
-              <option value="member">As Member</option>
-              <option value="head">As Head</option>
-            </select>
+            <Select fit className="w-40" value={inviteTier} onChange={e => setInviteTier(e.target.value as "member" | "head")}
+              options={[{ value: "member", label: "As Member" }, { value: "head", label: "As Head" }]} />
           )}
           <Button onClick={onEmailInvite} disabled={busy || !inviteEmail} leftIcon={busy ? <Spinner size={15} /> : <Icon name="mail" size={15} />}>
             Email invite

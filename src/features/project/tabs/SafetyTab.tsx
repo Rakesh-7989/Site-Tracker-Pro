@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Safety tab (v3 port, Batch 2, DB-wired).
+// SiteTrack Pro — project Safety tab (v3 port, Batch 2, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -47,9 +47,9 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
         <Card className="p-3 space-y-2">
           <Input placeholder="What happened?" value={desc} onChange={e => setDesc(e.target.value)} />
           <div className="flex gap-2 flex-wrap items-center">
-            <Select className="w-auto" value={sev} onChange={e => setSev(e.target.value as SafetySeverity)} options={SEV} />
-            <Input className="w-32" placeholder="Category" value={cat} onChange={e => setCat(e.target.value)} />
-            <Input className="w-32" placeholder="Location" value={loc} onChange={e => setLoc(e.target.value)} />
+            <Select fit className="w-auto" value={sev} onChange={e => setSev(e.target.value as SafetySeverity)} options={SEV} />
+            <Input fit className="w-32" placeholder="Category" value={cat} onChange={e => setCat(e.target.value)} />
+            <Input fit className="w-32" placeholder="Location" value={loc} onChange={e => setLoc(e.target.value)} />
             <Button className="ml-auto" onClick={() => void add()} disabled={busy === "add" || !desc.trim()}>{busy === "add" ? <Spinner size={14} /> : "Report"}</Button>
           </div>
         </Card>
@@ -61,7 +61,7 @@ export function SafetyTab({ projectId }: { projectId: string }): JSX.Element {
               <div className="min-w-0"><div className="text-sm text-fg-primary flex items-center gap-2"><Badge tone={sevTone(r.severity)}>{r.severity.replace("_", " ")}</Badge>{r.description}</div>
                 <div className="text-[11px] text-fg-tertiary mt-0.5">{[r.incidentDate, r.category, r.location].filter(Boolean).join(" · ")}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SafetyStatus; void run(`s-${r.id}`, c => setSafetyStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+                {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as SafetyStatus; void run(`s-${r.id}`, c => setSafetyStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-fg-secondary">{r.status}</span>}
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteSafety(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Spinner, Button } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
@@ -77,9 +78,7 @@ function DailySnapshotInner(): JSX.Element {
         <h1 className="text-2xl font-black text-fg-primary">Daily Snapshot</h1>
         <div className="flex items-center gap-3">
           <Button size="sm" variant="secondary" onClick={exportCSV}>Export CSV</Button>
-          <select value={selProject} onChange={e => setSelProject(e.target.value)} className="border border-default rounded-xl px-3 py-2 text-sm">
-            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <Select fit className="w-48" value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">

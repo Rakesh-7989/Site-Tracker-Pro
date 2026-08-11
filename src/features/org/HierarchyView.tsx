@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
@@ -160,9 +161,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
           <h1 className="font-display text-2xl md:text-4xl font-light text-fg-primary tracking-editorial leading-none">Project Hierarchy</h1>
           <p className="text-fg-secondary text-sm mt-2">Block → Floor → Unit — useful for residential towers, townships, gated communities.</p>
         </div>
-        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-panel border border-default rounded-xl text-sm font-semibold outline-none focus:border-accent">
-          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <Select fit className="w-56" value={selProject || ""} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
       </div>
       {proj && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-panel rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Project progress</div><div className="font-display text-2xl font-bold text-fg-primary">{progress.project}%</div></div>

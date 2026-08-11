@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Button, Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
 import { SEGMENTS, defaultProjectTypeFor, segmentProjectTypes, type CompanySegment } from "@/auth";
 import type { ProjectType } from "@/auth";
@@ -258,9 +259,7 @@ export function OnboardingView(): JSX.Element {
               </div>
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">Project type</label>
-                <select value={projType} onChange={e => setProjType(e.target.value as ProjectType)} className="w-full rounded-lg border border-default px-3 py-2 text-sm">
-                  {segmentProjectTypes(segment).map(pt => <option key={pt} value={pt}>{t(`projType.${pt}`)}</option>)}
-                </select>
+                <Select value={projType} onChange={e => setProjType(e.target.value as ProjectType)} options={segmentProjectTypes(segment).map(pt => ({ value: pt, label: t(`projType.${pt}`) }))} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">Start date</label>

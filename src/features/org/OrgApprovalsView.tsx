@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Org Approval Chains (/org/approvals). One chain per resource:
+// SiteTrack Pro — Org Approval Chains (/org/approvals). One chain per resource:
 // an ordered list of rungs (>= ₹threshold → approver role). DB-wired
 // (approval_chains table, migration 78). PK is (org_id, resource) → upsert.
 
@@ -64,12 +64,12 @@ function Inner({ orgId, updatedBy }: { orgId: string; updatedBy: string }): JSX.
 
       <Card className="p-3 space-y-3">
         <div className="flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Resource</span><Select className="mt-1 w-40" value={resource} onChange={e => setResource(e.target.value as ApprovalResource)} options={RES_OPTS} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Resource</span><Select fit className="mt-1 w-40" value={resource} onChange={e => setResource(e.target.value as ApprovalResource)} options={RES_OPTS} /></div>
           <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Chain name</span><Input className="mt-1" placeholder="e.g. Standard sign-off" value={name} onChange={e => setName(e.target.value)} /></div>
         </div>
         <div className="flex gap-2 flex-wrap items-end border-t border-default pt-3">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{'>='} Amount ₹</span><Input className="mt-1 w-28" type="number" value={thr} onChange={e => setThr(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Approver</span><Select className="mt-1 w-32" value={role} onChange={e => setRole(e.target.value)} options={ROLE_OPTS} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{'>='} Amount ₹</span><Input fit className="mt-1 w-28" type="number" value={thr} onChange={e => setThr(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Approver</span><Select fit className="mt-1 w-32" value={role} onChange={e => setRole(e.target.value)} options={ROLE_OPTS} /></div>
           <Button size="sm" variant="secondary" onClick={addRung} disabled={!thr}>+ Rung</Button>
         </div>
         {rungs.length > 0 && (

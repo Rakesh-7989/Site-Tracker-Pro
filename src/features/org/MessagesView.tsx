@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { Input } from "@/components/ui/forms";
+import { Input, Select } from "@/components/ui/forms";
 import { listMessages, postMessage, type Message } from "@/app/messageQueries";
 import { memberProjectScope } from "@/app/queries";
 
@@ -88,13 +88,7 @@ export function MessagesView(): JSX.Element {
           </h1>
           <p className="text-fg-tertiary text-sm mt-1">Project chat</p>
         </div>
-        <select
-          value={pid}
-          onChange={e => setPid(e.target.value)}
-          className="p-3 bg-panel border border-default rounded-xl text-sm outline-none focus:border-accent"
-        >
-          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <Select fit className="w-56" value={pid} onChange={e => setPid(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}

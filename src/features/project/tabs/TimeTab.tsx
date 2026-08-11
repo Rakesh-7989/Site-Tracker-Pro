@@ -150,7 +150,7 @@ export function TimeTab({ projectId }: { projectId: string }): JSX.Element {
                   <input type="checkbox" className="accent-[var(--st-accent)]" checked={billable} onChange={e => setBillable(e.target.checked)} />
                   Billable
                 </label>
-                <Select className="w-48" value={phaseId || ""} onChange={e => setPhaseId(e.target.value || null)} options={[{ value: "", label: "--- Phase (optional) ---" }, ...phases.map(p => ({ value: p.id, label: p.title }))]} />
+                <Select fit className="w-48" value={phaseId || ""} onChange={e => setPhaseId(e.target.value || null)} options={[{ value: "", label: "--- Phase (optional) ---" }, ...phases.map(p => ({ value: p.id, label: p.title }))]} />
                 <Button size="sm" onClick={() => void add()} disabled={busy === "add" || !activity.trim() || !hours.trim()}>{busy === "add" ? <Spinner size={14} /> : "Log time"}</Button>
               </div>
             </Card>

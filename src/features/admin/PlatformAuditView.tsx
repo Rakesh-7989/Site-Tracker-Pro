@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
 import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listAuditEvents, type AuditEvent } from "@/app/platformAuditQueries";
 
@@ -61,10 +62,7 @@ export function PlatformAuditView(): JSX.Element {
           <h1 className="text-2xl font-black text-fg-primary">Audit Log</h1>
           <p className="text-fg-tertiary text-sm mt-1">{filtered.length} events</p>
         </div>
-        <select value={filterType} onChange={e => setFilterType(e.target.value)} className="border border-default rounded-xl px-3 py-2 text-sm">
-          <option value="all">All types</option>
-          {types.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
+        <Select fit className="w-44" value={filterType} onChange={e => setFilterType(e.target.value)} options={[{ value: "all", label: "All types" }, ...types.map(t => ({ value: t, label: t }))]} />
       </div>
       <Card className="overflow-hidden">
         <DataTable columns={COLUMNS} rows={filtered} rowKey={r => r.id} emptyMessage="No events." />

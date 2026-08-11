@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
@@ -75,7 +75,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     {
       key: "status", header: "Status", className: "flex-shrink-0",
       render: r => canApprove ? (
-        <Select className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as InvoiceStatus; void run(`s-${r.id}`, c => setInvoiceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as InvoiceStatus; void run(`s-${r.id}`, c => setInvoiceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
       ) : <Badge tone={tone(r.status)}>{r.status}</Badge>,
     },
     ...(canCreate ? [{
@@ -94,10 +94,10 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
       {canCreate && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Invoice No</span><Input className="mt-1 w-32" placeholder="INV-001" value={no} onChange={e => setNo(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">GST %</span><Input className="mt-1 w-20" type="number" value={gst} onChange={e => setGst(e.target.value)} /></div>
-          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">TDS %</span><Input className="mt-1 w-20" type="number" value={tds} onChange={e => setTds(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Invoice No</span><Input fit className="mt-1 w-32" placeholder="INV-001" value={no} onChange={e => setNo(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Amount ₹</span><Input fit className="mt-1 w-28" type="number" value={amount} onChange={e => setAmount(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">GST %</span><Input fit className="mt-1 w-20" type="number" value={gst} onChange={e => setGst(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">TDS %</span><Input fit className="mt-1 w-20" type="number" value={tds} onChange={e => setTds(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
           <div className="w-full text-[11px] text-fg-secondary">
             GST {fmtRupees(tax.gstAmount)} · TDS {fmtRupees(tax.tdsAmount)} · <span className="text-fg-primary font-semibold">Net receivable {fmtRupees(tax.netReceivable)}</span>

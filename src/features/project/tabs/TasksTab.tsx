@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — project Tasks tab (v3 port, Batch 1, DB-wired to `tasks`).
+// SiteTrack Pro — project Tasks tab (v3 port, Batch 1, DB-wired to `tasks`).
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -70,9 +70,9 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
             <Input className="mt-1" placeholder={t("tasksTab.taskPlaceholder")} value={title} onChange={e => setTitle(e.target.value)} />
           </div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("tasksTab.assignee")}</span>
-            <Input className="mt-1 w-32" placeholder={t("tasksTab.assigneeName")} value={assignee} onChange={e => setAssignee(e.target.value)} /></div>
+            <Input fit className="mt-1 w-32" placeholder={t("tasksTab.assigneeName")} value={assignee} onChange={e => setAssignee(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("tasksTab.priority")}</span>
-            <Select className="mt-1 w-auto" value={priority} onChange={e => setPriority(e.target.value as TaskPriority)}
+            <Select fit className="mt-1 w-auto" value={priority} onChange={e => setPriority(e.target.value as TaskPriority)}
               options={[{ value: "high", label: t("tasksTab.high") }, { value: "medium", label: t("tasksTab.medium") }, { value: "low", label: t("tasksTab.low") }]} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("tasksTab.due")}</span>
             <Input className="mt-1" type="date" value={due} onChange={e => setDue(e.target.value)} /></div>

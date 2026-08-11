@@ -59,8 +59,8 @@ function Installations({ roomId, canManage }: { roomId: string; canManage: boole
     <div className="mt-2 space-y-1.5">
       {canManage && (
         <div className="flex flex-wrap gap-2 items-center">
-          <Input className="w-48" placeholder="Item e.g. Wardrobe" value={item} onChange={e => setItem(e.target.value)} />
-          <Input type="date" className="w-36" value={planned} onChange={e => setPlanned(e.target.value)} />
+          <Input fit className="w-48" placeholder="Item e.g. Wardrobe" value={item} onChange={e => setItem(e.target.value)} />
+          <Input fit type="date" className="w-36" value={planned} onChange={e => setPlanned(e.target.value)} />
           <Button size="sm" onClick={() => void add()} disabled={!item.trim()}>Add item</Button>
         </div>
       )}

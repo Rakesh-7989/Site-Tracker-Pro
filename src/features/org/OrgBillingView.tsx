@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Badge, Button, Spinner, Alert, AccessDenied, Icon } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { requestPlanUpgrade } from "@/app/upgradeQueries";
 import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, PLAN_SEATS, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/orgAdminQueries";
@@ -246,10 +247,7 @@ function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan
           {err && <Alert variant="danger">{err}</Alert>}
           <label className="block">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.moveToPlan")}</span>
-            <select value={desired} onChange={e => setDesired(e.target.value)} className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm bg-panel">
-              <option value="">{t("billing.choosePlan")}</option>
-              {targets.map(pl => <option key={pl} value={pl}>{PLAN_LABEL[pl] ?? pl}</option>)}
-            </select>
+            <Select value={desired} onChange={e => setDesired(e.target.value)} className="mt-1" options={[{ value: "", label: t("billing.choosePlan") }, ...targets.map(pl => ({ value: pl, label: PLAN_LABEL[pl] ?? pl }))]} />
           </label>
           <label className="block">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.noteLabel")}</span>
