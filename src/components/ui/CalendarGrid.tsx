@@ -38,6 +38,11 @@ function eventsForDay(events: CalendarEvent[], day: number, year: number, month:
   });
 }
 
+function isWeekend(date: Date): boolean {
+  const dow = date.getDay();
+  return dow === 0 || dow === 6;
+}
+
 export function CalendarGrid({ year, month, events = [], renderDay, className }: CalendarGridProps): JSX.Element {
   const isMobile = !useMediaQuery("(min-width: 640px)");
   const grid = useMemo(() => {
@@ -89,7 +94,9 @@ export function CalendarGrid({ year, month, events = [], renderDay, className }:
                       {day}
                     </span>
                     <span className="text-xs text-fg-tertiary font-medium">
-                      {DAY_LABELS[new Date(year, month, day).getDay()]}
+                      <span className={cn(isWeekend(new Date(year, month, day)) && "text-error")}>
+                        {DAY_LABELS[new Date(year, month, day).getDay()]}
+                      </span>
                     </span>
                   </div>
                   <div className="space-y-1.5 ml-10">
@@ -115,8 +122,8 @@ export function CalendarGrid({ year, month, events = [], renderDay, className }:
       ) : (
         <>
           <div className="grid grid-cols-7">
-            {DAY_LABELS.map(d => (
-              <div key={d} className="px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-fg-tertiary border-b border-default">
+            {DAY_LABELS.map((d, i) => (
+              <div key={d} className={cn("px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-fg-tertiary border-b border-default", (i === 0 || i === 6) && "text-error")}>
                 {d}
               </div>
             ))}
@@ -141,7 +148,7 @@ export function CalendarGrid({ year, month, events = [], renderDay, className }:
                       <>
                         <span className={cn(
                           "inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-medium",
-                          cell.isCurrent ? "bg-accent text-inverse" : "text-fg-primary",
+                          cell.isCurrent ? "bg-accent text-inverse" : isWeekend(date) ? "text-error" : "text-fg-primary",
                         )}>
                           {cell.day}
                         </span>
