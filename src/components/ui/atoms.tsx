@@ -109,7 +109,7 @@ export function Card({ children, className, title, action, padding = "none", div
     <div className={cn("bg-panel rounded-2xl border border-default shadow-card", className)}>
       {title != null && (
         <div className={cn("flex flex-wrap items-center justify-between gap-x-3 gap-y-2", CARD_HEAD_PAD[padding], divide && "border-b border-default")}>
-          <div className="min-w-0">{title}</div>
+          <div className="min-w-0 truncate">{title}</div>
           {action != null && <div className="ml-auto flex-shrink-0">{action}</div>}
         </div>
       )}
@@ -287,12 +287,21 @@ export interface ProgressBarProps {
   value: number;
   color?: BarColor;
   className?: string;
+  /** Accessible label for the bar (e.g. "Delivery progress"). Omitted = no label. */
+  ariaLabel?: string;
 }
 
-export function ProgressBar({ value, color = "orange", className }: ProgressBarProps): JSX.Element {
+export function ProgressBar({ value, color = "orange", className, ariaLabel }: ProgressBarProps): JSX.Element {
   const pct = Math.min(Math.max(value || 0, 0), 100);
   return (
-    <div className={cn("w-full bg-elevated rounded-full h-1.5 overflow-hidden", className)}>
+    <div
+      className={cn("w-full bg-elevated rounded-full h-1.5 overflow-hidden", className)}
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={ariaLabel}
+    >
       <div className={cn("h-full rounded-full", BAR[color], "transition-all duration-500")} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -352,22 +361,24 @@ export interface TileProps {
 }
 
 export function Tile({ icon, label, sub, onClick, accent = "neutral", className }: TileProps): JSX.Element {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "group flex items-center gap-3 p-3 md:p-4 rounded-xl border border-default bg-panel",
-        "hover:border-stronger hover:shadow-hover text-left transition-all min-h-[64px] w-full",
-        className,
-      )}
-    >
+  const classes = cn(
+    "group flex items-center gap-3 p-3 md:p-4 rounded-xl border border-default bg-panel",
+    "text-left transition-all min-h-[64px] w-full",
+    onClick && "hover:border-stronger hover:shadow-hover cursor-pointer",
+    className,
+  );
+  const body = (
+    <>
       {icon && <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", TILE[accent])}><Icon name={icon} size={18} /></div>}
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm text-fg-primary leading-tight">{label}</div>
         {sub && <div className="text-[11px] text-fg-secondary mt-0.5 truncate">{sub}</div>}
       </div>
-    </button>
+    </>
   );
+  return onClick
+    ? <button type="button" onClick={onClick} className={classes}>{body}</button>
+    : <div className={classes}>{body}</div>;
 }
 
 // ── AccessDenied ────────────────────────────────────────────────────────────
