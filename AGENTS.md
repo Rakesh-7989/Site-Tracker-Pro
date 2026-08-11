@@ -1707,3 +1707,37 @@ tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
 Phase 4 batch candidates: responsive/overflow polish on the migrated Card
 headers, remaining props-parity gaps, or start Phase 5 (data-intensive views:
 tables, charts, kanban, calendar). Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 4: Batch O — ProgressBar a11y + Tile semantics + Card truncate (Complete, 2026-08-11)
+
+### Batch O (shipped 2026-08-11, commit `24e880c`, pushed `prod`, live 200)
+- **ProgressBar accessible** (`atoms.tsx`) — now `role="progressbar"` +
+  `aria-valuenow` (clamped 0–100) + `aria-valuemin`/`aria-valuemax`, plus a
+  new optional `ariaLabel` prop (applied as `aria-label`; omitted = no label).
+  Real a11y gap closed: the 12 consumers (delivery/utilization/risk/CPI-SPI
+  progress) were purely visual before.
+- **Tile button semantics** — renders a real `<button type="button">` only when
+  `onClick` is provided; otherwise a non-interactive `<div>` (no bogus button
+  role, hover/cursor affordances moved onto the clickable case). Tile has zero
+  consumers in `src/` — library-level, verified by tests.
+- **Card header title truncate** — the `title` wrapper in the header row gained
+  `truncate` (single-line ellipsis, `min-w-0` already present) so long headings
+  ellipsize on one line with the `action` pinned right (matches the Modal title
+  truncate from Batch K).
+- **Tests** — new `tests/components/uiBatchO.test.tsx` (9: progressbar role +
+  min/max/now, clamp above 100 + below 0, ariaLabel applied/omitted; Tile
+  button+click fires / non-interactive div; Card title truncate wrapper + no
+  header without title).
+
+### Verify (Batch O)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (6.99s) · vitest **156 files / 1951 tests pass** (+9) · smoke
+  **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Batch P)
+Phase 4 batch candidates: responsive/overflow polish on the migrated Card
+headers (mostly done via the Batch O truncate), remaining props-parity gaps, or
+start Phase 5 (data-intensive views: tables, charts, kanban, calendar).
+Candidate next sub-task (needs user go).
