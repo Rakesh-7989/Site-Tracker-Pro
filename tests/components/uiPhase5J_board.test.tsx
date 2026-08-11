@@ -44,6 +44,32 @@ describe("Board — DnD ARIA attributes", () => {
     colContainers.forEach(c => expect(c).toHaveAttribute("aria-dropeffect", "move"));
   });
 
+  it("marks the dragged item with aria-grabbed in mobile accordion", () => {
+    // Use mobile matchMedia (768px = false)
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = (query: string) => ({
+      matches: !query.includes("768"),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    });
+    const { container, unmount } = render(<Board columns={columns} items={items} onItemMove={() => {}} />);
+    window.matchMedia = originalMatchMedia;
+
+    // Mobile items have role=button, aria-grabbed
+    const item = container.querySelector('[role="button"]')!;
+    expect(item.getAttribute("role")).toBe("button");
+    expect(item.getAttribute("aria-grabbed")).toBe("false");
+    // Open accordion content has aria-dropeffect
+    const dropZone = container.querySelector('[aria-dropeffect="move"]');
+    expect(dropZone).not.toBeNull();
+    unmount();
+  });
+
   it("renders MoveControls with aria-labels for keyboard moves", () => {
     render(<Board columns={columns} items={items} onItemMove={() => {}} />);
     // First item in first column: left button = "Move left", right = "Move to Doing"

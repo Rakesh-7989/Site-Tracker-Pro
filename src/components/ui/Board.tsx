@@ -172,12 +172,35 @@ export function Board({
                 <Icon name="arrow" size={14} className={cn("text-fg-tertiary transition-transform", isOpen && "rotate-180")} />
               </button>
               {isOpen && (
-                <div className="px-3 pb-3 space-y-2">
+                <div
+                  className="px-3 pb-3 space-y-2"
+                  onDragOver={e => { e.preventDefault(); setDragOverCol(col.id); }}
+                  onDragLeave={() => setDragOverCol(null)}
+                  onDrop={e => {
+                    e.preventDefault();
+                    const id = draggedItemId;
+                    setDraggedItemId(null);
+                    setDragOverCol(null);
+                    if (id && onItemMove) {
+                      const item = items.find(i => i.id === id);
+                      if (item && item.columnId !== col.id) {
+                        onItemMove(id, item.columnId, col.id);
+                      }
+                    }
+                  }}
+                  aria-dropeffect="move"
+                >
                   {colItems.length === 0 ? (
                     <div className="text-sm text-fg-tertiary py-4 text-center">No items</div>
                   ) : colItems.map(item => (
                     <div
                       key={item.id}
+                      draggable
+                      tabIndex={0}
+                      role="button"
+                      aria-grabbed={draggedItemId === item.id}
+                      onDragStart={() => { setDraggedItemId(item.id); }}
+                      onDragEnd={() => { setDraggedItemId(null); }}
                       className="bg-card rounded-xl border border-default p-3"
                     >
                       {item.content}

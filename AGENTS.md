@@ -1947,5 +1947,10 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **Tests** — new `tests/components/uiPhase5J_board.test.tsx` (2: ARIA attrs + MoveControls labels) + `tests/components/uiPhase5J.test.tsx` (5: totalPages=0, last page, hasNext fallback, busy flag).
 - **Verify** — lint clean · tsc clean · build clean (7.92s) · vitest **169 files / 2007 tests** (+2 files / +7) · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 5K)
-Data-intensive candidates: Phase 6 mobile/responsive audit of the dense tables, Board mobile drag replacement (long-press → reorder), or ChartCard responsive legend on remaining chart consumers. Candidate next sub-task (needs user go).
+### Phase 5K — Board mobile drag ARIA (Complete, commit `c1e4f2a`, pushed `prod`, live 200)
+- **Mobile drag parity** — accordion items now have `draggable`, `tabIndex={0}`, `role="button"`, `aria-grabbed` (toggled on drag), matching desktop DnD ARIA. Open accordion content gains `aria-dropeffect="move"` + drag-over/drop handlers. Keyboard MoveControls already present (5E).
+- **Tests** — new `uiPhase5J_board` test: mobile items have `role="button"` + `aria-grabbed`, open accordion has `aria-dropeffect="move"`.
+- **Verify** — tsc clean · build clean · vitest **169 files / 2008 tests** (+1) · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 5L)
+Data-intensive candidates: Phase 6 mobile audit of dense tables (horizontal scroll fallback on xs:480), Board mobile long-press drag visual feedback, or ChartCard responsive legend on remaining chart consumers. Candidate next sub-task (needs user go).
