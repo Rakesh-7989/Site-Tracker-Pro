@@ -38,7 +38,7 @@ function eventsForDay(events: CalendarEvent[], day: number, year: number, month:
   });
 }
 
-export function CalendarGrid({ year, month, events = [], className }: CalendarGridProps): JSX.Element {
+export function CalendarGrid({ year, month, events = [], renderDay, className }: CalendarGridProps): JSX.Element {
   const isMobile = !useMediaQuery("(min-width: 640px)");
   const grid = useMemo(() => {
     const firstDay = new Date(year, month, 1).getDay();
@@ -77,32 +77,38 @@ export function CalendarGrid({ year, month, events = [], className }: CalendarGr
             <div className="p-6 text-center text-sm text-fg-tertiary">No events this month</div>
           ) : sortedEvents.map(({ day, events: evs }) => (
             <div key={day} className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={cn(
-                  "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold",
-                  isCurrentMonth && day === today.getDate() ? "bg-accent text-inverse" : "bg-elevated text-fg-primary",
-                )}>
-                  {day}
-                </span>
-                <span className="text-xs text-fg-tertiary font-medium">
-                  {DAY_LABELS[new Date(year, month, day).getDay()]}
-                </span>
-              </div>
-              <div className="space-y-1.5 ml-10">
-                {evs.map((ev, ei) => (
-                  <button
-                    key={ei}
-                    onClick={ev.onClick}
-                    className={cn(
-                      "block w-full text-left rounded-lg px-3 py-2 text-sm font-medium leading-snug transition-colors",
-                      ev.color ? "" : "bg-accent-tint text-accent-2",
-                    )}
-                    style={ev.color ? { backgroundColor: hexToRgba(ev.color, 0.12), color: ev.color } : undefined}
-                  >
-                    {ev.label}
-                  </button>
-                ))}
-              </div>
+              {renderDay ? (
+                renderDay(new Date(year, month, day), evs)
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={cn(
+                      "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold",
+                      isCurrentMonth && day === today.getDate() ? "bg-accent text-inverse" : "bg-elevated text-fg-primary",
+                    )}>
+                      {day}
+                    </span>
+                    <span className="text-xs text-fg-tertiary font-medium">
+                      {DAY_LABELS[new Date(year, month, day).getDay()]}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 ml-10">
+                    {evs.map((ev, ei) => (
+                      <button
+                        key={ei}
+                        onClick={ev.onClick}
+                        className={cn(
+                          "block w-full text-left rounded-lg px-3 py-2 text-sm font-medium leading-snug transition-colors",
+                          ev.color ? "" : "bg-accent-tint text-accent-2",
+                        )}
+                        style={ev.color ? { backgroundColor: hexToRgba(ev.color, 0.12), color: ev.color } : undefined}
+                      >
+                        {ev.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -120,6 +126,7 @@ export function CalendarGrid({ year, month, events = [], className }: CalendarGr
               {week.map((cell, ci) => {
                 if (!cell) return <div key={ci} className="min-h-[80px] bg-elevated" />;
                 const dayEvents = eventsForDay(events, cell.day, year, month);
+                const date = new Date(year, month, cell.day);
                 return (
                   <div
                     key={ci}
@@ -128,33 +135,39 @@ export function CalendarGrid({ year, month, events = [], className }: CalendarGr
                       "hover:bg-elevated transition-colors",
                     )}
                   >
-                    <span className={cn(
-                      "inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-medium",
-                      cell.isCurrent ? "bg-accent text-inverse" : "text-fg-primary",
-                    )}>
-                      {cell.day}
-                    </span>
-                    <div className="mt-0.5 space-y-0.5">
-                      {dayEvents.slice(0, 2).map((ev, ei) => (
-                        <button
-                          key={ei}
-                          onClick={ev.onClick}
-                          className={cn(
-                            "block w-full text-left truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight",
-                            ev.color ? "" : "text-accent-2",
-                          )}
-                          style={ev.color ? { backgroundColor: hexToRgba(ev.color, 0.12), color: ev.color } : undefined}
-                          title={ev.label}
-                        >
-                          {ev.label}
-                        </button>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <span className="block text-[10px] text-fg-tertiary px-1">
-                          +{dayEvents.length - 2} more
+                    {renderDay ? (
+                      renderDay(date, dayEvents)
+                    ) : (
+                      <>
+                        <span className={cn(
+                          "inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-medium",
+                          cell.isCurrent ? "bg-accent text-inverse" : "text-fg-primary",
+                        )}>
+                          {cell.day}
                         </span>
-                      )}
-                    </div>
+                        <div className="mt-0.5 space-y-0.5">
+                          {dayEvents.slice(0, 2).map((ev, ei) => (
+                            <button
+                              key={ei}
+                              onClick={ev.onClick}
+                              className={cn(
+                                "block w-full text-left truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight",
+                                ev.color ? "" : "text-accent-2",
+                              )}
+                              style={ev.color ? { backgroundColor: hexToRgba(ev.color, 0.12), color: ev.color } : undefined}
+                              title={ev.label}
+                            >
+                              {ev.label}
+                            </button>
+                          ))}
+                          {dayEvents.length > 2 && (
+                            <span className="block text-[10px] text-fg-tertiary px-1">
+                              +{dayEvents.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}

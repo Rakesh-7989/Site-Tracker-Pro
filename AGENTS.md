@@ -1336,7 +1336,47 @@ stretched their columns. Fix:
   · vitest **145 files / 1848 tests pass** · smoke **309 checks** · live 200
   · built CSS contains `.w-48/.w-56/.min-w-\[9rem\]` and `fit` now works.
 
-### Next (Batch C)
-Dialog/Modal consistency review, Tabs/Board/CalendarGrid prop review, DataTable
-rowKey API, remaining kiosk-dark raw selects (SiteWall/Labour) if a dark Select
-preset is wanted later. Candidate next sub-task (needs user go).
+### Batch C (shipped 2026-08-11, pushed `prod`, live 200)
+Component-library consistency + behavior fixes across the 5 remaining base
+components (Board untouched — no concrete gap; drag a11y deferred):
+- **Modal.tsx** — a11y + behavior: new `role` (default `"dialog"`) and
+  `ariaLabel` props, `aria-modal="true"` on the panel, **Esc-to-close**, and a
+  **body scroll lock** (saves/restores `document.body.style.overflow`, keydown
+  listener removed on unmount). Deduped the radius classes
+  (`rounded-t-3xl md:rounded-2xl` was repeated across two cn() entries).
+- **Dialog.tsx** — passes `role="alertdialog"` to Modal for the `danger`
+  variant (else `dialog`), plus `ariaLabel={title}`.
+- **Tabs.tsx** — keyboard Arrow/Home/End now **skip disabled tabs**
+  (`seekEnabled` wraps around; `seekEnabledEdge` picks the nearest enabled edge).
+  Previously pressing an arrow toward a disabled tab got stuck (onChange was
+  skipped silently).
+- **DataTable.tsx** — `rowKey` API loosened + **sort bug fixed**:
+  - `rowKey?: string | ((row: T) => string | number)` — string form reads the
+    property, function form stringifies, omitted falls back to a stable index
+    key. Pure exported `resolveRowKey(row, rowKey, index)` helper. All 42
+    existing call sites unchanged (function form is a subtype).
+  - `sortable: true` (no comparator) previously compared the **whole row
+    objects** (`"[object Object]"` → always 0 → sorting silently never worked;
+    `MeasurementBookView` + `EquipmentView` used it). Now compares the row
+    value at `col.key` via `compareValues` (null-safe, string/number-aware).
+- **CalendarGrid.tsx** — wired the previously **dead `renderDay` prop** into
+  both the mobile day list and desktop grid day cells (`renderDay(date, events)`
+  replaces the default day cell when provided).
+- **Tests** — new `tests/components/uiBatchC.test.tsx` (16, jsdom +
+  testing-library): Modal role/aria/aria-label, Esc close, body scroll
+  lock/restore; Dialog alertdialog-on-danger; Tabs disabled-skip (Arrow both
+  ways + Home/End); DataTable `resolveRowKey` unit cases + string-key render +
+  omitted-key index fallback + click-to-sort reorder; CalendarGrid `renderDay`
+  in desktop grid, default day numbers, and mobile list. Includes
+  `matchMedia`/`ResizeObserver` jsdom stubs.
+
+### Verify (Batch C)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit`
+  clean · build clean (3.61s) · vitest **146 files / 1864 tests pass** (+1 file
+  / +16) · smoke **309 checks** · live 200.
+
+### Next (Batch D)
+Remaining kiosk-dark raw selects (SiteWall/Labour) if a dark Select preset is
+wanted later; Phase 4 batch candidates: Button/Card/Input/Select/Dialog props
+parity audit across `src/features`; focus-trap + focus-restore for Modal.
+Candidate next sub-task (needs user go).

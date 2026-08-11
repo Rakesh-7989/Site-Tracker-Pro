@@ -15,10 +15,18 @@ export interface Column<T> {
   sortable?: boolean | ((a: T, b: T) => number);
 }
 
+export type RowKey<T> = string | ((row: T) => string | number);
+
+export function resolveRowKey<T>(row: T, rowKey: RowKey<T> | undefined, index: number): string {
+  if (typeof rowKey === "function") return String(rowKey(row));
+  if (typeof rowKey === "string") return String((row as Record<string, unknown>)[rowKey]);
+  return String(index);
+}
+
 export interface DataTableProps<T> {
   columns: Column<T>[];
   rows: T[];
-  rowKey: (row: T) => string;
+  rowKey?: RowKey<T>;
   loading?: boolean;
   error?: string | null;
   emptyMessage?: string;
@@ -62,7 +70,9 @@ export function DataTable<T>({
     if (!sortKey) return rows;
     const col = columns.find(c => c.key === sortKey);
     if (!col || !col.sortable) return rows;
-    const cmp = typeof col.sortable === "function" ? col.sortable : defaultComparator;
+    const cmp = typeof col.sortable === "function"
+      ? col.sortable
+      : (a: T, b: T) => compareValues((a as Record<string, unknown>)[col.key], (b as Record<string, unknown>)[col.key]);
     const sorted = [...rows].sort((a, b) => cmp(a, b));
     return sortDir === "desc" ? sorted.reverse() : sorted;
   }, [rows, sortKey, sortDir, columns]);
@@ -121,9 +131,9 @@ export function DataTable<T>({
               </tr>
             </thead>
             <tbody className="divide-y divide-default">
-              {sortedRows.map(row => (
+              {sortedRows.map((row, index) => (
                 <tr
-                  key={rowKey(row)}
+                  key={resolveRowKey(row, rowKey, index)}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   onKeyDown={onRowClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(row); } } : undefined}
                   tabIndex={onRowClick ? 0 : undefined}
@@ -158,7 +168,7 @@ export function DataTable<T>({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {sortedRows.map(row => {
+      {sortedRows.map((row, index) => {
         const rowContent = (
           <>
             {columns.map(col => (
@@ -176,7 +186,7 @@ export function DataTable<T>({
         if (onRowClick) {
           return (
             <button
-              key={rowKey(row)}
+              key={resolveRowKey(row, rowKey, index)}
               onClick={() => onRowClick(row)}
               className="w-full text-left bg-card rounded-2xl border border-default shadow-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:shadow-hover transition-shadow"
             >
@@ -187,7 +197,7 @@ export function DataTable<T>({
 
         return (
           <div
-            key={rowKey(row)}
+            key={resolveRowKey(row, rowKey, index)}
             className="bg-card rounded-2xl border border-default shadow-card p-3 flex items-center justify-between gap-3"
           >
             {rowContent}
@@ -199,7 +209,7 @@ export function DataTable<T>({
   );
 }
 
-function defaultComparator<T>(a: T, b: T): number {
+function compareValues(a: unknown, b: unknown): number {
   if (a == null) return b == null ? 0 : -1;
   if (b == null) return 1;
   if (typeof a === "string" && typeof b === "string") return a.localeCompare(b);

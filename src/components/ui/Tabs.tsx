@@ -27,6 +27,24 @@ const TAB_INACTIVE: Record<string, string> = {
   pills: "text-fg-secondary hover:bg-elevated",
 };
 
+function seekEnabled(tabs: Tab[], dir: 1 | -1, from: number): number {
+  const n = tabs.length;
+  for (let k = 0; k < n; k++) {
+    const i = (from + dir * (k + 1) + n) % n;
+    if (!tabs[i].disabled) return i;
+  }
+  return from;
+}
+
+function seekEnabledEdge(tabs: Tab[], dir: 1 | -1): number {
+  if (dir === 1) {
+    for (let i = 0; i < tabs.length; i++) if (!tabs[i].disabled) return i;
+  } else {
+    for (let i = tabs.length - 1; i >= 0; i--) if (!tabs[i].disabled) return i;
+  }
+  return -1;
+}
+
 export function Tabs({ tabs, activeTab, onChange, variant = "underline", className }: TabsProps): JSX.Element {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -45,10 +63,10 @@ export function Tabs({ tabs, activeTab, onChange, variant = "underline", classNa
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     const idx = tabs.findIndex(t => t.id === activeTab);
     let nextIdx = idx;
-    if (e.key === "ArrowRight") { nextIdx = Math.min(idx + 1, tabs.length - 1); }
-    else if (e.key === "ArrowLeft") { nextIdx = Math.max(idx - 1, 0); }
-    else if (e.key === "Home") { nextIdx = 0; }
-    else if (e.key === "End") { nextIdx = tabs.length - 1; }
+    if (e.key === "ArrowRight") { nextIdx = seekEnabled(tabs, 1, idx); }
+    else if (e.key === "ArrowLeft") { nextIdx = seekEnabled(tabs, -1, idx); }
+    else if (e.key === "Home") { nextIdx = seekEnabledEdge(tabs, 1); }
+    else if (e.key === "End") { nextIdx = seekEnabledEdge(tabs, -1); }
     else return;
     e.preventDefault();
     const next = tabs[nextIdx];
