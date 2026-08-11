@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { Spinner } from "./atoms";
+import { Skeleton } from "./Skeleton";
 import { EmptyState } from "./EmptyState";
 import { Pager, type PagerProps } from "./Pager";
 import type { IconName } from "./icons";
@@ -36,7 +36,57 @@ export interface DataTableProps<T> {
   variant?: "card" | "table";
   onRowClick?: (row: T) => void;
   pagination?: PagerProps;
+  /** Cap the table body height (a CSS length, e.g. "360px" or "24rem") — makes the table header sticky while rows scroll. Table variant only. */
+  maxHeight?: string;
   className?: string;
+}
+
+const SKELETON_WIDTHS = ["w-full", "w-3/4", "w-1/2", "w-5/6"];
+
+function LoadingSkeleton({ columns, variant }: { columns: Column<unknown>[]; variant: "card" | "table" }): JSX.Element {
+  if (variant === "table") {
+    return (
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-default">
+            {columns.map(col => (
+              <th key={col.key} scope="col" className={cn(
+                "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3 py-2.5",
+                col.hideOnMobile && "hidden md:table-cell",
+              )}>
+                {col.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-default">
+          {[0, 1, 2, 3].map(r => (
+            <tr key={r}>
+              {columns.map((col, ci) => (
+                <td key={col.key} className={cn("px-3 py-3", col.hideOnMobile && "hidden md:table-cell")}>
+                  <Skeleton decorative height={12} width={SKELETON_WIDTHS[ci % SKELETON_WIDTHS.length]} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {[0, 1, 2, 3].map(r => (
+        <div key={r} className="bg-card rounded-2xl border border-default shadow-card p-3 flex items-center justify-between gap-3">
+          {columns.map((col, ci) => (
+            <div key={col.key} className={cn("min-w-0 flex-1", col.hideOnMobile && "hidden md:block")}>
+              <Skeleton decorative height={14} width={SKELETON_WIDTHS[ci % SKELETON_WIDTHS.length]} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function SortIcon({ direction }: { direction: "asc" | "desc" | null }): JSX.Element {
@@ -64,6 +114,7 @@ export function DataTable<T>({
   variant = "card",
   onRowClick,
   pagination,
+  maxHeight,
   className,
 }: DataTableProps<T>): JSX.Element {
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -91,8 +142,13 @@ export function DataTable<T>({
 
   if (loading) {
     return (
-      <div className="grid place-items-center py-12">
-        <Spinner size={24} />
+      <div role="status" aria-label="Loading rows" className={cn(className)}>
+        <LoadingSkeleton columns={columns as Column<unknown>[]} variant={variant} />
+        {pagination && (
+          <div className="mt-3 flex items-center justify-center">
+            <Pager {...pagination} />
+          </div>
+        )}
       </div>
     );
   }
@@ -114,10 +170,10 @@ export function DataTable<T>({
   if (variant === "table") {
     return (
       <div className={cn(className)}>
-        <div className="overflow-x-auto">
+        <div className={cn("overflow-x-auto", maxHeight && "overflow-y-auto")} style={maxHeight ? { maxHeight } : undefined}>
           <table className="w-full text-sm" aria-label={ariaLabel}>
             <thead>
-              <tr className="border-b border-default">
+              <tr className={cn("border-b border-default", maxHeight && "sticky top-0 z-10 bg-panel")}>
                 {columns.map(col => (
                   <th key={col.key} scope="col" className={cn(
                     "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3 py-2.5",

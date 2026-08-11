@@ -6,12 +6,14 @@ export interface SkeletonProps {
   variant?: SkeletonVariant;
   width?: string | number;
   height?: string | number;
+  /** Drop the status role/aria-label for bulk/decorative skeletons (screen readers announce the wrapper instead). */
+  decorative?: boolean;
   className?: string;
 }
 
-export function Skeleton({ variant = "text", width, height, className }: SkeletonProps): JSX.Element {
+export function Skeleton({ variant = "text", width, height, decorative = false, className }: SkeletonProps): JSX.Element {
   const base = "animate-pulse bg-elevated";
-  const commonProps = { role: "status" as const, "aria-label": "Loading" as const };
+  const commonProps = decorative ? {} : { role: "status" as const, "aria-label": "Loading" as const };
 
   if (variant === "circle") {
     return (
