@@ -11,8 +11,9 @@ import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listFeePhases, type FeePhase } from "@/app/phaseQueries";
+import { listProjectMembers, type ProjectMemberRow } from "@/app/queries";
 import {
-  listDeliverables, createDeliverable, setDeliverableStatus, deleteDeliverable,
+  listDeliverables, createDeliverable, setDeliverableStatus, updateDeliverable, deleteDeliverable,
   DOC_TYPES, type Deliverable, type DeliverableStatus, type DocType,
 } from "@/app/deliverableQueries";
 import {
@@ -31,9 +32,6 @@ const DOC_LABEL: Record<DocType, string> = {
   drawing: "Drawing", spec: "Spec", report: "Report", model: "Model",
   schedule: "Schedule", certificate: "Certificate", other: "Other",
 };
-const NEXT: Record<DeliverableStatus, DeliverableStatus> = {
-  draft: "in_review", in_review: "approved", approved: "issued", rejected: "in_review", issued: "draft",
-};
 
 export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
@@ -42,6 +40,7 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
 
   const [rows, setRows] = useState<Deliverable[]>([]);
   const [phases, setPhases] = useState<FeePhase[]>([]);
+  const [members, setMembers] = useState<ProjectMemberRow[]>([]);
   const [files, setFiles] = useState<Record<string, DeliverableFileRef[]>>({});
   const [fileLoading, setFileLoading] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -52,6 +51,13 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
   const [docType, setDocType] = useState<DocType>("drawing");
   const [phaseId, setPhaseId] = useState("");
   const [due, setDue] = useState("");
+  const [ownerId, setOwnerId] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [edTitle, setEdTitle] = useState("");
+  const [edDocType, setEdDocType] = useState<DocType>("other");
+  const [edPhaseId, setEdPhaseId] = useState("");
+  const [edDue, setEdDue] = useState("");
+  const [edOwnerId, setEdOwnerId] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [targetDeliverable, setTargetDeliverable] = useState<string | null>(null);
 
@@ -59,9 +65,10 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
     setLoading(true); setError(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const [d, p] = await Promise.all([listDeliverables(client, projectId), listFeePhases(client, projectId)]);
+    const [d, p, m] = await Promise.all([listDeliverables(client, projectId), listFeePhases(client, projectId), listProjectMembers(client, projectId)]);
     if (d.ok) setRows(d.data); else setError(d.error);
     if (p.ok) setPhases(p.data);
+    if (m.ok) setMembers(m.data);
     setLoading(false);
   }, [projectId]);
 
@@ -82,11 +89,27 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
   const add = async () => {
     if (!title.trim()) return;
     const tmpId = "tmp-" + Date.now();
-    await run("add", c => createDeliverable(c, { projectId, title: title.trim(), docType, phaseId: phaseId || null, dueDate: due || null }), {
-      apply: () => setRows(prev => [{ id: tmpId, phaseId: phaseId || null, title: title.trim(), docType, status: "draft" as DeliverableStatus, dueDate: due || null, ownerId: null, ownerName: null, createdAt: "" }, ...prev]),
+    await run("add", c => createDeliverable(c, { projectId, title: title.trim(), docType, phaseId: phaseId || null, dueDate: due || null, ownerId: ownerId || null }), {
+      apply: () => setRows(prev => [{ id: tmpId, phaseId: phaseId || null, title: title.trim(), docType, status: "draft" as DeliverableStatus, dueDate: due || null, ownerId: ownerId || null, ownerName: members.find(m => m.profileId === ownerId)?.name ?? null, createdAt: "" }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
-    setTitle(""); setPhaseId(""); setDue("");
+    setTitle(""); setPhaseId(""); setDue(""); setOwnerId("");
+  };
+
+  const startEdit = (d: Deliverable) => {
+    setEditingId(d.id); setEdTitle(d.title); setEdDocType(d.docType);
+    setEdPhaseId(d.phaseId ?? ""); setEdDue(d.dueDate ?? ""); setEdOwnerId(d.ownerId ?? "");
+  };
+
+  const saveEdit = async (d: Deliverable) => {
+    await run(`u-${d.id}`, c => updateDeliverable(c, d.id, {
+      title: edTitle.trim() || d.title, docType: edDocType, phaseId: edPhaseId || null,
+      dueDate: edDue || null, ownerId: edOwnerId || null,
+    }), {
+      apply: () => setRows(prev => prev.map(x => x.id === d.id ? { ...x, title: edTitle.trim() || d.title, docType: edDocType, phaseId: edPhaseId || null, dueDate: edDue || null, ownerId: edOwnerId || null, ownerName: members.find(m => m.profileId === edOwnerId)?.name ?? null } : x)),
+      rollback: () => setRows(prev => prev.map(x => x.id === d.id ? d : x)),
+    });
+    setEditingId(null);
   };
 
   const openPicker = (deliverableId: string) => {
@@ -130,7 +153,19 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
     else setFileError(res.error);
   };
 
-  const canCycle = (d: Deliverable) => canApprove || (canManage && (d.status === "draft" || d.status === "in_review"));
+  const setStatus = (d: Deliverable, ns: DeliverableStatus) => {
+    void run(`s-${d.id}`, c => setDeliverableStatus(c, d.id, ns), {
+      apply: () => setRows(prev => prev.map(x => x.id === d.id ? { ...x, status: ns } : x)),
+      rollback: () => setRows(prev => prev.map(x => x.id === d.id ? { ...x, status: d.status } : x)),
+    });
+  };
+
+  // Submit draft → in_review rides deliverable:manage (creator). Approve /
+  // Reject / Issue gates on the reviewer capability deliverable:approve.
+  const canSubmit = (d: Deliverable) => canManage && d.status === "draft";
+  const canReview = (d: Deliverable) => canApprove && d.status === "in_review";
+  const canIssue = (d: Deliverable) => canApprove && d.status === "approved";
+  const canReopen = (d: Deliverable) => canApprove && d.status === "rejected";
 
   return (
     <div className="space-y-4">
@@ -155,6 +190,10 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Phase</span>
             <Select className="mt-1" options={[{ value: "", label: "— none —" }, ...phases.map(p => ({ value: p.id, label: p.title }))]} value={phaseId} onChange={e => setPhaseId(e.target.value)} />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Owner</span>
+            <Select className="mt-1" options={[{ value: "", label: "— unassigned —" }, ...members.map(m => ({ value: m.profileId, label: m.name }))]} value={ownerId} onChange={e => setOwnerId(e.target.value)} />
           </div>
           <div className="flex gap-2 items-end">
             <Button className="flex-1" onClick={() => void add()} disabled={busy === "add" || !title.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
@@ -188,31 +227,53 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {canCycle(d) ? (
-                    <button
-                      type="button"
-                      disabled={busy === `s-${d.id}`}
-                      onClick={() => { const ns = NEXT[d.status]; void run(`s-${d.id}`, c => setDeliverableStatus(c, d.id, ns), { apply: () => setRows(prev => prev.map(x => x.id === d.id ? { ...x, status: ns } : x)), rollback: () => setRows(prev => prev.map(x => x.id === d.id ? { ...x, status: d.status } : x)) }); }}
-                      title="Advance status"
-                    >
-                      <Badge tone={STATUS_TONE[d.status]}>{STATUS_LABEL[d.status]}</Badge>
-                    </button>
-                  ) : (
-                    <Badge tone={STATUS_TONE[d.status]}>{STATUS_LABEL[d.status]}</Badge>
+                  <Badge tone={STATUS_TONE[d.status]}>{STATUS_LABEL[d.status]}</Badge>
+                  {canSubmit(d) && (
+                    <Button size="sm" variant="secondary" disabled={busy === `s-${d.id}`} onClick={() => setStatus(d, "in_review")}>Submit for review</Button>
+                  )}
+                  {canReview(d) && (
+                    <>
+                      <Button size="sm" disabled={busy === `s-${d.id}`} onClick={() => setStatus(d, "approved")}>Approve</Button>
+                      <Button size="sm" variant="danger" disabled={busy === `s-${d.id}`} onClick={() => setStatus(d, "rejected")}>Reject</Button>
+                    </>
+                  )}
+                  {canIssue(d) && (
+                    <Button size="sm" variant="secondary" disabled={busy === `s-${d.id}`} onClick={() => setStatus(d, "issued")}>Issue</Button>
+                  )}
+                  {canReopen(d) && (
+                    <Button size="sm" variant="ghost" disabled={busy === `s-${d.id}`} onClick={() => setStatus(d, "in_review")}>Reopen for review</Button>
                   )}
                   {canManage && (
                     <>
+                      {editingId === d.id ? (
+                        <Button size="sm" variant="secondary" disabled={busy === `u-${d.id}`} onClick={() => void saveEdit(d)}>Save</Button>
+                      ) : (
+                        <Button size="sm" variant="ghost" onClick={() => startEdit(d)} disabled={busy === `u-${d.id}`}>Edit</Button>
+                      )}
                       <Button size="sm" variant="secondary" onClick={() => openPicker(d.id)} disabled={uploading === d.id}>
                         {uploading === d.id ? <Spinner size={14} /> : <Icon name="upload" size={14} />}
                         <span className="ml-1 hidden sm:inline">Attach</span>
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => void run(`d-${d.id}`, c => deleteDeliverable(c, d.id), { apply: () => setRows(prev => prev.filter(x => x.id !== d.id)), rollback: () => setRows(prev => [...prev, d]) })}>
-                        <Icon name="trash" size={14} className="text-error" />
-                      </Button>
+                      {editingId !== d.id && (
+                        <Button size="sm" variant="ghost" onClick={() => void run(`d-${d.id}`, c => deleteDeliverable(c, d.id), { apply: () => setRows(prev => prev.filter(x => x.id !== d.id)), rollback: () => setRows(prev => [...prev, d]) })}>
+                          <Icon name="trash" size={14} className="text-error" />
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
               </div>
+
+              {editingId === d.id && canManage && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 items-end">
+                  <Input value={edTitle} onChange={x => setEdTitle(x.target.value)} placeholder="Title" />
+                  <Select options={DOC_TYPES.map(t => ({ value: t, label: DOC_LABEL[t] }))} value={edDocType} onChange={x => setEdDocType(x.target.value as DocType)} />
+                  <Select options={[{ value: "", label: "— none —" }, ...phases.map(p => ({ value: p.id, label: p.title }))]} value={edPhaseId} onChange={x => setEdPhaseId(x.target.value)} />
+                  <Input type="date" value={edDue} onChange={x => setEdDue(x.target.value)} />
+                  <Select options={[{ value: "", label: "— unassigned —" }, ...members.map(m => ({ value: m.profileId, label: m.name }))]} value={edOwnerId} onChange={x => setEdOwnerId(x.target.value)} />
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                </div>
+              )}
 
               <div className="mt-2 space-y-1">
                 {fileLoading === d.id ? (

@@ -47,6 +47,9 @@ export function TimeTab({ projectId }: { projectId: string }): JSX.Element {
   const [editActivity, setEditActivity] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editPhaseId, setEditPhaseId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editRate, setEditRate] = useState("");
+  const [editBillable, setEditBillable] = useState(true);
 
   const canEditEntry = (e: TimeEntry) => e.approvalStatus === "pending" && (canManage || e.profileId === profileId);
 
@@ -92,16 +95,22 @@ export function TimeTab({ projectId }: { projectId: string }): JSX.Element {
 
   const startEdit = (e: TimeEntry) => {
     setEditingId(e.id); setEditHours(String(e.hours)); setEditActivity(e.activity); setEditNotes(e.notes ?? "");
+    setEditPhaseId(e.phaseId); setEditDate(e.date); setEditRate(e.rate == null ? "" : String(e.rate)); setEditBillable(e.billable);
   };
 
   const saveEdit = async (e: TimeEntry) => {
     const h = Number(editHours) || e.hours;
-    await run(`e-${e.id}`, c => updateTimeEntry(c, e.id, { activity: editActivity.trim() || e.activity, hours: h, notes: editNotes.trim() || null, phaseId: editPhaseId }), {
-      apply: () => setRows(prev => prev.map(x => x.id === e.id ? { ...x, hours: h, activity: editActivity.trim() || e.activity, notes: editNotes.trim() || null, phaseId: editPhaseId } : x)),
-      rollback: () => setRows(prev => prev.map(x => x.id === e.id ? { ...x, hours: e.hours, activity: e.activity, notes: e.notes, phaseId: e.phaseId } : x)),
+    const r = editRate.trim() === "" ? null : Number(editRate);
+    await run(`e-${e.id}`, c => updateTimeEntry(c, e.id, {
+      date: editDate || e.date, activity: editActivity.trim() || e.activity, hours: h,
+      rate: r, billable: editBillable, notes: editNotes.trim() || null, phaseId: editPhaseId,
+    }), {
+      apply: () => setRows(prev => prev.map(x => x.id === e.id ? { ...x, date: editDate || e.date, hours: h, activity: editActivity.trim() || e.activity, rate: r, billable: editBillable, notes: editNotes.trim() || null, phaseId: editPhaseId } : x)),
+      rollback: () => setRows(prev => prev.map(x => x.id === e.id ? { ...x, hours: e.hours, activity: e.activity, notes: e.notes, phaseId: e.phaseId, date: e.date, rate: e.rate, billable: e.billable } : x)),
     });
     setEditingId(null);
     setEditPhaseId(null);
+    setEditDate(""); setEditRate(""); setEditBillable(true);
   };
 
   const total = billableHours(rows);
@@ -156,9 +165,17 @@ export function TimeTab({ projectId }: { projectId: string }): JSX.Element {
           {rows.map(e => (
             <Card key={e.id} className="p-3 flex items-center justify-between gap-3">
               {editingId === e.id ? (
-                <div className="flex-1 grid gap-2 sm:grid-cols-3 items-end">
+                <div className="flex-1 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 items-end">
+                  <Input type="date" value={editDate} onChange={x => setEditDate(x.target.value)} />
                   <Input value={editActivity} onChange={x => setEditActivity(x.target.value)} placeholder="Activity" />
                   <Input type="number" min={0.25} max={24} step={0.25} value={editHours} onChange={x => setEditHours(x.target.value)} placeholder="Hours" />
+                  <Input type="number" min={0} value={editRate} onChange={x => setEditRate(x.target.value)} placeholder="Rate (₹/h)" />
+                  <label className="flex items-center gap-1.5 text-sm text-fg-secondary cursor-pointer">
+                    <input type="checkbox" className="accent-[var(--st-accent)]" checked={editBillable} onChange={x => setEditBillable(x.target.checked)} />
+                    Billable
+                  </label>
+                  <Select className="w-full" value={editPhaseId || ""} onChange={x => setEditPhaseId(x.target.value || null)} options={[{ value: "", label: "--- Phase (optional) ---" }, ...phases.map(p => ({ value: p.id, label: p.title }))]} />
+                  <Input value={editNotes} onChange={x => setEditNotes(x.target.value)} placeholder="Notes" />
                   <div className="flex gap-2">
                     <Button size="sm" disabled={busy === `e-${e.id}`} onClick={() => void saveEdit(e)}>Save</Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>

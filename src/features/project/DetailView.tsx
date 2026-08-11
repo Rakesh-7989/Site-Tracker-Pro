@@ -51,6 +51,7 @@ import { PhasesTab } from "./tabs/PhasesTab";
 import { TimeTab } from "./tabs/TimeTab";
 import { DeliverablesTab } from "./tabs/DeliverablesTab";
 import { ReviewRoundsTab } from "./tabs/ReviewRoundsTab";
+import { UtilizationTab } from "./tabs/UtilizationTab";
 import { BillingTab } from "./tabs/BillingTab";
 import { FfeTab } from "./tabs/FfeTab";
 import { StatutoryTab } from "./tabs/StatutoryTab";
@@ -163,6 +164,7 @@ export function DetailView(): JSX.Element {
       {requestedId === "time" && <TimeTab projectId={project.id} />}
       {requestedId === "deliverables" && <DeliverablesTab projectId={project.id} />}
       {requestedId === "reviews" && <ReviewRoundsTab projectId={project.id} />}
+      {requestedId === "utilization" && <UtilizationTab projectId={project.id} />}
       {requestedId === "billing" && <BillingTab projectId={project.id} />}
       {requestedId === "ffe" && <FfeTab projectId={project.id} />}
       {requestedId === "statutory" && <StatutoryTab projectId={project.id} />}

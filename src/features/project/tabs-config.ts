@@ -200,7 +200,7 @@ export const REAL_TABS: ReadonlySet<string> = new Set([
   "overview", "team", "milestones", "tasks", "updates", "issues", "punchlist", "drawings",
   "rfi", "changeorders", "boq", "estimate", "fieldops", "materials", "attendance", "labour",
   "safety", "inspections", "map", "boq", "gantt", "approvals", "messages",
-  "phases", "time", "deliverables", "reviews", "billing",
+  "phases", "time", "deliverables", "reviews", "billing", "utilization",
   "ffe", "statutory", "moodboards", "rooms", "inspection", "reports",
   "po", "3way", "invoices", "budget", "rabills", "ledger", "compliance",
   "pnl", "wip", "budgetChange",
