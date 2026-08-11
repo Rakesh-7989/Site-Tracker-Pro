@@ -4,8 +4,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { useOrgSwitcher } from "@/auth";
-import { Card, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Alert, Icon } from "@/components/ui/atoms";
 import { ChartCard } from "@/components/ui/ChartCard";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { fmtRupees } from "@/app/financeQueries";
 import { getOrgAnalytics, toBars, type OrgAnalytics } from "@/app/analyticsQueries";
 
@@ -14,6 +15,31 @@ import { getClient } from "@/lib/supabase";
 const PIE_COLORS = ["var(--st-success)", "var(--st-warning)", "var(--st-indigo)", "var(--st-error)"];
 const STATUS_ORDER = ["active", "completed", "on_hold", "cancelled"];
 const PROG_ORDER = ["pending", "in_progress", "completed"];
+
+export function AnalyticsSkeleton(): JSX.Element {
+  const chartCards = [0, 1].map(i => (
+    <div key={i} className="bg-card rounded-2xl border border-default shadow-card p-4 space-y-2">
+      <Skeleton decorative height={12} width="w-28" />
+      <div className="grid place-items-center py-8">
+        <Skeleton decorative height={80} width="w-40" />
+      </div>
+    </div>
+  ));
+  return (
+    <div role="status" aria-label="Loading analytics" aria-busy="true" className="space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default shadow-card p-4 space-y-2">
+            <Skeleton decorative height={24} width="w-20" />
+            <Skeleton decorative height={12} width="w-16" />
+          </div>
+        ))}
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">{chartCards}</div>
+      <div className="grid sm:grid-cols-2 gap-3">{chartCards}</div>
+    </div>
+  );
+}
 
 function Stat({ label, value }: { label: string; value: string }): JSX.Element {
   return <Card className="p-4"><div className="text-2xl font-display font-bold text-fg-primary">{value}</div><div className="text-xs text-fg-secondary mt-0.5">{label}</div></Card>;
@@ -73,7 +99,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     <div className="max-w-4xl mx-auto space-y-5">
       <h1 className="font-display text-2xl font-bold text-fg-primary">Analytics</h1>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !a ? <div className="text-sm text-fg-secondary">No data.</div> : (
+      {loading ? <AnalyticsSkeleton /> : !a ? <div className="text-sm text-fg-secondary">No data.</div> : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Stat label="Projects" value={String(a.projectCount)} />
