@@ -81,7 +81,7 @@ export function SecurityView(): JSX.Element {
 
       {error && <Alert variant="danger">{error}</Alert>}
       {isAdmin && !isOn && (
-        <Alert variant="warning">You have an admin role � turning on two-factor authentication is strongly recommended.</Alert>
+        <Alert variant="warning" title="Enable two-factor authentication">You have an admin role � turning on two-factor authentication is strongly recommended.</Alert>
       )}
 
       <Card className="p-5">

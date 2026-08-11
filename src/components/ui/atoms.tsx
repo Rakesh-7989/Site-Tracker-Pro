@@ -197,6 +197,8 @@ type AlertVariant = "neutral" | "info" | "success" | "warning" | "danger" | "acc
 export interface AlertProps {
   children: ReactNode;
   variant?: AlertVariant;
+  /** Optional bold title line rendered above the message. */
+  title?: string;
   icon?: ReactNode;
   /** Right-aligned slot (action links, buttons…). */
   action?: ReactNode;
@@ -214,7 +216,7 @@ const ALERT: Record<AlertVariant, { bg: string; text: string; bar: string }> = {
   accent: { bg: "bg-accent-tint", text: "text-accent-2", bar: "var(--st-accent)" },
 };
 
-export function Alert({ children, variant = "neutral", icon, action, onDismiss, className }: AlertProps): JSX.Element {
+export function Alert({ children, variant = "neutral", title, icon, action, onDismiss, className }: AlertProps): JSX.Element {
   const v = ALERT[variant];
   return (
     <div
@@ -226,7 +228,10 @@ export function Alert({ children, variant = "neutral", icon, action, onDismiss, 
       role={variant === "danger" ? "alert" : "status"}
     >
       {icon && <span className="flex-shrink-0 mt-0.5">{icon}</span>}
-      <div className="leading-snug">{children}</div>
+      <div className="leading-snug min-w-0 flex-1">
+        {title && <div className="font-semibold mb-0.5">{title}</div>}
+        <div>{children}</div>
+      </div>
       {action && <span className="ml-auto flex-shrink-0">{action}</span>}
       {onDismiss && (
         <button
@@ -318,7 +323,7 @@ const STAT: Record<StatAccent, { bar: string; iconBg: string; iconFg: string }> 
 };
 
 export interface StatCardProps {
-  icon?: IconName;
+  icon?: IconName | ReactNode;
   label: string;
   value: ReactNode;
   sub?: ReactNode;
@@ -328,6 +333,11 @@ export interface StatCardProps {
 
 export function StatCard({ icon, label, value, sub, accent = "orange", className }: StatCardProps): JSX.Element {
   const a = STAT[accent];
+  const renderIcon = (iconEl: IconName | ReactNode | undefined) => {
+    if (iconEl == null) return null;
+    if (typeof iconEl === "string") return <Icon name={iconEl as IconName} size={14} />;
+    return <>{iconEl}</>;
+  };
   return (
     <div className={cn(
       "relative bg-panel rounded-xl border border-default p-3 md:p-5 hover:shadow-hover transition-shadow overflow-hidden",
@@ -336,7 +346,7 @@ export function StatCard({ icon, label, value, sub, accent = "orange", className
       <div className={cn("absolute top-0 left-0 right-0 h-0.5", a.bar)} />
       <div className="flex items-start justify-between gap-2 mb-2 md:mb-3">
         <div className="text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.1em] text-fg-secondary leading-tight">{label}</div>
-        {icon && <div className={cn("w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0", a.iconBg, a.iconFg)}><Icon name={icon} size={14} /></div>}
+        {icon && <div className={cn("w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0", a.iconBg, a.iconFg)}>{renderIcon(icon)}</div>}
       </div>
       <div className="font-sans font-bold text-2xl md:text-[2rem] text-fg-primary leading-none tabular-nums tracking-tight">{value}</div>
       {sub && <div className="text-[10px] md:text-[11px] text-fg-secondary mt-1.5 md:mt-2 leading-tight">{sub}</div>}
