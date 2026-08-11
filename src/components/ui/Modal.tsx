@@ -1,8 +1,10 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "./icons";
 
 type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
+
+const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const MODAL_WIDTH: Record<ModalSize, string> = {
   sm: "max-w-sm",
@@ -43,6 +45,8 @@ export function Modal({
   role = "dialog",
   ariaLabel,
 }: ModalProps): JSX.Element | null {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -54,6 +58,33 @@ export function Modal({
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const prevActive = document.activeElement as HTMLElement | null;
+    const focusables = () => Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
+    const first = focusables()[0];
+    if (first) first.focus();
+    else panel.focus();
+    const onTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const els = focusables();
+      if (els.length === 0) return;
+      e.preventDefault();
+      const idx = els.indexOf(document.activeElement as HTMLElement);
+      const next = e.shiftKey
+        ? (idx <= 0 ? els[els.length - 1] : els[idx - 1])
+        : (idx === -1 || idx === els.length - 1 ? els[0] : els[idx + 1]);
+      next.focus();
+    };
+    document.addEventListener("keydown", onTab);
+    return () => {
+      document.removeEventListener("keydown", onTab);
+      if (prevActive && typeof prevActive.focus === "function") prevActive.focus();
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -67,6 +98,8 @@ export function Modal({
       onClick={e => { if (closeOnOverlay && e.target === e.currentTarget) onClose(); }}
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role={role}
         aria-modal={role === "dialog" || role === "alertdialog" ? true : undefined}
         aria-label={ariaLabel ?? title}
@@ -74,6 +107,7 @@ export function Modal({
           "w-full rounded-t-3xl md:rounded-2xl bg-card shadow-editorial-deep",
           "flex flex-col max-h-[92vh]",
           "md:max-h-[85vh]",
+          "outline-none",
           MODAL_WIDTH[size],
           className,
         )}

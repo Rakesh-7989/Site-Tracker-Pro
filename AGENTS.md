@@ -1375,8 +1375,36 @@ components (Board untouched — no concrete gap; drag a11y deferred):
   clean · build clean (3.61s) · vitest **146 files / 1864 tests pass** (+1 file
   / +16) · smoke **309 checks** · live 200.
 
-### Next (Batch D)
-Remaining kiosk-dark raw selects (SiteWall/Labour) if a dark Select preset is
-wanted later; Phase 4 batch candidates: Button/Card/Input/Select/Dialog props
-parity audit across `src/features`; focus-trap + focus-restore for Modal.
-Candidate next sub-task (needs user go).
+### Batch D (shipped 2026-08-11, pushed `prod`, live 200)
+Modal focus management + kiosk-dark select unification:
+- **Modal.tsx** — **focus trap + focus restore**:
+  - On open, remembers `document.activeElement`, focuses the first focusable
+    inside the panel (falls back to the panel itself via `tabIndex={-1}` +
+    `outline-none`).
+  - **Tab cycles deterministically** through focusables (index-based wrap —
+    Tab from last → first, Shift+Tab from first → last; focus outside the
+    panel is impossible). Handler removed on close/unmount, and focus is
+    **restored to the previously focused element** on close.
+- **forms.tsx Select** — new **`dark` variant** (kiosk skin): `bg-ink` surface,
+  cream text, `border-accent/30` + accent focus, `rounded-xl`, deliberately
+  NOT `w-full` (inline width matches the original raw kiosk selects). Now the
+  **only** Select skins are `light` (default) / `compact` / `dark`.
+- **Kiosk migrations** — the last 2 raw `<select>`s in the app:
+  `SiteWallKioskView` + `LabourKioskView` project pickers → `<Select dark>`
+  (`@/components/ui/forms`). Remaining raw selects (TopBar org switcher,
+  LanguageSwitcher, VendorsView star rating) stay intentional — custom
+  styling/behavior.
+- **Tests** — new `tests/components/uiBatchD.test.tsx` (6): Modal focus-first,
+  Tab wrap (both directions), focus-restore on close; Select dark skin w/o
+  `w-full` + light default `w-full` vs `fit`.
+
+### Verify (Batch D)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit`
+  clean · build clean (6.22s) · vitest **147 files / 1870 tests pass** (+1 file
+  / +6) · smoke **309 checks** · live 200.
+
+### Next (Batch E)
+Phase 4 batch candidates: Button/Card/Input/Select/Dialog props-parity audit
+across `src/features`; Tabs aria-controls/id wiring; Board drag a11y
+(keyboard move alternative for `onItemMove`). Candidate next sub-task (needs
+user go).

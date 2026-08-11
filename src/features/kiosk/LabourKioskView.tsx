@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
@@ -96,9 +97,7 @@ function LabourKioskInner(): JSX.Element {
           <h1 className="text-3xl font-light tracking-tight">Site attendance</h1>
         </div>
         <div className="flex items-center gap-3">
-          <select value={selProject} onChange={e => setSelProject(e.target.value)} className="px-4 py-2.5 bg-ink border border-accent/30 text-cream rounded-xl text-sm outline-none">
-            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <Select dark value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
           <div className="text-right">
             <div className="text-[10px] tracking-widest uppercase text-cream/50">Pair code</div>
             <div className="font-mono text-2xl font-bold text-warning tracking-wider">{pairCode}</div>

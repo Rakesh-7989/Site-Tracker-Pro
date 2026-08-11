@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
@@ -61,9 +62,7 @@ function SiteWallKioskInner(): JSX.Element {
     <div className="min-h-screen bg-ink text-cream p-6 md:p-10">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-light tracking-tight">Site Wall</h1>
-        <select value={selProject || ""} onChange={e => setSelProject(e.target.value)} className="px-4 py-2 bg-ink border border-accent/30 text-cream rounded-xl text-sm outline-none focus:border-accent">
-          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <Select dark value={selProject || ""} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
       </div>
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-ink/40 rounded-3xl p-6 border border-accent/25">

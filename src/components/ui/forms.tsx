@@ -92,6 +92,11 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   /** Compact filter-row style (bg-bg-secondary, tighter padding). */
   compact?: boolean;
   /**
+   * Dark-theme (kiosk) style: bg-ink surface, cream text, accent border.
+   * Deliberately NOT w-full (inline width) — matches the raw kiosk selects.
+   */
+  dark?: boolean;
+  /**
    * Drop the `w-full` from FIELD_BASE so an explicit width class (w-56, w-48,
    * w-auto…) actually applies. Tailwind emits `.w-full` AFTER every numeric
    * `w-*` utility, so leaving w-full on an element silently wins over any
@@ -102,10 +107,25 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 const SELECT_BASE = FIELD_BASE.replace("w-full ", "");
 
-export function Select({ invalid = false, options, compact = false, fit = false, className, ...rest }: SelectProps): JSX.Element {
+export function Select({ invalid = false, options, compact = false, fit = false, dark = false, className, ...rest }: SelectProps): JSX.Element {
+  const opts = options.map(o => <option key={o.value} value={o.value}>{o.label}</option>);
+  if (dark) {
+    return (
+      <select
+        className={cn(
+          "px-4 py-2.5 rounded-xl text-sm bg-ink text-cream border border-accent/30 outline-none transition",
+          "focus:ring-2 focus:ring-[rgba(var(--st-accent-rgb),0.15)] focus:border-accent",
+          className,
+        )}
+        {...rest}
+      >
+        {opts}
+      </select>
+    );
+  }
   return (
     <select className={cn(SELECT_BASE, compact ? "px-3 py-1.5 bg-bg-secondary text-xs" : "px-3.5 py-2.5 bg-bg-primary", !fit && "w-full", invalid ? FIELD_ERR : FIELD_OK, className)} {...rest}>
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      {opts}
     </select>
   );
 }
