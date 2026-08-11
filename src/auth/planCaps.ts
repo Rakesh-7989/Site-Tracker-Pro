@@ -27,7 +27,9 @@ export type PlanFeature =
   // v4 Phase A — CRM & Sales (lead pipeline)
   | "crm"
   // v4 Phase C — consultancy inspection/audit depth
-  | "audit_reports";
+  | "audit_reports"
+  // Research module — technical research library
+  | "research_library";
 
 /** Numeric plan limits (null = unlimited). */
 export type PlanLimit = "users_max" | "projects_max" | "projects_ceiling" | "storage_gb" | "audit_days";
@@ -66,6 +68,7 @@ export const FEATURE_MIN_PLAN: Record<PlanFeature, string> = {
   rate_cards: "pro", time_approval: "pro", retainer_billing: "pro", hourly_billing: "pro",
   crm: "business",
   audit_reports: "business",
+  research_library: "pro",
 };
 
 /** Human labels for upsell cards. */
@@ -88,6 +91,7 @@ export const PLAN_FEATURE_LABEL: Record<PlanFeature, string> = {
   retainer_billing: "Monthly retainer billing", hourly_billing: "Hourly billing from time logs",
   crm: "Sales pipeline (CRM & leads)",
   audit_reports: "Consultancy inspection & audit reports",
+  research_library: "Technical research library",
 };
 
 export const PLAN_RANK: Record<string, number> = { free: 0, basic: 1, pro: 2, business: 3, enterprise: 4, custom: 4 };

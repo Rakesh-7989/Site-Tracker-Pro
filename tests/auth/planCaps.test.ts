@@ -71,6 +71,12 @@ describe("FEATURE_MIN_PLAN + labels", () => {
     expect(hasPlanCap({ crm: true }, "audit_reports")).toBe(false);
     expect(hasPlanCap({ audit_reports: true }, "audit_reports")).toBe(true);
   });
+  it("research_library resolves at Pro with deny-by-default", () => {
+    expect(FEATURE_MIN_PLAN.research_library).toBe("pro");
+    expect(PLAN_FEATURE_LABEL.research_library).toBeTruthy();
+    expect(hasPlanCap({ crm: true }, "research_library")).toBe(false);
+    expect(hasPlanCap({ research_library: true }, "research_library")).toBe(true);
+  });
   it("plan rank orders correctly", () => {
     expect(PLAN_RANK.basic).toBeLessThan(PLAN_RANK.pro);
     expect(PLAN_RANK.pro).toBeLessThan(PLAN_RANK.business);

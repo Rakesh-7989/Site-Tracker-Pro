@@ -162,6 +162,15 @@ GRANT SELECT ON public.role_catalog TO authenticated, anon;
 -- capabilities in src/auth/capabilities.ts that gate the same actions in UI:
 --   inspection_checklists + results + consultancy_reports write → audit:manage
 --
+-- ── Capability ↔ RLS gate map (Research module 180/182, comment-only) ──────
+-- 182 (research_module) is org-scoped: read/insert/update = any org member
+-- (`user_org_ids()`), delete = managers (orgadmin/pm/project_admin/superadmin);
+-- collection_documents follows the owning collection's org; the research-docs
+-- bucket mirrors the table gates by org prefix. Identifiers below are the
+-- capabilities in src/auth/capabilities.ts that gate the same actions in UI:
+--   research_documents + collections read   → research:view
+--   research_documents + collections write  → research:manage
+--
 -- RLS gap note: invoices / retainers / rate_cards read gates are project
 -- membership-based; org-wide rollups (utilization/revenue) therefore only
 -- surface projects the caller is already a member of — by design.

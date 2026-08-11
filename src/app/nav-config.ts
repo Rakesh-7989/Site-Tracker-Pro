@@ -78,6 +78,8 @@ export const NAV_CATALOG: NavItem[] = [
 
   { to: "/crm", label: "Pipeline", icon: "trend", requires: "crm:view", group: "Sales", modules: ["crm"] },
 
+  { to: "/research", label: "Research Library", icon: "book", requires: "research:view", group: "Insights", modules: ["research"] },
+
   { to: "/dpr", label: "Daily Reports", icon: "clipboard", requires: "dpr:view", group: "Field", modules: ["site_ops"] },
   { to: "/compliance", label: "Compliance", icon: "shield", requires: "compliance:view", group: "Field", modules: ["compliance"] },
   { to: "/digest", label: "Digest Subs", icon: "bell", requires: "digest:subscribe", group: "Field" },

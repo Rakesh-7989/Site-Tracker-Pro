@@ -1098,3 +1098,91 @@ Unassigned projects must never reach their client.
   `.in("id")`.
 - Full gate: `npm run lint` clean (0 errors) · `tsc --noEmit` clean · vitest
   **144 files / 1807 tests** · smoke **304 checks** · e2e-mock **11/11**.
+
+---
+
+## v4 Research Module — Library RLS alignment + docs bucket + gating (Complete, 2026-08-11)
+
+### Goal
+Land the uncommitted research-library scaffold (tables already shipped in
+`180_research_library.sql`, committed earlier): align the org-scoped RLS to the
+CRM posture (member read/insert/update, manager delete), add the missing
+`collection_documents` UPDATE policy, create the `research-docs` private
+storage bucket, admit the `research` module id, seed the `research_library`
+plan feature (Pro+), and ship a full `/research` UI (documents CRUD, search +
+filters, curated collections, per-doc status ladder). Gated by plan feature
+`research_library` via `<PlanGate>` + capability `research:view`/`research:manage`
+via `<AccessDenied>`/`useCan` + module `research` via the plugin route
+`<ModuleGuard>`.
+
+### Done (all verified)
+- **Migration 182** `scripts/supabase/182_research_module.sql` (applied live):
+  1. drops+re-adds the 155 `organizations_enabled_modules_check` to admit
+     `research` (mirrors 161);
+  2. `research_documents` + `research_collections` RLS relaxed from
+     `is_orgadmin()`-only writes to member read/insert/update (`user_org_ids()`)
+     with **manager delete** (`is_orgadmin()` or
+     `current_role_text() in ('pm','project_admin','superadmin')`);
+  3. adds the missing `collection_docs_update` policy (180 only had
+     read/insert/delete — delete now manager-scoped);
+  4. private `research-docs` bucket (50 MB, id=name) + org-scoped storage
+     policies (path `<org_id>/<doc_id>/<file>` via `storage.foldername(name)[1]`
+     in `user_org_ids()`, the 145 pattern; insert excludes
+     client/site_inspector/vendor/sub_contractor; delete manager-scoped);
+  5. seeds `research_library`: basic=false, pro/business/enterprise/custom=true
+     (matches `planCaps.ts` `FEATURE_MIN_PLAN` "pro").
+- **Capabilities** — `research:view` + `research:manage` (`capabilities.ts`),
+  labels + new `research` domain in `capabilityLabels.ts`. Assignments
+  (identity tier only, no project-tier): **view+manage** = orgadmin, pm,
+  project_admin; **view-only** = promoter, architect, senior_architect,
+  design_architect_interior, design_head, consultant_head, mep_consultant,
+  structural_consultant, consultant, site_engineer; **none** = prospector
+  (owns CRM, not the technical library), junior_architect, designer, client,
+  vendor, sub_contractor. Comment-sync appended to
+  `66_rls_role_catalog_sync.sql`.
+- **Module** — `research` added to `ModuleId`, `MODULES` (icon `book` — new
+  icon in `icons.tsx`), all 4 `INDUSTRY_TEMPLATES`, and i18n `module.research.*`
+  + `research.*` keys in en/hi/te (flat namespace, not deep-checked by
+  i18n.test.ts).
+- **`src/app/researchQueries.ts`** (uncommitted scaffold, now wired in) —
+  documents/collections CRUD + collection membership + `searchDocuments`
+  (websearch on `search_vector`) + label maps (`SOURCE_TYPE_LABELS`,
+  `CATEGORY_LABELS`, `STATUS_LABELS`, `STATUS_TONES`).
+- **`src/features/org/ResearchLibraryView.tsx`** (new, `/research`) — mirrors
+  CrmView: header + 5 stat cards, docs DataTable (search/filter/source/status),
+  collections side panel (create/delete + add/remove docs inline), document
+  create/edit modal (full metadata: title/abstract/source/category/url/tags/
+  authors/year/publisher/DOI/ISBN), status ladder + delete in the row editor
+  (`research:manage`-gated).
+- **Plugin catalog + nav** — `research` plugin owns the `/research` route
+  (lazy `ResearchLibraryView`); nav item under **Insights** group
+  (`requires: "research:view"`, `modules: ["research"]`).
+- **Tests** — new `tests/app/researchQueries.test.ts` (24) + research block in
+  `tests/auth/permissionsMatrix.test.ts` (manage/view-only/deny + no-dead-cap)
+  + `research_library` Pro deny-by-default in `tests/auth/planCaps.test.ts`.
+- **Smoke** — app-source scan + 4 markers added (309 checks, was 304).
+
+### Verification
+- Full gate: `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build`
+  clean · vitest **145 files / 1848 tests pass** (+1 file / +41) ·
+  `npm run smoke` **309 checks** (was 304) · `npm run test:e2e:mock` **11/11**.
+- **Live DB apply** (temp runner, like apply-175.mjs): migration 182 applied +
+  verified via pg — module CHECK admits `research`; 4 policies per table on
+  research_documents/research_collections + 4 on collection_documents
+  (incl. the new UPDATE); `research-docs` bucket private 50 MB + 4 storage
+  policies; feature caps basic=false / pro/business/enterprise/custom=true.
+- **Not yet committed/pushed** — commit the research bundle (researchQueries.ts
+  + RESEARCH_MODULE_PLAN.md + ResearchLibraryView + migration 182 + wiring +
+  tests). `scripts/apply-175.mjs` stays out of this commit (temp runner for the
+  unrelated 175). Push `prod` when shipping.
+
+### Notes / Follow-ups
+- Research write RLS is "any org member" (like CRM 161 insert/update) — the UI
+  gates writes behind `research:manage`; delete is manager-only
+  (orgadmin + pm + project_admin + superadmin).
+- Collections docs membership is org-scoped through the parent collection:
+  reads/inserts check `collection_id ∈ org collections`; add/remove also
+  validates `document_id ∈ org documents`.
+- Next backlog candidates: CRM sales→project handoff, per-owner pipeline is
+  done (H1), quotation→agreement auto-conversion is done (H2), CRM i18n;
+  consultancy C3 drill-downs; frontend redesign Phase 4 (component library).

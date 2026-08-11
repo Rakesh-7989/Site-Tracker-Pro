@@ -78,6 +78,8 @@ const app = [
   read("src/features/shell/BrandingEffect.tsx"),
   read("src/features/shell/useOrgBranding.ts"),
   read("src/features/shell/brandingCss.ts"),
+  read("src/features/org/ResearchLibraryView.tsx"),
+  read("src/app/researchQueries.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -228,6 +230,11 @@ const vite = read("vite.config.js");
   "BrandingEffect",
   "resolveShellBranding",
   "registerServiceWorker",
+  "ResearchLibraryView",
+  "researchQueries",
+  "listDocuments",
+  "listCollections",
+  "addDocumentToCollection",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

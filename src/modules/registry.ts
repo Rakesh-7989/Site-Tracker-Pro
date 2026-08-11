@@ -30,6 +30,7 @@ export const MODULES: readonly ModuleDef[] = [
   { id: "insights",     label: "Analytics & Insights",  description: "Analytics, cost forecast, utilization, revenue and activity feeds.", icon: "barChart" },
   { id: "kiosks",       label: "Kiosks & AR",           description: "Labour kiosk, site wall, AR drawing overlay and daily snapshot.", icon: "camera" },
   { id: "crm",          label: "CRM & Sales",           description: "Lead pipeline, meetings, quotations and agreements (prospecting to signed client).", icon: "trend" },
+  { id: "research",     label: "Research Library",      description: "Construction literature repository: IS/ASTM standards, papers, datasheets and method statements.", icon: "book" },
 ];
 
 export const MODULE_IDS: readonly ModuleId[] = MODULES.map(m => m.id);
@@ -78,10 +79,10 @@ export const CORE_MODULE: ModuleId = "projects";
  * every module on.
  */
 export const INDUSTRY_TEMPLATES: Record<CompanySegment, readonly ModuleId[]> = {
-  construction: ["crm", "projects", "site_ops", "people", "procurement", "compliance", "finance", "insights", "kiosks"],
-  architecture: ["crm", "projects", "design", "consultancy", "clients", "finance", "insights", "compliance", "procurement"],
-  interior:     ["crm", "projects", "design", "site_ops", "clients", "finance", "procurement", "compliance", "insights"],
-  consultancy:  ["crm", "projects", "consultancy", "clients", "finance", "insights"],
+  construction: ["crm", "projects", "site_ops", "people", "procurement", "compliance", "finance", "insights", "kiosks", "research"],
+  architecture: ["crm", "projects", "design", "consultancy", "clients", "finance", "insights", "compliance", "procurement", "research"],
+  interior:     ["crm", "projects", "design", "site_ops", "clients", "finance", "procurement", "compliance", "insights", "research"],
+  consultancy:  ["crm", "projects", "consultancy", "clients", "finance", "insights", "research"],
   multiple:     [...MODULE_IDS],
 };
 

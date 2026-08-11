@@ -115,6 +115,13 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
       { path: "crm", lazy: () => import("@/features/org/CrmView").then(m => ({ default: m.CrmView })) },
     ],
   },
+  {
+    moduleId: "research",
+    label: "Research Library",
+    routes: [
+      { path: "research", lazy: () => import("@/features/org/ResearchLibraryView").then(m => ({ default: m.ResearchLibraryView })) },
+    ],
+  },
 ];
 
 /** Flat list of every catalog route. */

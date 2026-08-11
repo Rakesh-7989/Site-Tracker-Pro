@@ -128,6 +128,10 @@ export const CAPABILITIES = [
   "crm:view",             // view the org lead pipeline (leads, meetings, quotations)
   "crm:manage",           // create/update leads + meetings + quotations + agreements
 
+  // ── Research Library (Research module, Phase 1) ──────────────────────────
+  "research:view",        // read the org research library (documents, collections)
+  "research:manage",      // create/edit documents + collections, add/remove docs
+
   // ── Consultancy audit (v4 Phase C: inspection checklists + reports) ─────
   "audit:manage",         // create/edit checklists, results + consultancy reports
 

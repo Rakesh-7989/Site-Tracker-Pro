@@ -519,6 +519,43 @@ describe("v4 A — CRM capability assignment (identity tier)", () => {
   });
 });
 
+// research:view = read the org research library (documents, collections);
+// research:manage = create/edit documents + collections, add/remove docs.
+// orgadmin manages + holds view; pm + project_admin also manage; design /
+// consultancy / field identities get read-only library access. prospector
+// is excluded — sales owns CRM, not the technical library.
+const RESEARCH_MANAGE_ROLES = ["orgadmin", "pm", "project_admin"] as const;
+const RESEARCH_VIEW_ONLY = [
+  "architect", "senior_architect", "design_architect_interior", "design_head",
+  "consultant_head", "mep_consultant", "structural_consultant", "consultant",
+  "site_engineer", "promoter",
+] as const;
+const RESEARCH_DENY_ROLES = ["junior_architect", "designer", "client", "vendor", "sub_contractor"] as const;
+
+describe("v4 A — research capability assignment (identity tier)", () => {
+  for (const role of RESEARCH_MANAGE_ROLES) {
+    it(`${role} holds research:view + research:manage`, () => {
+      const caps = identityCapabilities(role);
+      expect(caps).toContain("research:view" as never);
+      expect(caps).toContain("research:manage" as never);
+    });
+  }
+  for (const role of RESEARCH_VIEW_ONLY) {
+    it(`${role} holds research:view but not research:manage`, () => {
+      const caps = identityCapabilities(role);
+      expect(caps).toContain("research:view" as never);
+      expect(caps).not.toContain("research:manage" as never);
+    });
+  }
+  it("prospector + non-technical roles hold no research caps", () => {
+    for (const role of [...RESEARCH_DENY_ROLES, "prospector"] as const) {
+      const caps = identityCapabilities(role);
+      expect(caps, `role=${role}`).not.toContain("research:view" as never);
+      expect(caps, `role=${role}`).not.toContain("research:manage" as never);
+    }
+  });
+});
+
 describe("v4 A — no dead capabilities", () => {
   it("crm:view + crm:manage are granted to at least one identity role", () => {
     for (const cap of ["crm:view", "crm:manage"] as const) {
@@ -528,6 +565,18 @@ describe("v4 A — no dead capabilities", () => {
   });
   it("crm:view + crm:manage are denied to at least one identity role", () => {
     for (const cap of ["crm:view", "crm:manage"] as const) {
+      const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
+      expect(denied, `cap=${cap}`).toBe(true);
+    }
+  });
+  it("research:view + research:manage are granted to at least one identity role", () => {
+    for (const cap of ["research:view", "research:manage"] as const) {
+      const granted = IDENTITY_ROLES.some(r => identityCapabilities(r).includes(cap as never));
+      expect(granted, `cap=${cap}`).toBe(true);
+    }
+  });
+  it("research:view + research:manage are denied to at least one identity role", () => {
+    for (const cap of ["research:view", "research:manage"] as const) {
       const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
       expect(denied, `cap=${cap}`).toBe(true);
     }

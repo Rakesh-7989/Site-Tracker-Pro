@@ -63,6 +63,8 @@ export const FEATURE_LABEL: Record<string, string> = {
   "crm:view": "View the sales pipeline (leads, meetings, quotations)",
   "crm:manage": "Create / update leads, meetings, quotations & agreements",
   "audit:manage": "Manage consultancy inspections, checklists & audit reports",
+  "research:view": "View the research library (documents, collections)",
+  "research:manage": "Create / edit research documents & collections",
 };
 
 /** Founder-readable label for a capability (falls back to a humanized id). */
@@ -85,6 +87,7 @@ const GROUP_BY_DOMAIN: Record<string, string> = {
   rate: "consultancy", retainer: "consultancy",
   billing: "finance", revenue: "finance",
   ffe: "architecture", statutory: "architecture", procurement: "architecture",
+  research: "research",
   compliance: "compliance", rera: "compliance", gstn: "compliance", epfo: "compliance",
   message: "comms", notification: "comms", whatsapp: "comms", digest: "comms",
   activity: "activity", audit: "activity",
@@ -92,7 +95,7 @@ const GROUP_BY_DOMAIN: Record<string, string> = {
   handover: "handover", org: "orgadmin", platform: "platform",
 };
 
-export const GROUP_ORDER = ["projects","progress","dpr","capture","siteops","team","materials","drawings","boq","rfi","finance","consultancy","architecture","compliance","comms","activity","export","handover","orgadmin","platform"] as const;
+export const GROUP_ORDER = ["projects","progress","dpr","capture","siteops","team","materials","drawings","boq","rfi","finance","consultancy","architecture","research","compliance","comms","activity","export","handover","orgadmin","platform"] as const;
 
 export const GROUP_LABEL: Record<string, string> = {
   projects: "Projects", progress: "Progress & Milestones", dpr: "Daily Reports (DPR)",
@@ -100,6 +103,7 @@ export const GROUP_LABEL: Record<string, string> = {
   materials: "Materials & Procurement", drawings: "Drawings", boq: "BOQ & Estimates",
   rfi: "RFIs & Change Orders", finance: "Finance & Billing", consultancy: "Consultancy Engagements",
   architecture: "Architecture & Design",
+  research: "Research Library",
   compliance: "Compliance & Filings", comms: "Communications", activity: "Activity & Audit", export: "Export & Sharing",
   handover: "Handover", orgadmin: "Org Administration", platform: "Platform Administration",
 };

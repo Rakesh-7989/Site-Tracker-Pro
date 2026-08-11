@@ -64,6 +64,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "ffe:manage", "statutory:manage", "procurement:view",
     "crm:view", "crm:manage",
     "audit:manage",
+    "research:view", "research:manage",
   ),
   promoter: arr(
     // Paying firm owner — sees finances + DPR digests + handover packets.
@@ -71,6 +72,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "dpr:view", "digest:subscribe", "digest:receive",
     "budget:view", "ledger:view", "compliance:view",
     "handover:view", "handover:sign",
+    "research:view",
     "export:pdf", "export:csv",
   ),
   // Separation of Duties: Project Admin creates invoices/RA bills but
@@ -95,6 +97,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "ffe:manage", "statutory:manage", "procurement:view",
     "crm:view",
     "audit:manage",
+    "research:view", "research:manage",
     "export:pdf", "export:csv",
   ),
   prospector: arr(
@@ -145,6 +148,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "procurement:view",
     "crm:view",
     "audit:manage",
+    "research:view", "research:manage",
     "export:pdf", "export:csv",
   ),
 
@@ -159,6 +163,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "boq:edit", "estimate:edit",
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
+    "research:view",
     "export:pdf", "export:csv",
   ),
   senior_architect: arr(
@@ -172,6 +177,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "update:add", "update:edit", "update:delete",
     "material:price:view",  // Material cost context for change orders.
     "time:log", "deliverable:manage", "review:comment",
+    "research:view",
     "export:pdf", "export:csv",
   ),
   junior_architect: arr(
@@ -194,6 +200,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
     "ffe:manage", "statutory:manage", "procurement:view",
+    "research:view",
   ),
   design_head: arr(
     "activity:view",
@@ -211,6 +218,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
     "ffe:manage", "statutory:manage", "procurement:view",
+    "research:view",
     "audit:manage",
   ),
   consultant_head: arr(
@@ -227,6 +235,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "utilization:view",
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
     "ffe:manage", "statutory:manage", "procurement:view",
+    "research:view",
     "audit:manage",
   ),
   designer: arr(
@@ -251,6 +260,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "inspection:create", "inspection:close",
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
+    "research:view",
   ),
   structural_consultant: arr(
     "activity:view",
@@ -261,6 +271,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "inspection:create", "inspection:close",
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
+    "research:view",
   ),
   // NOTE (founder 2026-08-04): consultant and designer are near-identical
   // (only differ by rfi:respond vs drawings:upload) — deliberate. designer is
@@ -273,6 +284,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rfi:create", "rfi:respond",
     "update:add",
     "time:log", "deliverable:manage", "review:comment",
+    "research:view",
   ),
   // site_engineer is now the single field role — it absorbs the former
   // site_supervisor (voice DPR origin) and civil_engineer (founder
@@ -292,6 +304,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "voice:record", "photo:upload",
     "dpr:submit", "dpr:view",   // files DPRs; pm approves/publishes them (SoD)
     "drawings:markup",
+    "research:view",
   ),
 
   // Supply chain.
