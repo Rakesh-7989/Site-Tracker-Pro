@@ -4,9 +4,10 @@
 // When `totalPages` is provided, it shows "Page X of Y" instead of "Page X".
 
 import { cn } from "@/lib/cn";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./atoms";
 import { Icon } from "./icons";
+import { Select } from "./forms";
 
 export interface PagerProps {
   /** 0-based page index. */
@@ -18,15 +19,44 @@ export interface PagerProps {
   busy?: boolean;
   /** Optional total page count — when set, shows "Page X of Y" and disables Next when page >= totalPages - 1. */
   totalPages?: number;
+  /** Optional page size selector — adds a dropdown to change items per page. */
+  pageSize?: number;
+  /** Callback when page size changes. Receives new page size. */
+  onPageSizeChange?: (size: number) => void;
+  /** Available page size options. Default: [10, 25, 50, 100]. */
+  pageSizeOptions?: number[];
   className?: string;
 }
 
-export function Pager({ page, hasNext, onPrev, onNext, busy = false, totalPages, className }: PagerProps): JSX.Element {
+export function Pager({
+  page,
+  hasNext,
+  onPrev,
+  onNext,
+  busy = false,
+  totalPages,
+  pageSize,
+  onPageSizeChange,
+  pageSizeOptions = [10, 25, 50, 100],
+  className,
+}: PagerProps): JSX.Element {
   const canGoPrev = page > 0 && !busy;
   const canGoNext = (totalPages !== undefined
     ? page < Math.max(totalPages, 1) - 1
     : hasNext) && !busy;
   const showTotal = totalPages !== undefined && totalPages > 0;
+
+  const [localPageSize, setLocalPageSize] = useState(pageSize ?? 10);
+
+  useEffect(() => {
+    if (pageSize !== undefined) setLocalPageSize(pageSize);
+  }, [pageSize]);
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const size = Number(e.target.value);
+    setLocalPageSize(size);
+    onPageSizeChange?.(size);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,6 +79,15 @@ export function Pager({ page, hasNext, onPrev, onNext, busy = false, totalPages,
         {showTotal ? `Page ${page + 1} of ${totalPages}` : `Page ${page + 1}`}
       </span>
       <Button size="sm" variant="secondary" disabled={!canGoNext} onClick={onNext} aria-label="Next page">Next <Icon name="chevron" size={14} /></Button>
+      {onPageSizeChange && (
+        <Select
+          value={localPageSize}
+          onChange={handlePageSizeChange}
+          options={pageSizeOptions.map(s => ({ value: String(s), label: `${s} / page` }))}
+          compact
+          aria-label="Items per page"
+        />
+      )}
     </nav>
   );
 }

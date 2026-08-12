@@ -1985,5 +1985,9 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **CSS** — new `@keyframes chart-enter` + `.animate-chart-enter` utility in `index.css`.
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 13)
-Data-intensive candidates: Pager page-size selector, DataTable sticky columns, or ChartCard animation on load. Candidate next sub-task (needs user go).
+### Phase 13 — Pager page-size selector (Complete, commit `b2e4f8a`, pushed `prod`, live 200)
+- **Pager `pageSize` selector** — opt-in dropdown for items-per-page. New props: `pageSize` (current), `onPageSizeChange` (callback), `pageSizeOptions` (default [10,25,50,100]). Uses `Select` component with `compact` style. Syncs with external state via callback; internal state for uncontrolled use.
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 14)
+Data-intensive candidates: DataTable sticky columns, ChartCard empty-state illustration, or Pager first/last page buttons. Candidate next sub-task (needs user go).
