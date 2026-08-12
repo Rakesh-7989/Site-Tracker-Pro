@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Skeleton } from "./Skeleton";
@@ -36,6 +36,12 @@ export interface DataTableProps<T> {
   variant?: "card" | "table";
   /** Tighter row padding + smaller cell text for dense/data-heavy surfaces. */
   dense?: boolean;
+  /** Virtualize rows for large datasets (table variant only). Renders only visible rows + buffer. */
+  virtualized?: boolean;
+  /** Row height in pixels for virtualization (default: 40). */
+  virtualRowHeight?: number;
+  /** Number of extra rows to render above/below viewport (default: 5). */
+  virtualOverscan?: number;
   onRowClick?: (row: T) => void;
   pagination?: PagerProps;
   /** Cap the table body height (a CSS length, e.g. "360px" or "24rem") — makes the table header sticky while rows scroll. Table variant only. */
@@ -116,6 +122,9 @@ export function DataTable<T>({
   ariaLabel,
   variant = "card",
   dense = false,
+  virtualized = false,
+  virtualRowHeight = 40,
+  virtualOverscan = 5,
   onRowClick,
   pagination,
   maxHeight,
@@ -123,6 +132,13 @@ export function DataTable<T>({
 }: DataTableProps<T>): JSX.Element {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  // Virtualization state (table variant only)
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const rowHeight = virtualRowHeight;
+  const overscan = virtualOverscan;
 
   const sortedRows = useMemo(() => {
     if (!sortKey) return rows;
@@ -157,6 +173,14 @@ export function DataTable<T>({
     );
   }
 
+  // Virtualization: compute visible row range
+  const virtualizedEnabled = virtualized && variant === "table" && containerHeight > 0;
+  const visibleCount = virtualizedEnabled ? Math.ceil(containerHeight / rowHeight) + 2 * overscan : sortedRows.length;
+  const startIndex = virtualizedEnabled ? Math.max(0, Math.floor(scrollTop / rowHeight) - overscan) : 0;
+  const endIndex = virtualizedEnabled ? Math.min(sortedRows.length, startIndex + visibleCount) : sortedRows.length;
+  const visibleRows = virtualizedEnabled ? sortedRows.slice(startIndex, endIndex) : sortedRows;
+  const offsetY = virtualizedEnabled ? startIndex * rowHeight : 0;
+
   if (error) {
     return (
       <div className="bg-card rounded-2xl border border-default shadow-card p-4">
@@ -174,7 +198,15 @@ export function DataTable<T>({
   if (variant === "table") {
     return (
       <div className={cn(className)}>
-        <div className={cn("overflow-x-auto", maxHeight && "overflow-y-auto")} style={maxHeight ? { maxHeight } : undefined}>
+        <div
+          ref={scrollContainerRef}
+          className={cn("overflow-x-auto", maxHeight && "overflow-y-auto")}
+          style={maxHeight ? { maxHeight } : undefined}
+          onScroll={e => {
+            setScrollTop(e.currentTarget.scrollTop);
+            setContainerHeight(e.currentTarget.clientHeight);
+          }}
+        >
           <table className="w-full text-sm" aria-label={ariaLabel}>
             <thead>
               <tr className={cn("border-b border-default", maxHeight && "sticky top-0 z-10 bg-panel")}>
@@ -196,31 +228,34 @@ export function DataTable<T>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-default">
-              {sortedRows.map((row, index) => (
-                <tr
-                  key={resolveRowKey(row, rowKey, index)}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  onKeyDown={onRowClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(row); } } : undefined}
-                  tabIndex={onRowClick ? 0 : undefined}
-                  role={onRowClick ? "button" : undefined}
-                  className={cn(
-                    "hover:bg-elevated transition",
-                    onRowClick && "cursor-pointer",
-                  )}
-                >
-                  {columns.map(col => (
-                    <td key={col.key} className={cn(
-                      "px-3 text-fg-primary",
-                      dense ? "py-2" : "py-3",
-                      col.hideOnMobile && "hidden md:table-cell",
-                      col.className,
-                    )}>
-                      {col.render(row)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
+            <tbody className="divide-y divide-default" style={virtualizedEnabled ? { transform: `translateY(${offsetY}px)` } : undefined}>
+              {visibleRows.map((row, visibleIndex) => {
+                const actualIndex = startIndex + visibleIndex;
+                return (
+                  <tr
+                    key={resolveRowKey(row, rowKey, actualIndex)}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    onKeyDown={onRowClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(row); } } : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    role={onRowClick ? "button" : undefined}
+                    className={cn(
+                      "hover:bg-elevated transition",
+                      onRowClick && "cursor-pointer",
+                    )}
+                  >
+                    {columns.map(col => (
+                      <td key={col.key} className={cn(
+                        "px-3 text-fg-primary",
+                        dense ? "py-2" : "py-3",
+                        col.hideOnMobile && "hidden md:table-cell",
+                        col.className,
+                      )}>
+                        {col.render(row)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

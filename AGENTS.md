@@ -1970,5 +1970,10 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **ChartCard `legend` prop** — new responsive legend slot: desktop `flex-wrap` with gap; mobile (`xs:480`) horizontal scroll with `scrollbar-hide` and `min-w-max` inner container. Distinct from `footer` (legends vs footnotes). AnalyticsView pie legend migrated to `legend`.
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 10)
-Data-intensive candidates: Board mobile long-press drag visual feedback already done, or new Phase 10 candidates. Candidate next sub-task (needs user go).
+### Phase 10 — DataTable virtualized rows (Complete, commit `f7e4b8a`, pushed `prod`, live 200)
+- **DataTable `virtualized` prop** — opt-in virtual scrolling for table variant with `virtualRowHeight` (default 40px) and `virtualOverscan` (default 5 rows). Uses scroll position + container height to render only visible rows + overscan buffer, with `translateY` offset for scrollbar continuity. Scroll listener on container ref updates state; sticky header unaffected.
+- **Props** — `virtualized`, `virtualRowHeight`, `virtualOverscan` (all optional, back-compat).
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 11)
+Data-intensive candidates: Board mobile long-press drag visual feedback already done, ChartCard responsive legend done, or new Phase 11 candidates (DataTable column resizing, ChartCard animation on load, Pager page-size selector). Candidate next sub-task (needs user go).
