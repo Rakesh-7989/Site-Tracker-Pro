@@ -1,7 +1,24 @@
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Card, Spinner } from "./atoms";
 import { Icon, type IconName } from "./icons";
 import { cn } from "@/lib/cn";
+
+/** Right-edge "more content" hint while the legend can still scroll right (Tabs/DataTable pattern). */
+function useScrollRightHint(ref: { current: HTMLDivElement | null }): boolean {
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setHint(el.scrollWidth > el.clientWidth && el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+    check();
+    el.addEventListener("scroll", check);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
+  }, [ref]);
+  return hint;
+}
 
 export interface ChartCardProps {
   title: string;
@@ -41,6 +58,8 @@ export function ChartCard({
   className,
 }: ChartCardProps): JSX.Element {
   const animationClass = animate ? "animate-chart-enter" : "";
+  const legendRef = useRef<HTMLDivElement>(null);
+  const legendCanScrollRight = useScrollRightHint(legendRef);
   return (
     <Card padding="md" className={className}>
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -80,10 +99,15 @@ export function ChartCard({
       )}
 
       {legend && (
-        <div className="mt-2 xs:overflow-x-auto xs:scrollbar-hide">
-          <div className="flex flex-wrap items-center gap-1.5 min-w-max xs:min-w-0">
-            {legend}
+        <div className="relative mt-2">
+          <div ref={legendRef} className="xs:overflow-x-auto xs:scrollbar-hide">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-max xs:min-w-0">
+              {legend}
+            </div>
           </div>
+          {legendCanScrollRight && (
+            <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none bg-gradient-to-l from-bg-primary to-transparent" />
+          )}
         </div>
       )}
 

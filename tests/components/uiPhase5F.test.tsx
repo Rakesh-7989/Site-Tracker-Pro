@@ -5,6 +5,14 @@ import { render, screen } from "@testing-library/react";
 
 import { DataTable } from "@/components/ui/DataTable";
 
+if (!(window as { ResizeObserver?: unknown }).ResizeObserver) {
+  (window as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  };
+}
+
 interface Row { name: string; amount: number }
 const columns = [
   { key: "name", header: "Name", render: (r: Row) => r.name },

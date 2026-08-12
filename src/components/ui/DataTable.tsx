@@ -64,6 +64,26 @@ export interface DataTableProps<T> {
 
 const SKELETON_WIDTHS = ["w-full", "w-3/4", "w-1/2", "w-5/6"];
 
+/** Right-edge "more content" hint while a scroll container can still scroll right (Tabs pattern). */
+function useScrollRightHint(ref: { current: HTMLDivElement | null }, active: boolean): boolean {
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    if (!active) {
+      setHint(false);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setHint(el.scrollWidth > el.clientWidth && el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+    check();
+    el.addEventListener("scroll", check);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
+  }, [ref, active]);
+  return hint;
+}
+
 function LoadingSkeleton({ columns, variant, dense }: { columns: Column<unknown>[]; variant: "card" | "table"; dense: boolean }): JSX.Element {
   if (variant === "table") {
     return (
@@ -163,8 +183,14 @@ export function DataTable<T>({
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const cardScrollRef = useRef<HTMLDivElement>(null);
   const rowHeight = virtualRowHeight;
   const overscan = virtualOverscan;
+
+  // Horizontal-scroll hint (fade only while more content is off-screen right).
+  const scrollContainerRendered = !loading && !error && rows.length > 0;
+  const activeScrollRef = variant === "card" ? cardScrollRef : scrollContainerRef;
+  const canScrollRight = useScrollRightHint(activeScrollRef, scrollContainerRendered);
 
   // Initialize column widths from initialWidth props
   useEffect(() => {
@@ -272,6 +298,7 @@ export function DataTable<T>({
   if (variant === "table") {
     return (
       <div className={cn(className)}>
+        <div className="relative">
         <div
           ref={scrollContainerRef}
           className={cn("overflow-x-auto", maxHeight && "overflow-y-auto")}
@@ -342,6 +369,7 @@ export function DataTable<T>({
                     className={cn(
                       "hover:bg-elevated transition",
                       onRowClick && "cursor-pointer",
+                      (!!onRowClick || !!expandedContent) && "xs:min-h-[44px]",
                     )}
                   >
                     {expandedContent && (
@@ -388,6 +416,10 @@ export function DataTable<T>({
             </tbody>
           </table>
         </div>
+        {canScrollRight && (
+          <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none bg-gradient-to-l from-bg-primary to-transparent" />
+        )}
+        </div>
         {pagination && (
           <div className="border-t border-default pt-3 px-3">
             <Pager {...pagination} />
@@ -399,7 +431,8 @@ export function DataTable<T>({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="xs:overflow-x-auto xs:scrollbar-hide">
+      <div className="relative">
+      <div ref={cardScrollRef} className="xs:overflow-x-auto xs:scrollbar-hide">
         <div className="min-w-[500px] space-y-2">
           {sortedRows.map((row, index) => {
         const rowKeyValue = resolveRowKey(row, rowKey, index);
@@ -432,7 +465,7 @@ export function DataTable<T>({
 
         if (expandedContent) {
           return (
-            <div key={rowKeyValue} className="bg-card rounded-2xl border border-default shadow-card">
+            <div key={rowKeyValue} className={cn("bg-card rounded-2xl border border-default shadow-card", (!!onRowClick || !!expandedContent) && "xs:min-h-[44px]")}>
               <div
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
@@ -456,7 +489,7 @@ export function DataTable<T>({
             <button
               key={rowKeyValue}
               onClick={() => onRowClick(row)}
-              className={cn("w-full text-left bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3 cursor-pointer hover:shadow-hover transition-shadow", dense ? "p-2.5" : "p-3")}
+              className={cn("w-full text-left bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3 cursor-pointer hover:shadow-hover transition-shadow", dense ? "p-2.5" : "p-3", (!!onRowClick || !!expandedContent) && "xs:min-h-[44px]")}
             >
               {rowContent}
             </button>
@@ -466,13 +499,17 @@ export function DataTable<T>({
         return (
           <div
             key={rowKeyValue}
-            className={cn("bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3", dense ? "p-2.5" : "p-3")}
+            className={cn("bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3", dense ? "p-2.5" : "p-3", (!!onRowClick || !!expandedContent) && "xs:min-h-[44px]")}
           >
             {rowContent}
           </div>
         );
       })}
       </div>
+      </div>
+      {canScrollRight && (
+        <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none bg-gradient-to-l from-bg-primary to-transparent" />
+      )}
       </div>
       {pagination && <Pager {...pagination} />}
     </div>

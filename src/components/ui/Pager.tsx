@@ -89,10 +89,10 @@ export function Pager({
   }, [canGoPrev, canGoNext, canGoFirst, canGoLast, onPrev, onNext, onFirst, onLast]);
 
   return (
-    <nav role="navigation" aria-label="Pagination" className={cn("flex items-center justify-center gap-2 pt-1", className)}>
+    <nav role="navigation" aria-label="Pagination" className={cn("flex flex-wrap items-center justify-center gap-2 pt-1", className)}>
       {onFirst && <Button size="sm" variant="secondary" disabled={!canGoFirst} onClick={onFirst} aria-label="First page"><Icon name="chevrons-left" size={14} /></Button>}
       <Button size="sm" variant="secondary" disabled={!canGoPrev} onClick={onPrev} aria-label="Previous page"><Icon name="chevron" size={14} className="rotate-180" /> Prev</Button>
-      <span className="text-[12px] text-fg-secondary tabular-nums" aria-current="page">
+      <span className="text-[12px] text-fg-secondary tabular-nums whitespace-nowrap" aria-current="page">
         {showTotal ? `Page ${page + 1} of ${totalPages}` : `Page ${page + 1}`}
       </span>
       <Button size="sm" variant="secondary" disabled={!canGoNext} onClick={onNext} aria-label="Next page">Next <Icon name="chevron" size={14} /></Button>

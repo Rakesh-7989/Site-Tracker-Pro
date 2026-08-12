@@ -6,6 +6,14 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 
 import { DataTable, type Column } from "@/components/ui/DataTable";
 
+if (!(window as { ResizeObserver?: unknown }).ResizeObserver) {
+  (window as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  };
+}
+
 type Row = { id: number; name: string };
 
 const columns: Column<Row>[] = [
