@@ -16,6 +16,10 @@ export interface PagerProps {
   hasNext: boolean;
   onPrev: () => void;
   onNext: () => void;
+  /** Optional jump-to-first callback — renders a First button when provided. */
+  onFirst?: () => void;
+  /** Optional jump-to-last callback — renders a Last button when provided. */
+  onLast?: () => void;
   busy?: boolean;
   /** Optional total page count — when set, shows "Page X of Y" and disables Next when page >= totalPages - 1. */
   totalPages?: number;
@@ -33,6 +37,8 @@ export function Pager({
   hasNext,
   onPrev,
   onNext,
+  onFirst,
+  onLast,
   busy = false,
   totalPages,
   pageSize,
@@ -42,6 +48,10 @@ export function Pager({
 }: PagerProps): JSX.Element {
   const canGoPrev = page > 0 && !busy;
   const canGoNext = (totalPages !== undefined
+    ? page < Math.max(totalPages, 1) - 1
+    : hasNext) && !busy;
+  const canGoFirst = page > 0 && !busy;
+  const canGoLast = (totalPages !== undefined
     ? page < Math.max(totalPages, 1) - 1
     : hasNext) && !busy;
   const showTotal = totalPages !== undefined && totalPages > 0;
@@ -66,19 +76,27 @@ export function Pager({
       } else if (e.key === "ArrowRight" && canGoNext) {
         e.preventDefault();
         onNext();
+      } else if (e.key === "Home" && onFirst && canGoFirst) {
+        e.preventDefault();
+        onFirst();
+      } else if (e.key === "End" && onLast && canGoLast) {
+        e.preventDefault();
+        onLast();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [canGoPrev, canGoNext, onPrev, onNext]);
+  }, [canGoPrev, canGoNext, canGoFirst, canGoLast, onPrev, onNext, onFirst, onLast]);
 
   return (
-    <nav role="navigation" aria-label="Pagination" className={cn("flex items-center justify-center gap-3 pt-1", className)}>
+    <nav role="navigation" aria-label="Pagination" className={cn("flex items-center justify-center gap-2 pt-1", className)}>
+      {onFirst && <Button size="sm" variant="secondary" disabled={!canGoFirst} onClick={onFirst} aria-label="First page"><Icon name="chevrons-left" size={14} /></Button>}
       <Button size="sm" variant="secondary" disabled={!canGoPrev} onClick={onPrev} aria-label="Previous page"><Icon name="chevron" size={14} className="rotate-180" /> Prev</Button>
       <span className="text-[12px] text-fg-secondary tabular-nums" aria-current="page">
         {showTotal ? `Page ${page + 1} of ${totalPages}` : `Page ${page + 1}`}
       </span>
       <Button size="sm" variant="secondary" disabled={!canGoNext} onClick={onNext} aria-label="Next page">Next <Icon name="chevron" size={14} /></Button>
+      {onLast && <Button size="sm" variant="secondary" disabled={!canGoLast} onClick={onLast} aria-label="Last page"><Icon name="chevrons-right" size={14} /></Button>}
       {onPageSizeChange && (
         <Select
           value={localPageSize}
