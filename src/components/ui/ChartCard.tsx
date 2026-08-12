@@ -13,6 +13,8 @@ export interface ChartCardProps {
   action?: ReactNode;
   /** Optional slot below the chart body (legends, footnotes…). */
   footer?: ReactNode;
+  /** Optional legend slot with responsive behavior (mobile: horizontal scroll, desktop: flex-wrap). */
+  legend?: ReactNode;
   height?: number;
   className?: string;
 }
@@ -27,6 +29,7 @@ export function ChartCard({
   error,
   action,
   footer,
+  legend,
   height = 200,
   className,
 }: ChartCardProps): JSX.Element {
@@ -62,6 +65,14 @@ export function ChartCard({
       {!loading && !error && !empty && (
         <div style={{ width: "100%", height }}>
           {children}
+        </div>
+      )}
+
+      {legend && (
+        <div className="mt-2 xs:overflow-x-auto xs:scrollbar-hide">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-max xs:min-w-0">
+            {legend}
+          </div>
         </div>
       )}
 

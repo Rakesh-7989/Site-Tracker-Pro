@@ -1966,5 +1966,9 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **State** — `longPressItemId` + `handleTouchStart`/`handleTouchEnd` with 350ms timer; clears on `touchmove`/`touchend` before threshold. ARIA `aria-grabbed` covers both desktop drag and mobile long-press.
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 9)
-Data-intensive candidates: ChartCard responsive legend on remaining chart consumers, or Pager keyboard shortcuts (←/→). Candidate next sub-task (needs user go).
+### Phase 9 — ChartCard responsive legend (Complete, commit `d4e7f2a`, pushed `prod`, live 200)
+- **ChartCard `legend` prop** — new responsive legend slot: desktop `flex-wrap` with gap; mobile (`xs:480`) horizontal scroll with `scrollbar-hide` and `min-w-max` inner container. Distinct from `footer` (legends vs footnotes). AnalyticsView pie legend migrated to `legend`.
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 10)
+Data-intensive candidates: Board mobile long-press drag visual feedback already done, or new Phase 10 candidates. Candidate next sub-task (needs user go).

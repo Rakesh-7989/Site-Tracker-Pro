@@ -114,7 +114,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
               height={160}
               empty={pie.length === 0}
               emptyMessage="No projects yet"
-              footer={<ChartLegend rows={pie} />}
+              legend={<ChartLegend rows={pie} />}
             >
               <ResponsiveContainer>
                 <PieChart>
