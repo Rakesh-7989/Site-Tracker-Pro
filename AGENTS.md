@@ -2220,3 +2220,29 @@ Recommended next focus: **Phase-4 props-parity sweep** on DataTable/Pager/
 ChartCard touched since Phase 5 (check for missing `className` forwarding,
 `fit`/`compact`/`dark` variants, `title`/`action`/`padding` on Card, etc.).
 Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 22: props-parity sweep (Complete, 2026-08-12)
+
+### Goal
+Close remaining Phase-4 parity gaps on components modified since Phase 5:
+DataTable, ChartCard.
+
+### Done (all verified)
+- **ChartCard** — added `padding?: "none" | "sm" | "md" | "lg"` (default `md`),
+  forwarded to the internal `Card`. Matches Card's `padding` prop exactly.
+- **DataTable** — added `fit?: boolean` (default `false`) for card variant.
+  When true, disables the `min-w-[500px]` inner wrapper so card rows can
+  shrink below 500px (mirrors `fit` on Select/Input).
+- **Tests** — existing ChartCard (`uiPhase5D`), DataTable (`uiPhase5F`, `uiPhase17`,
+  `uiPhase21`, `uiPhase5A`, `uiBatchM`) regression suites all green.
+- **Verify (Phase 22)** — lint clean (0 errors) · tsc clean · build clean
+  (9.32s) · vitest **175 files / 2046 tests** · smoke **309 checks** · e2e-mock
+  **11/11**.
+
+### Next (Phase 23)
+All Phase-4 parity gaps closed. Recommended next: **Phase-5 data-intensive
+views** (kanban, calendar, advanced charting) or **Phase-6 mobile polish**
+(remaining touch-target audits, RTL, large-text). Candidate next sub-task
+(needs user go).
