@@ -2053,3 +2053,54 @@ Give the offset Pager jump-to-boundary controls for long paged lists: **First**
 ### Next (Phase 17)
 Data-intensive candidate: DataTable row expansion. Candidate next sub-task
 (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 17: DataTable row expansion (Complete, 2026-08-12)
+
+### Goal
+Let dense tables/cards reveal per-row detail inline without leaving the list:
+an opt-in **row expansion** (`expandedContent`) with a chevron toggle per row
+and an expandable panel beneath it — both card and table variants, layering on
+`onRowClick`, `dense`, pagination, sticky/resizable columns.
+
+### Done (all verified)
+- **DataTable.tsx** — two new props:
+  - `expandedContent?: (row: T) => ReactNode` — enables expansion; each row
+    gets a real `<button type="button">` toggle (`aria-expanded`, "Expand
+    row"/"Collapse row" aria-labels, chevron icon, `rotate-90` when open).
+  - `onExpandedChange?: (row: T, expanded: boolean) => void` — fired after
+    each toggle. Internal `expandedKeys: Set<string>` (keyed by
+    `resolveRowKey`) is uncontrolled; callback lets consumers react.
+  - **Card variant** — the card becomes a wrapper: toggle chevron pins to the
+    right of the row content; expanded panel renders beneath inside the card
+    (`border-t border-default px-3 py-2.5`, inherits `dense` padding on the
+    header row). `onRowClick` is retained on the header row; the toggle
+    `stopPropagation()`s so it never fires row-click (matches the POsTab
+    nested-control rule — the chevron is a focusable button, not a nested
+    `<button>` inside one).
+  - **Table variant** — an empty toggle `<th w-8>` is prepended to the header
+    (skipped when expansion off), each row gets the toggle `<td>`, and the
+    expanded panel is a full-width `<tr>` with `colSpan={columns.length + 1}`
+    + `bg-bg-secondary/50`. The row's `role="button"`/`Enter`-activation is
+    suppressed while expansion is on (nested-controls rule); clicks still fire
+    `onRowClick`.
+  - **Virtualization** — `virtualized` is ignored when `expandedContent` is
+    present (expanded rows break the fixed-row-height math; documented).
+- **Tests** — new `tests/components/uiPhase17.test.tsx` (8: no toggles without
+  expandedContent / expand+collapse / per-row content / onRowClick header
+  works while toggle separate / onExpandedChange fires true+false / table
+  toggle column + colSpan span / toggle does not bubble to onRowClick in
+  table variant / virtualization disabled when expanded). Container-scoped
+  queries (label queries accumulate across renders in this repo).
+- **Verify (Phase 17)** — all 28 `tests/components` files pass (184 tests) ·
+  lint clean (0 errors) · tsc clean · build clean (3.85s) · vitest **173 files
+  / 2034 tests** (+1 / +8) · smoke **309 checks** · e2e-mock **11/11**.
+
+### Next (Phase 18)
+Phase 5 candidates are complete (tables, charts, kanban, calendar a11y +
+polish). Recommended next: **Phase 6 — mobile/responsive depth**: interactive
+tables on 480px viewports (touch targets, horizontal-scroll affordance),
+ChartCard touch-friendly legends, Pager wrap on narrow screens, or a
+Phase-4-style props-parity sweep on any newly touched component. Candidate
+next sub-task (needs user go).
