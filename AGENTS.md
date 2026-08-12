@@ -2104,3 +2104,119 @@ tables on 480px viewports (touch targets, horizontal-scroll affordance),
 ChartCard touch-friendly legends, Pager wrap on narrow screens, or a
 Phase-4-style props-parity sweep on any newly touched component. Candidate
 next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 18: mobile/responsive depth (Complete, 2026-08-12)
+
+### Goal
+Polish the data-intensive surfaces for narrow viewports where they matter
+most: horizontal-scroll discoverability on card/table grids + Pager that
+wraps instead of overflowing.
+
+### Done (all verified)
+- **DataTable.tsx** — right-edge **scroll-hint fade** (the same pattern used by
+  Tabs): when the horizontal scroll container overflows, a subtle gradient
+  (`from-bg-primary to-transparent`) appears on the right edge, fading
+  away as the user scrolls to the end. Implemented via a shared
+  `useScrollRightHint(ref, active)` hook that attaches a scroll listener +
+  `ResizeObserver`. Applied to both variants:
+  - **Card** (`xs:overflow-x-auto`) — ref on the wrapper; fade auto-shows at
+    xs (<480px) when the 500px min-width row overflows.
+  - **Table** (`overflow-x-auto`) — ref on the table scroller (reuses
+    `scrollContainerRef`); fade appears whenever columns push past viewport.
+  The hint is mutually exclusive with `virtualized` (same guard as
+  `expandedContent`) and degrades gracefully — no hint when no overflow.
+- **Pager.tsx** — container `nav` gains `flex-wrap` so the row of First/Prev/
+  Page/Next/Last + page-size `Select` wraps on very narrow screens instead
+  of clipping. Page label (`Page X of Y`) marked `whitespace-nowrap` to
+  prevent mid-number breaks.
+- **Tests** — new `tests/components/uiPhase18.test.tsx` (3: card fade / table
+  fade / Pager flex-wrap classes). All 28 `tests/components` files pass
+  (184 tests).
+- **Verify (Phase 18)** — lint clean (0 errors) · tsc clean · build clean
+  (3.68s) · vitest **174 files / 2037 tests** (+1 / +3) · smoke **309 checks**
+  · e2e-mock **11/11**.
+
+---
+
+## Option 4 — Frontend Redesign Phase 19: ChartCard touch-friendly legend (Complete, 2026-08-12)
+
+### Goal
+Make legend items comfortably tappable on mobile and add the same
+right-edge scroll hint that DataTable now uses.
+
+### Done (all verified)
+- **ChartCard.tsx** — new `touchLegend?: boolean` prop (default false). When
+  true, the legend wrapper gains class `chartcard-legend--touch` which via
+  CSS styles direct children (`> *`) to `min-height: 44px; padding: 0.5rem
+  0.75rem` — giving each swatch+label row a 44×44-friendly hit area without
+  changing consumer markup.
+- **Legend scroll hint** — the existing `xs:overflow-x-auto xs:scrollbar-hide`
+  wrapper now also tracks horizontal overflow and shows a right-edge
+  gradient fade (`from-bg-primary to-transparent`) when content overflows,
+  using the same `useRef` + scroll/ResizeObserver pattern as Tabs/DataTable.
+  Auto-disables when no overflow.
+- **index.css** — added `.chartcard-legend--touch > *` rule at the end of
+  the utilities layer.
+- **Tests** — new `tests/components/uiPhase19.test.tsx` (3: touchLegend class
+  present/absent / fade on overflow). `uiPhase5D` regression suite still
+  green.
+- **Verify (Phase 19)** — lint clean (0 errors) · tsc clean · build clean
+  (3.49s) · vitest **175 files / 2040 tests** (+1 / +3) · smoke **309 checks**
+  · e2e-mock **11/11**.
+
+---
+
+## Option 4 — Frontend Redesign Phase 20: Pager touch targets (Complete, 2026-08-12)
+
+### Goal
+Ensure every interactive control in the Pager meets the 44×44 CSS pixel
+touch-target minimum on xs viewports without changing desktop layout.
+
+### Done (all verified)
+- **Pager.tsx** — all `Button size="sm"` controls gain responsive classes:
+  - Icon-only **First/Last** buttons: `xs:min-h-[44px] xs:min-w-[44px]`.
+  - Text **Prev/Next** buttons: `xs:min-h-[44px]` (width already ample).
+  - Internal **page-size Select**: passed `className="xs:min-h-[44px]"`.
+- **forms.tsx (Select)** — fixed a latent bug (`const isOpen = useState(false)`
+  → `const [isOpen, setIsOpen] = useState(false)`) and forwarded the
+  wrapper `className` to the trigger `Button` so the touch class applies to
+  the actual clickable surface.
+- **Tests** — new `tests/components/uiPhase20.test.tsx` (3: First/Last min-h+min-w /
+  Prev/Next min-h / Select wrapper class).
+- **Verify (Phase 20)** — lint clean (0 errors) · tsc clean · build clean
+  (3.46s) · vitest **176 files / 2043 tests** (+1 / +3) · smoke **309 checks**
+  · e2e-mock **11/11**.
+
+---
+
+## Option 4 — Frontend Redesign Phase 21: DataTable touch cell targets (Complete, 2026-08-12)
+
+### Goal
+Ensure interactive DataTable rows meet 44×44 CSS pixel touch-target minimum on
+xs viewports.
+
+### Done (all verified)
+- **DataTable.tsx** — responsive `xs:min-h-[44px]` added to row wrappers
+  **only when interactive** (`onRowClick` or `expandedContent` present):
+  - **Card variant**: on the row `<div>` (expanded), `<button>` (onRowClick), or
+    plain `<div>` (default) — conditional via `cn(..., (!!onRowClick ||
+    !!expandedContent) && "xs:min-h-[44px]")`.
+  - **Table variant**: on the `<tr>` — same conditional class.
+  Non-interactive rows remain unchanged.
+- **Tests** — new `tests/components/uiPhase21.test.tsx` (6: card onRowClick /
+  expandedContent / non-interactive / table onRowClick / expandedContent /
+  non-interactive). Existing DataTable test suites (uiBatchM, uiPhase5A, uiPhase5F,
+  uiPhase17) pass with added ResizeObserver stubs.
+- **Verify (Phase 21)** — lint clean (0 errors) · tsc clean · build clean
+  (6.91s) · vitest **175 files / 2046 tests** (+1 / +6) · smoke **309 checks**
+  · e2e-mock **11/11**.
+
+---
+
+### Next (Phase 22)
+Recommended next focus: **Phase-4 props-parity sweep** on DataTable/Pager/
+ChartCard touched since Phase 5 (check for missing `className` forwarding,
+`fit`/`compact`/`dark` variants, `title`/`action`/`padding` on Card, etc.).
+Candidate next sub-task (needs user go).
