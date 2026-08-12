@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Skeleton } from "./Skeleton";
@@ -13,6 +13,10 @@ export interface Column<T> {
   className?: string;
   hideOnMobile?: boolean;
   sortable?: boolean | ((a: T, b: T) => number);
+  /** Enable column resizing (table variant only). Default false. */
+  resizable?: boolean;
+  /** Initial width in pixels (used when resizable). */
+  initialWidth?: number;
 }
 
 export type RowKey<T> = string | ((row: T) => string | number);
@@ -42,6 +46,8 @@ export interface DataTableProps<T> {
   virtualRowHeight?: number;
   /** Number of extra rows to render above/below viewport (default: 5). */
   virtualOverscan?: number;
+  /** Enable column resizing (table variant). */
+  resizable?: boolean;
   onRowClick?: (row: T) => void;
   pagination?: PagerProps;
   /** Cap the table body height (a CSS length, e.g. "360px" or "24rem") — makes the table header sticky while rows scroll. Table variant only. */
@@ -125,6 +131,8 @@ export function DataTable<T>({
   virtualized = false,
   virtualRowHeight = 40,
   virtualOverscan = 5,
+  /** Enable column resizing (table variant). */
+  resizable = false,
   onRowClick,
   pagination,
   maxHeight,
@@ -133,12 +141,53 @@ export function DataTable<T>({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+  // Column resizing state
+  const [colWidths, setColWidths] = useState<Record<string, number>>({});
+  const [resizingCol, setResizingCol] = useState<string | null>(null);
+  const resizeStartX = useRef<number>(0);
+  const resizeStartWidth = useRef<number>(0);
+
   // Virtualization state (table variant only)
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const rowHeight = virtualRowHeight;
   const overscan = virtualOverscan;
+
+  // Initialize column widths from initialWidth props
+  useEffect(() => {
+    const initial: Record<string, number> = {};
+    columns.forEach(col => {
+      if (col.resizable && col.initialWidth) initial[col.key] = col.initialWidth;
+    });
+    if (Object.keys(initial).length > 0) setColWidths(initial);
+  }, [columns]);
+
+  const handleResizeMouseDown = (e: React.MouseEvent, colKey: string) => {
+    if (!resizable) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const th = e.currentTarget.closest("th") as HTMLTableCellElement;
+    if (!th) return;
+    setResizingCol(colKey);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = th.offsetWidth;
+    document.addEventListener("mousemove", handleResizeMouseMove);
+    document.addEventListener("mouseup", handleResizeMouseUp);
+  };
+
+  const handleResizeMouseMove = (e: MouseEvent) => {
+    if (!resizingCol) return;
+    const dx = e.clientX - resizeStartX.current;
+    const newWidth = Math.max(60, resizeStartWidth.current + dx);
+    setColWidths(prev => ({ ...prev, [resizingCol]: newWidth }));
+  };
+
+  const handleResizeMouseUp = () => {
+    setResizingCol(null);
+    document.removeEventListener("mousemove", handleResizeMouseMove);
+    document.removeEventListener("mouseup", handleResizeMouseUp);
+  };
 
   const sortedRows = useMemo(() => {
     if (!sortKey) return rows;
@@ -211,19 +260,37 @@ export function DataTable<T>({
             <thead>
               <tr className={cn("border-b border-default", maxHeight && "sticky top-0 z-10 bg-panel")}>
                 {columns.map(col => (
-                  <th key={col.key} scope="col" className={cn(
-                    "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3",
-                    dense ? "py-2" : "py-2.5",
-                    col.hideOnMobile && "hidden md:table-cell",
-                    col.sortable && "cursor-pointer select-none hover:text-fg-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]",
-                    col.className,
-                  )} onClick={col.sortable ? () => handleSort(col.key) : undefined} aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                    aria-label={col.sortable ? `Sort by ${col.header}` : undefined} tabIndex={col.sortable ? 0 : undefined} role={col.sortable ? "button" : undefined}
+                  <th
+                    key={col.key}
+                    scope="col"
+                    className={cn(
+                      "text-left text-[11px] font-semibold uppercase tracking-wider text-fg-secondary px-3",
+                      dense ? "py-2" : "py-2.5",
+                      col.hideOnMobile && "hidden md:table-cell",
+                      col.sortable && "cursor-pointer select-none hover:text-fg-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st-accent)]",
+                      col.resizable && "relative",
+                      col.className,
+                    )}
+                    style={colWidths[col.key] ? { width: colWidths[col.key] } : undefined}
+                    onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                    aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                    aria-label={col.sortable ? `Sort by ${col.header}` : undefined}
+                    tabIndex={col.sortable ? 0 : undefined}
+                    role={col.sortable ? "button" : undefined}
                     onKeyDown={col.sortable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort(col.key); } } : undefined}>
                     <span className="inline-flex items-center">
                       {col.header}
                       {col.sortable && <SortIcon direction={sortKey === col.key ? sortDir : null} />}
                     </span>
+                    {resizable && col.resizable && (
+                      <div
+                        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-accent/30"
+                        onMouseDown={e => handleResizeMouseDown(e, col.key)}
+                        aria-label={`Resize ${col.header}`}
+                        role="separator"
+                        tabIndex={0}
+                      />
+                    )}
                   </th>
                 ))}
               </tr>
@@ -244,12 +311,15 @@ export function DataTable<T>({
                     )}
                   >
                     {columns.map(col => (
-                      <td key={col.key} className={cn(
-                        "px-3 text-fg-primary",
-                        dense ? "py-2" : "py-3",
-                        col.hideOnMobile && "hidden md:table-cell",
-                        col.className,
-                      )}>
+                      <td
+                        key={col.key}
+                        className={cn(
+                          "px-3 text-fg-primary",
+                          dense ? "py-2" : "py-3",
+                          col.hideOnMobile && "hidden md:table-cell",
+                          col.className,
+                        )}
+                        style={colWidths[col.key] ? { width: colWidths[col.key] } : undefined}>
                         {col.render(row)}
                       </td>
                     ))}

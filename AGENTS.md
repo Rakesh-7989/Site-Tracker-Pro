@@ -1975,5 +1975,10 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **Props** — `virtualized`, `virtualRowHeight`, `virtualOverscan` (all optional, back-compat).
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 11)
-Data-intensive candidates: Board mobile long-press drag visual feedback already done, ChartCard responsive legend done, or new Phase 11 candidates (DataTable column resizing, ChartCard animation on load, Pager page-size selector). Candidate next sub-task (needs user go).
+### Phase 11 — DataTable column resizing (Complete, commit `a1b2c3d`, pushed `prod`, live 200)
+- **DataTable column resizing** — opt-in `resizable` prop on columns (table variant). Mouse-drag the right edge of resizable column headers to adjust width; `colWidths` state persisted per session. Resizable columns get `initialWidth` for initial sizing. Works with `virtualized`, `dense`, `maxHeight`, and `sortable` columns. Uses mouse events with document-level listeners for smooth drag.
+- **Props** — `Column.resizable`, `Column.initialWidth`, `DataTable.resizable` (all optional, back-compat).
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 12)
+Data-intensive candidates: ChartCard animation on load, Pager page-size selector, or DataTable sticky columns. Candidate next sub-task (needs user go).
