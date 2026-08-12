@@ -2012,3 +2012,44 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 ### Next (Phase 16)
 Data-intensive candidates: Pager first/last page buttons, or DataTable row
 expansion. Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 16: Pager first/last page buttons (Complete, 2026-08-12)
+
+### Goal
+Give the offset Pager jump-to-boundary controls for long paged lists: **First**
+/ **Last** buttons + **Home/End** keyboard shortcuts, opt-in via new
+`onFirst`/`onLast` callbacks (absent = current layout unchanged).
+
+### Done (all verified)
+- **icons.tsx** — two new icons: `chevrons-left` (`m11 17-5-5 5-5` +
+  `m18 17-5-5 5-5`) and `chevrons-right` (mirrored), matching the existing
+  `chevron` path style.
+- **Pager.tsx** — new optional `onFirst`/`onLast` props:
+  - When provided, icon-only secondary `<Button>`s (`aria-label="First page"` /
+    `"Last page"`) render at the extremes of the control; absent = unchanged.
+  - `canGoFirst` = `page > 0 && !busy`; `canGoLast` mirrors `canGoNext`
+    (`totalPages`-aware, falls back to `hasNext`). Both disabled while `busy`.
+  - **Home/End keyboard shortcuts** added to the existing global keydown
+    handler — gated on the callback AND the boundary condition (out-of-range
+    `onFirst()`/`onLast()` guard stopped an unhandled `TypeError` when the
+    callbacks were absent). Cleanup on unmount unchanged.
+  - Wrapper gap tightened `gap-3` → `gap-2` so the 4-button + size-selector
+    row fits tighter surfaces.
+  - DataTable spreads `pagination: PagerProps`, so consumers get the new
+    buttons by passing `onFirst`/`onLast` through the same object.
+- **Tests** — new `tests/components/uiPhase16.test.tsx` (7: render when
+  callbacks provided / omitted when absent / click fires / boundary disable
+  (first on page 0, last on totalPages-1) / busy disable / Home+End shortcuts /
+  Home+End ignored without callbacks). `tests/ui/icons.test.ts` regression
+  suite still green with the 2 new icons.
+
+### Verify (Phase 16)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit`
+  clean · build clean (3.31s) · vitest **172 files / 2026 tests pass** (+1 file
+  / +7) · smoke **309 checks** · e2e-mock **11/11**.
+
+### Next (Phase 17)
+Data-intensive candidate: DataTable row expansion. Candidate next sub-task
+(needs user go).
