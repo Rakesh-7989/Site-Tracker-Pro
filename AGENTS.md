@@ -1952,5 +1952,9 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **Tests** — new `uiPhase5J_board` test: mobile items have `role="button"` + `aria-grabbed`, open accordion has `aria-dropeffect="move"`.
 - **Verify** — tsc clean · build clean · vitest **169 files / 2008 tests** (+1) · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 5L)
-Data-intensive candidates: Phase 6 mobile audit of dense tables (horizontal scroll fallback on xs:480), Board mobile long-press drag visual feedback, or ChartCard responsive legend on remaining chart consumers. Candidate next sub-task (needs user go).
+### Phase 6 — Mobile audit: dense tables horizontal scroll (Complete, commit `a7f3e9b`, pushed `prod`, live 200)
+- **DataTable card variant on xs:480** — wrapped the dense card rows in `xs:overflow-x-auto xs:scrollbar-hide` with a `min-w-[500px]` inner container so wide rows scroll horizontally instead of collapsing on 480px viewports. Applies to all 33 dense DataTable consumers (project tabs, handover, admin, org rollups).
+- **Verify** — tsc clean · lint 0 errors · build clean (8.04s) · vitest **169 files / 2008 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 7)
+Data-intensive candidates: Board mobile long-press drag visual feedback, ChartCard responsive legend on remaining chart consumers, or Pager keyboard shortcuts (←/→). Candidate next sub-task (needs user go).

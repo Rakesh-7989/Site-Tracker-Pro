@@ -235,7 +235,9 @@ export function DataTable<T>({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {sortedRows.map((row, index) => {
+      <div className="xs:overflow-x-auto xs:scrollbar-hide">
+        <div className="min-w-[500px] space-y-2">
+          {sortedRows.map((row, index) => {
         const rowContent = (
           <>
             {columns.map(col => (
@@ -271,6 +273,8 @@ export function DataTable<T>({
           </div>
         );
       })}
+      </div>
+      </div>
       {pagination && <Pager {...pagination} />}
     </div>
   );
