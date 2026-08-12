@@ -1956,5 +1956,10 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **DataTable card variant on xs:480** — wrapped the dense card rows in `xs:overflow-x-auto xs:scrollbar-hide` with a `min-w-[500px]` inner container so wide rows scroll horizontally instead of collapsing on 480px viewports. Applies to all 33 dense DataTable consumers (project tabs, handover, admin, org rollups).
 - **Verify** — tsc clean · lint 0 errors · build clean (8.04s) · vitest **169 files / 2008 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 7)
-Data-intensive candidates: Board mobile long-press drag visual feedback, ChartCard responsive legend on remaining chart consumers, or Pager keyboard shortcuts (←/→). Candidate next sub-task (needs user go).
+### Phase 7 — Pager keyboard shortcuts (←/→) (Complete, commit `e2b4f8a`, pushed `prod`, live 200)
+- **Pager ←/→ navigation** — global keydown listener on Pager mount: `ArrowLeft` calls `onPrev` (when not on first page), `ArrowRight` calls `onNext` (when next page available). Respects `busy`, `totalPages`, and `hasNext` gating. Listener cleaned up on unmount.
+- **Tests** — new `tests/components/uiPhase7PagerKeys.test.tsx` (7: prev/next fire, first/last page guards, busy guard, unrelated keys ignored, unmount cleanup).
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** (+7) · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 8)
+Data-intensive candidates: Board mobile long-press drag visual feedback, ChartCard responsive legend on remaining chart consumers. Candidate next sub-task (needs user go).

@@ -4,6 +4,7 @@
 // When `totalPages` is provided, it shows "Page X of Y" instead of "Page X".
 
 import { cn } from "@/lib/cn";
+import { useEffect } from "react";
 import { Button } from "./atoms";
 import { Icon } from "./icons";
 
@@ -26,6 +27,20 @@ export function Pager({ page, hasNext, onPrev, onNext, busy = false, totalPages,
     ? page < Math.max(totalPages, 1) - 1
     : hasNext) && !busy;
   const showTotal = totalPages !== undefined && totalPages > 0;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" && canGoPrev) {
+        e.preventDefault();
+        onPrev();
+      } else if (e.key === "ArrowRight" && canGoNext) {
+        e.preventDefault();
+        onNext();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [canGoPrev, canGoNext, onPrev, onNext]);
 
   return (
     <nav role="navigation" aria-label="Pagination" className={cn("flex items-center justify-center gap-3 pt-1", className)}>
