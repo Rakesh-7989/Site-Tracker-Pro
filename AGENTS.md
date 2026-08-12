@@ -1961,5 +1961,10 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **Tests** — new `tests/components/uiPhase7PagerKeys.test.tsx` (7: prev/next fire, first/last page guards, busy guard, unrelated keys ignored, unmount cleanup).
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** (+7) · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 8)
-Data-intensive candidates: Board mobile long-press drag visual feedback, ChartCard responsive legend on remaining chart consumers. Candidate next sub-task (needs user go).
+### Phase 8 — Board mobile long-press drag visual feedback (Complete, commit `b9c8e1f`, pushed `prod`, live 200)
+- **Mobile long-press drag feedback** — 350ms long-press on mobile accordion items triggers "picked up" visual state: ring-2 ring-accent ring-offset-2, scale-[1.02], shadow-cta (accent CTA shadow). `longPressItemId` state tracks the pressed item; 350ms touch timer clears on `touchmove`/`touchend` before threshold. Clears on `touchend` or if moved. Desktop DnD unchanged.
+- **State** — `longPressItemId` + `handleTouchStart`/`handleTouchEnd` with 350ms timer; clears on `touchmove`/`touchend` before threshold. ARIA `aria-grabbed` covers both desktop drag and mobile long-press.
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 9)
+Data-intensive candidates: ChartCard responsive legend on remaining chart consumers, or Pager keyboard shortcuts (←/→). Candidate next sub-task (needs user go).

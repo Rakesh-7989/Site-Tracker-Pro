@@ -84,6 +84,7 @@ export function Board({
 }: BoardProps): JSX.Element {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [longPressItemId, setLongPressItemId] = useState<string | null>(null);
   const isMobile = !useMediaQuery("(min-width: 768px)");
   const [expandedCols, setExpandedCols] = useState<Set<string>>(new Set(columns.length ? [columns[0].id] : []));
 
@@ -96,6 +97,36 @@ export function Board({
   const getItems = useCallback((colId: string) =>
     items.filter(i => i.columnId === colId),
   [items]);
+
+  const handleTouchStart = useCallback((itemId: string, e: React.TouchEvent) => {
+    if (!onItemMove) return;
+    const timer = setTimeout(() => {
+      setLongPressItemId(itemId);
+      setDraggedItemId(itemId);
+    }, 350);
+    const handleTouchEnd = () => {
+      clearTimeout(timer);
+      e.currentTarget.removeEventListener("touchend", handleTouchEnd);
+      e.currentTarget.removeEventListener("touchmove", handleTouchMove);
+    };
+    const handleTouchMove = () => {
+      clearTimeout(timer);
+      e.currentTarget.removeEventListener("touchend", handleTouchEnd);
+      e.currentTarget.removeEventListener("touchmove", handleTouchMove);
+    };
+    e.currentTarget.addEventListener("touchend", handleTouchEnd, { passive: true });
+    e.currentTarget.addEventListener("touchmove", handleTouchMove, { passive: true });
+  }, [onItemMove]);
+
+  const handleTouchEnd = useCallback((itemId: string, fromColId: string, targetColId: string) => {
+    if (longPressItemId === itemId) {
+      if (onItemMove && fromColId !== targetColId) {
+        onItemMove(itemId, fromColId, targetColId);
+      }
+      setLongPressItemId(null);
+      setDraggedItemId(null);
+    }
+  }, [longPressItemId, onItemMove]);
 
   if (loading) {
     return (
@@ -198,10 +229,16 @@ export function Board({
                       draggable
                       tabIndex={0}
                       role="button"
-                      aria-grabbed={draggedItemId === item.id}
+                      aria-grabbed={draggedItemId === item.id || longPressItemId === item.id}
                       onDragStart={() => { setDraggedItemId(item.id); }}
                       onDragEnd={() => { setDraggedItemId(null); }}
-                      className="bg-card rounded-xl border border-default p-3"
+                      onTouchStart={(e) => handleTouchStart(item.id, e)}
+                      onTouchEnd={() => { if (longPressItemId === item.id) { handleTouchEnd(item.id, item.columnId, col.id); }}}
+                      className={cn(
+                        "bg-card rounded-xl border border-default p-3",
+                        (draggedItemId === item.id || longPressItemId === item.id) &&
+                          "shadow-cta scale-[1.02] ring-2 ring-accent ring-offset-2 ring-offset-card",
+                      )}
                     >
                       {item.content}
                       <MoveControls onItemMove={onItemMove} itemId={item.id} fromColumn={item.columnId} columnId={item.columnId} columns={columns} />
