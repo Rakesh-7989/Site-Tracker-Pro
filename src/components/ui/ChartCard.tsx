@@ -38,6 +38,8 @@ export interface ChartCardProps {
   /** Enable entrance animation on load (fade + slight scale). Default true. */
   animate?: boolean;
   height?: number;
+  /** Card padding. Default `md`. */
+  padding?: "none" | "sm" | "md" | "lg";
   className?: string;
 }
 
@@ -55,13 +57,14 @@ export function ChartCard({
   legend,
   animate = true,
   height = 200,
+  padding = "md",
   className,
 }: ChartCardProps): JSX.Element {
   const animationClass = animate ? "animate-chart-enter" : "";
   const legendRef = useRef<HTMLDivElement>(null);
   const legendCanScrollRight = useScrollRightHint(legendRef);
   return (
-    <Card padding="md" className={className}>
+    <Card padding={padding} className={className}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="text-xs font-semibold tracking-[0.14em] uppercase text-fg-tertiary">{title}</div>

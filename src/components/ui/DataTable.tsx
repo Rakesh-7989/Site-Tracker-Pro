@@ -59,6 +59,8 @@ export interface DataTableProps<T> {
   pagination?: PagerProps;
   /** Cap the table body height (a CSS length, e.g. "360px" or "24rem") — makes the table header sticky while rows scroll. Table variant only. */
   maxHeight?: string;
+  /** Disable min-width on card rows (card variant only). */
+  fit?: boolean;
   className?: string;
 }
 
@@ -165,6 +167,7 @@ export function DataTable<T>({
   onExpandedChange,
   pagination,
   maxHeight,
+  fit = false,
   className,
 }: DataTableProps<T>): JSX.Element {
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -433,7 +436,7 @@ export function DataTable<T>({
     <div className={cn("space-y-2", className)}>
       <div className="relative">
       <div ref={cardScrollRef} className="xs:overflow-x-auto xs:scrollbar-hide">
-        <div className="min-w-[500px] space-y-2">
+        <div className={cn(fit ? "min-w-0" : "min-w-[500px]", "space-y-2")}>
           {sortedRows.map((row, index) => {
         const rowKeyValue = resolveRowKey(row, rowKey, index);
         const isExpanded = expandedKeys.has(rowKeyValue);
