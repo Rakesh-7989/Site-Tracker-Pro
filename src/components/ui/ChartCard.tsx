@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Card, Spinner } from "./atoms";
 import { Icon } from "./icons";
+import { cn } from "@/lib/cn";
 
 export interface ChartCardProps {
   title: string;
@@ -15,6 +16,8 @@ export interface ChartCardProps {
   footer?: ReactNode;
   /** Optional legend slot with responsive behavior (mobile: horizontal scroll, desktop: flex-wrap). */
   legend?: ReactNode;
+  /** Enable entrance animation on load (fade + slight scale). Default true. */
+  animate?: boolean;
   height?: number;
   className?: string;
 }
@@ -30,9 +33,11 @@ export function ChartCard({
   action,
   footer,
   legend,
+  animate = true,
   height = 200,
   className,
 }: ChartCardProps): JSX.Element {
+  const animationClass = animate ? "animate-chart-enter" : "";
   return (
     <Card padding="md" className={className}>
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -63,7 +68,7 @@ export function ChartCard({
       )}
 
       {!loading && !error && !empty && (
-        <div style={{ width: "100%", height }}>
+        <div className={cn("relative w-full", animationClass)} style={{ height }}>
           {children}
         </div>
       )}

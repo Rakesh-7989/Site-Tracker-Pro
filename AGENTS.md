@@ -1980,5 +1980,10 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **Props** — `Column.resizable`, `Column.initialWidth`, `DataTable.resizable` (all optional, back-compat).
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 12)
-Data-intensive candidates: ChartCard animation on load, Pager page-size selector, or DataTable sticky columns. Candidate next sub-task (needs user go).
+### Phase 12 — ChartCard entrance animation (Complete, commit `c5e4f2a`, pushed `prod`, live 200)
+- **ChartCard `animate` prop** — opt-in entrance animation (fade + slight scale-up) via `@keyframes chart-enter` (300ms ease-out). Default true; set `animate={false}` to disable. Applied to AnalyticsView pie + bar charts.
+- **CSS** — new `@keyframes chart-enter` + `.animate-chart-enter` utility in `index.css`.
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 13)
+Data-intensive candidates: Pager page-size selector, DataTable sticky columns, or ChartCard animation on load. Candidate next sub-task (needs user go).
