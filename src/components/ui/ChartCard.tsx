@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Card, Spinner } from "./atoms";
-import { Icon } from "./icons";
+import { Icon, type IconName } from "./icons";
 import { cn } from "@/lib/cn";
 
 export interface ChartCardProps {
@@ -10,6 +10,8 @@ export interface ChartCardProps {
   loading?: boolean;
   empty?: boolean;
   emptyMessage?: string;
+  /** Icon for the empty-state illustration. Defaults to `barChart`. */
+  emptyIcon?: IconName;
   error?: string;
   action?: ReactNode;
   /** Optional slot below the chart body (legends, footnotes…). */
@@ -29,6 +31,7 @@ export function ChartCard({
   loading = false,
   empty = false,
   emptyMessage = "No data yet",
+  emptyIcon = "barChart",
   error,
   action,
   footer,
@@ -62,7 +65,10 @@ export function ChartCard({
       )}
 
       {!loading && !error && empty && (
-        <div className="flex items-center justify-center" style={{ height }}>
+        <div className="flex flex-col items-center justify-center gap-2" style={{ height }}>
+          <div className="bg-elevated rounded-full w-10 h-10 flex items-center justify-center">
+            <Icon name={emptyIcon} size={18} className="text-fg-tertiary" />
+          </div>
           <span className="text-sm text-fg-tertiary">{emptyMessage}</span>
         </div>
       )}
