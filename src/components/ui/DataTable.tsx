@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, Fragment } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Skeleton } from "./Skeleton";
 import { EmptyState } from "./EmptyState";
 import { Pager, type PagerProps } from "./Pager";
+import { Icon } from "./icons";
 import type { IconName } from "./icons";
 
 export interface Column<T> {
@@ -51,6 +52,10 @@ export interface DataTableProps<T> {
   /** Enable column resizing (table variant). */
   resizable?: boolean;
   onRowClick?: (row: T) => void;
+  /** Enable row expansion — when provided, each row gets a chevron toggle that reveals this content beneath it. */
+  expandedContent?: (row: T) => ReactNode;
+  /** Optional callback fired after a row expands (true) or collapses (false). */
+  onExpandedChange?: (row: T, expanded: boolean) => void;
   pagination?: PagerProps;
   /** Cap the table body height (a CSS length, e.g. "360px" or "24rem") — makes the table header sticky while rows scroll. Table variant only. */
   maxHeight?: string;
@@ -136,12 +141,17 @@ export function DataTable<T>({
   /** Enable column resizing (table variant). */
   resizable = false,
   onRowClick,
+  expandedContent,
+  onExpandedChange,
   pagination,
   maxHeight,
   className,
 }: DataTableProps<T>): JSX.Element {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  // Row expansion state — keyed by resolveRowKey.
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
 
   // Column resizing state
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
@@ -211,6 +221,18 @@ export function DataTable<T>({
     }
   }
 
+  function toggleRow(row: T, index: number): void {
+    const key = resolveRowKey(row, rowKey, index);
+    const nowExpanded = !expandedKeys.has(key);
+    setExpandedKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+    onExpandedChange?.(row, nowExpanded);
+  }
+
   if (loading) {
     return (
       <div role="status" aria-label="Loading rows" className={cn(className)}>
@@ -225,7 +247,8 @@ export function DataTable<T>({
   }
 
   // Virtualization: compute visible row range
-  const virtualizedEnabled = virtualized && variant === "table" && containerHeight > 0;
+  // (mutually exclusive with row expansion — expanded rows break the fixed-height math).
+  const virtualizedEnabled = virtualized && variant === "table" && containerHeight > 0 && !expandedContent;
   const visibleCount = virtualizedEnabled ? Math.ceil(containerHeight / rowHeight) + 2 * overscan : sortedRows.length;
   const startIndex = virtualizedEnabled ? Math.max(0, Math.floor(scrollTop / rowHeight) - overscan) : 0;
   const endIndex = virtualizedEnabled ? Math.min(sortedRows.length, startIndex + visibleCount) : sortedRows.length;
@@ -261,6 +284,9 @@ export function DataTable<T>({
           <table className="w-full text-sm" aria-label={ariaLabel}>
             <thead>
               <tr className={cn("border-b border-default", maxHeight && "sticky top-0 z-10 bg-panel")}>
+                {expandedContent && (
+                  <th key="__expand" scope="col" className="w-8 px-2" aria-label="Expand row" />
+                )}
                 {columns.map(col => (
                   <th
                     key={col.key}
@@ -304,18 +330,33 @@ export function DataTable<T>({
             <tbody className="divide-y divide-default" style={virtualizedEnabled ? { transform: `translateY(${offsetY}px)` } : undefined}>
               {visibleRows.map((row, visibleIndex) => {
                 const actualIndex = startIndex + visibleIndex;
+                const rowKeyValue = resolveRowKey(row, rowKey, actualIndex);
+                const isExpanded = expandedKeys.has(rowKeyValue);
                 return (
+                  <Fragment key={rowKeyValue}>
                   <tr
-                    key={resolveRowKey(row, rowKey, actualIndex)}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    onKeyDown={onRowClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(row); } } : undefined}
-                    tabIndex={onRowClick ? 0 : undefined}
-                    role={onRowClick ? "button" : undefined}
+                    onKeyDown={onRowClick && !expandedContent ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(row); } } : undefined}
+                    tabIndex={onRowClick && !expandedContent ? 0 : undefined}
+                    role={onRowClick && !expandedContent ? "button" : undefined}
                     className={cn(
                       "hover:bg-elevated transition",
                       onRowClick && "cursor-pointer",
                     )}
                   >
+                    {expandedContent && (
+                      <td key="__expand" className="w-8 px-2">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleRow(row, actualIndex); }}
+                          aria-expanded={isExpanded}
+                          aria-label={isExpanded ? "Collapse row" : "Expand row"}
+                          className="p-1 -ml-1 rounded-lg hover:bg-bg-secondary text-fg-tertiary hover:text-fg-primary transition-colors"
+                        >
+                          <Icon name="chevron" size={14} className={cn(isExpanded && "rotate-90")} />
+                        </button>
+                      </td>
+                    )}
                     {columns.map(col => (
                       <td
                         key={col.key}
@@ -334,6 +375,14 @@ export function DataTable<T>({
                       </td>
                     ))}
                   </tr>
+                  {expandedContent && isExpanded && (
+                    <tr className="bg-bg-secondary/50">
+                      <td colSpan={columns.length + 1} className="px-3 py-2.5 border-t border-default">
+                        {expandedContent(row)}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -353,6 +402,8 @@ export function DataTable<T>({
       <div className="xs:overflow-x-auto xs:scrollbar-hide">
         <div className="min-w-[500px] space-y-2">
           {sortedRows.map((row, index) => {
+        const rowKeyValue = resolveRowKey(row, rowKey, index);
+        const isExpanded = expandedKeys.has(rowKeyValue);
         const rowContent = (
           <>
             {columns.map(col => (
@@ -367,10 +418,43 @@ export function DataTable<T>({
           </>
         );
 
+        const toggleButton = expandedContent && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleRow(row, index); }}
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? "Collapse row" : "Expand row"}
+            className="flex-shrink-0 p-1 -mr-1 rounded-lg hover:bg-bg-secondary text-fg-tertiary hover:text-fg-primary transition-colors"
+          >
+            <Icon name="chevron" size={14} className={cn(isExpanded && "rotate-90")} />
+          </button>
+        );
+
+        if (expandedContent) {
+          return (
+            <div key={rowKeyValue} className="bg-card rounded-2xl border border-default shadow-card">
+              <div
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={cn(
+                  "flex items-center justify-between gap-3",
+                  dense ? "p-2.5" : "p-3",
+                  onRowClick && "cursor-pointer hover:shadow-hover transition-shadow",
+                )}
+              >
+                {rowContent}
+                {toggleButton}
+              </div>
+              {isExpanded && (
+                <div className="border-t border-default px-3 py-2.5">{expandedContent(row)}</div>
+              )}
+            </div>
+          );
+        }
+
         if (onRowClick) {
           return (
             <button
-              key={resolveRowKey(row, rowKey, index)}
+              key={rowKeyValue}
               onClick={() => onRowClick(row)}
               className={cn("w-full text-left bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3 cursor-pointer hover:shadow-hover transition-shadow", dense ? "p-2.5" : "p-3")}
             >
@@ -381,7 +465,7 @@ export function DataTable<T>({
 
         return (
           <div
-            key={resolveRowKey(row, rowKey, index)}
+            key={rowKeyValue}
             className={cn("bg-card rounded-2xl border border-default shadow-card flex items-center justify-between gap-3", dense ? "p-2.5" : "p-3")}
           >
             {rowContent}
