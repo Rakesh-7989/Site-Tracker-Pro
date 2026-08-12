@@ -1989,5 +1989,10 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **Pager `pageSize` selector** — opt-in dropdown for items-per-page. New props: `pageSize` (current), `onPageSizeChange` (callback), `pageSizeOptions` (default [10,25,50,100]). Uses `Select` component with `compact` style. Syncs with external state via callback; internal state for uncontrolled use.
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 14)
-Data-intensive candidates: DataTable sticky columns, ChartCard empty-state illustration, or Pager first/last page buttons. Candidate next sub-task (needs user go).
+### Phase 14 — DataTable sticky columns (Complete, commit `e4f2a8b`, pushed `prod`, live 200)
+- **DataTable `sticky` column prop** — per-column `sticky: "left" | "right"` for table variant. Left-sticky columns stay visible on horizontal scroll with `position: sticky; left: 0`; right-sticky use `right: 0`. Both get `zIndex` and background color for visual separation. Works with `resizable`, `virtualized`, `dense`, `maxHeight`, and `sortable`.
+- **Props** — `Column.sticky` (optional, back-compat).
+- **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
+
+### Next (Phase 15)
+Data-intensive candidates: ChartCard empty-state illustration, Pager first/last page buttons, or DataTable row expansion. Candidate next sub-task (needs user go).

@@ -17,6 +17,8 @@ export interface Column<T> {
   resizable?: boolean;
   /** Initial width in pixels (used when resizable). */
   initialWidth?: number;
+  /** Make column sticky on horizontal scroll (table variant). */
+  sticky?: "left" | "right";
 }
 
 export type RowKey<T> = string | ((row: T) => string | number);
@@ -271,7 +273,11 @@ export function DataTable<T>({
                       col.resizable && "relative",
                       col.className,
                     )}
-                    style={colWidths[col.key] ? { width: colWidths[col.key] } : undefined}
+                    style={{
+                      ...(colWidths[col.key] ? { width: colWidths[col.key] } : {}),
+                      ...(col.sticky === "left" ? { position: "sticky", left: 0, zIndex: 10, backgroundColor: "var(--st-bg-panel)" } : {}),
+                      ...(col.sticky === "right" ? { position: "sticky", right: 0, zIndex: 10, backgroundColor: "var(--st-bg-panel)" } : {}),
+                    }}
                     onClick={col.sortable ? () => handleSort(col.key) : undefined}
                     aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
                     aria-label={col.sortable ? `Sort by ${col.header}` : undefined}
@@ -319,7 +325,11 @@ export function DataTable<T>({
                           col.hideOnMobile && "hidden md:table-cell",
                           col.className,
                         )}
-                        style={colWidths[col.key] ? { width: colWidths[col.key] } : undefined}>
+                        style={{
+                          ...(colWidths[col.key] ? { width: colWidths[col.key] } : {}),
+                          ...(col.sticky === "left" ? { position: "sticky", left: 0, zIndex: 9, backgroundColor: "var(--st-bg-card)" } : {}),
+                          ...(col.sticky === "right" ? { position: "sticky", right: 0, zIndex: 9, backgroundColor: "var(--st-bg-card)" } : {}),
+                        }}>
                         {col.render(row)}
                       </td>
                     ))}
