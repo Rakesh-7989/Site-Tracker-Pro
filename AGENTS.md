@@ -1994,5 +1994,21 @@ props-parity odds and ends. Candidate next sub-task (needs user go).
 - **Props** — `Column.sticky` (optional, back-compat).
 - **Verify** — lint clean · tsc clean · build clean · vitest **169 files / 2015 tests** · smoke **309 checks** · e2e-mock **11/11** · live 200.
 
-### Next (Phase 15)
-Data-intensive candidates: ChartCard empty-state illustration, Pager first/last page buttons, or DataTable row expansion. Candidate next sub-task (needs user go).
+### Phase 15 — ChartCard empty-state illustration (Complete)
+- **ChartCard `emptyIcon` prop** — the bare-text empty state ("No data yet") is
+  upgraded to a compact illustration: a `bg-elevated` rounded-full icon tile
+  (`w-10 h-10`, 18px icon, `text-fg-tertiary`) above the message, vertically
+  centered in the chart height. Default icon `barChart`; new optional
+  `emptyIcon?: IconName` for customization. Matches the EmptyState visual
+  language without the full `py-16` footprint. Error/loading/data states
+  unchanged. Back-compat: no `emptyIcon` = default icon.
+- **Tests** — new `tests/components/uiPhase15.test.tsx` (4: default icon tile +
+  message / custom emptyIcon / default message when omitted / no illustration
+  when data present).
+- **Verify** — lint clean (0 errors) · tsc clean · build clean · vitest
+  **171 files / 2019 tests** (+2 / +4) · smoke **309 checks** · e2e-mock
+  **11/11** · live 200.
+
+### Next (Phase 16)
+Data-intensive candidates: Pager first/last page buttons, or DataTable row
+expansion. Candidate next sub-task (needs user go).
