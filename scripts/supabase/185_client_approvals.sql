@@ -61,7 +61,7 @@ drop policy if exists drawing_comments_read on public.drawing_comments;
 create policy drawing_comments_read on public.drawing_comments for select
   using (drawing_id in (
     select d.id from public.drawings d
-    where d.project_id in (select user_project_ids())
+    where d.project_id = any(public.user_project_ids())
       and (current_role_text() <> 'client'
            or (d.status = 'current' and 'client' = any(d.released_to)))
   ));
@@ -71,7 +71,7 @@ drop policy if exists drawing_comments_insert on public.drawing_comments;
 create policy drawing_comments_insert on public.drawing_comments for insert
   with check (drawing_id in (
     select d.id from public.drawings d
-    where d.project_id in (select user_project_ids())
+    where d.project_id = any(public.user_project_ids())
       and (current_role_text() <> 'client'
            or (d.status = 'current' and 'client' = any(d.released_to)))
   ));
@@ -182,11 +182,11 @@ alter table public.handover_signatures enable row level security;
 
 drop policy if exists handover_signatures_read on public.handover_signatures;
 create policy handover_signatures_read on public.handover_signatures for select
-  using (org_id in (select user_org_ids()) or project_id in (select user_project_ids()));
+  using (org_id = any(public.user_org_ids()) or project_id in (select user_project_ids()));
 
 drop policy if exists handover_signatures_insert on public.handover_signatures;
 create policy handover_signatures_insert on public.handover_signatures for insert
-  with check (signed_by = auth.uid() and (org_id in (select user_org_ids()) or project_id in (select user_project_ids())));
+  with check (signed_by = auth.uid() and (org_id = any(public.user_org_ids()) or project_id in (select user_project_ids())));
 
 -- ── 5. Grants ────────────────────────────────────────────────────────────────
 grant select, insert, update, delete on public.drawing_comments to authenticated;
