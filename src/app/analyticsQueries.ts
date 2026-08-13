@@ -41,7 +41,7 @@ export async function getOrgAnalytics(client: any, orgId: string): Promise<AResu
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-/** Convert a {status: count} map into recharts-friendly rows with labels. */
+/** Convert a {status: count} map into chart rows with labels. */
 export function toBars(counts: Record<string, number>, order?: string[]): Array<{ name: string; value: number }> {
   const keys = order ? order.filter(k => k in counts || order) : Object.keys(counts);
   const seen = new Set<string>();

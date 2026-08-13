@@ -80,6 +80,7 @@ const app = [
   read("src/features/shell/brandingCss.ts"),
   read("src/features/org/ResearchLibraryView.tsx"),
   read("src/app/researchQueries.ts"),
+  read("src/components/ui/Charts.tsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -235,6 +236,10 @@ const vite = read("vite.config.js");
   "listDocuments",
   "listCollections",
   "addDocumentToCollection",
+  "BarChart",
+  "PieChart",
+  "LineChart",
+  "ChartLegend",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

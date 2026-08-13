@@ -5,7 +5,7 @@
 //
 // Performance: the entry + first-paint views are imported eagerly; everything
 // reached by navigation (the 28-tab project detail, all org + admin panels, the
-// recharts-heavy Analytics view) is React.lazy() so it is NOT in the initial
+// Analytics view) is React.lazy() so it is NOT in the initial
 // bundle. ShellLayout wraps <Outlet/> in <Suspense>, so lazy routes get a
 // spinner while their chunk loads.
 //

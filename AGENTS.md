@@ -2246,3 +2246,68 @@ All Phase-4 parity gaps closed. Recommended next: **Phase-5 data-intensive
 views** (kanban, calendar, advanced charting) or **Phase-6 mobile polish**
 (remaining touch-target audits, RTL, large-text). Candidate next sub-task
 (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 23: dependency-free SVG charts (Complete, 2026-08-12)
+
+### Goal
+Close the Phase-5 "advanced charting" gap by removing the app's **only**
+recharts integration: AnalyticsView was the sole consumer of `recharts`
+(~33 transitive packages). Replace it with a small dependency-free SVG chart
+library (`Charts.tsx`) that uses the design-system CSS variables, then drop the
+dependency entirely (vite manualChunks `recharts` entry, package.json,
+package-lock).
+
+### Done (all verified)
+- **`src/components/ui/Charts.tsx`** (new):
+  - Pure helpers (unit-testable without a DOM): `chartMax`, `datumColor`
+    (explicit color else palette by index), `chartAriaLabel` (screen-reader
+    summary), `pieSegments` (stroke-dasharray donut geometry: fraction/dash/
+    gap/offset), `linePoints` (normalized 0–100 coords), `linePath`/`areaPath`
+    (SVG path strings).
+  - **`BarChart`** — flex-based, proportional rounded bars, optional `showValues`
+    value labels (`title` tooltips), x-axis labels, `role="img"` + aria-label,
+    default `color` prop.
+  - **`PieChart`** — SVG donut via the stroke-dasharray technique, per-segment
+    design-token colors, optional `centerLabel` overlay, track ring when total=0,
+    `role="img"` + aria-label.
+  - **`LineChart`** — normalized SVG line with optional `area` fill and
+    `showPoints` (HTML dot overlay keeps circular points in jsdom + prod),
+    x-axis labels, `role="img"` + aria-label.
+  - **`ChartLegend`** — swatch + label (count) legend matching AnalyticsView's
+    old inline legend, using the same `datumColor` palette.
+- **`src/features/org/AnalyticsView.tsx`** — recharts imports + the local
+  `Bars`/`ChartLegend` helpers removed; pie → `<PieChart centerLabel={total}>`,
+  milestone/task status → `<BarChart>`. Data mapped `{name,value}` → `{label,value}`
+  (ChartDatum), `toBars` comment de-recharts'd. Visual parity with the old
+  recharts charts (same palette order, donut, bar radii).
+- **Dependency removal** — `npm uninstall recharts` (33 packages removed);
+  `vite.config.js` `manualChunks` recharts/react-smooth/react-transition-group
+  branch deleted (comment updated, "charts" marker still satisfied).
+- **Smoke** — `src/components/ui/Charts.tsx` added to the app-source scan + 4
+  markers (`BarChart`/`PieChart`/`LineChart`/`ChartLegend`): **313 checks**
+  (was 309).
+- **Tests** — new `tests/components/uiCharts.test.tsx` (19): pure-geometry
+  (chartMax floor-at-1, aria label, datumColor palette wrap, pieSegments
+  fraction/dash/offset sums + zero-total, linePoints x/y behavior + single-row
+  centering, linePath/areaPath shapes incl. empty), BarChart (bar count + titles
+  + 100%/25% heights, showValues hidden/shown, color prop, aria-label), PieChart
+  (segment count + palette strokes + dashoffset cascade, zero-total track ring,
+  centerLabel, aria-label), LineChart (area default + area=false, points), and
+  ChartLegend (label counts + swatch colors).
+
+### Verify (Phase 23)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (3.23s — recharts chunk gone from output) · vitest **176 files /
+  2065 tests** (+1 file / +19) · smoke **313 checks** (was 309; +4) · e2e-mock
+  **11/11** · `npm install`/lockfile consistent (no recharts anywhere).
+
+### Notes / Follow-ups
+- The chart library is generic — ForecastView/OrgFinancialView trend lines,
+  RevenueView source splits, or procurement quote-vs-price comparisons can now
+  render with `<LineChart>`/`<PieChart>`/`<BarChart>` without a chart-lib dep.
+- `datumColor` palette keeps AnalyticsView's historic pie order
+  (success → warning → indigo → error → violet → accent).
+- Next Phase-5 candidates: wire charts into more data-intensive views, or
+  Phase-6 mobile polish. Candidate next sub-task (needs user go).

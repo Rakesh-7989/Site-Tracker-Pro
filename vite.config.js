@@ -47,8 +47,8 @@ export default defineConfig({
           // Split super-admin views — most tenant users never open these.
           if (normalized.includes('/src/features/admin/')) return 'admin'
           // Mid-size tenant views (Calendar / Vendors / POs / Analytics etc.)
-          // — Recharts is heavy and only AnalyticsView needs it, so isolating
-          // these into their own chunk shrinks the dashboard cold path further.
+          // — split these into their own chunk so the dashboard cold path stays
+          // small. Analytics charts are dependency-free SVG (no chart lib).
           if (normalized.includes('/src/features/views/')) return 'views'
           // DetailView satellites (MarkupModal, ClientShareView, etc.) —
           // only loaded when a user enters project detail or clicks a share link.
@@ -57,7 +57,6 @@ export default defineConfig({
           if (normalized.includes('/src/features/org/')) return 'org'
           if (!normalized.includes('/node_modules/')) return undefined
           if (normalized.includes('/node_modules/react/') || normalized.includes('/node_modules/react-dom/') || normalized.includes('/node_modules/scheduler/')) return 'react'
-          if (normalized.includes('/node_modules/recharts/') || normalized.includes('/node_modules/react-smooth/') || normalized.includes('/node_modules/react-transition-group/')) return 'recharts'
           if (normalized.includes('/node_modules/d3-')) return 'd3'
           return undefined
         }
