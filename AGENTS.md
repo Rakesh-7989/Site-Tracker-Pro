@@ -2473,3 +2473,48 @@ UtilizationView (org rollup + phase drill-down) with a real legend.
   (BarGroup handles the single-series case cleanly, same visual as a BarChart).
 - Remaining Phase-5/6 candidates (needs user go): Phase-6 mobile polish, or
   RTL/large-text audits.
+
+---
+
+## Work State — Agentic SDLC Operating Model + Super Admin Panel Rebuild
+
+### Operating Model (2026-08-13)
+- **Lead = main session agent.** Every user prompt is interpreted like a client story,
+  routed to the right agent, executed via the loop. User delegates decisions.
+- **Loop** (per sub-task): Deep-Dive → Plan → Build → Verify → Commit; then phase
+  re-check → testing loop → release → push live. See `docs/AGENTIC_SDLC.md`.
+- **End-to-end plan**: `docs/END_TO_END_PLAN.md` (Track A = superadmin panel;
+  Track B = research-gap roadmap).
+- **Research source**: `docs/research/01_CHAT_SOURCE.md` (canonical copy of the
+  product-research chat — Client Approval & Revision System, 11 modules, multi-tenant,
+  core+plugins, onboarding toggles/templates, white-label).
+- **Agent team** (`.opencode/agent/`): platform-researcher/builder/tester/verifier
+  (SA track) + pm, solution-architect, backend-engineer, frontend-engineer,
+  qa-engineer, release-devops, gate-verifier. opencode must be restarted to load new
+  agents. (`.agents/sitetrack-pro/` team is the Claude-code equivalent.)
+- **Gate suite** (verify step, project root): `npx tsc --noEmit`, `npx eslint .`
+  (allow 1 pre-existing coverage warning), `npx vitest run`, `node scripts/smoke.mjs`,
+  `npm run build`, e2e-mock. All must pass before commit/phase-close.
+
+### Track A — Super Admin Platform Panel
+| Phase | Scope | Status |
+|-------|-------|--------|
+| SA-F | Capability matrix + audit consolidation | ✅ `73d3d37` (21 files, +562/−148) |
+| SA-D | Platform dashboard rebuild | ✅ `73d3d37` |
+| SA-O | Organizations screen rebuild | ✅ `a09d7f8` (PlatformOrgsView.tsx: MRR enrichment `enrichOrgs`, KPI strip `orgSummary`, plan mix `orgPlanMix`+BarChart, plan filter `filterOrgsByPlan`, CSV export `ORG_CSV_COLUMNS` via `@/lib/genericCsv`, `fmtMrr` ₹ en-IN, `settle<T>()`/`Lazy<T>`, `billingFailed` degradation; tests `tests/features/adminOrgs.test.ts` 15; smoke +6 markers → 331) |
+| **SA-U** | **Users & Staff screen rebuild** | **next** |
+| SA-AR | Active Requests / support screens | pending |
+| SA-S | Subscription & billing screens | pending |
+| SA-T | Testing + ship | pending |
+
+### Track B — Research-Gap Roadmap (killer features not yet shipped)
+B1 Client Approval & Revision System (Figma-style x/y drawing comments, share links
+with password/OTP/expiry/download-restriction, approve/reject + final lock, digital
+signature, revision timeline, approval analytics) · B2 Client Portal depth (payments,
+upcoming milestones) · B3 subscription usage-limit enforcement · B4 email/WhatsApp
+notifications · B5 storage/CAD (DWG/DXF/SKP) preview + quota · B6 future (white-label
+subdomains, mobile, AI, analytics).
+
+### Notes
+- Do-not-commit temp scripts still present: `scripts/apply-175.mjs`,
+  `scripts/apply-183.mjs`, `scripts/verify-183.mjs`, `scripts/scan-card-headers.mjs`.
