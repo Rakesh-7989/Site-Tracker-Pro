@@ -45,12 +45,11 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "activity:view", "audit:read",
     "org:members:manage", "org:billing:manage", "org:integrations:manage",
     "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
-    "org:branding:manage", "org:features:configure", "notification:configure",
+    "org:branding:manage", "org:features:configure",
     "vendor:manage", "vendor:select",
     "project:create", "project:archive", "project:restore", "project:settings:edit",
     "team:manage",
     "compliance:view", "ledger:view", "budget:view", "budget:edit",
-    "changeorder:approve", "po:approve", "invoice:approve", "rabill:approve", "expense:approve",
     "material:price:view", "material:delete",
     "update:delete",
     "export:pdf", "export:csv",
@@ -85,7 +84,6 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
     "invoice:create",
     "rabill:create",
-    "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Pick vendors when creating invoices / RA bills.
     "budget:view", "ledger:view", "material:price:view",  // Financial context for invoice/RA bill creation.
@@ -549,7 +547,6 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
     "invoice:create",
     "rabill:create",
-    "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Picks vendors when creating invoices / RA bills.
     "budget:view", "ledger:view", "material:price:view",  // Financial context for invoice/RA bill creation.
