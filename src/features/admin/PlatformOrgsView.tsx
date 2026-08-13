@@ -1,12 +1,28 @@
-﻿import { useCallback, useEffect, useState } from "react";
+﻿// SiteTrack Pro — platform organizations (/admin/orgs, superadmin). Tenant
+// management: page-scoped KPI strip, plan mix, plan filter, CSV export, inline
+// plan changes + manage modal (delete / subscription actions). Orgs rows are
+// enriched with live MRR + subscription status from the `orgs` view (migration
+// 135) so every tenant row shows its revenue at a glance.
+
+import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan } from "@/auth";
-import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied, type IconName } from "@/components/ui/atoms";
+import { Card, Badge, Button, Spinner, Alert, Icon, AccessDenied, StatCard, type IconName } from "@/components/ui/atoms";
 import { Modal } from "@/components/ui/Modal";
 import { FormField, Input, Select } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
-import { createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles, PLAN_LABEL, ADMIN_PAGE_SIZE, adminDeleteOrg, adminSetSubscriptionStatus, getOrgSubscription, type AssignablePlan, type PlatformOrg, type OrgSubscriptionInfo } from "@/app/platformAdminQueries";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { ChartCard } from "@/components/ui/ChartCard";
+import { BarChart, type ChartDatum } from "@/components/ui/Charts";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
+import {
+  createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles,
+  PLAN_LABEL, ADMIN_PAGE_SIZE, adminDeleteOrg, adminSetSubscriptionStatus, getOrgSubscription,
+  type AssignablePlan, type PlatformOrg, type OrgSubscriptionInfo,
+} from "@/app/platformAdminQueries";
+import { listOrgBillingRows, type OrgBillingRow } from "@/app/platformBillingQueries";
 
 import { getClient } from "@/lib/supabase";
+
 const PLAN_OPTIONS = ASSIGNABLE_PLANS.map(p => ({ value: p, label: PLAN_LABEL[p] ?? p }));
 
 const planTone = (p: string): "neutral" | "info" | "success" | "warning" => (p === "business" ? "success" : p === "pro" ? "info" : (p === "custom" || p === "enterprise") ? "warning" : "neutral");
@@ -15,24 +31,124 @@ const subTone = (s: string | null | undefined): "neutral" | "success" | "warning
 );
 const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
 
+// ── Pure helpers (exported for the phase unit tests) ──────────────────────────
+
+export interface EnrichedOrg extends PlatformOrg { status: string | null; mrr: number }
+
+/** Join live MRR + subscription status (orgs view) onto paged org rows by id. */
+export function enrichOrgs(rows: PlatformOrg[], billing: OrgBillingRow[]): EnrichedOrg[] {
+  const byId = new Map(billing.map(b => [b.id, b]));
+  return rows.map(r => {
+    const b = byId.get(r.id);
+    return b ? { ...r, status: b.status, mrr: b.mrr } : { ...r, status: null, mrr: 0 };
+  });
+}
+
+export interface OrgSummary { orgs: number; members: number; projects: number; mrr: number }
+
+/** Page-scoped totals for the KPI strip (reflects the current search/filter). */
+export function orgSummary(rows: EnrichedOrg[]): OrgSummary {
+  const acc = { orgs: 0, members: 0, projects: 0, mrr: 0 };
+  for (const r of rows) {
+    acc.orgs += 1;
+    acc.members += r.memberCount;
+    acc.projects += r.projectCount;
+    acc.mrr += r.mrr;
+  }
+  return acc;
+}
+
+/** Canonical plan display order for the mix chart. */
+export const PLAN_MIX_ORDER: readonly string[] = [...ASSIGNABLE_PLANS];
+
+/** Plan distribution of the current page (zero-count plans dropped). */
+export function orgPlanMix(rows: EnrichedOrg[]): ChartDatum[] {
+  const counts = new Map<string, number>();
+  for (const r of rows) counts.set(r.plan, (counts.get(r.plan) ?? 0) + 1);
+  return PLAN_MIX_ORDER
+    .map(p => ({ label: PLAN_LABEL[p] ?? p, value: counts.get(p) ?? 0 }))
+    .filter(d => d.value > 0);
+}
+
+/** Client-side plan filter over the loaded page ("all" = no filter). */
+export function filterOrgsByPlan(rows: EnrichedOrg[], plan: string): EnrichedOrg[] {
+  if (!plan || plan === "all") return rows;
+  return rows.filter(r => r.plan === plan);
+}
+
+/** Compact INR MRR (₹ + en-IN grouping); "—" for zero/unknown. */
+export function fmtMrr(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  return `₹${n.toLocaleString("en-IN")}`;
+}
+
+/** CSV column spec for the org export (raw values; MRR in INR). */
+export const ORG_CSV_COLUMNS: ReadonlyArray<CsvColumn<keyof EnrichedOrg>> = [
+  { key: "name", label: "Organization" },
+  { key: "slug", label: "Slug" },
+  { key: "plan", label: "Plan" },
+  { key: "memberCount", label: "Members" },
+  { key: "projectCount", label: "Projects" },
+  { key: "mrr", label: "MRR (INR)" },
+  { key: "status", label: "Subscription" },
+  { key: "createdAt", label: "Created" },
+];
+
+// ── Component ────────────────────────────────────────────────────────────────
+
 export function PlatformOrgsView(): JSX.Element {
   const can = useCan("platform:orgs:manage");
   if (!can) return <AccessDenied message="Platform superadmin access required." />;
   return <Inner />;
 }
 
+interface Settled<T> { ok: boolean; data: T | null; error?: string }
+
+type Lazy<T> = { ok: true; data: T } | { ok: false; error: string };
+
+async function settle<T>(p: Promise<Lazy<T>>): Promise<Settled<T>> {
+  try {
+    const r = await p;
+    if (r.ok) return { ok: true, data: r.data };
+    return { ok: false, data: null, error: r.error };
+  } catch (e) {
+    return { ok: false, data: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+function OrgsSkeleton(): JSX.Element {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading organizations">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-panel rounded-xl border border-default p-4 space-y-3">
+            <Skeleton decorative height={10} width="w-16" />
+            <Skeleton decorative height={24} width="w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="bg-panel rounded-xl border border-default p-4 space-y-3">
+        <Skeleton decorative height={10} width="w-24" />
+        <Skeleton decorative height={160} width="w-full" />
+      </div>
+    </div>
+  );
+}
+
 function Inner(): JSX.Element {
   const { session } = useAuth();
   const isOwner = session?.user.staffTier === "owner";
-  const [rows, setRows] = useState<PlatformOrg[]>([]);
+  const [rows, setRows] = useState<EnrichedOrg[]>([]);
+  const [billingFailed, setBillingFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [planFilter, setPlanFilter] = useState("all");
   const [planBusyId, setPlanBusyId] = useState<string | null>(null);
-  const [manageOrg, setManageOrg] = useState<PlatformOrg | null>(null);
+  const [manageOrg, setManageOrg] = useState<EnrichedOrg | null>(null);
   const [manageSub, setManageSub] = useState<OrgSubscriptionInfo | null>(null);
   const [manageSubLoading, setManageSubLoading] = useState(false);
   const [manageAction, setManageAction] = useState<string | null>(null);
@@ -53,13 +169,18 @@ function Inner(): JSX.Element {
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listPlatformOrgs(client, { limit: ADMIN_PAGE_SIZE, offset: page * ADMIN_PAGE_SIZE, search });
-    if (res.ok) setRows(res.data); else setError(res.error);
+    const [or, br] = await Promise.all([
+      settle(listPlatformOrgs(client, { limit: ADMIN_PAGE_SIZE, offset: page * ADMIN_PAGE_SIZE, search })),
+      settle(listOrgBillingRows(client)),
+    ]);
+    if (or.ok && or.data) setRows(enrichOrgs(or.data, br.ok ? br.data ?? [] : []));
+    else setError(or.error ?? "Failed to load organizations.");
+    setBillingFailed(!br.ok);
     setLoading(false);
   }, [page, search]);
   useEffect(() => { void reload(); }, [reload]);
 
-  const onOpenManage = useCallback(async (o: PlatformOrg) => {
+  const onOpenManage = useCallback(async (o: EnrichedOrg) => {
     setManageOrg(o); setManageAction(null); setManageReason(""); setManageResult(null); setManageBusy(false);
     setManageSubLoading(true); setManageSub(null);
     const client = await getClient();
@@ -97,6 +218,7 @@ function Inner(): JSX.Element {
       const res = await adminSetSubscriptionStatus(client, manageOrg.id, targetStatus, reason);
       if (res.ok) {
         setManageSub(prev => prev ? { ...prev, status: targetStatus } : { status: targetStatus, plan: null, provider: null, currentPeriodEnd: null, trialEndsAt: null });
+        setRows(prev => prev.map(r => r.id === manageOrg.id ? { ...r, status: targetStatus } : r));
         setManageResult({ ok: true, message: `Subscription for "${res.data.org}" changed: ${res.data.from ?? "(none)"} \u2192 ${res.data.to}.` });
       } else {
         setManageResult({ ok: false, message: res.error });
@@ -105,7 +227,7 @@ function Inner(): JSX.Element {
     setManageBusy(false);
   }, [manageOrg, manageAction, manageReason]);
 
-  const onChangePlan = useCallback(async (o: PlatformOrg, plan: string) => {
+  const onChangePlan = useCallback(async (o: EnrichedOrg, plan: string) => {
     if (plan === o.plan) return;
     const unlocksCustomRoles = planUnlocksCustomRoles(plan);
     const note = unlocksCustomRoles ? "\n\nThis plan UNLOCKS per-org role + feature customization (custom roles)." : "";
@@ -149,6 +271,7 @@ function Inner(): JSX.Element {
       if (page === 0 && !search) setRows(prev => [{
         id: res.data.org.id, name: res.data.org.name, slug: res.data.org.slug,
         plan: res.data.org.plan, memberCount: 0, projectCount: 0, createdAt: res.data.org.createdAt,
+        status: null, mrr: 0,
       }, ...prev].slice(0, ADMIN_PAGE_SIZE));
       else { setPage(0); setSearch(""); setQ(""); void reload(); }
     } else setError(res.error);
@@ -156,8 +279,18 @@ function Inner(): JSX.Element {
 
   const hasNext = rows.length === ADMIN_PAGE_SIZE;
 
+  const filtered = filterOrgsByPlan(rows, planFilter);
+  const summary = orgSummary(filtered);
+  const planData = orgPlanMix(filtered);
+
+  const onExport = useCallback(() => {
+    const content = buildCsv(filtered as unknown as Array<Record<string, unknown>>, ORG_CSV_COLUMNS);
+    if (!content) return;
+    downloadCsv(`organizations-${csvDateStamp()}.csv`, content);
+  }, [filtered]);
+
   const columns = [
-    { key: "org", header: "Organization", render: (o: PlatformOrg) => (
+    { key: "org", header: "Organization", render: (o: EnrichedOrg) => (
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-fg-primary truncate">{o.name}</span>
@@ -167,18 +300,26 @@ function Inner(): JSX.Element {
         <div className="text-[11px] text-fg-tertiary">{o.slug} \u00b7 created {fmtDate(o.createdAt)}</div>
       </div>
     )},
-    { key: "members", header: "Members", render: (o: PlatformOrg) => (
+    { key: "members", header: "Members", render: (o: EnrichedOrg) => (
       <div className="text-center"><div className="text-lg font-bold text-fg-primary leading-none">{o.memberCount}</div><div className="text-[10px] text-fg-tertiary uppercase tracking-wide">members</div></div>
     )},
-    { key: "projects", header: "Projects", render: (o: PlatformOrg) => (
+    { key: "projects", header: "Projects", render: (o: EnrichedOrg) => (
       <div className="text-center"><div className="text-lg font-bold text-fg-primary leading-none">{o.projectCount}</div><div className="text-[10px] text-fg-tertiary uppercase tracking-wide">projects</div></div>
     )},
-    { key: "plan", header: "Plan", render: (o: PlatformOrg) => (
+    { key: "revenue", header: "Revenue", render: (o: EnrichedOrg) => (
+      <div className="text-center">
+        <div className="text-sm font-semibold text-fg-primary leading-none">{fmtMrr(o.mrr)}</div>
+        {o.status && o.status !== "active" && (
+          <div className="mt-1"><Badge tone={subTone(o.status)}>{o.status}</Badge></div>
+        )}
+      </div>
+    )},
+    { key: "plan", header: "Plan", render: (o: EnrichedOrg) => (
       planBusyId === o.id
         ? <div className="grid place-items-center h-9"><Spinner size={16} /></div>
         : <Select aria-label="Change plan" options={PLAN_OPTIONS} value={o.plan} onChange={e => void onChangePlan(o, e.target.value)} />
     )},
-    { key: "actions", header: "", render: (o: PlatformOrg) => (
+    { key: "actions", header: "", render: (o: EnrichedOrg) => (
       <Button size="sm" variant="ghost" disabled={manageOrg?.id === o.id} onClick={() => void onOpenManage(o)}
         className="!text-accent hover:!bg-accent-tint" title="Manage organization">
         {manageOrg?.id === o.id ? <Spinner size={14} /> : <Icon name="sliders" size={16} />}
@@ -189,9 +330,14 @@ function Inner(): JSX.Element {
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="font-display text-2xl font-bold text-fg-primary">Organizations</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-fg-primary">Organizations</h1>
+          <div className="text-sm text-fg-secondary">Every tenant on the platform</div>
+        </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-fg-secondary">{search ? "filtered" : `page ${page + 1}`}</span>
+          <Button size="sm" variant="secondary" leftIcon={<Icon name="download" size={14} />} onClick={onExport} disabled={filtered.length === 0}>
+            Export CSV
+          </Button>
           {isOwner && (
             <Button size="sm" onClick={() => setShowCreate(v => !v)} leftIcon={<Icon name="plus" size={14} />}>
               New organization
@@ -251,15 +397,40 @@ function Inner(): JSX.Element {
           )}
         </Card>
       )}
-      <Input placeholder="Search by name or slug\u2026" value={q} onChange={e => setQ(e.target.value)} />
+
+      {loading ? <OrgsSkeleton /> : (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Organizations" value={summary.orgs} sub={(search || planFilter !== "all") ? "filtered" : `page ${page + 1}`} />
+            <StatCard label="Members" value={summary.members} sub="on this page" />
+            <StatCard label="Projects" value={summary.projects} sub="on this page" />
+            <StatCard label="MRR" value={fmtMrr(summary.mrr)} sub={billingFailed ? "unavailable" : "on this page"} />
+          </div>
+          <ChartCard
+            title="Plan mix"
+            subtitle="Organizations by plan"
+            height={180}
+            empty={planData.length === 0}
+            emptyMessage="No organizations on this page"
+          >
+            <BarChart data={planData} />
+          </ChartCard>
+        </>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Input placeholder="Search by name or slug\u2026" value={q} onChange={e => setQ(e.target.value)} className="sm:flex-1" />
+        <Select fit aria-label="Filter by plan" value={planFilter} onChange={e => setPlanFilter(e.target.value)}
+          options={[{ value: "all", label: "All plans" }, ...PLAN_OPTIONS]} className="sm:w-44" />
+      </div>
       <DataTable
         dense
         columns={columns}
-        rows={rows}
+        rows={filtered}
         rowKey={o => o.id}
         loading={loading}
         error={error}
-        emptyMessage={search ? `No organizations match "${search}".` : "No organizations yet."}
+        emptyMessage={search ? `No organizations match "${search}".` : planFilter !== "all" ? "No organizations on this plan." : "No organizations yet."}
         variant="card"
         pagination={{ page, hasNext, busy: loading, onPrev: () => setPage(p => Math.max(0, p - 1)), onNext: () => setPage(p => p + 1) }}
       />
