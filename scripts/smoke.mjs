@@ -93,6 +93,11 @@ const app = [
   read("src/features/org/ResearchLibraryView.tsx"),
   read("src/app/researchQueries.ts"),
   read("src/components/ui/Charts.tsx"),
+  read("src/app/approvalQueries.ts"),
+  read("src/features/project/tabs/DrawingReviewTab.tsx"),
+  read("src/components/ui/SignaturePad.tsx"),
+  read("src/features/share/ShareLinkView.tsx"),
+  read("src/features/org/ApprovalAnalyticsView.tsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -212,6 +217,15 @@ const vite = read("vite.config.js");
   "ffeOrgRollup",
   "DownloadAuditView",
   "logDownloadEvent",
+  "DrawingReviewTab",
+  "SignaturePad",
+  "ShareLinkView",
+  "ApprovalAnalyticsView",
+  "approvalOrgRollup",
+  "listOrgApprovalDrawings",
+  "shareUrl",
+  "validateShareLink",
+  "fetchSharePayload",
   "MonthlyStatementView",
   "monthlyStatementTotals",
   "monthlyStatementPdf",
@@ -411,6 +425,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "scripts/supabase/169_shift_roster.sql",
   "scripts/supabase/172_crm_agreement_from_quotation.sql",
   "scripts/supabase/184_platform_users_active.sql",
+  "scripts/supabase/185_client_approvals.sql",
   "docs/PRODUCTION_RLS.md",
   "docs/CASHFREE_ONBOARDING.md",
   // Session 16 — Feature-flag catalog system

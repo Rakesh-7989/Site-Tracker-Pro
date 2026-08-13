@@ -62,6 +62,9 @@ export const TAB_CATALOG: readonly TabDef[] = [
 
   // Design + docs
   { id: "drawings",     label: "Drawings",      icon: "image", moduleId: "design" },
+  // v5 Phase B1 — Client Approval & Revision System: revision register +
+  // Figma-style comment pins + approval/lock + share links.
+  { id: "drawing-review", label: "Review",      icon: "refresh", requiresAny: ["drawing:comment", "drawing:approve", "share:link:manage"], planFeature: "client_approvals", moduleId: "design" },
   { id: "rfi",          label: "RFIs",          icon: "msgcircle", requires: "rfi:create", planFeature: "rfi" },
   { id: "changeorders", label: "Change Orders", icon: "doc",       requires: "changeorder:create", planFeature: "approvals" },
   { id: "boq",          label: "BOQ",           icon: "barChart",  requires: "boq:edit" },
@@ -198,6 +201,7 @@ export function tabModuleId(tabId: string): ModuleId | undefined {
 /** Set of tab IDs that have real implementations (not placeholders). */
 export const REAL_TABS: ReadonlySet<string> = new Set([
   "overview", "team", "milestones", "tasks", "updates", "issues", "punchlist", "drawings",
+  "drawing-review",
   "rfi", "changeorders", "boq", "estimate", "fieldops", "materials", "attendance", "labour",
   "safety", "inspections", "map", "boq", "gantt", "approvals", "messages",
   "phases", "time", "deliverables", "reviews", "billing", "utilization",

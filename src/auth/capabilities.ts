@@ -74,6 +74,11 @@ export const CAPABILITIES = [
   "drawings:release",
   "drawings:markup",
 
+  // ── Client approval & revision (v5 Phase B1) ──────────────────────────────
+  "drawing:comment",      // place / reply / resolve comment pins on a drawing
+  "drawing:approve",      // approve / reject / lock a drawing revision (client + managers)
+  "share:link:manage",    // create / update / revoke project share links
+
   // ── BOQ + estimate ───────────────────────────────────────────────────────
   "boq:edit",
   "estimate:edit",

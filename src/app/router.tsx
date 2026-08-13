@@ -69,6 +69,7 @@ const UpgradeRequestsView = lazy(() => import("@/features/admin/UpgradeRequestsV
 const SecurityView = lazy(() => import("@/features/account/SecurityView").then(m => ({ default: m.SecurityView })));
 const ProfileView = lazy(() => import("@/features/account/ProfileView").then(m => ({ default: m.ProfileView })));
 const ClientShareView = lazy(() => import("@/features/share/ClientShareView").then(m => ({ default: m.ClientShareView })));
+const ShareLinkView = lazy(() => import("@/features/share/ShareLinkView").then(m => ({ default: m.ShareLinkView })));
 const PlatformBillingView = lazy(() => import("@/features/admin/PlatformBillingView").then(m => ({ default: m.PlatformBillingView })));
 const PlatformUsageView = lazy(() => import("@/features/admin/PlatformUsageView").then(m => ({ default: m.PlatformUsageView })));
 const PlatformSupportView = lazy(() => import("@/features/admin/PlatformSupportView").then(m => ({ default: m.PlatformSupportView })));
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
   { path: "/profile/complete", element: <ProfileCompleteView /> },
   { path: "/pay/:requestId", element: <PayView /> },
   { path: "/share/:id", element: <ClientShareView /> },
+  { path: "/share-link/:token", element: <ShareLinkView /> },
   // ── Authenticated app (pathless layout route wraps RequireSession + Suspense) ──
   {
     element: <ShellLayout />,

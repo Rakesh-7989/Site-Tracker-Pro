@@ -171,6 +171,19 @@ GRANT SELECT ON public.role_catalog TO authenticated, anon;
 --   research_documents + collections read   → research:view
 --   research_documents + collections write  → research:manage
 --
+-- ── Capability ↔ RLS gate map (v5 Phase B1 client approvals, comment-only) ──
+-- 185 (client_approvals) is project-scoped: drawing_comments read/insert =
+-- any member — the client only on released-to-client current drawings (the
+-- 149 rule); comment update = author or managers; delete = managers+orgadmin.
+-- share_links read = member, write = managers+orgadmin; the PUBLIC surface is
+-- exclusively the SECURITY DEFINER RPCs (validate_share_link /
+-- share_project_payload). Identifiers below are the capabilities in
+-- src/auth/capabilities.ts that gate the same actions in UI:
+--   drawing_comments read + pin/reply/resolve  → drawing:comment
+--   drawing approve/reject/lock                → drawing:approve
+--   share_links create/update/revoke           → share:link:manage
+--   handover_signatures read/insert (org)      → handover:sign
+--
 -- RLS gap note: invoices / retainers / rate_cards read gates are project
 -- membership-based; org-wide rollups (utilization/revenue) therefore only
 -- surface projects the caller is already a member of — by design.

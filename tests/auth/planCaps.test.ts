@@ -77,6 +77,12 @@ describe("FEATURE_MIN_PLAN + labels", () => {
     expect(hasPlanCap({ crm: true }, "research_library")).toBe(false);
     expect(hasPlanCap({ research_library: true }, "research_library")).toBe(true);
   });
+  it("v5 B1 client_approvals resolves at Pro with deny-by-default", () => {
+    expect(FEATURE_MIN_PLAN.client_approvals).toBe("pro");
+    expect(PLAN_FEATURE_LABEL.client_approvals).toBeTruthy();
+    expect(hasPlanCap({ research_library: true }, "client_approvals")).toBe(false);
+    expect(hasPlanCap({ client_approvals: true }, "client_approvals")).toBe(true);
+  });
   it("plan rank orders correctly", () => {
     expect(PLAN_RANK.basic).toBeLessThan(PLAN_RANK.pro);
     expect(PLAN_RANK.pro).toBeLessThan(PLAN_RANK.business);

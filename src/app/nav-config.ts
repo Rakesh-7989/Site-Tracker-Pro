@@ -92,6 +92,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/procurement", label: "Procurement", icon: "wallet", requires: "procurement:view", segments: ["architecture", "interior", "multiple"], group: "Procurement", modules: ["procurement"] },
   { to: "/ffe", label: "FF&E Rollup", icon: "hardhat", requires: "ffe:manage", segments: ["architecture", "interior", "multiple"], group: "Procurement", modules: ["design"] },
   { to: "/download-audit", label: "Download Audit", icon: "download", requiresAny: ["deliverable:manage", "deliverable:approve", "drawings:upload"], group: "Insights", modules: ["consultancy", "design"] },
+  { to: "/approval-analytics", label: "Approvals", icon: "refresh", requires: "drawing:approve", group: "Insights", modules: ["design"] },
   { to: "/pos", label: "Purchase Orders", icon: "doc", requiresAny: ["po:create", "material:add"], group: "Procurement", modules: ["procurement"] },
    { to: "/vendor-scorecard", label: "Vendor Scorecard", icon: "trend", requires: "procurement:view", segments: ["architecture", "interior", "multiple", "construction"], group: "Procurement", modules: ["procurement"] },
   { to: "/material-prices", label: "Material Prices", icon: "truck", requires: "material:price:view", group: "Procurement", modules: ["procurement"] },

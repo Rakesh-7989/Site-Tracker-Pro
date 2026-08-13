@@ -3,7 +3,7 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { Input, Select, Textarea } from "@/components/ui/forms";
+import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listPunch, createPunch, setPunchStatus, deletePunch, type PunchItem, type PunchSeverity, type PunchStatus } from "@/app/siteOpsQueries";
 import { listSubmittals, createSubmittal, setSubmittalStatus, deleteSubmittal, type Submittal, type SubmittalStatus, type SubmittalType } from "@/app/siteOpsQueries";
@@ -11,6 +11,12 @@ import { listPermits, createPermit, setPermitStatus, deletePermit, type Permit, 
 import { buildHandoverManifest, serializeManifest } from "@/lib/handoverPacket";
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
+import { SignaturePad } from "@/components/ui/SignaturePad";
+import {
+  listHandoverSignatures,
+  addHandoverSignature,
+  type HandoverSignature,
+} from "@/app/approvalQueries";
 
 type Tab = "punch" | "submittals" | "permits" | "generate";
 
@@ -380,10 +386,20 @@ function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: s
   const [signature, setSignature] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signed, setSigned] = useState<HandoverSignature[]>([]);
   const { session } = useAuth();
 
+  const loadSigned = useCallback(async () => {
+    const client = await getClient();
+    if (!client) return;
+    const res = await listHandoverSignatures(client, projectId);
+    if (res.ok) setSigned(res.data);
+  }, [projectId]);
+
+  useEffect(() => { void loadSigned(); }, [loadSigned]);
+
   const sign = async () => {
-    if (!signature.trim()) {
+    if (!signature.trim() || !session?.user.id) {
       setError("Signature is required.");
       return;
     }
@@ -391,17 +407,15 @@ function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: s
     try {
       const client = await getClient();
       if (!client) { setError("Backend not configured."); return; }
-      // Sign the handover packet (implementation depends on your API/endpoint)
-      const { error: signError } = await client
-        .from("handover_signatures")
-        .insert({
-          project_id: projectId,
-          org_id: orgId,
-          signed_by: session?.user.id,
-          signature: signature,
-          signed_at: new Date().toISOString(),
-        });
-      if (signError) throw signError;
+      const res = await addHandoverSignature(client, {
+        projectId,
+        orgId,
+        signedBy: session.user.id,
+        signature: signature.trim(),
+      });
+      if (!res.ok) throw new Error(res.error);
+      setSignature("");
+      await loadSigned();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to sign handover packet");
     } finally {
@@ -416,13 +430,23 @@ function SignHandoverSection({ projectId, orgId }: { projectId: string; orgId: s
       </p>
     </div>}>
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
-      <Textarea
-        placeholder="Type your signature here..."
-        value={signature}
-        onChange={e => setSignature(e.target.value)}
-        rows={4}
-        className="mb-4"
-      />
+      {signed.length > 0 && (
+        <div className="mb-4 rounded-lg border border-border bg-bg-secondary p-3">
+          <p className="mb-2 text-xs font-semibold text-fg-primary">Signed by</p>
+          <ul className="space-y-1">
+            {signed.map(s => (
+              <li key={s.id} className="flex items-center justify-between text-xs text-fg-secondary">
+                <span className="flex items-center gap-2">
+                  <Icon name="check" size={14} />
+                  {s.signedByName ?? "Signed"}
+                </span>
+                <span>{new Date(s.signedAt).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <SignaturePad value={signature} onChange={setSignature} className="mb-4" />
       <Button onClick={() => void sign()} disabled={loading || !signature.trim()} leftIcon={<Icon name="check" size={16} />}>{loading ? <Spinner size={14} /> : "Sign Handover Packet"}</Button>
       <p className="text-xs text-fg-tertiary mt-3">By signing, you acknowledge that you have reviewed all punch list items, submittals, and permits, and the project is ready for handover.</p>
     </Card>

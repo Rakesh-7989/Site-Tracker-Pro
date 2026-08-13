@@ -611,3 +611,108 @@ describe("v4 C - no dead capability: audit:manage", () => {
     expect(denied).toBe(true);
   });
 });
+
+// v5 Phase B1 — Client Approval & Revision System capability assignment.
+// drawing:comment = pin/reply/resolve comment threads on released drawings.
+// drawing:approve = approve / reject / lock a drawing revision (final gate).
+// share:link:manage = create / update / revoke project share links.
+// Client reviews + approves drawings directly (the whole point of B1);
+// managers (identity + project tier) approve/lock; contributors comment;
+// external roles (vendor/sub_contractor/prospector) get none.
+const B1_COMMENT_ROLES = [
+  "orgadmin", "superadmin", "pm", "project_admin", "design_head", "consultant_head",
+  "architect", "senior_architect", "junior_architect", "design_architect_interior",
+  "designer", "consultant", "mep_consultant", "structural_consultant", "site_engineer",
+  "client",
+] as const;
+const B1_APPROVE_ROLES = [
+  "orgadmin", "superadmin", "pm", "project_admin", "design_head", "consultant_head",
+  "architect", "senior_architect", "client",
+] as const;
+const B1_LINK_MANAGE_ROLES = [
+  "orgadmin", "superadmin", "pm", "project_admin", "design_head", "consultant_head",
+] as const;
+const B1_DENY_ROLES = ["vendor", "sub_contractor", "prospector"] as const;
+
+describe("v5 B1 - client approval capability assignment (identity tier)", () => {
+  it("client holds drawing:comment + drawing:approve (core B1 review loop)", () => {
+    const caps = identityCapabilities("client");
+    expect(caps).toContain("drawing:comment" as never);
+    expect(caps).toContain("drawing:approve" as never);
+    expect(caps).not.toContain("share:link:manage" as never);
+  });
+  it("approve+manage roles hold all three B1 capabilities", () => {
+    for (const role of B1_LINK_MANAGE_ROLES as readonly IdentityRole[]) {
+      const caps = identityCapabilities(role);
+      expect(caps, `role=${role}`).toContain("drawing:comment" as never);
+      expect(caps, `role=${role}`).toContain("drawing:approve" as never);
+      expect(caps, `role=${role}`).toContain("share:link:manage" as never);
+    }
+  });
+  it("comment-only roles hold drawing:comment but not drawing:approve / share:link:manage", () => {
+    for (const role of B1_COMMENT_ROLES as readonly IdentityRole[]) {
+      if ((B1_APPROVE_ROLES as readonly string[]).includes(role)) continue;
+      const caps = identityCapabilities(role);
+      expect(caps, `role=${role}`).toContain("drawing:comment" as never);
+      expect(caps, `role=${role}`).not.toContain("drawing:approve" as never);
+      expect(caps, `role=${role}`).not.toContain("share:link:manage" as never);
+    }
+  });
+  it("external roles hold none of the B1 capabilities", () => {
+    for (const role of B1_DENY_ROLES as readonly IdentityRole[]) {
+      const caps = identityCapabilities(role);
+      for (const cap of ["drawing:comment", "drawing:approve", "share:link:manage"] as const) {
+        expect(caps, `role=${role} cap=${cap}`).not.toContain(cap as never);
+      }
+    }
+  });
+  it("superadmin holds all three (ALL by construction)", () => {
+    const caps = identityCapabilities("superadmin");
+    for (const cap of ["drawing:comment", "drawing:approve", "share:link:manage"] as const) {
+      expect(caps).toContain(cap as never);
+    }
+  });
+});
+
+describe("v5 B1 - client approval capability assignment (project tier)", () => {
+  it("project-tier client holds drawing:comment + drawing:approve", () => {
+    const caps = projectTierCapabilities("client");
+    expect(caps).toContain("drawing:comment" as never);
+    expect(caps).toContain("drawing:approve" as never);
+    expect(caps).not.toContain("share:link:manage" as never);
+  });
+  it("project-tier managers hold all three B1 capabilities", () => {
+    for (const role of ["pm", "project_admin", "design_head", "consultant_head"] as readonly ProjectTierRole[]) {
+      const caps = projectTierCapabilities(role);
+      expect(caps, `role=${role}`).toContain("drawing:comment" as never);
+      expect(caps, `role=${role}`).toContain("drawing:approve" as never);
+      expect(caps, `role=${role}`).toContain("share:link:manage" as never);
+    }
+  });
+  it("project-tier contributors hold drawing:comment but not approve/manage", () => {
+    for (const role of [
+      "junior_architect", "design_architect_interior",
+      "designer", "consultant", "mep_consultant", "structural_consultant", "site_engineer",
+    ] as readonly ProjectTierRole[]) {
+      const caps = projectTierCapabilities(role);
+      expect(caps, `role=${role}`).toContain("drawing:comment" as never);
+      expect(caps, `role=${role}`).not.toContain("drawing:approve" as never);
+      expect(caps, `role=${role}`).not.toContain("share:link:manage" as never);
+    }
+  });
+});
+
+describe("v5 B1 - no dead capabilities", () => {
+  it("all three B1 caps granted to at least one identity role", () => {
+    for (const cap of ["drawing:comment", "drawing:approve", "share:link:manage"] as const) {
+      const granted = IDENTITY_ROLES.some(r => identityCapabilities(r).includes(cap as never));
+      expect(granted, `cap=${cap}`).toBe(true);
+    }
+  });
+  it("all three B1 caps denied to at least one identity role", () => {
+    for (const cap of ["drawing:comment", "drawing:approve", "share:link:manage"] as const) {
+      const denied = IDENTITY_ROLES.some(r => !identityCapabilities(r).includes(cap as never));
+      expect(denied, `cap=${cap}`).toBe(true);
+    }
+  });
+});

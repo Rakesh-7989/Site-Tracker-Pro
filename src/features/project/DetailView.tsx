@@ -37,6 +37,7 @@ import { BudgetTab } from "./tabs/BudgetTab";
 import { RaBillsTab } from "./tabs/RaBillsTab";
 import { LedgerTab } from "./tabs/LedgerTab";
 import { DrawingsTab } from "./tabs/DrawingsTab";
+import { DrawingReviewTab } from "./tabs/DrawingReviewTab";
 import { RfiTab } from "./tabs/RfiTab";
 import { ChangeOrdersTab } from "./tabs/ChangeOrdersTab";
 import { EstimateTab } from "./tabs/EstimateTab";
@@ -144,6 +145,7 @@ export function DetailView(): JSX.Element {
       {requestedId === "rabills" && <RaBillsTab projectId={project.id} />}
       {requestedId === "ledger" && <LedgerTab projectId={project.id} />}
       {requestedId === "drawings" && <DrawingsTab projectId={project.id} />}
+      {requestedId === "drawing-review" && <DrawingReviewTab projectId={project.id} />}
       {requestedId === "rfi" && <RfiTab projectId={project.id} />}
       {requestedId === "changeorders" && <ChangeOrdersTab projectId={project.id} />}
       {requestedId === "estimate" && <EstimateTab projectId={project.id} />}
