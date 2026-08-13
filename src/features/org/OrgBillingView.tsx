@@ -8,7 +8,9 @@ import { Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { requestPlanUpgrade } from "@/app/upgradeQueries";
-import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, PLAN_SEATS, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/orgAdminQueries";
+import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/orgAdminQueries";
+import { fetchOrgQuota, usageRollup, type QuotaRollup } from "@/app/quotaQueries";
+import { QuotaMeter } from "@/auth/QuotaGate";
 import { useT } from "@/i18n/I18nProvider";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,6 +35,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
   const t = useT();
   const [overview, setOverview] = useState<OrgOverview | null>(null);
   const [billing, setBilling] = useState<BillingFull | null>(null);
+  const [quota, setQuota] = useState<QuotaRollup | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [action, setAction] = useState<{ kind: string } | null>(null);
@@ -42,12 +45,14 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError(t("billing.backendError")); setLoading(false); return; }
-    const [o, b] = await Promise.all([
+    const [o, b, q] = await Promise.all([
       getOrgOverview(client, orgId),
       getOrgBillingFull(client, orgId),
+      fetchOrgQuota(client, orgId),
     ]);
     if (o.ok) setOverview(o.data); else setError(o.error);
     if (b.ok) setBilling(b.data); else if (!o.ok) setError(b.error);
+    if (q.ok) setQuota(usageRollup(q.data));
     setLoading(false);
   }, [orgId, t]);
   useEffect(() => { void reload(); }, [reload]);
@@ -70,10 +75,6 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
   };
 
   const sub = billing?.subscription;
-  const seats = overview ? PLAN_SEATS[overview.plan] ?? null : null;
-  const used = overview?.memberCount ?? 0;
-  const pct = seats ? Math.min(100, Math.round((used / seats) * 100)) : 0;
-  const over = seats != null && used > seats;
 
   return (
     <div className="max-w-3xl mx-auto space-y-5 p-4 md:p-6">
@@ -102,17 +103,13 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
             )}
           </Card>
 
-          {/* â”€â”€ Seat usage â”€â”€ */}
-          <Card padding="lg" title={<span className="font-semibold text-fg-primary">{t("billing.seats")}</span>} action={<span className={over ? "text-error font-semibold" : "text-fg-secondary"}>{used} {seats != null ? `/ ${seats}` : t("billing.unlimited")}</span>}>
-            <div className="space-y-2">
-            {seats != null && (
-              <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                <div className={`h-full rounded-full ${over ? "bg-error" : pct > 80 ? "bg-accent" : "bg-success"}`} style={{ width: `${pct}%` }} />
-              </div>
-            )}
-            {over && <div className="text-[11px] text-error">{t("billing.overLimit")}</div>}
+          {/* â”€â”€ Usage meters (users + projects) â”€â”€ */}
+          {quota && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <QuotaMeter resource="users" rollup={quota} />
+              <QuotaMeter resource="projects" rollup={quota} />
             </div>
-          </Card>
+          )}
 
           {/* â”€â”€ Subscription details â”€â”€ */}
           <Card padding="lg" title={<div className="text-xs text-fg-tertiary uppercase tracking-wider">{t("billing.subscription")}</div>} action={<div className="flex items-center gap-2">

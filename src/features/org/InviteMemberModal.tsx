@@ -4,6 +4,7 @@ import { Button, Input, Select, FormField, Modal, Alert, Spinner } from "@/compo
 import { lookupUserForInvite, inviteExistingOrgMember, inviteNewOrgMember, type InviteCandidate } from "@/app/orgMemberQueries";
 import { getClient } from "@/lib/supabase";
 import type { IdentityRole } from "@/auth";
+import { QuotaGate } from "@/auth/QuotaGate";
 
 interface InviteMemberModalProps {
   open: boolean;
@@ -118,7 +119,8 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
           )}
 
           {step === "details" && (
-            <div className="space-y-3">
+            <QuotaGate resource="users">
+              <div className="space-y-3">
               <p className="text-sm text-fg-secondary">
                 {candidate
                   ? t("invite.existingUser", { name: candidate.name })
@@ -151,9 +153,10 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
                 </Button>
               </div>
             </div>
+            </QuotaGate>
           )}
         </div>
       )}
     </Modal>
-  );
+    );
 }

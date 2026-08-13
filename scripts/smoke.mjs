@@ -72,6 +72,7 @@ const app = [
   read("src/app/crossAnalyticsQueries.ts"),
   read("src/features/org/CrmView.tsx"),
   read("src/app/crmQueries.ts"),
+  read("src/app/clientPortalQueries.ts"),
   read("src/features/project/RiskSignalsCard.tsx"),
   read("src/app/riskQueries.ts"),
   read("src/app/designWorkflow.ts"),
@@ -98,8 +99,8 @@ const app = [
   read("src/components/ui/SignaturePad.tsx"),
   read("src/features/share/ShareLinkView.tsx"),
   read("src/features/org/ApprovalAnalyticsView.tsx"),
-  read("src/features/org/ClientPortalProjectView.tsx"),
-  read("src/app/clientPortalQueries.ts"),
+  read("src/app/quotaQueries.ts"),
+  read("src/auth/QuotaGate.tsx"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -232,6 +233,12 @@ const vite = read("vite.config.js");
   "buildActivityFeed",
   "listClientInvoices",
   "listClientDrawings",
+  "fetchOrgQuota",
+  "usageRollup",
+  "QuotaGate",
+  "QuotaMeter",
+  "quotaPct",
+  "atQuota",
   "shareUrl",
   "validateShareLink",
   "fetchSharePayload",

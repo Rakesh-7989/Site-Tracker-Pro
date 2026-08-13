@@ -10,6 +10,7 @@ import { useOrgSwitcher, useCan, CONSTRUCTION_INDUSTRIES, CONSTRUCTION_INDUSTRY_
 import { createProject } from "@/app/queries";
 import { Card, Button, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
+import { QuotaGate } from "@/auth/QuotaGate";
 
 const TYPE_LABEL: Record<ProjectType, string> = {
   construction: "Construction",
@@ -72,8 +73,9 @@ export function CreateProjectView(): JSX.Element {
   return (
     <div className="max-w-lg mx-auto p-4 md:p-6">
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary mb-4">New Project</h1>
-      <Card className="p-6">
-        <form onSubmit={onSubmit} className="space-y-4">
+      <QuotaGate resource="projects">
+        <Card className="p-6">
+          <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label htmlFor="pname" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Project name</label>
             <input
@@ -117,8 +119,9 @@ export function CreateProjectView(): JSX.Element {
             </Button>
             <Button type="button" variant="secondary" size="lg" onClick={() => navigate("/projects")}>Cancel</Button>
           </div>
-        </form>
-      </Card>
+          </form>
+        </Card>
+      </QuotaGate>
     </div>
   );
 }
