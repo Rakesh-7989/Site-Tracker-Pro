@@ -3,17 +3,45 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth, useHasStaffArea } from "@/auth";
-import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
+import { Card, Button, Icon, Badge, StatCard } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
 import { listUpgradeRequests, assignUpgradeRequest, setUpgradeStatus, type UpgradeRequest, type UpgradeStatus } from "@/app/upgradeQueries";
 import { listStaff, type StaffMember } from "@/app/staffQueries";
 import { Pager } from "@/components/ui/Pager";
 
 const UPGRADE_PAGE_SIZE = 100;
 
-const STATUS_TONE: Record<UpgradeStatus, "warning" | "info" | "success"> = { open: "warning", in_progress: "info", closed: "success" };
-const STATUS_LABEL: Record<UpgradeStatus, string> = { open: "Open", in_progress: "In progress", closed: "Closed" };
+export const STATUS_TONE: Record<UpgradeStatus, "warning" | "info" | "success"> = { open: "warning", in_progress: "info", closed: "success" };
+export const STATUS_LABEL: Record<UpgradeStatus, string> = { open: "Open", in_progress: "In progress", closed: "Closed" };
+
+// ── Pure helpers (exported for the phase unit tests) ──────────────────────────
+
+/** Roll-up of the loaded page (open / in_progress / closed + still-open total). */
+export function upgradeSummary(rows: UpgradeRequest[]): { open: number; inProgress: number; closed: number; openTotal: number } {
+  let open = 0, inProgress = 0, closed = 0;
+  for (const r of rows) {
+    if (r.status === "open") open++;
+    else if (r.status === "in_progress") inProgress++;
+    else closed++;
+  }
+  return { open, inProgress, closed, openTotal: open + inProgress };
+}
+
+/** CSV column spec for the upgrade export (raw values). */
+export const UPGRADE_CSV_COLUMNS: ReadonlyArray<CsvColumn<keyof UpgradeRequest>> = [
+  { key: "orgName", label: "Org" },
+  { key: "requesterEmail", label: "Requester" },
+  { key: "currentPlan", label: "Current plan" },
+  { key: "desiredPlan", label: "Desired plan" },
+  { key: "status", label: "Status" },
+  { key: "assignedEmail", label: "Assigned to" },
+  { key: "resolutionNote", label: "Resolution note" },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
+];
 
 export function UpgradeRequestsView(): JSX.Element {
   const { session } = useAuth();
@@ -42,6 +70,25 @@ export function UpgradeRequestsView(): JSX.Element {
   }, [canAssign, page]);
 
   useEffect(() => { if (isStaff) void load(); else setLoading(false); }, [isStaff, load]);
+
+  function UpgradeSkeleton(): JSX.Element {
+    return (
+      <div className="space-y-6" role="status" aria-label="Loading upgrade requests">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-panel rounded-xl border border-default p-4 space-y-3">
+              <Skeleton decorative height={10} width="w-16" />
+              <Skeleton decorative height={24} width="w-12" />
+            </div>
+          ))}
+        </div>
+        <div className="bg-panel rounded-xl border border-default p-4 space-y-3">
+          <Skeleton decorative height={12} width="w-40" />
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} decorative height={40} width="w-full" />)}
+        </div>
+      </div>
+    );
+  }
 
   const doAssign = async (r: UpgradeRequest, staffId: string) => {
     setBusy(r.id);
@@ -106,11 +153,23 @@ export function UpgradeRequestsView(): JSX.Element {
     },
   ];
 
+  const summary = upgradeSummary(rows);
+  const onExport = useCallback(() => {
+    const content = buildCsv(rows as unknown as Array<Record<string, unknown>>, UPGRADE_CSV_COLUMNS);
+    if (!content) return;
+    downloadCsv(`upgrade-requests-${csvDateStamp()}.csv`, content);
+  }, [rows]);
+
   return (
     <div className="max-w-6xl mx-auto space-y-4 p-4 md:p-6">
-      <div>
-        <h1 className="font-display text-xl md:text-2xl font-bold">Upgrade requests</h1>
-        <p className="text-sm text-fg-secondary mt-1">Orgs asking to move up a plan. {canAssign ? "Assign to a staff or take it yourself, then track to close." : "Your assigned requests."}</p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="font-display text-xl md:text-2xl font-bold">Upgrade requests</h1>
+          <p className="text-sm text-fg-secondary mt-1">Orgs asking to move up a plan. {canAssign ? "Assign to a staff or take it yourself, then track to close." : "Your assigned requests."}</p>
+        </div>
+        <Button size="sm" variant="secondary" leftIcon={<Icon name="download" size={14} />} onClick={onExport} disabled={rows.length === 0}>
+          Export CSV
+        </Button>
       </div>
 
       {error && (
@@ -119,10 +178,20 @@ export function UpgradeRequestsView(): JSX.Element {
         </div>
       )}
 
-      {loading ? <div className="grid place-items-center py-12 text-accent"><Spinner size={24} /></div>
-        : <Card className="overflow-hidden">
-            <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No upgrade requests ${page > 0 ? "on this page." : "yet."}`} />
-          </Card>}
+      {loading ? <UpgradeSkeleton /> : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard label="Open" value={summary.open} sub="needs action" />
+          <StatCard label="In progress" value={summary.inProgress} sub="assigned" />
+          <StatCard label="Closed" value={summary.closed} sub="resolved" />
+          <StatCard label="Active total" value={summary.openTotal} sub={`${canAssign ? "all staff" : "your queue"}`} />
+        </div>
+      )}
+
+      {!loading && (
+        <Card className="overflow-hidden">
+          <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No upgrade requests ${page > 0 ? "on this page." : "yet."}`} />
+        </Card>
+      )}
       {rows.length > 0 && <Pager page={page} hasNext={rows.length === UPGRADE_PAGE_SIZE} busy={loading} onPrev={() => setPage(p => Math.max(0, p - 1))} onNext={() => setPage(p => p + 1)} />}
     </div>
   );

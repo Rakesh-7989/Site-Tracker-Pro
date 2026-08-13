@@ -1,28 +1,91 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useAuth } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { Card, Button, Badge, Alert, AccessDenied, Icon, Spinner, StatCard } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
 import { listSignupRequests, reviewSignupRequest, markSignupPaid, createCheckoutLink, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
 import { listStaff, assignSignupRequest, type StaffMember } from "@/app/staffQueries";
 
 import { getClient } from "@/lib/supabase";
 const FILTERS = [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "all", label: "All" }];
 const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
-const statusTone = (s: SignupStatus): "neutral" | "warning" | "success" | "danger" => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");
-const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
-const PAY_TONE: Record<string, "warning" | "success" | "neutral"> = { unpaid: "warning", paid: "success", waived: "neutral" };
-const PAY_LABEL: Record<string, string> = { unpaid: "Payment due", paid: "Paid", waived: "Waived" };
-function slaText(r: SignupRequestRow): { text: string; over: boolean } | null {
+export const statusTone = (s: SignupStatus): "neutral" | "warning" | "success" | "danger" => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");
+export const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
+export const PAY_TONE: Record<string, "warning" | "success" | "neutral"> = { unpaid: "warning", paid: "success", waived: "neutral" };
+export const PAY_LABEL: Record<string, string> = { unpaid: "Payment due", paid: "Paid", waived: "Waived" };
+export function slaText(r: SignupRequestRow): { text: string; over: boolean } | null {
   if (r.status !== "pending" || r.paymentStatus === "unpaid" || !r.paidAt) return null;
   const hrs = Math.round((new Date(r.paidAt).getTime() + 24 * 3600 * 1000 - Date.now()) / 3600000);
   return hrs >= 0 ? { text: `Provision due in ${hrs}h`, over: false } : { text: `Overdue by ${-hrs}h`, over: true };
 }
 
+// ── Pure helpers (exported for the phase unit tests) ──────────────────────────
+
+/** Queue roll-up of the loaded rows (pending / approved / rejected + unpaid pending). */
+export function signupSummary(rows: SignupRequestRow[]): { pending: number; approved: number; rejected: number; pendingUnpaid: number } {
+  let pending = 0, approved = 0, rejected = 0, pendingUnpaid = 0;
+  for (const r of rows) {
+    if (r.status === "pending") { pending++; if (r.paymentStatus === "unpaid") pendingUnpaid++; }
+    else if (r.status === "approved") approved++;
+    else rejected++;
+  }
+  return { pending, approved, rejected, pendingUnpaid };
+}
+
+/** CSV column spec for the signup export (raw values). */
+export const SIGNUP_CSV_COLUMNS: ReadonlyArray<CsvColumn<keyof SignupRequestRow>> = [
+  { key: "firmName", label: "Firm" },
+  { key: "contactName", label: "Contact" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
+  { key: "plan", label: "Plan" },
+  { key: "status", label: "Status" },
+  { key: "paymentStatus", label: "Payment" },
+  { key: "paymentRef", label: "Payment ref" },
+  { key: "paidAt", label: "Paid at" },
+  { key: "reviewNotes", label: "Review notes" },
+  { key: "createdAt", label: "Created" },
+];
+
 export function SignupRequestsView(): JSX.Element {
   const canManage = useCan("platform:orgs:manage");
   if (!canManage) return <AccessDenied message="Platform superadmin access required." />;
   return <Inner />;
+}
+
+interface Settled<T> { ok: boolean; data: T | null; error?: string }
+
+type Lazy<T> = { ok: true; data: T } | { ok: false; error: string };
+
+async function settle<T>(p: Promise<Lazy<T>>): Promise<Settled<T>> {
+  try {
+    const r = await p;
+    if (r.ok) return { ok: true, data: r.data };
+    return { ok: false, data: null, error: r.error };
+  } catch (e) {
+    return { ok: false, data: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+function SignupSkeleton(): JSX.Element {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading signup requests">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-panel rounded-xl border border-default p-4 space-y-3">
+            <Skeleton decorative height={10} width="w-16" />
+            <Skeleton decorative height={24} width="w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="bg-panel rounded-xl border border-default p-4 space-y-3">
+        <Skeleton decorative height={12} width="w-40" />
+        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} decorative height={40} width="w-full" />)}
+      </div>
+    </div>
+  );
 }
 
 function Inner(): JSX.Element {
@@ -78,8 +141,8 @@ function Inner(): JSX.Element {
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listSignupRequests(client, filter === "all" ? undefined : (filter as SignupStatus));
-    if (res.ok) setRows(res.data); else setError(res.error);
+    const res = await settle(listSignupRequests(client, filter === "all" ? undefined : (filter as SignupStatus)));
+    if (res.ok && res.data) setRows(res.data); else setError(res.error ?? "Failed to load signup requests.");
     setLoading(false);
   }, [filter]);
   useEffect(() => { void reload(); }, [reload]);
@@ -108,6 +171,13 @@ function Inner(): JSX.Element {
     if (res.ok) setNotice(`Rejected ${r.firmName}.`); else setError(res.error);
     setRejecting(null); setRejectNote(""); await reload(); setBusy(null);
   };
+
+  const summary = signupSummary(rows);
+  const onExport = useCallback(() => {
+    const content = buildCsv(rows as unknown as Array<Record<string, unknown>>, SIGNUP_CSV_COLUMNS);
+    if (!content) return;
+    downloadCsv(`signup-requests-${csvDateStamp()}.csv`, content);
+  }, [rows]);
 
   const columns: Column<SignupRequestRow>[] = [
     {
@@ -208,15 +278,30 @@ function Inner(): JSX.Element {
       </Alert>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Signup requests</h1>
-        <Select fit className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="secondary" leftIcon={<Icon name="download" size={14} />} onClick={onExport} disabled={rows.length === 0}>
+            Export CSV
+          </Button>
+          <Select fit className="w-36" value={filter} onChange={e => setFilter(e.target.value)} options={FILTERS} />
+        </div>
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {notice && <Alert variant="success">{notice}</Alert>}
 
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
-        : <Card className="overflow-hidden">
-            <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No ${filter === "all" ? "" : filter} requests.`} />
-          </Card>}
+      {loading ? <SignupSkeleton /> : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard label="Pending" value={summary.pending} sub={`${summary.pendingUnpaid} unpaid`} />
+          <StatCard label="Approved" value={summary.approved} sub="created orgs" />
+          <StatCard label="Rejected" value={summary.rejected} sub="declined" />
+          <StatCard label="Queue total" value={rows.length} sub={`${filter === "all" ? "" : filter} view`} />
+        </div>
+      )}
+
+      {!loading && (
+        <Card className="overflow-hidden">
+          <DataTable dense columns={columns} rows={rows} rowKey={r => r.id} emptyMessage={`No ${filter === "all" ? "" : filter} requests.`} />
+        </Card>
+      )}
     </div>
   );
 }
