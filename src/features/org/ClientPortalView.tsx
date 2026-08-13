@@ -83,7 +83,7 @@ export function ClientPortalView(): JSX.Element {
         {mp.map(p => (
           <button
             key={p.id}
-            onClick={() => navigate(`/projects/${p.id}`)}
+            onClick={() => navigate(`/client/${p.id}`)}
             className="w-full bg-panel rounded-2xl border border-default p-6 text-left hover:shadow-md hover:border-accent transition-all group"
           >
             <div className="flex items-start justify-between mb-4">

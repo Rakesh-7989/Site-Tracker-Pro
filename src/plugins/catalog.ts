@@ -22,6 +22,7 @@ export const PLUGIN_CATALOG: readonly PluginDef[] = [
     label: "Client Portal",
     routes: [
       { path: "client", lazy: () => import("@/features/org/ClientPortalView").then(m => ({ default: m.ClientPortalView })) },
+      { path: "client/:projectId", lazy: () => import("@/features/org/ClientPortalProjectView").then(m => ({ default: m.ClientPortalProjectView })) },
     ],
   },
   {

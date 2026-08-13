@@ -98,6 +98,8 @@ const app = [
   read("src/components/ui/SignaturePad.tsx"),
   read("src/features/share/ShareLinkView.tsx"),
   read("src/features/org/ApprovalAnalyticsView.tsx"),
+  read("src/features/org/ClientPortalProjectView.tsx"),
+  read("src/app/clientPortalQueries.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -223,6 +225,13 @@ const vite = read("vite.config.js");
   "ApprovalAnalyticsView",
   "approvalOrgRollup",
   "listOrgApprovalDrawings",
+  "ClientPortalProjectView",
+  "clientPaymentRollup",
+  "upcomingMilestones",
+  "approvedDrawings",
+  "buildActivityFeed",
+  "listClientInvoices",
+  "listClientDrawings",
   "shareUrl",
   "validateShareLink",
   "fetchSharePayload",
