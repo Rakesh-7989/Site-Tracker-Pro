@@ -22,3 +22,20 @@ export async function getUsageStats(client: any): Promise<PResult<UsageStats>> {
     };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
+
+export interface PlanCount { plan: string; count: number }
+
+/** Platform-wide org headcount per plan (for the usage plan-mix chart). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listUsagePlanCounts(client: any): Promise<PResult<PlanCount[]>> {
+  try {
+    const { data, error } = await client.from("orgs").select("plan");
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    const counts = new Map<string, number>();
+    for (const r of (data ?? []) as Array<{ plan?: string | null }>) {
+      const p = r.plan || "basic";
+      counts.set(p, (counts.get(p) ?? 0) + 1);
+    }
+    return { ok: true, data: Array.from(counts, ([plan, count]) => ({ plan, count })) };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}

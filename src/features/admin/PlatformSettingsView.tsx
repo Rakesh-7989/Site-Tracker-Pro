@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
-import { Card, Spinner, AccessDenied } from "@/components/ui/atoms";
+import { Card, AccessDenied, Alert, Spinner } from "@/components/ui/atoms";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { listOpsToggles, upsertOpsToggle } from "@/app/platformSettingsQueries";
+import { UpiSettingsCard } from "@/features/admin/UpiSettingsCard";
 
 import { getClient } from "@/lib/supabase";
 interface ToggleRow { id: string; key: string; label: string; desc: string; enabled: boolean; }
@@ -22,37 +25,59 @@ export function PlatformSettingsView(): JSX.Element {
 
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true); setError(null);
     const client = await getClient();
-    if (!client) { setLoading(false); return; }
+    if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await listOpsToggles(client);
     const map: Record<string, boolean> = {};
-    if (res.ok) res.data.forEach((r) => { map[r.key] = r.value === "true"; });
-    setToggles(map);
+    if (res.ok) { res.data.forEach((r) => { map[r.key] = r.value === "true"; }); setToggles(map); }
+    else setError(res.error);
     setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
   const toggle = async (key: string) => {
-    setSaving(key);
+    setSaving(key); setSaveError(null);
     const next = !toggles[key];
     const client = await getClient();
-    if (client) await upsertOpsToggle(client, key, String(next));
-    setToggles(p => ({ ...p, [key]: next }));
+    if (client) {
+      const res = await upsertOpsToggle(client, key, String(next));
+      if (res.ok) setToggles(p => ({ ...p, [key]: next }));
+      else setSaveError(res.error);
+    }
     setSaving(null);
   };
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) {
+    return (
+      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-4" role="status" aria-label="Loading settings">
+        <div className="space-y-2">
+          <Skeleton decorative height={28} width="w-48" />
+          <Skeleton decorative height={12} width="w-40" />
+        </div>
+        <div className="bg-panel rounded-xl border border-default p-4 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} decorative height={52} width="w-full" />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-black text-fg-primary mb-1">System Settings</h1>
-      <p className="text-fg-tertiary text-sm mb-6">Platform-wide operational toggles</p>
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-black text-fg-primary mb-1">System Settings</h1>
+        <p className="text-fg-tertiary text-sm">Platform-wide operational toggles</p>
+      </div>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {saveError && <Alert variant="danger">Save failed: {saveError}</Alert>}
 
-      <Card padding="lg" className="mb-6" title={<div>
+      <Card padding="lg" title={<div>
         <h2 className="font-bold text-lg">Operational toggles</h2>
         <p className="text-xs text-fg-tertiary">Control which surfaces are available across all orgs.</p>
       </div>}>
@@ -62,7 +87,7 @@ export function PlatformSettingsView(): JSX.Element {
             const busy = saving === t.key;
             return (
               <label key={t.key} className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer transition-all ${enabled ? "bg-success-tint" : "bg-secondary"}`}>
-                <input type="checkbox" checked={enabled} disabled={busy} onChange={() => toggle(t.key)} className="mt-1 w-5 h-5 accent-[var(--st-accent)]" />
+                <Checkbox checked={enabled} disabled={busy} onChange={() => toggle(t.key)} />
                 <div className="flex-1">
                   <div className="font-semibold text-sm">{t.label}</div>
                   <div className="text-xs text-fg-tertiary">{t.desc}</div>
@@ -73,6 +98,8 @@ export function PlatformSettingsView(): JSX.Element {
           })}
         </div>
       </Card>
+
+      <UpiSettingsCard />
     </div>
   );
 }
