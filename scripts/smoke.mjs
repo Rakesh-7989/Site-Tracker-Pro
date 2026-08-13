@@ -101,6 +101,7 @@ const app = [
   read("src/features/org/ApprovalAnalyticsView.tsx"),
   read("src/app/quotaQueries.ts"),
   read("src/auth/QuotaGate.tsx"),
+  read("scripts/supabase/186_notification_delivery.sql"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -239,6 +240,10 @@ const vite = read("vite.config.js");
   "QuotaMeter",
   "quotaPct",
   "atQuota",
+  "trigger_notify_deliver",
+  "notification_templates",
+  "notify_deliver",
+  "notification_prefs",
   "shareUrl",
   "validateShareLink",
   "fetchSharePayload",
