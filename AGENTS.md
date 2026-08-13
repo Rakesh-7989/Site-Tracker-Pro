@@ -2505,7 +2505,7 @@ UtilizationView (org rollup + phase drill-down) with a real legend.
 | **SA-U** | **Users & Staff screen rebuild** | ✅ `d8c8c50` (U1: migration **184** `platform_users` — org_count counts `org_members` where `removed_at IS NULL AND status='active'`, adds `staff_tier` to RETURN TABLE; `PlatformUser.staffTier`; StaffAdminView `tierBadge` helper + AccessDenied) · `b1575f7` (U2: PlatformUsersView rebuild — `platform_stats` KPI strip w/ `statsFailed` degradation, `userTierMix`+BarChart, `filterUsersByTier`, `USER_CSV_COLUMNS` CSV export, settle/skeleton; tests `adminUsers.test.ts` 12; smoke +4 → 336) · `f3ed4d1` (U3: StaffAdminView rebuild — `staffSummary` KPI strip, settle/skeleton, raw `<input>`→`<Input>` migration, `validEmail` export; tests `adminStaff.test.ts` 5; smoke +2 → 338; e2e superadmin Staff-nav assert). **Migration 184 + push prod pending at SA-T.** |
 | **SA-AR** | **Active Requests / support screens** | ✅ `ede4f3d` (SignupRequestsView — `signupSummary` KPI strip (pending/approved/rejected + unpaid), `SIGNUP_CSV_COLUMNS` CSV export, settle/skeleton, exported pure helpers `slaText`/`statusTone`/`fmtDate`/`PAY_TONE`/`PAY_LABEL`; UpgradeRequestsView — `upgradeSummary` KPI strip (open/in_progress/closed + active total), `UPGRADE_CSV_COLUMNS` CSV export, structural skeleton, exported `STATUS_TONE`/`STATUS_LABEL`/`upgradeSummary`; PlatformSupportView — `ticketSummary` KPI strip (open/replied/closed/total), `TICKET_CSV_COLUMNS` CSV export, structural skeleton, raw `<textarea>`→`<Textarea>`, reply/close error surfacing, exported `fmtTime`/`ticketSummary`; tests `adminSignups` 9 / `adminUpgrades` 5 / `adminSupport` 5; smoke +6 → 344; vitest 185 files/2167 tests) |
 | SA-S | Subscription & billing screens | ✅ `8d0cb11` (PlatformBillingView — `billingSummary` KPI strip (active/trial/suspended/MRR/ARR), `billingByPlan` MRR-by-plan BarChart (`PLAN_ORDER`), org billing DataTable + `BILLING_CSV_COLUMNS` CSV export, settle/skeleton, error surfacing; PlatformUsageView — StatCard KPI strip, `usagePlanMix` orgs-by-plan BarChart via new `listUsagePlanCounts` query, `USAGE_CSV_COLUMNS` CSV export, settle/skeleton, error surfacing; PlatformSettingsView — raw `<input>`→`<Checkbox>`, load/save error surfacing, structural skeleton, Payment UPI section; **UpiSettingsCard extracted to shared `UpiSettingsCard.tsx`** (Payment UPI config now on Settings too, still on Staff) + `paymentSettingsValid` helper; StaffAdminView inline card removed; tests `adminBilling` 6 / `adminUsage` 5 / `adminSettings` 3; smoke +7 → 351; vitest 188 files/2181 tests) |
-| SA-T | Testing + ship | pending |
+| SA-T | Testing + ship | ✅ full gate suite green (tsc · lint 0 err · build clean · smoke **351** · vitest **188 files/2181 tests** · e2e-mock **11/11**); migration **184** applied + verified live (`platform_users` RETURN TABLE = `staff_tier text` + active-membership `org_count int`, identity `(int,int,text)`); `db:apply` → **171 passed / 1 failed** (only benign dev-seed `120` duplicate-email — pre-existing); pushed `prod` (commit TBD); live 200. **Track A complete.** |
 
 ### Track B — Research-Gap Roadmap (killer features not yet shipped)
 B1 Client Approval & Revision System (Figma-style x/y drawing comments, share links
@@ -2517,4 +2517,9 @@ subdomains, mobile, AI, analytics).
 
 ### Notes
 - Do-not-commit temp scripts still present: `scripts/apply-175.mjs`,
-  `scripts/apply-183.mjs`, `scripts/verify-183.mjs`, `scripts/scan-card-headers.mjs`.
+  `scripts/apply-183.mjs`, `scripts/verify-183.mjs`, `scripts/scan-card-headers.mjs`,
+  `scripts/verify-184.mjs`.
+- **Track A — Super Admin Platform Panel: COMPLETE** (SA-F → SA-T all shipped,
+  verified, live). Next candidates (needs user go): Track B backlog — B1 Client
+  Approval & Revision System (biggest research gap), B2 Client Portal depth, B3
+  subscription usage-limit enforcement.
