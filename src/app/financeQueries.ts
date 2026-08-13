@@ -12,6 +12,13 @@ export function fmtRupees(n: number): string {
   return "₹" + (Number.isFinite(n) ? n : 0).toLocaleString("en-IN");
 }
 
+/** Compact rupee label for tight chart slots (Cr / k / full fallback). */
+export function fmtCompactRupees(n: number): string {
+  if (n >= 1e7) return `₹${(n / 1e7).toFixed(1)}Cr`;
+  if (n >= 1e5) return `₹${Math.round(n / 1e3)}k`;
+  return fmtRupees(n);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function upd(client: any, table: string, id: string, patch: Record<string, unknown>): Promise<Result<{ ok: true }>> {
   try { const { error } = await client.from(table).update(patch).eq("id", id); if (error) return dbe(error); return ok({ ok: true }); } catch (e) { return er(e); }

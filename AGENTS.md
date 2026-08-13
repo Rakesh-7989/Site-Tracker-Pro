@@ -2365,3 +2365,56 @@ donut), **OrgFinancialView** (6-month cash-flow trend lines), and **ForecastView
   series the current single-series library doesn't express yet — deferred).
 - Next candidates (needs user go): Phase-6 mobile polish, or per-phase
   utilization bars.
+
+---
+
+## Option 4 — Frontend Redesign Phase 25: Utilization + Procurement bars (Complete, 2026-08-13)
+
+### Goal
+Close the last two Phase-5 chart candidates from Phase 24's notes: **UtilizationView**
+(per-project + per-phase committed-fee vs billed-effort bars) and **ProcurementView**
+(per-FF&E quote unit-price comparison). Also promotes the compact rupee formatter to
+`financeQueries.ts` and adds `formatValue` to `BarChart` so money bars don't need
+library support for readable labels.
+
+### Done (all verified)
+- **`financeQueries.ts`** — new `fmtCompactRupees(n)` (₹ Cr / k / full fallback);
+  `RevenueView.shortCurrency` is now a re-exported alias of it (Phase-24 test +
+  smoke marker stay green).
+- **Charts.tsx `BarChart.formatValue`** — new optional prop applied to value
+  labels, bar tooltips and the `aria-label` summary (formatted version replaces
+  the raw `chartAriaLabel` call). Back-compat: omitted = raw values (existing
+  BarChart tests unchanged).
+- **UtilizationView → BarChart** — org-rollup "Committed fee by project" +
+  "Billed effort by project" cards (violet / accent, `showValues` +
+  `formatValue={fmtCompactRupees}`) above the project table; the per-project
+  phase drill-down gained "Phase fees" + "Phase billed effort" cards above the
+  phase table. New pure exported helpers `utilizationFeeData` /
+  `utilizationValueData` / `phaseFeeData` / `phaseValueData` (unassigned phase
+  kept with fee 0).
+- **ProcurementView → BarChart** — inside each expanded FF&E group, a
+  "Unit price comparison" card (`height 120`, `padding="none"`) renders when
+  ≥2 comparable quotes exist; the best-scored quote's bar is success-green.
+  New pure exported helper `quotePriceData(quotes, bestQuoteId)` (drops
+  rejected / zero-price quotes; `vendorName ?? "Vendor"` label).
+- **Smoke** — `UtilizationView.tsx` + `ProcurementView.tsx` added to the
+  app-source scan; 4 Markers (`utilizationFeeData`/`phaseFeeData`/
+  `quotePriceData`/`fmtCompactRupees`): **321 checks** (was 317).
+- **Tests** — `tests/features/orgChartWiring.test.ts` extended to **23** (fee/
+  value series mapping + rounding + empty, phase series incl. unassigned,
+  quotePriceData best-highlight + rejected/zero drop + empty);
+  `tests/components/uiCharts.test.tsx` extended to **21** (formatValue on value
+  labels/tooltips/aria + raw-value fallback).
+
+### Verify (Phase 25)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (9.13s) · vitest **177 files / 2090 tests pass** (+11) · smoke
+  **321 checks** (was 317; +4) · e2e-mock **11/11**.
+
+### Notes / Follow-ups
+- Grouped/paired series still not expressed by the library — the two
+  fee-vs-effort bars render as side-by-side charts instead of paired columns
+  (deliberate; documented). A `BarGroup` component remains an option.
+- Phase-5 data-intensive candidates now complete (tables, charts, kanban,
+  calendar). Next candidates (needs user go): Phase-6 mobile polish, or the
+  `BarGroup` paired-series enhancement.

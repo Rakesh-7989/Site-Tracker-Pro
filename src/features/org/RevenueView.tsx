@@ -18,7 +18,7 @@ import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { ChartLegend, PieChart, type ChartDatum } from "@/components/ui/Charts";
-import { fmtRupees } from "@/app/financeQueries";
+import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
 import { listProjectsByType, type ProjectBrief } from "@/app/utilizationQueries";
 import {
   listOrgInvoices, listOrgRetainers, billedToDate, billedBySource, retainerMrr,
@@ -178,9 +178,5 @@ export function sourceSplitData(phase: number, hourly: number, retainer: number)
   return rows;
 }
 
-/** Compact rupee label for tight pie-centre slots (Cr / k / full). */
-export function shortCurrency(n: number): string {
-  if (n >= 1e7) return `₹${(n / 1e7).toFixed(1)}Cr`;
-  if (n >= 1e5) return `₹${Math.round(n / 1e3)}k`;
-  return fmtRupees(n);
-}
+/** Compact rupee label for tight pie-centre slots (alias of financeQueries). */
+export const shortCurrency = fmtCompactRupees;

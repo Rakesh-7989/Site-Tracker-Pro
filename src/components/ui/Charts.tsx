@@ -43,25 +43,28 @@ export interface BarChartProps {
   data: ChartDatum[];
   color?: string;
   showValues?: boolean;
+  /** Format bar values for value labels, tooltips and the aria summary. */
+  formatValue?: (value: number) => string;
   className?: string;
 }
 
-export function BarChart({ data, color = "var(--st-accent)", showValues = false, className }: BarChartProps): JSX.Element {
+export function BarChart({ data, color = "var(--st-accent)", showValues = false, formatValue, className }: BarChartProps): JSX.Element {
   const max = chartMax(data);
+  const fmt = formatValue ?? ((v: number) => String(v));
   return (
-    <div role="img" aria-label={`Bar chart: ${chartAriaLabel(data)}`} className={cn("flex flex-col w-full h-full", className)}>
+    <div role="img" aria-label={`Bar chart: ${data.map(d => `${d.label}: ${fmt(d.value)}`).join(", ")}`} className={cn("flex flex-col w-full h-full", className)}>
       <div className="flex flex-1 items-end gap-1 relative min-h-0">
         {data.map((d, i) => {
           const pct = d.value <= 0 ? 0 : Math.max((d.value / max) * 100, 3);
           return (
             <div key={i} className="relative flex-1 h-full min-w-0 flex items-end justify-center">
               {showValues && d.value > 0 && (
-                <span className="absolute -top-2 inset-x-0 text-center text-[10px] text-fg-tertiary leading-none">{d.value}</span>
+                <span className="absolute -top-2 inset-x-0 text-center text-[10px] text-fg-tertiary leading-none">{fmt(d.value)}</span>
               )}
               <div
                 className="w-full rounded-t-sm"
                 style={{ height: `${pct}%`, backgroundColor: d.color ?? color }}
-                title={`${d.label}: ${d.value}`}
+                title={`${d.label}: ${fmt(d.value)}`}
               />
             </div>
           );

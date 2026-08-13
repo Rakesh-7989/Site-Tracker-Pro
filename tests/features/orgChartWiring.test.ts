@@ -1,13 +1,18 @@
-// SiteTrack Pro — pure chart-wiring helpers (Option 4 Phase 24).
+// SiteTrack Pro — pure chart-wiring helpers (Option 4 Phase 24/25).
 // RevenueView.sourceSplitData / shortCurrency, OrgFinancialView.cashFlowTrend,
-// ForecastView.burnUpSeries / monthLabel.
+// ForecastView.burnUpSeries / monthLabel, UtilizationView fee/value series,
+// ProcurementView.quotePriceData.
 
 import { describe, expect, it } from "vitest";
 import { sourceSplitData, shortCurrency } from "@/features/org/RevenueView";
 import { cashFlowTrend } from "@/features/org/OrgFinancialView";
 import { burnUpSeries, monthLabel } from "@/features/org/ForecastView";
+import { utilizationFeeData, utilizationValueData, phaseFeeData, phaseValueData } from "@/features/org/UtilizationView";
+import { quotePriceData } from "@/features/org/ProcurementView";
 import type { RaBill } from "@/app/forecastQueries";
 import type { CashFlowForecastRow } from "@/app/crossAnalyticsQueries";
+import type { UtilizationRow, UtilizationPhaseRow } from "@/app/utilizationQueries";
+import type { ProcurementQuote } from "@/app/procurementQuotes";
 
 describe("sourceSplitData", () => {
   it("keeps only positive slices in phase, hourly, retainer order", () => {
@@ -112,5 +117,104 @@ describe("burnUpSeries", () => {
 
   it("returns empty when there is nothing dated", () => {
     expect(burnUpSeries([bill({ id: "a", bill_amount: 10, bill_date: null })])).toEqual([]);
+  });
+});
+
+describe("utilizationFeeData / utilizationValueData", () => {
+  const rows: UtilizationRow[] = [
+    { projectId: "p1", name: "Design Hub", type: "design", fee: 500000, loggedHours: 40, billedValue: 300000, variance: 200000, utilizationPct: 60 },
+    { projectId: "p2", name: "Villa", type: "consultant", fee: 900000, loggedHours: 90, billedValue: 800000, variance: 100000, utilizationPct: 89 },
+  ];
+
+  it("maps fee series by project name", () => {
+    expect(utilizationFeeData(rows)).toEqual([
+      { label: "Design Hub", value: 500000 },
+      { label: "Villa", value: 900000 },
+    ]);
+  });
+
+  it("maps billed-value series rounded to whole rupees", () => {
+    expect(utilizationValueData([{ ...rows[0], billedValue: 300000.4 }])).toEqual([
+      { label: "Design Hub", value: 300000 },
+    ]);
+  });
+
+  it("returns empty for an empty rollup", () => {
+    expect(utilizationFeeData([])).toEqual([]);
+  });
+});
+
+describe("phaseFeeData / phaseValueData", () => {
+  const phases: UtilizationPhaseRow[] = [
+    { projectId: "p1", projectName: "Design Hub", phaseId: "f1", phaseTitle: "Concept", feeAmount: 100000, loggedHours: 10, billedValue: 80000, variance: 20000, utilizationPct: 80 },
+    { projectId: "p1", projectName: "Design Hub", phaseId: "__unassigned__", phaseTitle: "Unassigned", feeAmount: 0, loggedHours: 5, billedValue: 40000, variance: -40000, utilizationPct: 0 },
+  ];
+
+  it("maps phase fee series keeping the unassigned row", () => {
+    expect(phaseFeeData(phases)).toEqual([
+      { label: "Concept", value: 100000 },
+      { label: "Unassigned", value: 0 },
+    ]);
+  });
+
+  it("maps phase billed-value series", () => {
+    expect(phaseValueData(phases)).toEqual([
+      { label: "Concept", value: 80000 },
+      { label: "Unassigned", value: 40000 },
+    ]);
+  });
+
+  it("returns empty for empty phases", () => {
+    expect(phaseValueData([])).toEqual([]);
+  });
+});
+
+describe("quotePriceData", () => {
+  const quote = (partial: Partial<ProcurementQuote> & { id: string }): ProcurementQuote => ({
+    id: partial.id,
+    orgId: "org",
+    ffeEntryId: "f1",
+    projectId: "p1",
+    vendorId: partial.vendorId ?? null,
+    vendorName: partial.vendorName ?? "Vendor",
+    itemName: null,
+    unitPrice: partial.unitPrice ?? 0,
+    qty: 1,
+    leadDays: null,
+    validUntil: null,
+    status: partial.status ?? "received",
+    notes: null,
+    createdBy: null,
+    createdAt: "",
+  });
+
+  it("maps vendor → unit price, marking the best quote success", () => {
+    const rows = quotePriceData(
+      [
+        quote({ id: "a", vendorName: "SteelCo", unitPrice: 1200 }),
+        quote({ id: "b", vendorName: "Ira", unitPrice: 900 }),
+      ],
+      "b",
+    );
+    expect(rows).toEqual([
+      { label: "SteelCo", value: 1200, color: undefined },
+      { label: "Ira", value: 900, color: "var(--st-success)" },
+    ]);
+  });
+
+  it("drops rejected and zero-price quotes", () => {
+    const rows = quotePriceData(
+      [
+        quote({ id: "a", vendorName: "A", unitPrice: 500 }),
+        quote({ id: "b", vendorName: "B", unitPrice: 0 }),
+        quote({ id: "c", vendorName: "C", unitPrice: 700, status: "rejected" }),
+      ],
+      null,
+    );
+    expect(rows.map(r => r.label)).toEqual(["A"]);
+  });
+
+  it("returns empty when nothing comparable", () => {
+    expect(quotePriceData([quote({ id: "a", unitPrice: 0 })], null)).toEqual([]);
   });
 });

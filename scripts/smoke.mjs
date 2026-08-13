@@ -45,6 +45,8 @@ const app = [
   read("src/features/org/FfeRollupView.tsx"),
   read("src/features/org/RevenueView.tsx"),
   read("src/features/org/ForecastView.tsx"),
+  read("src/features/org/UtilizationView.tsx"),
+  read("src/features/org/ProcurementView.tsx"),
   read("src/features/org/DownloadAuditView.tsx"),
   read("src/features/org/MonthlyStatementView.tsx"),
   read("src/app/downloadAuditQueries.ts"),
@@ -246,6 +248,10 @@ const vite = read("vite.config.js");
   "shortCurrency",
   "cashFlowTrend",
   "burnUpSeries",
+  "utilizationFeeData",
+  "phaseFeeData",
+  "quotePriceData",
+  "fmtCompactRupees",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

@@ -16,7 +16,9 @@ import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
 import { Card, Button, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
+import { ChartCard } from "@/components/ui/ChartCard";
+import { BarChart, type ChartDatum } from "@/components/ui/Charts";
+import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
 import { getOrgUtilization, getProjectUtilizationByPhase, type UtilizationRow, type UtilizationPhaseRow } from "@/app/utilizationQueries";
 
 export function UtilizationView(): JSX.Element {
@@ -146,6 +148,23 @@ function UtilizationInner(): JSX.Element {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
+        <ChartCard
+          title="Committed fee by project"
+          empty={rows.length === 0}
+          emptyMessage="No projects"
+        >
+          <BarChart data={utilizationFeeData(rows)} color="var(--st-violet)" showValues formatValue={fmtCompactRupees} />
+        </ChartCard>
+        <ChartCard
+          title="Billed effort by project"
+          empty={rows.length === 0}
+          emptyMessage="No projects"
+        >
+          <BarChart data={utilizationValueData(rows)} color="var(--st-accent)" showValues formatValue={fmtCompactRupees} />
+        </ChartCard>
+      </div>
+
       {loading ? (
         <div className="grid place-items-center py-16"><Spinner size={22} /></div>
       ) : rows.length === 0 ? (
@@ -168,15 +187,53 @@ function UtilizationInner(): JSX.Element {
                  <div className="grid place-items-center py-8"><Spinner size={20} /></div>
                ) : phases.length === 0 ? (
                  <Card className="p-6 text-center text-sm text-fg-secondary">No phases or billable time logged for this project.</Card>
-               ) : (
-                 <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-                    <DataTable dense columns={phaseColumns} rows={phases} rowKey={r => `${r.projectId}-${r.phaseId}`} />
+) : (
+                 <div className="space-y-4">
+                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                     <ChartCard
+                       title="Phase fees"
+                       empty={phases.length === 0}
+                       emptyMessage="No phases"
+                     >
+                       <BarChart data={phaseFeeData(phases)} color="var(--st-violet)" showValues formatValue={fmtCompactRupees} />
+                     </ChartCard>
+                     <ChartCard
+                       title="Phase billed effort"
+                       empty={phases.length === 0}
+                       emptyMessage="No phases"
+                     >
+                       <BarChart data={phaseValueData(phases)} color="var(--st-accent)" showValues formatValue={fmtCompactRupees} />
+                     </ChartCard>
+                   </div>
+                   <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
+                     <DataTable dense columns={phaseColumns} rows={phases} rowKey={r => `${r.projectId}-${r.phaseId}`} />
+                   </div>
                  </div>
-               )}
+                )}
              </div>
            )}
          </div>
        )}
      </div>
    );
+}
+
+/** Org-rollup committed-fee bar series (project name → fee). */
+export function utilizationFeeData(rows: UtilizationRow[]): ChartDatum[] {
+  return rows.map(r => ({ label: r.name, value: r.fee }));
+}
+
+/** Org-rollup billed-effort bar series (project name → billed value). */
+export function utilizationValueData(rows: UtilizationRow[]): ChartDatum[] {
+  return rows.map(r => ({ label: r.name, value: Math.round(r.billedValue) }));
+}
+
+/** Per-phase fee bar series (phase title → fee). */
+export function phaseFeeData(phases: UtilizationPhaseRow[]): ChartDatum[] {
+  return phases.map(r => ({ label: r.phaseTitle, value: r.feeAmount }));
+}
+
+/** Per-phase billed-effort bar series (phase title → billed value). */
+export function phaseValueData(phases: UtilizationPhaseRow[]): ChartDatum[] {
+  return phases.map(r => ({ label: r.phaseTitle, value: Math.round(r.billedValue) }));
 }

@@ -19,7 +19,9 @@ import { memberProjectScope } from "@/app/queries";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Select, Input } from "@/components/ui/forms";
-import { fmtRupees } from "@/app/financeQueries";
+import { ChartCard } from "@/components/ui/ChartCard";
+import { BarChart, type ChartDatum } from "@/components/ui/Charts";
+import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
 import { createPO } from "@/app/financeQueries";
 import { listVendors, vendorOptionGroups, type Vendor } from "@/app/vendorQueries";
 import { listFfeEntries, type FfeEntry } from "@/app/ffeQueries";
@@ -349,6 +351,19 @@ function ProcurementInner(): JSX.Element {
                     {expandedOpen && (
                       <div className="mt-3 space-y-2">
                         {list.length === 0 && <div className="text-sm text-fg-tertiary">No quotes yet.</div>}
+                        {(() => {
+                          const priceData = quotePriceData(list, bestScored !== null ? bestScored.id : null);
+                          return priceData.length >= 2 ? (
+                            <ChartCard
+                              title="Unit price comparison"
+                              empty={false}
+                              height={120}
+                              padding="none"
+                            >
+                              <BarChart data={priceData} color="var(--st-accent)" showValues formatValue={fmtCompactRupees} />
+                            </ChartCard>
+                          ) : null;
+                        })()}
                         {list.map(q => quoteRow(
                           q,
                           ffeEntry,
@@ -399,4 +414,11 @@ function ProcurementInner(): JSX.Element {
       )}
     </div>
   );
+}
+
+/** Quote unit-price comparison series (vendor → unit price); rejected / zero-price quotes dropped. */
+export function quotePriceData(quotes: ProcurementQuote[], bestQuoteId: string | null): ChartDatum[] {
+  return quotes
+    .filter(q => q.status !== "rejected" && q.unitPrice > 0)
+    .map(q => ({ label: q.vendorName ?? "Vendor", value: q.unitPrice, color: q.id === bestQuoteId ? "var(--st-success)" : undefined }));
 }

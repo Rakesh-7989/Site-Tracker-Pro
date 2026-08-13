@@ -108,6 +108,25 @@ describe("BarChart", () => {
     expect(container.querySelector("[title]")?.getAttribute("style")).toContain("rgb(18, 52, 86)");
   });
 
+  it("applies formatValue to value labels, tooltips and the aria summary", () => {
+    const fmt = (v: number) => `₹${v}k`;
+    const { container } = render(<BarChart data={[{ label: "a", value: 4 }]} showValues formatValue={fmt} />);
+    // value label
+    expect(screen.getByText("₹4k")).toBeInTheDocument();
+    // tooltip
+    expect(container.querySelector("[title]")?.getAttribute("title")).toBe("a: ₹4k");
+    // aria summary
+    expect(container.querySelector('[role="img"]')?.getAttribute("aria-label")).toContain("a: ₹4k");
+  });
+
+  it("falls back to raw values when formatValue is omitted", () => {
+    const { container } = render(<BarChart data={DATA} />);
+    expect(container.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe(
+      "Bar chart: active: 4, completed: 2, on hold: 1",
+    );
+    expect(container.querySelector("[title]")?.getAttribute("title")).toBe("active: 4");
+  });
+
   it("exposes a bar-chart aria-label on a role=img element", () => {
     render(<BarChart data={DATA} />);
     expect(screen.getByRole("img", { name: "Bar chart: active: 4, completed: 2, on hold: 1" })).toBeInTheDocument();
