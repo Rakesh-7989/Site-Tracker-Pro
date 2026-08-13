@@ -97,6 +97,9 @@ describe("anyAtQuota / resourceAtQuota pure", () => {
   const rollup = {
     users: { current: 5, max: 5, pct: 100, atQuota: true },
     projects: { current: 3, max: 10, pct: 30, atQuota: false },
+    storage: { current: 0, max: null, pct: null, atQuota: false },
+    deliverables: { current: 0, max: null, pct: null, atQuota: false },
+    crm_leads: { current: 0, max: null, pct: null, atQuota: false },
   };
   it("anyAtQuota true when users at quota", () => {
     expect(anyAtQuota(rollup)).toBe(true);

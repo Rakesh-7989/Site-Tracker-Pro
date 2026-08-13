@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
+import { useFeatureWithQuota } from "@/auth/useFeatureWithQuota";
 import { Button, Icon, StatCard, AccessDenied, Alert } from "@/components/ui/atoms";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChartCard } from "@/components/ui/ChartCard";
@@ -39,6 +40,9 @@ export function PlatformUsageView(): JSX.Element {
   const [counts, setCounts] = useState<PlanCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { atQuota: crAtQuota, rollup: crRollup } = useFeatureWithQuota("crm", "crm_leads");
+  const { atQuota: ffeAtQuota, rollup: ffeRollup } = useFeatureWithQuota("crm", "storage");
+  const { atQuota: storageAtQuota, rollup: storageRollup } = useFeatureWithQuota("crm", "deliverables");
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -80,6 +84,80 @@ export function PlatformUsageView(): JSX.Element {
         <StatCard label="Projects" value={stats?.projects ?? "—"} sub="across orgs" />
         <StatCard label="DAU / WAU / MAU" value="—" sub="build after go-live" />
       </div>
+
+      {/* Quota usage alerts */}
+      {crRollup && (
+        <div className="mt-3 p-3 rounded-xl border" style={{ borderColor: crAtQuota ? 'var(--st-error)' : 'var(--st-warning)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-fg-tertiary text-sm">CRM Leads Quota</span>
+            <span className="font-medium">{crRollup.crm_leads.current ?? 0}/{crRollup.crm_leads.max ?? '—'}</span>
+          </div>
+          <div className="w-full bg-panel rounded-full h-2">
+            <div
+              className={`bg-accent rounded-full h-2 transition-colors duration-500 ${crAtQuota ? 'after:scale-x-full' : ''}`}
+              style={{ width: crRollup.crm_leads.pct !== null ? crRollup.crm_leads.pct + '%' : '0%' }}
+              title={crRollup.crm_leads.pct !== null ? `CRM Leads: ${crRollup.crm_leads.pct}% used` : ''}
+            />
+          </div>
+          {crRollup.crm_leads.pct !== null && crRollup.crm_leads.pct >= 100 && (
+            <span className="text-xxxs text-error mt-1 block">🚫 At capacity</span>
+          )}
+          {crRollup.crm_leads.pct !== null && crRollup.crm_leads.pct >= 90 && crRollup.crm_leads.pct < 100 && (
+            <span className="text-xxxs text-error mt-1 block">⚠️ 90% used</span>
+          )}
+          {crRollup.crm_leads.pct !== null && crRollup.crm_leads.pct >= 80 && crRollup.crm_leads.pct < 90 && (
+            <span className="text-xxxs text-warning mt-1 block">⚠️ 80% used</span>
+          )}
+        </div>
+      )}
+      {ffeRollup && (
+        <div className="mt-3 p-3 rounded-xl border" style={{ borderColor: ffeAtQuota ? 'var(--st-error)' : 'var(--st-warning)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-fg-tertiary text-sm">Storage Quota</span>
+            <span className="font-medium">{ffeRollup.storage.current ?? 0}/{ffeRollup.storage.max ?? '—'} GB</span>
+          </div>
+          <div className="w-full bg-panel rounded-full h-2">
+            <div
+              className={`bg-accent rounded-full h-2 transition-colors duration-500 ${ffeAtQuota ? 'after:scale-x-full' : ''}`}
+              style={{ width: ffeRollup.storage.pct !== null ? ffeRollup.storage.pct + '%' : '0%' }}
+              title={ffeRollup.storage.pct !== null ? `Storage: ${ffeRollup.storage.pct}% used` : ''}
+            />
+          </div>
+          {ffeRollup.storage.pct !== null && ffeRollup.storage.pct >= 100 && (
+            <span className="text-xxxs text-error mt-1 block">🚫 At capacity</span>
+          )}
+          {ffeRollup.storage.pct !== null && ffeRollup.storage.pct >= 90 && ffeRollup.storage.pct < 100 && (
+            <span className="text-xxxs text-error mt-1 block">⚠️ 90% used</span>
+          )}
+          {ffeRollup.storage.pct !== null && ffeRollup.storage.pct >= 80 && ffeRollup.storage.pct < 90 && (
+            <span className="text-xxxs text-warning mt-1 block">⚠️ 80% used</span>
+          )}
+        </div>
+      )}
+      {storageRollup && (
+        <div className="mt-3 p-3 rounded-xl border" style={{ borderColor: storageAtQuota ? 'var(--st-error)' : 'var(--st-warning)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-fg-tertiary text-sm">Deliverables Quota</span>
+            <span className="font-medium">{storageRollup.deliverables.current ?? 0}/{storageRollup.deliverables.max ?? '—'}</span>
+          </div>
+          <div className="w-full bg-panel rounded-full h-2">
+            <div
+              className={`bg-accent rounded-full h-2 transition-colors duration-500 ${storageAtQuota ? 'after:scale-x-full' : ''}`}
+              style={{ width: storageRollup.deliverables.pct !== null ? storageRollup.deliverables.pct + '%' : '0%' }}
+              title={storageRollup.deliverables.pct !== null ? `Deliverables: ${storageRollup.deliverables.pct}% used` : ''}
+            />
+          </div>
+          {storageRollup.deliverables.pct !== null && storageRollup.deliverables.pct >= 100 && (
+            <span className="text-xxxs text-error mt-1 block">🚫 At capacity</span>
+          )}
+          {storageRollup.deliverables.pct !== null && storageRollup.deliverables.pct >= 90 && storageRollup.deliverables.pct < 100 && (
+            <span className="text-xxxs text-error mt-1 block">⚠️ 90% used</span>
+          )}
+          {storageRollup.deliverables.pct !== null && storageRollup.deliverables.pct >= 80 && storageRollup.deliverables.pct < 90 && (
+            <span className="text-xxxs text-warning mt-1 block">⚠️ 80% used</span>
+          )}
+        </div>
+      )}
 
       <ChartCard
         title="Organizations by plan"

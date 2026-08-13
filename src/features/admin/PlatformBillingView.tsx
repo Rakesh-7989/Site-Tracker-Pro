@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
+import { useFeatureWithQuota } from "@/auth/useFeatureWithQuota";
 import { Badge, Button, Icon, StatCard, AccessDenied, Alert } from "@/components/ui/atoms";
 import { DataTable } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -60,6 +61,7 @@ export function PlatformBillingView(): JSX.Element {
   const [orgs, setOrgs] = useState<OrgBillingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { atQuota: crAtQuota, rollup: crRollup } = useFeatureWithQuota("crm", "crm_leads");
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -107,6 +109,32 @@ export function PlatformBillingView(): JSX.Element {
         </Button>
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
+
+      {/* Quota usage alerts */}
+      {crRollup && (
+        <div className="mt-3 p-3 rounded-xl border" style={{ borderColor: crAtQuota ? 'var(--st-error)' : 'var(--st-warning)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-fg-tertiary text-sm">CRM Leads Quota</span>
+            <span className="font-medium">{crRollup.crm_leads.current ?? 0}/{crRollup.crm_leads.max ?? '—'}</span>
+          </div>
+          <div className="w-full bg-panel rounded-full h-2">
+            <div
+              className={`bg-accent rounded-full h-2 transition-colors duration-500 ${crAtQuota ? 'after:scale-x-full' : ''}`}
+              style={{ width: crRollup.crm_leads.pct !== null ? crRollup.crm_leads.pct + '%' : '0%' }}
+              title={crRollup.crm_leads.pct !== null ? `CRM Leads: ${crRollup.crm_leads.pct}% used` : ''}
+            />
+          </div>
+          {crRollup.crm_leads.pct !== null && crRollup.crm_leads.pct >= 100 && (
+            <span className="text-xxxs text-error mt-1 block">🚫 At capacity</span>
+          )}
+          {crRollup.crm_leads.pct !== null && crRollup.crm_leads.pct >= 90 && crRollup.crm_leads.pct < 100 && (
+            <span className="text-xxxs text-error mt-1 block">⚠️ 90% used</span>
+          )}
+          {crRollup.crm_leads.pct !== null && crRollup.crm_leads.pct >= 80 && crRollup.crm_leads.pct < 90 && (
+            <span className="text-xxxs text-warning mt-1 block">⚠️ 80% used</span>
+          )}
+        </div>
+      )}
 
       {loading ? <BillingSkeleton /> : (
         <>

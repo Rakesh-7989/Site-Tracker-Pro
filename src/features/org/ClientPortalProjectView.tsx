@@ -17,7 +17,7 @@ import {
   type ClientProjectHeader, type ClientInvoice, type ClientMilestone,
   type ClientDrawing, type ClientActivityRow,
 } from "@/app/clientPortalQueries";
-import { listDrawingComments, addDrawingComment, type DrawingComment } from "@/app/approvalQueries";
+import { listDrawingComments, addDrawingComment, requestApproval, type DrawingComment } from "@/app/approvalQueries";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -91,6 +91,16 @@ export function ClientPortalProjectView(): JSX.Element {
     if (cRes.ok) { setComments(prev => ({ ...prev, [drawingId]: cRes.data })); setReplyBox(prev => ({ ...prev, [drawingId]: "" })); }
   };
 
+const handleRequestApproval = async (drawingId: string) => {
+    const client = await getClient();
+    if (!client) return;
+    setBusy(`request-${drawingId}`);
+    const res = await requestApproval(client, drawingId);
+    setBusy(null);
+    if (!res.ok) return;
+    void load();
+  };
+
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
   if (error) return <div className="p-8 max-w-3xl mx-auto"><Alert variant="danger">{error}</Alert></div>;
   if (!project) return <div className="p-8"><Alert variant="danger">Project not found.</Alert></div>;
@@ -98,6 +108,8 @@ export function ClientPortalProjectView(): JSX.Element {
   const rollup = clientPaymentRollup(invoices);
   const upcoming = upcomingMilestones(milestones);
   const approved = approvedDrawings(drawings);
+const pending = drawings.filter(d => d.approvalStatus === "pending");
+const requested = drawings.filter(d => d.approvalStatus === "not_requested");
 
   const tabs: Array<{ id: Tab; label: string; icon: IconName }> = [
     { id: "payments", label: "Payments", icon: "wallet" },
@@ -170,6 +182,17 @@ export function ClientPortalProjectView(): JSX.Element {
               )}
             </Card>
           ))}
+          {invoices.length > 0 && (
+            <Card className="p-4 mt-4 border border-info/30">
+              <div className="flex items-start gap-3">
+                <Icon name="calendar" size={16} className="mt-1 text-info" />
+                <div>
+                  <div className="font-semibold text-fg-info">Invoice Aging Summary</div>
+                  <div className="text-xs text-fg-tertiary">—</div>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
       )}
 
@@ -190,6 +213,29 @@ export function ClientPortalProjectView(): JSX.Element {
 
       {tab === "drawings" && (
         <div className="space-y-4">
+          {/* Request approval section */}
+          {requested.length > 0 && (
+            <Card className="p-4 border border-warning/30 mb-4">
+              <div className="flex items-start gap-3">
+                <Icon name="alert" size={20} className="mt-1 text-warning" />
+                <div>
+                  <div className="font-semibold text-fg-warning">Has {requested.length} revision{requested.length > 1 ? "s" : ""} awaiting approval</div>
+                  <div className="text-xs text-fg-tertiary">These drawings are drafts. Request approval to send them to the project team for review.</div>
+                </div>
+              </div>
+            </Card>
+          )}
+          {pending.length > 0 && (
+            <Card className="p-4 border border-warning/30 mb-4">
+              <div className="flex items-start gap-3">
+                <Icon name="alert" size={20} className="mt-1 text-warning" />
+                <div>
+                  <div className="font-semibold text-fg-warning">Has {pending.length} revision{pending.length > 1 ? "s" : ""} pending approval</div>
+                  <div className="text-xs text-fg-tertiary">Awaiting review by the project team. You will be notified of the decision.</div>
+                </div>
+              </div>
+            </Card>
+          )}
           {approved.length === 0 && <Card className="p-8 text-center text-fg-tertiary"><Icon name="doc" size={28} className="mx-auto mb-3 opacity-30" /><p>No approved drawings released to you yet.</p></Card>}
           {approved.map(d => {
             const c = comments[d.id] ?? [];
@@ -237,6 +283,24 @@ export function ClientPortalProjectView(): JSX.Element {
                     placeholder="Reply on this drawing…" className="flex-1" />
                   <Button onClick={() => void submitReply(d.id)} disabled={busy !== null || !(replyBox[d.id] ?? "").trim()}>Reply</Button>
                 </div>
+              </Card>
+            );
+          })}
+          {/* Request approval buttons for drawings not yet requested */}
+          {requested.map(d => {
+            const canRequest = d.approvalStatus === "not_requested";
+            return (
+              <Card key={d.id} className="p-4 border-t border-warning/30 mb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-bold text-fg-primary">{d.title}</div>
+                    <div className="text-fg-tertiary text-xs">Revision {d.revision}</div>
+                  </div>
+                  <Button onClick={() => handleRequestApproval(d.id)} disabled={busy !== null} size="sm" className="text-xs">
+                    {canRequest ? "Request Approval" : "Pending"}
+                  </Button>
+                </div>
+                <div className="text-xs text-fg-tertiary">Click to request project team review. The revision will move to pending status.</div>
               </Card>
             );
           })}
