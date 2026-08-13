@@ -8,7 +8,7 @@ import { getUsageStats, type UsageStats } from "@/app/platformUsageQueries";
 
 import { getClient } from "@/lib/supabase";
 export function PlatformUsageView(): JSX.Element {
-  const can = useCan("platform:orgs:manage");
+  const can = useCan("platform:usage:view");
   if (!can) return <AccessDenied message="Platform superadmin access required." />;
 
   const [stats, setStats] = useState<UsageStats | null>(null);

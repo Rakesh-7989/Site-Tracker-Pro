@@ -70,7 +70,6 @@ const SecurityView = lazy(() => import("@/features/account/SecurityView").then(m
 const ProfileView = lazy(() => import("@/features/account/ProfileView").then(m => ({ default: m.ProfileView })));
 const ClientShareView = lazy(() => import("@/features/share/ClientShareView").then(m => ({ default: m.ClientShareView })));
 const PlatformBillingView = lazy(() => import("@/features/admin/PlatformBillingView").then(m => ({ default: m.PlatformBillingView })));
-const PlatformAuditView = lazy(() => import("@/features/admin/PlatformAuditView").then(m => ({ default: m.PlatformAuditView })));
 const PlatformUsageView = lazy(() => import("@/features/admin/PlatformUsageView").then(m => ({ default: m.PlatformUsageView })));
 const PlatformSupportView = lazy(() => import("@/features/admin/PlatformSupportView").then(m => ({ default: m.PlatformSupportView })));
 const PlatformSettingsView = lazy(() => import("@/features/admin/PlatformSettingsView").then(m => ({ default: m.PlatformSettingsView })));
@@ -135,13 +134,12 @@ export const router = createBrowserRouter([
       { path: "admin/upgrades", element: <RequireStaffArea area="upgrades" fallback={<Navigate to="/admin" replace />}><UpgradeRequestsView /></RequireStaffArea> },
       { path: "admin/signups", element: <RequireStaffArea area="signups" fallback={<Navigate to="/admin" replace />}><SignupRequestsView /></RequireStaffArea> },
       { path: "admin/billing", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformBillingView /></RequireStaffArea> },
-      { path: "admin/audit", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformAuditView /></RequireStaffArea> },
+      { path: "admin/audit", element: <StubGuard stubId="admin-audit-log"><RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformAuditLogV2View /></RequireStaffArea></StubGuard> },
       { path: "admin/usage", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformUsageView /></RequireStaffArea> },
       { path: "admin/support", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformSupportView /></RequireStaffArea> },
       { path: "admin/settings", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformSettingsView /></RequireStaffArea> },
       { path: "admin/feature-flags", element: <RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformFeatureFlagsView /></RequireStaffArea> },
       { path: "admin/branding", element: <StubGuard stubId="admin-branding"><RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformBrandingView /></RequireStaffArea></StubGuard> },
-      { path: "admin/audit-v2", element: <StubGuard stubId="admin-audit-log"><RequireStaffArea area="orgs" fallback={<Navigate to="/admin" replace />}><PlatformAuditLogV2View /></RequireStaffArea></StubGuard> },
       { path: "settings/security", element: <SecurityView /> },
       { path: "settings/profile", element: <ProfileView /> },
     ],

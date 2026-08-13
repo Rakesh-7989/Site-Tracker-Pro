@@ -15,7 +15,7 @@ import { resolveBranding, accentToHex } from "@/lib/branding";
 export function PlatformBrandingView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const can = useCan("platform:settings:manage");
+  const can = useCan("platform:branding:manage");
   if (!can) return <AccessDenied message="Platform superadmin access required." />;
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;

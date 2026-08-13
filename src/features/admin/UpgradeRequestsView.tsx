@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { useAuth } from "@/auth";
+import { useAuth, useHasStaffArea } from "@/auth";
 import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
@@ -18,7 +18,7 @@ const STATUS_LABEL: Record<UpgradeStatus, string> = { open: "Open", in_progress:
 export function UpgradeRequestsView(): JSX.Element {
   const { session } = useAuth();
   const tier = session?.user.staffTier ?? null;
-  const isStaff = session?.user.identityRole === "superadmin" || tier === "owner" || tier === "head" || tier === "member";
+  const isStaff = useHasStaffArea("upgrades");
   const canAssign = session?.user.identityRole === "superadmin" || tier === "owner" || tier === "head";
 
   const [rows, setRows] = useState<UpgradeRequest[]>([]);

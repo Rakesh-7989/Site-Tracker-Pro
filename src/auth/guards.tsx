@@ -36,6 +36,16 @@ export function useCan(capability: Capability, context: ResolveContext = {}): bo
 }
 
 /**
+ * Boolean predicate for ANY-of gating (e.g. a cross-cutting surface reachable
+ * with any one of several capabilities). Same shape as `useCan`.
+ */
+export function useCanAny(capabilities: readonly Capability[], context: ResolveContext = {}): boolean {
+  const { session } = useAuth();
+  if (!session) return false;
+  return capabilities.some(cap => pureCan(session, cap, context));
+}
+
+/**
  * Structured form — returns { allowed, reason } so callers can surface
  * a tooltip explaining WHY a button is disabled.
  */

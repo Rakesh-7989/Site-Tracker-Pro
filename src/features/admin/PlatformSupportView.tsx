@@ -13,7 +13,7 @@ function fmtTime(iso: string): string {
 }
 
 export function PlatformSupportView(): JSX.Element {
-  const can = useCan("platform:orgs:manage");
+  const can = useCan("platform:support:manage");
   if (!can) return <AccessDenied message="Platform superadmin access required." />;
 
   const [tickets, setTickets] = useState<Ticket[]>([]);

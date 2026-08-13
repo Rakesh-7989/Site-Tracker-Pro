@@ -148,6 +148,7 @@ export {
 
 export {
   useCan,
+  useCanAny,
   useCanWithPlan,
   useDecide,
   useHasRole,

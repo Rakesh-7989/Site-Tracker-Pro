@@ -120,7 +120,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/org/integrations", label: "Integrations", icon: "plug", requires: "org:integrations:manage", group: "Org Admin", stubId: "org-integrations" },
   { to: "/org/features", label: "Features", icon: "sliders", requires: "org:features:configure", group: "Org Admin", stubId: "org-features" },
 
-  { to: "/admin", label: "Platform", icon: "dashboard", requires: "platform:orgs:manage", group: "Platform" },
+  { to: "/admin", label: "Platform", icon: "dashboard", requiresAny: ["platform:users:manage", "platform:orgs:manage", "platform:billing:manage", "platform:settings:manage", "platform:impersonate", "platform:audit:read:cross-org", "platform:roles:configure", "platform:usage:view", "platform:support:manage", "platform:branding:manage", "platform:featureflags:manage"], group: "Platform" },
   { to: "/admin/signups", label: "Signups", icon: "mail", requires: "platform:orgs:manage", area: "signups", group: "Platform" },
   { to: "/admin/users", label: "Users", icon: "user-cog", requires: "platform:users:manage", area: "users", group: "Platform" },
   { to: "/admin/orgs", label: "Organizations", icon: "building", requires: "platform:orgs:manage", area: "orgs", group: "Platform" },
@@ -129,12 +129,11 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/admin/upgrades", label: "Upgrade requests", icon: "trend", requiresStaffTier: ["owner", "head", "member"], area: "upgrades", group: "Platform" },
   { to: "/admin/billing", label: "Billing", icon: "credit-card", requires: "platform:billing:manage", area: "orgs", group: "Platform" },
   { to: "/admin/audit", label: "Audit Log", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform", stubId: "admin-audit-log" },
-  { to: "/admin/usage", label: "Usage", icon: "barChart", requires: "platform:orgs:manage", area: "orgs", group: "Platform" },
-  { to: "/admin/support", label: "Support", icon: "mail", requires: "platform:orgs:manage", group: "Platform" },
+  { to: "/admin/usage", label: "Usage", icon: "barChart", requires: "platform:usage:view", area: "orgs", group: "Platform" },
+  { to: "/admin/support", label: "Support", icon: "mail", requires: "platform:support:manage", group: "Platform" },
   { to: "/admin/settings", label: "Settings", icon: "sliders", requires: "platform:settings:manage", area: "orgs", group: "Platform" },
-  { to: "/admin/feature-flags", label: "Feature Flags", icon: "flag", requires: "platform:settings:manage", area: "orgs", group: "Platform" },
-  { to: "/admin/branding", label: "Branding", icon: "image", requires: "platform:orgs:manage", group: "Platform", stubId: "admin-branding" },
-  { to: "/admin/audit-v2", label: "Audit v2 (immutable)", icon: "shield", requires: "platform:audit:read:cross-org", area: "orgs", group: "Platform" },
+  { to: "/admin/feature-flags", label: "Feature Flags", icon: "flag", requires: "platform:featureflags:manage", area: "orgs", group: "Platform" },
+  { to: "/admin/branding", label: "Branding", icon: "image", requires: "platform:branding:manage", group: "Platform", stubId: "admin-branding" },
 
   // Always visible — every signed-in user can manage their own account security (2FA).
   { to: "/settings/security", label: "Security", icon: "lock", group: "Account" },

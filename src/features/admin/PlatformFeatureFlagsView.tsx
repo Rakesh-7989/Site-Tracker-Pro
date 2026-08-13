@@ -23,7 +23,7 @@ const GROUP_LABEL: Record<string, string> = {
 
 export function PlatformFeatureFlagsView(): JSX.Element {
   const { session } = useAuth();
-  const can = useCan("platform:settings:manage");
+  const can = useCan("platform:featureflags:manage");
   if (!can) return <AccessDenied message="Platform superadmin access required." />;
   if (!session) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
 

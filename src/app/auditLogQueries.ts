@@ -52,13 +52,15 @@ function mapRow(r: Record<string, unknown>): AuditLogRow {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listAuditLog(client: any, orgId: string, filters: AuditLogFilters = {}): Promise<QueryResult<AuditLogRow[]>> {
+export async function listAuditLog(client: any, orgId: string | undefined, filters: AuditLogFilters = {}): Promise<QueryResult<AuditLogRow[]>> {
   try {
     let query = client
       .from("audit_log_v2")
       .select("id, org_id, project_id, actor_id, actor_name, actor_role, action, resource, resource_id, message, ts")
-      .eq("org_id", orgId)
       .order("ts", { ascending: false });
+
+    // orgId undefined → cross-org feed (RLS gates to is_superadmin() rows).
+    if (orgId) query = query.eq("org_id", orgId);
 
     if (filters.actorId) query = query.eq("actor_id", filters.actorId);
     if (filters.action) query = query.eq("action", filters.action);
