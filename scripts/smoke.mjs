@@ -43,6 +43,8 @@ const app = [
   read("src/features/dpr/DPRComposer.tsx"),
   read("src/features/dpr/PhotoGeotagCapture.tsx"),
   read("src/features/org/FfeRollupView.tsx"),
+  read("src/features/org/RevenueView.tsx"),
+  read("src/features/org/ForecastView.tsx"),
   read("src/features/org/DownloadAuditView.tsx"),
   read("src/features/org/MonthlyStatementView.tsx"),
   read("src/app/downloadAuditQueries.ts"),
@@ -240,6 +242,10 @@ const vite = read("vite.config.js");
   "PieChart",
   "LineChart",
   "ChartLegend",
+  "sourceSplitData",
+  "shortCurrency",
+  "cashFlowTrend",
+  "burnUpSeries",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

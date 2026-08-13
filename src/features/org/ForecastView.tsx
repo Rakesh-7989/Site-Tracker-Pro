@@ -3,6 +3,8 @@ import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
+import { ChartCard } from "@/components/ui/ChartCard";
+import { LineChart, type ChartDatum } from "@/components/ui/Charts";
 import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
 import { getClient } from "@/lib/supabase";
 import {
@@ -21,6 +23,26 @@ function fmtTime(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso);
   return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Short month label for a bill date (fallback to the raw string when invalid). */
+export function monthLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-IN", { month: "short" });
+}
+
+/** Cumulative RA-billed burn-up series, oldest bill first, undated / zero bills skipped. */
+export function burnUpSeries(raBills: RaBill[]): ChartDatum[] {
+  const dated = raBills
+    .filter(r => r.bill_date && r.bill_amount > 0)
+    .slice()
+    .sort((a, b) => String(a.bill_date).localeCompare(String(b.bill_date)));
+  let acc = 0;
+  return dated.map(r => {
+    acc += r.bill_amount;
+    return { label: monthLabel(String(r.bill_date)), value: acc };
+  });
 }
 
 export function ForecastView(): JSX.Element {
@@ -89,6 +111,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
 
   const proj = projects.find(p => p.id === selProject);
   const cached = forecast[selProject];
+  const burn = burnUpSeries(raBills);
 
   const runForecast = useCallback(async () => {
     if (!proj) return;
@@ -126,6 +149,16 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
               <div className="bg-panel rounded-2xl p-4 shadow-editorial border-default"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-fg-secondary mb-1">Projected total</div><div className="font-display text-xl font-bold text-fg-primary">{fmtCur(cached.projected_total)}</div></div>
               <div className={`rounded-2xl p-4 shadow-editorial border-default ${cached.overrun_amount > 0 ? "bg-error-tint" : "bg-success-tint"}`}><div className={`text-[10px] font-bold uppercase tracking-[0.18em] mb-1 ${cached.overrun_amount > 0 ? "text-error" : "text-success"}`}>Likely overrun</div><div className={`font-display text-xl font-bold ${cached.overrun_amount > 0 ? "text-error" : "text-success"}`}>{cached.overrun_amount > 0 ? `+${fmtCur(cached.overrun_amount)} (${cached.overrun_pct}%)` : "On track"}</div></div>
             </div>
+            <ChartCard
+              title="Cumulative RA billings"
+              subtitle={`Budget ${fmtCur(cached.budget)} · ${raBills.length} RA bills`}
+              empty={burn.length === 0}
+              emptyMessage="No dated RA bills yet"
+              emptyIcon="trend"
+              className="mb-5"
+            >
+              <LineChart data={burn} color="var(--st-accent)" showPoints />
+            </ChartCard>
             {cached.narrative && <div className="bg-panel rounded-2xl p-5 mb-5 shadow-editorial border-default"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-warning mb-2">— Advisor narrative ({cached.mode === "llm" ? "LLM-enriched" : "deterministic"})</div><p className="text-fg-primary text-sm leading-relaxed">{cached.narrative}</p></div>}
             {cached.over_consumed_materials?.length > 0 && <div className="bg-panel rounded-2xl p-5 mb-5 shadow-editorial border-default"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-warning mb-3">— Materials trending over plan</div><div className="space-y-2">{cached.over_consumed_materials.map((m: any) => (<div key={m.name} className="flex items-center justify-between text-sm"><span className="font-semibold text-fg-primary capitalize">{m.name}</span><span className="text-error font-mono">{m.planned} → {m.consumed} (<strong>+{m.over_pct}%</strong>)</span></div>))}</div></div>}
             <div className="text-[11px] text-fg-secondary text-center">Schedule slip: <strong>{cached.schedule_slip_days} days</strong> · Confidence: <strong>{cached.confidence}</strong></div>

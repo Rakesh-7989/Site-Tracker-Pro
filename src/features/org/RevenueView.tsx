@@ -16,6 +16,8 @@ import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
 import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { ChartCard } from "@/components/ui/ChartCard";
+import { ChartLegend, PieChart, type ChartDatum } from "@/components/ui/Charts";
 import { fmtRupees } from "@/app/financeQueries";
 import { listProjectsByType, type ProjectBrief } from "@/app/utilizationQueries";
 import {
@@ -59,7 +61,9 @@ export function RevenueView(): JSX.Element {
   const totalBilled = billedToDate(invoices);
   const hourly = billedBySource(invoices, "hourly");
   const phase = billedBySource(invoices, "phase");
+  const retainer = billedBySource(invoices, "retainer");
   const mrr = retainerMrr(retainers);
+  const sourceData = sourceSplitData(phase, hourly, retainer);
 
   const rows = projects.map(p => {
     const pInv = invoices.filter(i => i.projectId === p.id && i.status !== "cancelled");
@@ -139,6 +143,17 @@ export function RevenueView(): JSX.Element {
         </Card>
       </div>
 
+      <ChartCard
+        title="Invoiced by source"
+        subtitle="Phase / hourly / retainer split of invoiced revenue"
+        empty={totalBilled <= 0}
+        emptyMessage="No invoiced revenue yet"
+        className="mb-6"
+        legend={<ChartLegend data={sourceData} />}
+      >
+        <PieChart data={sourceData} centerLabel={shortCurrency(totalBilled)} size={150} thickness={26} />
+      </ChartCard>
+
       {loading ? (
         <div className="grid place-items-center py-16"><Spinner size={22} /></div>
       ) : rows.length === 0 ? (
@@ -152,4 +167,20 @@ export function RevenueView(): JSX.Element {
       )}
     </div>
   );
+}
+
+/** Source-split pie data, zero slices dropped (order: phase, hourly, retainer). */
+export function sourceSplitData(phase: number, hourly: number, retainer: number): ChartDatum[] {
+  const rows: ChartDatum[] = [];
+  if (phase > 0) rows.push({ label: "Phase", value: phase });
+  if (hourly > 0) rows.push({ label: "Hourly", value: hourly });
+  if (retainer > 0) rows.push({ label: "Retainer", value: retainer });
+  return rows;
+}
+
+/** Compact rupee label for tight pie-centre slots (Cr / k / full). */
+export function shortCurrency(n: number): string {
+  if (n >= 1e7) return `₹${(n / 1e7).toFixed(1)}Cr`;
+  if (n >= 1e5) return `₹${Math.round(n / 1e3)}k`;
+  return fmtRupees(n);
 }

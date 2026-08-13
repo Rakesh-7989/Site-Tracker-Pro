@@ -2311,3 +2311,57 @@ package-lock).
   (success → warning → indigo → error → violet → accent).
 - Next Phase-5 candidates: wire charts into more data-intensive views, or
   Phase-6 mobile polish. Candidate next sub-task (needs user go).
+
+---
+
+## Option 4 — Frontend Redesign Phase 24: wire Charts into revenue / cash-flow / forecast views (Complete, 2026-08-13)
+
+### Goal
+Put the Phase 23 dependency-free `Charts.tsx` library to work on the three
+data-heavy org views AGENTS used as candidates: **RevenueView** (source-split
+donut), **OrgFinancialView** (6-month cash-flow trend lines), and **ForecastView**
+(project burn-up curve from dated RA bills). No new deps — all render through
+`ChartCard` + `<LineChart>`/`<PieChart>`.
+
+### Done (all verified)
+- **RevenueView → PieChart** — computed the missing `retainer` source
+  (`billedBySource(invoices, "retainer")`) and render a
+  `ChartCard` "Invoiced by source" donut (`size 150`, `thickness 26`) with the
+  live source split gated by `empty={totalBilled <= 0}`. Legend via the
+  `legend` slot (`ChartLegend`). New pure exported helpers:
+  `sourceSplitData(phase, hourly, retainer)` (zero slices dropped, canonical
+  phase → hourly → retainer order) and `shortCurrency(n)` (₹ Cr / k / full
+  compaction for the pie centre — avoids ₹ overflow in a 150px donut).
+- **OrgFinancialView → LineChart** — two `ChartCard`s ("Projected In" /
+  "Projected Out", success / warning colours, `showPoints`) above the existing
+  6-month cash-flow table, gated `empty={cashFlow.length === 0}`. New pure
+  exported helper `cashFlowTrend(cashFlow, "in" | "out")` maps forecast rows to
+  a single line series (only non-negative series rendered, so the
+  max-normalizing geometry is never fed negatives).
+- **ForecastView → LineChart** — "Cumulative RA billings" burn-up curve beside
+  the forecast stat cards (subtitle shows budget + RA-bill count), gated
+  `empty={burn.length === 0}`. New pure exported helpers
+  `burnUpSeries(raBills)` (oldest-first cumulative running total; skips
+  undated / zero-amount bills) and `monthLabel(dateStr)` (short month, raw
+  fallback on invalid).
+- **Smoke** — `RevenueView.tsx` + `ForecastView.tsx` added to the app-source
+  scan; 4 Markers (`sourceSplitData`/`shortCurrency`/`cashFlowTrend`/
+  `burnUpSeries`): **317 checks** (was 313).
+- **Tests** — new `tests/features/orgChartWiring.test.ts` (14): source-split
+  filtering/order/empty, shortCurrency Cr/k/full, cashFlowTrend in/out/empty,
+  burnUpSeries cumulative order + undated/zero skip + empty, monthLabel valid +
+  invalid fallback.
+
+### Verify (Phase 24)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (7.93s) · vitest **177 files / 2079 tests pass** (+1 file / +14)
+  · smoke **317 checks** (was 313; +4) · e2e-mock **11/11**.
+
+### Notes / Follow-ups
+- The three helpers live on the views (DPR-history pattern) so the phase unit
+  tests import the feature modules; no schema / query-layer change anywhere.
+- UtilizationView and procurement quote-vs-price comparisons remain viable
+  Phase-5 candidates (per-phase fee-vs-effort bars need a grouped/paired
+  series the current single-series library doesn't express yet — deferred).
+- Next candidates (needs user go): Phase-6 mobile polish, or per-phase
+  utilization bars.

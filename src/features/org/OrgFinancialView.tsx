@@ -7,6 +7,8 @@ import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
 import { Card, Badge, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { ChartCard } from "@/components/ui/ChartCard";
+import { LineChart, type ChartDatum } from "@/components/ui/Charts";
 import { fmtRupees } from "@/app/financeQueries";
 import { getOrgProjectKPIs, orgKPIRollup, getOrgCashFlowForecast, type ProjectKPIs, type CashFlowForecastRow } from "@/app/crossAnalyticsQueries";
 import { getClient } from "@/lib/supabase";
@@ -146,6 +148,27 @@ export function OrgFinancialView(): JSX.Element {
       </Card>
 
       {/* Cash Flow Forecast */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <ChartCard
+          title="Projected In"
+          subtitle="6-month incoming cash trend"
+          empty={cashFlow.length === 0}
+          emptyMessage="No forecast data."
+          emptyIcon="trend"
+        >
+          <LineChart data={cashFlowTrend(cashFlow, "in")} color="var(--st-success)" showPoints />
+        </ChartCard>
+        <ChartCard
+          title="Projected Out"
+          subtitle="6-month outgoing cash trend"
+          empty={cashFlow.length === 0}
+          emptyMessage="No forecast data."
+          emptyIcon="trend"
+        >
+          <LineChart data={cashFlowTrend(cashFlow, "out")} color="var(--st-warning)" showPoints />
+        </ChartCard>
+      </div>
+
       <Card padding="sm" title={<div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">6-Month Cash Flow Forecast</div>}>
         <DataTable dense columns={cashFlowColumns} rows={cashFlow} rowKey={r => r.period} emptyMessage="No forecast data." />
       </Card>
@@ -156,4 +179,9 @@ export function OrgFinancialView(): JSX.Element {
       </Card>
     </div>
   );
+}
+
+/** Map a cash-flow forecast to a single line series ("in" | "out"). */
+export function cashFlowTrend(cashFlow: CashFlowForecastRow[], side: "in" | "out"): ChartDatum[] {
+  return cashFlow.map(r => ({ label: r.period, value: side === "in" ? r.projectedIn : r.projectedOut }));
 }
