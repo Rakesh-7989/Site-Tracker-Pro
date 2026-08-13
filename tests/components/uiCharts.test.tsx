@@ -7,16 +7,20 @@ import { render, screen } from "@testing-library/react";
 
 import {
   BarChart,
+  BarGroup,
   ChartLegend,
   PieChart,
   LineChart,
   chartMax,
   chartAriaLabel,
+  barGroupMax,
+  barGroupAriaLabel,
   datumColor,
   pieSegments,
   linePoints,
   linePath,
   areaPath,
+  type BarGroupSeries,
 } from "@/components/ui/Charts";
 
 const DATA = [
@@ -130,6 +134,64 @@ describe("BarChart", () => {
   it("exposes a bar-chart aria-label on a role=img element", () => {
     render(<BarChart data={DATA} />);
     expect(screen.getByRole("img", { name: "Bar chart: active: 4, completed: 2, on hold: 1" })).toBeInTheDocument();
+  });
+});
+
+describe("BarGroup", () => {
+  const GROUPS = ["Design Hub", "Villa"];
+  const SERIES: BarGroupSeries[] = [
+    { name: "Fee", values: [500000, 900000] },
+    { name: "Billed", color: "var(--st-accent)", values: [300000, 800000] },
+  ];
+
+  it("barGroupMax floors at 1 and scans every series", () => {
+    expect(barGroupMax(GROUPS, SERIES)).toBe(900000);
+    expect(barGroupMax([], [])).toBe(1);
+    expect(barGroupMax(["a"], [{ name: "s", values: [0] }])).toBe(1);
+  });
+
+  it("barGroupAriaLabel joins group/series pairs", () => {
+    expect(barGroupAriaLabel(GROUPS, SERIES)).toBe(
+      "Design Hub: Fee 500000, Design Hub: Billed 300000, Villa: Fee 900000, Villa: Billed 800000",
+    );
+  });
+
+  it("renders paired bars per group with palette fallback + default colors", () => {
+    const { container } = render(<BarGroup groups={GROUPS} series={SERIES} />);
+    const bars = container.querySelectorAll("[title]");
+    expect(bars).toHaveLength(4);
+    // explicit accent color used; fee series falls back to palette[0]
+    const owns = (el: Element, sub: string) => (el.getAttribute("style") ?? "").includes(sub);
+    expect([...bars].filter(el => owns(el, "var(--st-accent)"))).toHaveLength(2);
+    expect([...bars].filter(el => owns(el, "var(--st-success)"))).toHaveLength(2);
+    // tallest bar (900000) is 100%, the 300000 bar is ~33%
+    const [, b2, b3] = Array.from(bars);
+    expect((b3 as HTMLElement).style.height).toBe("100%");
+    expect(parseFloat((b2 as HTMLElement).style.height)).toBeCloseTo(33.33, 1);
+    // x-axis group labels render
+    expect(screen.getByText("Design Hub")).toBeInTheDocument();
+    expect(screen.getByText("Villa")).toBeInTheDocument();
+  });
+
+  it("hides value labels unless showValues", () => {
+    const { container, rerender } = render(<BarGroup groups={GROUPS} series={SERIES} />);
+    expect(container.querySelectorAll("span.absolute")).toHaveLength(0);
+    rerender(<BarGroup groups={GROUPS} series={SERIES} showValues />);
+    // fee labels for 500000, 900000 + billed labels for 300000, 800000 (zero-valued skipped)
+    expect(container.querySelectorAll("span.absolute")).toHaveLength(4);
+  });
+
+  it("applies formatValue to value labels, tooltips and the aria summary", () => {
+    const fmt = (v: number) => `₹${v}k`;
+    const { container } = render(<BarGroup groups={["a"]} series={[{ name: "Fee", values: [4] }]} showValues formatValue={fmt} />);
+    expect(screen.getByText("₹4k")).toBeInTheDocument();
+    expect(container.querySelector("[title]")?.getAttribute("title")).toBe("a · Fee: ₹4k");
+    expect(container.querySelector('[role="img"]')?.getAttribute("aria-label")).toContain("a: Fee ₹4k");
+  });
+
+  it("exposes a grouped-bar aria-label on a role=img element", () => {
+    render(<BarGroup groups={GROUPS} series={SERIES} />);
+    expect(screen.getByRole("img", { name: "Grouped bar chart: Design Hub: Fee 500000, Design Hub: Billed 300000, Villa: Fee 900000, Villa: Billed 800000" })).toBeInTheDocument();
   });
 });
 

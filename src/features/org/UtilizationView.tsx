@@ -17,7 +17,7 @@ import { memberProjectScope } from "@/app/queries";
 import { Card, Button, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ChartCard } from "@/components/ui/ChartCard";
-import { BarChart, type ChartDatum } from "@/components/ui/Charts";
+import { BarGroup, CHART_COLORS, type BarGroupSeries } from "@/components/ui/Charts";
 import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
 import { getOrgUtilization, getProjectUtilizationByPhase, type UtilizationRow, type UtilizationPhaseRow } from "@/app/utilizationQueries";
 
@@ -150,18 +150,19 @@ function UtilizationInner(): JSX.Element {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
         <ChartCard
-          title="Committed fee by project"
+          title="Fee vs billed effort by project"
           empty={rows.length === 0}
           emptyMessage="No projects"
+          legend={<GroupedLegend bars={utilizationBars(rows)} />}
         >
-          <BarChart data={utilizationFeeData(rows)} color="var(--st-violet)" showValues formatValue={fmtCompactRupees} />
+          <BarGroup {...utilizationBars(rows)} showValues formatValue={fmtCompactRupees} />
         </ChartCard>
         <ChartCard
-          title="Billed effort by project"
+          title="Utilization % by project"
           empty={rows.length === 0}
           emptyMessage="No projects"
         >
-          <BarChart data={utilizationValueData(rows)} color="var(--st-accent)" showValues formatValue={fmtCompactRupees} />
+          <BarGroup {...utilizationPctData(rows)} showValues formatValue={v => `${v}%`} />
         </ChartCard>
       </div>
 
@@ -191,18 +192,19 @@ function UtilizationInner(): JSX.Element {
                  <div className="space-y-4">
                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                      <ChartCard
-                       title="Phase fees"
+                       title="Phase fee vs billed effort"
                        empty={phases.length === 0}
                        emptyMessage="No phases"
+                       legend={<GroupedLegend bars={phaseBars(phases)} />}
                      >
-                       <BarChart data={phaseFeeData(phases)} color="var(--st-violet)" showValues formatValue={fmtCompactRupees} />
+                       <BarGroup {...phaseBars(phases)} showValues formatValue={fmtCompactRupees} />
                      </ChartCard>
                      <ChartCard
-                       title="Phase billed effort"
+                       title="Phase utilization %"
                        empty={phases.length === 0}
                        emptyMessage="No phases"
                      >
-                       <BarChart data={phaseValueData(phases)} color="var(--st-accent)" showValues formatValue={fmtCompactRupees} />
+                       <BarGroup {...phasePctData(phases)} showValues formatValue={v => `${v}%`} />
                      </ChartCard>
                    </div>
                    <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
@@ -218,22 +220,54 @@ function UtilizationInner(): JSX.Element {
    );
 }
 
-/** Org-rollup committed-fee bar series (project name → fee). */
-export function utilizationFeeData(rows: UtilizationRow[]): ChartDatum[] {
-  return rows.map(r => ({ label: r.name, value: r.fee }));
+/** Org-rollup Fee-vs-Billed grouped series (one bar per series per project). */
+export function utilizationBars(rows: UtilizationRow[]): { groups: string[]; series: BarGroupSeries[] } {
+  return {
+    groups: rows.map(r => r.name),
+    series: [
+      { name: "Fee", color: "var(--st-violet)", values: rows.map(r => r.fee) },
+      { name: "Billed", color: "var(--st-accent)", values: rows.map(r => Math.round(r.billedValue)) },
+    ],
+  };
 }
 
-/** Org-rollup billed-effort bar series (project name → billed value). */
-export function utilizationValueData(rows: UtilizationRow[]): ChartDatum[] {
-  return rows.map(r => ({ label: r.name, value: Math.round(r.billedValue) }));
+/** Org-rollup single-series utilization % bars. */
+export function utilizationPctData(rows: UtilizationRow[]): { groups: string[]; series: BarGroupSeries[] } {
+  return {
+    groups: rows.map(r => r.name),
+    series: [{ name: "Util", color: "var(--st-warning)", values: rows.map(r => r.utilizationPct) }],
+  };
 }
 
-/** Per-phase fee bar series (phase title → fee). */
-export function phaseFeeData(phases: UtilizationPhaseRow[]): ChartDatum[] {
-  return phases.map(r => ({ label: r.phaseTitle, value: r.feeAmount }));
+/** Per-phase Fee-vs-Billed grouped series (unassigned phase keeps fee 0). */
+export function phaseBars(phases: UtilizationPhaseRow[]): { groups: string[]; series: BarGroupSeries[] } {
+  return {
+    groups: phases.map(r => r.phaseTitle),
+    series: [
+      { name: "Fee", color: "var(--st-violet)", values: phases.map(r => r.feeAmount) },
+      { name: "Billed", color: "var(--st-accent)", values: phases.map(r => Math.round(r.billedValue)) },
+    ],
+  };
 }
 
-/** Per-phase billed-effort bar series (phase title → billed value). */
-export function phaseValueData(phases: UtilizationPhaseRow[]): ChartDatum[] {
-  return phases.map(r => ({ label: r.phaseTitle, value: Math.round(r.billedValue) }));
+/** Per-phase single-series utilization % bars. */
+export function phasePctData(phases: UtilizationPhaseRow[]): { groups: string[]; series: BarGroupSeries[] } {
+  return {
+    groups: phases.map(r => r.phaseTitle),
+    series: [{ name: "Util", color: "var(--st-warning)", values: phases.map(r => r.utilizationPct) }],
+  };
+}
+
+/** Small legend row for a grouped bar chart (swatch + series name). */
+export function GroupedLegend({ bars }: { bars: { groups: string[]; series: BarGroupSeries[] } }): JSX.Element {
+  return (
+    <div className="flex flex-wrap gap-2 justify-center">
+      {bars.series.map((s, i) => (
+        <span key={i} className="text-[11px] text-fg-secondary flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: s.color ?? CHART_COLORS[i % CHART_COLORS.length] }} />
+          {s.name}
+        </span>
+      ))}
+    </div>
+  );
 }

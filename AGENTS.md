@@ -2418,3 +2418,58 @@ library support for readable labels.
 - Phase-5 data-intensive candidates now complete (tables, charts, kanban,
   calendar). Next candidates (needs user go): Phase-6 mobile polish, or the
   `BarGroup` paired-series enhancement.
+
+---
+
+## Option 4 — Frontend Redesign Phase 26: `BarGroup` paired-series component (Complete, 2026-08-13)
+
+### Goal
+Close the Phase-25 note: fee-vs-effort rendered as two side-by-side single-series
+`BarChart`s. Add a **`BarGroup`** paired-column component to the dependency-free
+chart library so the comparison reads as grouped columns, and wire it into
+UtilizationView (org rollup + phase drill-down) with a real legend.
+
+### Done (all verified)
+- **`src/components/ui/Charts.tsx`** — new **`BarGroup`** component + pure helpers:
+  - `BarGroupSeries { name; color?; values: number[] }` (one value per group index);
+    `BarGroupProps { groups; series; showValues?; formatValue?; className? }`.
+  - `barGroupMax(groups, series)` — max across all series (floor 1);
+    `barGroupAriaLabel(groups, series, formatValue?)` — "group: series value" pairs
+    (skips zeros), fed into `role="img"` + `aria-label` ("Grouped bar chart: …").
+  - Render: flex row of groups, per-group paired columns (`gap-[3px]`), value
+    labels (`-top-2` absolute) when `showValues`, `title` tooltips, x-axis group
+    labels row; colors = `series.color ?? CHART_COLORS[si % len]` (palette
+    fallback). Same `formatValue` contract as `BarChart` (labels/tooltips/aria).
+- **`src/features/org/UtilizationView.tsx`** — replaced the 4 single-series
+  helpers + side-by-side charts with:
+  - `utilizationBars(rows)` → `{ groups, series }` (Fee violet / Billed accent,
+    billed rounded);
+  - `utilizationPctData(rows)` → single-series Util warning % bars;
+  - `phaseBars(phases)` / `phasePctData(phases)` → same pair for the drill-down
+    (unassigned phase keeps fee 0);
+  - `GroupedLegend` (swatch + series name) rendered in the `ChartCard legend`
+    slot of both fee-vs-effort cards.
+  - Deleted `utilizationFeeData` / `utilizationValueData` / `phaseFeeData` /
+    `phaseValueData`. Old `ChartDatum`/`BarChart` imports dropped.
+- **Tests** — `tests/components/uiCharts.test.tsx` → **27** (BarGroup: max
+  floor/scan, aria label join, 4-bar render with palette fallback + explicit
+  color + 100%/33% heights + group labels, showValues hidden/shown, formatValue
+  on labels/tooltips/aria, role=img label). `tests/features/orgChartWiring.test.ts`
+  → **24** (utilizationBars/phaseBars paired series incl. rounding + unassigned +
+  empty, utilizationPctData/phasePctData single-series, retired helpers gone).
+- **Smoke** — markers `utilizationFeeData`/`phaseFeeData` → `utilizationBars`/
+  `phaseBars`; added `BarGroup`: **322 checks** (was 321; +1).
+
+### Verify (Phase 26)
+- lint clean (0 errors; 1 pre-existing coverage warning) · `tsc --noEmit` clean
+  · build clean (11.35s) · vitest **177 files / 2097 tests pass** (+7) · smoke
+  **322 checks** (was 321; +1) · e2e-mock **11/11**.
+
+### Notes / Follow-ups
+- `barGroupMax`'s first arg (`groups`) is unused for the math (series carry the
+  values) — kept for a symmetric API with `barGroupAriaLabel`; prefixed `_groups`.
+- UtilizationView now shows four BarGroup cards (org fee-vs-billed + org util %,
+  phase fee-vs-billed + phase util %) — the util % cards are single-series
+  (BarGroup handles the single-series case cleanly, same visual as a BarChart).
+- Remaining Phase-5/6 candidates (needs user go): Phase-6 mobile polish, or
+  RTL/large-text audits.

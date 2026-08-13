@@ -79,6 +79,84 @@ export function BarChart({ data, color = "var(--st-accent)", showValues = false,
   );
 }
 
+// ──────────────────────────── BarGroup (paired) ───────────────────────────
+
+export interface BarGroupSeries {
+  name: string;
+  color?: string;
+  /** One value per category (aligned with `groups` by index). */
+  values: number[];
+}
+
+export interface BarGroupProps {
+  /** Category labels across the x-axis. */
+  groups: string[];
+  /** Parallel series rendered as paired columns within each group. */
+  series: BarGroupSeries[];
+  showValues?: boolean;
+  /** Format bar values for value labels, tooltips and the aria summary. */
+  formatValue?: (value: number) => string;
+  className?: string;
+}
+
+/** Max across all series values (floor 1 so zero-only data never divides by zero). */
+export function barGroupMax(_groups: string[], series: BarGroupSeries[]): number {
+  return Math.max(...series.flatMap(s => s.values.map(v => Math.max(v, 0))), 1);
+}
+
+/** Screen-reader summary of the grouped series (skips zero values). */
+export function barGroupAriaLabel(groups: string[], series: BarGroupSeries[], formatValue?: (value: number) => string): string {
+  const fmt = formatValue ?? ((v: number) => String(v));
+  const rows: string[] = [];
+  groups.forEach((g, gi) => {
+    series.forEach(s => {
+      const v = s.values[gi] ?? 0;
+      if (v > 0) rows.push(`${g}: ${s.name} ${fmt(v)}`);
+    });
+  });
+  return rows.join(", ");
+}
+
+export function BarGroup({ groups, series, showValues = false, formatValue, className }: BarGroupProps): JSX.Element {
+  const max = barGroupMax(groups, series);
+  const fmt = formatValue ?? ((v: number) => String(v));
+  return (
+    <div
+      role="img"
+      aria-label={`Grouped bar chart: ${barGroupAriaLabel(groups, series, formatValue)}`}
+      className={cn("flex flex-col w-full h-full", className)}
+    >
+      <div className="flex flex-1 items-end gap-2 min-h-0">
+        {groups.map((g, gi) => (
+          <div key={gi} className="flex-1 min-w-0 h-full flex items-end justify-center gap-[3px]">
+            {series.map((s, si) => {
+              const v = s.values[gi] ?? 0;
+              const pct = v <= 0 ? 0 : Math.max((v / max) * 100, 3);
+              return (
+                <div key={si} className="relative flex-1 h-full flex items-end justify-center min-w-0">
+                  {showValues && v > 0 && (
+                    <span className="absolute -top-2 inset-x-0 text-center text-[9px] text-fg-tertiary leading-none truncate">{fmt(v)}</span>
+                  )}
+                  <div
+                    className="w-full rounded-t-sm"
+                    style={{ height: `${pct}%`, backgroundColor: s.color ?? CHART_COLORS[si % CHART_COLORS.length] }}
+                    title={`${g} · ${s.name}: ${fmt(v)}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-1">
+        {groups.map((g, gi) => (
+          <span key={gi} className="flex-1 min-w-0 text-center text-[10px] text-fg-tertiary truncate">{g}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────── PieChart ────────────────────────────────
 
 export interface PieSegment {

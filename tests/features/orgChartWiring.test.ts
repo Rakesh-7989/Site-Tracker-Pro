@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { sourceSplitData, shortCurrency } from "@/features/org/RevenueView";
 import { cashFlowTrend } from "@/features/org/OrgFinancialView";
 import { burnUpSeries, monthLabel } from "@/features/org/ForecastView";
-import { utilizationFeeData, utilizationValueData, phaseFeeData, phaseValueData } from "@/features/org/UtilizationView";
+import { utilizationBars, utilizationPctData, phaseBars, phasePctData } from "@/features/org/UtilizationView";
 import { quotePriceData } from "@/features/org/ProcurementView";
 import type { RaBill } from "@/app/forecastQueries";
 import type { CashFlowForecastRow } from "@/app/crossAnalyticsQueries";
@@ -120,52 +120,70 @@ describe("burnUpSeries", () => {
   });
 });
 
-describe("utilizationFeeData / utilizationValueData", () => {
+describe("utilizationBars / utilizationPctData", () => {
   const rows: UtilizationRow[] = [
     { projectId: "p1", name: "Design Hub", type: "design", fee: 500000, loggedHours: 40, billedValue: 300000, variance: 200000, utilizationPct: 60 },
     { projectId: "p2", name: "Villa", type: "consultant", fee: 900000, loggedHours: 90, billedValue: 800000, variance: 100000, utilizationPct: 89 },
   ];
 
-  it("maps fee series by project name", () => {
-    expect(utilizationFeeData(rows)).toEqual([
-      { label: "Design Hub", value: 500000 },
-      { label: "Villa", value: 900000 },
-    ]);
+  it("builds paired fee-vs-billed grouped series by project", () => {
+    expect(utilizationBars(rows)).toEqual({
+      groups: ["Design Hub", "Villa"],
+      series: [
+        { name: "Fee", color: "var(--st-violet)", values: [500000, 900000] },
+        { name: "Billed", color: "var(--st-accent)", values: [300000, 800000] },
+      ],
+    });
   });
 
-  it("maps billed-value series rounded to whole rupees", () => {
-    expect(utilizationValueData([{ ...rows[0], billedValue: 300000.4 }])).toEqual([
-      { label: "Design Hub", value: 300000 },
-    ]);
+  it("rounds billed values to whole rupees", () => {
+    const { series } = utilizationBars([{ ...rows[0], billedValue: 300000.4 }]);
+    expect(series[1].values).toEqual([300000]);
   });
 
-  it("returns empty for an empty rollup", () => {
-    expect(utilizationFeeData([])).toEqual([]);
+  it("builds the single-series utilization % bars", () => {
+    expect(utilizationPctData(rows)).toEqual({
+      groups: ["Design Hub", "Villa"],
+      series: [{ name: "Util", color: "var(--st-warning)", values: [60, 89] }],
+    });
+  });
+
+  it("returns empty groups/series for an empty rollup", () => {
+    expect(utilizationBars([])).toEqual({ groups: [], series: [
+      { name: "Fee", color: "var(--st-violet)", values: [] },
+      { name: "Billed", color: "var(--st-accent)", values: [] },
+    ] });
   });
 });
 
-describe("phaseFeeData / phaseValueData", () => {
+describe("phaseBars / phasePctData", () => {
   const phases: UtilizationPhaseRow[] = [
     { projectId: "p1", projectName: "Design Hub", phaseId: "f1", phaseTitle: "Concept", feeAmount: 100000, loggedHours: 10, billedValue: 80000, variance: 20000, utilizationPct: 80 },
     { projectId: "p1", projectName: "Design Hub", phaseId: "__unassigned__", phaseTitle: "Unassigned", feeAmount: 0, loggedHours: 5, billedValue: 40000, variance: -40000, utilizationPct: 0 },
   ];
 
-  it("maps phase fee series keeping the unassigned row", () => {
-    expect(phaseFeeData(phases)).toEqual([
-      { label: "Concept", value: 100000 },
-      { label: "Unassigned", value: 0 },
-    ]);
+  it("builds paired phase fee-vs-billed series keeping the unassigned row", () => {
+    expect(phaseBars(phases)).toEqual({
+      groups: ["Concept", "Unassigned"],
+      series: [
+        { name: "Fee", color: "var(--st-violet)", values: [100000, 0] },
+        { name: "Billed", color: "var(--st-accent)", values: [80000, 40000] },
+      ],
+    });
   });
 
-  it("maps phase billed-value series", () => {
-    expect(phaseValueData(phases)).toEqual([
-      { label: "Concept", value: 80000 },
-      { label: "Unassigned", value: 40000 },
-    ]);
+  it("builds per-phase utilization % bars", () => {
+    expect(phasePctData(phases)).toEqual({
+      groups: ["Concept", "Unassigned"],
+      series: [{ name: "Util", color: "var(--st-warning)", values: [80, 0] }],
+    });
   });
 
-  it("returns empty for empty phases", () => {
-    expect(phaseValueData([])).toEqual([]);
+  it("returns empty groups/series for empty phases", () => {
+    expect(phaseBars([])).toEqual({ groups: [], series: [
+      { name: "Fee", color: "var(--st-violet)", values: [] },
+      { name: "Billed", color: "var(--st-accent)", values: [] },
+    ] });
   });
 });
 
