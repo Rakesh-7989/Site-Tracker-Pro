@@ -8,7 +8,7 @@ import { getClient } from "@/lib/supabase";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/auth";
-import { Card, Button, Icon, Badge, Spinner } from "@/components/ui/atoms";
+import { Card, Button, Icon, Badge, Spinner, AccessDenied } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import {
   createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
@@ -85,7 +85,7 @@ function UpiSettingsCard(): JSX.Element {
       <div className="text-[13px] text-fg-secondary mt-0.5">The UPI ID customers pay to (used for the QR on payment pages). Zero gateway fees.</div>
     </div>}>
       {err && <div className="mb-2 text-[12px] text-error">{err}</div>}
-      {saved && <div className="mb-2 text-[12px] text-success">✅ Saved.</div>}
+      {saved && <div className="mb-2 text-[12px] text-success">Saved.</div>}
       <div className="grid sm:grid-cols-2 gap-2">
         <input value={upi} onChange={e => setUpi(e.target.value)} placeholder="yourname@okhdfcbank" className="px-3 py-2.5 border border-default rounded-lg text-sm bg-bg-primary" />
         <input value={payee} onChange={e => setPayee(e.target.value)} placeholder="Payee name (e.g. Rakesh Boyapati)" className="px-3 py-2.5 border border-default rounded-lg text-sm bg-bg-primary" />
@@ -97,11 +97,16 @@ function UpiSettingsCard(): JSX.Element {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
-const TIER_BADGE: Record<string, { label: string; tone: "warning" | "info" | "neutral" }> = {
-  owner: { label: "🔑 Owner", tone: "warning" },
-  head: { label: "🎖ï¸ Head", tone: "info" },
-  member: { label: "Member", tone: "neutral" },
-};
+export interface TierBadgeInfo { label: string; tone: "warning" | "info" | "neutral" }
+/** Staff tier → display badge (no emoji; design-system Badge tones). */
+export function tierBadge(tier: string | null | undefined): TierBadgeInfo {
+  switch (tier) {
+    case "owner": return { label: "Owner", tone: "warning" };
+    case "head": return { label: "Head", tone: "info" };
+    case "member": return { label: "Member", tone: "neutral" };
+    default: return { label: tier ?? "\u2014", tone: "neutral" };
+  }
+}
 
 export function StaffAdminView(): JSX.Element {
   const { session } = useAuth();
@@ -151,7 +156,7 @@ export function StaffAdminView(): JSX.Element {
     setBusy(false);
     if (!res.ok) return setError(res.error);
     setEmailNote(res.data.emailSent
-      ? `✅ Invite emailed to ${inviteEmail}.`
+      ? `Invite emailed to ${inviteEmail}.`
       : `Invite created, but the email didn't send — copy the link below and share it manually.`);
     setJustCreated({ id: "", token: res.data.token, email: inviteEmail, tier: inviteTier, usedAt: null, revokedAt: null, expiresAt: "", createdAt: "" });
     setInviteEmail("");
@@ -169,15 +174,7 @@ export function StaffAdminView(): JSX.Element {
   };
 
   if (!canManage) {
-    return (
-      <div className="max-w-xl mx-auto mt-10">
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-bg-secondary text-fg-tertiary grid place-items-center mx-auto mb-3"><Icon name="shield" size={24} /></div>
-          <h1 className="font-display text-lg font-bold">Staff management</h1>
-          <p className="text-sm text-fg-secondary mt-2">Only the platform Owner or Staff Head can manage staff and invites.</p>
-        </Card>
-      </div>
-    );
+    return <AccessDenied message="Only the platform Owner or Staff Head can manage staff and invites." />;
   }
 
   return (
@@ -219,7 +216,7 @@ export function StaffAdminView(): JSX.Element {
 
         {justCreated && (
           <div className="mt-4 rounded-lg bg-success-tint border border-success p-3">
-            <div className="text-[12px] font-semibold text-success mb-1.5">✅ Invite link ready — share it with the new staff member (expires in 7 days):</div>
+            <div className="text-[12px] font-semibold text-success mb-1.5">Invite link ready — share it with the new staff member (expires in 7 days):</div>
             <div className="flex items-center gap-2">
               <input readOnly value={staffJoinUrl(justCreated.token)}
                 className="flex-1 text-[12px] font-mono px-3 py-2 border border-success rounded-lg bg-bg-primary text-fg-primary truncate" />
@@ -243,7 +240,7 @@ export function StaffAdminView(): JSX.Element {
                       <div className="text-sm font-semibold text-fg-primary truncate">{m.name || m.email}</div>
                       <div className="text-[12px] text-fg-secondary truncate">{m.email}{m.managerEmail ? ` · reports to ${m.managerEmail}` : ""} · {m.managedOrgs} org{m.managedOrgs === 1 ? "" : "s"}</div>
                     </div>
-                    <Badge tone={TIER_BADGE[m.tier]?.tone ?? "neutral"}>{TIER_BADGE[m.tier]?.label ?? m.tier}</Badge>
+                    <Badge tone={tierBadge(m.tier).tone}>{tierBadge(m.tier).label}</Badge>
                   </div>
                   {m.tier === "member" && <MemberAreas staffId={m.id} initial={areaMap.get(m.id) ?? []} />}
                 </div>

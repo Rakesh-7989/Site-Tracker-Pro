@@ -41,13 +41,13 @@ describe("createPlatformOrg", () => {
 });
 
 describe("listPlatformUsers", () => {
-  it("maps profile + email + staff + org count", async () => {
+  it("maps profile + email + staff + tier + org count", async () => {
     const r = await listPlatformUsers(rpcClient({ data: [
-      { id: "u1", name: "Rakesh", email: "r@a.com", role: "superadmin", is_staff: true, org_count: 2, created_at: "2026-02-02" },
-      { id: "u2", name: "X", email: null, role: "client", is_staff: false, org_count: 0, created_at: "2026-03-03" },
+      { id: "u1", name: "Rakesh", email: "r@a.com", role: "superadmin", is_staff: true, staff_tier: "head", org_count: 2, created_at: "2026-02-02" },
+      { id: "u2", name: "X", email: null, role: "client", is_staff: false, staff_tier: null, org_count: 0, created_at: "2026-03-03" },
     ], error: null }));
-    expect(r.ok && r.data[0]).toMatchObject({ name: "Rakesh", email: "r@a.com", role: "superadmin", isStaff: true, orgCount: 2 });
-    expect(r.ok && r.data[1]).toMatchObject({ email: null, isStaff: false, orgCount: 0 });
+    expect(r.ok && r.data[0]).toMatchObject({ name: "Rakesh", email: "r@a.com", role: "superadmin", isStaff: true, staffTier: "head", orgCount: 2 });
+    expect(r.ok && r.data[1]).toMatchObject({ email: null, isStaff: false, staffTier: null, orgCount: 0 });
   });
 });
 

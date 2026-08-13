@@ -6,7 +6,7 @@ import { planSupportsCustomRoles } from "@/auth/planRoleMatrix";
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface PlatformOrg { id: string; name: string; slug: string; plan: string; memberCount: number; projectCount: number; createdAt: string; }
-export interface PlatformUser { id: string; name: string; email: string | null; role: string; isStaff: boolean; orgCount: number; createdAt: string; }
+export interface PlatformUser { id: string; name: string; email: string | null; role: string; isStaff: boolean; staffTier: string | null; orgCount: number; createdAt: string; }
 export interface CreatePlatformOrgInput { name: string; plan: AssignablePlan; }
 
 const num = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0);
@@ -116,7 +116,8 @@ export async function listPlatformUsers(client: any, opts: PageOpts = {}): Promi
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), name: String(r.name ?? ""), email: r.email == null ? null : String(r.email),
-      role: String(r.role ?? ""), isStaff: r.is_staff === true, orgCount: num(r.org_count), createdAt: String(r.created_at ?? ""),
+      role: String(r.role ?? ""), isStaff: r.is_staff === true, staffTier: r.staff_tier == null ? null : String(r.staff_tier),
+      orgCount: num(r.org_count), createdAt: String(r.created_at ?? ""),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
