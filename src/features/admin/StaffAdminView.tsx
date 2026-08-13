@@ -8,8 +8,9 @@ import { getClient } from "@/lib/supabase";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/auth";
-import { Card, Button, Icon, Badge, Spinner, AccessDenied } from "@/components/ui/atoms";
-import { Select } from "@/components/ui/forms";
+import { Card, Button, Icon, Badge, AccessDenied, StatCard } from "@/components/ui/atoms";
+import { Input, Select } from "@/components/ui/forms";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
   staffJoinUrl, inviteStatus, listAllStaffAreas, setStaffAreas, STAFF_AREAS, STAFF_AREA_LABEL,
@@ -18,7 +19,7 @@ import {
 import { getPaymentSettings, setPlatformSetting } from "@/app/paymentQueries";
 import { isValidVpa } from "@/lib/upi";
 
-const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+export const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 // `initial` = the member's currently-granted areas (batch-loaded once by the
 // parent via list_all_staff_areas — no per-row query). Empty = full access.
@@ -87,8 +88,8 @@ function UpiSettingsCard(): JSX.Element {
       {err && <div className="mb-2 text-[12px] text-error">{err}</div>}
       {saved && <div className="mb-2 text-[12px] text-success">Saved.</div>}
       <div className="grid sm:grid-cols-2 gap-2">
-        <input value={upi} onChange={e => setUpi(e.target.value)} placeholder="yourname@okhdfcbank" className="px-3 py-2.5 border border-default rounded-lg text-sm bg-bg-primary" />
-        <input value={payee} onChange={e => setPayee(e.target.value)} placeholder="Payee name (e.g. Rakesh Boyapati)" className="px-3 py-2.5 border border-default rounded-lg text-sm bg-bg-primary" />
+        <Input value={upi} onChange={e => setUpi(e.target.value)} placeholder="yourname@okhdfcbank" />
+        <Input value={payee} onChange={e => setPayee(e.target.value)} placeholder="Payee name (e.g. Rakesh Boyapati)" />
       </div>
       <Button className="mt-3" loading={busy} onClick={save}>{busy ? "Saving..." : "Save UPI"}</Button>
     </Card>
@@ -96,6 +97,8 @@ function UpiSettingsCard(): JSX.Element {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+// ── Pure helpers (exported for the phase unit tests) ──────────────────────────
 
 export interface TierBadgeInfo { label: string; tone: "warning" | "info" | "neutral" }
 /** Staff tier → display badge (no emoji; design-system Badge tones). */
@@ -106,6 +109,58 @@ export function tierBadge(tier: string | null | undefined): TierBadgeInfo {
     case "member": return { label: "Member", tone: "neutral" };
     default: return { label: tier ?? "\u2014", tone: "neutral" };
   }
+}
+
+export interface StaffSummary { staff: number; owners: number; heads: number; members: number; activeInvites: number }
+
+/** Roster + invites rollup for the KPI strip (active = unused invites). */
+export function staffSummary(staff: StaffMember[], invites: StaffInvite[]): StaffSummary {
+  const acc: StaffSummary = { staff: 0, owners: 0, heads: 0, members: 0, activeInvites: 0 };
+  for (const m of staff) {
+    acc.staff += 1;
+    if (m.tier === "owner") acc.owners += 1;
+    else if (m.tier === "head") acc.heads += 1;
+    else acc.members += 1;
+  }
+  for (const inv of invites) if (inviteStatus(inv) === "active") acc.activeInvites += 1;
+  return acc;
+}
+
+interface Settled<T> { ok: boolean; data: T | null; error?: string }
+
+type Lazy<T> = { ok: true; data: T } | { ok: false; error: string };
+
+async function settle<T>(p: Promise<Lazy<T>>): Promise<Settled<T>> {
+  try {
+    const r = await p;
+    if (r.ok) return { ok: true, data: r.data };
+    return { ok: false, data: null, error: r.error };
+  } catch (e) {
+    return { ok: false, data: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+function StaffSkeleton(): JSX.Element {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading staff">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="bg-panel rounded-xl border border-default p-4 space-y-3">
+            <Skeleton decorative height={10} width="w-16" />
+            <Skeleton decorative height={24} width="w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="bg-panel rounded-xl border border-default p-4 space-y-3">
+        <Skeleton decorative height={14} width="w-32" />
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} decorative height={20} width="w-full" />)}
+      </div>
+      <div className="bg-panel rounded-xl border border-default p-4 space-y-3">
+        <Skeleton decorative height={14} width="w-24" />
+        {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} decorative height={20} width="w-full" />)}
+      </div>
+    </div>
+  );
 }
 
 export function StaffAdminView(): JSX.Element {
@@ -129,10 +184,14 @@ export function StaffAdminView(): JSX.Element {
     setLoading(true); setError(null);
     const client = await getClient();
     if (!client) { setError("Backend unavailable."); setLoading(false); return; }
-    const [s, i, a] = await Promise.all([listStaff(client), listStaffInvites(client), listAllStaffAreas(client)]);
-    if (s.ok) setStaff(s.data); else setError(s.error);
-    if (i.ok) setInvites(i.data);
-    if (a.ok) setAreaMap(a.data);
+    const [s, i, a] = await Promise.all([
+      settle(listStaff(client)),
+      settle(listStaffInvites(client)),
+      settle(listAllStaffAreas(client)),
+    ]);
+    if (s.ok && s.data) setStaff(s.data); else if (!s.ok) setError(s.error ?? "Failed to load staff.");
+    if (i.ok && i.data) setInvites(i.data);
+    if (a.ok && a.data) setAreaMap(a.data);
     setLoading(false);
   }, []);
 
@@ -177,6 +236,8 @@ export function StaffAdminView(): JSX.Element {
     return <AccessDenied message="Only the platform Owner or Staff Head can manage staff and invites." />;
   }
 
+  const summary = staffSummary(staff, invites);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -200,8 +261,7 @@ export function StaffAdminView(): JSX.Element {
         <div className="flex items-end gap-2 flex-wrap">
           <label className="flex-1 min-w-[200px]">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">Invitee email (optional)</span>
-            <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="person@email.com"
-              className="w-full mt-1 px-3 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-bg-primary" />
+            <Input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="person@email.com" />
           </label>
           {tier === "owner" && (
             <Select fit className="w-40" value={inviteTier} onChange={e => setInviteTier(e.target.value as "member" | "head")}
@@ -226,10 +286,15 @@ export function StaffAdminView(): JSX.Element {
         )}
       </Card>
 
-      {loading ? (
-        <div className="grid place-items-center py-12 text-accent"><Spinner size={24} /></div>
-      ) : (
+      {loading ? <StaffSkeleton /> : (
         <>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <StatCard label="Staff" value={summary.staff} sub="team" />
+            <StatCard label="Owners" value={summary.owners} sub="tier" />
+            <StatCard label="Heads" value={summary.heads} sub="tier" />
+            <StatCard label="Members" value={summary.members} sub="tier" />
+            <StatCard label="Active invites" value={summary.activeInvites} sub="unused" />
+          </div>
           {/* Staff hierarchy */}
           <Card padding="lg" title={<div className="font-semibold text-fg-primary">Staff team ({staff.length})</div>}>
             <div className="space-y-2">

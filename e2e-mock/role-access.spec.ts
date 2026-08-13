@@ -62,6 +62,7 @@ test.describe("Role-access · mocked Supabase session", () => {
   test("superadmin — sees Platform nav", async ({ page }) => {
     await openAs(page, "superadmin");
     await expect(navLink(page, "Platform")).toBeVisible({ timeout: 10000 });
+    await expect(navLink(page, "Staff")).toBeVisible();
   });
 
   test("pm — blocked on /org (org admin route) renders AccessDenied", async ({ page }) => {
