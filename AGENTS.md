@@ -2507,7 +2507,7 @@ UtilizationView (org rollup + phase drill-down) with a real legend.
 | SA-S | Subscription & billing screens | ✅ `8d0cb11` (PlatformBillingView — `billingSummary` KPI strip (active/trial/suspended/MRR/ARR), `billingByPlan` MRR-by-plan BarChart (`PLAN_ORDER`), org billing DataTable + `BILLING_CSV_COLUMNS` CSV export, settle/skeleton, error surfacing; PlatformUsageView — StatCard KPI strip, `usagePlanMix` orgs-by-plan BarChart via new `listUsagePlanCounts` query, `USAGE_CSV_COLUMNS` CSV export, settle/skeleton, error surfacing; PlatformSettingsView — raw `<input>`→`<Checkbox>`, load/save error surfacing, structural skeleton, Payment UPI section; **UpiSettingsCard extracted to shared `UpiSettingsCard.tsx`** (Payment UPI config now on Settings too, still on Staff) + `paymentSettingsValid` helper; StaffAdminView inline card removed; tests `adminBilling` 6 / `adminUsage` 5 / `adminSettings` 3; smoke +7 → 351; vitest 188 files/2181 tests) |
 | SA-T | Testing + ship | ✅ full gate suite green (tsc · lint 0 err · build clean · smoke **351** · vitest **188 files/2181 tests** · e2e-mock **11/11**); migration **184** applied + verified live (`platform_users` RETURN TABLE = `staff_tier text` + active-membership `org_count int`, identity `(int,int,text)`); `db:apply` → **171 passed / 1 failed** (only benign dev-seed `120` duplicate-email — pre-existing); pushed `prod` (commit TBD); live 200. **Track A complete.** |
 
-### Track B — Research-Gap Roadmap (killer features not yet shipped)
+### Track B — Research-Gap Roadmap (killer features)
 B1 Client Approval & Revision System (Figma-style x/y drawing comments, share links
 with password/OTP/expiry/download-restriction, approve/reject + final lock, digital
 signature, revision timeline, approval analytics) · B2 Client Portal depth (payments,
@@ -2515,11 +2515,24 @@ upcoming milestones) · B3 subscription usage-limit enforcement · B4 email/What
 notifications · B5 storage/CAD (DWG/DXF/SKP) preview + quota · B6 future (white-label
 subdomains, mobile, AI, analytics).
 
+### Track B — Execution Status (2026-08-14, commit `e9c5889`, prod live 200)
+| B item | Status | Details |
+|--------|--------|---------|
+| B1 — Client Approval & Revision | ✅ code shipped + **DB substrate LIVE** | Frontend `39972e7`: `DrawingReviewTab` (x/y comment pins + status-ladder threads + share-link manager), `ShareLinkView` `/share-link/:token`, `ApprovalAnalyticsView` `/approval-analytics`, `SignaturePad`, `approvalQueries.ts`. Migration **185** (`drawing_comments`, `share_links`, `handover_signatures`, `drawings.parent_id/change_note/approval_status/approved_by/signature/author_id`) + RPCs `validate_share_link`/`share_project_payload`/`create_share_link` + 187 triggers **now applied live**. **185 had 3 bugs fixed in `e9c5889`**: SRF-in-WHERE (`= any(user_project_ids())` → `in (select ...)` — `user_project_ids()` returns `setof uuid`; `user_org_ids()` is `uuid[]` so its `= any()` is fine), grants-before-definition (anon grants moved after RPC defs), and `limit 10` inside `jsonb_agg(...)` (moved into subquery); also added `drawings.author_id` for 187's triggers. |
+| B2 — Client Portal depth | ✅ shipped + verified | `6b6963c`: `ClientPortalProjectView` `/client/:projectId` (payments rollup, upcoming milestones, approved drawings, activity feed, invoices), `clientPortalQueries.ts`, `ClientDashboard`/`ClientPortalView`. Live `plan_cap`/`org_quota_snapshot` verified. |
+| B3 — Usage-limit enforcement | ✅ shipped + verified | `916c56e`+`deacd3c`: `QuotaGate`/`QuotaMeter`, `useFeatureWithQuota`, quota meters in OrgBilling/PlatformBilling/PlatformUsage, gates in CreateProject/InviteMember. |
+| B4 — Notifications | 🟡 partial | B4.5 migration **188** `send_org_notification` **now applied live** — **4 bugs fixed in `e9c5889`**: DEFAULT-in-RETURNS-TABLE, JS-array refs (`NOTIFICATION_TITLES`/`BODIES`/`generateTitle`/`generateBody` → `notification_templates` row), 2-col `SELECT id,name INTO` → `name`, `pm.status='active'` → `pm.removed_at IS NULL` (+ removed inverted `notification_prefs` skip). B4.4 `notificationPrefs.js` `toggleNotifType` `activeRole` bug (runtime ReferenceError) fixed in `e9c5889`. Real email/WhatsApp delivery blocked on provider keys. |
+| B5 — Storage/CAD preview | 🟡 partial | buckets + download audit exist; DWG/DXF/SKP preview ⬜ |
+| B6 — White-label | ✅ | `7bc3762` org branding + `afd2254` build repair; subdomains/mobile/AI ⬜ |
+
+**db:apply result** (2026-08-14): **175 passed / 1 failed** (only benign pre-existing `120_seed_test_data`). Live probe 23/23: B1 tables/columns/RPCs + anon grants, 187 triggers ×5, 186 delivery, 188 broadcast, B2/B3 RPCs. Full gate green: tsc · lint 0 err · smoke **378** · vitest **192 files/2278 tests** · build · e2e-mock **11/11**. Track B next candidates (needs user go): real email/WhatsApp delivery, CAD preview, B6 subdomains/mobile/AI.
+
 ### Notes
 - Do-not-commit temp scripts still present: `scripts/apply-175.mjs`,
   `scripts/apply-183.mjs`, `scripts/verify-183.mjs`, `scripts/scan-card-headers.mjs`,
   `scripts/verify-184.mjs`.
 - **Track A — Super Admin Platform Panel: COMPLETE** (SA-F → SA-T all shipped,
-  verified, live). Next candidates (needs user go): Track B backlog — B1 Client
-  Approval & Revision System (biggest research gap), B2 Client Portal depth, B3
-  subscription usage-limit enforcement.
+  verified, live).
+- **Track B — B1/B2/B3: COMPLETE** (code + live DB substrate shipped, `e9c5889`).
+  B4 partial (delivery blocked on provider keys), B5 partial (CAD preview ⬜), B6
+  partial (subdomains/mobile/AI ⬜).
