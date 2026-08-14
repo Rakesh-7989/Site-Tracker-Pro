@@ -94,25 +94,25 @@ One multi-tenant core platform (CRM, Projects, Permission engines) + industry pl
 ## 4.4 Pending Items — Agentic Loop Execution Plan (2026-08-15)
 
 > **Method**: per phase, take one sub-task at a time → Deep-Dive → Plan → Build → Verify → commit; finish ALL sub-tasks in a phase → phase re-check → next phase (same loop); after all phases → re-check → testing loop (same loop) → release → push live. User is unavailable; Lead (this session) takes all decisions.
-> **Branch rule**: commit on `prod` → push `origin prod` (auto Vercel deploy) → verify live 200 → fast-forward merge `prod` → `main` → push `origin main`. (Current: main = prod = `f454664`.)
+> **Branch rule**: commit on `prod` → push `origin prod` (auto Vercel deploy) → verify live 200 → fast-forward merge `prod` → `main` → push `origin main`. (Current: main = prod = `ef4e601`.)
 
 | Phase | Scope | Sub-tasks | Status |
 |-------|-------|-----------|--------|
 | **P1 — Live-drift final sweep** | Verify the last unverified drift surfaces (repo vs live), record results. | P1.1 Edge Function deploy parity (9 frontend-invoked EFs) · P1.2 Storage buckets (deliverables / dpr-media / research-docs) · P1.3 Views/tables referenced by frontend | ✅ all 3 verified live (2026-08-15): **9/9 EFs ACTIVE** (`invite_org_member` v27, `remove_org_member` v5 recent); **3/3 buckets exist** with correct size limits (deliverables 50MB, dpr-media 15MB, research-docs 50MB; leftover `probe-c32` test bucket — harmless, note only); all frontend-referenced views/tables present in committed migrations (`orgs` 135, `wip_aging` 179, `vendor_performance` 178, `ops_toggles` 24). **No code/migration change required.** |
-| **P2 — B5: CAD/DXF/SKP preview** | The last buildable Track-B gap: client-side preview for uploaded CAD files in the drawing/deliverable register. | P2.1 Deep-dive drawing storage + DrawingsTab/DeliverablesTab upload flow · P2.2 DXF text-entity parser (LINES/LWPOLYLINE/POLYLINE/CIRCLE/ARC/TEXT, zero-dep) · P2.3 SVG renderer + bounds/scale · P2.4 Preview modal + DWG/SKP graceful fallback (metadata + download prompt) · P2.5 Wire into DrawingsTab + DeliverablesTab · P2.6 Tests + smoke + commit | ⬜ |
-| **P3 — Testing loop** | Full regression with the same loop (unit → integration → smoke → build → e2e-mock). | P3.1 Full gate suite · P3.2 e2e-mock · P3.3 fix any surfaced issues via the loop | ⬜ |
-| **P4 — Release** | Ship to live. | P4.1 commit/push `prod` · P4.2 verify live 200 + live probe · P4.3 FF-merge `prod` → `main` → push | ⬜ |
+| **P2 — B5: CAD/DXF/SKP preview** | The last buildable Track-B gap: client-side preview for uploaded CAD files in the drawing/deliverable register. | P2.1 Deep-dive drawing storage + DrawingsTab/DeliverablesTab upload flow · P2.2 DXF text-entity parser (LINES/LWPOLYLINE/POLYLINE/CIRCLE/ARC/TEXT, zero-dep) · P2.3 SVG renderer + bounds/scale · P2.4 Preview modal + DWG/SKP graceful fallback (metadata + download prompt) · P2.5 Wire into DrawingsTab + DeliverablesTab · P2.6 Tests + smoke + commit | ✅ **complete `ef4e601`** (2026-08-15): `src/lib/dxfPreview.ts` (pure parser+SVG renderer, XML-escaped text, no DOM/client), `src/features/shared/CadPreviewModal.tsx` (full-size modal; DXF fetch-via-signed-URL → parse → render; DWG/SKP metadata+download fallback; loading/error+retry), eye-icon Preview button per CAD file row in DrawingsTab + DeliverablesTab (extension-gated, no capability change), 19 vitest tests (`tests/lib/dxfPreview.test.ts`). Also fixed pre-existing CI lint break (eslint test-block missing vitest globals → `tests/email.test.js` 59 no-undef errors red on main). Gate: tsc ✓ lint ✓ vitest 194/2303 ✓ smoke **382** ✓ build ✓ e2e-mock 11/11 ✓. |
+| **P3 — Testing loop** | Full regression with the same loop (unit → integration → smoke → build → e2e-mock). | P3.1 Full gate suite · P3.2 e2e-mock · P3.3 fix any surfaced issues via the loop | ✅ full gate green incl. **e2e-mock 11/11** (2026-08-15); surfaced + fixed the pre-existing CI lint break (see P2 row). |
+| **P4 — Release** | Ship to live. | P4.1 commit/push `prod` · P4.2 verify live 200 + live probe · P4.3 FF-merge `prod` → `main` → push | ✅ **shipped `ef4e601`** (2026-08-15): push `origin prod` → Deploy + CI green → live https://sitetrack-rakesh.vercel.app **200** → FF-merge `prod`→`main` → push. **Track B — B5 complete: storage + CAD preview done.** |
 
 ### Accepted / deferred (recorded for traceability)
 - **B4 — real email/WhatsApp delivery**: blocked on provider API keys (mock SES + Meta Cloud API client shells exist). Deferred; no action without keys.
 - **B6 — white-label subdomains / mobile app / AI**: future roadmap. Deferred.
-- **Frontend Phase 6 mobile polish**: complete per docs/AGENTS.md; only the new P2 preview surface needs mobile checking.
+- **Frontend Phase 6 mobile polish**: complete per docs/AGENTS.md; the P2 CAD preview modal already uses the responsive `full` Modal size (max-w-5xl) with an overflow-auto render panel.
 
 ## 5. Testing Strategy
 
 - Unit: pure helpers in `tests/features/*.test.ts` (vitest, node env).
 - Integration: query-layer tests in `tests/app/*.test.ts`.
-- Smoke: `scripts/smoke.mjs` curated file+marker scan (currently 378 checks; grows with each phase).
+- Smoke: `scripts/smoke.mjs` curated file+marker scan (currently 382 checks; grows with each phase).
 - E2E: e2e-mock suite for auth-guarded journeys.
 - Regression: run full gate suite (AGENTIC_SDLC §3) at every sub-task close and phase close.
 - UAT: client flows via ClientPortal/ClientShare with seeded data; then release.
