@@ -84,6 +84,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
     "invoice:create",
     "rabill:create",
+    "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Pick vendors when creating invoices / RA bills.
     "budget:view", "ledger:view", "material:price:view",  // Financial context for invoice/RA bill creation.
@@ -547,6 +548,7 @@ const PROJECT_TIER_CAPS: Record<ProjectTierRole, Capability[]> = {
     "compliance:view", "rera:file", "gstn:file", "epfo:file",
     "invoice:create",
     "rabill:create",
+    "po:approve",
     "milestone:add", "milestone:edit",
     "vendor:select",   // Picks vendors when creating invoices / RA bills.
     "budget:view", "ledger:view", "material:price:view",  // Financial context for invoice/RA bill creation.

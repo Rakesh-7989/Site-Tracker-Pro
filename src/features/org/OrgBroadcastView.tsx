@@ -1,178 +1,55 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { useRouter } from 'next/navigation';
-import { NotificationType } from '@/app/notificationTemplates';
-import { sendOrgNotification } from '@/app/orgBroadcastQueries';
+// SiteTrack Pro — Org Broadcast (/org/broadcast). "Broadcast" a typed
+// notification to all active org members via the `send_org_notification` RPC.
 
-const NotificationTypeOptions = [
-  { value: 'welcome' as const, label: 'Welcome' },
-  { value: 'weekly_digest' as const, label: 'Weekly Digest' },
-  { value: 'system_alert' as const, label: 'System Alert' },
-  { value: 'dpr_submitted' as const, label: 'DPR Submitted' },
-  { value: 'dpr_approved' as const, label: 'DPR Approved' },
-  { value: 'dpr_rejected' as const, label: 'DPR Rejected' },
-  { value: 'dpr_reminder' as const, label: 'DPR Reminder' },
-  { value: 'dpr_deadline_approaching' as const, label: 'DPR Deadline Approaching' },
-  { value: 'project_milestone' as const, label: 'Project Milestone' },
-  { value: 'project_deadline_approaching' as const, label: 'Project Deadline Approaching' },
-  { value: 'invoice_generated' as const, label: 'Invoice Generated' },
-  { value: 'invoice_overdue' as const, label: 'Invoice Overdue' },
-  { value: 'invoice_paid' as const, label: 'Invoice Paid' },
-  { value: 'ra_bill_generated' as const, label: 'RA Bill Generated' },
-  { value: 'ra_bill_paid' as const, label: 'RA Bill Paid' },
-];
+import { useState } from "react";
+import { useAuth, useCan, useOrgSwitcher } from "@/auth";
+import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
+import { NOTIFICATION_TITLES, type NotificationType } from "@/app/notificationTemplates";
+import { sendOrgNotification } from "@/app/orgBroadcastQueries";
 
-export const OrgBroadcastView = () => {
-  const [formValues, setFormValues] = useForm<{
-    orgId: string;
-    notificationType: NotificationType;
-    placeholders: Record<string, string>;
-  }>({
-    defaultValues: {
-      orgId: '',
-      notificationType: 'welcome' as NotificationType,
-      placeholders: {},
-    },
-  });
+const TYPE_OPTS = (Object.keys(NOTIFICATION_TITLES) as NotificationType[]).map(t => ({ value: t, label: NOTIFICATION_TITLES[t] }));
 
-  const { data: result, isLoading, isError, error } = useState<{
-    success: boolean;
-    sent_count: number;
-    failed_count: number;
-    error: string | null;
-  } | null>(null);
-  const { toast } = useToast();
-  const router = useRouter();
+export function OrgBroadcastView(): JSX.Element {
+  const { session } = useAuth();
+  const { activeOrg } = useOrgSwitcher();
+  const canManage = useCan("org:notifications:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
+  if (!session) return <></>;
+  if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
+  if (!canManage) return <AccessDenied message="Org broadcast requires the notifications manage capability." />;
+  return <Inner orgId={activeOrg.orgId} />;
+}
 
-  const onSubmit = async (values: {
-    orgId: string;
-    notificationType: NotificationType;
-    placeholders: Record<string, string>;
-  }) => {
-    try {
-      const response = await sendOrgNotification(
-        values.orgId,
-        values.notificationType,
-        values.placeholders
-      );
+function Inner({ orgId }: { orgId: string }): JSX.Element {
+  const [type, setType] = useState<NotificationType>("welcome");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ sent_count: number; failed_count: number } | null>(null);
 
-      if (response.success) {
-        setResult({ success: true, sent_count: response.sent_count, failed_count: response.failed_count, error: null });
-        toast({
-          title: 'Success',
-          description: `Notification sent to ${response.sent_count} org members (${response.failed_count} failed)`,
-        });
-        router.refresh();
-      } else {
-        setResult({ success: false, sent_count: 0, failed_count: 0, error: response.error });
-        toast({
-          title: 'Failed',
-          description: response.error || 'Failed to send notification',
-          variant: 'destructive',
-        });
-      }
-    } catch (err: any) {
-      setResult({ success: false, sent_count: 0, failed_count: 0, error: err.message });
-      toast({
-        title: 'Error',
-        description: err.message || 'Network error',
-        variant: 'destructive',
-      });
-    }
+  const send = async () => {
+    setSending(true); setError(null); setResult(null);
+    const res = await sendOrgNotification(orgId, type, {});
+    if (!res.success) setError(res.error || "Failed to send notification");
+    else setResult({ sent_count: res.sent_count, failed_count: res.failed_count });
+    setSending(false);
   };
 
-  useEffect(() => {
-    if (result?.success === false) {
-      toast({
-        title: 'Failed',
-        description: result.error || 'Failed to send notification',
-        variant: 'destructive',
-      });
-    }
-  }, [result, toast]);
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Org Broadcast Notification</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); onSubmit(formValues); }} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-fg-secondary mb-2">
-              Organization
-            </label>
-            <Input
-              placeholder="Select organization"
-              {...form.getInputProps('orgId')}
-              onChange={(e) => setFormValues({ ...formValues, orgId: e.target.value })}
-            />
-          </div>
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Org broadcast</h1>
+      <p className="text-sm text-fg-secondary -mt-2">Send a typed notification to every active member of this org.</p>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {result && <Alert variant="success">Sent to {result.sent_count} member{result.sent_count === 1 ? "" : "s"} ({result.failed_count} failed).</Alert>}
 
-          <div>
-            <label className="block text-sm font-medium text-fg-secondary mb-2">
-              Notification Type
-            </label>
-            <Select
-              onValueChange={(val) => setFormValues({ ...formValues, notificationType: val })}
-              defaultValue='welcome'
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select notification type" />
-              </SelectTrigger>
-              <SelectContent>
-                {NotificationTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-fg-secondary mb-2">
-              Placeholders
-            </label>
-            <p className="text-xs text-fg-tertiary mb-2">
-              Available for selected type
-            </p>
-            <div className="space-y-1">
-              {NotificationTypeOptions.forEach((opt) => {
-                return (
-                  <div key={opt.value} className="flex items-center">
-                    <Input
-                      placeholder={opt.label}
-                      {...form.getInputProps(`ph_${opt.value}`, {
-                        value: formValues.placeholders?.[`ph_${opt.value}`] || '',
-                        onChange: (e) =>
-                          setFormValues({
-                            ...formValues,
-                            placeholders: {
-                              ...formValues.placeholders,
-                              [`ph_${opt.value}`]: e.target.value,
-                            },
-                          }),
-                      })}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Sending...' : 'Send Org Broadcast'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <Card className="p-4 space-y-4">
+        <div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Notification type</span>
+          <Select fit className="mt-1 w-64" value={type} onChange={e => setType(e.target.value as NotificationType)} options={TYPE_OPTS} />
+        </div>
+        <Button onClick={() => void send()} disabled={sending}>
+          {sending ? <Spinner size={14} /> : <Icon name="bell" size={14} />} Send org broadcast
+        </Button>
+      </Card>
+    </div>
   );
-};
+}

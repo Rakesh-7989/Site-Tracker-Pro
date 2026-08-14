@@ -1,145 +1,97 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { useRouter } from 'next/navigation';
-import { useOrgBranding } from '@/features/shell/useOrgBranding';
-import { BRANDING_PRESETS, brandingPresetToForm, brandingFormToPreset, DEFAULT_BRANDING } from '@/app/brandingQueries';
-import { getClient } from '@/lib/supabase';
+// SiteTrack Pro — Org Branding (/org/branding). "White-label" the active org:
+// tagline + accent + logo URL. Writes the org-level `branding` row (migration 23).
 
-export const OrgBrandingView = () => {
-  const [form] = useForm<{
-    logoUrl: string;
-    tagline: string;
-    accent: 'amber' | 'blue' | 'emerald' | 'violet' | 'rose';
-  }>({
-    defaultValues: {
-      logoUrl: '',
-      tagline: DEFAULT_BRANDING.tagline,
-      accent: DEFAULT_BRANDING.accent,
-    },
-  });
+import { useCallback, useEffect, useState } from "react";
+import { useAuth, useCan, useOrgSwitcher } from "@/auth";
+import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
+import { Input, Select } from "@/components/ui/forms";
+import { getClient } from "@/lib/supabase";
+import { getOrgBranding, upsertOrgBranding, BRANDING_PRESETS, type OrgBrandingForm } from "@/app/brandingQueries";
 
-  const { data: brand, isLoading } = useOrgBranding(form.getValues().orgId || undefined);
-  const { toast } = useToast();
-  const router = useRouter();
+const ACCENT_OPTS = BRANDING_PRESETS.map(p => ({ value: p.accent, label: p.label }));
 
-  const onSubmit = async (values: {
-    logoUrl: string;
-    tagline: string;
-    accent: 'amber' | 'blue' | 'emerald' | 'violet' | 'rose';
-  }) => {
-    try {
-      const client = getClient();
-      const { error } = await client
-        .from('branding')
-        .upsert({
-          ...values,
-          orgId: (await client.auth.getUser()).user.id,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'orgId' });
+export function OrgBrandingView(): JSX.Element {
+  const { session } = useAuth();
+  const { activeOrg } = useOrgSwitcher();
+  const canManage = useCan("org:branding:manage", activeOrg ? { orgId: activeOrg.orgId } : {});
+  if (!session) return <></>;
+  if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
+  if (!canManage) return <AccessDenied message="Org branding requires org admin." />;
+  return <Inner orgId={activeOrg.orgId} />;
+}
 
-      if (error) throw error;
+function Inner({ orgId }: { orgId: string }): JSX.Element {
+  const [form, setForm] = useState<OrgBrandingForm>({ logoUrl: "", tagline: "Construction Suite", accent: "blue" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
-      toast({
-        title: 'Branding updated',
-        description: 'Org branding has been saved',
+  const load = useCallback(async () => {
+    setLoading(true); setError(null);
+    const client = await getClient();
+    if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const res = await getOrgBranding(client, orgId);
+    if (res.ok && res.data) {
+      setForm({
+        logoUrl: res.data.logoUrl ?? "",
+        tagline: res.data.tagline ?? "",
+        accent: (res.data.accent as OrgBrandingForm["accent"]) || "blue",
       });
-      router.refresh();
-    } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to save branding',
-        variant: 'destructive',
-      });
+    } else if (!res.ok) {
+      setError(res.error);
     }
+    setLoading(false);
+  }, [orgId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const save = async () => {
+    setSaving(true); setError(null); setDone(false);
+    const client = await getClient();
+    if (!client) { setError("Backend not configured."); setSaving(false); return; }
+    const res = await upsertOrgBranding(client, orgId, {
+      logoUrl: form.logoUrl.trim() || null,
+      tagline: form.tagline.trim() || null,
+      accent: form.accent,
+    });
+    if (!res.ok) setError(res.error);
+    else setDone(true);
+    setSaving(false);
   };
 
-  const onPresetSelect = (presetId: string) => {
-    const preset = BRANDING_PRESETS.find((p) => p.id === presetId);
-    if (preset) {
-      form.setValue('tagline', preset.tagline);
-      form.setValue('accent', preset.accent);
-    }
-  };
+  if (loading) return <div className="grid place-items-center py-12"><Spinner size={24} /></div>;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Org Branding</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); onSubmit(form.getValues()); }} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-fg-secondary mb-2">
-              Tagline
-            </label>
-            <Input
-              placeholder="Enter org tagline"
-              {...form.getInputProps('tagline')}
-            />
-          </div>
+    <div className="max-w-3xl mx-auto space-y-4 p-4 md:p-6">
+      <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Org branding</h1>
+      <p className="text-sm text-fg-secondary -mt-2">White-label this org: tagline, accent color, and logo shown in the top bar.</p>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {done && <Alert variant="success">Branding saved.</Alert>}
 
-          <div>
-            <label className="block text-sm font-medium text-fg-secondary mb-2">
-              Accent Color
-            </label>
-            <Select
-              onValueChange={(val) => form.setValue('accent', val)}
-              defaultValue='blue'
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select accent color" />
-              </SelectTrigger>
-              <SelectContent>
-                {BRANDING_PRESETS.map((preset) => (
-                  <SelectItem key={preset.id} value={preset.accent}>
-                    {preset.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <Card className="p-4 space-y-4">
+        <div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Tagline</span>
+          <Input className="mt-1" value={form.tagline} onChange={e => setForm(prev => ({ ...prev, tagline: e.target.value }))} placeholder="e.g. Buildco Premium Homes" />
+        </div>
+        <div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Accent</span>
+          <Select fit className="mt-1 w-56" value={form.accent} onChange={e => setForm(prev => ({ ...prev, accent: e.target.value as OrgBrandingForm["accent"] }))} options={ACCENT_OPTS} />
+        </div>
+        <div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Logo URL (optional)</span>
+          <Input className="mt-1" value={form.logoUrl} onChange={e => setForm(prev => ({ ...prev, logoUrl: e.target.value }))} placeholder="https://yourbrand.com/logo.png" />
+          <p className="text-xs text-fg-tertiary mt-1">PNG / JPG / SVG. Recommended size: 120×40px.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button onClick={() => void save()} disabled={saving}>{saving ? <Spinner size={14} /> : <Icon name="check" size={14} />} Save branding</Button>
+          <div className="flex gap-2 items-center">
+            {BRANDING_PRESETS.map(p => (
+              <button key={p.id} type="button" onClick={() => setForm(prev => ({ ...prev, accent: p.accent, tagline: p.tagline }))} className="w-7 h-7 rounded-full ring-offset-2" title={`${p.label} preset`} style={{ backgroundColor: p.accent }} aria-label={`Apply ${p.label} preset`} />
+            ))}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-fg-secondary mb-2">
-              Logo URL (optional)
-            </label>
-            <Input
-              placeholder="https://example.com/logo.png"
-              {...form.getInputProps('logoUrl')}
-            />
-            <p className="text-xs text-fg-tertiary mt-1">
-              Supported formats: PNG, JPG, SVG. Recommended size: 120×40px.
-            </p>
-          </div>
-
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? 'Saving...' : 'Save Branding'}
-          </Button>
-
-          <div className="mt-4 pt-4 border-t border-default">
-            <h4 className="text-xs font-semibold text-fg-tertiary mb-2">Presets</h4>
-            <div className="grid grid-cols-2 gap-2">
-              {BRANDING_PRESETS.map((preset) => (
-                <Button
-                  key={preset.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPresetSelect(preset.id)}
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </Card>
+    </div>
   );
-};
+}

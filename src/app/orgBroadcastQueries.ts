@@ -1,5 +1,9 @@
-// Org broadcast RPC helper - uses existing notificationTemplates + emailTemplates patterns
-// Fetches from the send-org-notification Edge Function
+// SiteTrack Pro — Org broadcast RPC helper.
+// Calls the `send_org_notification` Postgres function (migration 188) via the
+// Supabase client — no HTTP edge function involved.
+
+import { getClient } from "@/lib/supabase";
+import type { NotificationType } from "@/app/notificationTemplates";
 
 export type OrgNotificationResult = {
   success: boolean;
@@ -10,28 +14,22 @@ export type OrgNotificationResult = {
 
 export const sendOrgNotification = async (
   orgId: string,
-  type: string,
-  placeholders?: Record<string, string>
+  type: NotificationType,
+  placeholders?: Record<string, string>,
 ): Promise<OrgNotificationResult> => {
-  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/send-org-notification`;
-  const fetchOptions: RequestInit = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      org_id: orgId,
-      type,
-      placeholders: placeholders || {},
-    }),
+  const client = await getClient();
+  if (!client) return { success: false, sent_count: 0, failed_count: 0, error: "Backend not configured." };
+  const { data, error } = await client.rpc("send_org_notification", {
+    p_org_id: orgId,
+    p_type: type,
+    p_placeholders: placeholders || {},
+  });
+  if (error) return { success: false, sent_count: 0, failed_count: 0, error: error.message };
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    success: row?.success !== false,
+    sent_count: Number(row?.sent_count ?? 0),
+    failed_count: Number(row?.failed_count ?? 0),
+    error: row?.error ?? null,
   };
-
-  const response = await fetch(url, fetchOptions);
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `HTTP ${response.status}`);
-  }
-
-  return data as OrgNotificationResult;
 };
