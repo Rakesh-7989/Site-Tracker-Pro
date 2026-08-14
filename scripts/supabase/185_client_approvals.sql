@@ -27,6 +27,7 @@ create extension if not exists pgcrypto;
 alter table public.drawings
   add column if not exists parent_id uuid references public.drawings(id) on delete set null,
   add column if not exists change_note text,
+  add column if not exists author_id uuid references public.profiles(id) on delete set null,
   add column if not exists approval_status text not null default 'not_requested'
     check (approval_status in ('not_requested','pending','approved','rejected','locked')),
   add column if not exists approved_by uuid references public.profiles(id) on delete set null,
@@ -61,7 +62,7 @@ drop policy if exists drawing_comments_read on public.drawing_comments;
 create policy drawing_comments_read on public.drawing_comments for select
   using (drawing_id in (
     select d.id from public.drawings d
-    where d.project_id = any(public.user_project_ids())
+    where d.project_id in (select public.user_project_ids())
       and (current_role_text() <> 'client'
            or (d.status = 'current' and 'client' = any(d.released_to)))
   ));
@@ -71,7 +72,7 @@ drop policy if exists drawing_comments_insert on public.drawing_comments;
 create policy drawing_comments_insert on public.drawing_comments for insert
   with check (drawing_id in (
     select d.id from public.drawings d
-    where d.project_id = any(public.user_project_ids())
+    where d.project_id in (select public.user_project_ids())
       and (current_role_text() <> 'client'
            or (d.status = 'current' and 'client' = any(d.released_to)))
   ));
@@ -195,8 +196,6 @@ grant select, insert on public.handover_signatures to authenticated;
 revoke all on public.share_links from anon;
 revoke all on public.drawing_comments from anon;
 revoke all on public.handover_signatures from anon;
-grant execute on function public.validate_share_link(text) to anon, authenticated;
-grant execute on function public.share_project_payload(text, text, text) to anon, authenticated;
 
 -- ── 6. Public share-link RPCs (SECURITY DEFINER — the ONLY anon surface) ─────
 --
@@ -296,8 +295,8 @@ begin
     ), '[]'::jsonb),
     'updates', coalesce((
       select jsonb_agg(jsonb_build_object('id', u.id, 'update_date', u.update_date, 'notes', u.notes,
-        'weather', u.weather, 'workers_count', u.workers_count) order by u.update_date desc limit 10)
-      from public.site_updates u where u.project_id = pid
+        'weather', u.weather, 'workers_count', u.workers_count) order by u.update_date desc)
+      from (select * from public.site_updates u where u.project_id = pid order by u.update_date desc limit 10) u
     ), '[]'::jsonb),
     'drawings', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -366,6 +365,9 @@ $$;
 
 grant execute on function public.create_share_link(uuid, text, boolean, timestamptz, int, text, boolean) to authenticated;
 revoke all on function public.create_share_link(uuid, text, boolean, timestamptz, int, text, boolean) from anon;
+
+grant execute on function public.validate_share_link(text) to anon, authenticated;
+grant execute on function public.share_project_payload(text, text, text) to anon, authenticated;
 
 DO $$ DECLARE
   dc bigint; sl bigint; hs bigint; ap bigint;

@@ -12,9 +12,9 @@ CREATE OR REPLACE FUNCTION public.send_org_notification(
 )
 RETURNS TABLE (
   success boolean,
-  sent_count integer DEFAULT 0,
-  failed_count integer DEFAULT 0,
-  error text DEFAULT NULL
+  sent_count integer,
+  failed_count integer,
+  error text
 )
 LANGUAGE plpgsql
 STABLE
@@ -28,12 +28,12 @@ DECLARE
   v_notif_title text;
   v_notif_body text;
   v_link text;
-  v_sent int DEFAULT 0;
-  v_failed int DEFAULT 0;
+  v_sent int := 0;
+  v_failed int := 0;
   v_err text;
 BEGIN
   -- Verify org exists
-  SELECT id, name INTO v_org_name FROM public.organizations WHERE id = p_org_id;
+  SELECT name INTO v_org_name FROM public.organizations WHERE id = p_org_id;
   IF NOT FOUND THEN
     RETURN QUERY SELECT false::boolean, 0::integer, 0::integer, 'Org not found'::text;
   END IF;
@@ -41,17 +41,18 @@ BEGIN
   -- Verify user has org:notifications:manage capability (checked at call site via service_role)
   -- Fetch template for this type + org + english language
   SELECT * INTO v_template FROM public.notification_templates
-  WHERE trigger = p_type AND channel = 'email' AND language = 'en';
+  WHERE trigger = p_type AND channel = 'email' AND language = 'en'
+  LIMIT 1;
 
   -- Build title/body from template if template exists, otherwise use defaults
-  IF v_template IS NOT NULL THEN
-    v_notif_title := public.generateTitle(p_type, p_placeholders);
-    v_notif_body := public.generateBody(p_type, p_placeholders);
+  IF v_template IS NOT NULL AND v_template.subject IS NOT NULL THEN
+    v_notif_title := v_template.subject;
+    v_notif_body := COALESCE(v_template.body, p_type);
     v_link := '#';
   ELSE
     -- Fallback title/body
-    v_notif_title := public.NOTIFICATION_TITLES[p_type] || ' - ' || v_org_name;
-    v_notif_body := public.NOTIFICATION_BODIES[p_type];
+    v_notif_title := p_type || ' - ' || v_org_name;
+    v_notif_body := 'You have a new ' || p_type || ' notification from ' || v_org_name || '.';
     v_link := '#';
   END IF;
 
@@ -59,35 +60,28 @@ BEGIN
   SELECT array_agg(DISTINCT om.profile_id) INTO v_recipients
   FROM public.org_members om
   WHERE om.org_id = p_org_id
-    AND om.status = 'active';
+    AND om.status = 'active'
+    AND om.removed_at IS NULL;
 
   -- Insert notifications for each recipient
   FOREACH v_user_id IN ARRAY v_recipients LOOP
-    -- Check user preference: skip if user has this type disabled
-    IF NOT EXISTS (
-      SELECT 1 FROM public.profiles p2
-      WHERE p2.id = v_user_id AND p2.notification_prefs ?| ARRAY[p_type]
-    ) THEN
-      -- Determine project_id: use first active project membership
-      SELECT pm.project_id INTO v_project_id
-      FROM public.project_members pm
-      WHERE pm.profile_id = v_user_id AND pm.status = 'active'
-      LIMIT 1;
+    -- Determine project_id: use first active project membership
+    SELECT pm.project_id INTO v_project_id
+    FROM public.project_members pm
+    WHERE pm.profile_id = v_user_id AND pm.removed_at IS NULL
+    LIMIT 1;
 
-      -- Create the notification
-      PERFORM public.create_payment_notification(
-        v_user_id,
-        v_project_id,
-        p_org_id,
-        p_type,
-        v_notif_title,
-        v_notif_body,
-        v_link
-      );
-      v_sent := v_sent + 1;
-    ELSE
-      v_failed := v_failed + 1;
-    END IF;
+    -- Create the notification
+    PERFORM public.create_payment_notification(
+      v_user_id,
+      v_project_id,
+      p_org_id,
+      p_type,
+      v_notif_title,
+      v_notif_body,
+      v_link
+    );
+    v_sent := v_sent + 1;
   END LOOP;
 
   RETURN QUERY SELECT true::boolean, v_sent::integer, v_failed::integer, NULL::text;

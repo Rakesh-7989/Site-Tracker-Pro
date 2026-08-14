@@ -135,8 +135,8 @@ export function getEnabledNotificationTypes(prefs, role) {
 export function toggleNotifType(prefs, type, role) {
   const current = { ...prefs };
   if (!current.role) current.role = role;
-  if (!current[activeRole]) current[activeRole] = {};
-  current[activeRole][type] = !current[activeRole][type];
+  if (!current[role]) current[role] = {};
+  current[role][type] = !current[role][type];
   return current;
 }
 
