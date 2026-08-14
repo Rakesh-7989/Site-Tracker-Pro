@@ -56,6 +56,7 @@ const OrgBillingView = lazy(() => import("@/features/org/OrgBillingView").then(m
 const OrgTemplatesView = lazy(() => import("@/features/org/OrgTemplatesView").then(m => ({ default: m.OrgTemplatesView })));
 const OrgApprovalsView = lazy(() => import("@/features/org/OrgApprovalsView").then(m => ({ default: m.OrgApprovalsView })));
 const OrgNotificationsView = lazy(() => import("@/features/org/OrgNotificationsView").then(m => ({ default: m.OrgNotificationsView })));
+const NotificationPreferencesView = lazy(() => import("@/features/org/NotificationPreferencesView").then(m => ({ default: m.NotificationPreferencesView })));
 const OrgIntegrationsView = lazy(() => import("@/features/org/OrgIntegrationsView").then(m => ({ default: m.OrgIntegrationsView })));
 const OrgFeaturesView = lazy(() => import("@/features/org/OrgFeaturesView").then(m => ({ default: m.OrgFeaturesView })));
 const OnboardingView = lazy(() => import("@/features/org/OnboardingView").then(m => ({ default: m.OnboardingView })));
@@ -125,6 +126,7 @@ export const router = createBrowserRouter([
       { path: "org/templates", element: <OrgTemplatesView /> },
       { path: "org/approvals", element: <OrgApprovalsView /> },
       { path: "org/notifications", element: <OrgNotificationsView /> },
+      { path: "org/notification-preferences", element: <NotificationPreferencesView /> },
       { path: "org/integrations", element: <OrgIntegrationsView /> },
       { path: "org/features", element: <OrgFeaturesView /> },
       { path: "org/onboarding", element: <OnboardingView /> },
