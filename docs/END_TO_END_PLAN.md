@@ -103,6 +103,19 @@ One multi-tenant core platform (CRM, Projects, Permission engines) + industry pl
 | **P3 — Testing loop** | Full regression with the same loop (unit → integration → smoke → build → e2e-mock). | P3.1 Full gate suite · P3.2 e2e-mock · P3.3 fix any surfaced issues via the loop | ✅ full gate green incl. **e2e-mock 11/11** (2026-08-15); surfaced + fixed the pre-existing CI lint break (see P2 row). |
 | **P4 — Release** | Ship to live. | P4.1 commit/push `prod` · P4.2 verify live 200 + live probe · P4.3 FF-merge `prod` → `main` → push | ✅ **shipped `ef4e601`** (2026-08-15): push `origin prod` → Deploy + CI green → live https://sitetrack-rakesh.vercel.app **200** → FF-merge `prod`→`main` → push. **Track B — B5 complete: storage + CAD preview done.** |
 
+## 4.5 Track D — New Scope Phases (2026-08-15, user mandate)
+
+> Method: one sub-task at a time → Deep-Dive → Plan → Build → Verify → commit on `prod` → push → verify live → FF-merge `main`. Loop repeats per phase. User unavailable; Lead takes all decisions.
+
+| Phase | Scope | Sub-tasks | Status |
+|-------|-------|-----------|--------|
+| **P-A — Column/query drift: auth.users embeds** | 5 live PGRST200 breakages: PostgREST drops FKs targeting `auth.users` from the schema cache, so `*:fk(name)` embeds fail on every call. | A1 leads.owner_id (crmQueries ×3) · A2 payments.received_by (receiptQueries) · A3 po_receipts.received_by · A4 material_requests.requested_by+approved_by · A5 corrective_actions.opened_by(+verified_by) · A6 migration 192 FK re-point → profiles · A7 live apply + REST probe + gate | ✅ **complete** (2026-08-15, migration **192** `fk_identity_to_profiles` applied live, verified): all 7 FKs `auth.users` → `public.profiles` (same `ON DELETE SET NULL`; `profiles.id` is 1:1 with `auth.users.id`). Zero data risk (all columns empty, verified). Live REST probes: pre-fix **PGRST200** on all 5 embeds → post-fix **42501** (anon legitimately lacks SELECT = embed now resolves). Full gate: tsc ✓ lint ✓ vitest 194/2303 ✓ smoke 382 ✓ build ✓. |
+| **P-B — Org project lifecycle** | Delete / pause / hold / deactivate / reactivate projects. | B1 lifecycle states (paused/on_hold/deactivated + reactivate + terminal archive) · B2 migration (status CHECK + quota) · B3 UI (list filter + tab gating + actions) · B4 tests + apply | ⬜ pending |
+| **P-C — Better project UI** | ProjectsListView redesign (search/filter/sort/stat strip/richer cards). | C1 inventory → C2 layout + controls → C3 wire queries → C4 tests | ⬜ pending |
+| **P-D — Zoho-style org signup onboarding** | Unify the two parallel org paths (/register vs /signup). | D1 deep-dive (done) → D2 unified flow → D3 UI + EF → D4 tests | ⬜ pending |
+| **P-E — Payment-at-signup + temp password + forced change** | Signup payment → email temp password → sign in → mandatory new password. | E1 fix cashfree-webhook dead end (never marks signup paid) · E2 billing_history wiring · E3 temp-password email + admin-API user · E4 force password change · E5 tests | ⬜ pending |
+| **P-F — General issues sweep** | Remaining errors/better-ideas from deep-dives. | F1 sweep → F2 fixes → F3 final re-check → testing loop → release | ⬜ pending |
+
 ### Accepted / deferred (recorded for traceability)
 - **B4 — real email/WhatsApp delivery**: blocked on provider API keys (mock SES + Meta Cloud API client shells exist). Deferred; no action without keys.
 - **B6 — white-label subdomains / mobile app / AI**: future roadmap. Deferred.
