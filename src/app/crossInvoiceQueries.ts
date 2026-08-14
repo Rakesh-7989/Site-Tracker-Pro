@@ -94,24 +94,43 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
     const projectIds = (projRes.data ?? []).map((p: any) => p.id);
     if (projectIds.length === 0) return ok([]);
 
-    // Fetch invoices for these projects with payment aggregation
+    // Fetch invoices for these projects; payments are polymorphic
+    // (target_type/target_id, no invoice_id FK) so they're fetched separately
+    // by target and grouped back onto invoices. `invoices` has no `created_at`
+    // — order by `issued_date`.
     const { data, error } = await client
       .from("invoices")
       .select(`
         id, no, amount, gst, tds, status, issued_date, due_date, project_id,
-        project:projects(id, name, type),
-        payments!invoice_id(amount, received_at)
+        project:projects(id, name, type)
       `)
       .in("project_id", projectIds)
-      .order("created_at", { ascending: false });
+      .order("issued_date", { ascending: false, nullsFirst: false });
     if (error) return dbe(error);
 
-    const invoices = ((data ?? []) as any[]).map(r => {
+    const raw = ((data ?? []) as any[]);
+    const invoiceIds = raw.map(r => String(r.id));
+    let paymentsByInvoice: Record<string, any[]> = {};
+    if (invoiceIds.length > 0) {
+      const { data: pData, error: pErr } = await client
+        .from("payments")
+        .select("target_id, amount")
+        .eq("target_type", "invoice")
+        .in("target_id", invoiceIds);
+      if (pErr) return dbe(pErr);
+      paymentsByInvoice = ((pData ?? []) as any[]).reduce<Record<string, any[]>>((acc, p) => {
+        const tid = String(p.target_id ?? "");
+        (acc[tid] ||= []).push(p);
+        return acc;
+      }, {});
+    }
+
+    const invoices = raw.map(r => {
       const amount = Number(r.amount ?? 0);
       const gst = Number(r.gst ?? 0);
       const tds = Number(r.tds ?? 0);
       const netReceivable = amount + gst - tds;
-      const received = (r.payments ?? []).reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
+      const received = (paymentsByInvoice[String(r.id)] ?? []).reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
       const outstanding = Math.max(0, netReceivable - received);
       const project = r.project as { id?: string; name?: string; type?: string } | null;
       return {

@@ -151,25 +151,71 @@ describe("getClientProject mapper", () => {
 });
 
 describe("listClientInvoices mapper", () => {
-  it("maps invoices with embedded payments + computed net/received/outstanding/status", async () => {
-    const chain = { order: () => Promise.resolve({ error: null, data: [
-      { id: "i1", no: "INV-001", amount: 100000, gst: 18000, tds: 2000, status: "sent", issued_date: "2026-08-01",
-        payments: [{ id: "p1", amount: 40000, method: "bank", received_on: "2026-08-05", reference: "R1" }] },
-    ] }) };
-    const client = { from: () => ({ select: () => ({ eq: () => chain }) }) };
+  function invoicesClient(overrides: { invoices?: Record<string, unknown>[]; payments?: Record<string, unknown>[] } = {}) {
+    const tableData: Record<string, Record<string, unknown>[]> = {
+      invoices: [
+        { id: "i1", no: "INV-001", amount: 100000, gst: 18000, tds: 2000, status: "sent", issued_date: "2026-08-01" },
+      ],
+      payments: [
+        { target_id: "i1", amount: 40000, method: "bank", received_on: "2026-08-05", reference: "R1" },
+      ],
+      ...(overrides.invoices ? { invoices: overrides.invoices } : {}),
+      ...(overrides.payments ? { payments: overrides.payments } : {}),
+    };
+    const calls: string[] = [];
+    const client = {
+      from: (t: string) => {
+        calls.push(`from:${t}`);
+        const rows = tableData[t] ?? [];
+        return {
+          select: () => ({
+            eq: (_k: string) => ({
+              in: (k2: string, ids: string[]) => {
+                calls.push(`in:${k2}`);
+                const filtered = rows.filter((r: Record<string, unknown>) => ids.includes(String(r.target_id ?? r.id)));
+                return Promise.resolve({ error: null, data: filtered });
+              },
+              order: () => Promise.resolve({ error: null, data: rows }),
+            }),
+          }),
+        };
+      },
+    };
+    return { client, calls };
+  }
+
+  it("fetches payments polymorphically and maps net/received/outstanding/status", async () => {
+    const { client, calls } = invoicesClient();
     const res = await listClientInvoices(client as never, "p1");
     expect(res.ok).toBe(true);
     if (!res.ok) return;
+    expect(calls).toEqual(["from:invoices", "from:payments", "in:target_id"]);
     expect(res.data[0]).toMatchObject({
       no: "INV-001", netReceivable: 116000, received: 40000, outstanding: 76000, paymentStatus: "partial",
     });
     expect(res.data[0].payments[0]).toMatchObject({ amount: 40000, method: "bank", reference: "R1" });
   });
-  it("surfaces DB errors", async () => {
+  it("maps zero payments to received 0 and the issued-date-derived status", async () => {
+    const { client } = invoicesClient({ payments: [] });
+    const res = await listClientInvoices(client as never, "p1");
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.data[0]).toMatchObject({ received: 0, outstanding: 116000, payments: [] });
+    expect(res.data[0].paymentStatus).toBe("overdue");
+  });
+  it("surfaces DB errors on invoices", async () => {
     const client = { from: () => ({ select: () => ({ eq: () => ({ order: () => Promise.resolve({ error: { message: "denied" }, data: null }) }) }) }) };
     const res = await listClientInvoices(client as never, "p1");
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe("denied");
+  });
+  it("surfaces DB errors on payments", async () => {
+    const invoices = () => ({ select: () => ({ eq: () => ({ order: () => Promise.resolve({ error: null, data: [{ id: "i1" }] }) }) }) });
+    const payments = () => ({ select: () => ({ eq: () => ({ in: () => Promise.resolve({ error: { message: "denied2" }, data: null }) }) }) });
+    const client = { from: (t: string) => (t === "payments" ? payments() : invoices()) };
+    const res = await listClientInvoices(client as never, "p1");
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe("denied2");
   });
 });
 

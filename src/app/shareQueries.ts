@@ -69,10 +69,11 @@ export async function getShareData(client: any, projectId: string): Promise<Shar
         .limit(10),
       client
         .from("drawings")
-        .select("id, title, type, revision, date, status, notes, files")
+        .select("id, title, type, revision, release_date, status, notes, storage_path, preview_url")
         .eq("project_id", projectId)
-        .eq("status", "released")
-        .order("date", { ascending: false }),
+        .eq("status", "current")
+        .contains("released_to", ["client"])
+        .order("release_date", { ascending: false, nullsFirst: false }),
     ]);
 
     if (projectRes.error) return { ok: false, error: String(projectRes.error.message ?? projectRes.error) };
@@ -116,10 +117,10 @@ export async function getShareData(client: any, projectId: string): Promise<Shar
       title: String(r.title ?? ""),
       type: String(r.type ?? ""),
       revision: r.revision === undefined || r.revision === null ? null : String(r.revision),
-      date: r.date === undefined || r.date === null ? null : String(r.date),
+      date: r.release_date === undefined || r.release_date === null ? null : String(r.release_date),
       status: r.status === undefined || r.status === null ? null : String(r.status),
       notes: r.notes === undefined || r.notes === null ? null : String(r.notes),
-      files: r.files === undefined || r.files === null ? null : Array.isArray(r.files) ? r.files : null,
+      files: r.storage_path == null ? (r.preview_url == null ? null : [r.preview_url]) : [r.storage_path],
     }));
 
     return { ok: true, project, milestones, updates, drawings };

@@ -207,18 +207,39 @@ export async function getClientProject(client: any, projectId: string, email: st
 
 export async function listClientInvoices(client: any, projectId: string): Promise<PResult<ClientInvoice[]>> {
   try {
+    // `invoices` has no `created_at` — order by `issued_date`. `payments` is
+    // polymorphic (target_type/target_id, no invoice_id FK) so payments are
+    // fetched separately by target and grouped back onto invoices.
     const { data, error } = await client
       .from("invoices")
-      .select("id, no, amount, gst, tds, status, issued_date, payments!invoice_id(id, amount, method, received_on, reference)")
+      .select("id, no, amount, gst, tds, status, issued_date")
       .eq("project_id", projectId)
-      .order("created_at", { ascending: false });
+      .order("issued_date", { ascending: false, nullsFirst: false });
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: ((data ?? []) as any[]).map(r => {
+
+    const invoices = ((data ?? []) as any[]);
+    const invoiceIds = invoices.map(r => String(r.id));
+    let paymentsByInvoice: Record<string, any[]> = {};
+    if (invoiceIds.length > 0) {
+      const { data: pData, error: pErr } = await client
+        .from("payments")
+        .select("target_id, amount, method, received_on, reference")
+        .eq("target_type", "invoice")
+        .in("target_id", invoiceIds);
+      if (pErr) return { ok: false, error: String(pErr.message ?? pErr) };
+      paymentsByInvoice = ((pData ?? []) as any[]).reduce<Record<string, any[]>>((acc, p) => {
+        const tid = String(p.target_id ?? "");
+        (acc[tid] ||= []).push(p);
+        return acc;
+      }, {});
+    }
+
+    return { ok: true, data: invoices.map(r => {
       const amount = Number(r.amount ?? 0);
       const gst = Number(r.gst ?? 0);
       const tds = Number(r.tds ?? 0);
       const net = netReceivable(amount, gst, tds);
-      const payments = ((r.payments ?? []) as any[]).map((p: any) => ({
+      const payments = (paymentsByInvoice[String(r.id)] ?? []).map((p: any) => ({
         id: String(p.id),
         amount: Number(p.amount ?? 0),
         method: String(p.method ?? "bank"),
