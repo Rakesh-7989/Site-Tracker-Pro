@@ -9,13 +9,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
+import { BuildNowBadge } from "@/features/dpr/BuildNowBadge";
 import { useT } from "@/i18n/I18nProvider";
+import { getClient } from "@/lib/supabase";
 import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
 import { invokeSendDpr } from "@/app/dprSubmit";
 import { downloadDprPdf, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
-import { getClient } from "@/lib/supabase";
-import { DPRStatusBadge } from "./DPRStatusBadge";
-import { BuildNowBadge } from "./BuildNowBadge";
 
 export const fmtDateTime = (iso: string): string => {
   const d = new Date(iso);
@@ -111,6 +110,11 @@ export function DPRDetailView(): JSX.Element {
 
   const lang = (row.language as "en" | "te" | "hi") ?? "en";
 
+  const whatsappShareData = {
+    phone: row.promoterPhone,
+    title: `DPR ${fmtDateTime(row.createdAt)} · ${row.transcript?.slice(0, 120) ?? "Site update"}`,
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-5 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -120,12 +124,10 @@ export function DPRDetailView(): JSX.Element {
             {t("dpr.detail.downloadPdf")}
           </Button>
           {dprWhatsAppShareEnabled({ VITE_DPR_PDF_WHATSAPP: import.meta.env.VITE_DPR_PDF_WHATSAPP as string | undefined, DEV: import.meta.env.DEV }) && (
-            <a href={waShareLink(row.promoterPhone, `DPR ${fmtDateTime(row.createdAt)} · ${row.transcript?.slice(0, 120) ?? "Site update"}`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-success hover:opacity-80">
+            <a href={waShareLink(whatsappShareData.phone, whatsappShareData.title)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-success hover:opacity-80">
               <Icon name="whatsapp" size={13} />{t("dpr.detail.shareWhatsApp")}
             </a>
           )}
-          <DPRStatusBadge status={row.status} lang={lang} size="sm" attempts={row.attempts} />
-          {row.language && <span className="text-[11px] font-mono text-fg-tertiary">{row.language.toUpperCase()}</span>}
         </div>
       </div>
 

@@ -79,6 +79,41 @@ export function waShareLink(phone: string, text: string): string {
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
+/** Open WhatsApp composer with pre-filled data.
+ *  Supports both single-phone (detail view) and multi-recipient (org composer).
+ */
+export function openWhatsAppComposer(data: {
+  phone: string;
+  title: string;
+  project?: string;
+  status?: string;
+  transcript?: string;
+}): void {
+  const { phone, title, project, status, transcript } = data;
+  // Build message text
+  let text = title;
+  if (project) text += `\nProject: ${project}`;
+  if (status) text += `\nStatus: ${status}`;
+  if (transcript) text += `\n${transcript}`;
+  // WhatsApp URL: whatsapp://send?phone=<phone>&text=<text>
+  // URL-encode the message text
+  const encodedText = encodeURIComponent(text);
+  const whatsappUrl = `https://wa.me/${phone.replace(/[^0-9]/g, "")}?text=${encodedText}`;
+  // Open in new tab
+  const win = window.open(whatsappUrl, "_blank");
+  // If popup blocked, fallback to just setting the href for user to click
+  if (!win) {
+    // Create a temporary link element to trigger the download/programmatic open
+    const link = document.createElement("a");
+    link.href = whatsappUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
 /** Filter a key/value map down to present (non-empty) rows. */
 export function rowPairs(o: Record<string, string>): Array<[string, string]> {
   return Object.entries(o).filter(([, v]) => v && v.trim().length > 0);
