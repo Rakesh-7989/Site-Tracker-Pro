@@ -21,6 +21,8 @@ import {
   deliverableObjectPath, formatBytes, type DeliverableFileRef,
 } from "@/app/deliverableStorageQueries";
 import { logDownloadEvent } from "@/app/downloadAuditQueries";
+import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
+import { isCadFileName } from "@/lib/dxfPreview";
 
 const STATUS_TONE: Record<DeliverableStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
   draft: "neutral", in_review: "info", approved: "success", rejected: "danger", issued: "success",
@@ -60,6 +62,7 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
   const [edOwnerId, setEdOwnerId] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [targetDeliverable, setTargetDeliverable] = useState<string | null>(null);
+  const [previewTarget, setPreviewTarget] = useState<{ id: string; name: string } | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -289,6 +292,11 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
                         <span className="ml-1.5 text-fg-tertiary">{formatBytes(f.size)}</span>
                       </span>
                       <span className="flex items-center gap-1 flex-shrink-0">
+                        {isCadFileName(f.name) && (
+                          <Button size="sm" variant="ghost" onClick={() => setPreviewTarget({ id: d.id, name: f.name })} title="Preview">
+                            <Icon name="eye" size={14} />
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" onClick={() => void download(d, f.name)} title="Download">
                           <Icon name="download" size={14} />
                         </Button>
@@ -306,6 +314,19 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
           ))}
         </div>
       )}
+
+      <CadPreviewModal
+        open={previewTarget !== null}
+        onClose={() => setPreviewTarget(null)}
+        fileName={previewTarget?.name ?? null}
+        label="deliverable"
+        getUrl={async () => {
+          const client = await getClient();
+          if (!client) return { ok: false, error: "Backend not configured." };
+          if (!previewTarget) return { ok: false, error: "No file selected." };
+          return deliverableFileUrl(client, deliverableObjectPath(projectId, previewTarget.id, previewTarget.name), 120);
+        }}
+      />
     </div>
   );
 }

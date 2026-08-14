@@ -31,6 +31,8 @@ const app = [
   read("src/lib/escape.ts"),
   read("src/lib/genericCsv.ts"),
   read("src/lib/contractors.ts"),
+  read("src/lib/dxfPreview.ts"),
+  read("src/features/shared/CadPreviewModal.tsx"),
   read("src/data/seed.ts"),
   read("src/auth/PlanGate.tsx"),
   read("src/features/auth/LoginScreenV3.tsx"),
@@ -324,6 +326,10 @@ const vite = read("vite.config.js");
   "phaseBars",
   "quotePriceData",
   "fmtCompactRupees",
+  "dxfPreview",
+  "parseDxf",
+  "dxfToSvg",
+  "CadPreviewModal",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

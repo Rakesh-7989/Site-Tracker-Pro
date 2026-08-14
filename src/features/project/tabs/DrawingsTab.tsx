@@ -17,6 +17,8 @@ import { logDownloadEvent } from "@/app/downloadAuditQueries";
 import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
 import { resolveDiffPair } from "@/app/drawingDiffSources";
 import type { DiffImageSource } from "@/features/shared/DiffView";
+import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
+import { isCadFileName } from "@/lib/dxfPreview";
 import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
 import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
 
@@ -42,6 +44,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const [compareOpen, setCompareOpen] = useState(false);
   const [pairIndex, setPairIndex] = useState(0);
   const [compareImages, setCompareImages] = useState<{ oldImage: DiffImageSource | null; newImage: DiffImageSource | null }>({ oldImage: null, newImage: null });
+  const [previewTarget, setPreviewTarget] = useState<{ id: string; name: string } | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -243,6 +246,11 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
                         <span className="ml-1.5 text-fg-tertiary">{formatBytes(f.size)}</span>
                       </span>
                       <span className="flex items-center gap-1 flex-shrink-0">
+                        {isCadFileName(f.name) && (
+                          <Button size="sm" variant="ghost" onClick={() => setPreviewTarget({ id: r.id, name: f.name })} title="Preview">
+                            <Icon name="eye" size={14} />
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" onClick={() => void download(r, f.name)} title="Download">
                           <Icon name="download" size={14} />
                         </Button>
@@ -281,6 +289,19 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
           <div className="text-sm text-fg-secondary">No two-revision pairs to compare.</div>
         )}
       </Modal>
+
+      <CadPreviewModal
+        open={previewTarget !== null}
+        onClose={() => setPreviewTarget(null)}
+        fileName={previewTarget?.name ?? null}
+        label="drawing"
+        getUrl={async () => {
+          const client = await getClient();
+          if (!client) return { ok: false, error: "Backend not configured." };
+          if (!previewTarget) return { ok: false, error: "No file selected." };
+          return drawingFileUrl(client, drawingObjectPath(projectId, previewTarget.id, previewTarget.name), 120);
+        }}
+      />
     </div>
   );
 }

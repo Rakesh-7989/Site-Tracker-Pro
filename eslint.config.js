@@ -57,7 +57,7 @@ export default [
   {
     // Test files
     files: ["tests/**/*.{js,jsx}"],
-    languageOptions: { globals: { ...globals.node } },
+    languageOptions: { globals: { ...globals.node, describe: "readonly", test: "readonly", it: "readonly", expect: "readonly", vi: "readonly", beforeEach: "readonly", afterEach: "readonly", beforeAll: "readonly", afterAll: "readonly" } },
   },
   {
     // Build/script files (Node runtime — incl. doc-build scripts)
