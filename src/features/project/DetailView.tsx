@@ -12,7 +12,7 @@ import { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 import { useAuth, resolveCapabilities } from "@/auth";
-import { Card, Icon, Spinner, Badge } from "@/components/ui/atoms";
+import { Card, Icon, Spinner, Badge, StatusBadge } from "@/components/ui/atoms";
 import { Tabs, tabButtonId, tabPanelId } from "@/components/ui/Tabs";
 import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
@@ -192,6 +192,7 @@ export function DetailView(): JSX.Element {
         <div className="mt-1 flex items-center gap-2 flex-wrap">
           <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">{project.name}</h1>
           <Badge tone="info">{project.type}</Badge>
+          {project.status != null && <StatusBadge status={project.status} />}
         </div>
       </div>
 

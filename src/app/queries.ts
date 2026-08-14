@@ -7,6 +7,8 @@
 
 import type { ProjectType, ProjectTierRole, ConstructionIndustry, AuthSession } from "@/auth";
 import { isProjectTierRole } from "@/auth";
+import type { ProjectLifecycleStatus } from "@/lib/projectLifecycle";
+import { isProjectLifecycleStatus } from "@/lib/projectLifecycle";
 
 export interface ProjectSummary {
   id: string;
@@ -14,6 +16,7 @@ export interface ProjectSummary {
   type: ProjectType;
   status: string | null;
   location: string | null;
+  archivedAt: string | null;
   industrySubtype?: ConstructionIndustry | null;
 }
 
@@ -74,7 +77,7 @@ export async function listProjectsForOrg(
   try {
     let query = client
       .from("projects")
-      .select("id, name, type, status, location, industry_subtype")
+      .select("id, name, type, status, location, archived_at, industry_subtype")
       .eq("org_id", orgId);
     if (scope.mode === "member") {
       // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
@@ -90,6 +93,7 @@ export async function listProjectsForOrg(
       type: (r.type as ProjectType) ?? "construction",
       status: r.status === undefined || r.status === null ? null : String(r.status),
       location: r.location === undefined || r.location === null ? null : String(r.location),
+      archivedAt: r.archived_at === undefined || r.archived_at === null ? null : String(r.archived_at),
       industrySubtype: r.industry_subtype == null ? null : (r.industry_subtype as ConstructionIndustry),
     }));
     return { ok: true, data: projects };
@@ -135,7 +139,7 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
   try {
     const { data, error } = await client
       .from("projects")
-      .select("id, name, type, status, location, org_id, start_date, industry_subtype")
+      .select("id, name, type, status, location, org_id, start_date, industry_subtype, archived_at")
       .eq("id", projectId)
       .maybeSingle();
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -152,6 +156,7 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
         orgId: String(r.org_id),
         startedAt: r.start_date == null ? null : String(r.start_date),
         completedAt: null,
+        archivedAt: r.archived_at == null ? null : String(r.archived_at),
         industrySubtype: r.industry_subtype == null ? null : (r.industry_subtype as ConstructionIndustry),
       },
     };
@@ -186,6 +191,117 @@ export async function listProjectMembers(client: any, projectId: string): Promis
         };
       });
     return { ok: true, data: members };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+// ── Project lifecycle (P-B) ────────────────────────────────────────────────
+
+export interface ProjectLifecyclePatch {
+  status: ProjectLifecycleStatus;
+  archivedAt: string | null;
+}
+
+/**
+ * Transition a project's lifecycle status (active ⇄ paused/on_hold/deactivated,
+ * or → completed/cancelled). RLS (`update_project_architect`, migration 116)
+ * gates who may update. Returns the new status.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function setProjectStatus(
+  client: any,
+  projectId: string,
+  status: ProjectLifecycleStatus,
+): Promise<QueryResult<ProjectLifecyclePatch>> {
+  try {
+    if (!isProjectLifecycleStatus(status)) {
+      return { ok: false, error: `Invalid project status: ${String(status)}` };
+    }
+    const { data, error } = await client
+      .from("projects")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", projectId)
+      .select("status, archived_at")
+      .single();
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return {
+      ok: true,
+      data: {
+        status: isProjectLifecycleStatus(data.status) ? data.status : "active",
+        archivedAt: data.archived_at == null ? null : String(data.archived_at),
+      },
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * Archive a project (soft delete — sets `archived_at`). Hard-hides it from the
+ * active list and frees its quota slot (migrations 35/97 count only
+ * `archived_at IS NULL`). Gated by `project:archive`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function archiveProject(client: any, projectId: string): Promise<QueryResult<ProjectLifecyclePatch>> {
+  try {
+    const { data, error } = await client
+      .from("projects")
+      .update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("id", projectId)
+      .is("archived_at", null)
+      .select("status, archived_at")
+      .single();
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return {
+      ok: true,
+      data: {
+        status: isProjectLifecycleStatus(data.status) ? data.status : "active",
+        archivedAt: data.archived_at == null ? null : String(data.archived_at),
+      },
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * Restore an archived project — clears `archived_at` and returns status to
+ * `active`. Gated by `project:restore`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function restoreProject(client: any, projectId: string): Promise<QueryResult<ProjectLifecyclePatch>> {
+  try {
+    const { data, error } = await client
+      .from("projects")
+      .update({ archived_at: null, status: "active", updated_at: new Date().toISOString() })
+      .eq("id", projectId)
+      .not("archived_at", "is", null)
+      .select("status, archived_at")
+      .single();
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return {
+      ok: true,
+      data: {
+        status: isProjectLifecycleStatus(data.status) ? data.status : "active",
+        archivedAt: null,
+      },
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * Hard-delete a project. Irreversible — superadmin only (frontend gates on
+ * `project:delete`). Child rows cascade via their FKs.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function deleteProject(client: any, projectId: string): Promise<QueryResult<null>> {
+  try {
+    const { error } = await client.from("projects").delete().eq("id", projectId);
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: null };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
