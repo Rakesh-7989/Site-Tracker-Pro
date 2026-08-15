@@ -18,6 +18,14 @@ export interface ProjectSummary {
   location: string | null;
   archivedAt: string | null;
   industrySubtype?: ConstructionIndustry | null;
+  /** 0–100 completion percent (default 0). */
+  progress: number;
+  /** Sanctioned budget in rupees (bigint; null = unset). */
+  budget: number | null;
+  startDate: string | null;
+  expectedEndDate: string | null;
+  clientName: string | null;
+  description: string | null;
 }
 
 export interface ProjectDetail extends ProjectSummary {
@@ -77,7 +85,7 @@ export async function listProjectsForOrg(
   try {
     let query = client
       .from("projects")
-      .select("id, name, type, status, location, archived_at, industry_subtype")
+      .select("id, name, type, status, location, archived_at, industry_subtype, progress, budget, start_date, expected_end_date, client_name, description")
       .eq("org_id", orgId);
     if (scope.mode === "member") {
       // PostgREST ignores `IN ()` on an empty array — short-circuit instead.
@@ -95,6 +103,12 @@ export async function listProjectsForOrg(
       location: r.location === undefined || r.location === null ? null : String(r.location),
       archivedAt: r.archived_at === undefined || r.archived_at === null ? null : String(r.archived_at),
       industrySubtype: r.industry_subtype == null ? null : (r.industry_subtype as ConstructionIndustry),
+      progress: Number(r.progress ?? 0),
+      budget: r.budget === undefined || r.budget === null ? null : Number(r.budget),
+      startDate: r.start_date === undefined || r.start_date === null ? null : String(r.start_date),
+      expectedEndDate: r.expected_end_date === undefined || r.expected_end_date === null ? null : String(r.expected_end_date),
+      clientName: r.client_name === undefined || r.client_name === null ? null : String(r.client_name),
+      description: r.description === undefined || r.description === null ? null : String(r.description),
     }));
     return { ok: true, data: projects };
   } catch (e) {
@@ -139,7 +153,7 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
   try {
     const { data, error } = await client
       .from("projects")
-      .select("id, name, type, status, location, org_id, start_date, industry_subtype, archived_at")
+      .select("id, name, type, status, location, org_id, start_date, industry_subtype, archived_at, progress, budget, expected_end_date, client_name, description")
       .eq("id", projectId)
       .maybeSingle();
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -158,6 +172,12 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
         completedAt: null,
         archivedAt: r.archived_at == null ? null : String(r.archived_at),
         industrySubtype: r.industry_subtype == null ? null : (r.industry_subtype as ConstructionIndustry),
+        progress: Number(r.progress ?? 0),
+        budget: r.budget == null ? null : Number(r.budget),
+        startDate: r.start_date == null ? null : String(r.start_date),
+        expectedEndDate: r.expected_end_date == null ? null : String(r.expected_end_date),
+        clientName: r.client_name == null ? null : String(r.client_name),
+        description: r.description == null ? null : String(r.description),
       },
     };
   } catch (e) {

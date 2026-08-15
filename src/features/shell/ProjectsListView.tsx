@@ -1,14 +1,18 @@
-// SiteTrack Pro — v3 projects list with lifecycle management (P-B).
+// SiteTrack Pro — v3 projects list with lifecycle management (P-B) + redesign (P-C).
 //
 // Lists the active org's projects via the typed query helper. Adds:
 //   * lifecycle filter chips (All / Active / Paused / On hold / Deactivated /
 //     Completed / Cancelled / Archived);
-//   * status-coded tone badges (design-system tokens via projectLifecycle);
+//   * stat strip (live / paused+hold / completed / cancelled / archived) from
+//     the pure `projectRollup` helper;
+//   * client-side search (name / location / client / description) + sort
+//     (name / status / location / progress / budget / start date);
+//   * richer cards: progress bar, budget, dates, client, description;
 //   * per-card lifecycle actions menu (pause / hold / deactivate / reactivate /
 //     complete / cancel / archive / restore / delete) — capability-gated.
 // RLS (`update_project_architect`, migration 116) enforces writes server-side.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useOrgSwitcher, useCan, RequireCapability } from "@/auth";
@@ -18,8 +22,14 @@ import {
   listProjectsForOrg, memberProjectScope, type ProjectSummary,
   setProjectStatus, archiveProject, restoreProject, deleteProject,
 } from "@/app/queries";
-import { Card, Button, Icon, Spinner, Badge, Alert } from "@/components/ui/atoms";
+import { fmtCompactRupees } from "@/app/financeQueries";
+import { Card, Button, Icon, Spinner, Badge, Alert, StatCard, ProgressBar } from "@/components/ui/atoms";
 import { DropdownMenu, DropdownItem } from "@/components/ui";
+import { Input, Select } from "@/components/ui/forms";
+import {
+  filterProjects, projectRollup, sortProjects, PROJECT_SORT_KEYS,
+  type ProjectSortKey, type SortDirection,
+} from "@/lib/projectList";
 import {
   asProjectLifecycleStatus,
   PROJECT_STATUS_LABEL,
@@ -76,6 +86,9 @@ export function ProjectsListView(): JSX.Element {
   const canDelete = useCan("project:delete", orgCtx);
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [filter, setFilter] = useState<LifecycleFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<ProjectSortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDirection>("asc");
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -150,14 +163,21 @@ export function ProjectsListView(): JSX.Element {
     await runLifecycleAction(client, p, (c, id) => deleteProject(c, id));
   }
 
-  const visible = state.kind === "ready"
-    ? state.projects.filter(p => {
-        const archived = p.archivedAt != null;
-        if (filter === "all") return !archived;
-        if (filter === "archived") return archived;
-        return !archived && isProjectLifecycleStatus(p.status) && p.status === filter;
-      })
-    : [];
+  const rollup = useMemo(
+    () => (state.kind === "ready" ? projectRollup(state.projects) : undefined),
+    [state],
+  );
+
+  const visible = useMemo(() => {
+    if (state.kind !== "ready") return [];
+    const filtered = state.projects.filter(p => {
+      const archived = p.archivedAt != null;
+      if (filter === "all") return !archived;
+      if (filter === "archived") return archived;
+      return !archived && isProjectLifecycleStatus(p.status) && p.status === filter;
+    });
+    return sortProjects(filterProjects(filtered, query), sortKey, sortDir);
+  }, [state, filter, query, sortKey, sortDir]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
@@ -191,23 +211,63 @@ export function ProjectsListView(): JSX.Element {
         </Card>
       )}
 
+      {state.kind === "ready" && rollup && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <StatCard label="Live" value={rollup.total} sub={`${rollup.totalBudget > 0 ? fmtCompactRupees(rollup.totalBudget) : "—"} budget`} accent="orange" />
+          <StatCard label="Active" value={rollup.active} sub={`${rollup.paused + rollup.onHold} paused / hold`} accent="emerald" />
+          <StatCard label="Completed" value={rollup.completed} accent="blue" />
+          <StatCard label="Cancelled" value={rollup.cancelled} accent="red" />
+          <StatCard label="Archived" value={rollup.archived} accent="violet" />
+        </div>
+      )}
+
       {state.kind === "ready" && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {FILTERS.map(f => (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setFilter(f.key)}
-              className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition",
-                filter === f.key
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-fg-secondary hover:text-fg-primary",
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              fit
+              leftIcon={<Icon name="search" size={14} />}
+              placeholder="Search projects…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-56"
+            />
+            <div className="flex items-center gap-1.5">
+              <Select
+                fit
+                compact
+                aria-label="Sort by"
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value as ProjectSortKey)}
+                options={PROJECT_SORT_KEYS.map(({ key, label }) => ({ value: key, label }))}
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                aria-label={sortDir === "asc" ? "Sort ascending" : "Sort descending"}
+                onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))}
+              >
+                <Icon name="chevron" size={14} className={cn(sortDir === "desc" && "rotate-180")} />
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {FILTERS.map(f => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  "px-3 py-1 rounded-full text-xs font-medium transition",
+                  filter === f.key
+                    ? "bg-accent text-white"
+                    : "bg-bg-secondary text-fg-secondary hover:text-fg-primary",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -240,7 +300,13 @@ export function ProjectsListView(): JSX.Element {
                 <div className="flex items-start justify-between gap-2">
                   <Link to={`/projects/${p.id}`} className="min-w-0 flex-1">
                     <div className="font-semibold text-fg-primary truncate">{p.name}</div>
-                    {p.location && <div className="text-xs text-fg-secondary mt-0.5 truncate">{p.location}</div>}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-fg-secondary">
+                      {p.location && <span className="truncate">{p.location}</span>}
+                      {p.clientName && <span className="truncate">Client: {p.clientName}</span>}
+                    </div>
+                    {p.description && (
+                      <div className="text-xs text-fg-tertiary mt-1 line-clamp-2">{p.description}</div>
+                    )}
                   </Link>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge tone={TYPE_TONE[p.type] ?? "neutral"}>{p.type}</Badge>
@@ -288,6 +354,24 @@ export function ProjectsListView(): JSX.Element {
                     )}
                   </div>
                 </div>
+
+                {!archived && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ProgressBar value={p.progress} ariaLabel={`${p.name} progress`} className="flex-1" />
+                      <span className="text-xs text-fg-secondary shrink-0">{Math.min(Math.max(p.progress || 0, 0), 100)}%</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-secondary">
+                      {typeof p.budget === "number" && (
+                        <span className="flex items-center gap-1">
+                          <Icon name="wallet" size={12} />{fmtCompactRupees(p.budget)}
+                        </span>
+                      )}
+                      {p.startDate && <span>Start {p.startDate}</span>}
+                      {p.expectedEndDate && <span>Due {p.expectedEndDate}</span>}
+                    </div>
+                  </div>
+                )}
               </Card>
             );
           })}
