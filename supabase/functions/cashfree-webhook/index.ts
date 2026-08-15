@@ -1,11 +1,19 @@
 // Edge Function: cashfree-webhook
 //
-// Cashfree POSTs lifecycle events here (mandate signed, payment succeeded,
-// payment failed, subscription cancelled). We:
-//   1. Verify the HMAC-SHA256 signature using the WEBHOOK secret.
-//   2. Map the event to a subscription row update via applyWebhookEvent().
-//   3. Upsert into `subscriptions` (service_role bypasses RLS).
-//   4. Record an audit_log_v2 entry via the SECURITY DEFINER RPC.
+// Cashfree POSTs two kinds of events here:
+//   (A) SUBSCRIPTION lifecycle events (mandate signed, payment succeeded,
+//       payment failed, subscription cancelled) → mapped onto the
+//       `subscriptions` row via applyWebhookEvent().
+//   (B) PAYMENT LINK events (type "PAYMENT_LINK_EVENT") — the one-time signup
+//       payment created by cashfree-checkout. Reconciled against the
+//       `signup_requests` row (payment_ref = Cashfree link_id, or the
+//       link_meta.signup_request_id echoed back) and marked paid when the link
+//       settles PAID. billing_history is seeded LATER at org creation
+//       (review_signup_request) because billing_history.org_id is NOT NULL and
+//       no org exists at payment time.
+//
+// For every OTHER event: return 200 (ack) so Cashfree stops retrying — never
+// 4xx a well-formed, signature-valid event we simply don't act on.
 //
 // Deploy:
 //   supabase functions deploy cashfree-webhook --no-verify-jwt
@@ -46,14 +54,39 @@ Deno.serve(async (req) => {
     return text("Invalid signature", 401);
   }
 
-  let event: { type?: string; event_type?: string; data?: { subscription?: { subscription_id?: string } } };
+  let event: {
+    type?: string;
+    event_type?: string;
+    data?: {
+      subscription?: { subscription_id?: string };
+      // Payment-link event fields (type "PAYMENT_LINK_EVENT")
+      link_id?: string;
+      link_status?: string;
+      link_amount_paid?: string | number;
+      link_meta?: { signup_request_id?: string };
+      order?: { order_id?: string; transaction_status?: string; order_amount?: string | number };
+    };
+  };
   try { event = JSON.parse(rawBody); }
   catch { return text("Invalid JSON", 400); }
 
-  const subId = event.data?.subscription?.subscription_id;
-  if (!subId) return text("No subscription_id in event", 400);
-
   const supa = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+  const data = event.data || {};
+  const linkId = data.link_id;
+  // Cashfree payment-link webhooks use type "PAYMENT_LINK_EVENT" with
+  // data.link_id / data.link_status — distinct from subscription events.
+  const isPaymentLinkEvent =
+    Boolean(linkId)
+    || event.type === "PAYMENT_LINK_EVENT"
+    || Boolean(data.link_status);
+
+  if (isPaymentLinkEvent) {
+    return handlePaymentLinkEvent(supa, data, { resendKey: RESEND_API_KEY });
+  }
+
+  const subId = data.subscription?.subscription_id;
+  if (!subId) return text("No subscription_id in event", 400);
 
   // Load current row (may not exist yet if this is the first event)
   const { data: current, error: loadErr } = await supa
@@ -115,6 +148,134 @@ Deno.serve(async (req) => {
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+// Handle a Cashfree PAYMENT_LINK_EVENT (one-time signup payment from
+// cashfree-checkout). Reconcile against signup_requests and, on PAID, mark the
+// row paid + record the gateway charge. billing_history is NOT written here —
+// it needs the org that review_signup_request creates on approval (E2).
+async function handlePaymentLinkEvent(
+  supa: ReturnType<typeof createClient>,
+  data: {
+    link_id?: string;
+    link_status?: string;
+    link_amount_paid?: string | number;
+    link_meta?: { signup_request_id?: string };
+    order?: { order_id?: string; transaction_status?: string; order_amount?: string | number };
+  },
+  opts: { resendKey?: string },
+): Promise<Response> {
+  const linkId = String(data.link_id ?? "");
+  // The checkout echoes signup_request_id in link_meta; fall back to matching
+  // the stashed payment_ref (= Cashfree link_id) stored by cashfree-checkout.
+  const metaReqId = data.link_meta?.signup_request_id ? String(data.link_meta.signup_request_id) : null;
+
+  let query = supa.from("signup_requests").select("id, payment_status, payment_ref, contact_name, email, firm_name").limit(1);
+  if (metaReqId) query = query.eq("id", metaReqId);
+  else if (linkId) query = query.eq("payment_ref", linkId);
+  else return text("ok (no link id)", 200);
+
+  const { data: rows, error: findErr } = await query;
+  if (findErr) {
+    console.error("signup_requests lookup failed:", findErr);
+    return text("db-error", 500);
+  }
+  const row = Array.isArray(rows) && rows.length ? (rows[0] as Record<string, unknown>) : null;
+
+  const linkStatus = String(data.link_status ?? "").toUpperCase();
+  const orderStatus = String((data.order as Record<string, unknown> | undefined)?.transaction_status ?? "").toUpperCase();
+  const paid = linkStatus === "PAID" || orderStatus === "SUCCESS";
+  const cancelledOrExpired = linkStatus === "EXPIRED" || linkStatus === "CANCELLED";
+
+  if (!row) {
+    // Unknown link — ack so Cashfree stops retrying (no signup to update).
+    console.warn("cashfree-webhook: payment-link event for unknown signup", { linkId, linkStatus, metaReqId });
+    return text("ok (orphan payment link)", 200);
+  }
+
+  const requestId = String(row.id);
+  const alreadyPaid = String(row.payment_status ?? "unpaid") === "paid";
+
+  if (!paid) {
+    // Failed/expired/cancelled/partial — leave unpaid. Ack (no retry storm).
+    if (alreadyPaid) {
+      // Already paid from an earlier event; a late non-PAID echo must not flip it.
+      console.log("cashfree-webhook: late non-PAID echo ignored for paid signup", { requestId, linkStatus });
+    } else {
+      console.log("cashfree-webhook: payment link not paid", { requestId, linkId, linkStatus, orderStatus });
+    }
+    return text("ok", 200);
+  }
+
+  if (alreadyPaid) {
+    // Idempotent — Cashfree may re-deliver a PAID event.
+    return text("ok (already paid)", 200);
+  }
+
+  // Gateway charge in paise: order.order_amount is paise; link_amount_paid is
+  // INR (minor-unit? no — currency units), so convert when present.
+  const orderAmount = Number((data.order as Record<string, unknown> | undefined)?.order_amount);
+  const linkAmountPaid = Number(data.link_amount_paid);
+  const amountPaise = Number.isFinite(orderAmount) && orderAmount > 0
+    ? Math.round(orderAmount)
+    : Number.isFinite(linkAmountPaid) && linkAmountPaid > 0
+      ? Math.round(linkAmountPaid * 100)
+      : null;
+
+  const patch: Record<string, unknown> = { payment_status: "paid", paid_at: new Date().toISOString() };
+  if (amountPaise != null && amountPaise > 0) patch.paid_amount_paise = amountPaise;
+  // Keep the stashed payment_ref (link id) as the gateway reference.
+  if (linkId) patch.payment_ref = linkId;
+
+  const { error: updErr } = await supa
+    .from("signup_requests")
+    .update(patch)
+    .eq("id", requestId);
+  if (updErr) {
+    console.error("signup_requests paid-update failed:", updErr);
+    return text("update failed", 500);
+  }
+
+  console.log("cashfree-webhook: signup marked paid by gateway", { requestId, linkId, amountPaise });
+  notifySignupPaid(supa, row, { resendKey: opts.resendKey }).catch((e) =>
+    console.warn("paid-email notification failed:", e),
+  );
+
+  return text("ok", 200);
+}
+
+// Fire-and-forget confirmation email when RESEND is configured.
+async function notifySignupPaid(
+  supa: ReturnType<typeof createClient>,
+  row: Record<string, unknown>,
+  opts: { resendKey?: string },
+): Promise<void> {
+  const key = opts.resendKey;
+  if (!key) return;
+  const to = String(row.email ?? "");
+  if (!to) return;
+  const firm = String(row.firm_name ?? "Your firm");
+  const contact = String(row.contact_name ?? "");
+
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
+      <h2 style="color:#16a34a">Payment received</h2>
+      <p>Hi ${esc(contact || "there")},</p>
+      <p>We received your payment for the <b>${esc(firm)}</b> SiteTrack Pro workspace.</p>
+      <p>Our team will provision your account shortly and email your sign-in details.</p>
+      <p style="color:#78716c;font-size:13px">- Team SiteTrack Pro</p>
+    </div>`;
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ from, to, subject: `Payment received — ${firm}`, html }),
+    });
+    if (!r.ok) console.warn("notifySignupPaid: Resend rejected", { to, status: r.status });
+  } catch (e) {
+    console.warn("notifySignupPaid: fetch failed", { to, err: String(e) });
+  }
+}
 
 async function notifyOrgAdmins(
   supa: ReturnType<typeof createClient>,

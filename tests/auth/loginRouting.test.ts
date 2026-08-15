@@ -75,4 +75,22 @@ describe("login lane routing", () => {
     expect(postLoginFallbackPath("staff")).toBe("/admin");
     expect(postLoginFallbackPath("org")).toBe("/dashboard");
   });
+
+  // P-E: temp-password users must pick a new password before entering the app.
+  // The guard lives in the single post-login decision point, so it wins over
+  // staff routing, the org dashboard, and the already-signed-in <Navigate> path.
+  it("forces a password change for temp-password users before the app (org lane)", () => {
+    const tmp = session({ mustChangePassword: true });
+    expect(postLoginPathForSession(tmp, "org")).toBe("/auth/change-password");
+  });
+
+  it("forces a password change for temp-password staff before the platform area", () => {
+    const tmp = session({ isStaff: true, staffTier: "owner", mustChangePassword: true }, null);
+    expect(postLoginPathForSession(tmp, "staff")).toBe("/auth/change-password");
+  });
+
+  it("normal users are unaffected by the gate", () => {
+    const normal = session({ mustChangePassword: false });
+    expect(postLoginPathForSession(normal, "org")).toBe("/dashboard");
+  });
 });

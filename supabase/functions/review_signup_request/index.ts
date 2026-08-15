@@ -28,6 +28,23 @@ const json = (data: unknown, status: number): Response =>
 const esc = (s: string): string => s.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] || c));
 const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
 
+// P-E: approved applicants sign in with a generated temp password (emailed),
+// then MUST change it on first login (profiles.must_change_password = true).
+function generateTempPassword(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const all = upper + lower + digits;
+  let pw = "";
+  pw += upper[crypto.getRandomValues(new Uint8Array(1))[0] % upper.length];
+  pw += lower[crypto.getRandomValues(new Uint8Array(1))[0] % lower.length];
+  pw += digits[crypto.getRandomValues(new Uint8Array(1))[0] % digits.length];
+  for (let i = 0; i < 9; i++) {
+    pw += all[crypto.getRandomValues(new Uint8Array(1))[0] % all.length];
+  }
+  return pw.split("").sort(() => crypto.getRandomValues(new Uint8Array(1))[0] - 128).join("");
+}
+
 function slugify(name: string): string {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30) || "org";
   return `${base}-${crypto.randomUUID().slice(0, 6)}`;
@@ -56,16 +73,88 @@ async function createOrganization(admin, firm: string, plan: string, staffId: st
     .single();
 }
 
-async function ensureApplicantProfile(admin, userId: string, contact: string, email: string, consentVersion?: string | null) {
+async function ensureApplicantProfile(admin, userId: string, contact: string, email: string, consentVersion?: string | null, mustChangePassword = false) {
   const name = contact.trim() || email.split("@")[0] || "SiteTrack user";
   const profile: Record<string, unknown> = { id: userId, name, role: "client" };
   if (consentVersion) {
     profile.consent_version = consentVersion;
     profile.consent_updated_at = new Date().toISOString();
   }
+  if (mustChangePassword) profile.must_change_password = true;
   return await admin
     .from("profiles")
     .upsert(profile, { onConflict: "id", ignoreDuplicates: true });
+}
+
+async function sendTempPasswordEmail(
+  to: string,
+  firm: string,
+  plan: string,
+  tempPassword: string,
+  loginUrl: string,
+): Promise<boolean> {
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) return false;
+
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="width:48px;height:48px;border-radius:12px;background:#ea580c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">S</div>
+      </div>
+      <h2 style="color:#1c1917;text-align:center">Your SiteTrack Pro workspace is ready</h2>
+      <p style="color:#57534e">Hi ${esc(firm)} team,</p>
+      <p style="color:#57534e">Your workspace on the <b>${esc(PLAN_LABEL[plan] || plan)}</b> plan is approved and ready.
+         Sign in with the temporary password below.</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#fafaf9;border-radius:8px;font-size:14px">
+        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Organization</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(firm)}</td></tr>
+        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Email</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(to)}</td></tr>
+        <tr><td style="padding:10px 16px;color:#78716c">Temporary password</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;font-family:monospace;letter-spacing:1px">${esc(tempPassword)}</td></tr>
+      </table>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13px;color:#991b1b">
+        <strong>Important:</strong> You must change this password after your first sign-in.
+      </div>
+      <p style="text-align:center;margin:28px 0">
+        <a href="${esc(loginUrl)}" style="background:#ea580c;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">
+          Sign in to SiteTrack Pro
+        </a>
+      </p>
+      <p style="color:#78716c;font-size:13px;text-align:center">- Team SiteTrack Pro</p>
+    </div>`;
+
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ from, to, subject: `Your SiteTrack Pro workspace is ready — ${firm}`, html }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+// E2: seed billing_history for gateway-paid signups at org creation (org_id
+// exists only now). Non-fatal — telemetry failure must not block provisioning.
+async function seedBillingHistory(admin, orgId: string, reqRow: Record<string, unknown>): Promise<boolean> {
+  const paid = String(reqRow.payment_status ?? "unpaid") === "paid";
+  const amountPaise = Number(reqRow.paid_amount_paise);
+  if (!paid || !Number.isFinite(amountPaise) || amountPaise <= 0) return false;
+
+  const { error } = await admin.from("billing_history").insert({
+    org_id: orgId,
+    provider: "cashfree",
+    external_id: reqRow.payment_ref == null ? null : String(reqRow.payment_ref),
+    amount: Math.round(amountPaise),
+    status: "succeeded",
+    paid_at: reqRow.paid_at == null ? null : String(reqRow.paid_at),
+    payload: { source: "signup_gateway", signup_request_id: String(reqRow.id) },
+  });
+  if (error) {
+    console.warn("seedBillingHistory: billing_history insert failed (non-fatal):", error.message);
+    return false;
+  }
+  return true;
 }
 
 async function sendBrandedInvite(
@@ -195,19 +284,29 @@ Deno.serve(async (req: Request): Promise<Response> => {
   let userId: string | null = null;
   let emailSent = false;
   let existingUser = false;
+  let tempPasswordIssued = false;
   const resendKey = Deno.env.get("RESEND_API_KEY");
 
   if (resendKey) {
-    const { data: inviteData, error: inviteErr } = await admin.auth.admin.generateLink({
-      type: "invite",
+    // P-E: for a brand-new applicant, create the auth user via the admin API
+    // with a generated temp password (email it), and force a password change on
+    // first login. Existing accounts keep the magic-link path.
+    const tempPassword = generateTempPassword();
+    const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
-      options: { redirectTo, data: { name: contact } },
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { name: contact },
     });
 
-    if (inviteErr || !inviteData?.user) {
-      if (!isAlreadyRegistered(inviteErr?.message)) {
+    if (!createErr && created?.user?.id) {
+      userId = created.user.id;
+      tempPasswordIssued = true;
+      emailSent = await sendTempPasswordEmail(email, firm, plan, tempPassword, redirectTo);
+    } else {
+      if (!isAlreadyRegistered(createErr?.message)) {
         await rollbackOrg();
-        return json({ ok: false, error: "invite-link-failed", detail: inviteErr?.message }, 502);
+        return json({ ok: false, error: "create-user-failed", detail: createErr?.message }, 502);
       }
 
       const { data: loginData, error: loginErr } = await admin.auth.admin.generateLink({
@@ -228,9 +327,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       userId = loginData.user.id;
       existingUser = true;
       emailSent = await sendBrandedInvite(email, firm, plan, String(loginData.properties?.action_link ?? redirectTo), true);
-    } else {
-      userId = inviteData.user.id;
-      emailSent = await sendBrandedInvite(email, firm, plan, String(inviteData.properties?.action_link ?? redirectTo));
     }
   } else {
     const { data: inviteData, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
@@ -273,7 +369,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, error: "auth-user-missing" }, 502);
   }
 
-  const { error: profileErr } = await ensureApplicantProfile(admin, userId, contact, email, reqRow.consent_version);
+  const { error: profileErr } = await ensureApplicantProfile(admin, userId, contact, email, reqRow.consent_version, tempPasswordIssued);
   if (profileErr) {
     await rollbackOrg();
     return json({ ok: false, error: "profile-repair-failed", detail: profileErr.message }, 500);
@@ -287,6 +383,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, error: "org-member-failed", detail: omErr.message }, 500);
   }
 
+  // E2: gateway-paid signups get their charge into billing_history now that the
+  // org exists (orgs view MRR + platform billing). Non-fatal on failure.
+  const billingSeeded = await seedBillingHistory(admin, orgId, reqRow);
+
   const { error: updErr } = await admin
     .from("signup_requests")
     .update({ status: "approved", review_notes: notes, reviewed_by: auth.user.id, reviewed_at: new Date().toISOString(), created_org_id: orgId })
@@ -296,5 +396,5 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, error: "finalize-failed", detail: updErr.message }, 500);
   }
 
-  return json({ ok: true, action: "approved", orgId, userId, emailSent, existingUser }, 200);
+  return json({ ok: true, action: "approved", orgId, userId, emailSent, existingUser, tempPasswordIssued, billingSeeded }, 200);
 });

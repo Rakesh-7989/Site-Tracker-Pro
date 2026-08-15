@@ -57,6 +57,10 @@ export function postLoginFallbackPath(lane: LoginLane): string {
 }
 
 export function postLoginPathForSession(session: AuthSession, preferredLane: LoginLane | null = null): string {
+  // P-E: temp-password users MUST pick a new password before entering the app.
+  // Checked here (the single post-login decision point) so both the org and
+  // staff lanes and the already-signed-in <Navigate> path route through it.
+  if (session.user.mustChangePassword) return "/auth/change-password";
   const isStaff = isStaffSession(session);
   const lane = preferredLane ?? (isStaff ? "staff" : "org");
   if (lane === "staff" && isStaff) return staffLandingPath(session);

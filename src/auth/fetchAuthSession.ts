@@ -89,6 +89,7 @@ export function normalizeProfile(
     isStaff: Boolean(row.is_staff),
     staffTier: tier === "owner" || tier === "head" || tier === "member" ? tier : null,
     profileCompleted: Boolean(row.profile_completed),
+    mustChangePassword: Boolean(row.must_change_password),
   };
   return { ok: true, user };
 }
@@ -273,7 +274,7 @@ export async function fetchAuthSession(
     // 1. profile
     const profileRes = await client
       .from("profiles")
-      .select("id, name, avatar, role, is_staff, staff_tier, profile_completed")
+      .select("id, name, avatar, role, is_staff, staff_tier, profile_completed, must_change_password")
       .eq("id", input.authUserId)
       .maybeSingle();
     if (profileRes.error) {
@@ -284,7 +285,7 @@ export async function fetchAuthSession(
       try { await client.rpc("ensure_my_profile"); } catch {}
       const retryRes = await client
         .from("profiles")
-        .select("id, name, avatar, role, is_staff, staff_tier, profile_completed")
+        .select("id, name, avatar, role, is_staff, staff_tier, profile_completed, must_change_password")
         .eq("id", input.authUserId)
         .maybeSingle();
       normalized = normalizeProfile(retryRes.data as Record<string, unknown> | null, input.authUserEmail);

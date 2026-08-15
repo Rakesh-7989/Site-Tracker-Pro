@@ -34,6 +34,8 @@ export interface AuthUser {
   staffTier?: StaffTier | null;
   /** profiles.profile_completed — false → user must finish their profile first. */
   profileCompleted?: boolean;
+  /** profiles.must_change_password — true → user must pick a new password before entering (P-E temp-password flow). */
+  mustChangePassword?: boolean;
   /**
    * Admin areas a staff MEMBER may access (migration 106). Owner/head → all.
    * Undefined for non-staff. A member with no explicit grants defaults to all.

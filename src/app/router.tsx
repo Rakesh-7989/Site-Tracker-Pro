@@ -28,6 +28,7 @@ import { PayView } from "@/features/marketing/PayView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
 import { LoginScreenV3, StaffLoginScreen } from "@/features/auth/LoginScreenV3";
 import { ResetPasswordView } from "@/features/auth/ResetPasswordView";
+import { ChangePasswordView } from "@/features/auth/ChangePasswordView";
 import { StaffJoinView } from "@/features/auth/StaffJoinView";
 import { AcceptInviteView } from "@/features/auth/AcceptInviteView";
 import { ProfileCompleteView } from "@/features/account/ProfileCompleteView";
@@ -110,6 +111,7 @@ export const router = createBrowserRouter([
   { path: "/staff/login", element: <StaffLoginScreen /> },
   { path: "/admin/login", element: <Navigate to="/staff/login" replace /> },
   { path: "/auth/reset", element: <ResetPasswordView /> },
+  { path: "/auth/change-password", element: <ChangePasswordView /> },
   { path: "/staff/join", element: <StaffJoinView /> },
   { path: "/profile/complete", element: <ProfileCompleteView /> },
   { path: "/pay/:requestId", element: <PayView /> },
