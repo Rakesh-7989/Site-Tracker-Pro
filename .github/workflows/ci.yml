@@ -20,12 +20,11 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run smoke
-      # Column-drift gate: only runs when the SUPABASE_DB_URL secret is set
-      # (the scanner prints SKIP and exits 0 otherwise, so a missing secret
-      # never blocks a deploy). Add the secret to repo Settings → Secrets →
-      # Actions → SUPABASE_DB_URL to activate it.
+      # Column-drift gate: the scanner prints SKIP and exits 0 when the
+      # SUPABASE_DB_URL env var is empty (secret not set), so a missing secret
+      # never blocks a deploy. Add it to repo Settings → Secrets → Actions →
+      # SUPABASE_DB_URL to activate the gate.
       - name: Column-drift gate
-        if: ${{ secrets.SUPABASE_DB_URL != '' }}
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:columns
