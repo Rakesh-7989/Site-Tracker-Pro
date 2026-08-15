@@ -50,3 +50,54 @@ export function writeActiveOrgId(orgId: string | null, storage: StorageLike = de
   }
   storage.setItem(STORAGE_KEY, orgId);
 }
+
+// ---------------------------------------------------------------------------
+// White-label subdomain org preference (B6, P-G5). Each white-label subdomain
+// maps to one org_id; once resolved pre-auth it is remembered per-subdomain so
+// the post-auth session auto-switches to that org even across cold loads.
+// ---------------------------------------------------------------------------
+
+const SUBDOMAIN_KEY_PREFIX = "sitetrack:auth:subdomainOrg:";
+
+/** Stable storage key for a subdomain → org_id mapping. */
+export function subdomainOrgStorageKey(subdomain: string): string {
+  return `${SUBDOMAIN_KEY_PREFIX}${subdomain.trim().toLowerCase()}`;
+}
+
+/** Read the org_id remembered for a white-label subdomain, or null. */
+export function readSubdomainOrgId(subdomain: string, storage: StorageLike = defaultStorage()): string | null {
+  const raw = storage.getItem(subdomainOrgStorageKey(subdomain));
+  if (raw === null || raw === "") return null;
+  return raw;
+}
+
+/** Remember (or clear) the org_id mapped to a white-label subdomain. */
+export function rememberSubdomainOrgId(
+  subdomain: string,
+  orgId: string | null,
+  storage: StorageLike = defaultStorage(),
+): void {
+  const key = subdomainOrgStorageKey(subdomain);
+  if (orgId === null || orgId === "") {
+    storage.removeItem(key);
+    return;
+  }
+  storage.setItem(key, orgId);
+}
+
+/**
+ * Preferred org id for the current session. When the app runs on a white-label
+ * subdomain that has a remembered org_id, that org wins (auto-switch). Otherwise
+ * falls back to the stored generic active org id.
+ */
+export function preferredOrgIdForHost(
+  storedOrgId: string | null,
+  subdomain: string | null,
+  storage: StorageLike = defaultStorage(),
+): string | null {
+  if (subdomain) {
+    const subOrg = readSubdomainOrgId(subdomain, storage);
+    if (subOrg) return subOrg;
+  }
+  return storedOrgId;
+}

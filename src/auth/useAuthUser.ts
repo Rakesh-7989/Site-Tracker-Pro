@@ -11,7 +11,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AuthSession } from "./types";
 import { fetchAuthSession, fetchCapabilityOverrides, fetchCustomRoleOverrides, type FetchOutcome } from "./fetchAuthSession";
-import { defaultStorage, readActiveOrgId, writeActiveOrgId, type StorageLike } from "./activeOrgStore";
+import { defaultStorage, readActiveOrgId, writeActiveOrgId, preferredOrgIdForHost, type StorageLike } from "./activeOrgStore";
+import { resolveSubdomain } from "../lib/subdomain";
 import { setTenantContext } from "../lib/tenantContext";
 
 export type AuthStatus = "idle" | "loading" | "ready" | "signed-out" | "error";
@@ -161,7 +162,11 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
         setStatus("signed-out");
         return null;
       }
-      const preferredOrgId = readActiveOrgId(storageRef.current);
+      const storedOrgId = readActiveOrgId(storageRef.current);
+      const subdomain = typeof window !== "undefined"
+        ? resolveSubdomain(window.location.hostname)?.subdomain ?? null
+        : null;
+      const preferredOrgId = preferredOrgIdForHost(storedOrgId, subdomain, storageRef.current);
       const outcome: FetchOutcome = await withRetry(
         () => fetchAuthSession(
           sb,

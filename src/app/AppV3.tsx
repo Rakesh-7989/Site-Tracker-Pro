@@ -10,6 +10,7 @@ import { AuthProvider } from "@/auth";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ImpersonationProvider } from "@/features/admin/ImpersonationContext";
 import { PwaChrome } from "@/features/pwa/PwaChrome";
+import { SubdomainBranding } from "@/features/shell/SubdomainBranding";
 import { router } from "./router";
 
 export function AppV3(): JSX.Element {
@@ -17,6 +18,7 @@ export function AppV3(): JSX.Element {
     <I18nProvider>
       <AuthProvider>
         <ImpersonationProvider>
+            <SubdomainBranding />
             <RouterProvider router={router} />
             <Analytics />
             <PwaChrome />
