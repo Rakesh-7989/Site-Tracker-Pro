@@ -31,6 +31,7 @@
     "setup": "node scripts/setup.mjs",
     "check:supabase": "node scripts/check-supabase-connection.mjs",
     "check:mcp": "node scripts/check-mcp.mjs",
+    "check:columns": "node scripts/check-column-drift.mjs",
     "uptime": "node scripts/uptime-check.mjs",
     "qa:roles": "node scripts/role-access-probe.mjs",
     "verify:keys": "node scripts/verify-keys.mjs",

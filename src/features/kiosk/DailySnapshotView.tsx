@@ -50,7 +50,7 @@ function DailySnapshotInner(): JSX.Element {
       if (!client) return;
       const today = new Date().toISOString().split("T")[0];
       const [lRes, uRes, iRes, rRes] = await Promise.all([
-        client.from("labour").select("id", { count: "exact", head: true }).eq("project_id", selProject).gte("date", today),
+        client.from("attendance").select("id", { count: "exact", head: true }).eq("project_id", selProject).eq("date", today).eq("attendee_kind", "labour"),
         client.from("site_updates").select("id", { count: "exact", head: true }).eq("project_id", selProject).gte("update_date", today),
         client.from("issues").select("id", { count: "exact", head: true }).eq("project_id", selProject).eq("status", "open"),
         client.from("ra_bills").select("id", { count: "exact", head: true }).eq("project_id", selProject),

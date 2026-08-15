@@ -129,7 +129,7 @@ export async function listReviewRounds(client: any, deliverableId: string): Prom
   try {
     const { data, error } = await client
       .from("review_rounds")
-      .select("id, round_no, status, requested_by, comments, closed_by, closed_at, created_at, req_profiles(name), closed_profiles(name)")
+      .select("id, round_no, status, requested_by, comments, closed_by, closed_at, created_at, req_profiles:requested_by(name), closed_profiles:closed_by(name)")
       .eq("deliverable_id", deliverableId)
       .order("round_no", { ascending: true });
     if (error) return dbe(error);

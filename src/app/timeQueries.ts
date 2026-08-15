@@ -40,7 +40,7 @@ export async function listTimeEntries(client: any, projectId: string): Promise<R
   try {
     const { data, error } = await client
       .from("time_entries")
-      .select("id, profile_id, date, activity, hours, billable, rate, notes, approval_status, approved_by, approved_at, billed, billed_invoice_id, created_at, profiles(name), phase_id")
+      .select("id, profile_id, date, activity, hours, billable, rate, notes, approval_status, approved_by, approved_at, billed, billed_invoice_id, created_at, profile:profile_id(name), phase_id")
       .eq("project_id", projectId)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
@@ -48,7 +48,7 @@ export async function listTimeEntries(client: any, projectId: string): Promise<R
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id),
       profileId: String(r.profile_id ?? ""),
-      memberName: (r.profiles as { name?: string } | null | undefined)?.name ?? null,
+      memberName: (r.profile as { name?: string } | null | undefined)?.name ?? null,
       date: String(r.date ?? ""),
       activity: String(r.activity ?? ""),
       hours: Number(r.hours ?? 0),

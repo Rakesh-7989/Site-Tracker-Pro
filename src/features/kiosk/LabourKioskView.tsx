@@ -1,5 +1,8 @@
-// SiteTrack Pro � Labour Attendance Kiosk (/kiosk/labour).
-// Tablet-optimised clock-in/out for site entry.
+// SiteTrack Pro — Labour Attendance Kiosk (/kiosk/labour).
+// Tablet-optimised clock-in/out for site entry. Backed by the real schema:
+// workers come from `labour_register`, clock-in/out rows land on `attendance`
+// (attendee_kind='labour', one row per worker per day via the partial unique
+// index uniq_attendance_labour_day).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Spinner } from "@/components/ui/atoms";
@@ -13,8 +16,33 @@ import { getClient } from "@/lib/supabase";
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+function fmtClock(value: string | null): string {
+  if (!value) return "";
+  const [h, m] = value.split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return value;
+  const d = new Date(); d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+}
+function nowClock(): string {
+  return new Date().toTimeString().split(" ")[0];
+}
+function hoursBetween(inTime: string | null, outTime: string | null): number {
+  if (!inTime || !outTime) return 0;
+  const [ih, im] = inTime.split(":").map(Number);
+  const [oh, om] = outTime.split(":").map(Number);
+  if (![ih, im, oh, om].every(Number.isFinite)) return 0;
+  return Math.max(0, Math.round(((oh * 60 + om) - (ih * 60 + im)) / 60 * 100) / 100);
+}
+
+interface WorkerRow { id: string; name: string; trade: string | null; }
+interface KioskLog {
+  id: string;
+  labourId: string | null;
+  name: string;
+  trade: string | null;
+  inTime: string | null;
+  outTime: string | null;
+  hours: number | null;
 }
 
 export function LabourKioskView(): JSX.Element {
@@ -25,8 +53,9 @@ function LabourKioskInner(): JSX.Element {
   const session = useSession();
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
-  const [logs, setLogs] = useState<Array<{ id: string; date: string; badge: string; name: string; trade: string; in_time: string; out_time: string | null; hours: number }>>([]);
-  const [badge, setBadge] = useState("");
+  const [workers, setWorkers] = useState<WorkerRow[]>([]);
+  const [logs, setLogs] = useState<KioskLog[]>([]);
+  const [workerId, setWorkerId] = useState("");
   const [name, setName] = useState("");
   const [trade, setTrade] = useState("");
   const [toast, setToast] = useState("");
@@ -38,7 +67,7 @@ function LabourKioskInner(): JSX.Element {
     let h = 0; for (const c of selProject) { h = (h * 31 + c.charCodeAt(0)) & 0xffffff; }
     return String(100000 + (h % 900000));
   }, [selProject]);
-  const projLog = logs.filter(r => r.date === todayISO);
+  const projLog = logs.filter(r => r.inTime && !r.outTime);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2200); };
 
@@ -59,31 +88,71 @@ function LabourKioskInner(): JSX.Element {
     const pList = pjs ?? [];
     setProjects(pList);
     if (pList.length) setSelProject(pList[0].id);
-    const { data: l } = await client.from("labour").select("*").order("in_time", { ascending: false }).limit(100);
-    setLogs(l ?? []);
     setLoading(false);
   }, [session]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const clockIn = async () => {
-    if (!badge.trim() || !name.trim()) { showToast("Badge ID + name required."); return; }
-    const row = { id: "l_" + Date.now(), date: todayISO, badge: badge.trim(), name: name.trim(), trade: trade.trim() || "General", in_time: new Date().toISOString(), out_time: null, hours: 0, project_id: selProject };
+  const loadProject = useCallback(async () => {
+    if (!selProject) return;
     const client = await getClient();
-    if (client) await client.from("labour").insert(row);
-    setLogs(p => [row, ...p]);
-    setBadge(""); setName(""); setTrade(""); showToast(`? ${row.name} clocked in`);
+    if (!client) return;
+    const [wRes, aRes] = await Promise.all([
+      client.from("labour_register").select("id, name, trade").eq("project_id", selProject).order("name", { ascending: true }),
+      client.from("attendance").select("id, labour_id, attendee_name, in_time, out_time, hours, labour:labour_id(trade)").eq("project_id", selProject).eq("date", todayISO).eq("attendee_kind", "labour").order("in_time", { ascending: false }).limit(100),
+    ]);
+    const ws = (wRes.data ?? []) as Array<{ id: string; name: string; trade: string | null }>;
+    setWorkers(ws);
+    setWorkerId(ws[0]?.id ?? "");
+    setLogs(((aRes.data ?? []) as Array<Record<string, unknown>>).map(r => ({
+      id: String(r.id),
+      labourId: r.labour_id == null ? null : String(r.labour_id),
+      name: String(r.attendee_name ?? ""),
+      trade: (r.labour as { trade?: string | null } | null | undefined)?.trade ?? null,
+      inTime: r.in_time == null ? null : String(r.in_time),
+      outTime: r.out_time == null ? null : String(r.out_time),
+      hours: r.hours == null ? null : Number(r.hours),
+    })));
+  }, [selProject, todayISO]);
+
+  useEffect(() => { void loadProject(); }, [loadProject]);
+
+  const clockIn = async () => {
+    if (!workerId && !name.trim()) { showToast("Pick a worker or enter a name."); return; }
+    const client = await getClient();
+    if (!client) return;
+    const uid = (await client.auth.getUser())?.data?.user?.id;
+    const sel = workers.find(w => w.id === workerId);
+    const attendeeName = sel ? sel.name : name.trim();
+    const row = {
+      project_id: selProject,
+      attendee_kind: sel ? "labour" : "visitor",
+      labour_id: sel ? sel.id : null,
+      attendee_name: attendeeName,
+      date: todayISO,
+      status: "present",
+      in_time: nowClock(),
+      source: "kiosk",
+      recorded_by: uid ?? null,
+    };
+    const { error } = await client.from("attendance").insert(row);
+    if (error) { showToast(String(error.message ?? "Clock-in failed")); return; }
+    setWorkerId(""); setName(""); setTrade("");
+    showToast(`✓ ${attendeeName} clocked in`);
+    void loadProject();
   };
 
   const clockOut = async (rowId: string) => {
-    const out = new Date();
     const row = logs.find(r => r.id === rowId);
-    if (!row || row.out_time) return;
-    const hours = Math.max(0, Math.round(((out.getTime() - new Date(row.in_time).getTime()) / 3600000) * 100) / 100);
+    if (!row || row.outTime) return;
+    const out = nowClock();
+    const hours = hoursBetween(row.inTime, out);
     const client = await getClient();
-    if (client) await client.from("labour").update({ out_time: out.toISOString(), hours }).eq("id", rowId);
-    setLogs(p => p.map(r => r.id === rowId ? { ...r, out_time: out.toISOString(), hours } : r));
-    showToast("? Clocked out");
+    if (!client) return;
+    const { error } = await client.from("attendance").update({ out_time: out, hours }).eq("id", rowId);
+    if (error) { showToast(String(error.message ?? "Clock-out failed")); return; }
+    setLogs(p => p.map(r => r.id === rowId ? { ...r, outTime: out, hours } : r));
+    showToast("✓ Clocked out");
   };
 
   if (loading) return <div className="grid place-items-center p-12 bg-ink min-h-screen"><Spinner size={24} /></div>;
@@ -93,7 +162,7 @@ function LabourKioskInner(): JSX.Element {
     <div className="min-h-screen bg-ink text-cream p-4 md:p-8 flex flex-col">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <div className="text-[10px] font-bold tracking-widest uppercase text-warning">Labour kiosk � {fmtDate(todayISO)}</div>
+          <div className="text-[10px] font-bold tracking-widest uppercase text-warning">Labour kiosk — {fmtDate(todayISO)}</div>
           <h1 className="text-3xl font-light tracking-tight">Site attendance</h1>
         </div>
         <div className="flex items-center gap-3">
@@ -107,8 +176,16 @@ function LabourKioskInner(): JSX.Element {
       <div className="grid md:grid-cols-2 gap-6 flex-1 min-h-0">
         <div className="bg-ink/40 rounded-3xl p-8 flex flex-col border border-accent/25">
           <h2 className="text-2xl font-semibold mb-6">Clock in</h2>
-          <input value={badge} onChange={e => setBadge(e.target.value.toUpperCase())} placeholder="Badge ID (e.g. SP-0042)" className="w-full mb-3 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent font-mono" />
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Worker name" className="w-full mb-3 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent" />
+          {workers.length > 0 && (
+            <Select dark value={workerId} onChange={e => setWorkerId(e.target.value)} options={workers.map(w => ({ value: w.id, label: `${w.name}${w.trade ? ` · ${w.trade}` : ""}` }))} />
+          )}
+          {workers.length > 0 && (
+            <div className="text-[11px] text-cream/40 mt-1 mb-3">Registered worker — or add a visitor name below.</div>
+          )}
+          {!workers.length && (
+            <div className="text-[11px] text-cream/40 mb-3">No workers in the labour register yet — add them on the Labour tab, or record visitors below.</div>
+          )}
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Visitor name (or register workers first)" className="w-full mb-3 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent" />
           <input value={trade} onChange={e => setTrade(e.target.value)} placeholder="Trade" className="w-full mb-5 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent" />
           <button onClick={clockIn} className="w-full py-5 bg-accent-2 text-white font-bold text-lg rounded-2xl hover:bg-accent">Clock in</button>
         </div>
@@ -118,14 +195,14 @@ function LabourKioskInner(): JSX.Element {
             <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-accent/20 text-warning">{projLog.length} present</span>
           </div>
           <div className="flex-1 overflow-y-auto space-y-2">
-            {projLog.length === 0 && <div className="text-center py-12 text-cream/40 text-sm">No clock-ins yet today.</div>}
-            {projLog.map(r => (
+            {logs.length === 0 && <div className="text-center py-12 text-cream/40 text-sm">No clock-ins yet today.</div>}
+            {logs.map(r => (
               <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl bg-ink/60 border border-accent/12">
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate">{r.name} <span className="text-cream/40 font-mono text-[10px] ml-1">{r.badge}</span></div>
-                  <div className="text-[11px] text-cream/50">{r.trade} � in {fmtTime(r.in_time)}{r.out_time ? ` � out ${fmtTime(r.out_time)} � ${r.hours}h` : ""}</div>
+                  <div className="font-semibold text-sm truncate">{r.name}</div>
+                  <div className="text-[11px] text-cream/50">{r.trade ?? "General"} — in {fmtClock(r.inTime)}{r.outTime ? ` · out ${fmtClock(r.outTime)} · ${r.hours}h` : ""}</div>
                 </div>
-                {!r.out_time && <button onClick={() => clockOut(r.id)} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-accent/15 text-warning hover:bg-accent/25">Clock out</button>}
+                {!r.outTime && <button onClick={() => clockOut(r.id)} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-accent/15 text-warning hover:bg-accent/25">Clock out</button>}
               </div>
             ))}
           </div>

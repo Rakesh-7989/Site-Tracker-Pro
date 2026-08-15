@@ -8,7 +8,7 @@ export async function getUsageStats(client: any): Promise<PResult<UsageStats>> {
   try {
     const [orgRes, userRes, projRes] = await Promise.all([
       client.from("orgs").select("id", { count: "exact", head: true }),
-      client.from("org_members").select("id", { count: "exact", head: true }),
+      client.from("org_members").select("profile_id", { count: "exact", head: true }),
       client.from("projects").select("id", { count: "exact", head: true }),
     ]);
     return {
