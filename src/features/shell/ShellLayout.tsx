@@ -12,6 +12,7 @@ import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { BrandingEffect } from "./BrandingEffect";
+import { SubdomainBranding } from "./SubdomainBranding";
 import { SubscriptionBanner } from "@/features/org/SubscriptionBanner";
 import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -68,11 +69,11 @@ function GatedShell(): JSX.Element {
     return <Navigate to="/profile/complete" replace />;
   }
   return (
-      /* Fixed-height app frame: the TopBar stays put while the Sidebar and the
-         main content each scroll on their own (min-h-0 lets the flex children
-         actually shrink so their overflow-y-auto kicks in). */
+    /* Applied per-org branding (accent CSS vars + dynamic title) and once-on-subdomain
+       white-label branding (subdomain→org mapping + title + accent vars). */
       <div className="h-screen flex flex-col bg-panel overflow-hidden">
         <BrandingEffect />
+        <SubdomainBranding />
         <ImpersonationBanner />
         <TopBar onMenuToggle={() => setMobileOpen(v => !v)} />
         <SubscriptionBanner />
