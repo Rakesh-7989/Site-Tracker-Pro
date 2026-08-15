@@ -1,6 +1,7 @@
 // SiteTrack Pro — self-service org registration queries.
 
 import type { CompanySegment } from "@/auth";
+import type { BillingPeriod } from "@/features/marketing/plans";
 
 export type RegisterPlan = "basic" | "pro" | "business";
 export interface RegisterInput {
@@ -10,6 +11,8 @@ export interface RegisterInput {
   contactName: string;
   phone?: string;
   plan: RegisterPlan;
+  /** Billing cycle chosen at signup — "monthly" | "annual" (P-D unified flow). */
+  billing: BillingPeriod;
   /** What kind of company this org is (migration 134). */
   segment: CompanySegment;
   consentVersion?: string;
@@ -21,9 +24,14 @@ async function getClient(): Promise<any | null> {
   return await (mod as any).getSupabaseClient();
 }
 
-export async function registerOrg(input: RegisterInput): Promise<RegisterResult> {
+export async function registerOrg(
+  input: RegisterInput,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  injectedClient?: any,
+): Promise<RegisterResult> {
   try {
-    const client = await getClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = injectedClient ?? (await getClient());
     if (!client) return { ok: false, error: "Backend not configured." };
     const { data, error } = await client.functions.invoke("register_org", { body: input });
     if (error) {

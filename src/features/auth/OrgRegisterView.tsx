@@ -31,7 +31,7 @@ export function OrgRegisterView(): JSX.Element {
   const initialBilling: BillingPeriod = params.get("billing") === "annual" ? "annual" : "monthly";
 
   const [plan, setPlan] = useState<RegisterPlan>(initialPlan as RegisterPlan);
-  const billing = initialBilling;
+  const [billing, setBilling] = useState<BillingPeriod>(initialBilling);
   const [segment, setSegment] = useState<CompanySegment>("construction");
   const [firmName, setFirmName] = useState("");
   const [contactName, setContactName] = useState("");
@@ -62,6 +62,7 @@ export function OrgRegisterView(): JSX.Element {
       contactName: contactName.trim(),
       phone: phone.trim() || undefined,
       plan,
+      billing,
       segment,
       consentVersion: CONSENT_VERSION,
     });
@@ -78,7 +79,8 @@ export function OrgRegisterView(): JSX.Element {
           <div className="w-14 h-14 rounded-2xl bg-success-tint text-success grid place-items-center mx-auto mb-3"><Icon name="check" size={28} /></div>
           <h1 className="font-display text-xl font-bold">Your workspace is ready</h1>
           <p className="text-sm text-fg-secondary mt-2">
-            <b>{firmName}</b> has been created on the <b>{planTier?.name ?? plan}</b> plan.
+            <b>{firmName}</b> has been created on the <b>{planTier?.name ?? plan}</b> plan
+            ({billing === "annual" ? "annual billing — 2 months free" : "monthly billing"}).
             You are registered as <b>Firm Owner</b>.
           </p>
           <p className="text-sm text-fg-secondary mt-1">
@@ -125,6 +127,21 @@ export function OrgRegisterView(): JSX.Element {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Billing cycle (P-D unified signup) */}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex rounded-xl border border-border bg-bg-secondary p-1 gap-1" role="group" aria-label="Billing period">
+            <button type="button" onClick={() => setBilling("monthly")}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition ${billing === "monthly" ? "bg-card text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}>
+              {t("signup.monthly")}
+            </button>
+            <button type="button" onClick={() => setBilling("annual")}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${billing === "annual" ? "bg-card text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}>
+              {t("signup.annual")}
+              <span className="text-[10px] font-bold text-success bg-success-tint px-1.5 py-0.5 rounded-full">{t("signup.monthsFree")}</span>
+            </button>
           </div>
         </div>
 

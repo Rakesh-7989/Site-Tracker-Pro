@@ -104,6 +104,8 @@ const app = [
   read("src/app/quotaQueries.ts"),
   read("src/auth/QuotaGate.tsx"),
   read("scripts/supabase/186_notification_delivery.sql"),
+  read("src/features/auth/OrgRegisterView.tsx"),
+  read("src/app/orgRegisterQueries.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -330,6 +332,9 @@ const vite = read("vite.config.js");
   "parseDxf",
   "dxfToSvg",
   "CadPreviewModal",
+  "OrgRegisterView",
+  "registerOrg",
+  "SignupRedirect",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -453,6 +458,8 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "scripts/supabase/172_crm_agreement_from_quotation.sql",
   "scripts/supabase/184_platform_users_active.sql",
   "scripts/supabase/185_client_approvals.sql",
+  "scripts/supabase/193_project_lifecycle.sql",
+  "scripts/supabase/194_org_billing_period.sql",
   "docs/PRODUCTION_RLS.md",
   "docs/CASHFREE_ONBOARDING.md",
   // Session 16 — Feature-flag catalog system

@@ -16,14 +16,13 @@
 // truth for module→route ownership; non-module routes below stay hardcoded.
 
 import { lazy } from "react";
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, useSearchParams } from "react-router-dom";
 
 // ── Eager: entry + first paint + small ──────────────────────────────────────
 import { RequireStaffArea } from "@/auth";
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { StubGuard } from "@/auth/StubGuard";
 import { LandingView } from "@/features/marketing/LandingView";
-import { SignupView } from "@/features/marketing/SignupView";
 import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
 import { PayView } from "@/features/marketing/PayView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
@@ -83,10 +82,26 @@ const PlatformBrandingView = lazy(() => import("@/features/admin/PlatformBrandin
 const PlatformAuditLogV2View = lazy(() => import("@/features/admin/PlatformAuditLogV2View").then(m => ({ default: m.PlatformAuditLogV2View })));
 const PlatformFeatureFlagsView = lazy(() => import("@/features/admin/PlatformFeatureFlagsView").then(m => ({ default: m.PlatformFeatureFlagsView })));
 
+// P-D unified signup: `/signup` (legacy approval-gated flow) forwards to the
+// Zoho-style self-service `/register`, carrying over any plan/billing params
+// so deep links like `/signup?plan=pro&billing=annual` land correctly.
+function SignupRedirect(): JSX.Element {
+  const [params] = useSearchParams();
+  const query: string[] = [];
+  const plan = params.get("plan");
+  if (plan) query.push(`plan=${encodeURIComponent(plan)}`);
+  const billing = params.get("billing");
+  if (billing) query.push(`billing=${encodeURIComponent(billing)}`);
+  const to = query.length > 0 ? `/register?${query.join("&")}` : "/register";
+  return <Navigate to={to} replace />;
+}
+
 export const router = createBrowserRouter([
   // ── Public routes (no auth) ──
   { path: "/", element: <LandingView /> },
-  { path: "/signup", element: <SignupView /> },
+  // P-D unified signup: `/signup` (legacy approval-gated) redirects to the
+  // Zoho-style self-service `/register`, preserving plan/billing params.
+  { path: "/signup", element: <SignupRedirect /> },
   { path: "/register", element: <OrgRegisterView /> },
   { path: "/accept-invite", element: <AcceptInviteView /> },
   { path: "/privacy", element: <PrivacyView /> },

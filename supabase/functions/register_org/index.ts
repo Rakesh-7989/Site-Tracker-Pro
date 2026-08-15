@@ -22,6 +22,9 @@ const json = (data: unknown, status: number): Response =>
 
 const VALID_PLANS = ["basic", "pro", "business"] as const;
 const VALID_SEGMENTS = ["construction", "architecture", "interior", "consultancy", "multiple"] as const;
+const VALID_BILLING = ["monthly", "annual"] as const;
+const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business" };
+const BILLING_LABEL: Record<string, string> = { monthly: "Monthly", annual: "Annual" };
 const ROLE_LABEL: Record<string, string> = {
   orgadmin: "Firm Owner",
 };
@@ -48,7 +51,7 @@ function generateTempPassword(): string {
   return pw.split("").sort(() => crypto.getRandomValues(new Uint8Array(1))[0] - 128).join("");
 }
 
-async function sendWelcomeEmail(to: string, firmName: string, tempPassword: string, loginUrl: string): Promise<boolean> {
+async function sendWelcomeEmail(to: string, firmName: string, tempPassword: string, loginUrl: string, plan: string, billing: string): Promise<boolean> {
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return false;
   const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
@@ -64,6 +67,8 @@ async function sendWelcomeEmail(to: string, firmName: string, tempPassword: stri
       <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#fafaf9;border-radius:8px;font-size:14px">
         <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Organization</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(firmName)}</td></tr>
         <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Role</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">Firm Owner (orgadmin)</td></tr>
+        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Plan</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(PLAN_LABEL[plan] ?? plan)}${billing === "annual" ? " (annual — 2 months free)" : ""}</td></tr>
+        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Billing</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(BILLING_LABEL[billing] ?? billing)}</td></tr>
         <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Email</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(to)}</td></tr>
         <tr><td style="padding:10px 16px;color:#78716c">Temporary password</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;font-family:monospace;letter-spacing:1px">${esc(tempPassword)}</td></tr>
       </table>
@@ -101,6 +106,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const phone = body.phone ? String(body.phone).trim() : null;
   const plan = String(body.plan ?? "basic");
   const consentVersion = body.consentVersion ? String(body.consentVersion).trim() : null;
+  // Billing cycle (P-D unified signup): "monthly" | "annual". Optional for
+  // back-compat with older clients; defaults to monthly. Annual = "2 months
+  // free" (annual ≈ monthly × 10, per plans.ts).
+  const billing = String(body.billing ?? "monthly");
   // Company segment (v4 C0, migration 134). Optional for back-compat with
   // older clients; when present it MUST be a known segment. Legacy rows keep
   // segment = null until the owner picks one in onboarding.
@@ -110,6 +119,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (password.length < 8) return json({ ok: false, error: "password-too-short" }, 400);
   if (!firmName) return json({ ok: false, error: "firm-name-required" }, 400);
   if (!VALID_PLANS.includes(plan as typeof VALID_PLANS[number])) return json({ ok: false, error: "invalid-plan" }, 400);
+  if (!VALID_BILLING.includes(billing as typeof VALID_BILLING[number])) return json({ ok: false, error: "invalid-billing" }, 400);
   if (segment && !VALID_SEGMENTS.includes(segment as typeof VALID_SEGMENTS[number])) {
     return json({ ok: false, error: "invalid-segment" }, 400);
   }
@@ -144,7 +154,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // 2. Create org
   const { data: orgData, error: orgErr } = await admin
     .from("organizations")
-    .insert({ slug: slugify(firmName), name: firmName, plan, ...(segment ? { segment } : {}) })
+    .insert({ slug: slugify(firmName), name: firmName, plan, billing_period: billing, ...(segment ? { segment } : {}) })
     .select("id")
     .single();
 
@@ -185,7 +195,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // 5. Send welcome email
-  const emailSent = await sendWelcomeEmail(email, firmName, password, loginUrl);
+  const emailSent = await sendWelcomeEmail(email, firmName, password, loginUrl, plan, billing);
 
   return json({
     ok: true,

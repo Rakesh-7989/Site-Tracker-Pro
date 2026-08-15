@@ -921,7 +921,8 @@ Platform admin (superadmin) views for managing the entire SaaS.
 |------|-----------|---------|
 | `/` | LandingView | Public landing page |
 | `/login` | LoginScreenV3 | Sign in |
-| `/signup` | SignupView | Register |
+| `/signup` | → redirects to `/register` | Register (unified self-service) |
+| `/register` | OrgRegisterView | Create workspace (plan + billing + segment) |
 | `/dashboard` | RoleDashboard | User's home |
 | `/projects` | ProjectsListView | All projects |
 | `/projects/new` | CreateProjectView | New project form |
