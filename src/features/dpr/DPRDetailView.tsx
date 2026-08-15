@@ -15,6 +15,7 @@ import { getClient } from "@/lib/supabase";
 import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
 import { invokeSendDpr } from "@/app/dprSubmit";
 import { downloadDprPdf, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
+import { shareDprReport, unshareDprReport, listSharedDprReports, listMySharedDprReports } from "@/app/dprSharingQueries";
 
 export const fmtDateTime = (iso: string): string => {
   const d = new Date(iso);
@@ -32,6 +33,7 @@ export function DPRDetailView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canView = useCan("dpr:view");
+  const canManage = useCan("dpr:manage");
   const t = useT();
 
   const [row, setRow] = useState<DprMessageRow | null>(null);
@@ -65,7 +67,7 @@ export function DPRDetailView(): JSX.Element {
 
   useEffect(() => { void reload(); }, [reload]);
 
-  const onRetry = useCallback(async () => {
+const onRetry = useCallback(async () => {
     if (!row) return;
     const client = await getClient();
     if (!client) return;
@@ -92,6 +94,48 @@ export function DPRDetailView(): JSX.Element {
     setRetrying(false);
     await reload();
   }, [row, reload, t]);
+
+  const shareWithMembers = async (dprId: string) => {
+    if (!row) return;
+    const client = await getClient();
+    if (!client) return;
+    try {
+      const result = await shareDprReport(row.id, row.projectMemberId ?? "");
+      if (result.ok) {
+        showShareSuccess(t("dpr.detail.shareSuccess"));
+      } else {
+        showShareError(result.reason);
+      }
+    } catch (e) {
+      showShareError(e.message ?? t("dpr.detail.shareFailed"));
+    }
+  };
+
+  const unshareWithMembers = async (dprId: string) => {
+    if (!row) return;
+    const client = await getClient();
+    if (!client) return;
+    try {
+      const result = await unshareDprReport(row.id, row.projectMemberId ?? "");
+      if (result.ok) {
+        showShareSuccess(t("dpr.detail.unshareSuccess"));
+      } else {
+        showShareError(result.reason);
+      }
+    } catch (e) {
+      showShareError(e.message ?? t("dpr.detail.unshareFailed"));
+    }
+  };
+
+  const showShareSuccess = (msg: string) => {
+    // Show a temporary success message
+    // In a real implementation, this would use a toast or alert
+    alert(msg);
+  };
+
+  const showShareError = (msg: string) => {
+    alert(msg);
+  };
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!activeOrg) return <Alert variant="warning">{t("dpr.history.noOrg")}</Alert>;
@@ -123,10 +167,22 @@ export function DPRDetailView(): JSX.Element {
           <Button size="sm" variant="ghost" onClick={() => void downloadDprPdf(row, activeOrg.orgName)} leftIcon={<Icon name="download" size={12} />}>
             {t("dpr.detail.downloadPdf")}
           </Button>
-          {dprWhatsAppShareEnabled({ VITE_DPR_PDF_WHATSAPP: import.meta.env.VITE_DPR_PDF_WHATSAPP as string | undefined, DEV: import.meta.env.DEV }) && (
+          { dprWhatsAppShareEnabled({ VITE_DPR_PDF_WHATSAPP: import.meta.env.VITE_DPR_PDF_WHATSAPP as string | undefined, DEV: import.meta.env.DEV }) && (
             <a href={waShareLink(whatsappShareData.phone, whatsappShareData.title)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-success hover:opacity-80">
               <Icon name="whatsapp" size={13} />{t("dpr.detail.shareWhatsApp")}
             </a>
+          )}
+
+          {canManage && (
+            <Button size="sm" variant="outline" onClick={() => shareWithMembers(row.id)}>
+              {t("dpr.detail.shareMembers")}
+            </Button>
+          )}
+
+          {canManage && (
+            <Button size="sm" variant="outline" onClick={() => unshareWithMembers(row.id)}>
+              {t("dpr.detail.unshareMembers")}
+            </Button>
           )}
         </div>
       </div>

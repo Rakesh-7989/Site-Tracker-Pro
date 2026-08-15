@@ -13,6 +13,7 @@ import { getOrgOverview, deleteOrganization, PLAN_LABEL, type OrgOverview } from
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 import { getClient } from "@/lib/supabase";
+import { QuotaMeter } from "@/features/org/QuotaMeter";
 const LINKS: Array<{ to: string; label: string; icon: IconName; desc: string }> = [
   { to: "/org/members", label: "People", icon: "users", desc: "Members, roles & invites" },
   { to: "/org/billing", label: "Billing", icon: "credit-card", desc: "Plan, seats & subscription" },
@@ -71,6 +72,7 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
           <div className="grid sm:grid-cols-3 gap-3">
             <Card className="p-4"><div className="text-3xl font-display font-bold text-fg-primary">{data?.projectCount ?? 0}</div><div className="text-xs text-fg-secondary mt-0.5">Projects</div></Card>
             <Card className="p-4"><div className="text-3xl font-display font-bold text-fg-primary">{data?.memberCount ?? 0}</div><div className="text-xs text-fg-secondary mt-0.5">Members</div></Card>
+            <QuotaMeter orgId={orgId} />
             <Card className="p-4"><div className="text-sm font-semibold text-fg-primary">{data?.sub?.status ? data.sub.status : "No subscription"}</div><div className="text-xs text-fg-secondary mt-0.5">Billing status</div></Card>
           </div>
           <div>
