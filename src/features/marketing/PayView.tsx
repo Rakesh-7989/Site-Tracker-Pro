@@ -8,8 +8,8 @@ import { Link, useParams } from "react-router-dom";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 import { UpiQr } from "@/components/UpiQr";
 import { buildUpiUri } from "@/lib/upi";
-import { getPaymentSettings, getSignupForPay, submitPaymentClaim } from "@/app/paymentQueries";
-import { PLAN_TIERS, gstInclusive, formatINR } from "./plans";
+import { getPaymentSettings, getSignupForPay, submitPaymentClaim, resolveSignupAmount } from "@/app/paymentQueries";
+import { PLAN_TIERS, formatINR } from "./plans";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
@@ -22,7 +22,7 @@ export function PayView(): JSX.Element {
   const [paid, setPaid] = useState(false);
   const [upiId, setUpiId] = useState<string | null>(null);
   const [payee, setPayee] = useState<string | null>(null);
-  const [amountInr, setAmountInr] = useState(0);
+  const [amountInr, setAmountInr] = useState<number | null>(null);
   const [utr, setUtr] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -35,8 +35,7 @@ export function PayView(): JSX.Element {
       const [reqRes, setRes] = await Promise.all([getSignupForPay(client, requestId), getPaymentSettings(client)]);
       if (reqRes.ok) {
         setFirm(reqRes.data.firmName); setPlan(reqRes.data.plan); setPaid(reqRes.data.paymentStatus === "paid");
-        const tier = PLAN_TIERS.find(t => t.id === reqRes.data.plan);
-        if (tier) setAmountInr(gstInclusive(tier.annual));
+        setAmountInr(resolveSignupAmount(reqRes.data, PLAN_TIERS));
       } else setError(reqRes.error);
       if (setRes.ok) { setUpiId(setRes.data.upiId); setPayee(setRes.data.payeeName); }
       setLoading(false);
@@ -67,6 +66,7 @@ export function PayView(): JSX.Element {
   if (loading) return <Frame><div className="py-10 grid place-items-center"><Spinner size={24} /></div></Frame>;
   if (paid) return <Frame><div className="text-center py-6"><div className="w-14 h-14 rounded-2xl bg-success-tint text-success grid place-items-center mx-auto mb-3"><Icon name="check" size={28} /></div><h1 className="font-display text-lg font-bold">Already paid 🎉</h1><p className="text-sm text-fg-secondary mt-2">This plan is paid. Your workspace is being set up — check your email.</p></div></Frame>;
   if (!upiId) return <Frame><div className="rounded-lg bg-warning-tint border border-warning p-3 text-[13px] text-warning">UPI payment isn't set up yet. Please contact us to complete your payment.</div></Frame>;
+  if (amountInr == null) return <Frame><div className="rounded-lg bg-warning-tint border border-warning p-3 text-[13px] text-warning">We couldn't find a price for this plan. Please contact us to arrange payment for your workspace.</div></Frame>;
   if (done) return <Frame><div className="text-center py-6"><div className="w-14 h-14 rounded-2xl bg-success-tint text-success grid place-items-center mx-auto mb-3"><Icon name="check" size={28} /></div><h1 className="font-display text-lg font-bold">Thank you! 🙏</h1><p className="text-sm text-fg-secondary mt-2">We've recorded your payment reference. Our team will verify it and activate your workspace within 24 hours.</p></div></Frame>;
 
   const uri = buildUpiUri({ vpa: upiId, name: payee || "SiteTrack Pro", amount: amountInr, note: `SiteTrack ${plan} — ${firm}`.slice(0, 60) });

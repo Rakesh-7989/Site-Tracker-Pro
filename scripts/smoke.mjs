@@ -106,6 +106,7 @@ const app = [
   read("scripts/supabase/186_notification_delivery.sql"),
   read("src/features/auth/OrgRegisterView.tsx"),
   read("src/app/orgRegisterQueries.ts"),
+  read("src/app/paymentQueries.ts"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -335,6 +336,7 @@ const vite = read("vite.config.js");
   "OrgRegisterView",
   "registerOrg",
   "SignupRedirect",
+  "resolveSignupAmount",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
