@@ -180,7 +180,7 @@ export async function listOrgMonthlyStatement(
       client.from("retainers").select("project_id, monthly_amount, status, start_date, end_date").in("project_id", ids),
       client.from("expenses").select("project_id, amount, expense_date").in("project_id", ids),
       client.from("ra_bills").select("project_id, bill_amount, bill_date").in("project_id", ids),
-      client.from("po_receipts").select("project_id, amount, received_date").in("project_id", ids),
+      client.from("po_receipts").select("amount, received_date, po:purchase_orders(project_id)").in("po.project_id", ids),
       client.from("time_entries").select("project_id, hours, rate, billable, date, approval_status").in("project_id", ids),
     ]);
 
@@ -214,11 +214,14 @@ export async function listOrgMonthlyStatement(
       billAmount: num(r.bill_amount),
       billDate: r.bill_date == null ? null : String(r.bill_date).slice(0, 10),
     }));
-    const poReceipts = ((prRes.data ?? []) as Array<Record<string, unknown>>).map(r => ({
-      projectId: String(r.project_id ?? ""),
-      amount: num(r.amount),
-      receivedDate: r.received_date == null ? null : String(r.received_date).slice(0, 10),
-    }));
+    const poReceipts = ((prRes.data ?? []) as Array<Record<string, unknown>>).map(r => {
+      const po = r.po as Record<string, unknown> | undefined;
+      return {
+        projectId: String(po?.project_id ?? ""),
+        amount: num(r.amount),
+        receivedDate: r.received_date == null ? null : String(r.received_date).slice(0, 10),
+      };
+    });
     const timeEntries = ((teRes.data ?? []) as Array<Record<string, unknown>>).map(r => ({
       projectId: String(r.project_id ?? ""),
       hours: num(r.hours),

@@ -351,10 +351,10 @@ function GenerateSection({ projectId, orgId }: { projectId: string; orgId: strin
         client.from("submittals").select("id, no, type, title, description").eq("project_id", projectId),
         client.from("permits").select("id, kind, issuing_authority, ref_no, status").eq("project_id", projectId),
       ]);
-      const { data: proj } = await client.from("projects").select("id,name,slug,started_at,completed_at,address").eq("id", projectId).single();
+      const { data: proj } = await client.from("projects").select("id,name,location,start_date,expected_end_date").eq("id", projectId).single();
       const { data: org } = await client.from("orgs").select("id,name").eq("id", orgId).single();
       const result = await buildHandoverManifest({
-        project: { id: proj?.id, name: proj?.name, slug: proj?.slug, started_at: proj?.started_at, completed_at: proj?.completed_at, address: proj?.address },
+        project: { id: proj?.id, name: proj?.name, address: proj?.location, started_at: proj?.start_date, completed_at: proj?.expected_end_date },
         org: { id: org?.id, name: org?.name },
         drawings: (submittals ?? []).map(s => ({ id: s.id, title: s.title, drawing_no: s.no })),
         photos: [], payments: [], ra_bills: [],

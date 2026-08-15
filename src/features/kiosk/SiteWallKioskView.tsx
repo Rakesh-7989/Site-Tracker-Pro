@@ -19,8 +19,8 @@ function SiteWallKioskInner(): JSX.Element {
   const session = useSession();
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selProject, setSelProject] = useState("");
-  const [updates, setUpdates] = useState<Array<{ id: string; update_date: string; text: string }>>([]);
-  const [safety, setSafety] = useState<Array<{ id: string; title: string; status: string; severity: string }>>([]);
+  const [updates, setUpdates] = useState<Array<{ id: string; update_date: string; notes: string }>>([]);
+  const [safety, setSafety] = useState<Array<{ id: string; description: string; status: string; severity: string }>>([]);
   const [milestones, setMilestones] = useState<Array<{ id: string; title: string; status: string; due_date: string | null }>>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,8 +50,8 @@ function SiteWallKioskInner(): JSX.Element {
     if (!selProject) return;
     getClient().then(client => {
       if (!client) return;
-      client.from("updates").select("id, update_date, text").eq("project_id", selProject).order("update_date", { ascending: false }).limit(5).then((r: { data: any }) => setUpdates(r.data ?? []));
-      client.from("safety").select("id, title, status, severity").eq("project_id", selProject).order("created_at", { ascending: false }).limit(5).then((r: { data: any }) => setSafety(r.data ?? []));
+      client.from("site_updates").select("id, update_date, notes").eq("project_id", selProject).order("update_date", { ascending: false }).limit(5).then((r: { data: any }) => setUpdates(r.data ?? []));
+      client.from("safety").select("id, description, status, severity").eq("project_id", selProject).order("created_at", { ascending: false }).limit(5).then((r: { data: any }) => setSafety(r.data ?? []));
       client.from("milestones").select("id, title, status, due_date").eq("project_id", selProject).order("due_date", { ascending: true }).limit(5).then((r: { data: any }) => setMilestones(r.data ?? []));
     });
   }, [selProject]);
@@ -71,7 +71,7 @@ function SiteWallKioskInner(): JSX.Element {
           {updates.map(u => (
             <div key={u.id} className="mb-3 pb-3 border-b border-default/30">
               <div className="text-xs text-cream/50">{u.update_date}</div>
-              <div className="text-sm">{u.text}</div>
+              <div className="text-sm">{u.notes}</div>
             </div>
           ))}
         </div>
@@ -87,7 +87,7 @@ function SiteWallKioskInner(): JSX.Element {
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${statusColor}`}>{s.status}</span>
                   <span className={`text-[10px] font-bold ${sevColor}`}>{s.severity}</span>
                 </div>
-                <div className="text-sm font-semibold text-cream">{s.title}</div>
+                <div className="text-sm font-semibold text-cream">{s.description}</div>
               </div>
             );
           })}

@@ -154,7 +154,7 @@ describe("monthlyStatementQueries listOrgMonthlyStatement", () => {
       retainers: { data: [{ project_id: "p1", monthly_amount: 10000, status: "active", start_date: "2026-07-01", end_date: null }], error: null },
       expenses: { data: [{ project_id: "p1", amount: 5000, expense_date: "2026-08-10" }], error: null },
       raBills: { data: [{ project_id: "p1", bill_amount: 20000, bill_date: "2026-08-20" }], error: null },
-      poReceipts: { data: [{ project_id: "p1", amount: 8000, received_date: "2026-08-25" }], error: null },
+      poReceipts: { data: [{ amount: 8000, received_date: "2026-08-25", po: { project_id: "p1" } }], error: null },
       timeEntries: { data: [{ project_id: "p1", hours: 4, rate: 2000, billable: true, date: "2026-08-12", approval_status: "approved" }], error: null },
     });
     const r = await listOrgMonthlyStatement(client, "org-1", "2026-08-01", "2026-08-31");
