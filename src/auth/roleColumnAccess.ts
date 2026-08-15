@@ -14,17 +14,12 @@ export const BUDGET_VIEW_ROLES: Set<string> = new Set([
   "pm",
   "project_admin",
   "promoter",
-  "architect",
-  "senior_architect",
   "design_head",
   "consultant_head",
   "designer",
   "consultant",
   "mep_consultant",
   "structural_consultant",
-  "site_engineer",
-  "contractor",
-  "client",
 ]);
 
 /** All identity roles that can see `mrr` / financial rollup columns. */
@@ -33,15 +28,9 @@ export const FINANCIAL_ROLLUP_ROLES: Set<string> = new Set([
   "pm",
   "project_admin",
   "promoter",
-  "architect",
-  "senior_architect",
   "design_head",
   "consultant_head",
   "consultant",
-  "mep_consultant",
-  "structural_consultant",
-  "site_engineer",
-  "contractor",
 ]);
 
 /** All identity roles that can see `project_id` in rollup contexts. */
