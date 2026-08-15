@@ -1,10 +1,10 @@
 // SiteTrack Pro — B5 storage quota meter (P-H4).
 // Reusable component: progress bar + used/total per bucket + over-quota warning.
-// Wired into DeliverablesTab, DrawingsTab, ResearchLibrary, DPRComposer.
+// Wired into OrgDashboardView.
 
 import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase";
-import { storageByBucket, storagePercent, storageUsed, storageTotal } from "@/app/storageQuotaQueries";
+import { storageByBucket, storagePercent, storageUsed, storageTotal, storageRemaining } from "@/app/storageQuotaQueries";
 import { Card, ProgressBar, Spinner, Alert, Badge } from "@/components/ui/atoms";
 
 const BUCKET_LABELS: Record<string, string> = {
@@ -24,12 +24,12 @@ export function QuotaMeter({ orgId }: { orgId: string }): JSX.Element {
     setState({ loading: true, data: null, error: null });
     const client = await getClient();
     if (!client) {
-      setState({ loading: false, error: "Backend not configured." });
+      setState({ loading: false, data: null, error: "Backend not configured." });
       return;
     }
     const data = await storageByBucket(client, orgId);
     if (!data.ok) {
-      setState({ loading: false, error: data.error ?? "Failed to load quota." });
+      setState({ loading: false, data: null, error: data.error ?? "Failed to load quota." });
       return;
     }
     setState({ loading: false, data: data.data ?? null, error: null });
@@ -66,8 +66,8 @@ export function QuotaMeter({ orgId }: { orgId: string }): JSX.Element {
           {formatBytes(b.used_bytes)} / {formatBytes(b.total_bytes)}
         </span>
       </div>
-      <ProgressBar value={b.used_pct} max={100} />
-      <Badge variant={b.used_pct >= 90 ? "destructive" : "secondary"}>
+      <ProgressBar value={b.used_pct} />
+      <Badge tone={b.used_pct >= 90 ? "danger" : "neutral"}>
         {b.used_pct}% used
       </Badge>
     </div>
@@ -86,7 +86,7 @@ export function QuotaMeter({ orgId }: { orgId: string }): JSX.Element {
       </div>
 
       {usedPct >= 90 && (
-        <Alert variant="destructive">
+        <Alert variant="danger">
           <p className="font-medium">You are approaching your storage limit.</p>
           <p className="text-xs text-fg-tertiary mt-1">
             Free space by removing unused deliverables / DPR media / research docs.

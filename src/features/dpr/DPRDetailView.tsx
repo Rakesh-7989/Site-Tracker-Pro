@@ -15,7 +15,6 @@ import { getClient } from "@/lib/supabase";
 import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
 import { invokeSendDpr } from "@/app/dprSubmit";
 import { downloadDprPdf, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
-import { shareDprReport, unshareDprReport, listSharedDprReports, listMySharedDprReports } from "@/app/dprSharingQueries";
 
 export const fmtDateTime = (iso: string): string => {
   const d = new Date(iso);
@@ -33,7 +32,6 @@ export function DPRDetailView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canView = useCan("dpr:view");
-  const canManage = useCan("dpr:manage");
   const t = useT();
 
   const [row, setRow] = useState<DprMessageRow | null>(null);
@@ -93,49 +91,7 @@ const onRetry = useCallback(async () => {
     setRetryMsg(res.ok ? (res.error || t("dpr.detail.sendOk", { status: res.status ?? "sent" })) : res.error ?? t("dpr.detail.sendFailed"));
     setRetrying(false);
     await reload();
-  }, [row, reload, t]);
-
-  const shareWithMembers = async (dprId: string) => {
-    if (!row) return;
-    const client = await getClient();
-    if (!client) return;
-    try {
-      const result = await shareDprReport(row.id, row.projectMemberId ?? "");
-      if (result.ok) {
-        showShareSuccess(t("dpr.detail.shareSuccess"));
-      } else {
-        showShareError(result.reason);
-      }
-    } catch (e) {
-      showShareError(e.message ?? t("dpr.detail.shareFailed"));
-    }
-  };
-
-  const unshareWithMembers = async (dprId: string) => {
-    if (!row) return;
-    const client = await getClient();
-    if (!client) return;
-    try {
-      const result = await unshareDprReport(row.id, row.projectMemberId ?? "");
-      if (result.ok) {
-        showShareSuccess(t("dpr.detail.unshareSuccess"));
-      } else {
-        showShareError(result.reason);
-      }
-    } catch (e) {
-      showShareError(e.message ?? t("dpr.detail.unshareFailed"));
-    }
-  };
-
-  const showShareSuccess = (msg: string) => {
-    // Show a temporary success message
-    // In a real implementation, this would use a toast or alert
-    alert(msg);
-  };
-
-  const showShareError = (msg: string) => {
-    alert(msg);
-  };
+}, [row, reload, t]);
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!activeOrg) return <Alert variant="warning">{t("dpr.history.noOrg")}</Alert>;
@@ -173,17 +129,7 @@ const onRetry = useCallback(async () => {
             </a>
           )}
 
-          {canManage && (
-            <Button size="sm" variant="outline" onClick={() => shareWithMembers(row.id)}>
-              {t("dpr.detail.shareMembers")}
-            </Button>
-          )}
-
-          {canManage && (
-            <Button size="sm" variant="outline" onClick={() => unshareWithMembers(row.id)}>
-              {t("dpr.detail.unshareMembers")}
-            </Button>
-          )}
+          
         </div>
       </div>
 
