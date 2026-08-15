@@ -47,7 +47,7 @@ interface KioskLog {
 }
 
 export function LabourKioskView(): JSX.Element {
-  return <PlanGate feature="kiosks"><LabourKioskInner /></PlanGate>;
+  return <PlanGate feature="kiosks" aria-label="Labour attendance kiosk"><LabourKioskInner /></PlanGate>;
 }
 
 function LabourKioskInner(): JSX.Element {
@@ -167,7 +167,7 @@ function LabourKioskInner(): JSX.Element {
           <h1 className="text-3xl font-light tracking-tight">Site attendance</h1>
         </div>
         <div className="flex items-center gap-3">
-          <Select dark value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} />
+          <Select dark value={selProject} onChange={e => setSelProject(e.target.value)} options={projects.map(p => ({ value: p.id, label: p.name }))} aria-label="Select project" />
           <div className="text-right">
             <div className="text-[10px] tracking-widest uppercase text-cream/50">Pair code</div>
             <div className="font-mono text-2xl font-bold text-warning tracking-wider">{pairCode}</div>
@@ -178,7 +178,7 @@ function LabourKioskInner(): JSX.Element {
         <div className="bg-ink/40 rounded-3xl p-8 flex flex-col border border-accent/25">
           <h2 className="text-2xl font-semibold mb-6">Clock in</h2>
           {workers.length > 0 && (
-            <Select dark value={workerId} onChange={e => setWorkerId(e.target.value)} options={workers.map(w => ({ value: w.id, label: `${w.name}${w.trade ? ` · ${w.trade}` : ""}` }))} />
+            <Select dark value={workerId} onChange={e => setWorkerId(e.target.value)} options={workers.map(w => ({ value: w.id, label: `${w.name}${w.trade ? ` · ${w.trade}` : ""}` }))} aria-label="Select worker" />
           )}
           {workers.length > 0 && (
             <div className="text-[11px] text-cream/40 mt-1 mb-3">Registered worker — or add a visitor name below.</div>
@@ -186,9 +186,9 @@ function LabourKioskInner(): JSX.Element {
           {!workers.length && (
             <div className="text-[11px] text-cream/40 mb-3">No workers in the labour register yet — add them on the Labour tab, or record visitors below.</div>
           )}
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Visitor name (or register workers first)" className="w-full mb-3 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent" />
-          <input value={trade} onChange={e => setTrade(e.target.value)} placeholder="Trade" className="w-full mb-5 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent" />
-          <button onClick={clockIn} className="w-full py-5 bg-accent-2 text-white font-bold text-lg rounded-2xl hover:bg-accent">Clock in</button>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Visitor name (or register workers first)" className="w-full mb-3 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent" aria-label="Visitor name" />
+          <input value={trade} onChange={e => setTrade(e.target.value)} placeholder="Trade" className="w-full mb-5 p-4 bg-ink border border-accent/20 text-cream text-lg rounded-xl outline-none focus:border-accent" aria-label="Trade" />
+          <button onClick={clockIn} className="w-full py-5 bg-accent-2 text-white font-bold text-lg rounded-2xl hover:bg-accent" aria-label="Clock in">Clock in</button>
         </div>
         <div className="bg-ink/40 rounded-3xl p-8 flex flex-col border border-accent/25">
           <div className="flex items-center justify-between mb-4">
@@ -203,7 +203,7 @@ function LabourKioskInner(): JSX.Element {
                   <div className="font-semibold text-sm truncate">{r.name}</div>
                   <div className="text-[11px] text-cream/50">{r.trade ?? "General"} — in {fmtClock(r.inTime)}{r.outTime ? ` · out ${fmtClock(r.outTime)} · ${r.hours}h` : ""}</div>
                 </div>
-                {!r.outTime && <button onClick={() => clockOut(r.id)} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-accent/15 text-warning hover:bg-accent/25">Clock out</button>}
+                {!r.outTime && <button onClick={() => clockOut(r.id)} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-accent/15 text-warning hover:bg-accent/25" aria-label="Clock out">Clock out</button>}
               </div>
             ))}
           </div>
