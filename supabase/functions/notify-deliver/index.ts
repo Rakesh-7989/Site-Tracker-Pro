@@ -62,7 +62,11 @@ interface TemplateRow {
 
 async function fetchProfile(supa: ReturnType<typeof createClient>, userId: string): Promise<UserProfile | null> {
   const { data } = await supa.from("profiles").select("*").eq("id", userId).maybeSingle();
-  return (data as UserProfile) ?? null;
+  const profile = (data as Omit<UserProfile, "email">) ?? null;
+  if (!profile) return null;
+  // profiles has no email column — pull it from the auth user (service role).
+  const { data: authUser } = await supa.auth.admin.getUserById(userId);
+  return { ...profile, email: authUser?.user?.email ?? profile.email };
 }
 
 async function fetchOrgRules(supa: ReturnType<typeof createClient>, orgId: string | undefined): Promise<NotifRule[]> {
