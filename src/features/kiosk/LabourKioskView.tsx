@@ -13,6 +13,7 @@ import { memberProjectScope } from "@/app/queries";
 
 
 import { getClient } from "@/lib/supabase";
+import { clockOutAttendance } from "@/app/attendanceQueries";
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -149,8 +150,8 @@ function LabourKioskInner(): JSX.Element {
     const hours = hoursBetween(row.inTime, out);
     const client = await getClient();
     if (!client) return;
-    const { error } = await client.from("attendance").update({ out_time: out, hours }).eq("id", rowId);
-    if (error) { showToast(String(error.message ?? "Clock-out failed")); return; }
+    const res = await clockOutAttendance(client, rowId, out, hours);
+    if (!res.ok) { showToast(String(res.error ?? "Clock-out failed")); return; }
     setLogs(p => p.map(r => r.id === rowId ? { ...r, outTime: out, hours } : r));
     showToast("✓ Clocked out");
   };

@@ -77,3 +77,16 @@ export async function deleteAttendance(client: any, id: string): Promise<Result<
   try { const { error } = await client.from("attendance").delete().eq("id", id); if (error) return { ok: false, error: String(error.message ?? error) }; return { ok: true, data: { ok: true } }; }
   catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
+
+// Kiosk clock-out via the SECURITY DEFINER RPC (migration 197). Any project
+// member can clock a checked-in worker out; direct attendance_update stays
+// PM+ for corrections. This is what the Labour kiosk calls instead of a raw
+// UPDATE (which a non-PM kiosk operator could not run — 42501).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function clockOutAttendance(client: any, id: string, outTime: string, hours: number): Promise<Result<{ ok: true }>> {
+  try {
+    const { error } = await client.rpc("kiosk_clock_out", { p_attendance_id: id, p_out_time: outTime, p_hours: hours });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { ok: true } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
