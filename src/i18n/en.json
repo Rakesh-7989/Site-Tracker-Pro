@@ -161,9 +161,10 @@
     "Workspace": "Workspace", "Field": "Field", "Procurement": "Procurement", "Insights": "Insights",
     "Org Admin": "Org Admin", "Platform": "Platform", "Account": "Account"
   },
-  "shell": {
+"shell": {
     "signOut": "Sign out", "switchOrg": "Switch organization", "language": "Language",
-    "searchPlaceholder": "Search anythingâ€¦", "viewProfile": "View your profile"
+    "searchPlaceholder": "Search anything…", "viewProfile": "View your profile",
+    "trialBanner": "Pro trial · {days} days left", "trialBannerDay": "Pro trial · {days} day left"
   },
   "auth": {
     "heroTitle1": "Every site, every drawing,",

@@ -190,7 +190,9 @@
     "switchOrg": "సంస్థ మార్చండి",
     "language": "భాష",
     "searchPlaceholder": "ఏదైనా శోధించండి…",
-    "viewProfile": "మీ ప్రొఫైల్ చూడండి"
+    "viewProfile": "మీ ప్రొఫైల్ చూడండి",
+    "trialBanner": "ప్రో ట్రయల్ · {days} రోజులు మిగిలాయి",
+    "trialBannerDay": "ప్రో ట్రయల్ · {days} రోజు మిగిలింది"
   },
   "auth": {
     "heroTitle1": "ప్రతి సైట్, ప్రతి డ్రాయింగ్,",

@@ -26,6 +26,10 @@ export interface UsePlanCapsReturn {
   can: (feature: PlanFeature) => boolean;
   /** Numeric limit (null = unlimited / unknown). */
   limit: (key: PlanLimit) => number | null;
+  /** True while the org is inside an active Pro trial (subscriptions.status='trial', not expired). */
+  trialActive: boolean;
+  /** ISO timestamp of trial end (null when not in trial / unknown). */
+  trialEndsAt: string | null;
 }
 
 export function usePlanCaps(): UsePlanCapsReturn {
@@ -59,6 +63,8 @@ export function usePlanCaps(): UsePlanCapsReturn {
     // Fail-open while loading / unknown: don't hide a feature on a transient miss.
     can: (feature: PlanFeature) => (loading || !state ? true : hasPlanCap(state.caps, feature)),
     limit: (key: PlanLimit) => planLimit(state?.caps, key),
+    trialActive: !!state?.trialActive,
+    trialEndsAt: state?.trialEndsAt ?? null,
   };
 }
 

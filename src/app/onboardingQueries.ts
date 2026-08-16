@@ -2,6 +2,8 @@
 
 import type { CompanySegment, ProjectType } from "@/auth";
 import type { EnabledModules } from "@/modules";
+import type { SignupPlan } from "@/app/signupQueries";
+import type { BillingPeriod } from "@/features/marketing/plans";
 
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -13,6 +15,10 @@ export interface OrgDetails {
   segment: CompanySegment | null;
   /** Enabled product modules (migration 155); null = not configured yet. */
   enabled_modules: EnabledModules;
+  /** Plan id. Self-service orgs start on "pro" (14-day trial); null = legacy. */
+  plan: SignupPlan | null;
+  /** Billing cycle (migration 194); null until chosen. */
+  billing_period: BillingPeriod | null;
 }
 
 /** Gets the current user's org id and details. */
@@ -25,7 +31,7 @@ export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; or
     if (omErr) return { ok: false, error: String(omErr.message ?? omErr) };
     if (!om?.org_id) return { ok: false, error: "No org membership." };
     const { data: org } = await client.from("organizations")
-      .select("id, name, contact_email, segment, enabled_modules").eq("id", om.org_id).maybeSingle();
+      .select("id, name, contact_email, segment, enabled_modules, plan, billing_period").eq("id", om.org_id).maybeSingle();
     return { ok: true, data: { orgId: om.org_id, org: org ?? null } };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
@@ -33,11 +39,15 @@ export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; or
 export async function updateOrg(
   client: any, orgId: string, name: string, contactEmail: string, segment?: CompanySegment | null,
   enabledModules?: EnabledModules,
+  plan?: SignupPlan | null,
+  billingPeriod?: BillingPeriod | null,
 ): Promise<PResult<void>> {
   try {
     const patch: Record<string, unknown> = { name: name.trim(), contact_email: contactEmail.trim() };
     if (segment) patch.segment = segment;
     if (enabledModules !== undefined) patch.enabled_modules = enabledModules;
+    if (plan) patch.plan = plan;
+    if (billingPeriod !== undefined && billingPeriod !== null) patch.billing_period = billingPeriod;
     const { error } = await client.from("organizations")
       .update(patch).eq("id", orgId);
     if (error) return { ok: false, error: String(error.message ?? error) };

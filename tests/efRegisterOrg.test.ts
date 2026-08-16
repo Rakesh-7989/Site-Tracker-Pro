@@ -25,7 +25,28 @@ describe("register_org — company segment (v4 C0)", () => {
   it("passes segment into the organizations insert", () => {
     // The insert must include segment (spread only when present), selecting
     // its value from the validated body field.
-    expect(src).toMatch(/\.insert\(\{\s*slug: slugify\(firmName\),\s*name: firmName,\s*plan,/);
+    expect(src).toMatch(/\.insert\(\{\s*slug: slugify\(firmName\),\s*name: firmName,\s*plan: TRIAL_PLAN,/);
     expect(src).toContain("segment");
+  });
+
+  it("defaults the plan to the Pro trial (Zoho-style trial-first)", () => {
+    expect(src).toMatch(/const TRIAL_PLAN = "pro"/);
+    expect(src).toMatch(/plan: TRIAL_PLAN/);
+  });
+
+  it("provisions a 14-day trial subscription row (status='trial')", () => {
+    expect(src).toMatch(/TRIAL_DAYS = 14/);
+    expect(src).toMatch(/trial_ends_at: trialEnd/);
+    expect(src).toMatch(/status: "trial"/);
+    expect(src).toMatch(/onConflict: "org_id"/);
+  });
+
+  it("creates the auth user with email_confirm: false (owner must verify)", () => {
+    expect(src).toMatch(/email_confirm: false/);
+  });
+
+  it("returns plan + trialEndsAt for the client verify screen", () => {
+    expect(src).toMatch(/plan: TRIAL_PLAN/);
+    expect(src).toMatch(/trialEndsAt: trialEnd/);
   });
 });

@@ -190,7 +190,9 @@
     "switchOrg": "संगठन बदलें",
     "language": "भाषा",
     "searchPlaceholder": "कुछ भी खोजें…",
-    "viewProfile": "अपनी प्रोफ़ाइल देखें"
+    "viewProfile": "अपनी प्रोफ़ाइल देखें",
+    "trialBanner": "प्रो ट्रायल · {days} दिन बाकी",
+    "trialBannerDay": "प्रो ट्रायल · {days} दिन बाकी"
   },
   "auth": {
     "heroTitle1": "हर साइट, हर ड्रॉइंग,",

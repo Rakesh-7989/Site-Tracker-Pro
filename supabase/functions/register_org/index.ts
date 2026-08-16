@@ -23,11 +23,11 @@ const json = (data: unknown, status: number): Response =>
 const VALID_PLANS = ["basic", "pro", "business"] as const;
 const VALID_SEGMENTS = ["construction", "architecture", "interior", "consultancy", "multiple"] as const;
 const VALID_BILLING = ["monthly", "annual"] as const;
-const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business" };
-const BILLING_LABEL: Record<string, string> = { monthly: "Monthly", annual: "Annual" };
-const ROLE_LABEL: Record<string, string> = {
-  orgadmin: "Firm Owner",
-};
+// Self-service orgs start on the Pro plan with a 14-day free trial (Zoho-style
+// trial-first). The owner picks/keeps a paid plan in onboarding before the
+// trial ends (see docs/ZOHO_SIGNUP_REDESIGN_PHASE_C_PLAN.md).
+const TRIAL_DAYS = 14;
+const TRIAL_PLAN = "pro";
 
 const esc = (s: string): string => s.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] || c));
 
@@ -51,7 +51,12 @@ function generateTempPassword(): string {
   return pw.split("").sort(() => crypto.getRandomValues(new Uint8Array(1))[0] - 128).join("");
 }
 
-async function sendWelcomeEmail(to: string, firmName: string, tempPassword: string, loginUrl: string, plan: string, billing: string): Promise<boolean> {
+// Reworked for the email-confirm + Pro-trial flow: the account is NOT yet
+// confirmed (email_confirm:false), so this email must NOT contain the password
+// or a "sign in now" CTA. Supabase sends its own confirmation link; this is a
+// branded heads-up about the Pro trial. Deliberately does not duplicate the
+// confirm link (single source of truth = Supabase's confirm email).
+async function sendWelcomeEmail(to: string, firmName: string): Promise<boolean> {
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return false;
   const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
@@ -62,31 +67,17 @@ async function sendWelcomeEmail(to: string, firmName: string, tempPassword: stri
       </div>
       <h2 style="color:#1c1917;text-align:center">Welcome to SiteTrack Pro</h2>
       <p style="color:#57534e">Hi there,</p>
-      <p style="color:#57534e">Your workspace <b>${esc(firmName)}</b> is ready. You are registered as the <b>Firm Owner</b>.</p>
-      <p style="color:#57534e">Use the credentials below to sign in:</p>
-      <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#fafaf9;border-radius:8px;font-size:14px">
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Organization</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(firmName)}</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Role</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">Firm Owner (orgadmin)</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Plan</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(PLAN_LABEL[plan] ?? plan)}${billing === "annual" ? " (annual — 2 months free)" : ""}</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Billing</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(BILLING_LABEL[billing] ?? billing)}</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Email</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(to)}</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c">Temporary password</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;font-family:monospace;letter-spacing:1px">${esc(tempPassword)}</td></tr>
-      </table>
-      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13px;color:#991b1b">
-        <strong>Important:</strong> Please change your password after first login.
+      <p style="color:#57534e">Your workspace <b>${esc(firmName)}</b> is being set up. To activate it, please confirm your email address using the confirmation link we sent separately — once confirmed, you can sign in and finish setting up your workspace.</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13px;color:#166534">
+        <strong>Your ${TRIAL_DAYS}-day Pro free trial:</strong> your workspace starts on the <b>Pro plan</b> — all Pro features unlocked — free for ${TRIAL_DAYS} days. Pick a plan to keep after the trial ends.
       </div>
-      <p style="text-align:center;margin:28px 0">
-        <a href="${esc(loginUrl)}" style="background:#ea580c;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">
-          Sign in to SiteTrack Pro
-        </a>
-      </p>
       <p style="color:#78716c;font-size:13px;text-align:center">- Team SiteTrack Pro</p>
     </div>`;
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ from, to, subject: `Welcome to SiteTrack Pro — ${firmName} is ready`, html }),
+      body: JSON.stringify({ from, to, subject: `Activate your ${firmName} workspace on SiteTrack Pro`, html }),
     });
     return r.ok;
   } catch { return false; }
@@ -104,7 +95,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const firmName = String(body.firmName ?? "").trim();
   const contactName = String(body.contactName ?? "").trim();
   const phone = body.phone ? String(body.phone).trim() : null;
-  const plan = String(body.plan ?? "basic");
+  // Plan defaults to Pro (the 14-day trial plan). Explicit plan/billing/segment
+  // are still accepted for deep-link (`?plan=`) callers, but omitted by the
+  // new minimal identity screen — the EF then provisions a Pro trial.
+  const plan = String(body.plan ?? TRIAL_PLAN);
   // Honeypot: a hidden field real users never fill (bots do). Pretend success,
   // create nothing. Same posture as submit_signup_request.
   const honeypot = String(body.website ?? "").trim();
@@ -133,8 +127,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!url || !key) return json({ ok: false, error: "service-not-configured" }, 500);
 
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
-  const loginUrl = `${siteUrl}/login`;
 
   // Source IP for rate-limiting (first hop in x-forwarded-for).
   const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
@@ -154,11 +146,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  // 1. Create auth user
+  // 1. Create auth user — email NOT auto-confirmed. Supabase sends its own
+  //    confirmation email; the workspace activates only after the owner clicks
+  //    the link (Zoho-style verify step, closes the self-service abuse gap).
   const { data: createData, error: createErr } = await admin.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
+    email_confirm: false,
     user_metadata: { name: contactName || email.split("@")[0] },
   });
 
@@ -173,10 +167,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const userId = createData?.user?.id;
   if (!userId) return json({ ok: false, error: "user-id-missing" }, 502);
 
-  // 2. Create org
+  // 2. Create org — plan = Pro (trial). billing/segment optional (segment only
+  //    when present; back-compat with legacy orgs that leave it null).
+  const trialEnd = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { data: orgData, error: orgErr } = await admin
     .from("organizations")
-    .insert({ slug: slugify(firmName), name: firmName, plan, billing_period: billing, ...(segment ? { segment } : {}) })
+    .insert({ slug: slugify(firmName), name: firmName, plan: TRIAL_PLAN, billing_period: billing, ...(segment ? { segment } : {}) })
     .select("id")
     .single();
 
@@ -186,6 +182,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   const orgId = String(orgData.id);
+
+  // 2b. Record the Pro trial subscription (status='trial', trial_ends_at=+14d).
+  //     Best-effort — a failure here must never undo org creation. The gating
+  //     source stays organizations.plan (='pro' during the trial); this row is
+  //     the audit/expiry record used by the trial-end read-side check + cron.
+  await admin.from("subscriptions").upsert({
+    org_id: orgId,
+    provider: "manual",
+    plan: TRIAL_PLAN,
+    status: "trial",
+    trial_ends_at: trialEnd,
+    current_period_end: trialEnd,
+  }, { onConflict: "org_id" }).catch(() => {});
 
   // 3. Create profile with orgadmin role
   const { error: profileErr } = await admin
@@ -216,8 +225,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, error: "org-member-failed", detail: omErr.message }, 500);
   }
 
-  // 5. Send welcome email
-  const emailSent = await sendWelcomeEmail(email, firmName, password, loginUrl, plan, billing);
+  // 5. Send branded heads-up email (confirm link comes from Supabase itself)
+  const emailSent = await sendWelcomeEmail(email, firmName);
 
   // 6. Record the successful attempt for the IP rate limit (best-effort —
   //    a failure here must never undo the org creation).
@@ -230,6 +239,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     orgId,
     userId,
     emailSent,
-    message: "Organization created successfully. Welcome to SiteTrack Pro!",
+    plan: TRIAL_PLAN,
+    trialEndsAt: trialEnd,
+    message: "Organization created. Please confirm your email to activate your workspace.",
   }, 200);
 });

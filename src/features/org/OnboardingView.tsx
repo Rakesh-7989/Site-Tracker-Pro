@@ -2,17 +2,20 @@
 // 5-step first-time setup for new orgs. Persists to Supabase.
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, Button, Spinner } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
 import { SEGMENTS, defaultProjectTypeFor, segmentProjectTypes, type CompanySegment } from "@/auth";
 import type { ProjectType } from "@/auth";
 import { MODULES, CORE_MODULE, templateModules, isRecommendedForSegment, type ModuleId } from "@/modules";
 import { useT } from "@/i18n/I18nProvider";
+import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
+import type { SignupPlan } from "@/app/signupQueries";
 
 
 import { getClient } from "@/lib/supabase";
-const STEPS = ["Org details", "Invite team", "First project", "Feature presets", "Integrations"];
+const STEPS = ["Org details", "Plan & billing", "Invite team", "First project", "Feature presets", "Integrations"];
+const TRIAL_DAYS = 14;
 
 export function OnboardingView(): JSX.Element {
   const t = useT();
@@ -26,6 +29,11 @@ export function OnboardingView(): JSX.Element {
   const [contactEmail, setContactEmail] = useState("");
   const [segment, setSegment] = useState<CompanySegment | null>(null);
   const [enabledModules, setEnabledModules] = useState<ModuleId[]>([]);
+
+  // Step 2 — plan & billing. Defaults to the Pro trial so the owner keeps
+  // Pro unless they change it; billing defaults monthly.
+  const [plan, setPlan] = useState<SignupPlan>("pro");
+  const [billing, setBilling] = useState<BillingPeriod>("monthly");
 
   // Step 2
   const [inviteName, setInviteName] = useState("");
@@ -62,6 +70,8 @@ export function OnboardingView(): JSX.Element {
       } else if (res.data.org.segment) {
         setEnabledModules([...templateModules(res.data.org.segment)]);
       }
+      if (res.data.org.plan) setPlan(res.data.org.plan);
+      if (res.data.org.billing_period) setBilling(res.data.org.billing_period);
     }
     setLoading(false);
   }, []);
@@ -88,8 +98,14 @@ export function OnboardingView(): JSX.Element {
       ? enabledModules
       : [CORE_MODULE, ...enabledModules];
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, segment, modules);
+    await updateOrg(client, orgId, orgName, contactEmail, segment, modules, plan, billing);
     setStep(2);
+  };
+
+  const savePlan = async () => {
+    const client = await getClient();
+    await updateOrg(client, orgId, orgName, contactEmail, segment, enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules], plan, billing);
+    setStep(3);
   };
 
   const addPending = () => {
@@ -99,11 +115,11 @@ export function OnboardingView(): JSX.Element {
   };
 
   const commitInvites = async () => {
-    if (!pending.length) { setStep(3); return; }
+    if (!pending.length) { setStep(4); return; }
     const client = await getClient();
     await insertOrgMembers(client, orgId, pending);
     setPending([]);
-    setStep(3);
+    setStep(4);
   };
 
   const saveProject = async () => {
@@ -111,7 +127,7 @@ export function OnboardingView(): JSX.Element {
     if (!clientName.trim()) { alert("Client name required"); return; }
     const client = await getClient();
     await createProject(client, orgId, projName, clientName, startDate, projType);
-    setStep(4);
+    setStep(5);
   };
 
   const applyPreset = async () => {
@@ -123,7 +139,7 @@ export function OnboardingView(): JSX.Element {
       toDisable.push("arOverlay", "dprAuto", "photoGeo");
     }
     await disableFeatureFlags(client, orgId, toDisable);
-    setStep(5);
+    setStep(6);
   };
 
   const finish = async () => {
@@ -144,7 +160,7 @@ export function OnboardingView(): JSX.Element {
             <h1 className="text-3xl font-black text-fg-primary tracking-tight">Welcome to SiteTrack</h1>
             <p className="text-fg-tertiary text-sm mt-1">Let's get your workspace set up</p>
           </div>
-          <div className="text-xs font-bold text-fg-tertiary">{step} / 5</div>
+          <div className="text-xs font-bold text-fg-tertiary">{step} / 6</div>
         </div>
 
         <div className="flex gap-1 mb-6">
@@ -217,8 +233,55 @@ export function OnboardingView(): JSX.Element {
             </div>
           )}
 
-          {/* Step 2: Invite team */}
+          {/* Step 2: Plan & billing */}
           {step === 2 && (
+            <div className="space-y-4">
+              <h2 className="font-bold text-lg">Choose your plan</h2>
+              <div className="text-xs text-success bg-success-tint rounded-lg px-3 py-2">
+                You're on a <b>{TRIAL_DAYS}-day Pro free trial</b> — all Pro features are unlocked now. Pick the plan you'd like to keep after the trial ends.
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-fg-primary block">Billing</label>
+                <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-secondary border border-default">
+                  <button type="button" onClick={() => setBilling("monthly")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition ${billing === "monthly" ? "bg-panel text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}>
+                    Monthly
+                  </button>
+                  <button type="button" onClick={() => setBilling("annual")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5 ${billing === "annual" ? "bg-panel text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}>
+                    Annual <span className="text-[10px] font-bold text-success bg-success-tint px-1.5 py-0.5 rounded-full">2 months free</span>
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {PLAN_TIERS.map(p => {
+                  const active = plan === p.id;
+                  const pr = priceFor(p, billing);
+                  return (
+                    <button key={p.id} type="button" onClick={() => setPlan(p.id as SignupPlan)}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition relative ${active ? "border-accent bg-accent-tint" : "border-default"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold">{p.name}</span>
+                          {p.popular && <Badge tone="warning">Popular</Badge>}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold">{pr.amount}<span className="text-xs font-normal text-fg-tertiary">{pr.cadence}</span></div>
+                          {billing === "annual" && <div className="text-[10px] text-success font-semibold">{pr.effectiveMonthly} &middot; Save {pr.savingsAmount}</div>}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-fg-tertiary mt-0.5">{t("signup.gstLine", { amount: formatINR(gstInclusive(billing === "annual" ? p.annual : p.monthly)) })}</div>
+                      <div className="text-[11px] text-fg-secondary mt-0.5">{p.tagline}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end pt-2"><Button onClick={savePlan}>Continue</Button></div>
+            </div>
+          )}
+
+          {/* Step 3: Invite team */}
+          {step === 3 && (
             <div className="space-y-4">
               <h2 className="font-bold text-lg">Invite your team</h2>
               <p className="text-xs text-fg-secondary">Add at least an architect and a project manager.</p>
@@ -238,14 +301,14 @@ export function OnboardingView(): JSX.Element {
                 </div>
               )}
               <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setStep(3)}>Skip</Button>
+                <Button variant="secondary" onClick={() => setStep(4)}>Skip</Button>
                 <Button onClick={commitInvites}>Continue</Button>
               </div>
             </div>
           )}
 
-          {/* Step 3: First project */}
-          {step === 3 && (
+          {/* Step 4: First project */}
+          {step === 4 && (
             <div className="space-y-4">
               <h2 className="font-bold text-lg">Create your first project</h2>
               <p className="text-xs text-fg-secondary">A project is what you deliver for a client.</p>
@@ -266,14 +329,14 @@ export function OnboardingView(): JSX.Element {
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
               </div>
               <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setStep(4)}>Skip</Button>
+                <Button variant="secondary" onClick={() => setStep(5)}>Skip</Button>
                 <Button onClick={saveProject}>Continue</Button>
               </div>
             </div>
           )}
 
-          {/* Step 4: Feature presets */}
-          {step === 4 && (
+          {/* Step 5: Feature presets */}
+          {step === 5 && (
             <div className="space-y-4">
               <h2 className="font-bold text-lg">Feature preset</h2>
               <p className="text-xs text-fg-secondary">Choose how many features to turn on by default.</p>
@@ -290,8 +353,8 @@ export function OnboardingView(): JSX.Element {
             </div>
           )}
 
-          {/* Step 5: Integrations */}
-          {step === 5 && (
+          {/* Step 6: Integrations */}
+          {step === 6 && (
             <div className="space-y-4">
               <h2 className="font-bold text-lg">Integrations (optional)</h2>
               <p className="text-xs text-fg-secondary">Connect your tools later from the Integrations panel.</p>

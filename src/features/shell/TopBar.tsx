@@ -8,6 +8,7 @@ import { Icon, Button, Avatar } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { GlobalSearch } from "./GlobalSearch";
+import { TrialBanner } from "./TrialBanner";
 import { useConnectionStatus } from "@/lib/useConnectionStatus";
 import { useOrgBranding } from "./useOrgBranding";
 
@@ -120,6 +121,8 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         {orgs.length === 1 && activeOrg && (
           <span className="text-xs text-fg-secondary font-medium hidden sm:inline">{activeOrg.orgName}</span>
         )}
+
+        <TrialBanner />
 
         <LanguageSwitcher />
 

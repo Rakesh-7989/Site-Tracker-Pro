@@ -40,6 +40,10 @@ export interface PlanCaps {
   plan: string;
   /** Raw feature_caps JSON from the plans row. */
   caps: Record<string, unknown>;
+  /** True while the org is inside an active Pro trial (subscriptions.status='trial', not expired). */
+  trialActive?: boolean;
+  /** ISO timestamp of trial end (only meaningful when trialActive). */
+  trialEndsAt?: string | null;
 }
 
 /** True only when the plan explicitly unlocks the feature. Missing/unknown → false (deny by default). */

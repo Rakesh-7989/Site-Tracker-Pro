@@ -11,13 +11,14 @@ type Handler = () => MockResult;
 
 function mockClient(handlers: Record<string, Handler>) {
   const calls: Array<{ table: string; method: string }> = [];
+  const patches: Array<Record<string, unknown>> = [];
   const chain = (table: string, result: () => MockResult): Record<string, unknown> => ({
     select() { calls.push({ table, method: "select" }); return chain(table, result); },
     eq() { calls.push({ table, method: "eq" }); return chain(table, result); },
     limit() { calls.push({ table, method: "limit" }); return chain(table, result); },
     async maybeSingle() { calls.push({ table, method: "maybeSingle" }); return result(); },
     async single() { calls.push({ table, method: "single" }); return result(); },
-    update() { calls.push({ table, method: "update" }); return chain(table, result); },
+    update(patch: Record<string, unknown>) { calls.push({ table, method: "update" }); patches.push(patch); return chain(table, result); },
     insert() { calls.push({ table, method: "insert" }); return chain(table, result); },
     then(resolve: (v: MockResult) => unknown) {
       calls.push({ table, method: "then" });
@@ -26,6 +27,7 @@ function mockClient(handlers: Record<string, Handler>) {
   });
   return {
     calls,
+    patches,
     auth: { getUser: async () => ({ data: { user: { id: "u-1" } } }) },
     from(table: string) {
       const result = handlers[table] ?? (() => ({ data: [], error: null }));
@@ -59,6 +61,19 @@ describe("getMyOrg", () => {
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.data.org?.segment).toBeNull();
   });
+
+  it("returns plan + billing_period for the onboarding plan step", async () => {
+    const c = mockClient({
+      org_members: () => ({ data: { org_id: "o-1" }, error: null }),
+      organizations: () => ({ data: { id: "o-1", name: "Eng Co", contact_email: "a@b", segment: "construction", plan: "pro", billing_period: "annual" }, error: null }),
+    });
+    const res = await getMyOrg(c as never);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data.org?.plan).toBe("pro");
+      expect(res.data.org?.billing_period).toBe("annual");
+    }
+  });
 });
 
 describe("updateOrg", () => {
@@ -75,6 +90,23 @@ describe("updateOrg", () => {
     const res = await updateOrg(c as never, "o-1", "Firm", "a@b", "architecture", ["projects", "design", "finance"]);
     expect(res.ok).toBe(true);
     expect(c.calls.map(x => x.table)).toContain("organizations");
+  });
+
+  it("persists plan + billing_period when provided (Zoho-style onboarding)", async () => {
+    const c = mockClient({ organizations: () => ({ data: null, error: null }) });
+    const res = await updateOrg(c as never, "o-1", "Firm", "a@b", "construction", undefined, "pro", "annual");
+    expect(res.ok).toBe(true);
+    const patch = c.patches.find(p => p.billing_period !== undefined);
+    expect(patch).toBeDefined();
+    expect(patch?.plan).toBe("pro");
+    expect(patch?.billing_period).toBe("annual");
+  });
+
+  it("does not stamp plan/billing_period when omitted (legacy callers unchanged)", async () => {
+    const c = mockClient({ organizations: () => ({ data: null, error: null }) });
+    await updateOrg(c as never, "o-1", "Firm", "a@b", "architecture");
+    expect(c.patches[0]).not.toHaveProperty("plan");
+    expect(c.patches[0]).not.toHaveProperty("billing_period");
   });
 });
 

@@ -1,7 +1,7 @@
 // SiteTrack Pro — self-service org registration query tests (P-D unified signup).
 
 import { describe, it, expect } from "vitest";
-import { registerOrg, type RegisterInput } from "@/app/orgRegisterQueries";
+import { registerOrg, resendConfirmation, type RegisterInput } from "@/app/orgRegisterQueries";
 
 const input: RegisterInput = {
   email: "owner@firm.com",
@@ -71,6 +71,57 @@ describe("registerOrg", () => {
   it("falls back to error.message when no JSON body", async () => {
     const err = { message: "network down", context: {} };
     const r = await registerOrg(input, client({ data: null, error: err }));
+    expect(r).toEqual({ ok: false, error: "network down" });
+  });
+
+  it("omits plan/billing/segment from the body when the identity screen omits them (Pro-trial default)", async () => {
+    let body: unknown;
+    const c = client({ data: { ok: true, orgId: "org-1", emailSent: false }, error: null });
+    c.functions.invoke = async (_fn: string, opts: { body: unknown }) => {
+      body = opts.body;
+      return { data: { ok: true, orgId: "org-1", emailSent: false }, error: null };
+    };
+    const minimal: RegisterInput = { email: "a@b.co", password: "s3cret-Pass", firmName: "a", contactName: "a" };
+    const r = await registerOrg(minimal, c);
+    expect(r.ok).toBe(true);
+    expect(body).not.toHaveProperty("plan");
+    expect(body).not.toHaveProperty("billing");
+    expect(body).not.toHaveProperty("segment");
+  });
+
+  it("passes plan + trialEndsAt through on success (verify screen)", async () => {
+    const r = await registerOrg(input, client({ data: { ok: true, orgId: "org-1", emailSent: true, plan: "pro", trialEndsAt: "2026-08-30T00:00:00.000Z" }, error: null }));
+    expect(r).toEqual({ ok: true, orgId: "org-1", emailSent: true, plan: "pro", trialEndsAt: "2026-08-30T00:00:00.000Z" });
+  });
+});
+
+describe("resendConfirmation", () => {
+  it("sends the email through the EF body", async () => {
+    let body: unknown;
+    const c = client({ data: { ok: true, emailSent: true }, error: null });
+    c.functions.invoke = async (_fn: string, opts: { body: unknown }) => {
+      body = opts.body;
+      return { data: { ok: true, emailSent: true }, error: null };
+    };
+    const r = await resendConfirmation("owner@firm.com", c);
+    expect(r).toEqual({ ok: true, emailSent: true });
+    expect(body).toMatchObject({ email: "owner@firm.com" });
+  });
+
+  it("surfaces an EF error message", async () => {
+    const r = await resendConfirmation("owner@firm.com", client({ data: { ok: false, message: "This email is already confirmed. Please sign in." }, error: null }));
+    expect(r).toEqual({ ok: false, error: "This email is already confirmed. Please sign in." });
+  });
+
+  it("surfaces the EF JSON body from a 4xx (FunctionsHttpError)", async () => {
+    const err = { message: "Edge Function returned a non-2xx status code", context: { json: async () => ({ ok: false, error: "rate-limited", message: "Too many resend requests. Please wait a minute." }) } };
+    const r = await resendConfirmation("owner@firm.com", client({ data: null, error: err }));
+    expect(r).toEqual({ ok: false, error: "Too many resend requests. Please wait a minute." });
+  });
+
+  it("falls back to error.message when no JSON body", async () => {
+    const err = { message: "network down", context: {} };
+    const r = await resendConfirmation("owner@firm.com", client({ data: null, error: err }));
     expect(r).toEqual({ ok: false, error: "network down" });
   });
 });

@@ -16,6 +16,7 @@ const app = [
   read("src/features/shell/TopBar.tsx"),
   read("src/features/shell/Sidebar.tsx"),
   read("src/features/shell/GlobalSearch.tsx"),
+  read("src/features/shell/TrialBanner.tsx"),
   read("src/features/admin/ImpersonationBanner.tsx"),
   read("src/features/admin/ImpersonationContext.tsx"),
   read("src/lib/useConnectionStatus.ts"),
@@ -106,6 +107,7 @@ const app = [
   read("scripts/supabase/186_notification_delivery.sql"),
   read("src/features/auth/OrgRegisterView.tsx"),
   read("src/app/orgRegisterQueries.ts"),
+  read("src/app/planCapsQueries.ts"),
   read("src/app/paymentQueries.ts"),
   read("scripts/supabase/201_signup_attempts.sql"),
 ].join("\n");
@@ -339,6 +341,11 @@ const vite = read("vite.config.js");
   "SignupRedirect",
   "resolveSignupAmount",
   "signup_attempts",
+  "resolveEffectivePlan",
+  "isTrialActive",
+  "getPlanCaps",
+  "TrialBanner",
+  "trialDaysLeft",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
@@ -464,6 +471,8 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "scripts/supabase/185_client_approvals.sql",
   "scripts/supabase/193_project_lifecycle.sql",
   "scripts/supabase/194_org_billing_period.sql",
+  "scripts/supabase/201_signup_attempts.sql",
+  "scripts/supabase/202_trial_end_cron.sql",
   "docs/PRODUCTION_RLS.md",
   "docs/CASHFREE_ONBOARDING.md",
   // Session 16 — Feature-flag catalog system
