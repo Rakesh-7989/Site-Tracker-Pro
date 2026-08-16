@@ -2569,6 +2569,58 @@ the TypeError at runtime. `admin.auth.admin.deleteUser(...)` calls were unaffect
   vitest `tests/efRegisterOrg + orgRegisterQueries + trialBanner` 24/24 · smoke **396
   checks**. `resend_confirmation` EF audited — no `.catch` bug.
 
+## Fix — confirm email NEVER sent: createUser does not email + supabase-js v2.108.2 positional generateLink broken (2026-08-16)
+
+### Problem
+Two independent bugs left the self-service signup **lockout-invisible**: registered
+users were told "check your inbox" but **no confirmation email was ever dispatched**.
+1. `register_org` created the user with `email_confirm:false` and assumed Supabase
+   would email the confirmation link — but `admin.auth.admin.createUser()` with
+   `email_confirm:false` **never sends** a confirmation email (SDK docs: "createUser()
+   will not send a confirmation email"; verified live: `confirmation_sent_at` stayed
+   NULL after createUser).
+2. `resend_confirmation` called `generateLink("signup", email)` positionally — but
+   supabase-js **v2.108.2** changed the signature to a **single params object**
+   `{ type, email, options? }` (source: `node_modules/@supabase/auth-js/dist/main/
+   GoTrueAdminApi.js` — body = `{...rest, ...options}`; positional call spreads the
+   email string → no `email` key). Live probe returned **502 `{ok:false,
+   error:"link-failed", detail:"An email address is required"}`**.
+
+### Root cause
+- GoTrue's admin `generate_link` endpoint **both generates the link AND dispatches
+  the confirmation email** via the configured SMTP (Gmail) — verified live
+  (`confirmation_sent_at` set immediately after the raw REST call, smtp.gmail.com:587,
+  sender "SiteTrack Pro"). So `generateLink` is the single source of truth for the
+  confirm email; `createUser` is NOT.
+- The redirect `site_url` on the project is **stale**
+  (`https://sitetrack-rakesh-rakesh15.vercel.app/`) but the redirect allowlist
+  includes `https://sitetrack-rakesh.vercel.app` → must pass `redirectTo` explicitly.
+
+### Fix (commit `7cd711b`, pushed `prod`, live 200)
+- `supabase/functions/register_org/index.ts` — after the org/profile/member steps
+  succeed, dispatch the confirm email via
+  `admin.auth.admin.generateLink({ type: "signup", email, options: { redirectTo: siteUrl } })`
+  where `siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app")
+  .replace(/\/+$/, "")`. `emailSent` now reflects the confirm dispatch
+  (`confirmDispatched`); a new `welcomeSent` field reports the Resend heads-up email.
+  The welcome email comment updated (GoTrue's email is the single confirm-link source).
+- `supabase/functions/resend_confirmation/index.ts` — switched to the object-form
+  `generateLink({ type: "signup", email, options: { redirectTo: siteUrl } })`; since
+  GoTrue dispatches the SMTP email itself, **removed** the duplicate Resend
+  `sendConfirmEmail` send (no double email); returns `{ ok:true, emailSent:true,
+  email, link }`.
+- New source-contract test `tests/efResendConfirmation.test.ts` (locks object-form
+  generateLink, redirectTo, no Resend call) + `tests/efRegisterOrg.test.ts` extended
+  (+4: generateLink dispatch, emailSent=confirm dispatch, canonical redirect URL).
+- **Verified live** (probe org/user cleaned): register_org → `emailSent:true`,
+  `confirmation_sent_at` **set** (was NULL before the fix); resend_confirmation →
+  **200** with `link` carrying `redirect_to=https://sitetrack-rakesh.vercel.app`.
+- Gates: `tsc` clean · eslint 0 errors · vitest **207 files / 2562 tests** · smoke
+  **396 checks**.
+- Deploy gotcha: `supabase functions deploy <fn>` intermittently failed with
+  "failed to read file ... no such file or directory" on Windows — fixed by passing
+  `--workdir "C:\Users\boyap\projects\04-site-tracker-pro"` explicitly.
+
 ### Notes
 - Debug instrumentation (try/catch wrapper returning `detail`) was **reverted** after
   root-cause — the live diff is the minimal 4-line `.then` swap.
