@@ -10,6 +10,7 @@ import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { useT } from "@/i18n/I18nProvider";
 import { CONSENT_VERSION } from "@/features/marketing/legalContent";
 import { type BillingPeriod } from "@/features/marketing/plans";
 import { registerOrg, resendConfirmation, type RegisterPlan } from "@/app/orgRegisterQueries";
@@ -30,6 +31,7 @@ const TRIAL_DAYS = 14;
 export function OrgRegisterView(): JSX.Element {
   const { session, status } = useAuth();
   const [params] = useSearchParams();
+  const t = useT();
 
   // Optional deep-link defaults (e.g. ?plan=business&billing=annual from a
   // marketing page). When absent, the EF provisions the Pro trial. Not shown
@@ -53,10 +55,10 @@ export function OrgRegisterView(): JSX.Element {
 
   const submit = async () => {
     setError(null);
-    if (!validEmail(email)) return setError("Please enter a valid work email.");
-    if (password.length < 8) return setError("Password must be at least 8 characters.");
-    if (password !== confirmPassword) return setError("Passwords do not match.");
-    if (!consent) return setError("Please agree to the Terms & Privacy Policy.");
+    if (!validEmail(email)) return setError(t("auth.errValidWorkEmail"));
+    if (password.length < 8) return setError(t("auth.errPasswordMin"));
+    if (password !== confirmPassword) return setError(t("auth.errPasswordMismatch"));
+    if (!consent) return setError(t("auth.errConsentRequired"));
     setBusy(true);
     const res = await registerOrg({
       email: email.trim().toLowerCase(),
@@ -79,18 +81,17 @@ export function OrgRegisterView(): JSX.Element {
       <div className="min-h-screen bg-panel grid place-items-center px-5">
         <Card className="max-w-md w-full p-8 text-center">
           <div className="w-14 h-14 rounded-2xl bg-accent-tint text-accent grid place-items-center mx-auto mb-3"><Icon name="mail" size={28} /></div>
-          <h1 className="font-display text-xl font-bold">Check your inbox</h1>
+          <h1 className="font-display text-xl font-bold">{t("auth.verifyTitle")}</h1>
           <p className="text-sm text-fg-secondary mt-2">
-            We sent a confirmation link to <b>{email}</b>. Click it to activate your workspace
-            and start your <b>{TRIAL_DAYS}-day Pro free trial</b>.
+            {t("auth.verifySub", { email, days: TRIAL_DAYS })}
           </p>
-          <p className="text-sm text-fg-secondary mt-1">Didn't get the email? Check spam, or resend it.</p>
+          <p className="text-sm text-fg-secondary mt-1">{t("auth.verifySpam")}</p>
           <ResendButton email={email} />
           <div className="mt-4">
-            <Link to="/register" className="text-sm text-accent font-semibold hover:underline">Use a different email</Link>
+            <Link to="/register" className="text-sm text-accent font-semibold hover:underline">{t("auth.verifyDifferentEmail")}</Link>
           </div>
           <Link to="/login" className="inline-block mt-5 px-6 py-2.5 bg-accent text-white font-bold rounded-xl text-sm hover:bg-accent-2">
-            Back to sign in
+            {t("auth.verifyBackToSignIn")}
           </Link>
         </Card>
       </div>
@@ -110,8 +111,8 @@ export function OrgRegisterView(): JSX.Element {
 
       <div className="max-w-md mx-auto px-5 pb-16">
         <div className="text-center mb-6">
-          <h1 className="font-display text-3xl font-bold">Create your workspace</h1>
-          <p className="text-sm text-fg-secondary mt-1">Start your <b>{TRIAL_DAYS}-day Pro free trial</b> — no credit card required</p>
+          <h1 className="font-display text-3xl font-bold">{t("auth.registerTitle")}</h1>
+          <p className="text-sm text-fg-secondary mt-1">{t("auth.registerSub", { days: TRIAL_DAYS })}</p>
         </div>
 
         <Card className="p-6 space-y-4">
@@ -121,28 +122,45 @@ export function OrgRegisterView(): JSX.Element {
             <label htmlFor="reg-website">Website</label>
             <input id="reg-website" type="text" name="website" autoComplete="off" tabIndex={-1} value={website} onChange={e => setWebsite(e.target.value)} />
           </div>
-          <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Work email</span>
+          <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">{t("auth.workEmail")}</span>
             <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@firm.com" autoComplete="email" />
           </label>
-          <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Password</span>
-            <Input className="mt-1" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete="new-password" />
+          <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">{t("auth.passwordLabel")}</span>
+            <Input className="mt-1" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} autoComplete="new-password" />
           </label>
-          <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Confirm password</span>
-            <Input className="mt-1" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
+          <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">{t("auth.confirmPasswordLabel")}</span>
+            <Input className="mt-1" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} autoComplete="new-password" />
           </label>
 
           <label className="flex items-start gap-2 text-[12px] text-fg-secondary cursor-pointer">
             <input type="checkbox" className="mt-0.5 accent-[var(--st-accent)]" checked={consent} onChange={e => setConsent(e.target.checked)} />
-            <span>I agree to the <Link to="/terms" target="_blank" className="text-accent font-semibold hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-accent font-semibold hover:underline">Privacy Policy</Link>.</span>
+            <span>{renderConsent(t)}</span>
           </label>
 
           <Button className="w-full" onClick={() => void submit()} disabled={busy || !consent}>
-            {busy ? <Spinner size={16} /> : <>Create workspace</>}
+            {busy ? <Spinner size={16} /> : <>{t("auth.registerCta")}</>}
           </Button>
-          <p className="text-[11px] text-fg-tertiary text-center">Already have an account? <Link to="/login" className="text-accent font-semibold">Sign in</Link></p>
+          <p className="text-[11px] text-fg-tertiary text-center">{t("auth.alreadyAccount")} <Link to="/login" className="text-accent font-semibold">{t("auth.signIn")}</Link></p>
         </Card>
       </div>
     </div>
+  );
+}
+
+function renderConsent(t: (key: string, vars?: Record<string, string | number>) => string): JSX.Element {
+  const parts = t("auth.consentRegister").split(/\{(terms|privacy)\}/);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part === "terms") {
+          return <Link key={i} to="/terms" target="_blank" className="text-accent font-semibold hover:underline">{t("auth.termsLabel")}</Link>;
+        }
+        if (part === "privacy") {
+          return <Link key={i} to="/privacy" target="_blank" className="text-accent font-semibold hover:underline">{t("auth.privacyLabel")}</Link>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
   );
 }
 
@@ -150,6 +168,7 @@ function ResendButton({ email }: { email: string }): JSX.Element {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
 
   const resend = async () => {
     setError(null);
@@ -163,7 +182,7 @@ function ResendButton({ email }: { email: string }): JSX.Element {
   if (sent) {
     return (
       <div className="mt-4 text-sm text-success bg-success-tint rounded-xl px-4 py-2.5">
-        Confirmation email sent. Please check your inbox.
+        {t("auth.verifySent")}
       </div>
     );
   }
@@ -173,7 +192,7 @@ function ResendButton({ email }: { email: string }): JSX.Element {
       <button type="button" onClick={() => void resend()} disabled={sending}
         className="w-full px-6 py-2.5 rounded-xl border border-border bg-bg-secondary text-sm font-semibold text-fg-primary hover:bg-bg-secondary/70 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
         {sending ? <Spinner size={16} /> : <Icon name="mail" size={16} />}
-        {sending ? "Sending..." : "Resend confirmation email"}
+        {sending ? t("auth.verifySending") : t("auth.verifyResend")}
       </button>
       {error && <p className="text-[12px] text-error mt-2 text-center">{error}</p>}
     </div>

@@ -2623,5 +2623,42 @@ users were told "check your inbox" but **no confirmation email was ever dispatch
 
 ### Notes
 - Debug instrumentation (try/catch wrapper returning `detail`) was **reverted** after
-  root-cause — the live diff is the minimal 4-line `.then` swap.
+  root-cause - the live diff is the minimal 4-line `.then` swap.
 - Temp files cleaned: `scripts/probe-202*.mjs`, `%TEMP%\stp-svc-key.txt`.
+
+---
+
+## Pending Work — End-to-End Plan (docs/PENDING_WORK_END_TO_END_PLAN.md, 2026-08-16)
+
+### Phase B — Signup-flow i18n parity (COMPLETE)
+`OrgRegisterView` (the self-service `/register` screen) now renders via `useT()`
+instead of hardcoded English — mirroring `LoginScreenV3`:
+- **22 new `auth.*` keys added to en/te/hi** (register title/subtitle, trial line,
+  confirm-password, consent, register CTA, 8 validation messages, verify-screen
+  title/sub/email-sent/resend/back). en.json keeps its UTF-8 BOM; te/hi stay
+  CRLF-no-BOM. Parity test (`tests/i18n/i18n.test.ts`, 25) green — key-set based,
+  no count updates needed.
+- **`src/features/auth/OrgRegisterView.tsx`** — `useT()` wired in; hardcoded strings
+  → `t("auth.*")` with `{days}`/`{email}` interpolation; the consent sentence is a
+  pure `renderConsent(t)` helper that token-splits the translated string on
+  `{terms}`/`{privacy}` and renders the two legal `<Link>`s in place (t() only
+  interpolates strings, not ReactNodes).
+- **New component test** `tests/features/auth/orgRegisterView.test.tsx` (4) —
+  renders via `renderToStaticMarkup` inside `I18nProvider` + `MemoryRouter`
+  (locale defaults to en in Node): i18n-wired title/subtitle, consent links with
+  `/terms` + `/privacy` hrefs, sign-in footer, deep-link query accepted.
+- Gates: tsc clean · eslint 0 errors · vitest **209 files / 2577 tests** · smoke
+  **398 checks** · build clean · e2e-mock **11/11**.
+
+### Phase A — Real email delivery via sitetrack.in (BLOCKED on user DNS)
+- Resend domain `sitetrack.in` created (id `ddf2ce85-70c8-4b59-a734-a0d58d301976`,
+  region us-east-1, status `not_started`). User must add 3 records at the DNS
+  provider: **TXT `resend._domainkey`** = the `p=...` value from the domain's
+  `records` API, **TXT `send`** = `v=spf1 include:amazonses.com ~all`, **MX `send`**
+  (pri 10) = `feedback-smtp.us-east-1.amazonses.com`. After DNS propagates, agent
+  verifies in Resend, flips `RESEND_FROM_EMAIL` → `hello@sitetrack.in` (env.local +
+  Supabase EF secret), live-tests delivery to `boyapatirakesh7777@gmail.com`
+  (test domain only reaches `boyapatirakesh.mahespaddy@gmail.com`), then does the
+  §8 manual confirm round-trip.
+- `RESEND_FROM_EMAIL` is currently `SiteTrack <onboarding@resend.dev>` (test
+  domain) — works only to the account owner email.
