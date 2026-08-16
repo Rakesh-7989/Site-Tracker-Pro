@@ -35,6 +35,17 @@ describe("registerOrg", () => {
     expect(body).toMatchObject({ plan: "pro", billing: "annual", segment: "construction" });
   });
 
+  it("sends the honeypot field through (empty for real users, autofilled by bots)", async () => {
+    let body: unknown;
+    const c = client({ data: { ok: true, orgId: "org-1", emailSent: false }, error: null });
+    c.functions.invoke = async (_fn: string, opts: { body: unknown }) => {
+      body = opts.body;
+      return { data: { ok: true, orgId: "org-1", emailSent: false }, error: null };
+    };
+    await registerOrg({ ...input, website: "http://spam.example" }, c);
+    expect(body).toMatchObject({ website: "http://spam.example" });
+  });
+
   it("defaults emailSent to false when the EF omits it", async () => {
     const r = await registerOrg(input, client({ data: { ok: true, orgId: "org-1" }, error: null }));
     expect(r).toEqual({ ok: true, orgId: "org-1", emailSent: false });
@@ -49,6 +60,12 @@ describe("registerOrg", () => {
     const err = { message: "Edge Function returned a non-2xx status code", context: { json: async () => ({ ok: false, message: "Please enter a valid work email." }) } };
     const r = await registerOrg(input, client({ data: null, error: err }));
     expect(r).toEqual({ ok: false, error: "Please enter a valid work email." });
+  });
+
+  it("surfaces the friendly rate-limited message from a 429 (migration 201)", async () => {
+    const err = { message: "Edge Function returned a non-2xx status code", context: { json: async () => ({ ok: false, error: "rate-limited", message: "Too many workspace signups from your network. Please try again in about an hour." }) } };
+    const r = await registerOrg(input, client({ data: null, error: err }));
+    expect(r).toEqual({ ok: false, error: "Too many workspace signups from your network. Please try again in about an hour." });
   });
 
   it("falls back to error.message when no JSON body", async () => {

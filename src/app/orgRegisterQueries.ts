@@ -16,6 +16,8 @@ export interface RegisterInput {
   /** What kind of company this org is (migration 134). */
   segment: CompanySegment;
   consentVersion?: string;
+  /** Honeypot — bots autofill this hidden field; real users leave it empty. */
+  website?: string;
 }
 export type RegisterResult = { ok: true; orgId: string; emailSent: boolean } | { ok: false; error: string };
 

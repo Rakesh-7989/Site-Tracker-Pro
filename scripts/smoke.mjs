@@ -107,6 +107,7 @@ const app = [
   read("src/features/auth/OrgRegisterView.tsx"),
   read("src/app/orgRegisterQueries.ts"),
   read("src/app/paymentQueries.ts"),
+  read("scripts/supabase/201_signup_attempts.sql"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
 const vite = read("vite.config.js");
@@ -337,6 +338,7 @@ const vite = read("vite.config.js");
   "registerOrg",
   "SignupRedirect",
   "resolveSignupAmount",
+  "signup_attempts",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

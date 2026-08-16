@@ -105,6 +105,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const contactName = String(body.contactName ?? "").trim();
   const phone = body.phone ? String(body.phone).trim() : null;
   const plan = String(body.plan ?? "basic");
+  // Honeypot: a hidden field real users never fill (bots do). Pretend success,
+  // create nothing. Same posture as submit_signup_request.
+  const honeypot = String(body.website ?? "").trim();
+  if (honeypot) return json({ ok: true }, 200);
   const consentVersion = body.consentVersion ? String(body.consentVersion).trim() : null;
   // Billing cycle (P-D unified signup): "monthly" | "annual". Optional for
   // back-compat with older clients; defaults to monthly. Annual = "2 months
@@ -131,6 +135,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
   const loginUrl = `${siteUrl}/login`;
+
+  // Source IP for rate-limiting (first hop in x-forwarded-for).
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+
+  // Throttle: max 5 self-service org creations per IP per hour (mirrors the
+  // submit_signup_request posture that the honest review praised — the legacy
+  // approval path had this, the live self-service path did not).
+  if (ip) {
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await admin
+      .from("signup_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .gt("created_at", since);
+    if ((count ?? 0) >= 5) {
+      return json({ ok: false, error: "rate-limited", message: "Too many workspace signups from your network. Please try again in about an hour." }, 429);
+    }
+  }
 
   // 1. Create auth user
   const { data: createData, error: createErr } = await admin.auth.admin.createUser({
@@ -196,6 +218,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // 5. Send welcome email
   const emailSent = await sendWelcomeEmail(email, firmName, password, loginUrl, plan, billing);
+
+  // 6. Record the successful attempt for the IP rate limit (best-effort —
+  //    a failure here must never undo the org creation).
+  if (ip) {
+    await admin.from("signup_attempts").insert({ ip }).catch(() => {});
+  }
 
   return json({
     ok: true,

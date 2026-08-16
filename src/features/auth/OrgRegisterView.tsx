@@ -39,6 +39,7 @@ export function OrgRegisterView(): JSX.Element {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
+  const [website, setWebsite] = useState("");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +66,7 @@ export function OrgRegisterView(): JSX.Element {
       billing,
       segment,
       consentVersion: CONSENT_VERSION,
+      website,
     });
     setBusy(false);
     if (res.ok) setDone(true);
@@ -170,6 +172,11 @@ export function OrgRegisterView(): JSX.Element {
         {/* Form */}
         <Card className="max-w-xl mx-auto p-6 space-y-4">
           {error && <Alert variant="danger">{error}</Alert>}
+          {/* Honeypot — invisible to humans, autofilled by bots (migration 201 / register_org EF). */}
+          <div className="hidden" aria-hidden="true">
+            <label htmlFor="reg-website">Website</label>
+            <input id="reg-website" type="text" name="website" autoComplete="off" tabIndex={-1} value={website} onChange={e => setWebsite(e.target.value)} />
+          </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">Firm name</span>
               <Input className="mt-1" value={firmName} onChange={e => setFirmName(e.target.value)} placeholder="e.g. ABC Constructions" /></label>
