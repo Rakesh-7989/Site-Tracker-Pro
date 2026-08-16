@@ -22,7 +22,7 @@ import {
   getStatusLabel,
   getStatusBadgeColor,
   roleCanAction,
-} from "../src/features/project/lifecycleStatus";
+} from "@/features/project/lifecycleStatus";
 
 const ALL_STATUSES: ProjectStatus[] = [
   "active",
@@ -62,16 +62,17 @@ const ALL_IDENTITY_ROLES = [
 
 describe("ProjectStatus type", () => {
   it("should be a union of 6 string literals", () => {
-    // Compile-time check that the type has exactly 6 values
-    type ExpectTrue<T> = true;
-    type tests = [
-      expect<expect_true<ProjectStatus extends "active">>,
-      expect<expect_true<ProjectStatus extends "paused">>,
-      expect<expect_true<ProjectStatus extends "on_hold">>,
-      expect<expect_true<ProjectStatus extends "deactivated">>,
-      expect<expect_true<ProjectStatus extends "completed">>,
-      expect<expect_true<ProjectStatus extends "cancelled">>,
-    ];
+    // Runtime check that the type has exactly 6 values
+    const statuses = Object.keys(STATUS_LABELS);
+    expect(statuses.length).toBe(6);
+    expect(statuses).toEqual([
+      "active",
+      "paused",
+      "on_hold",
+      "deactivated",
+      "completed",
+      "cancelled",
+    ]);
   });
 
   it("should have all 6 statuses", () => {
@@ -85,6 +86,12 @@ describe("ProjectStatus type", () => {
 describe("DEFAULT_STATUS", () => {
   it("should be 'active'", () => {
     expect(DEFAULT_STATUS).toBe("active");
+  });
+
+  it("should be the reactivation target, not terminal", () => {
+    expect(NON_TERMINAL_STATUSES).not.toContain(DEFAULT_STATUS);
+    expect(TERMINAL_STATUSES).not.toContain(DEFAULT_STATUS);
+    expect(getAllStatuses()).toContain(DEFAULT_STATUS);
   });
 });
 
@@ -263,7 +270,7 @@ describe("getStatusLabel", () => {
   it("should return the status itself for unknown values", () => {
     expect(getStatusLabel("unknown" as ProjectStatus)).toBe("unknown");
   });
-}
+});
 
 // ── Status badge color ──────────────────────────────────────────────────
 
@@ -386,8 +393,8 @@ describe("comprehensive role coverage", () => {
       // Each role should have a defined STATUS_ACTIONS entry
       const actions = STATUS_ACTIONS[role];
       expect(actions).toBeDefined();
-      // Verify it's a ReadonlySet
-      expect(actions instanceof ReadonlySet).toBe(true);
+      // Verify it's a Set
+      expect(actions instanceof Set).toBe(true);
     }
   });
 
@@ -402,7 +409,7 @@ describe("comprehensive role coverage", () => {
         }
       }
       // At minimum, superadmin should be able to activate
-      expect(anyRoleCan).toBe(true);
+      expect(anyRoleCan, `status ${status}`).toBe(true);
     }
   });
 });

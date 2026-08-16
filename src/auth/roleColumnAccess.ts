@@ -4,8 +4,8 @@
 // direct imports for server-side rendering / SSG.
 
 import { isIdentityRole, isProjectTierRole } from "./roles";
+import type { IdentityRole, ProjectTierRole } from "./roles";
 import { identityCapabilities, projectTierCapabilities } from "./permissions-matrix";
-import { CAPABILITIES } from "./capabilities";
 import type { Capability } from "./capabilities";
 
 /** All identity roles that have `budget:view` capability (can see budget columns). */
@@ -60,43 +60,43 @@ export function canViewProjectScope(role: string): boolean {
 
 /** Check if an identity role has the `crm:view` capability. */
 export function canViewCrm(role: string): boolean {
-  const caps = identityCapabilities(role as const);
+  const caps = identityCapabilities(role as IdentityRole);
   return caps.includes("crm:view");
 }
 
 /** Check if an identity role has the `utilization:view` capability. */
 export function canViewUtilization(role: string): boolean {
-  const caps = identityCapabilities(role as const);
+  const caps = identityCapabilities(role as IdentityRole);
   return caps.includes("utilization:view");
 }
 
 /** Check if an identity role has the `ffe:manage` capability. */
 export function canManageFFE(role: string): boolean {
-  const caps = identityCapabilities(role as const);
+  const caps = identityCapabilities(role as IdentityRole);
   return caps.includes("ffe:manage");
 }
 
 /** Check if an identity role has the `statutory:manage` capability. */
 export function canManageStatutory(role: string): boolean {
-  const caps = identityCapabilities(role as const);
+  const caps = identityCapabilities(role as IdentityRole);
   return caps.includes("statutory:manage");
 }
 
 /** Check if an identity role has the `audit:manage` capability. */
 export function canManageAudit(role: string): boolean {
-  const caps = identityCapabilities(role as const);
+  const caps = identityCapabilities(role as IdentityRole);
   return caps.includes("audit:manage");
 }
 
 /** Check if an identity role has the `crm:manage` capability. */
 export function canManageCrm(role: string): boolean {
-  const caps = identityCapabilities(role as const);
+  const caps = identityCapabilities(role as IdentityRole);
   return caps.includes("crm:manage");
 }
 
 /** Check if an identity role has the `deliverable:manage` capability. */
 export function canManageDeliverable(role: string): boolean {
-  const caps = identityCapabilities(role as const);
+  const caps = identityCapabilities(role as IdentityRole);
   return caps.includes("deliverable:manage");
 }
 
@@ -107,17 +107,17 @@ export function canViewProjectId(role: string): boolean {
 
 /** Check if a project-tier role can see deliverable management columns. */
 export function projectTierCanManageDeliverable(role: string): boolean {
-  return projectTierCapabilities(role as const).includes("deliverable:manage");
+  return projectTierCapabilities(role as ProjectTierRole).includes("deliverable:manage");
 }
 
 /** Check if a project-tier role can see utilization view columns. */
 export function projectTierCanViewUtilization(role: string): boolean {
-  return projectTierCapabilities(role as const).includes("utilization:view");
+  return projectTierCapabilities(role as ProjectTierRole).includes("utilization:view");
 }
 
 /** Check if a project-tier role can see budget view columns. */
 export function projectTierCanViewBudget(role: string): boolean {
-  return projectTierCapabilities(role as const).some(
+  return projectTierCapabilities(role as ProjectTierRole).some(
     (cap) => cap.startsWith("budget:")
   );
 }
@@ -128,7 +128,7 @@ export function getIdentityCapabilities(role: string): Capability[] {
   if (!isIdentityRole(role)) {
     return [];
   }
-  return identityCapabilities(role as const);
+  return identityCapabilities(role as IdentityRole);
 }
 
 /** Get all capabilities for a project-tier role. */
@@ -137,7 +137,7 @@ export function getProjectTierCapabilities(role: string): Capability[] {
   if (!isProjectTierRole(role)) {
     return [];
   }
-  return projectTierCapabilities(role as const);
+  return projectTierCapabilities(role as ProjectTierRole);
 }
 
 /** Check if any of the given roles have the specified capability. */
@@ -150,8 +150,8 @@ export function hasCapabilityAny(
 
 /** Check if a specific role can view a specific capability. */
 export function canViewCapability(role: string, capability: string): boolean {
-  const caps = identityCapabilities(role);
-  return caps.includes(capability);
+  const caps = identityCapabilities(role as IdentityRole);
+  return caps.includes(capability as Capability);
 }
 
 /** Get the overlap of capabilities between two roles. */
@@ -159,18 +159,17 @@ export function getCapabilityIntersection(
   roleA: string,
   roleB: string
 ): Set<Capability> {
-  const capsA = new Set(identityCapabilities(roleA));
-  const capsB = new Set(identityCapabilities(roleB));
+  const capsA = new Set(identityCapabilities(roleA as IdentityRole));
+  const capsB = new Set(identityCapabilities(roleB as IdentityRole));
   return new Set([...capsA].filter((x) => capsB.has(x)));
 }
 
 /** Check if roleA has strictly more capabilities than roleB. */
 export function hasMoreCapabilitiesThan(roleA: string, roleB: string): boolean {
-  const capsA = new Set(identityCapabilities(roleA));
-  const capsB = new Set(identityCapabilities(roleB));
-  // A has all of B's caps + at least one extra
-  const allBCaps = new Set(capsB);
-  return [...capsA].every((x) => allBCaps.has(x)) && capsA.size > capsB.size;
+  const capsA = new Set(identityCapabilities(roleA as IdentityRole));
+  const capsB = new Set(identityCapabilities(roleB as IdentityRole));
+  // B is a subset of A and A has at least one extra cap
+  return [...capsB].every((x) => capsA.has(x)) && capsA.size > capsB.size;
 }
 
 /** Get capabilities unique to a role (not shared with another). */
@@ -178,9 +177,9 @@ export function getUniqueCapabilities(
   role: string,
   excludeRole?: string
 ): Set<Capability> {
-  const caps = new Set(identityCapabilities(role));
+  const caps = new Set(identityCapabilities(role as IdentityRole));
   if (excludeRole) {
-    const excludeCaps = new Set(identityCapabilities(excludeRole));
+    const excludeCaps = new Set(identityCapabilities(excludeRole as IdentityRole));
     return new Set([...caps].filter((x) => !excludeCaps.has(x)));
   }
   return caps;
@@ -216,12 +215,6 @@ export function isColumnVisibleToRole(
       return false;
   }
 }
-
-export type {
-  BUDGET_VIEW_ROLES,
-  FINANCIAL_ROLLUP_ROLES,
-  PROJECT_SCOPE_ROLES,
-};
 
 /** Legacy compatibility: map old PERMS-style checks to new capability system. */
 export function legacyPermCheck(

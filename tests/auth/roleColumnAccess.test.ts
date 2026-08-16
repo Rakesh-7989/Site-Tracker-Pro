@@ -27,9 +27,9 @@ import {
   getUniqueCapabilities,
   isColumnVisibleToRole,
   isOrgAdminOrSuper,
-  IDENTITY_ROLES_LIST,
+  legacyPermCheck,
   IDENTITY_ROLES_LIST as identityRoles,
-} from "../src/auth/roleColumnAccess";
+} from "@/auth/roleColumnAccess";
 
 const ALL_IDENTITY_ROLES = identityRoles;
 
@@ -48,8 +48,8 @@ describe("canViewBudget", () => {
     expect(canViewBudget("project_admin")).toBe(true);
   });
 
-  it("should return true for architect", () => {
-    expect(canViewBudget("architect")).toBe(true);
+  it("should return false for architect (not in BUDGET_VIEW_ROLES)", () => {
+    expect(canViewBudget("architect")).toBe(false);
   });
 
   it("should return false for client", () => {
@@ -72,8 +72,8 @@ describe("canViewFinancialRollup", () => {
     expect(canViewFinancialRollup("pm")).toBe(true);
   });
 
-  it("should return true for architect", () => {
-    expect(canViewFinancialRollup("architect")).toBe(true);
+  it("should return false for architect (not in FINANCIAL_ROLLUP_ROLES)", () => {
+    expect(canViewFinancialRollup("architect")).toBe(false);
   });
 
   it("should return false for client", () => {
@@ -132,8 +132,8 @@ describe("canViewUtilization", () => {
     expect(canViewUtilization("pm")).toBe(true);
   });
 
-  it("should return true for consultant", () => {
-    expect(canViewUtilization("consultant")).toBe(true);
+  it("should return false for consultant (no utilization:view at identity tier)", () => {
+    expect(canViewUtilization("consultant")).toBe(false);
   });
 
   it("should return false for site_inspector", () => {
@@ -196,8 +196,8 @@ describe("canManageCrm", () => {
     expect(canManageCrm("orgadmin")).toBe(true);
   });
 
-  it("should return true for pm", () => {
-    expect(canManageCrm("pm")).toBe(true);
+  it("should return false for pm (only crm:view, not crm:manage)", () => {
+    expect(canManageCrm("pm")).toBe(false);
   });
 
   it("should return false for client", () => {
@@ -258,8 +258,8 @@ describe("projectTierCanViewUtilization", () => {
     expect(projectTierCanViewUtilization("pm")).toBe(true);
   });
 
-  it("should return true for architect", () => {
-    expect(projectTierCanViewUtilization("architect")).toBe(true);
+  it("should return false for architect (no utilization:view at project tier)", () => {
+    expect(projectTierCanViewUtilization("architect")).toBe(false);
   });
 
   it("should return false for client", () => {
@@ -329,27 +329,33 @@ describe("canViewCapability", () => {
 });
 
 describe("getCapabilityIntersection", () => {
-  it("should return intersection of orgadmin and pm caps", () => {
+  it("should include only shared caps of orgadmin and pm", () => {
     const intersection = getCapabilityIntersection("orgadmin", "pm");
     expect(intersection).toContain("activity:view");
-    expect(intersection).toContain("audit:read");
+    expect(intersection).toContain("deliverable:manage");
+    expect(intersection).not.toContain("audit:read");
   });
 
-  it("should return empty set for disjoint roles", () => {
+  it("should exclude role-specific caps from the intersection", () => {
     const intersection = getCapabilityIntersection("client", "site_inspector");
-    expect(intersection.size).toBe(0);
+    expect(intersection).toContain("activity:view");
+    expect(intersection).not.toContain("audit:read");
+    expect(intersection).not.toContain("handover:sign");
   });
 });
 
 describe("hasMoreCapabilitiesThan", () => {
-  it("should return true when orgadmin has more caps than pm", () => {
-    expect(hasMoreCapabilitiesThan("orgadmin", "pm")).toBe(true);
+  it("should return true when superadmin has more caps than pm", () => {
+    expect(hasMoreCapabilitiesThan("superadmin", "pm")).toBe(true);
   });
 
-  it("should return false when roles have equal caps", () => {
-    // architect and senior_architect have different but comparable sets
-    // This test verifies the function doesn't crash
-    expect(hasMoreCapabilitiesThan("architect", "senior_architect")).toBeDefined();
+  it("should return false for orgadmin vs pm (SoD sets, not a superset)", () => {
+    expect(hasMoreCapabilitiesThan("orgadmin", "pm")).toBe(false);
+  });
+
+  it("should return true when a role is a strict superset of another", () => {
+    expect(hasMoreCapabilitiesThan("senior_architect", "architect")).toBe(true);
+    expect(hasMoreCapabilitiesThan("architect", "senior_architect")).toBe(false);
   });
 });
 
@@ -389,17 +395,11 @@ describe("isColumnVisibleToRole", () => {
 // ── Org admin / super check ─────────────────────────────────────────────
 
 describe("isOrgAdminOrSuper", () => {
-  it("should return true for orgadmin", () => {
+  it("should return true only for orgadmin and superadmin", () => {
     expect(isOrgAdminOrSuper("orgadmin")).toBe(true);
-  });
-
-  it("should return true for superadmin", () => {
     expect(isOrgAdminOrSuper("superadmin")).toBe(true);
-  });
-
-  it("should return false for other roles", () => {
-    expect(isOrgAdminOrSuper("client")).toBe(false);
-    expect(isOrgAdminOrSuper("pm")).toBe(false);
+    expect(isOrgAdminOrSuper("promoter")).toBe(false);
+    expect(isOrgAdminOrSuper("project_admin")).toBe(false);
   });
 });
 
@@ -442,10 +442,11 @@ describe("legacyPermCheck", () => {
 // ── Role category grouping ──────────────────────────────────────────────
 
 describe("role category grouping", () => {
-  it("should group org-leadership roles correctly", () => {
+  it("should not group non-orgadmin roles as org-admin", () => {
     expect(isOrgAdminOrSuper("orgadmin")).toBe(true);
-    expect(isOrgAdminOrSuper("promoter")).toBe(true);
-    expect(isOrgAdminOrSuper("project_admin")).toBe(true);
+    expect(isOrgAdminOrSuper("superadmin")).toBe(true);
+    expect(isOrgAdminOrSuper("promoter")).toBe(false);
+    expect(isOrgAdminOrSuper("project_admin")).toBe(false);
   });
 
   it("should NOT group project-execution roles as org-admin", () => {

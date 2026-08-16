@@ -58,11 +58,22 @@ export const STATUS_ACTIONS: Record<string, ReadonlySet<ProjectStatus>> = {
   pm: new Set(["active", "paused", "on_hold", "deactivated", "completed"]),
   // project_admin can pause/hold/deactivate but not complete/cancel
   project_admin: new Set(["active", "paused", "on_hold", "deactivated"]),
+  // promoters/prospectors/heads own the engagement but can only view status
+  promoter: new Set(["active"]),
+  prospector: new Set(["active"]),
+  design_head: new Set(["active"]),
+  consultant_head: new Set(["active"]),
   // architects and designers can only view status
   architect: new Set(["active"]),
   senior_architect: new Set(["active"]),
+  junior_architect: new Set(["active"]),
+  design_architect_interior: new Set(["active"]),
   designer: new Set(["active"]),
   consultant: new Set(["active"]),
+  mep_consultant: new Set(["active"]),
+  structural_consultant: new Set(["active"]),
+  site_engineer: new Set(["active"]),
+  contractor: new Set(["active"]),
   client: new Set(["active"]),
   vendor: new Set(["active"]),
   site_inspector: new Set(["active"]),
@@ -124,26 +135,34 @@ export function getStatusBadgeColor(status: ProjectStatus): string {
   return STATUS_BADGE_COLOR[status] || "default";
 }
 
+// Action → the status a role must be able to reach
+const ACTION_TARGET: Record<string, ProjectStatus> = {
+  activate: "active",
+  pause: "paused",
+  hold: "on_hold",
+  deactivate: "deactivated",
+  complete: "completed",
+  cancel: "cancelled",
+  archive: "completed",
+  delete: "completed",
+};
+
+// View-only roles are granted only the "active" action (read status, no change)
+export function isViewOnlyRole(allowed: ReadonlySet<ProjectStatus>): boolean {
+  return allowed.size === 1 && allowed.has("active");
+}
+
 // Check if a role can perform a specific status action
 export function roleCanAction(role: string, action: "activate" | "pause" | "hold" | "deactivate" | "complete" | "cancel" | "archive" | "delete"): boolean {
   const allowed = STATUS_ACTIONS[role];
   if (!allowed) return false;
 
-  // Map action to status check
-  const statusMap: Record<string, () => boolean> = {
-    activate: () => isNonTerminal("deactivated"), // simplified
-    pause: () => isNonTerminal("active"),
-    hold: () => isNonTerminal("active"),
-    deactivate: () => isNonTerminal("active"),
-    complete: () => isTerminal("active"),
-    cancel: () => isTerminal("active"),
-    archive: () => isTerminal("completed"), // superadmin only in UI gating
-    delete: () => isTerminal("completed"),   // superadmin only in UI gating
-  };
+  const target = ACTION_TARGET[action];
+  if (!target) return false;
 
-  const check = statusMap[action];
-  if (check) return check("active"); // placeholder — role gating done separately
-  return allowed.has("active"); // fallback
+  if (isViewOnlyRole(allowed)) return false;
+
+  return allowed.has(target);
 }
 
 // Export all status values for convenience
