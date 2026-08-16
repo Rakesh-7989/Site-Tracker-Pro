@@ -2536,3 +2536,40 @@ subdomains, mobile, AI, analytics).
 - **Track B — B1/B2/B3: COMPLETE** (code + live DB substrate shipped, `e9c5889`).
   B4 partial (delivery blocked on provider keys), B5 partial (CAD preview ⬜), B6
   partial (subdomains/mobile/AI ⬜).
+
+---
+
+## Fix — register_org live 500: `.catch` on supabase-js v2 PostgrestBuilder (2026-08-16)
+
+### Problem
+The freshly deployed `register_org` EF returned **HTTP 500 `{ok:false, error:"internal",
+detail:"TypeError: admin.from(...).upsert(...).catch is not a function"}`** on every
+valid self-service signup — the live Zoho-style signup flow was broken end-to-end.
+
+### Root cause
+supabase-js **v2** PostgrestBuilder query chains expose `.then` but **not `.catch`**.
+The EF's four best-effort fire-and-forget writes used `.catch(() => {})`, which threw
+the TypeError at runtime. `admin.auth.admin.deleteUser(...)` calls were unaffected
+(real promises).
+
+### Fix (commit `3a23339`, pushed `prod`, live 200)
+- `supabase/functions/register_org/index.ts` — the 4 builder-chain `.catch(() => {})`
+  → `.then(() => {}, () => {})` (subscriptions upsert ×1, organizations delete ×2,
+  signup_attempts insert ×1). The `deleteUser(...).catch(...)` calls kept (safe).
+- Redeployed EF + **verified live**: valid POST → **HTTP 200** with
+  `{ok:true, orgId, userId, emailSent:false, plan:"pro", trialEndsAt}`; auth user
+  created `email_confirmed_at: NULL` (unconfirmed); org `plan=pro billing_period=monthly`;
+  subscription `status=trial` 14-day `trial_ends_at`; profile `orgadmin`; org_members
+  `admin`. Probe orgs/users cleaned up; temp probe scripts removed.
+- `emailSent:false` = the Resend welcome email rejects the unroutable `.test` probe
+  domain — expected; the critical confirm email is sent by Supabase Auth's configured
+  Gmail SMTP (verified live: `mailer_autoconfirm:false` + smtp.gmail.com:587,
+  sender "SiteTrack Pro").
+- Gates: `tsc` clean · eslint 0 errors (EF ignored by eslint config — no change) ·
+  vitest `tests/efRegisterOrg + orgRegisterQueries + trialBanner` 24/24 · smoke **396
+  checks**. `resend_confirmation` EF audited — no `.catch` bug.
+
+### Notes
+- Debug instrumentation (try/catch wrapper returning `detail`) was **reverted** after
+  root-cause — the live diff is the minimal 4-line `.then` swap.
+- Temp files cleaned: `scripts/probe-202*.mjs`, `%TEMP%\stp-svc-key.txt`.
