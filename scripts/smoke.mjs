@@ -502,6 +502,9 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "supabase/functions/_shared/cashfree.ts",
   "supabase/functions/cashfree-subscription/index.ts",
   "supabase/functions/cashfree-webhook/index.ts",
+  // Resend delivery/bounce webhook receiver (Svix-signed, RESEND_WEBHOOK_SECRET)
+  "supabase/functions/_shared/resendWebhook.ts",
+  "supabase/functions/resend-webhook/index.ts",
   "supabase/functions/README.md",
   "src/lib/blockchainAnchor.ts",
   "tests/blockchainAnchor.test.js",
