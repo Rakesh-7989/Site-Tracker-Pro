@@ -194,7 +194,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     status: "trial",
     trial_ends_at: trialEnd,
     current_period_end: trialEnd,
-  }, { onConflict: "org_id" }).catch(() => {});
+  }, { onConflict: "org_id" }).then(() => {}, () => {});
 
   // 3. Create profile with orgadmin role
   const { error: profileErr } = await admin
@@ -209,7 +209,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }, { onConflict: "id", ignoreDuplicates: false });
 
   if (profileErr) {
-    await admin.from("organizations").delete().eq("id", orgId).catch(() => {});
+    await admin.from("organizations").delete().eq("id", orgId).then(() => {}, () => {});
     await admin.auth.admin.deleteUser(userId).catch(() => {});
     return json({ ok: false, error: "profile-create-failed", detail: profileErr.message }, 500);
   }
@@ -220,7 +220,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     .upsert({ org_id: orgId, profile_id: userId, role: "admin", removed_at: null }, { onConflict: "org_id,profile_id" });
 
   if (omErr) {
-    await admin.from("organizations").delete().eq("id", orgId).catch(() => {});
+    await admin.from("organizations").delete().eq("id", orgId).then(() => {}, () => {});
     await admin.auth.admin.deleteUser(userId).catch(() => {});
     return json({ ok: false, error: "org-member-failed", detail: omErr.message }, 500);
   }
@@ -231,7 +231,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // 6. Record the successful attempt for the IP rate limit (best-effort —
   //    a failure here must never undo the org creation).
   if (ip) {
-    await admin.from("signup_attempts").insert({ ip }).catch(() => {});
+    await admin.from("signup_attempts").insert({ ip }).then(() => {}, () => {});
   }
 
   return json({
