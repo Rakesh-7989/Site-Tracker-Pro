@@ -1,11 +1,12 @@
 // SiteTrack Pro — resend the email-confirmation link for a self-service signup.
 //
 // The minimal /register screen creates an unconfirmed user (email_confirm:false).
-// If the user didn't get the Supabase confirmation email, the verify screen
-// offers "Resend" — this EF regenerates a fresh signup-confirmation link and
-// emails it via Resend (the same branded sender as register_org). It also
-// supports returning the link to an authorized caller if a future flow wants
-// to deep-link the user without email.
+// If the user didn't get the confirmation email, the verify screen offers
+// "Resend" — this EF regenerates a fresh signup-confirmation link via the admin
+// generate_link endpoint, which dispatches the email itself through the
+// configured SMTP (Gmail, single source of truth — no duplicate Resend send).
+// It also returns the link to an authorized caller if a future flow wants to
+// deep-link the user without email.
 //
 // Deploy: `node scripts/deploy-edge-functions.mjs` (needs `supabase login`).
 
@@ -23,38 +24,6 @@ const CORS: Record<string, string> = {
 const json = (data: unknown, status: number): Response =>
   new Response(JSON.stringify(data), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
-const esc = (s: string): string => s.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] || c));
-
-async function sendConfirmEmail(to: string, link: string): Promise<boolean> {
-  const key = Deno.env.get("RESEND_API_KEY");
-  if (!key) return false;
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
-  const html = `
-    <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="width:48px;height:48px;border-radius:12px;background:#ea580c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">S</div>
-      </div>
-      <h2 style="color:#1c1917;text-align:center">Confirm your SiteTrack Pro account</h2>
-      <p style="color:#57534e">Hi there,</p>
-      <p style="color:#57534e">Click the button below to confirm your email and activate your workspace.</p>
-      <p style="text-align:center;margin:28px 0">
-        <a href="${esc(link)}" style="background:#ea580c;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">
-          Confirm my email
-        </a>
-      </p>
-      <p style="color:#78716c;font-size:13px;text-align:center">If the button doesn't work, paste this link into your browser:<br/>${esc(link)}</p>
-      <p style="color:#78716c;font-size:13px;text-align:center">- Team SiteTrack Pro</p>
-    </div>`;
-  try {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ from, to, subject: "Confirm your email to activate your workspace", html }),
-    });
-    return r.ok;
-  } catch { return false; }
-}
-
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "method-not-allowed" }, 405);
@@ -70,11 +39,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!url || !key) return json({ ok: false, error: "service-not-configured" }, 500);
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  // Generate a fresh signup-confirmation link. Throws if the user is already
-  // confirmed or doesn't exist — surface as a friendly error.
+  // Generate a fresh signup-confirmation link. The admin generate_link endpoint
+  // dispatches the confirmation email itself via the configured SMTP (Gmail),
+  // so this is the single send — no duplicate branded email. redirectTo =
+  // canonical app URL (the default site_url is a stale preview URL). Throws if
+  // the user is already confirmed or doesn't exist — surface as a friendly error.
+  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
   let link: string;
   try {
-    const { data, error } = await admin.auth.admin.generateLink("signup", email);
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: "signup",
+      email,
+      options: { redirectTo: siteUrl },
+    });
     if (error) throw error;
     const l = data?.properties?.action_link;
     if (!l) throw new Error("no action link");
@@ -104,7 +81,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  const emailSent = await sendConfirmEmail(email, link);
-
-  return json({ ok: true, emailSent, email }, 200);
+  // The email was dispatched by GoTrue's generate_link (SMTP) above; reaching
+  // this point with a valid link means the resend happened. Return the link to
+  // an authorized caller that wants to deep-link (e.g. a future flow).
+  return json({ ok: true, emailSent: true, email, link }, 200);
 });

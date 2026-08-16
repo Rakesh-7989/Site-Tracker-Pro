@@ -49,4 +49,24 @@ describe("register_org — company segment (v4 C0)", () => {
     expect(src).toMatch(/plan: TRIAL_PLAN/);
     expect(src).toMatch(/trialEndsAt: trialEnd/);
   });
+
+  it("dispatches the confirmation email via generateLink (createUser does NOT email)", () => {
+    // createUser(email_confirm:false) never sends a confirmation email — the
+    // handler must explicitly generate a signup link so GoTrue dispatches it
+    // via SMTP (single source of truth). Locked so a future edit can't drop it.
+    expect(src).toMatch(/generateLink\(\{/);
+    expect(src).toMatch(/type: "signup"/);
+    expect(src).toMatch(/options: \{ redirectTo: siteUrl \}/);
+    expect(src).toMatch(/confirmDispatched = !confirmErr/);
+  });
+
+  it("reports emailSent from the confirm dispatch, not the welcome email", () => {
+    expect(src).toMatch(/emailSent: confirmDispatched/);
+    expect(src).toMatch(/welcomeSent/);
+  });
+
+  it("uses the canonical app URL for the confirm redirect", () => {
+    expect(src).toMatch(/PUBLIC_SITE_URL/);
+    expect(src).toContain("https://sitetrack-rakesh.vercel.app");
+  });
 });

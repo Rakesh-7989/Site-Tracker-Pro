@@ -53,9 +53,10 @@ function generateTempPassword(): string {
 
 // Reworked for the email-confirm + Pro-trial flow: the account is NOT yet
 // confirmed (email_confirm:false), so this email must NOT contain the password
-// or a "sign in now" CTA. Supabase sends its own confirmation link; this is a
-// branded heads-up about the Pro trial. Deliberately does not duplicate the
-// confirm link (single source of truth = Supabase's confirm email).
+// or a "sign in now" CTA. The confirm link comes from GoTrue's own email
+// (dispatched via generateLink in the handler); this is a branded heads-up
+// about the Pro trial. Deliberately does not duplicate the confirm link
+// (single source of truth = GoTrue's confirm email).
 async function sendWelcomeEmail(to: string, firmName: string): Promise<boolean> {
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return false;
@@ -225,8 +226,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, error: "org-member-failed", detail: omErr.message }, 500);
   }
 
-  // 5. Send branded heads-up email (confirm link comes from Supabase itself)
-  const emailSent = await sendWelcomeEmail(email, firmName);
+  // 5. Dispatch the Supabase confirmation email. createUser(email_confirm:false)
+  //    does NOT send one (verified live: confirmation_sent_at stays NULL), so we
+  //    explicitly generate a fresh signup link, which GoTrue emails via the
+  //    configured SMTP (Gmail). redirectTo = canonical app URL — the default
+  //    site_url is a stale preview URL. Single source of truth for the confirm
+  //    link = GoTrue's own email.
+  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
+  let confirmDispatched = false;
+  {
+    const { error: confirmErr } = await admin.auth.admin.generateLink({
+      type: "signup",
+      email,
+      options: { redirectTo: siteUrl },
+    });
+    confirmDispatched = !confirmErr;
+  }
+
+  // 5b. Send branded heads-up email (the confirm link itself is sent above).
+  const welcomeSent = await sendWelcomeEmail(email, firmName);
 
   // 6. Record the successful attempt for the IP rate limit (best-effort —
   //    a failure here must never undo the org creation).
@@ -238,7 +256,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     ok: true,
     orgId,
     userId,
-    emailSent,
+    emailSent: confirmDispatched,
+    welcomeSent,
     plan: TRIAL_PLAN,
     trialEndsAt: trialEnd,
     message: "Organization created. Please confirm your email to activate your workspace.",
