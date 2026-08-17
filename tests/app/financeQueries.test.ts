@@ -1,7 +1,7 @@
 // SiteTrack Pro — finance + attendance query tests (Batch 2/3).
 
 import { describe, it, expect } from "vitest";
-import { listPOs, listInvoices, listExpenses, fmtRupees, invoiceTaxBreakup } from "@/app/financeQueries";
+import { listPOs, listInvoices, listExpenses, fmtRupees, invoiceTaxBreakup, listLedger, createLedgerTxn, stockBalance, stockRows, stockLevel, type LedgerTxn } from "@/app/financeQueries";
 import { listAttendance } from "@/app/attendanceQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
@@ -11,6 +11,8 @@ function chain(result: { data?: unknown; error?: unknown }) {
   return c;
 }
 const mockClient = (result: { data?: unknown; error?: unknown }) => ({ from: () => chain(result) });
+
+const txn = (p: Partial<LedgerTxn>): LedgerTxn => ({ id: "1", txnDate: "2026-08-17", material: "Cement", unit: "bag", qty: 10, direction: "inward", source: null, refNo: null, issuedTo: null, notes: null, recordedByName: null, ...p });
 
 describe("fmtRupees", () => {
   it("formats with the Indian locale + ₹", () => {
@@ -70,5 +72,67 @@ describe("listAttendance", () => {
     ], error: null }), "p");
     expect(r.ok && r.data[0]).toMatchObject({ attendeeName: "Ravi", kind: "labour", status: "present", hours: 8 });
     expect(r.ok && r.data[1]).toMatchObject({ kind: "labour", status: "present", hours: null });
+  });
+});
+
+describe("listLedger (ST-018)", () => {
+  it("maps issuedTo/notes/recordedBy embed + coerces direction", async () => {
+    const r = await listLedger(mockClient({ data: [
+      { id: "1", txn_date: "2026-08-17", material: "Cement", unit: "bag", qty: 10, direction: "outward", source: null, ref_no: "PO-1", issued_to: "Contractor Ravi", notes: "slab pour", recorded_by: { name: "Rajesh" } },
+      { id: "2", txn_date: "2026-08-16", material: "Steel", unit: null, qty: 5, direction: "weird", source: "x", ref_no: null, issued_to: null, notes: null, recorded_by: null },
+    ], error: null }), "p");
+    expect(r.ok && r.data[0]).toMatchObject({ issuedTo: "Contractor Ravi", notes: "slab pour", recordedByName: "Rajesh", refNo: "PO-1" });
+    expect(r.ok && r.data[1]).toMatchObject({ direction: "inward", issuedTo: null, recordedByName: null });
+    const e = await listLedger(mockClient({ data: null, error: { message: "denied" } }), "p");
+    expect(e).toEqual({ ok: false, error: "denied" });
+  });
+});
+
+describe("createLedgerTxn (ST-018)", () => {
+  it("inserts issuedTo/notes/recordedBy + coerces falsy to null", async () => {
+    let body: Record<string, unknown> = {};
+    const c: Record<string, unknown> = {};
+    c.select = () => c; c.single = () => c;
+    c.then = (resolve: (v: unknown) => unknown) => resolve({ data: { id: "9" }, error: null });
+    const insert = (b: Record<string, unknown>) => { body = b; return c; };
+    const r = await createLedgerTxn({ from: () => ({ insert }) }, { projectId: "p", material: "Cement", qty: 4, direction: "outward", issuedTo: "Contractor", notes: "note", recordedBy: "u" });
+    expect(r.ok && r.data.id).toBe("9");
+    expect(body).toMatchObject({ project_id: "p", issued_to: "Contractor", notes: "note", recorded_by: "u", direction: "outward" });
+  });
+});
+
+describe("stock helpers (ST-018)", () => {
+  const ledger: LedgerTxn[] = [
+    txn({ material: "Cement", qty: 20, direction: "inward" }),
+    txn({ material: "Cement", qty: 6, direction: "outward", issuedTo: "Ravi" }),
+    txn({ material: "Steel", qty: 5, direction: "inward", unit: "ton" }),
+    txn({ material: "Steel", qty: 3, direction: "wastage", unit: "ton" }),
+    txn({ material: "Sand", qty: 2, direction: "outward", unit: null }),
+  ];
+
+  it("stockBalance sums inward/return + subtracts outward/wastage", () => {
+    const b = stockBalance(ledger);
+    expect(b.get("Cement")).toBe(14);
+    expect(b.get("Steel")).toBe(2);
+    expect(b.get("Sand")).toBe(-2);
+  });
+
+  it("stockLevel tones ok/low/out", () => {
+    expect(stockLevel(5)).toBe("ok");
+    expect(stockLevel(0)).toBe("low");
+    expect(stockLevel(-1)).toBe("out");
+  });
+
+  it("stockRows aggregates + last-known unit + sorted", () => {
+    const rows = stockRows(ledger);
+    expect(rows).toEqual([
+      { material: "Cement", unit: "bag", balance: 14, level: "ok" },
+      { material: "Sand", unit: null, balance: -2, level: "out" },
+      { material: "Steel", unit: "ton", balance: 2, level: "ok" },
+    ]);
+  });
+
+  it("stockRows empty + out-tone null-unit", () => {
+    expect(stockRows([])).toEqual([]);
   });
 });
