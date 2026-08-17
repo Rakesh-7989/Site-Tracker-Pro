@@ -2,7 +2,11 @@
 // DB: statutory_approvals (migration 152). RLS: read = project member;
 // insert/update/delete = managers + org admin only (statutory:manage). UI
 // gating via the statutory:manage capability + plan gate (PlanFeature
-// "statutory").
+// "statutory"). Status transitions are derived from the workflow register
+// (STATUTORY_WORKFLOW) so the register is the single source of truth.
+
+import { workflowNextMap } from "./workflowEngine";
+import { STATUTORY_WORKFLOW } from "./workflowDefinitions";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -17,6 +21,9 @@ const asKind = oneOf<StatutoryKind>(STATUTORY_KINDS, "other");
 export type StatutoryStatus = "draft" | "applied" | "approved" | "rejected" | "expired";
 export const STATUTORY_STATUSES: readonly StatutoryStatus[] = ["draft", "applied", "approved", "rejected", "expired"];
 const asStatus = oneOf<StatutoryStatus>(STATUTORY_STATUSES, "draft");
+
+/** Pure: next status in the statutory ladder (derived from the workflow register). */
+export const STATUTORY_NEXT: Record<StatutoryStatus, StatutoryStatus | null> = workflowNextMap(STATUTORY_WORKFLOW);
 
 export interface StatutoryApproval {
   id: string;

@@ -36,6 +36,8 @@ export const CORRECTIVE_ACTION_WORKFLOW = defineWorkflow({
 });
 
 // ── Statutory approval (152): draft → applied → approved|rejected → expired ─
+// Faithful to the StatutoryTab ladder: approved stays put (advance no-op),
+// rejected reopens to draft, expired reapplies; approved may lapse to expired.
 export const STATUTORY_WORKFLOW = defineWorkflow({
   id: "statutory",
   name: "Statutory approval",
@@ -46,7 +48,10 @@ export const STATUTORY_WORKFLOW = defineWorkflow({
     { from: "draft", to: "applied" },
     { from: "applied", to: "approved", primary: true },
     { from: "applied", to: "rejected" },
+    { from: "approved", to: "approved", primary: true },
     { from: "approved", to: "expired" },
+    { from: "rejected", to: "draft" },
+    { from: "expired", to: "applied" },
   ],
 });
 

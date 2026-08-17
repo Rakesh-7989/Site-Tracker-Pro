@@ -26,6 +26,7 @@ import {
 } from "@/app/workflowDefinitions";
 import { REQUEST_NEXT } from "@/app/materialRequestQueries";
 import { CORRECTIVE_NEXT } from "@/app/qualityQueries";
+import { STATUTORY_NEXT } from "@/app/statutoryQueries";
 import { RETAINER_NEXT } from "@/app/retainerQueries";
 import { CHECKLIST_STATUS_NEXT, REPORT_STATUS_NEXT, CL_STATUS_NEXT } from "@/app/consultancyAuditQueries";
 import { LEAD_STAGE_NEXT } from "@/app/crmQueries";
@@ -174,6 +175,10 @@ describe("declare-first parity (derived maps === historical values)", () => {
     expect(CORRECTIVE_NEXT).toEqual({ open: "in_progress", in_progress: "resolved", resolved: "verified", verified: null });
   });
 
+  it("STATUTORY_NEXT (NOC: approved stays put, rejected→draft, expired→applied)", () => {
+    expect(STATUTORY_NEXT).toEqual({ draft: "applied", applied: "approved", approved: "approved", rejected: "draft", expired: "applied" });
+  });
+
   it("RETAINER_NEXT (retainer toggle, cancelled terminal)", () => {
     expect(RETAINER_NEXT).toEqual({ active: "paused", paused: "active", cancelled: null });
   });
@@ -212,6 +217,7 @@ describe("declare-first parity (derived maps === historical values)", () => {
   it("derived maps are also reachable via the registry defs (single source of truth)", () => {
     expect(workflowNextMap(workflowById("material_request")!)).toEqual(REQUEST_NEXT);
     expect(workflowNextMap(workflowById("corrective_action")!)).toEqual(CORRECTIVE_NEXT);
+    expect(workflowNextMap(workflowById("statutory")!)).toEqual(STATUTORY_NEXT);
     expect(workflowNextMap(workflowById("retainer")!)).toEqual(RETAINER_NEXT);
     expect(workflowNextMap(workflowById("checklist")!)).toEqual(CHECKLIST_STATUS_NEXT);
     expect(workflowNextMap(workflowById("report")!)).toEqual(REPORT_STATUS_NEXT);

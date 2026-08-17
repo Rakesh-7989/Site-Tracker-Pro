@@ -5,7 +5,7 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listMaterials, createMaterial, setMaterialStatus, deleteMaterial, type Material, type MaterialStatus } from "@/app/siteOpsQueries";
-import { listMaterialRequests, createMaterialRequest, setMaterialRequestStatus, deleteMaterialRequest, requestTotals, REQUEST_STATUS_LABEL, type MaterialRequest, type RequestStatus } from "@/app/materialRequestQueries";
+import { listMaterialRequests, createMaterialRequest, setMaterialRequestStatus, deleteMaterialRequest, requestTotals, REQUEST_NEXT, REQUEST_STATUS_LABEL, type MaterialRequest, type RequestStatus } from "@/app/materialRequestQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
@@ -55,7 +55,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
   };
 
   const advanceRequest = async (r: MaterialRequest) => {
-    const next = r.status === "requested" ? "approved" as RequestStatus : r.status === "approved" ? "ordered" as RequestStatus : "received" as RequestStatus;
+    const next = REQUEST_NEXT[r.status]; if (!next) return;
     await run(`rs-${r.id}`, c => setMaterialRequestStatus(c, r.id, next, session?.user.id ?? null), {
       apply: () => setRequests(prev => prev.map(x => x.id === r.id ? { ...x, status: next } : x)),
       rollback: () => setRequests(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)),
@@ -103,7 +103,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {canEdit && r.status !== "received" ? (
                     <Button size="sm" disabled={busy === `rs-${r.id}`} onClick={() => void advanceRequest(r)}>
-                      {busy === `rs-${r.id}` ? <Spinner size={12} /> : REQUEST_STATUS_LABEL[r.status] === "Ordered" ? "Mark received" : `Mark ${(r.status === "requested" ? "approved" : r.status === "approved" ? "ordered" : "received")}`}
+                      {busy === `rs-${r.id}` ? <Spinner size={12} /> : REQUEST_STATUS_LABEL[r.status] === "Ordered" ? "Mark received" : `Mark ${REQUEST_STATUS_LABEL[REQUEST_NEXT[r.status] ?? r.status]}`}
                     </Button>
                   ) : (
                     <span className="text-xs text-fg-secondary">{r.status}</span>
