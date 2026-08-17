@@ -178,46 +178,46 @@ function UtilizationInner(): JSX.Element {
               <DataTable dense columns={columns} rows={rows} rowKey={r => r.projectId} />
            </div>
 
-           {selectedProjectId && (
-             <div className="space-y-4">
-               <div className="flex items-center justify-between mb-2">
-                 <h3 className="text-lg font-semibold text-fg-primary">Phase Utilization for selected project</h3>
-                 <Button size="sm" variant="ghost" onClick={() => setSelectedProjectId(null)}>Clear Selection</Button>
-               </div>
-               {phaseLoading ? (
-                 <div className="grid place-items-center py-8"><Spinner size={20} /></div>
-               ) : phases.length === 0 ? (
-                 <Card className="p-6 text-center text-sm text-fg-secondary">No phases or billable time logged for this project.</Card>
-) : (
-                 <div className="space-y-4">
-                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                     <ChartCard
-                       title="Phase fee vs billed effort"
-                       empty={phases.length === 0}
-                       emptyMessage="No phases"
-                       legend={<GroupedLegend bars={phaseBars(phases)} />}
-                     >
-                       <BarGroup {...phaseBars(phases)} showValues formatValue={fmtCompactRupees} />
-                     </ChartCard>
-                     <ChartCard
-                       title="Phase utilization %"
-                       empty={phases.length === 0}
-                       emptyMessage="No phases"
-                     >
-                       <BarGroup {...phasePctData(phases)} showValues formatValue={v => `${v}%`} />
-                     </ChartCard>
-                   </div>
-                   <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
-                     <DataTable dense columns={phaseColumns} rows={phases} rowKey={r => `${r.projectId}-${r.phaseId}`} />
-                   </div>
-                 </div>
+{selectedProjectId && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-fg-primary">Phase Utilization for selected project</h3>
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedProjectId(null)}>Clear Selection</Button>
+                </div>
+                {phaseLoading ? (
+                  <div className="grid place-items-center py-8"><Spinner size={20} /></div>
+                ) : phases.length === 0 ? (
+                  <Card className="p-6 text-center text-sm text-fg-secondary">No phases or billable time logged for this project.</Card>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      <ChartCard
+                        title="Phase fee vs billed effort"
+                        empty={phases.length === 0}
+                        emptyMessage="No phases"
+                        legend={<GroupedLegend bars={phaseBars(phases)} />}
+                      >
+                        <BarGroup {...phaseBars(phases)} showValues formatValue={fmtCompactRupees} />
+                      </ChartCard>
+                      <ChartCard
+                        title="Phase utilization %"
+                        empty={phases.length === 0}
+                        emptyMessage="No phases"
+                      >
+                        <BarGroup {...phasePctData(phases)} showValues formatValue={v => `${v}%`} />
+                      </ChartCard>
+                    </div>
+                    <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-default">
+                      <DataTable dense columns={phaseColumns} rows={phases} rowKey={r => `${r.projectId}-${r.phaseId}`} />
+                    </div>
+                  </div>
                 )}
-             </div>
-           )}
-         </div>
-       )}
-     </div>
-   );
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
 }
 
 /** Org-rollup Fee-vs-Billed grouped series (one bar per series per project). */
@@ -239,7 +239,7 @@ export function utilizationPctData(rows: UtilizationRow[]): { groups: string[]; 
   };
 }
 
-/** Per-phase Fee-vs-Billed grouped series (unassigned phase keeps fee 0). */
+/** Per-phase Fee-vs-Billed grouped series (one bar per series per phase). */
 export function phaseBars(phases: UtilizationPhaseRow[]): { groups: string[]; series: BarGroupSeries[] } {
   return {
     groups: phases.map(r => r.phaseTitle),

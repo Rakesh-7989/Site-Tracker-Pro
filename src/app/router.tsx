@@ -52,6 +52,7 @@ const OrgActivityView = lazy(() => import("@/features/org/OrgActivityView").then
 const OrgDashboardView = lazy(() => import("@/features/org/OrgDashboardView").then(m => ({ default: m.OrgDashboardView })));
 const OrgMembersView = lazy(() => import("@/features/org/OrgMembersView").then(m => ({ default: m.OrgMembersView })));
 const OrgRolesView = lazy(() => import("@/features/org/OrgRolesView").then(m => ({ default: m.OrgRolesView })));
+const RbacView = lazy(() => import("@/features/org/RbacView").then(m => ({ default: m.RbacView })));
 const OrgBillingView = lazy(() => import("@/features/org/OrgBillingView").then(m => ({ default: m.OrgBillingView })));
 const OrgTemplatesView = lazy(() => import("@/features/org/OrgTemplatesView").then(m => ({ default: m.OrgTemplatesView })));
 const OrgApprovalsView = lazy(() => import("@/features/org/OrgApprovalsView").then(m => ({ default: m.OrgApprovalsView })));
@@ -150,6 +151,7 @@ export const router = createBrowserRouter([
       { path: "org/broadcast", element: <OrgBroadcastView /> },
       { path: "org/integrations", element: <OrgIntegrationsView /> },
       { path: "org/features", element: <OrgFeaturesView /> },
+      { path: "org/rbac", element: <RbacView /> },
       { path: "org/onboarding", element: <OnboardingView /> },
       { path: "admin", element: <PlatformDashboardView /> },
       { path: "admin/users", element: <RequireStaffArea area="users" fallback={<Navigate to="/admin" replace />}><PlatformUsersView /></RequireStaffArea> },

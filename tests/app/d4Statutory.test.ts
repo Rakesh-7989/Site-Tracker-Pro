@@ -3,7 +3,7 @@
 
 import { describe, it, expect } from "vitest";
 import {
-  isExpiring, STATUTORY_KINDS, STATUTORY_STATUSES,
+  isExpiring, STATUTORY_KINDS, STATUTORY_STATUSES, STATUTORY_NEXT,
   type StatutoryStatus,
 } from "@/app/statutoryQueries";
 
@@ -46,5 +46,13 @@ describe("statutoryQueries domain constants", () => {
     (STATUTORY_STATUSES as readonly StatutoryStatus[]).forEach(s => {
       expect(STATUTORY_STATUSES).toContain(s);
     });
+  });
+
+  it("STATUTORY_NEXT walks the register ladder (approved stays put, rejected→draft, expired→applied)", () => {
+    expect(STATUTORY_NEXT.draft).toBe("applied");
+    expect(STATUTORY_NEXT.applied).toBe("approved");
+    expect(STATUTORY_NEXT.approved).toBe("approved");
+    expect(STATUTORY_NEXT.rejected).toBe("draft");
+    expect(STATUTORY_NEXT.expired).toBe("applied");
   });
 });

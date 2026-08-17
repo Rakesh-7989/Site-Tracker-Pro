@@ -60,6 +60,11 @@ export {
 } from "./forms";
 
 export {
+  SchemaForm,
+  type SchemaFormProps,
+} from "./SchemaForm";
+
+export {
   Pager,
   type PagerProps,
 } from "./Pager";

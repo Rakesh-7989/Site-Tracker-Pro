@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Card, Button, Input, Select, FormField, Badge, Alert, Spinner, AccessDenied,
+  Card, Button, Input, FormField, Badge, Alert, Spinner, AccessDenied, SchemaForm,
 } from "@/components/ui";
 import { useT } from "@/i18n/I18nProvider";
 import { useCan } from "@/auth";
@@ -12,8 +12,10 @@ import {
   listChecklists, upsertChecklist, setChecklistStatus, deleteChecklist,
   listResults, upsertResult, setResultVerdict, deleteResult,
   checklistProgress, CHECKLIST_STATUS_NEXT,
+  checklistFormSchema,
   type InspectionChecklist, type ChecklistStatus, type ResultVerdict,
   type InspectionResult, type ChecklistKind,
+  type ChecklistFormLabels, type ChecklistFormValues,
 } from "@/app/consultancyAuditQueries";
 import { getClient } from "@/lib/supabase";
 
@@ -119,7 +121,6 @@ export function AuditTab({ projectId }: { projectId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<InspectionChecklist | null>(null);
-  const [form, setForm] = useState({ kind: "site_visit" as ChecklistKind, title: "", status: "draft" as ChecklistStatus });
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -128,14 +129,31 @@ export function AuditTab({ projectId }: { projectId: string }) {
   }, [projectId, t]);
   useEffect(() => { void reload(); }, [reload]);
 
-  const { run } = useAction(reload, setError);
+  const { run, busy } = useAction(reload, setError);
 
-  const submit = async () => {
-    if (!form.title.trim()) return;
+  const formLabels = useMemo<ChecklistFormLabels>(() => ({
+    fieldKind: t("audit.fieldKind"),
+    fieldTitle: t("audit.fieldTitle"),
+    fieldStatus: t("audit.fieldStatus"),
+    titlePlaceholder: t("audit.titlePlaceholder"),
+    titleRequired: t("audit.titleRequired"),
+    kindLabel: k => KIND_LABEL[k] ?? k,
+    statusLabel: s => t(`audit.checklistStatus.${s}`),
+  }), [t]);
+
+  const schema = useMemo(
+    () => checklistFormSchema(formLabels, editing !== null),
+    [formLabels, editing],
+  );
+
+  const submit = async (values: ChecklistFormValues) => {
     await run(editing ? "edit" : "add", (c: any) => upsertChecklist(c, {
-      id: editing?.id ?? null, projectId, kind: form.kind, title: form.title.trim(), status: form.status,
+      id: editing?.id ?? null, projectId,
+      kind: (values.kind as ChecklistKind) ?? "site_visit",
+      title: String(values.title ?? "").trim(),
+      status: (values.status as ChecklistStatus) ?? "draft",
     }));
-    setCreating(false); setEditing(null); setForm({ kind: "site_visit", title: "", status: "draft" });
+    setCreating(false); setEditing(null);
   };
 
   const toggle = async (c: InspectionChecklist) => {
@@ -155,7 +173,7 @@ export function AuditTab({ projectId }: { projectId: string }) {
     <div className="space-y-4">
       {canManage && (
         <div className="flex justify-end">
-          <Button onClick={() => { setEditing(null); setForm({ kind: "site_visit", title: "", status: "draft" }); setCreating(true); }}>
+          <Button onClick={() => { setEditing(null); setCreating(true); }}>
             {t("audit.newChecklist")}
           </Button>
         </div>
@@ -186,7 +204,7 @@ export function AuditTab({ projectId }: { projectId: string }) {
                   </Button>
                 )}
                 {canManage && (
-                  <Button size="sm" variant="ghost" onClick={() => { setEditing(c); setForm({ kind: c.kind, title: c.title, status: c.status }); setCreating(true); }}>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditing(c); setCreating(true); }}>
                     {t("audit.edit")}
                   </Button>
                 )}
@@ -202,25 +220,16 @@ export function AuditTab({ projectId }: { projectId: string }) {
 
       {creating && (
         <Card padding="md" className="border-accent" title={<h4 className="font-display text-base font-bold text-fg-primary">{editing ? t("audit.editChecklist") : t("audit.newChecklist")}</h4>}>
-          <div className="space-y-3">
-            <FormField label={t("audit.fieldKind")} htmlFor="cl-kind">
-              <Select value={form.kind} onChange={e => setForm(f => ({ ...f, kind: e.target.value as typeof form.kind }))}
-                options={["site_visit", "design_review", "quality_audit", "other"].map(k => ({ value: k, label: KIND_LABEL[k] }))} />
-            </FormField>
-            <FormField label={t("audit.fieldTitle")} htmlFor="cl-title">
-              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder={t("audit.titlePlaceholder")} />
-            </FormField>
-            {editing && (
-              <FormField label={t("audit.fieldStatus")} htmlFor="cl-status">
-                <Select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as ChecklistStatus }))}
-                  options={["draft", "in_progress", "passed", "failed", "cancelled"].map(s => ({ value: s, label: t(`audit.checklistStatus.${s}`) }))} />
-              </FormField>
-            )}
-          </div>
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => { setCreating(false); setEditing(null); }}>{t("audit.cancel")}</Button>
-            <Button onClick={submit} disabled={!form.title.trim()}>{t("audit.save")}</Button>
-          </div>
+          <SchemaForm
+            key={editing?.id ?? "new"}
+            schema={schema}
+            initialValues={editing ? { kind: editing.kind, title: editing.title, status: editing.status } : undefined}
+            submitLabel={t("audit.save")}
+            cancelLabel={t("audit.cancel")}
+            busy={busy !== null}
+            onCancel={() => { setCreating(false); setEditing(null); }}
+            onSubmit={submit}
+          />
         </Card>
       )}
     </div>

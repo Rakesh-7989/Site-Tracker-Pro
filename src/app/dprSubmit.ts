@@ -41,6 +41,8 @@ export interface DprSendPayload {
   photo_accuracy_metres?: number | null;
   buildnow_anchor_url?: string | null;
   buildnow_anchor_hash?: string | null;
+  /** Spatial hierarchy node ref (P2.4, migration 210). Null = not stamped. */
+  location_id?: string | null;
 }
 
 export interface DprMediaInput {
@@ -76,6 +78,8 @@ export interface DprSubmitInput {
   photoTakenAt?: string | null;
   buildnowAnchorUrl?: string | null;
   buildnowAnchorHash?: string | null;
+  /** Spatial hierarchy node ref (P2.4). Passed through to the EF body. */
+  locationId?: string | null;
   /** explicit idempotency key — 10-15 digit E.164 phone is used as the
       caller-facing id, plus this token. Defaults to makeClientToken(). */
   clientToken?: string;
@@ -176,6 +180,7 @@ export function buildDprPayload(input: DprSubmitInput): DprSendPayload {
     photo_taken_at: input.photoTakenAt ?? null,
     buildnow_anchor_url: input.buildnowAnchorUrl ?? null,
     buildnow_anchor_hash: input.buildnowAnchorHash ?? null,
+    location_id: input.locationId ?? null,
   };
 }
 

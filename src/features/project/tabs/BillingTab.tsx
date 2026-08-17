@@ -14,6 +14,7 @@ import { Card, Button, Badge, Spinner, Alert, StatCard } from "@/components/ui/a
 import { Input, Select } from "@/components/ui/forms";
 import { fmtRupees } from "@/app/financeQueries";
 import { listInvoices, type Invoice, type InvoiceSource } from "@/app/financeQueries";
+import { publishInvoiceGenerated } from "@/app/outboxQueries";
 import { listRateCards, upsertRateCard, deleteRateCard, type RateCard } from "@/app/rateCardQueries";
 import { listTimeEntries, type TimeEntry } from "@/app/timeQueries";
 import {
@@ -123,13 +124,33 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
 
   const genHourly = async () => {
     if (!from || !to || from > to) { setError("Pick a valid billing period."); return; }
-    await runGen("gh", c => generateHourlyInvoice(c, { projectId, periodFrom: from, periodTo: to }), "Hourly invoice generated — see the list below.");
+    await runGen("gh", async c => {
+      const res = await generateHourlyInvoice(c, { projectId, periodFrom: from, periodTo: to });
+      if (res.ok && orgId) {
+        const inv = await listInvoices(c, projectId);
+        const fresh = inv.ok ? inv.data.find(i => i.id === res.data.id) : undefined;
+        if (fresh) {
+          await publishInvoiceGenerated(c, { orgId, projectId, invoiceId: fresh.id, invoiceNo: fresh.no, amount: fresh.amount });
+        }
+      }
+      return res;
+    }, "Hourly invoice generated — see the list below.");
   };
 
   const genRetainer = async (r: Retainer) => {
     const p = genPeriod[r.id] ?? currentMonthRange();
     if (p.from > p.to) { setError(`Pick a valid period for ${r.title}.`); return; }
-    await runGen(`gr-${r.id}`, c => generateRetainerInvoice(c, { retainerId: r.id, periodFrom: p.from, periodTo: p.to }), `Invoice generated for ${r.title}.`);
+    await runGen(`gr-${r.id}`, async c => {
+      const res = await generateRetainerInvoice(c, { retainerId: r.id, periodFrom: p.from, periodTo: p.to });
+      if (res.ok && orgId) {
+        const inv = await listInvoices(c, projectId);
+        const fresh = inv.ok ? inv.data.find(i => i.id === res.data.id) : undefined;
+        if (fresh) {
+          await publishInvoiceGenerated(c, { orgId, projectId, invoiceId: fresh.id, invoiceNo: fresh.no, amount: fresh.amount, projectLabel: r.title });
+        }
+      }
+      return res;
+    }, `Invoice generated for ${r.title}.`);
   };
 
   const unbilled = unbilledSummary(entries);

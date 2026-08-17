@@ -70,6 +70,7 @@ const PATHS = {
   inbox: <><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></>,
   whatsapp: <><path d="M3 21l1.7-4.9A8.5 8.5 0 1 1 9.6 20.5L3 21z" /><path d="M8 9.2c.3 1.2 1.4 2.6 2.5 3.6.8.8 1.9 1.2 3 .9l1.2-.5c.3-.1.6.1.8.4l1 1.4" /></>,
   book: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></>,
+  layout: <><rect x="0" y="0" width="20" height="20" rx="2" /><path d="M5 3v4h14V3zm2 8h10v4H7v-4zm8 4v4h2v-4h-2zm-6-4v4h4v-4H7zm4 8v2h2v-2h-2z" /></>,
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -25,7 +25,8 @@ export type ModuleId =
   | "insights"
   | "kiosks"
   | "crm"
-  | "research";
+  | "research"
+  | "space";
 
 /** Static metadata for a module. */
 export interface ModuleDef {

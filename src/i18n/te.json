@@ -19,6 +19,7 @@
       "photoCaptureCta": "Site photo teeyandi",
       "photoRetakeCta": "Marala teeyandi",
       "sendCta": "Promoter ki pampandi",
+      "quotaExceeded": "Storage pari limit - photos/voice delete cheyandi leda upgrade chesi DPR pampandi.",
       "sendingCta": "Pampisthondi…",
       "sentSuccess": "Ayipoyindi — promoter ki WhatsApp lo vasthondi",
       "saveDraftCta": "Draft la save cheyandi",
@@ -34,6 +35,15 @@
       "stepVoice": "1 · Voice note",
       "stepPhoto": "2 · Site photo",
       "stepPreview": "3 · Promoter ki vasthondi",
+      "stepLocation": "Report location",
+      "projectLabel": "Project",
+      "noProject": "Project ledu (org-wide report)",
+      "noProjectsAvailable": "Projects levu",
+      "locationLabel": "Location",
+      "locationHint": "Option — site, building, floor, zone లేదా room ki tag cheyyandi.",
+      "pickProjectFirst": "Mundu project select cheyyandi",
+      "noLocation": "Location ledu",
+      "noLocations": "Ee project ki locations levu",
       "transcribing": "Transcribe avuthondi…",
       "qualityGood": "manchi",
       "qualityLow": "takkuva",
@@ -501,6 +511,10 @@
     "research": {
       "label": "రీసెర్చ్ లైబ్రరీ",
       "desc": "సంస్థ-వ్యాప్త సాంకేతిక సాహిత్యం: IS కోడ్‌లు, ప్రమాణాలు, పేపర్‌లు, డేటాషీట్‌లు మరియు క్యూరేటెడ్ సేకరణలు."
+    },
+    "space": {
+      "label": "స్థానిక సోపానక్రమం",
+      "desc": "సైట్, భవనం, అంతస్తు, జోన్ మరియు గది సోపానక్రమం మరియు లొకేషన్-స్కోప్డ్ ప్రాజెక్ట్ డేటా."
     }
   },
   "research": {
@@ -675,6 +689,7 @@
     "fieldKind": "రకం",
     "fieldTitle": "శీర్షిక",
     "titlePlaceholder": "ఉదా. సైట్ విసిట్ #3",
+    "titleRequired": "శీర్షిక అవసరం.",
     "fieldStatus": "స్థితి",
     "cancel": "రద్దు",
     "save": "సేవ్",

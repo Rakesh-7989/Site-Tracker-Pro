@@ -115,6 +115,8 @@ interface DprSendRequest {
   photo_accuracy_metres?: number;
   buildnow_anchor_url?: string;
   buildnow_anchor_hash?: string;
+  /** Spatial hierarchy node ref (P2.4). Null = not stamped. */
+  location_id?: string;
 }
 
 interface DprSendResponse {
@@ -280,6 +282,7 @@ Deno.serve(async (httpReq: Request) => {
     photo_accuracy_metres: payload.photo_accuracy_metres ?? null,
     buildnow_anchor_url: payload.buildnow_anchor_url ?? null,
     buildnow_anchor_hash: payload.buildnow_anchor_hash ?? null,
+    location_id: payload.location_id ?? null,
     status: "sending",
   };
 

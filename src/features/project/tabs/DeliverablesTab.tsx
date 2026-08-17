@@ -10,6 +10,7 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
+import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
 import { listFeePhases, type FeePhase } from "@/app/phaseQueries";
 import { listProjectMembers, type ProjectMemberRow } from "@/app/queries";
 import {
@@ -39,6 +40,7 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("deliverable:manage", { orgId: activeOrg?.orgId, projectId });
   const canApprove = useCan("deliverable:approve", { orgId: activeOrg?.orgId, projectId });
+  const uploadGate = useStorageUploadGate(activeOrg?.orgId);
 
   const [rows, setRows] = useState<Deliverable[]>([]);
   const [phases, setPhases] = useState<FeePhase[]>([]);
@@ -172,6 +174,7 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
 
   return (
     <div className="space-y-4">
+      <StorageQuotaWarning quota={uploadGate.quota} />
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-bold text-fg-primary">Deliverables</h2>
         {rows.length > 0 && <span className="text-sm text-fg-secondary">{rows.filter(d => d.status === "issued").length}/{rows.length} issued</span>}
@@ -253,7 +256,7 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
                       ) : (
                         <Button size="sm" variant="ghost" onClick={() => startEdit(d)} disabled={busy === `u-${d.id}`}>Edit</Button>
                       )}
-                      <Button size="sm" variant="secondary" onClick={() => openPicker(d.id)} disabled={uploading === d.id}>
+                      <Button size="sm" variant="secondary" onClick={() => openPicker(d.id)} disabled={uploading === d.id || !uploadGate.canUpload}>
                         {uploading === d.id ? <Spinner size={14} /> : <Icon name="upload" size={14} />}
                         <span className="ml-1 hidden sm:inline">Attach</span>
                       </Button>

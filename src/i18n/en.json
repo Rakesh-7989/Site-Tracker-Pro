@@ -19,6 +19,7 @@
       "photoCaptureCta": "Take site photo",
       "photoRetakeCta": "Retake",
       "sendCta": "Send to promoter",
+      "quotaExceeded": "Storage limit reached - delete photos/voice or upgrade to submit a DPR.",
       "sendingCta": "Sendingâ€¦",
       "sentSuccess": "Sent â€” promoter will receive on WhatsApp",
       "saveDraftCta": "Save as draft",
@@ -34,6 +35,15 @@
       "stepVoice": "1 Â· Voice note",
       "stepPhoto": "2 Â· Site photo",
       "stepPreview": "3 Â· Promoter will receive",
+      "stepLocation": "Report location",
+      "projectLabel": "Project",
+      "noProject": "No project (org-wide report)",
+      "noProjectsAvailable": "No projects available",
+      "locationLabel": "Location",
+      "locationHint": "Optional â€” tags this report to a site, building, floor, zone or room.",
+      "pickProjectFirst": "Pick a project first",
+      "noLocation": "No location",
+      "noLocations": "No locations for this project",
       "transcribing": "Transcribingâ€¦",
       "qualityGood": "good",
       "qualityLow": "low",
@@ -501,6 +511,10 @@
     "research": {
       "label": "Research Library",
       "desc": "Org-wide technical literature: IS codes, standards, papers, datasheets and curated collections."
+    },
+    "space": {
+      "label": "Spatial Hierarchy",
+      "desc": "Site, building, floor, zone and room hierarchy with location-scoped project data."
     }
   },
   "research": {
@@ -675,6 +689,7 @@
     "fieldKind": "Type",
     "fieldTitle": "Title",
     "titlePlaceholder": "e.g. Site visit #3",
+    "titleRequired": "Title is required.",
     "fieldStatus": "Status",
     "cancel": "Cancel",
     "save": "Save",

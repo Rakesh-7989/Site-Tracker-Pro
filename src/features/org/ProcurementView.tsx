@@ -18,17 +18,19 @@ import { useSession } from "@/auth/OrganizationContext";
 import { memberProjectScope } from "@/app/queries";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
-import { Select, Input } from "@/components/ui/forms";
+import { Select } from "@/components/ui/forms";
+import { SchemaForm } from "@/components/ui";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
 import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
 import { createPO } from "@/app/financeQueries";
+import { publishQuoteAccepted } from "@/app/outboxQueries";
 import { listVendors, vendorOptionGroups, type Vendor } from "@/app/vendorQueries";
 import { listFfeEntries, type FfeEntry } from "@/app/ffeQueries";
 import {
   listOrgProjects, listOrgQuotes, upsertQuote, attachQuote, setQuoteStatus, deleteQuote,
-  quoteTotal, QUOTE_NEXT, scoreQuote, bestScoredQuote,
-  type ProcurementQuote, type OrgProjectBrief, type QuoteStatus,
+  quoteTotal, QUOTE_NEXT, scoreQuote, bestScoredQuote, quoteFormSchema,
+  type ProcurementQuote, type OrgProjectBrief, type QuoteStatus, type QuoteFormValues,
 } from "@/app/procurementQuotes";
 
 const STATUS_TONE: Record<QuoteStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
@@ -62,7 +64,6 @@ function ProcurementInner(): JSX.Element {
 
   // Manual quote form (per FF&E item).
   const [formFfeId, setFormFfeId] = useState<string | null>(null);
-  const [form, setForm] = useState({ vendorId: "", itemName: "", unitPrice: "", qty: "1", leadDays: "", validUntil: "", notes: "" });
 
   // Un-assigned quote attach form.
   const [attachQuoteId, setAttachQuoteId] = useState<string | null>(null);
@@ -119,41 +120,44 @@ function ProcurementInner(): JSX.Element {
   const vendorName = (id: string | null) => vendors.find(v => v.id === id)?.name ?? "Unknown vendor";
   const vendorRating = (id: string | null): number | undefined => vendors.find(v => v.id === id)?.rating ?? undefined;
 
-  const saveManual = async (ffeEntry: FfeEntry) => {
-    if (!form.itemName.trim() && !ffeEntry.name) return;
-    const price = Number(form.unitPrice);
+  const saveManual = async (ffeEntry: FfeEntry, values: QuoteFormValues) => {
+    if (!String(values.itemName ?? "").trim() && !ffeEntry.name) return;
+    const price = Number(values.unitPrice);
     if (!Number.isFinite(price) || price < 0) return;
-    const vendorId = form.vendorId || null;
+    const vendorId = values.vendorId ? String(values.vendorId) : null;
+    const itemName = String(values.itemName ?? "").trim() || ffeEntry.name;
+    const qty = Math.max(1, Number(values.qty) || 1);
+    const leadDays = values.leadDays != null && values.leadDays !== "" ? Number(values.leadDays) : null;
+    const validUntil = values.validUntil ? String(values.validUntil) : null;
+    const notes = String(values.notes ?? "").trim() || null;
     const optimistic: ProcurementQuote = {
       id: "tmp-" + Date.now(),
       orgId,
       ffeEntryId: ffeEntry.id,
-      projectId: ffeEntry.id ? selectedProjectId || null : null,
+      projectId: selectedProjectId || null,
       vendorId,
       vendorName: vendorName(vendorId),
-      itemName: form.itemName.trim() || ffeEntry.name,
+      itemName,
       unitPrice: price,
-      qty: Math.max(1, Number(form.qty) || 1),
-      leadDays: form.leadDays ? Number(form.leadDays) : null,
-      validUntil: form.validUntil || null,
+      qty,
+      leadDays,
+      validUntil,
       status: "received",
-      notes: form.notes.trim() || null,
+      notes,
       createdBy: null,
       createdAt: "",
     };
     const prev = quotes;
     await run(`add-${ffeEntry.id}`, c => upsertQuote(c, {
       orgId, ffeEntryId: ffeEntry.id, projectId: selectedProjectId || null,
-      vendorId, itemName: form.itemName.trim() || ffeEntry.name,
-      unitPrice: price, qty: Math.max(1, Number(form.qty) || 1),
-      leadDays: form.leadDays ? Number(form.leadDays) : null,
-      validUntil: form.validUntil || null, status: "received",
-      notes: form.notes.trim() || null,
+      vendorId, itemName,
+      unitPrice: price, qty,
+      leadDays, validUntil, status: "received",
+      notes,
     }), {
       apply: () => setQuotes(p => [optimistic, ...p]),
       rollback: () => setQuotes(prev),
     });
-    setForm({ vendorId: "", itemName: "", unitPrice: "", qty: "1", leadDays: "", validUntil: "", notes: "" });
     setFormFfeId(null);
   };
 
@@ -174,7 +178,18 @@ function ProcurementInner(): JSX.Element {
         quoteId: q.id,
       });
       if (!po.ok) return po;
-      return setQuoteStatus(c, q.id, "selected");
+      const st = await setQuoteStatus(c, q.id, "selected");
+      if (st.ok && orgId) {
+        await publishQuoteAccepted(c, {
+          orgId,
+          projectId,
+          quoteId: q.id,
+          itemName: q.itemName || ffeEntry.name || ffeEntry.code,
+          vendorName: q.vendorName,
+          amount,
+        });
+      }
+      return st;
     }, {
       apply: () => setQuotes(p => p.map(x => x.id === q.id ? { ...x, status: "selected" as const } : x)),
       rollback: () => setQuotes(prevQuotes),
@@ -207,45 +222,35 @@ function ProcurementInner(): JSX.Element {
     });
   };
 
+  const QUOTE_FORM_LABELS = {
+    fieldVendor: "Vendor",
+    fieldItem: "Item",
+    fieldUnitPrice: "Unit price",
+    fieldQty: "Qty",
+    fieldLeadDays: "Lead (days)",
+    fieldValidUntil: "Valid until",
+    fieldNotes: "Notes",
+    vendorPlaceholder: "— Select vendor —",
+    itemPlaceholder: "Item name",
+    unitPriceRequired: "Unit price is required.",
+    qtyRequired: "Qty is required.",
+  };
+
   const quoteForm = (ffeEntry: FfeEntry) => (
-    <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 items-end mt-2">
-      <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Vendor</span>
-        <Select className="mt-1" value={form.vendorId}
-          options={[{ value: "", label: "— Select vendor —" }]}
-          groups={vendorOptionGroups(vendors)}
-          onChange={e => setForm(f => ({ ...f, vendorId: e.target.value }))} />
-      </div>
-      <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Item</span>
-        <Input className="mt-1" placeholder={ffeEntry.name || "Item name"} value={form.itemName} onChange={e => setForm(f => ({ ...f, itemName: e.target.value }))} />
-      </div>
-      <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Unit price (₹)</span>
-        <Input className="mt-1" type="number" min={0} prefix="₹" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} />
-      </div>
-      <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Qty</span>
-        <Input className="mt-1" type="number" min={1} value={form.qty} onChange={e => setForm(f => ({ ...f, qty: e.target.value }))} />
-      </div>
-      <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Lead (days)</span>
-        <Input className="mt-1" type="number" min={0} value={form.leadDays} onChange={e => setForm(f => ({ ...f, leadDays: e.target.value }))} />
-      </div>
-      <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Valid until</span>
-        <Input className="mt-1" type="date" value={form.validUntil} onChange={e => setForm(f => ({ ...f, validUntil: e.target.value }))} />
-      </div>
-      <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Notes</span>
-        <Input className="mt-1" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-      </div>
-      <div className="flex gap-2 items-end">
-        <Button className="flex-1" disabled={busy === `add-${ffeEntry.id}` || !(Number(form.unitPrice) >= 0)} onClick={() => void saveManual(ffeEntry)}>
-          {busy === `add-${ffeEntry.id}` ? <Spinner size={14} /> : "Add quote"}
-        </Button>
-        <Button variant="ghost" onClick={() => setFormFfeId(null)}>Cancel</Button>
-      </div>
+    <Card className="p-3 mt-2">
+      <SchemaForm
+        key={ffeEntry.id}
+        schema={quoteFormSchema({
+          ...QUOTE_FORM_LABELS,
+          itemPlaceholder: ffeEntry.name || QUOTE_FORM_LABELS.itemPlaceholder,
+        }, vendorOptionGroups(vendors))}
+        submitLabel="Add quote"
+        cancelLabel="Cancel"
+        busy={busy === `add-${ffeEntry.id}`}
+        columns={2}
+        onCancel={() => setFormFfeId(null)}
+        onSubmit={values => void saveManual(ffeEntry, values)}
+      />
     </Card>
   );
 

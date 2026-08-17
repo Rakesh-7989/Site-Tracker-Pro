@@ -2,6 +2,9 @@
 // Layer over migration 168. Mirrors the siteOpsQueries pattern
 // (client-injected Result<T>, camelCase mappers, pure helpers).
 
+import { workflowNextMap } from "./workflowEngine";
+import { CORRECTIVE_ACTION_WORKFLOW } from "./workflowDefinitions";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -18,9 +21,7 @@ export interface CorrectiveAction {
 const asPrio = oneOf<CorrectivePriority>(["low", "medium", "high", "critical"], "medium");
 const asStatus = oneOf<CorrectiveStatus>(["open", "in_progress", "resolved", "verified"], "open");
 
-export const CORRECTIVE_NEXT: Record<CorrectiveStatus, CorrectiveStatus | null> = {
-  open: "in_progress", in_progress: "resolved", resolved: "verified", verified: null,
-};
+export const CORRECTIVE_NEXT: Record<CorrectiveStatus, CorrectiveStatus | null> = workflowNextMap(CORRECTIVE_ACTION_WORKFLOW);
 export const CORRECTIVE_STATUS_LABEL: Record<CorrectiveStatus, string> = {
   open: "Open", in_progress: "In progress", resolved: "Resolved", verified: "Verified",
 };

@@ -8,7 +8,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DiffView } from "@/features/shared/DiffView";
-import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, type Drawing, type DrawingStatus } from "@/app/designQueries";
+import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
   drawingObjectPath, formatBytes, type DrawingFileRef,
@@ -19,6 +19,7 @@ import { resolveDiffPair } from "@/app/drawingDiffSources";
 import type { DiffImageSource } from "@/features/shared/DiffView";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
 import { isCadFileName } from "@/lib/dxfPreview";
+import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
 import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
 import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
 
@@ -31,6 +32,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canEdit = useCan("drawings:upload", { orgId: activeOrg?.orgId, projectId });
+  const uploadGate = useStorageUploadGate(activeOrg?.orgId);
   const [rows, setRows] = useState<Drawing[]>([]);
   const [files, setFiles] = useState<Record<string, DrawingFileRef[]>>({});
   const [fileLoading, setFileLoading] = useState<string | null>(null);
@@ -93,8 +95,9 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const add = async () => {
     if (!title.trim() || !session) return;
     const tmpId = "tmp-" + Date.now();
+    const added: Drawing = { id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null, designStage: "concept", supersededBy: null };
     await run("add", c => createDrawing(c, { projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", releasedBy: session.user.id }), {
-      apply: () => setRows(prev => [{ id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null, designStage: "concept" }, ...prev]),
+      apply: () => setRows(prev => [added, ...applyAutoSupersede(prev, added)]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setTitle(""); setRev("Rev A");
@@ -150,6 +153,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
+      <StorageQuotaWarning quota={uploadGate.quota} />
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-bold text-fg-primary">Drawings</h2>
         {pairs.length > 0 && (
@@ -208,7 +212,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
             <Card key={r.id} className={`p-3 ${r.status === "superseded" ? "opacity-60" : ""}`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
-                  <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}</div></div>
+                  <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}{r.status === "superseded" && r.supersededBy ? ` · superseded by ${rows.find(x => x.id === r.supersededBy)?.revision ?? "newer revision"}` : ""}</div></div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                     : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}
@@ -222,7 +226,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
                   )}
                   {canEdit && (
                     <>
-                      <Button size="sm" variant="secondary" onClick={() => openPicker(r.id)} disabled={uploading === r.id}>
+                      <Button size="sm" variant="secondary" onClick={() => openPicker(r.id)} disabled={uploading === r.id || !uploadGate.canUpload}>
                         {uploading === r.id ? <Spinner size={14} /> : <Icon name="upload" size={14} />}
                         <span className="ml-1 hidden sm:inline">Attach</span>
                       </Button>

@@ -208,21 +208,22 @@ export const deleteRaBill = (client: any, id: string) => del(client, "ra_bills",
 
 // ── Ledger (inventory transactions) ───────────────────────────────────────
 export type LedgerDirection = "inward" | "outward" | "return" | "wastage";
-export interface LedgerTxn { id: string; txnDate: string; material: string; unit: string | null; qty: number; direction: LedgerDirection; source: string | null; refNo: string | null; }
+export interface LedgerTxn { id: string; txnDate: string; material: string; unit: string | null; qty: number; direction: LedgerDirection; source: string | null; refNo: string | null; issuedTo: string | null; notes: string | null; recordedByName: string | null; }
 const asDir = oneOf<LedgerDirection>(["inward", "outward", "return", "wastage"], "inward");
+const nameOf = (v: unknown): string | null => (v as { name?: unknown } | null)?.name == null ? null : String((v as { name: unknown }).name);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listLedger(client: any, projectId: string): Promise<Result<LedgerTxn[]>> {
   try {
-    const { data, error } = await client.from("inventory_transactions").select("id, txn_date, material, unit, qty, direction, source, ref_no").eq("project_id", projectId).order("txn_date", { ascending: false });
+    const { data, error } = await client.from("inventory_transactions").select("id, txn_date, material, unit, qty, direction, source, ref_no, issued_to, notes, recorded_by:recorded_by(name)").eq("project_id", projectId).order("txn_date", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), txnDate: String(r.txn_date ?? ""), material: String(r.material ?? ""), unit: r.unit == null ? null : String(r.unit), qty: Number(r.qty ?? 0), direction: asDir(r.direction), source: r.source == null ? null : String(r.source), refNo: r.ref_no == null ? null : String(r.ref_no) })));
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), txnDate: String(r.txn_date ?? ""), material: String(r.material ?? ""), unit: r.unit == null ? null : String(r.unit), qty: Number(r.qty ?? 0), direction: asDir(r.direction), source: r.source == null ? null : String(r.source), refNo: r.ref_no == null ? null : String(r.ref_no), issuedTo: r.issued_to == null ? null : String(r.issued_to), notes: r.notes == null ? null : String(r.notes), recordedByName: nameOf(r.recorded_by) })));
   } catch (e) { return er(e); }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createLedgerTxn(client: any, input: { projectId: string; material: string; unit?: string; qty: number; direction: LedgerDirection; source?: string; refNo?: string; recordedBy: string }): Promise<Result<{ id: string }>> {
+export async function createLedgerTxn(client: any, input: { projectId: string; material: string; unit?: string; qty: number; direction: LedgerDirection; source?: string; refNo?: string; issuedTo?: string | null; notes?: string | null; recordedBy: string }): Promise<Result<{ id: string }>> {
   try {
-    const { data, error } = await client.from("inventory_transactions").insert({ project_id: input.projectId, material: input.material, unit: input.unit || null, qty: input.qty, direction: input.direction, source: input.source || null, ref_no: input.refNo || null, recorded_by: input.recordedBy }).select("id").single();
+    const { data, error } = await client.from("inventory_transactions").insert({ project_id: input.projectId, material: input.material, unit: input.unit || null, qty: input.qty, direction: input.direction, source: input.source || null, ref_no: input.refNo || null, issued_to: input.issuedTo || null, notes: input.notes || null, recorded_by: input.recordedBy }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
 }
@@ -234,6 +235,28 @@ export function stockBalance(txns: LedgerTxn[]): Map<string, number> {
     m.set(t.material, (m.get(t.material) ?? 0) + sign * t.qty);
   }
   return m;
+}
+/** Stock level tone for a material balance (ST-018 visibility): ok (> 0), low (= 0), out (< 0). */
+export function stockLevel(balance: number): "out" | "low" | "ok" {
+  return balance > 0 ? "ok" : balance === 0 ? "low" : "out";
+}
+/** Per-material stock summary rows for display/export: material, unit (last known), balance, tone. */
+export interface StockRow { material: string; unit: string | null; balance: number; level: "out" | "low" | "ok"; }
+export function stockRows(txns: LedgerTxn[]): StockRow[] {
+  const byMaterial = new Map<string, { unit: string | null; balance: number }>();
+  for (const t of txns) {
+    const cur = byMaterial.get(t.material);
+    if (cur) {
+      const sign = t.direction === "inward" || t.direction === "return" ? 1 : -1;
+      cur.balance += sign * t.qty;
+      if (t.unit) cur.unit = t.unit;
+    } else {
+      byMaterial.set(t.material, { unit: t.unit, balance: (t.direction === "inward" || t.direction === "return" ? 1 : -1) * t.qty });
+    }
+  }
+  return [...byMaterial.entries()]
+    .map(([material, v]) => ({ material, unit: v.unit, balance: v.balance, level: stockLevel(v.balance) }))
+    .sort((a, b) => a.material.localeCompare(b.material));
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const deleteLedgerTxn = (client: any, id: string) => del(client, "inventory_transactions", id);

@@ -8,7 +8,7 @@
 // Gated on dpr:submit — only roles that can submit a DPR reach the
 // compose surface (site_engineer, pm via project ctx).
 
-import { useReducer, useState, useCallback } from "react";
+import { useReducer, useState, useCallback, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
@@ -16,6 +16,8 @@ import { Card, Button, Icon, Spinner, Alert, Badge } from "@/components/ui/atoms
 import { FormField, Select, Textarea, Input } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
 import { normalizeE164, submitDpr, makeSupabaseDprRuntime, type DprSendStatus } from "@/app/dprSubmit";
+import { listProjectsForOrg, memberProjectScope } from "@/app/queries";
+import { loadProjectHierarchy, locationOptions, type SpatialHierarchy } from "@/app/spaceQueries";
 import { getClient } from "@/lib/supabase";
 import { isOnline } from "@/lib/offline";
 import { useOfflineSync } from "@/lib/dprOfflineSync";
@@ -27,6 +29,7 @@ import { previewDigest } from "./digestPreview";
 import { VoiceNoteRecorder, type VoiceRecordingResult } from "./VoiceNoteRecorder";
 import { PhotoGeotagCapture, type PhotoGeotagResult } from "./PhotoGeotagCapture";
 import { OfflineQueueBanner } from "./OfflineQueueBanner";
+import { useStorageUploadGate } from "@/features/shared/StorageUploadGate";
 
 const LANG_OPTIONS: Array<{ value: DprLanguage; labelKey: string }> = [
   { value: "te", labelKey: "voice.language.te" },
@@ -45,6 +48,7 @@ export function DPRComposer(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canSubmitDpr = useCan("dpr:submit");
   const canViewDpr = useCan("dpr:view");
+  const uploadGate = useStorageUploadGate(activeOrg?.orgId);
   const t = useT();
   const [draft, dispatch] = useReducer(dprReducer, EMPTY_DRAFT);
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +58,46 @@ export function DPRComposer(): JSX.Element {
   const [transcribing, setTranscribing] = useState(false);
   const [photo, setPhoto] = useState<PhotoGeotagResult | null>(null);
   const { queued: offlineQueued, draining: offlineDraining } = useOfflineSync();
+
+  // ── Report location context (P2.4): optional project + spatial node ──
+  const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [projectId, setProjectId] = useState("");
+  const [hierarchy, setHierarchy] = useState<SpatialHierarchy | null>(null);
+  const [locationId, setLocationId] = useState("");
+
+  // Member-scoped project list for the org-wide composer.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const client = await getClient();
+      if (!client || !session || !activeOrg?.orgId) return;
+      const scope = memberProjectScope(session);
+      const res = await listProjectsForOrg(client, activeOrg.orgId, scope);
+      if (cancelled || !res.ok) return;
+      setProjects((res.data ?? []).map(p => ({ id: p.id, name: p.name })));
+    })();
+    return () => { cancelled = true; };
+  }, [session, activeOrg?.orgId]);
+
+  // Load the spatial hierarchy when a project is selected.
+  useEffect(() => {
+    let cancelled = false;
+    if (!projectId) { setHierarchy(null); setLocationId(""); return; }
+    setHierarchy(null); setLocationId("");
+    void (async () => {
+      const client = await getClient();
+      if (!client) return;
+      const res = await loadProjectHierarchy(client, projectId);
+      if (cancelled) return;
+      if (res.ok) setHierarchy(res.data);
+    })();
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  const locOptions = useMemo(
+    () => (hierarchy ? locationOptions(hierarchy) : []),
+    [hierarchy],
+  );
 
   // If user can only view DPRs, redirect to read-only view
   if (canViewDpr && !canSubmitDpr) {
@@ -128,7 +172,7 @@ export function DPRComposer(): JSX.Element {
 
   // ── Submit: upload media → enqueue → real WhatsApp EF send ──
   const onSubmit = useCallback(async () => {
-    if (!canSubmit(draft) || !session || submitting) return;
+    if (!canSubmit(draft) || !session || submitting || uploadGate.atQuota) return;
     setSubmitting(true);
     setSubmitState(null);
     try {
@@ -139,6 +183,7 @@ export function DPRComposer(): JSX.Element {
       const res = await submitDpr(
         {
           orgId: activeOrg?.orgId ?? "",
+          projectId: projectId || null,
           supervisorUserId: session.user?.id,
           promoterPhone,
           language: draft.language,
@@ -148,6 +193,7 @@ export function DPRComposer(): JSX.Element {
           photoLat: draft.photo.lat,
           photoLon: draft.photo.lon,
           photoTakenAt: photo?.takenAt ?? undefined,
+          locationId: locationId || null,
         },
         { photo: photo?.blob ?? undefined, voice: recordedBlob ?? undefined },
         runtime,
@@ -162,7 +208,7 @@ export function DPRComposer(): JSX.Element {
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, draft, session, activeOrg, promoterPhone, photo, recordedBlob, submitting]);
+  }, [canSubmit, draft, session, activeOrg, promoterPhone, photo, recordedBlob, submitting, projectId, locationId, uploadGate.atQuota]);
 
   const resetAll = useCallback(() => {
     setSubmitting(false);
@@ -248,6 +294,20 @@ export function DPRComposer(): JSX.Element {
         </FormField>
       </Card>
 
+      {/* Report location (optional, P2.4) */}
+      <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepLocation")}</h3>}>
+        <div className="space-y-3">
+          <FormField label={t("dpr.composer.projectLabel")} htmlFor="dpr-project">
+            <Select id="dpr-project" value={projectId} onChange={e => setProjectId(e.target.value)}
+              options={[{ value: "", label: projects.length ? t("dpr.composer.noProject") : t("dpr.composer.noProjectsAvailable") }, ...projects.map(p => ({ value: p.id, label: p.name }))]} />
+          </FormField>
+          <FormField label={t("dpr.composer.locationLabel")} htmlFor="dpr-location" hint={t("dpr.composer.locationHint")}>
+            <Select id="dpr-location" value={locationId} onChange={e => setLocationId(e.target.value)} disabled={!projectId || locOptions.length === 0}
+              options={[{ value: "", label: !projectId ? t("dpr.composer.pickProjectFirst") : locOptions.length ? t("dpr.composer.noLocation") : t("dpr.composer.noLocations") }, ...locOptions.map(o => ({ value: o.id, label: o.label }))]} />
+          </FormField>
+        </div>
+      </Card>
+
       {/* Voice */}
       <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("dpr.composer.stepVoice")}</h3>} action={draft.voice.status === "done" && quality !== null && (
         <Badge tone={quality ? "success" : "warning"}>
@@ -294,10 +354,11 @@ export function DPRComposer(): JSX.Element {
               </div>
             ))}
           </div>
-          <Button fullWidth size="lg" onClick={() => void onSubmit()} loading={submitting} disabled={normalizeE164(promoterPhone) == null}
+          <Button fullWidth size="lg" onClick={() => void onSubmit()} loading={submitting} disabled={normalizeE164(promoterPhone) == null || uploadGate.atQuota}
             leftIcon={<Icon name="send" size={16} />}>
             {submitting ? t("dpr.composer.sendingCta") : t("dpr.composer.sendCta")}
           </Button>
+          {uploadGate.atQuota && <Alert variant="warning">{t("dpr.composer.quotaExceeded")}</Alert>}
           {promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null && (
             <p className="text-xs text-error text-center">{t("dpr.composer.enterValidNumber")}</p>
           )}

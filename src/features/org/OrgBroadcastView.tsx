@@ -1,5 +1,6 @@
 // SiteTrack Pro — Org Broadcast (/org/broadcast). "Broadcast" a typed
-// notification to all active org members via the `send_org_notification` RPC.
+// notification to all active org members by publishing a durable `org.broadcast`
+// outbox event (VNext P1.3). The pg_cron worker delivers it within a minute.
 
 import { useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -7,6 +8,7 @@ import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/u
 import { Select } from "@/components/ui/forms";
 import { NOTIFICATION_TITLES, type NotificationType } from "@/app/notificationTemplates";
 import { sendOrgNotification } from "@/app/orgBroadcastQueries";
+import { getClient } from "@/lib/supabase";
 
 const TYPE_OPTS = (Object.keys(NOTIFICATION_TITLES) as NotificationType[]).map(t => ({ value: t, label: NOTIFICATION_TITLES[t] }));
 
@@ -24,13 +26,15 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   const [type, setType] = useState<NotificationType>("welcome");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ sent_count: number; failed_count: number } | null>(null);
+  const [result, setResult] = useState<{ eventId: string | null } | null>(null);
 
   const send = async () => {
     setSending(true); setError(null); setResult(null);
-    const res = await sendOrgNotification(orgId, type, {});
-    if (!res.success) setError(res.error || "Failed to send notification");
-    else setResult({ sent_count: res.sent_count, failed_count: res.failed_count });
+    const client = await getClient();
+    if (!client) { setError("Backend not configured."); setSending(false); return; }
+    const res = await sendOrgNotification(client, orgId, type, {});
+    if (!res.success) setError(res.error || "Failed to queue broadcast");
+    else setResult({ eventId: res.eventId });
     setSending(false);
   };
 
@@ -39,7 +43,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Org broadcast</h1>
       <p className="text-sm text-fg-secondary -mt-2">Send a typed notification to every active member of this org.</p>
       {error && <Alert variant="danger">{error}</Alert>}
-      {result && <Alert variant="success">Sent to {result.sent_count} member{result.sent_count === 1 ? "" : "s"} ({result.failed_count} failed).</Alert>}
+      {result && <Alert variant="success">Broadcast queued — members will be notified within a minute.</Alert>}
 
       <Card className="p-4 space-y-4">
         <div>

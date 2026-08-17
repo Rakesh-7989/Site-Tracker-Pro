@@ -19,6 +19,7 @@
       "photoCaptureCta": "Site photo lo",
       "photoRetakeCta": "Phir se lo",
       "sendCta": "Promoter ko bhejo",
+      "quotaExceeded": "Storage seema paar - photos/voice delete karein ya upgrade karke DPR bhejein.",
       "sendingCta": "Bhej raha hai…",
       "sentSuccess": "Ho gaya — promoter ko WhatsApp pe mil jayega",
       "saveDraftCta": "Draft mein save karo",
@@ -34,6 +35,15 @@
       "stepVoice": "1 · Voice note",
       "stepPhoto": "2 · Site photo",
       "stepPreview": "3 · Promoter ko milega",
+      "stepLocation": "Report ka location",
+      "projectLabel": "Project",
+      "noProject": "Koi project nahi (org-wide report)",
+      "noProjectsAvailable": "Koi project available nahi",
+      "locationLabel": "Location",
+      "locationHint": "Optional — site, building, floor, zone ya room tag karein.",
+      "pickProjectFirst": "Pehle project chunein",
+      "noLocation": "Koi location nahi",
+      "noLocations": "Is project ke liye koi location nahi",
       "transcribing": "Transcribe ho raha hai…",
       "qualityGood": "achhi",
       "qualityLow": "kam",
@@ -501,6 +511,10 @@
     "research": {
       "label": "रिसर्च लाइब्रेरी",
       "desc": "संगठन-व्यापी तकनीकी साहित्य: IS कोड, मानक, पेपर, डेटाशीट और क्यूरेटेड कलेक्शन।"
+    },
+    "space": {
+      "label": "स्थानिक पदानुक्रम",
+      "desc": "साइट, भवन, मंज़िल, ज़ोन और कमरा पदानुक्रम और स्थान-स्कोप्ड परियोजना डेटा।"
     }
   },
   "research": {
@@ -675,6 +689,7 @@
     "fieldKind": "प्रकार",
     "fieldTitle": "शीर्षक",
     "titlePlaceholder": "जैसे साइट विज़िट #3",
+    "titleRequired": "शीर्षक आवश्यक है।",
     "fieldStatus": "स्थिति",
     "cancel": "रद्द करें",
     "save": "सहेजें",

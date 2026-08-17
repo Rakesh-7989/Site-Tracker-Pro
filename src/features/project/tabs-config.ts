@@ -38,6 +38,13 @@ export interface TabDef {
    * (not-yet-configured) keeps every module enabled → no regression.
    */
   moduleId?: ModuleId;
+  /**
+   * vNext-005: when supplied, this tab's content can be scoped to a
+   * selected location in the spatial hierarchy. Tabs without this field are
+   * always visible when a location is selected; tabs with this field are
+   * shown only when the selected location ID is included here.
+   */
+  locationId?: string;
 }
 
 // Project types that involve physical site execution (attendance, labour,
@@ -48,6 +55,19 @@ const SITE_TYPES: ReadonlyArray<ProjectType> = ["construction", "interior"];
 // deliverables + design review rounds apply here (not site execution).
 const CONSULTANCY_TYPES: ReadonlyArray<ProjectType> = ["consultant", "design"];
 
+// Fixed set of tabs that have real implementations (not placeholders).
+export const REAL_TABS: ReadonlySet<string> = new Set([
+  "overview", "team", "milestones", "tasks", "updates", "issues", "punchlist", "drawings",
+  "drawing-review",
+  "rfi", "changeorders", "boq", "estimate", "fieldops", "materials", "attendance", "labour",
+  "safety", "inspections", "map", "boq", "gantt", "approvals", "messages",
+  "phases", "time", "deliverables", "reviews", "billing", "utilization",
+  "ffe", "statutory", "moodboards", "rooms", "inspection", "reports",
+  "po", "3way", "invoices", "budget", "rabills", "ledger", "compliance",
+  "pnl", "wip", "budgetChange",
+]);
+
+/** The catalog of all tab definitions, in desired order. */
 export const TAB_CATALOG: readonly TabDef[] = [
   // Always-on for any project member
   { id: "overview",     label: "Overview",      icon: "dashboard" },
@@ -115,15 +135,15 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "wip",          label: "WIP Aging",     icon: "activity",  requires: "budget:view",     planFeature: "finance", moduleId: "finance" },
   { id: "budgetChange", label: "Budget Changes",icon: "refresh",   requires: "budget:edit",     planFeature: "finance", moduleId: "finance" },
 
-    // Approvals + compliance (Pro+)
-    {
-      id: "approvals",
-      label: "Approvals",
-      icon: "check",
-      requiresAny: ["changeorder:approve", "rabill:approve", "po:approve"],
-      planFeature: "approvals",
-    },
-    { id: "compliance",   label: "Compliance",    icon: "shield",    requires: "compliance:view", moduleId: "compliance" },
+  // Approvals + compliance (Pro+)
+  {
+    id: "approvals",
+    label: "Approvals",
+    icon: "check",
+    requiresAny: ["changeorder:approve", "rabill:approve", "po:approve"],
+    planFeature: "approvals",
+  },
+  { id: "compliance",   label: "Compliance",    icon: "shield",    requires: "compliance:view", moduleId: "compliance" },
 
   // Always-on viewers
   { id: "map",          label: "Map",           icon: "map" },
@@ -131,6 +151,7 @@ export const TAB_CATALOG: readonly TabDef[] = [
   { id: "messages",     label: "Messages",      icon: "msgcircle" },
 ] as const;
 
+/** All tab IDs in catalog order. */
 export const TAB_IDS = TAB_CATALOG.map(t => t.id);
 
 /** The default tab when none is specified in the URL. */
@@ -140,17 +161,20 @@ export const DEFAULT_TAB = "overview";
  * Compute the ordered list of tabs a user sees for a project, given their
  * aggregate capability set + the project's type.
  *
- * @param caps         the user's capabilities (from capabilitiesAnywhere or
- *                     a context-scoped resolve)
- * @param projectType  the project.type
- * @param planCan      plan-unlock predicate (omit = no plan gating)
- * @param segment      the active org's company segment (migration 134)
- * @param catalog      the tab catalog to filter (defaults to TAB_CATALOG;
- *                     tests inject synthetic segment-gated tabs)
- * @param moduleEnabled  v4 Phase 3 module predicate — when supplied, tabs that
- *                     declare a moduleId are hidden unless the predicate is
- *                     true for that module. Omit / undefined → module gate off
- *                     (back-compat with pre-module callers).
+ * @param caps               the user's capabilities (from capabilitiesAnywhere or
+ *                           a context-scoped resolve)
+ * @param projectType        the project.type
+ * @param planCan            plan-unlock predicate (omit = no plan gating)
+ * @param segment            the active org's company segment (migration 134)
+ * @param catalog            the tab catalog to filter (defaults to TAB_CATALOG;
+ *                           tests inject synthetic segment-gated tabs)
+ * @param moduleEnabled      v4 Phase 3 module predicate — when supplied, tabs that
+ *                           declare a moduleId are hidden unless the predicate is
+ *                           true for that module. Omit / undefined → module gate off
+ *                           (back-compat with pre-module callers).
+ * @param currentLocationId  vNext-005: when supplied, tabs whose content is not
+ *                           location-scoped are filtered; tabs that require a location
+ *                           are shown only when a location is selected.
  */
 export function visibleTabs(
   caps: ReadonlySet<Capability>,
@@ -159,6 +183,7 @@ export function visibleTabs(
   segment?: CompanySegment | null,
   catalog: ReadonlyArray<TabDef> = TAB_CATALOG,
   moduleEnabled?: (id: ModuleId) => boolean,
+  currentLocationId?: string,
 ): TabDef[] {
   return catalog.filter(tab => {
     if (tab.projectTypes && !tab.projectTypes.includes(projectType)) return false;
@@ -171,6 +196,10 @@ export function visibleTabs(
     // Module gate (v4 Phase 3): when the tab owns a module and a predicate is
     // supplied, require that module to be enabled.
     if (tab.moduleId && moduleEnabled && !moduleEnabled(tab.moduleId)) return false;
+    // VNEXT-005: location gating — when a currentLocationId is supplied, only
+    // show tabs that are compatible with a selected location (i.e. tabs without
+    // a location requirement, or tabs whose content can be scoped by location).
+    if (currentLocationId && tab.locationId && !tab.locationId.includes(currentLocationId)) return false;
     return true;
   });
 }
@@ -184,8 +213,9 @@ export function isTabVisible(
   segment?: CompanySegment | null,
   catalog: ReadonlyArray<TabDef> = TAB_CATALOG,
   moduleEnabled?: (id: ModuleId) => boolean,
+  currentLocationId?: string,
 ): boolean {
-  return visibleTabs(caps, projectType, planCan, segment, catalog, moduleEnabled).some(t => t.id === tabId);
+  return visibleTabs(caps, projectType, planCan, segment, catalog, moduleEnabled, currentLocationId).some(t => t.id === tabId);
 }
 
 /** Look up a tab definition by id (any tab, regardless of visibility). */
@@ -197,15 +227,3 @@ export function tabById(tabId: string): TabDef | undefined {
 export function tabModuleId(tabId: string): ModuleId | undefined {
   return tabById(tabId)?.moduleId;
 }
-
-/** Set of tab IDs that have real implementations (not placeholders). */
-export const REAL_TABS: ReadonlySet<string> = new Set([
-  "overview", "team", "milestones", "tasks", "updates", "issues", "punchlist", "drawings",
-  "drawing-review",
-  "rfi", "changeorders", "boq", "estimate", "fieldops", "materials", "attendance", "labour",
-  "safety", "inspections", "map", "boq", "gantt", "approvals", "messages",
-  "phases", "time", "deliverables", "reviews", "billing", "utilization",
-  "ffe", "statutory", "moodboards", "rooms", "inspection", "reports",
-  "po", "3way", "invoices", "budget", "rabills", "ledger", "compliance",
-  "pnl", "wip", "budgetChange",
-]);

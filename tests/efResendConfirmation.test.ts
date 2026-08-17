@@ -11,7 +11,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const src = readFileSync(join(process.cwd(), "supabase", "functions", "resend_confirmation", "index.ts"), "utf8");
+const src = readFileSync(join(process.cwd(), "supabase", "functions", "resend_confirmation", "index.ts"), "utf8")
+  .replace(/\r\n/g, "\n");
 
 describe("resend_confirmation — email-confirm dispatch", () => {
   it("calls generateLink with the object form (never positional)", () => {

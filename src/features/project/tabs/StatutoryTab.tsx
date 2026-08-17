@@ -12,7 +12,7 @@ import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import {
   listStatutoryApprovals, upsertStatutoryApproval, setStatutoryStatus, deleteStatutoryApproval,
-  isExpiring, STATUTORY_KINDS,
+  isExpiring, STATUTORY_NEXT, STATUTORY_KINDS,
   type StatutoryApproval, type StatutoryKind, type StatutoryStatus,
 } from "@/app/statutoryQueries";
 
@@ -25,9 +25,6 @@ const STATUS_LABEL: Record<StatutoryStatus, string> = {
 const KIND_LABEL: Record<StatutoryKind, string> = {
   fire: "Fire NOC", municipal: "Municipal", environment: "Environment", electrical: "Electrical",
   labour: "Labour", occupancy: "Occupancy", other: "Other",
-};
-const NEXT: Record<StatutoryStatus, StatutoryStatus> = {
-  draft: "applied", applied: "approved", approved: "approved", rejected: "draft", expired: "applied",
 };
 const formatINR = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -96,7 +93,7 @@ export function StatutoryTab({ projectId }: { projectId: string }): JSX.Element 
   };
 
   const toggle = async (a: StatutoryApproval) => {
-    const next = NEXT[a.status];
+    const next = STATUTORY_NEXT[a.status]; if (!next) return;
     const prevRows = rows;
     await run(`s-${a.id}`, c => setStatutoryStatus(c, a.id, next), {
       apply: () => setRows(prev => prev.map(x => x.id === a.id ? { ...x, status: next } : x)),

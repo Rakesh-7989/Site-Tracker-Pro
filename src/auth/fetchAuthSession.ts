@@ -32,6 +32,14 @@ import { normalizeOverride } from "./capabilityOverrides";
 import { customRoleGrants } from "./customRoles";
 import { isCapability, type Capability } from "./capabilities";
 import type { IdentityRole } from "./roles";
+import type { Rbac2Context, Rbac2Mode } from "./rbac2/types";
+import {
+  normalizeAclEntry,
+  normalizeClientPermission,
+  normalizeProfileBinding,
+  normalizeRoleProfile,
+  normalizeVendorScope,
+} from "./rbac2/queries";
 
 // Narrow shape we expect from the Supabase client. Decoupled so we can
 // mock without pulling @supabase/supabase-js into Node tests.
@@ -258,6 +266,50 @@ export async function fetchCustomRoleOverrides(
 }
 
 /**
+ * Fetch the RBAC V2 context (migrations 203–205) for the ACTIVE org.
+ * Best-effort: returns undefined on failure / no org / matrix mode.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchRbac2Context(
+  client: any,
+  authUserId: string,
+  activeOrgId: string | null,
+): Promise<Rbac2Context | undefined> {
+  if (!activeOrgId) return undefined;
+  try {
+    const modeRes = await client.from("org_rbac_settings").select("mode").eq("org_id", activeOrgId).maybeSingle();
+    const mode: Rbac2Mode | null = (modeRes?.data as { mode?: string } | null)?.mode as Rbac2Mode | null;
+    if (!mode || mode === "matrix") return undefined;
+
+    // Assigned profiles for this user in the active org.
+    const asgRes = await client
+      .from("rbac_profile_assignments")
+      .select("profile_id")
+      .eq("org_id", activeOrgId)
+      .eq("user_id", authUserId);
+    const profileIds = Array.isArray(asgRes?.data)
+      ? (asgRes.data as Array<Record<string, unknown>>).map(r => String(r.profile_id)).filter(Boolean)
+      : [];
+
+    const [profiles, bindings, acl, clientPermissions, vendorScopes] = await Promise.all([
+      profileIds.length
+        ? client.from("rbac_role_profiles").select("*").in("id", profileIds).then((r: any) => (r.data ?? []).map(normalizeRoleProfile).filter(Boolean))
+        : Promise.resolve([]),
+      profileIds.length
+        ? client.from("rbac_profile_bindings").select("*").in("profile_id", profileIds).then((r: any) => (r.data ?? []).map(normalizeProfileBinding).filter(Boolean))
+        : Promise.resolve([]),
+      client.from("resource_acl_entries").select("*").eq("org_id", activeOrgId).then((r: any) => (r.data ?? []).map(normalizeAclEntry).filter(Boolean)),
+      client.from("client_portal_permissions").select("*").eq("org_id", activeOrgId).then((r: any) => (r.data ?? []).map(normalizeClientPermission).filter(Boolean)),
+      client.from("vendor_project_scopes").select("*").eq("org_id", activeOrgId).then((r: any) => (r.data ?? []).map(normalizeVendorScope).filter(Boolean)),
+    ]);
+
+    return { mode, profiles, bindings, acl, clientPermissions, vendorScopes };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Top-level fetcher. The React hook calls this; tests can pass a mock
  * client that satisfies FetchClient.
  *
@@ -334,6 +386,9 @@ export async function fetchAuthSession(
       ...(await fetchCapabilityOverrides(client, normalized.user.identityRole, session.activeOrgId)),
       ...(await fetchCustomRoleOverrides(client, input.authUserId, normalized.user.identityRole, session.activeOrgId)),
     ];
+
+    // 5. RBAC V2 context (migrations 203–205) for the active org.
+    session.rbac2 = await fetchRbac2Context(client, input.authUserId, session.activeOrgId);
 
     return { ok: true, session };
   } catch (e) {

@@ -114,6 +114,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/org", label: "Org Home", icon: "building", requires: "org:members:manage", group: "Org Admin" },
   { to: "/org/members", label: "Members", icon: "users", requires: "org:members:manage", group: "Org Admin" },
   { to: "/org/roles", label: "Custom Roles", icon: "lock", requires: "org:members:manage", group: "Org Admin" },
+  { to: "/org/rbac", label: "RBAC V2", icon: "lock", requires: "org:members:manage", group: "Org Admin" },
   { to: "/org/billing", label: "Billing", icon: "credit-card", requires: "org:billing:manage", group: "Org Admin" },
   { to: "/org/templates", label: "Templates", icon: "doc", requires: "org:templates:manage", group: "Org Admin", stubId: "org-templates" },
   { to: "/org/approvals", label: "Approvals", icon: "check", requires: "org:approvals:manage", group: "Org Admin", stubId: "org-approvals" },

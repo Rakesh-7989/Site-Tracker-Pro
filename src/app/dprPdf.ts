@@ -183,6 +183,7 @@ export function downloadDprPdf(row: DprMessageRow, orgName: string): void {
   y = kvRow(doc, "Report ID", row.metaMessageId ? `Meta ${row.metaMessageId.slice(0, 14)}…` : row.id.slice(0, 8), y);
   y = kvRow(doc, "Status", pdfStatusLabel(row.status), y, statusColor(row.status));
   y = kvRow(doc, "Promoter", row.promoterPhone || "—", y);
+  if (row.locationId) y = kvRow(doc, "Location", row.locationLabel || row.locationId.slice(0, 8), y);
 
   // ── Transcript ──
   if (row.transcript) {

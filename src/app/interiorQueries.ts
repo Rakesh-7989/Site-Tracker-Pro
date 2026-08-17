@@ -4,6 +4,9 @@
 // managers + org admin (mirrors 151_ffe_schedules). UI gating reuses the
 // ffe:manage capability + PlanFeature "ffe" at the tab level.
 
+import { workflowNextMap } from "./workflowEngine";
+import { INSTALL_WORKFLOW, ROOM_FINISH_WORKFLOW } from "./workflowDefinitions";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -287,15 +290,11 @@ export function roomProgress(rooms: Pick<InteriorRoom, "finishStatus">[]): RoomP
   return { total: rooms.length, installed, inProgress, cancelled, pct };
 }
 
-/** Natural next status for an installation (terminal states stay put). */
-export const INSTALL_NEXT: Record<InstallStatus, InstallStatus> = {
-  planned: "ordered", ordered: "installed", installed: "installed", cancelled: "planned",
-};
+/** Natural next status for an installation (terminal states stay put — derived from the workflow register). */
+export const INSTALL_NEXT: Record<InstallStatus, InstallStatus> = workflowNextMap(INSTALL_WORKFLOW) as Record<InstallStatus, InstallStatus>;
 
-/** Natural next status for a room's finish (terminal states stay put). */
-export const ROOM_FINISH_NEXT: Record<RoomFinishStatus, RoomFinishStatus> = {
-  planned: "in_progress", in_progress: "installed", installed: "installed", cancelled: "planned",
-};
+/** Natural next status for a room's finish (terminal states stay put — derived from the workflow register). */
+export const ROOM_FINISH_NEXT: Record<RoomFinishStatus, RoomFinishStatus> = workflowNextMap(ROOM_FINISH_WORKFLOW) as Record<RoomFinishStatus, RoomFinishStatus>;
 
 export const ROOM_FINISH_LABEL: Record<RoomFinishStatus, string> = {
   planned: "Planned", in_progress: "In progress", installed: "Installed", cancelled: "Cancelled",
