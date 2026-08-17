@@ -2,10 +2,11 @@
 import { describe, it, expect } from "vitest";
 import {
   OutboxEventType, publishEvent, publishOrgBroadcast,
+  publishInvoiceGenerated, publishQuoteAccepted, publishCorrectiveActionOpened,
+  invoiceGeneratedPayload, quoteAcceptedPayload, correctiveActionOpenedPayload,
   OUTBOX_STATUS_LABEL, OUTBOX_STATUS_TONE, isOutboxStatus, outboxStatus,
   mapOutboxRow, outboxRollup,
 } from "@/app/outboxQueries";
-
 function mockRpc(impl: any) {
   return { rpc: impl };
 }
@@ -158,5 +159,91 @@ describe("outboxRollup", () => {
     const r = outboxRollup([]);
     expect(r.total).toBe(0);
     expect(r.deliveryPct).toBe(null);
+  });
+});
+
+describe("P2.3 typed domain-event publishers", () => {
+  it("invoiceGeneratedPayload renders title/body/link + project fan-out", () => {
+    const p = invoiceGeneratedPayload({ projectId: "proj-1", invoiceNo: "INV-100", amount: 12500, projectLabel: "Villa" });
+    expect(p.title).toBe("Invoice Generated");
+    expect(p.body).toContain("INV-100");
+    expect(p.body).toContain("Villa");
+    expect(p.body).toContain("12,500");
+    expect(p.link).toBe("/projects/proj-1/invoices");
+    expect(p.project_id).toBe("proj-1");
+    expect(p.to_project_members).toBe(true);
+  });
+
+  it("publishInvoiceGenerated calls publish_event with typed args", async () => {
+    const calls: any[] = [];
+    const client = mockRpc(async (_fn: string, args: any) => { calls.push(args); return { data: "evt-i1", error: null }; });
+    const res = await publishInvoiceGenerated(client, { orgId: "org-1", projectId: "proj-1", invoiceId: "inv-9", invoiceNo: "INV-9", amount: 500 });
+    expect(res.ok).toBe(true);
+    expect(calls[0]).toMatchObject({
+      p_type: "invoice.generated",
+      p_org_id: "org-1",
+      p_project_id: "proj-1",
+      p_entity_type: "invoice",
+      p_entity_id: "inv-9",
+    });
+    expect(calls[0].p_payload).toMatchObject({ project_id: "proj-1", to_project_members: true });
+  });
+
+  it("quoteAcceptedPayload uses item + vendor and links to the FFE tab", () => {
+    const p = quoteAcceptedPayload({ projectId: "proj-1", itemName: "Chairs", vendorName: "Urban", amount: 4000 });
+    expect(p.title).toBe("Quote accepted");
+    expect(p.body).toContain("Urban");
+    expect(p.body).toContain("Chairs");
+    expect(p.link).toBe("/projects/proj-1/ffe");
+    expect(p.project_id).toBe("proj-1");
+  });
+
+  it("quoteAcceptedPayload falls back to generic item/vendor", () => {
+    const p = quoteAcceptedPayload({ projectId: "p", itemName: "", vendorName: null, amount: 100 });
+    expect(p.body).toContain("vendor");
+    expect(p.body).toContain("quote");
+  });
+
+  it("publishQuoteAccepted calls publish_event with quote entity", async () => {
+    const calls: any[] = [];
+    const client = mockRpc(async (_fn: string, args: any) => { calls.push(args); return { data: "evt-q1", error: null }; });
+    const res = await publishQuoteAccepted(client, { orgId: "org-1", projectId: "proj-1", quoteId: "q-7", itemName: "Steel", vendorName: "MS", amount: 900 });
+    expect(res.ok).toBe(true);
+    expect(calls[0]).toMatchObject({
+      p_type: "quote.accepted",
+      p_org_id: "org-1",
+      p_project_id: "proj-1",
+      p_entity_type: "quote",
+      p_entity_id: "q-7",
+    });
+  });
+
+  it("correctiveActionOpenedPayload renders priority + description + inspections link", () => {
+    const p = correctiveActionOpenedPayload({ projectId: "proj-1", description: "Rework slab edge", priority: "high" });
+    expect(p.title).toBe("Corrective action opened");
+    expect(p.body).toContain("high priority");
+    expect(p.body).toContain("Rework slab edge");
+    expect(p.link).toBe("/projects/proj-1/inspections");
+    expect(p.project_id).toBe("proj-1");
+  });
+
+  it("correctiveActionOpenedPayload omits priority label when absent", () => {
+    const p = correctiveActionOpenedPayload({ projectId: "proj-1", description: "Clean up" });
+    expect(p.body).toBe("A corrective action has been opened: Clean up");
+  });
+
+  it("publishCorrectiveActionOpened calls publish_event with corrective_action entity", async () => {
+    const calls: any[] = [];
+    const client = mockRpc(async (_fn: string, args: any) => { calls.push(args); return { data: "evt-c1", error: null }; });
+    const res = await publishCorrectiveActionOpened(client, { orgId: "org-1", projectId: "proj-1", actionId: "ca-3", description: "Fix joint", priority: "critical" });
+    expect(res.ok).toBe(true);
+    expect(calls[0]).toMatchObject({
+      p_type: "corrective_action.opened",
+      p_org_id: "org-1",
+      p_project_id: "proj-1",
+      p_entity_type: "corrective_action",
+      p_entity_id: "ca-3",
+    });
+    expect(calls[0].p_payload).toMatchObject({ to_project_members: true });
   });
 });

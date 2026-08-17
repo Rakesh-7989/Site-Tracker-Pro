@@ -9,7 +9,8 @@
 // calling the RPC that fanned out synchronously.
 
 import type { QueryResult } from "./queries";
-import type { NotificationType } from "./notificationTemplates";
+import { generateBody, generateTitle, type NotificationType } from "./notificationTemplates";
+import { fmtRupees } from "./financeQueries";
 
 /** Outbox event type constants — mirror the SQL `type` values (migration 208). */
 export const OutboxEventType = {
@@ -88,6 +89,128 @@ export async function publishOrgBroadcast(
       body: (placeholders ?? {})["body"],
       link: (placeholders ?? {})["link"] ?? "#",
     },
+  });
+}
+
+// ── Typed project-scoped domain-event publishers (VNext P2.3) ───────────────
+// Business flows publish a durable outbox event after a successful domain
+// write so the worker fans the notification out to active project members
+// (`payload.project_id` + `to_project_members`). Publishing is best-effort:
+// callers may discard the result — a publish failure must never fail the
+// domain write it accompanies.
+
+export interface PublishInvoiceGeneratedInput {
+  orgId: string;
+  projectId: string;
+  invoiceId: string;
+  invoiceNo: string;
+  amount: number;
+  projectLabel?: string;
+}
+
+/** Pure payload builder for an `invoice.generated` outbox event. */
+export function invoiceGeneratedPayload(input: {
+  projectId: string; invoiceNo: string; amount: number; projectLabel?: string;
+}): OutboxPayload {
+  const project = input.projectLabel ?? "project";
+  return {
+    title: generateTitle("invoice_generated", { inv: input.invoiceNo, project }),
+    body: generateBody("invoice_generated", { inv: input.invoiceNo, project, amount: fmtRupees(input.amount) }),
+    link: `/projects/${input.projectId}/invoices`,
+    project_id: input.projectId,
+    to_project_members: true,
+  };
+}
+
+/** Publish `invoice.generated` to project members (best-effort). */
+export function publishInvoiceGenerated(
+  client: any,
+  input: PublishInvoiceGeneratedInput,
+): Promise<QueryResult<PublishedEvent>> {
+  return publishEvent(client, {
+    type: OutboxEventType.INVOICE_GENERATED,
+    orgId: input.orgId,
+    projectId: input.projectId,
+    entityType: "invoice",
+    entityId: input.invoiceId,
+    payload: invoiceGeneratedPayload(input),
+  });
+}
+
+export interface PublishQuoteAcceptedInput {
+  orgId: string;
+  projectId: string;
+  quoteId: string;
+  itemName: string;
+  vendorName?: string | null;
+  amount: number;
+}
+
+/** Pure payload builder for a `quote.accepted` outbox event. */
+export function quoteAcceptedPayload(input: {
+  projectId: string; itemName: string; vendorName?: string | null; amount: number;
+}): OutboxPayload {
+  const item = input.itemName || "quote";
+  const vendor = input.vendorName || "vendor";
+  return {
+    title: "Quote accepted",
+    body: `Quote from ${vendor} for ${item} (${fmtRupees(input.amount)}) has been accepted — a PO has been raised.`,
+    link: `/projects/${input.projectId}/ffe`,
+    project_id: input.projectId,
+    to_project_members: true,
+  };
+}
+
+/** Publish `quote.accepted` to project members (best-effort). */
+export function publishQuoteAccepted(
+  client: any,
+  input: PublishQuoteAcceptedInput,
+): Promise<QueryResult<PublishedEvent>> {
+  return publishEvent(client, {
+    type: OutboxEventType.QUOTE_ACCEPTED,
+    orgId: input.orgId,
+    projectId: input.projectId,
+    entityType: "quote",
+    entityId: input.quoteId,
+    payload: quoteAcceptedPayload(input),
+  });
+}
+
+export interface PublishCorrectiveActionOpenedInput {
+  orgId: string;
+  projectId: string;
+  actionId: string;
+  description: string;
+  priority?: string;
+}
+
+/** Pure payload builder for a `corrective_action.opened` outbox event. */
+export function correctiveActionOpenedPayload(input: {
+  projectId: string; description: string; priority?: string;
+}): OutboxPayload {
+  return {
+    title: "Corrective action opened",
+    body: input.priority
+      ? `${input.priority} priority corrective action: ${input.description}`
+      : `A corrective action has been opened: ${input.description}`,
+    link: `/projects/${input.projectId}/inspections`,
+    project_id: input.projectId,
+    to_project_members: true,
+  };
+}
+
+/** Publish `corrective_action.opened` to project members (best-effort). */
+export function publishCorrectiveActionOpened(
+  client: any,
+  input: PublishCorrectiveActionOpenedInput,
+): Promise<QueryResult<PublishedEvent>> {
+  return publishEvent(client, {
+    type: OutboxEventType.CORRECTIVE_ACTION_OPENED,
+    orgId: input.orgId,
+    projectId: input.projectId,
+    entityType: "corrective_action",
+    entityId: input.actionId,
+    payload: correctiveActionOpenedPayload(input),
   });
 }
 

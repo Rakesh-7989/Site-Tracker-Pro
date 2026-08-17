@@ -24,6 +24,7 @@ import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
 import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
 import { createPO } from "@/app/financeQueries";
+import { publishQuoteAccepted } from "@/app/outboxQueries";
 import { listVendors, vendorOptionGroups, type Vendor } from "@/app/vendorQueries";
 import { listFfeEntries, type FfeEntry } from "@/app/ffeQueries";
 import {
@@ -177,7 +178,18 @@ function ProcurementInner(): JSX.Element {
         quoteId: q.id,
       });
       if (!po.ok) return po;
-      return setQuoteStatus(c, q.id, "selected");
+      const st = await setQuoteStatus(c, q.id, "selected");
+      if (st.ok && orgId) {
+        await publishQuoteAccepted(c, {
+          orgId,
+          projectId,
+          quoteId: q.id,
+          itemName: q.itemName || ffeEntry.name || ffeEntry.code,
+          vendorName: q.vendorName,
+          amount,
+        });
+      }
+      return st;
     }, {
       apply: () => setQuotes(p => p.map(x => x.id === q.id ? { ...x, status: "selected" as const } : x)),
       rollback: () => setQuotes(prevQuotes),

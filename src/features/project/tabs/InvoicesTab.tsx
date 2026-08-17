@@ -4,6 +4,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listInvoices, createInvoice, setInvoiceStatus, deleteInvoice, invoiceTaxBreakup, fmtRupees, type Invoice, type InvoiceStatus } from "@/app/financeQueries";
+import { publishInvoiceGenerated } from "@/app/outboxQueries";
 import { ReceiptsPanel } from "./ReceiptsPanel";
 
 import { getClient } from "@/lib/supabase";
@@ -35,7 +36,13 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     const amt = Number(amount);
     if (!no.trim() || !Number.isFinite(amt) || amt <= 0) return;
     const tmpId = "tmp-" + Date.now();
-    await run("add", c => createInvoice(c, { projectId, no: no.trim(), amount: amt, gst: Number(gst) || 0, tds: Number(tds) || 0 }), {
+    await run("add", async c => {
+      const res = await createInvoice(c, { projectId, no: no.trim(), amount: amt, gst: Number(gst) || 0, tds: Number(tds) || 0 });
+      if (res.ok && activeOrg?.orgId) {
+        await publishInvoiceGenerated(c, { orgId: activeOrg.orgId, projectId, invoiceId: res.data.id, invoiceNo: no.trim(), amount: amt });
+      }
+      return res;
+    }, {
       apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: Number(gst) || 0, tds: Number(tds) || 0, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10), source: null, periodFrom: null, periodTo: null, retainerId: null, phaseId: null, lines: [] }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });

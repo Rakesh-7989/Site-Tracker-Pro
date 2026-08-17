@@ -6,6 +6,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import { listInspections, createInspection, setInspectionResult, deleteInspection, type Inspection, type InspectionResult } from "@/app/siteOpsQueries";
 import { listCorrectiveActions, createCorrectiveAction, setCorrectiveStatus, deleteCorrectiveAction, correctiveRollup, CORRECTIVE_NEXT, CORRECTIVE_STATUS_LABEL, CORRECTIVE_PRIORITY_LABEL, type CorrectiveAction, type CorrectiveStatus } from "@/app/qualityQueries";
+import { publishCorrectiveActionOpened } from "@/app/outboxQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
@@ -49,7 +50,13 @@ export function InspectionsTab({ projectId }: { projectId: string }): JSX.Elemen
   const addAction = async () => {
     if (!caDesc.trim()) return;
     const tmpId = "tmp-" + Date.now();
-    await run("ca", c => createCorrectiveAction(c, { projectId, description: caDesc.trim(), priority: caPrio as CorrectiveAction["priority"], assignedTo: caAssigned.trim() || undefined, dueDate: caDue || null }), {
+    await run("ca", async c => {
+      const res = await createCorrectiveAction(c, { projectId, description: caDesc.trim(), priority: caPrio as CorrectiveAction["priority"], assignedTo: caAssigned.trim() || undefined, dueDate: caDue || null });
+      if (res.ok && activeOrg?.orgId) {
+        await publishCorrectiveActionOpened(c, { orgId: activeOrg.orgId, projectId, actionId: res.data.id, description: caDesc.trim(), priority: caPrio });
+      }
+      return res;
+    }, {
       apply: () => setActions(prev => [{ id: tmpId, projectId, inspectionId: null, description: caDesc.trim(), priority: caPrio as CorrectiveAction["priority"], status: "open" as CorrectiveStatus, assignedTo: caAssigned.trim() || null, dueDate: caDue || null, openedByName: null, openedAt: "" }, ...prev]),
       rollback: () => setActions(prev => prev.filter(x => x.id !== tmpId)),
     });
