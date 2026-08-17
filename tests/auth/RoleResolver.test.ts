@@ -172,3 +172,89 @@ describe("capabilitiesAnywhere", () => {
     expect(all.has("milestone:add")).toBe(true);       // from p-2 pm
   });
 });
+
+describe("RBAC V2 wiring (migrations 203–205)", () => {
+  const rbac2 = (partial: Partial<NonNullable<AuthSession["rbac2"]>>): NonNullable<AuthSession["rbac2"]> => ({
+    mode: "enforce",
+    profiles: [],
+    bindings: [],
+    acl: [],
+    clientPermissions: [],
+    vendorScopes: [],
+    ...partial,
+  });
+
+  it("matrix mode (absent rbac2) behaves exactly as before", () => {
+    const s = sessionFor({ user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false } });
+    expect(can(s, "drawings:upload")).toBe(true);
+    expect(resolveCapabilities(s).trace.v2).toBeUndefined();
+  });
+
+  it("shadow mode: matrix still decides; V2 informs but doesn't gate", () => {
+    const s = sessionFor({
+      user: { id: "u-1", email: "a@b", name: "x", identityRole: "client", isStaff: false },
+      rbac2: rbac2({ mode: "shadow" }),
+    });
+    // matrix allows dpr:view for client → shadow keeps it (no ACL/policy)
+    expect(can(s, "dpr:view")).toBe(true);
+    // an ACL deny in shadow mode does NOT flip the decision
+    const s2 = sessionFor({
+      user: { id: "u-1", email: "a@b", name: "x", identityRole: "client", isStaff: false },
+      rbac2: rbac2({
+        mode: "shadow",
+        acl: [{ id: "a1", orgId: "o-1", resourceType: "project", resourceId: "p-1", subjectType: "user", subjectId: "u-1", capability: "dpr:view", effect: "deny", note: null, createdAt: "" }],
+      }),
+    });
+    expect(can(s2, "dpr:view", { orgId: "o-1", resource: { type: "project", id: "p-1" } })).toBe(true);
+  });
+
+  it("enforce mode: binding deny strips a matrix cap", () => {
+    const s = sessionFor({
+      user: { id: "u-1", email: "a@b", name: "x", identityRole: "pm", isStaff: false },
+      rbac2: rbac2({
+        profiles: [{ id: "prof-1", code: "custom-pm", name: "Custom PM", description: null, segment: null, scope: "project", sourceRole: null, isSystem: false, orgId: "o-1", createdAt: "" }],
+        bindings: [{ id: "b1", profileId: "prof-1", capability: "milestone:add", effect: "deny", note: null }],
+      }),
+    });
+    // pm identity matrix grants milestone:add (permissions-matrix.ts) — the
+    // binding deny strips it in enforce mode.
+    expect(can(s, "milestone:add", { orgId: "o-1" })).toBe(false);
+    const r = resolveCapabilities(s, { orgId: "o-1" });
+    expect(r.trace.v2?.denies).toContain("milestone:add");
+  });
+
+  it("enforce mode: ACL allow grants a cap the matrix lacks (resource-scoped)", () => {
+    const s = sessionFor({
+      user: { id: "u-1", email: "client@example.com", name: "Client", identityRole: "client", isStaff: false },
+      rbac2: rbac2({
+        acl: [{ id: "a1", orgId: "o-1", resourceType: "drawing", resourceId: "d-1", subjectType: "user", subjectId: "u-1", capability: "budget:view", effect: "allow", note: null, createdAt: "" }],
+      }),
+    });
+    // client identity lacks budget:view — ACL allow grants it for d-1…
+    expect(can(s, "budget:view", { orgId: "o-1", resource: { type: "drawing", id: "d-1" } })).toBe(true);
+    // …but NOT for a different drawing
+    expect(can(s, "budget:view", { orgId: "o-1", resource: { type: "drawing", id: "d-2" } })).toBe(false);
+  });
+
+  it("enforce mode: client portal permission grants share-scoped cap", () => {
+    const s = sessionFor({
+      user: { id: "u-1", email: "c@example.com", name: "C", identityRole: "client", isStaff: false },
+      rbac2: rbac2({
+        clientPermissions: [{ id: "cp1", orgId: "o-1", projectId: "p-1", clientEmail: "c@example.com", capability: "budget:edit", createdAt: "" }],
+      }),
+    });
+    expect(can(s, "budget:edit", { orgId: "o-1", resource: { type: "project", id: "p-1" }, clientEmail: "c@example.com" })).toBe(true);
+    expect(can(s, "budget:edit", { orgId: "o-1", resource: { type: "project", id: "p-2" }, clientEmail: "c@example.com" })).toBe(false);
+  });
+
+  it("enforce mode: vendor scope grants project-scoped PO cap to vendor identity", () => {
+    const s = sessionFor({
+      user: { id: "v-1", email: "v@example.com", name: "V", identityRole: "vendor", isStaff: false },
+      rbac2: rbac2({
+        vendorScopes: [{ id: "vs1", orgId: "o-1", projectId: "p-1", vendorId: "vd-1", profileId: null, createdAt: "" }],
+      }),
+    });
+    expect(can(s, "procurement:view", { orgId: "o-1", resource: { type: "project", id: "p-1" } })).toBe(true);
+    expect(can(s, "procurement:view", { orgId: "o-1", resource: { type: "project", id: "p-2" } })).toBe(false);
+  });
+});

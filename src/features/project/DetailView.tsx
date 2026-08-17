@@ -1,4 +1,4 @@
-// SiteTrack Pro — project DetailView (Phase 6).
+// SiteTrack Pro — project DetailView (Phase 6 + VNext Spatial Integration).
 //
 // Replaces the legacy 5,000-line detail view with a role-gated tab shell.
 // The visible tabs are computed from the user's capabilities (resolved
@@ -6,8 +6,10 @@
 // type. Overview + Team are real; the rest render an honest placeholder
 // until their Phase 6 sub-pass.
 //
+// Spatial integration (VNEXT-005): queries scoped by currentLocationId
+// when a location is selected in the spatial hierarchy navigator.
+//
 // URL: /projects/:id/:tab?  (defaults to overview)
-
 import { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
@@ -18,7 +20,8 @@ import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
 import { useModules, ModuleGate } from "@/modules";
-import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS } from "./tabs-config";
+import { useLocationContext } from "@/hooks/useLocationContext";
+import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS, TAB_CATALOG } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { RequestProjectAccess } from "./RequestProjectAccess";
@@ -70,6 +73,15 @@ export function DetailView(): JSX.Element {
   const { can: planCan } = usePlanCaps();
   const { isEnabled: moduleEnabled } = useModules();
   const { state, reload } = useProject(id);
+  // ---- VNEXT-005: Location context ----
+  const {
+    currentLocationId,
+    setLocationId,
+    resetLocation,
+    locationHierarchy,
+    spaceEnabled,
+  } = useLocationContext();
+  // ----------------------------------------
 
   // Resolve the user's capabilities for THIS project's context.
   const caps = useMemo(() => {
@@ -80,14 +92,14 @@ export function DetailView(): JSX.Element {
     }).capabilities;
   }, [session, state]);
 
+  // ---- VNEXT-005: Visible tabs filtered by currentLocationId ----
   const tabs = useMemo(() => {
     if (state.kind !== "ready") return [];
-    // planCan hides Pro+ tabs (finance/rfi/estimate/etc) on lower plans.
-    // activeSegment gates v4 segment-specific tabs (migration 134).
-    // moduleEnabled hides tabs whose owning industry module is switched off.
     const activeSegment = session?.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
-    return visibleTabs(caps, state.project.type, planCan, activeSegment, undefined, moduleEnabled);
-  }, [caps, state, planCan, session, moduleEnabled]);
+    // pass currentLocationId so visibleTabs can gate location-specific tabs
+    return visibleTabs(caps, state.project.type, planCan, activeSegment, TAB_CATALOG, moduleEnabled, currentLocationId);
+  }, [caps, state, planCan, session, moduleEnabled, currentLocationId]);
+  // -----------------------------------------------
 
   // The Tabs component's items (i18n label + icon ReactNode).
   const tabItems = useMemo(() => tabs.map(tb => ({
@@ -119,7 +131,7 @@ export function DetailView(): JSX.Element {
   }
 
   // Resolve the active tab: requested → if visible use it in tab bar,
-  // but always render the requested tab content so AccessDenied can trigger.
+  // but always render the requested tab content so AccessDenied triggers.
   const requestedId = (tab ?? DEFAULT_TAB) as string;
   const isVisibleTab = tabs.some(tb => tb.id === requestedId);
   const activeId = isVisibleTab ? requestedId : DEFAULT_TAB;
@@ -195,6 +207,28 @@ export function DetailView(): JSX.Element {
           {project.status != null && <StatusBadge status={project.status} />}
         </div>
       </div>
+
+      {/* Spatial location selector (integrated into header) */}
+      {spaceEnabled && (
+        <div className="mt-3 flex flex-col md:flex-row gap-2 items-center">
+          <select
+            onChange={(e) => setLocationId(e.target.value)}
+            className="p-1 border-default rounded-sm text-sm"
+          >
+            <option value="">-- Select Location --</option>
+            {locationHierarchy.site && <option value={locationHierarchy.site.id}>{locationHierarchy.site.name}</option>}
+            {locationHierarchy.building && <option value={locationHierarchy.building.id}>{locationHierarchy.building.name}</option>}
+            {locationHierarchy.floor && <option value={locationHierarchy.floor.id}>{locationHierarchy.floor.name}</option>}
+            {locationHierarchy.zone && <option value={locationHierarchy.zone.id}>{locationHierarchy.zone.name}</option>}
+            {locationHierarchy.room && <option value={locationHierarchy.room.id}>{locationHierarchy.room.name}</option>}
+          </select>
+          <button
+            onClick={resetLocation}
+            className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-error hover:underline">
+            Reset
+          </button>
+        </div>
+      )}
 
       {/* Tab bar (WAI-ARIA tabs — buttons get id/aria-controls, roving tabindex) */}
       <div className="mb-5">

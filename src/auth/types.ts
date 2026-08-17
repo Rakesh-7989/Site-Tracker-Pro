@@ -15,6 +15,7 @@ import type { IdentityRole, ProjectTierRole, ProjectType, ConstructionIndustry }
 import type { Capability } from "./capabilities";
 import type { CompanySegment } from "./segmentConfig";
 import type { EnabledModules } from "@/modules/types";
+import type { Rbac2Context } from "./rbac2/types";
 
 /** Canonical user identity. */
 export interface AuthUser {
@@ -140,6 +141,12 @@ export interface AuthSession {
    * so existing session builders stay valid; resolver treats absent as [].
    */
   capabilityOverrides?: CapabilityOverride[];
+  /**
+   * RBAC V2 context (migrations 203–205) — populated by the session-fetcher
+   * for the ACTIVE org. When absent, the resolver behaves exactly as before
+   * (matrix-only). When present with mode 'shadow'/'enforce', V2 layers on.
+   */
+  rbac2?: Rbac2Context;
 }
 
 /** Context for a capability resolution decision. */
@@ -148,6 +155,10 @@ export interface ResolveContext {
   orgId?: string;
   /** When set, layer project-tier capabilities for this specific project. */
   projectId?: string;
+  /** RBAC V2 resource scope (migrations 203–205). */
+  resource?: { type: string; id: string };
+  /** Client identity (client portal / share context) for scoped grants. */
+  clientEmail?: string;
 }
 
 /** Output of RoleResolver.resolveCapabilities. */
@@ -163,6 +174,8 @@ export interface ResolvedCapabilities {
     overrideGrants?: Capability[];
     /** Capabilities removed by a superadmin override (migration 69). */
     overrideRevokes?: Capability[];
+    /** RBAC V2 delta (migrations 203–205) when mode='enforce'. */
+    v2?: { mode: string; denies: Capability[]; grants: Capability[] };
   };
 }
 

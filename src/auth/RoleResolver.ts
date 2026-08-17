@@ -9,6 +9,7 @@ import {
   isProjectTierRole,
 } from "./roles";
 import { applyOverrides } from "./capabilityOverrides";
+import { composeV2Caps, decideV2 } from "./rbac2/resolver";
 
 const ADMIN_EXTRA_CAPS: Capability[] = [
   "org:members:manage", "org:billing:manage", "org:integrations:manage",
@@ -32,6 +33,14 @@ const ADMIN_EXTRA_CAPS: Capability[] = [
   "ffe:manage", "statutory:manage", "procurement:view",
   "audit:manage",
 ];
+
+/** Org-tier for the V2 resolver: 'admin' when the user is an admin of ctx.orgId. */
+function orgTierForContext(session: AuthSession, context: ResolveContext): "admin" | "pm" | null {
+  if (!context.orgId) return null;
+  const m = session.orgs.find(o => o.orgId === context.orgId);
+  if (m?.isAdmin || session.user.identityRole === "orgadmin") return "admin";
+  return null;
+}
 
 export function resolveCapabilities(
   session: AuthSession,
@@ -69,9 +78,39 @@ export function resolveCapabilities(
   const overrides = session.capabilityOverrides ?? [];
   const all = applyOverrides(union, overrides, user.identityRole);
 
+  // RBAC V2 layer: only applied when the session carries V2 context and the
+  // org mode is 'enforce'. In 'shadow' mode V2 is computed but the matrix
+  // still decides (audit-driven cutover); caller logs via writeAuditEvent().
+  const rbac2 = session.rbac2;
+  let v2Applied = false;
+  let capabilities = all;
+  let v2Trace: { mode: string; denies: Capability[]; grants: Capability[] } | undefined;
+  if (rbac2 && rbac2.mode === "enforce") {
+    const composed = composeV2Caps({
+      matrix: all,
+      ctx: rbac2,
+      userId: user.id,
+      identityRole: user.identityRole,
+      orgTier: orgTierForContext(session, context),
+      resource: context.resource,
+      clientEmail: context.clientEmail ?? (user.identityRole === "client" ? user.email : undefined),
+    });
+    capabilities = composed;
+    v2Applied = true;
+    const removed = new Set<Capability>(all);
+    for (const c of composed) removed.delete(c);
+    const added = new Set<Capability>(composed);
+    for (const c of all) added.delete(c);
+    v2Trace = {
+      mode: "enforce",
+      denies: Array.from(removed),
+      grants: Array.from(added),
+    };
+  }
+
   const applied = overrides.filter(o => o.role === user.identityRole);
   return {
-    capabilities: all,
+    capabilities,
     trace: {
       fromIdentity,
       ...(fromOrgAdmin !== undefined ? { fromOrgAdmin } : {}),
@@ -79,6 +118,9 @@ export function resolveCapabilities(
       ...(applied.length ? {
         overrideGrants: applied.filter(o => o.mode === "grant").map(o => o.capability),
         overrideRevokes: applied.filter(o => o.mode === "revoke").map(o => o.capability),
+      } : {}),
+      ...(v2Trace && v2Applied ? {
+        v2: v2Trace,
       } : {}),
     },
   };
@@ -89,6 +131,26 @@ export function can(
   capability: Capability,
   context: ResolveContext = {},
 ): boolean {
+  // V2 shadow/enforce decision (ACL + bindings layered) when context present.
+  const rbac2 = session.rbac2;
+  if (rbac2 && (rbac2.mode === "shadow" || rbac2.mode === "enforce")) {
+    const matrix = resolveCapabilities(session, context).capabilities;
+    // shadow = matrix decides (V2 computed but never gates).
+    if (rbac2.mode === "shadow") return matrix.has(capability);
+    const d = decideV2({
+      capability,
+      matrixAllowed: matrix.has(capability),
+      isSuperadmin: session.user.identityRole === "superadmin",
+      ctx: rbac2,
+      userId: session.user.id,
+      identityRole: session.user.identityRole,
+      orgTier: orgTierForContext(session, context),
+      resource: context.resource,
+      clientEmail: context.clientEmail ?? (session.user.identityRole === "client" ? session.user.email : undefined),
+    });
+    // enforce = V2 decides.
+    return d.allowed;
+  }
   return resolveCapabilities(session, context).capabilities.has(capability);
 }
 

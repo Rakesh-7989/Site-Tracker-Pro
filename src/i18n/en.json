@@ -501,6 +501,10 @@
     "research": {
       "label": "Research Library",
       "desc": "Org-wide technical literature: IS codes, standards, papers, datasheets and curated collections."
+    },
+    "space": {
+      "label": "Spatial Hierarchy",
+      "desc": "Site, building, floor, zone and room hierarchy with location-scoped project data."
     }
   },
   "research": {
