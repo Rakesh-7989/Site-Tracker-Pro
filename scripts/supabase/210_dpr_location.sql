@@ -35,3 +35,5 @@ BEGIN
     RAISE EXCEPTION 'migration 210 FAILED: dpr_messages.location_id missing';
   END IF;
 END $$;
+
+COMMIT;
