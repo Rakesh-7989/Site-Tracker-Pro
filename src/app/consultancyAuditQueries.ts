@@ -3,6 +3,9 @@
 // RLS: read = project member; insert/update = managers + org admin (audit:manage).
 // UI gating: audit:manage capability + planFeature "audit_reports" at tab level.
 
+import { workflowNextMap } from "./workflowEngine";
+import { CHECKLIST_WORKFLOW, REPORT_WORKFLOW } from "./workflowDefinitions";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -229,9 +232,7 @@ export function checklistVerdict(results: Pick<InspectionResult, "result">[]): C
   return { total: base.total, passed: base.passed, failed: base.failed, na: base.na, passPct: base.pct, verdict };
 }
 
-export const CHECKLIST_STATUS_NEXT: Record<ChecklistStatus, ChecklistStatus | null> = {
-  draft: "in_progress", in_progress: "passed", passed: "passed", failed: "failed", cancelled: "draft",
-};
+export const CHECKLIST_STATUS_NEXT: Record<ChecklistStatus, ChecklistStatus | null> = workflowNextMap(CHECKLIST_WORKFLOW);
 
 // ── Reports ────────────────────────────────────────────────────────────────────
 export type ReportKind = "site_visit" | "recommendation" | "milestone_review";
@@ -338,10 +339,8 @@ export async function deleteReport(client: any, id: string): Promise<Result<{ ok
   } catch (e) { return er(e); }
 }
 
-// Pure: next report status
-export const REPORT_STATUS_NEXT: Record<ReportStatus, ReportStatus | null> = {
-  draft: "published", published: "archived", archived: "archived",
-};
+// Pure: next report status (derived from the workflow register)
+export const REPORT_STATUS_NEXT: Record<ReportStatus, ReportStatus | null> = workflowNextMap(REPORT_WORKFLOW);
 
 // Label maps (for UI + tests)
 export const CL_KIND_LABEL: Record<ChecklistKind, string> = {

@@ -4,6 +4,9 @@
 // Invoices are generated manually per month through the security-definer
 // generate_retainer_invoice RPC (billing:generate).
 
+import { workflowNextMap } from "./workflowEngine";
+import { RETAINER_WORKFLOW } from "./workflowDefinitions";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -14,10 +17,8 @@ export type RetainerStatus = "active" | "paused" | "cancelled";
 export const RETAINER_STATUSES: readonly RetainerStatus[] = ["active", "paused", "cancelled"];
 const asRetainerStatus = oneOf<RetainerStatus>(RETAINER_STATUSES, "active");
 
-/** Legal status transitions for the UI cycle button. null = terminal. */
-export const RETAINER_NEXT: Record<RetainerStatus, RetainerStatus | null> = {
-  active: "paused", paused: "active", cancelled: null,
-};
+/** Legal status transitions for the UI cycle button (derived from the workflow register). null = terminal. */
+export const RETAINER_NEXT: Record<RetainerStatus, RetainerStatus | null> = workflowNextMap(RETAINER_WORKFLOW);
 
 /** Auto-billing hint for active retainers (v4 C3.4 cron). */
 export function autoBillingHint(billingDay: number): string | null {

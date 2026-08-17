@@ -6,6 +6,8 @@
 // capabilities + plan gate (PlanFeature "crm", Business+).
 
 import { createProject } from "./queries";
+import { workflowNextMap } from "./workflowEngine";
+import { LEAD_WORKFLOW } from "./workflowDefinitions";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -102,15 +104,16 @@ export function isOpenLead(stage: LeadStage): boolean {
   return LEAD_OPEN_STAGES.includes(stage);
 }
 
-/** Advanceable step for a stage in the funnel UI (undefined = no auto-next). */
-export const LEAD_STAGE_NEXT: Partial<Record<LeadStage, LeadStage>> = {
-  new: "contacted",
-  contacted: "meeting_scheduled",
-  meeting_scheduled: "quotation_sent",
-  quotation_sent: "negotiating",
-  negotiating: "agreement_signed",
-  agreement_signed: "won",
-};
+/** Advanceable step for a stage in the funnel UI (undefined = no auto-next). Derived from the workflow register. */
+export const LEAD_STAGE_NEXT: Partial<Record<LeadStage, LeadStage>> = (() => {
+  const next = workflowNextMap(LEAD_WORKFLOW);
+  const out: Partial<Record<LeadStage, LeadStage>> = {};
+  for (const s of LEAD_STAGES) {
+    const n = next[s];
+    if (n !== null) out[s] = n;
+  }
+  return out;
+})();
 
 /** Reopen a closed lead back into the funnel (won → new, lost → new). */
 export function reopenLead(stage: LeadStage): LeadStage {

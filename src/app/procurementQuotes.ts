@@ -7,6 +7,8 @@
 // "procurement", Business+).
 
 import type { MemberProjectScope } from "./queries";
+import { workflowNextMap } from "./workflowEngine";
+import { QUOTE_WORKFLOW } from "./workflowDefinitions";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -65,13 +67,8 @@ export function bestQuote(quotes: ProcurementQuote[], today: string): Procuremen
   return best;
 }
 
-/** The next status when the manager advances a quote (status FSM). */
-export const QUOTE_NEXT: Record<QuoteStatus, QuoteStatus> = {
-  requested: "received",
-  received: "selected",
-  selected: "rejected",
-  rejected: "received",
-};
+/** The next status when the manager advances a quote (status FSM — derived from the workflow register; every state has an outbound transition so the map is never null). */
+export const QUOTE_NEXT: Record<QuoteStatus, QuoteStatus> = workflowNextMap(QUOTE_WORKFLOW) as Record<QuoteStatus, QuoteStatus>;
 
 // ── Supplier score (v4 Phase E) ─────────────────────────────────────────────
 //

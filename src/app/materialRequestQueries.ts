@@ -3,6 +3,9 @@
 // siteOpsQueries / financeQueries pattern (client-injected Result<T>,
 // camelCase mappers, pure helpers).
 
+import { workflowNextMap } from "./workflowEngine";
+import { MATERIAL_REQUEST_WORKFLOW } from "./workflowDefinitions";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -17,10 +20,8 @@ export interface MaterialRequest {
 }
 const asReqStatus = oneOf<RequestStatus>(["requested", "approved", "ordered", "received"], "requested");
 
-/** Pure: next status in the requested → approved → ordered → received ladder. */
-export const REQUEST_NEXT: Record<RequestStatus, RequestStatus | null> = {
-  requested: "approved", approved: "ordered", ordered: "received", received: null,
-};
+/** Pure: next status in the requested → approved → ordered → received ladder (derived from the workflow register). */
+export const REQUEST_NEXT: Record<RequestStatus, RequestStatus | null> = workflowNextMap(MATERIAL_REQUEST_WORKFLOW);
 
 export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
   requested: "Requested", approved: "Approved", ordered: "Ordered", received: "Received",
