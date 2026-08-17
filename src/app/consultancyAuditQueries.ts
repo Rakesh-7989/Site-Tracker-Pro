@@ -5,6 +5,62 @@
 
 import { workflowNextMap } from "./workflowEngine";
 import { CHECKLIST_WORKFLOW, REPORT_WORKFLOW } from "./workflowDefinitions";
+import { defineFormSchema, type FormSchema, type FormValues } from "./formEngine";
+
+// ── Schema-driven checklist form (VNext P1.2) ────────────────────────────────
+export type ChecklistFieldName = "kind" | "title" | "status";
+
+export interface ChecklistFormLabels {
+  fieldKind: string;
+  fieldTitle: string;
+  fieldStatus: string;
+  titlePlaceholder: string;
+  titleRequired: string;
+  kindLabel: (k: ChecklistKind) => string;
+  statusLabel: (s: ChecklistStatus) => string;
+}
+
+export function checklistFormSchema(
+  labels: ChecklistFormLabels,
+  showStatus: boolean,
+): FormSchema<ChecklistFieldName> {
+  return defineFormSchema<ChecklistFieldName>({
+    id: "inspection-checklist",
+    name: "inspection checklist",
+    fields: [
+      {
+        name: "kind",
+        label: labels.fieldKind,
+        type: "select",
+        options: (["site_visit", "design_review", "quality_audit", "other"] as ChecklistKind[]).map(k => ({
+          value: k,
+          label: labels.kindLabel(k),
+        })),
+      },
+      {
+        name: "title",
+        label: labels.fieldTitle,
+        type: "text",
+        placeholder: labels.titlePlaceholder,
+        requiredMessage: labels.titleRequired,
+        validate: { required: true },
+      },
+      ...(showStatus
+        ? [{
+            name: "status" as ChecklistFieldName,
+            label: labels.fieldStatus,
+            type: "select" as const,
+            options: (["draft", "in_progress", "passed", "failed", "cancelled"] as ChecklistStatus[]).map(s => ({
+              value: s,
+              label: labels.statusLabel(s),
+            })),
+          }]
+        : []),
+    ],
+  });
+}
+
+export type ChecklistFormValues = FormValues<ChecklistFieldName>;
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });

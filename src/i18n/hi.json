@@ -679,6 +679,7 @@
     "fieldKind": "प्रकार",
     "fieldTitle": "शीर्षक",
     "titlePlaceholder": "जैसे साइट विज़िट #3",
+    "titleRequired": "शीर्षक आवश्यक है।",
     "fieldStatus": "स्थिति",
     "cancel": "रद्द करें",
     "save": "सहेजें",

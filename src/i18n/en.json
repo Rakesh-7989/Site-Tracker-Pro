@@ -679,6 +679,7 @@
     "fieldKind": "Type",
     "fieldTitle": "Title",
     "titlePlaceholder": "e.g. Site visit #3",
+    "titleRequired": "Title is required.",
     "fieldStatus": "Status",
     "cancel": "Cancel",
     "save": "Save",
