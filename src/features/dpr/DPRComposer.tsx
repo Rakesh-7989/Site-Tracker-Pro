@@ -29,6 +29,7 @@ import { previewDigest } from "./digestPreview";
 import { VoiceNoteRecorder, type VoiceRecordingResult } from "./VoiceNoteRecorder";
 import { PhotoGeotagCapture, type PhotoGeotagResult } from "./PhotoGeotagCapture";
 import { OfflineQueueBanner } from "./OfflineQueueBanner";
+import { useStorageUploadGate } from "@/features/shared/StorageUploadGate";
 
 const LANG_OPTIONS: Array<{ value: DprLanguage; labelKey: string }> = [
   { value: "te", labelKey: "voice.language.te" },
@@ -47,6 +48,7 @@ export function DPRComposer(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canSubmitDpr = useCan("dpr:submit");
   const canViewDpr = useCan("dpr:view");
+  const uploadGate = useStorageUploadGate(activeOrg?.orgId);
   const t = useT();
   const [draft, dispatch] = useReducer(dprReducer, EMPTY_DRAFT);
   const [submitting, setSubmitting] = useState(false);
@@ -170,7 +172,7 @@ export function DPRComposer(): JSX.Element {
 
   // ── Submit: upload media → enqueue → real WhatsApp EF send ──
   const onSubmit = useCallback(async () => {
-    if (!canSubmit(draft) || !session || submitting) return;
+    if (!canSubmit(draft) || !session || submitting || uploadGate.atQuota) return;
     setSubmitting(true);
     setSubmitState(null);
     try {
@@ -206,7 +208,7 @@ export function DPRComposer(): JSX.Element {
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, draft, session, activeOrg, promoterPhone, photo, recordedBlob, submitting, projectId, locationId]);
+  }, [canSubmit, draft, session, activeOrg, promoterPhone, photo, recordedBlob, submitting, projectId, locationId, uploadGate.atQuota]);
 
   const resetAll = useCallback(() => {
     setSubmitting(false);
@@ -352,10 +354,11 @@ export function DPRComposer(): JSX.Element {
               </div>
             ))}
           </div>
-          <Button fullWidth size="lg" onClick={() => void onSubmit()} loading={submitting} disabled={normalizeE164(promoterPhone) == null}
+          <Button fullWidth size="lg" onClick={() => void onSubmit()} loading={submitting} disabled={normalizeE164(promoterPhone) == null || uploadGate.atQuota}
             leftIcon={<Icon name="send" size={16} />}>
             {submitting ? t("dpr.composer.sendingCta") : t("dpr.composer.sendCta")}
           </Button>
+          {uploadGate.atQuota && <Alert variant="warning">{t("dpr.composer.quotaExceeded")}</Alert>}
           {promoterPhone.trim().length > 0 && normalizeE164(promoterPhone) == null && (
             <p className="text-xs text-error text-center">{t("dpr.composer.enterValidNumber")}</p>
           )}

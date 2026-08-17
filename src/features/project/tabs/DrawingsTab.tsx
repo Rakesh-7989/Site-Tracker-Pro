@@ -19,6 +19,7 @@ import { resolveDiffPair } from "@/app/drawingDiffSources";
 import type { DiffImageSource } from "@/features/shared/DiffView";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
 import { isCadFileName } from "@/lib/dxfPreview";
+import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
 import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
 import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
 
@@ -31,6 +32,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canEdit = useCan("drawings:upload", { orgId: activeOrg?.orgId, projectId });
+  const uploadGate = useStorageUploadGate(activeOrg?.orgId);
   const [rows, setRows] = useState<Drawing[]>([]);
   const [files, setFiles] = useState<Record<string, DrawingFileRef[]>>({});
   const [fileLoading, setFileLoading] = useState<string | null>(null);
@@ -151,6 +153,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
 
   return (
     <div className="space-y-4">
+      <StorageQuotaWarning quota={uploadGate.quota} />
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-bold text-fg-primary">Drawings</h2>
         {pairs.length > 0 && (
@@ -223,7 +226,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
                   )}
                   {canEdit && (
                     <>
-                      <Button size="sm" variant="secondary" onClick={() => openPicker(r.id)} disabled={uploading === r.id}>
+                      <Button size="sm" variant="secondary" onClick={() => openPicker(r.id)} disabled={uploading === r.id || !uploadGate.canUpload}>
                         {uploading === r.id ? <Spinner size={14} /> : <Icon name="upload" size={14} />}
                         <span className="ml-1 hidden sm:inline">Attach</span>
                       </Button>

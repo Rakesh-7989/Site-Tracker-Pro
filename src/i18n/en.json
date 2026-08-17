@@ -19,6 +19,7 @@
       "photoCaptureCta": "Take site photo",
       "photoRetakeCta": "Retake",
       "sendCta": "Send to promoter",
+      "quotaExceeded": "Storage limit reached - delete photos/voice or upgrade to submit a DPR.",
       "sendingCta": "Sendingâ€¦",
       "sentSuccess": "Sent â€” promoter will receive on WhatsApp",
       "saveDraftCta": "Save as draft",

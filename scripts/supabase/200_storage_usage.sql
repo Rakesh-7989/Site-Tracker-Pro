@@ -125,19 +125,28 @@ returns table(
   used_bytes bigint,
   total_bytes bigint,
   used_pct numeric(5,2)
-) language plpgsql stable as $$
+) language plpgsql stable security definer set search_path = public as $$
 declare
   v_used bigint;
   v_total bigint;
-  v_pct numeric(5,2);
 begin
+  if p_org_id is null then
+    return;
+  end if;
+  if not (p_org_id = any(public.user_org_ids())) then
+    return;
+  end if;
+
   -- Deliverables bucket: path <org_id>/... so foldername[1] = org_id text
   select coalesce(sum((metadata->>'size')::bigint),0) into v_used
   from storage.objects
   where bucket_id = 'deliverables'
-    and (storage.foldername(name))[1] = org_id::text;
+    and (storage.foldername(name))[1] = p_org_id::text;
   select coalesce(sum(file_size_limit),0) into v_total
   from storage.buckets where id = 'deliverables';
+  bucket := 'deliverables';
+  used_bytes := v_used;
+  total_bytes := v_total;
   used_pct := case when v_total > 0 then (v_used::numeric / v_total * 100) else 0 end;
   return next;
 
@@ -145,9 +154,12 @@ begin
   select coalesce(sum((metadata->>'size')::bigint),0) into v_used
   from storage.objects
   where bucket_id = 'dpr-media'
-    and (storage.foldername(name))[1] = org_id::text;
+    and (storage.foldername(name))[1] = p_org_id::text;
   select coalesce(sum(file_size_limit),0) into v_total
   from storage.buckets where id = 'dpr-media';
+  bucket := 'dpr-media';
+  used_bytes := v_used;
+  total_bytes := v_total;
   used_pct := case when v_total > 0 then (v_used::numeric / v_total * 100) else 0 end;
   return next;
 
@@ -155,15 +167,17 @@ begin
   select coalesce(sum((metadata->>'size')::bigint),0) into v_used
   from storage.objects
   where bucket_id = 'research-docs'
-    and (storage.foldername(name))[1] = org_id::text;
+    and (storage.foldername(name))[1] = p_org_id::text;
   select coalesce(sum(file_size_limit),0) into v_total
   from storage.buckets where id = 'research-docs';
+  bucket := 'research-docs';
+  used_bytes := v_used;
+  total_bytes := v_total;
   used_pct := case when v_total > 0 then (v_used::numeric / v_total * 100) else 0 end;
   return next;
 end;
 $$;
 
--- ── 4. Grants: anon + authenticated can read the RPC ────────────────────────
 revoke all on function public.storage_usage_by_org(uuid) from public;
 grant execute on function public.storage_usage_by_org(uuid) to anon, authenticated;
 
