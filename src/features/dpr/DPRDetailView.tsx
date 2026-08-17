@@ -13,6 +13,7 @@ import { BuildNowBadge } from "@/features/dpr/BuildNowBadge";
 import { useT } from "@/i18n/I18nProvider";
 import { getClient } from "@/lib/supabase";
 import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
+import { loadProjectHierarchy, hierarchyPath } from "@/app/spaceQueries";
 import { invokeSendDpr } from "@/app/dprSubmit";
 import { downloadDprPdf, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
 
@@ -42,6 +43,7 @@ export function DPRDetailView(): JSX.Element {
   const [retrying, setRetrying] = useState(false);
   const [retryMsg, setRetryMsg] = useState<string | null>(null);
   const [retryOk, setRetryOk] = useState(false);
+  const [locationPath, setLocationPath] = useState<string[]>([]);
 
   const reload = useCallback(async () => {
     if (!id) return;
@@ -52,12 +54,23 @@ export function DPRDetailView(): JSX.Element {
     if (!res.ok) { setError(res.error); setLoading(false); return; }
     setRow(res.data);
     setBuildnowMeta(null);
+    setLocationPath([]);
     if (res.data) {
       const lg = await listDprDeliveryLog(client, res.data.id);
       if (lg.ok) setLog(lg.data);
       if (res.data.projectId) {
         const bn = await getBuildnowAnchor(client, res.data.projectId);
         if (bn.ok) setBuildnowMeta(bn.data);
+      }
+      if (res.data.projectId && res.data.locationId) {
+        const h = await loadProjectHierarchy(client, res.data.projectId);
+        if (h.ok) {
+          const path = hierarchyPath(h.data, res.data.locationId).map(p => p.name);
+          if (path.length) {
+            setLocationPath(path);
+            res.data.locationLabel = path.join(" / ");
+          }
+        }
       }
     }
     setLoading(false);
@@ -147,6 +160,12 @@ const onRetry = useCallback(async () => {
           <span>{fmtDateTime(row.createdAt)}</span>
           {row.supervisorName && <span>{row.supervisorName}</span>}
           <span>{t("dpr.history.toPhone", { phone: row.promoterPhone })}</span>
+          {locationPath.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-fg-secondary">
+              <Icon name="map" size={12} />
+              {locationPath.join(" / ")}
+            </span>
+          )}
           {row.metaMessageId && <span className="font-mono">Meta {row.metaMessageId.slice(0, 12)}…</span>}
         </div>
         </div>

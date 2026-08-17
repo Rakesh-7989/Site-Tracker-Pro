@@ -52,6 +52,13 @@ describe("buildDprPayload", () => {
     expect(p.language).toBe("te");
     expect(p.project_id).toBeNull();
     expect(p.transcript_text).toBeNull();
+    expect(p.location_id).toBeNull();
+  });
+
+  it("passes project + location refs through to the EF body", () => {
+    const p = buildDprPayload({ ...base, projectId: "proj-1", locationId: "loc-1" });
+    expect(p.project_id).toBe("proj-1");
+    expect(p.location_id).toBe("loc-1");
   });
 
   it("clamps confidence into [0,1] and rounds coordinates to 6dp", () => {

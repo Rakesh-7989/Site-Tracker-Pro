@@ -23,6 +23,11 @@ export interface DprMessageRow {
   buildnowAnchorUrl: string | null;
   buildnowAnchorHash: string | null;
   buildnowSyncedAt: string | null;
+  /** Spatial hierarchy node ref (P2.4, migration 210). Null = not stamped. */
+  locationId: string | null;
+  /** Resolved breadcrumb (e.g. "Site · Vasavi / Building · Tower A"). Detail
+   *  view sets it from loadProjectHierarchy() so the PDF can render it. */
+  locationLabel?: string | null;
   createdAt: string;
   sentAt: string | null;
 }
@@ -41,7 +46,7 @@ export interface DprDeliveryLogRow {
 
 export type MResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-const SELECT = "id, org_id, project_id, transcript_text, voice_audio_url, voice_audio_sha256, photo_url, photo_taken_at, photo_lat, photo_lon, photo_accuracy_metres, status, promoter_phone_e164, supervisor:supervisor_user_id(name), language, client_token, attempts, failure_reason, meta_message_id, buildnow_anchor_url, buildnow_anchor_hash, buildnow_synced_at, created_at, sent_at";
+const SELECT = "id, org_id, project_id, transcript_text, voice_audio_url, voice_audio_sha256, photo_url, photo_taken_at, photo_lat, photo_lon, photo_accuracy_metres, status, promoter_phone_e164, supervisor:supervisor_user_id(name), language, client_token, attempts, failure_reason, meta_message_id, buildnow_anchor_url, buildnow_anchor_hash, buildnow_synced_at, location_id, created_at, sent_at";
 
 function mapRow(r: any): DprMessageRow {
   return {
@@ -67,6 +72,7 @@ function mapRow(r: any): DprMessageRow {
     buildnowAnchorUrl: r.buildnow_anchor_url ?? null,
     buildnowAnchorHash: r.buildnow_anchor_hash ?? null,
     buildnowSyncedAt: r.buildnow_synced_at ?? null,
+    locationId: r.location_id == null ? null : String(r.location_id),
     createdAt: String(r.created_at ?? ""),
     sentAt: r.sent_at ? String(r.sent_at) : null,
   };

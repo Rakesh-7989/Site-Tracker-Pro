@@ -514,6 +514,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "scripts/supabase/207_workflow_engine.sql",
   "scripts/supabase/208_event_outbox.sql",
   "scripts/supabase/209_attendance_location.sql",
+  "scripts/supabase/210_dpr_location.sql",
   "docs/DOMAIN_BOUNDARY_MAP.md",
   "docs/PRODUCTION_RLS.md",
   "docs/CASHFREE_ONBOARDING.md",

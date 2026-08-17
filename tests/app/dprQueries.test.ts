@@ -25,6 +25,7 @@ const row = {
   buildnow_anchor_url: null,
   buildnow_anchor_hash: null,
   buildnow_synced_at: null,
+  location_id: "33333333-3333-3333-3333-333333333333",
   created_at: "2026-08-06T05:30:00.000Z",
   sent_at: "2026-08-06T05:31:00.000Z",
 };
@@ -50,6 +51,7 @@ describe("getDprMessage", () => {
       voiceSha256: "ab".repeat(32), photoTakenAt: "2026-08-06T06:00:00.000Z",
       lat: 17.412346, lon: 78.456789, attempts: 2, failureReason: null, metaMessageId: "wamid.xyz",
       supervisorName: "Ravi", transcript: "slab pour ayindi",
+      locationId: "33333333-3333-3333-3333-333333333333",
     });
   });
 
