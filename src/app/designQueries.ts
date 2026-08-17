@@ -1,5 +1,11 @@
 // SiteTrack Pro — design/contract queries (v3 port, Batch 4). DB-wired to
 // drawings / rfi via the migration 72/75 bridge.
+//
+// Drawing revision governance (ST-016): the DB auto-supersedes via the
+// trg_drawings_auto_supersede trigger (migration 212) when a newer
+// `current` revision of the same (project, title, type) is released.
+// applyAutoSupersede() mirrors that rule in the optimistic UI so the
+// released revision list updates instantly before a reload.
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -29,13 +35,15 @@ export interface Drawing {
   previewUrl: string | null;
   /** Per-drawing design-workflow stage (Phase E Opt3, migration 166). */
   designStage: string;
+  /** id of the newer revision that superseded this row (ST-016, migration 212). */
+  supersededBy: string | null;
 }
 const asDw = oneOf<DrawingStatus>(["current", "superseded"], "current");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listDrawings(client: any, projectId: string): Promise<Result<Drawing[]>> {
   try {
-    const { data, error } = await client.from("drawings").select("id, project_id, title, type, revision, status, release_date, storage_path, preview_url, design_stage").eq("project_id", projectId).order("release_date", { ascending: false });
+    const { data, error } = await client.from("drawings").select("id, project_id, title, type, revision, status, release_date, storage_path, preview_url, design_stage, superseded_by").eq("project_id", projectId).order("release_date", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id),
@@ -48,6 +56,7 @@ export async function listDrawings(client: any, projectId: string): Promise<Resu
       storagePath: r.storage_path == null ? null : String(r.storage_path),
       previewUrl: r.preview_url == null ? null : String(r.preview_url),
       designStage: String(r.design_stage ?? "concept"),
+      supersededBy: r.superseded_by == null ? null : String(r.superseded_by),
     })));
   } catch (e) { return er(e); }
 }
@@ -57,6 +66,23 @@ export async function createDrawing(client: any, input: { projectId: string; tit
     const { data, error } = await client.from("drawings").insert({ project_id: input.projectId, title: input.title, type: input.type, revision: input.revision || "Rev A", released_by: input.releasedBy }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
+}
+
+/**
+ * ST-016 — mirror the trg_drawings_auto_supersede trigger in the optimistic UI:
+ * when `added` is released as `current`, every existing row with the same
+ * (projectId, title, type) at status `current` is flipped to `superseded`
+ * with `supersededBy = added.id`. Pure — returns a NEW array, never mutates.
+ */
+export function applyAutoSupersede(rows: Drawing[], added: Drawing): Drawing[] {
+  const key = (d: { projectId: string; title: string; type: string }) =>
+    [d.projectId, d.title.trim().toLowerCase(), d.type.trim().toLowerCase()].join("|");
+  const target = key(added);
+  return rows.map(r =>
+    key(r) === target && r.status === "current" && r.id !== added.id
+      ? { ...r, status: "superseded" as DrawingStatus, supersededBy: added.id }
+      : r,
+  );
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const setDrawingStatus = (client: any, id: string, status: DrawingStatus) => upd(client, "drawings", id, { status });

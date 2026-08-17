@@ -8,7 +8,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DiffView } from "@/features/shared/DiffView";
-import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, type Drawing, type DrawingStatus } from "@/app/designQueries";
+import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
   drawingObjectPath, formatBytes, type DrawingFileRef,
@@ -93,8 +93,9 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const add = async () => {
     if (!title.trim() || !session) return;
     const tmpId = "tmp-" + Date.now();
+    const added: Drawing = { id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null, designStage: "concept", supersededBy: null };
     await run("add", c => createDrawing(c, { projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", releasedBy: session.user.id }), {
-      apply: () => setRows(prev => [{ id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null, designStage: "concept" }, ...prev]),
+      apply: () => setRows(prev => [added, ...applyAutoSupersede(prev, added)]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setTitle(""); setRev("Rev A");
@@ -208,7 +209,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
             <Card key={r.id} className={`p-3 ${r.status === "superseded" ? "opacity-60" : ""}`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
-                  <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}</div></div>
+                  <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}{r.status === "superseded" && r.supersededBy ? ` · superseded by ${rows.find(x => x.id === r.supersededBy)?.revision ?? "newer revision"}` : ""}</div></div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                     : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}

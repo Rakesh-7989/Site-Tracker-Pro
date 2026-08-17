@@ -15,7 +15,7 @@ function drawing(over: Partial<Drawing>): Drawing {
   return {
     id: "id", projectId: "proj1", title: "Slab", type: "structural",
     revision: "Rev A", status: "current", releaseDate: "2026-08-01",
-    storagePath: null, previewUrl: null, designStage: "concept",
+    storagePath: null, previewUrl: null, designStage: "concept", supersededBy: null,
     ...over,
   };
 }
