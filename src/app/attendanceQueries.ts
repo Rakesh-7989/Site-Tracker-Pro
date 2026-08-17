@@ -12,6 +12,8 @@ export interface AttendanceRow {
   status: AttendanceStatus;
   hours: number | null;
   overtime: number | null;
+  /** Spatial hierarchy node ref (P1.4, migration 209). Null = not stamped. */
+  locationId: string | null;
 }
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -25,7 +27,7 @@ export async function listAttendance(client: any, projectId: string): Promise<Re
   try {
     const { data, error } = await client
       .from("attendance")
-      .select("id, attendee_name, attendee_kind, date, status, hours, overtime")
+      .select("id, attendee_name, attendee_kind, date, status, hours, overtime, location_id")
       .eq("project_id", projectId)
       .order("date", { ascending: false })
       .order("attendee_name", { ascending: true });
@@ -40,6 +42,7 @@ export async function listAttendance(client: any, projectId: string): Promise<Re
         status: asStatus(r.status),
         hours: r.hours == null ? null : Number(r.hours),
         overtime: r.overtime == null ? null : Number(r.overtime),
+        locationId: r.location_id == null ? null : String(r.location_id),
       })),
     };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
@@ -48,7 +51,7 @@ export async function listAttendance(client: any, projectId: string): Promise<Re
 export async function createAttendance(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
-  input: { projectId: string; attendeeName: string; kind: AttendeeKind; status: AttendanceStatus; hours?: number | null; overtime?: number | null; date?: string; recordedBy: string },
+  input: { projectId: string; attendeeName: string; kind: AttendeeKind; status: AttendanceStatus; hours?: number | null; overtime?: number | null; date?: string; recordedBy: string; locationId?: string | null },
 ): Promise<Result<{ id: string }>> {
   try {
     const { data, error } = await client.from("attendance").insert({
@@ -59,6 +62,7 @@ export async function createAttendance(
       ...(input.hours != null ? { hours: input.hours } : {}),
       ...(input.overtime != null ? { overtime: input.overtime } : {}),
       ...(input.date ? { date: input.date } : {}),
+      ...(input.locationId ? { location_id: input.locationId } : {}),
       recorded_by: input.recordedBy,
     }).select("id").single();
     if (error) return { ok: false, error: String(error.message ?? error) };

@@ -6,6 +6,7 @@ import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listAttendance, createAttendance, setAttendanceStatus, deleteAttendance, type AttendanceRow, type AttendanceStatus, type AttendeeKind } from "@/app/attendanceQueries";
 import { listShiftRoster, createShiftRoster, deleteShiftRoster, SHIFT_LABEL, type ShiftRoster, type ShiftName } from "@/app/shiftQueries";
+import { loadProjectHierarchy, locationOptions, locationLabel, type SpatialHierarchy } from "@/app/spaceQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
@@ -20,7 +21,8 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
   const [rows, setRows] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState(""); const [kind, setKind] = useState<AttendeeKind>("labour"); const [status, setStatus] = useState<AttendanceStatus>("present"); const [hours, setHours] = useState(""); const [overtime, setOvertime] = useState("");
+  const [name, setName] = useState(""); const [kind, setKind] = useState<AttendeeKind>("labour"); const [status, setStatus] = useState<AttendanceStatus>("present"); const [hours, setHours] = useState(""); const [overtime, setOvertime] = useState(""); const [locationId, setLocationId] = useState("");
+  const [hierarchy, setHierarchy] = useState<SpatialHierarchy | null>(null);
   const [shifts, setShifts] = useState<ShiftRoster[]>([]);
   const [worker, setWorker] = useState(""); const [shiftDate, setShiftDate] = useState(""); const [shiftName, setShiftName] = useState<ShiftName>("day"); const [startTime, setStartTime] = useState(""); const [endTime, setEndTime] = useState("");
 
@@ -29,11 +31,13 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await listAttendance(client, projectId); if (res.ok) setRows(res.data); else setError(res.error);
     const sr = await listShiftRoster(client, projectId); if (sr.ok) setShifts(sr.data);
+    const sp = await loadProjectHierarchy(client, projectId); if (sp.ok) setHierarchy(sp.data);
     setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
   const { busy, run } = useAction(reload, setError);
-  const add = async () => { if (!name.trim() || !session) return; const h = hours.trim() ? Number(hours) : null; const ot = overtime.trim() ? Number(overtime) : null; await run("add", c => createAttendance(c, { projectId, attendeeName: name.trim(), kind, status, hours: Number.isFinite(h) ? h : null, overtime: Number.isFinite(ot) ? ot : null, recordedBy: session.user.id })); setName(""); setHours(""); setOvertime(""); };
+  const locOptions = locationOptions(hierarchy ?? { projectId, sites: [], buildings: [], floors: [], zones: [], rooms: [] });
+  const add = async () => { if (!name.trim() || !session) return; const h = hours.trim() ? Number(hours) : null; const ot = overtime.trim() ? Number(overtime) : null; await run("add", c => createAttendance(c, { projectId, attendeeName: name.trim(), kind, status, hours: Number.isFinite(h) ? h : null, overtime: Number.isFinite(ot) ? ot : null, recordedBy: session.user.id, locationId: locationId || null })); setName(""); setHours(""); setOvertime(""); setLocationId(""); };
   const addShift = async () => { if (!worker.trim()) return; await run("shift", c => createShiftRoster(c, { projectId, workerName: worker.trim(), shiftDate: shiftDate || new Date().toISOString().slice(0, 10), shiftName, startTime: startTime || undefined, endTime: endTime || undefined })); setWorker(""); setStartTime(""); setEndTime(""); };
   const present = rows.filter(r => r.status === "present" || r.status === "on_site_late").length;
   const fmtShift = (s: ShiftRoster) => `${SHIFT_LABEL[s.shiftName]} ${s.shiftDate}${s.startTime ? ` · ${s.startTime}${s.endTime ? `–${s.endTime}` : ""}` : ""}`;
@@ -49,6 +53,7 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Status</span><Select fit className="mt-1 w-auto" value={status} onChange={e => setStatus(e.target.value as AttendanceStatus)} options={STT} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</span><Input fit className="mt-1 w-20" type="number" value={hours} onChange={e => setHours(e.target.value)} /></div>
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">OT hrs</span><Input fit className="mt-1 w-20" type="number" value={overtime} onChange={e => setOvertime(e.target.value)} /></div>
+          <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Location</span><Select fit className="mt-1 w-auto min-w-[180px]" value={locationId} onChange={e => setLocationId(e.target.value)} options={[{ value: "", label: locOptions.length ? "-- Select Location --" : "No locations" }, ...locOptions.map(o => ({ value: o.id, label: o.label }))]} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Mark"}</Button>
         </Card>
       )}
@@ -57,7 +62,7 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.attendeeName} <span className="text-[11px] text-fg-tertiary font-normal">· {r.kind}</span></div>
-                <div className="text-[11px] text-fg-tertiary">{r.date}{r.hours != null ? ` · ${r.hours}h` : ""}{r.overtime != null && r.overtime > 0 ? ` · +${r.overtime} OT` : ""}</div></div>
+                <div className="text-[11px] text-fg-tertiary">{r.date}{r.hours != null ? ` · ${r.hours}h` : ""}{r.overtime != null && r.overtime > 0 ? ` · +${r.overtime} OT` : ""}{r.locationId ? ` · loc: ${locationLabel(hierarchy ?? { projectId, sites: [], buildings: [], floors: [], zones: [], rooms: [] }, r.locationId) ?? "Location"}` : ""}</div></div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setAttendanceStatus(c, r.id, e.target.value as AttendanceStatus))} options={STT} />
                   : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>}

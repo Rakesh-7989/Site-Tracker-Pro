@@ -15,6 +15,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 
 import { useAuth, resolveCapabilities } from "@/auth";
 import { Card, Icon, Spinner, Badge, StatusBadge } from "@/components/ui/atoms";
+import { Select } from "@/components/ui/forms";
 import { Tabs, tabButtonId, tabPanelId } from "@/components/ui/Tabs";
 import { useT } from "@/i18n/I18nProvider";
 import { useProject } from "./useProject";
@@ -73,14 +74,17 @@ export function DetailView(): JSX.Element {
   const { can: planCan } = usePlanCaps();
   const { isEnabled: moduleEnabled } = useModules();
   const { state, reload } = useProject(id);
-  // ---- VNEXT-005: Location context ----
+  // ---- VNEXT-005: Location context (P1.4 — real hierarchy load) ----
   const {
     currentLocationId,
     setLocationId,
     resetLocation,
-    locationHierarchy,
     spaceEnabled,
-  } = useLocationContext();
+    options,
+    currentPath,
+    currentLabel,
+    loading: locationLoading,
+  } = useLocationContext(state.kind === "ready" ? state.project.id : undefined);
   // ----------------------------------------
 
   // Resolve the user's capabilities for THIS project's context.
@@ -208,25 +212,31 @@ export function DetailView(): JSX.Element {
         </div>
       </div>
 
-      {/* Spatial location selector (integrated into header) */}
+      {/* Spatial location selector (P1.4 — real hierarchy options + breadcrumb) */}
       {spaceEnabled && (
         <div className="mt-3 flex flex-col md:flex-row gap-2 items-center">
-          <select
+          <Select
+            fit
+            className="w-auto min-w-[220px]"
+            value={currentLocationId}
             onChange={(e) => setLocationId(e.target.value)}
-            className="p-1 border-default rounded-sm text-sm"
-          >
-            <option value="">-- Select Location --</option>
-            {locationHierarchy.site && <option value={locationHierarchy.site.id}>{locationHierarchy.site.name}</option>}
-            {locationHierarchy.building && <option value={locationHierarchy.building.id}>{locationHierarchy.building.name}</option>}
-            {locationHierarchy.floor && <option value={locationHierarchy.floor.id}>{locationHierarchy.floor.name}</option>}
-            {locationHierarchy.zone && <option value={locationHierarchy.zone.id}>{locationHierarchy.zone.name}</option>}
-            {locationHierarchy.room && <option value={locationHierarchy.room.id}>{locationHierarchy.room.name}</option>}
-          </select>
-          <button
-            onClick={resetLocation}
-            className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-error hover:underline">
-            Reset
-          </button>
+            options={[
+              { value: "", label: locationLoading ? "Loading locations…" : "-- Select Location --" },
+              ...options.map(o => ({ value: o.id, label: o.label })),
+            ]}
+          />
+          {currentLabel && (
+            <span className="text-xs text-fg-tertiary max-w-[320px] truncate" title={currentPath.map(p => p.name).join(" / ")}>
+              {currentPath.map(p => p.name).join(" / ")}
+            </span>
+          )}
+          {currentLocationId && (
+            <button
+              onClick={resetLocation}
+              className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-error hover:underline">
+              Reset
+            </button>
+          )}
         </div>
       )}
 
