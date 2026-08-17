@@ -13,6 +13,11 @@ export interface FieldOption {
   label: string;
 }
 
+export interface FieldOptionGroup {
+  label: string;
+  options: readonly FieldOption[];
+}
+
 export interface FieldValidation<V extends string = string> {
   /** Non-empty (text: trimmed; number: parseable; checkbox/switch: true). */
   required?: boolean;
@@ -41,6 +46,12 @@ export interface FieldDef<V extends string = string> {
   optional?: boolean;
   /** Select options (required when type === "select"). */
   options?: readonly FieldOption[];
+  /** Select optgroups — rendered as <optgroup> blocks after `options`. */
+  groups?: readonly FieldOptionGroup[];
+  /** Text adornment inside the field's left edge (e.g. "₹"). */
+  prefix?: string;
+  /** Text adornment inside the field's right edge (e.g. "/h"). */
+  suffix?: string;
   /** Hide/disable the field conditionally — receives current values. */
   visibleWhen?: (values: FormValues<V>) => boolean;
   /** Default value when the form mounts. */
@@ -72,8 +83,15 @@ export function defineFormSchema<V extends string>(def: FormSchema<V>): FormSche
     if (!["text", "textarea", "select", "number", "date", "checkbox", "switch"].includes(f.type)) {
       throw new Error(`form '${def.id}': field '${f.name}' has unknown type '${f.type}'`);
     }
-    if (f.type === "select" && (!f.options || f.options.length === 0)) {
-      throw new Error(`form '${def.id}': select field '${f.name}' requires options`);
+    if (f.type === "select" && (!f.options || f.options.length === 0) && (!f.groups || f.groups.length === 0)) {
+      throw new Error(`form '${def.id}': select field '${f.name}' requires options or groups`);
+    }
+    if (f.groups) {
+      for (const g of f.groups) {
+        if (!g.label || !g.options || g.options.length === 0) {
+          throw new Error(`form '${def.id}': select field '${f.name}' has an empty group`);
+        }
+      }
     }
     if (f.visibleWhen && typeof f.visibleWhen !== "function") {
       throw new Error(`form '${def.id}': field '${f.name}' visibleWhen must be a function`);

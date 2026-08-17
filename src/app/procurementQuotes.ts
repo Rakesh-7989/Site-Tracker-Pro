@@ -9,6 +9,81 @@
 import type { MemberProjectScope } from "./queries";
 import { workflowNextMap } from "./workflowEngine";
 import { QUOTE_WORKFLOW } from "./workflowDefinitions";
+import {
+  defineFormSchema, type FormSchema, type FormValues, type FieldOptionGroup,
+} from "./formEngine";
+
+// ── Schema-driven manual quote form (VNext P2.2) ─────────────────────────────
+export type QuoteFieldName =
+  | "vendorId" | "itemName" | "unitPrice" | "qty" | "leadDays" | "validUntil" | "notes";
+
+export interface QuoteFormLabels {
+  fieldVendor: string;
+  fieldItem: string;
+  fieldUnitPrice: string;
+  fieldQty: string;
+  fieldLeadDays: string;
+  fieldValidUntil: string;
+  fieldNotes: string;
+  vendorPlaceholder: string;
+  itemPlaceholder: string;
+  unitPriceRequired: string;
+  qtyRequired: string;
+}
+
+export function quoteFormSchema(
+  labels: QuoteFormLabels,
+  vendorGroups: ReadonlyArray<FieldOptionGroup>,
+): FormSchema<QuoteFieldName> {
+  return defineFormSchema<QuoteFieldName>({
+    id: "procurement-quote",
+    name: "procurement quote",
+    fields: [
+      {
+        name: "vendorId",
+        label: labels.fieldVendor,
+        type: "select",
+        options: [{ value: "", label: labels.vendorPlaceholder }],
+        groups: vendorGroups,
+        optional: true,
+      },
+      {
+        name: "itemName",
+        label: labels.fieldItem,
+        type: "text",
+        placeholder: labels.itemPlaceholder,
+        optional: true,
+      },
+      {
+        name: "unitPrice",
+        label: labels.fieldUnitPrice,
+        type: "number",
+        prefix: "₹",
+        requiredMessage: labels.unitPriceRequired,
+        validate: { required: true, min: 0 },
+      },
+      {
+        name: "qty",
+        label: labels.fieldQty,
+        type: "number",
+        defaultValue: 1,
+        requiredMessage: labels.qtyRequired,
+        validate: { required: true, min: 1 },
+      },
+      {
+        name: "leadDays",
+        label: labels.fieldLeadDays,
+        type: "number",
+        optional: true,
+        validate: { min: 0 },
+      },
+      { name: "validUntil", label: labels.fieldValidUntil, type: "date", optional: true },
+      { name: "notes", label: labels.fieldNotes, type: "text", optional: true },
+    ],
+  });
+}
+
+export type QuoteFormValues = FormValues<QuoteFieldName>;
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });

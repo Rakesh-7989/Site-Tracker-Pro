@@ -29,6 +29,7 @@ import { TAB_CATALOG } from "@/features/project/tabs-config";
 import { NAV_CATALOG } from "@/app/nav-config";
 import { WORKFLOW_REGISTRY } from "./workflowDefinitions";
 import { checklistFormSchema, type ChecklistFormLabels } from "./consultancyAuditQueries";
+import { quoteFormSchema, type QuoteFormLabels } from "./procurementQuotes";
 import { OutboxEventType } from "./outboxQueries";
 import { SPATIAL_LEVELS } from "./spaceQueries";
 
@@ -75,8 +76,9 @@ export function workflowEngineEntries(): readonly string[] {
 
 /**
  * Form-engine registry entries — live from the declared schemas.
- * P1.2 shipped one schema (inspection checklist); add to this list as more
- * registers convert to defineFormSchema.
+ * P1.2 shipped the inspection-checklist schema; P2.2 added the
+ * procurement-quote schema. Add to this list as more registers convert to
+ * defineFormSchema.
  */
 const FORM_STUB_LABELS: ChecklistFormLabels = {
   fieldKind: "",
@@ -88,8 +90,25 @@ const FORM_STUB_LABELS: ChecklistFormLabels = {
   statusLabel: () => "",
 };
 
+const QUOTE_FORM_STUB_LABELS: QuoteFormLabels = {
+  fieldVendor: "",
+  fieldItem: "",
+  fieldUnitPrice: "",
+  fieldQty: "",
+  fieldLeadDays: "",
+  fieldValidUntil: "",
+  fieldNotes: "",
+  vendorPlaceholder: "",
+  itemPlaceholder: "",
+  unitPriceRequired: "",
+  qtyRequired: "",
+};
+
 export function formEngineEntries(): readonly string[] {
-  return [checklistFormSchema(FORM_STUB_LABELS, false).id];
+  return [
+    checklistFormSchema(FORM_STUB_LABELS, false).id,
+    quoteFormSchema(QUOTE_FORM_STUB_LABELS, []).id,
+  ];
 }
 
 /** Outbox-engine registry entries — live from outboxQueries (migration 208). */
@@ -256,7 +275,7 @@ export const MODULE_SURFACES: readonly ModuleSurface[] = [
       "procurementQuotes", "vendorQueries", "vendorPortalQueries",
       "materialRequestQueries", "advancedProcurementQueries", "poReceiptQueries",
     ],
-    engines: ["workflow", "outbox"],
+    engines: ["workflow", "outbox", "form"],
     tables: [
       "vendors", "procurement_quotes", "purchase_orders", "material_requests",
       "po_receipts", "inventory",
@@ -376,9 +395,9 @@ export const ENGINE_BOUNDARIES: readonly EngineBoundary[] = [
   },
   {
     id: "form",
-    label: "Schema-driven forms (P1.2)",
+    label: "Schema-driven forms (P1.2, P2.2)",
     ownedBy: consumersOf("form"),
-    files: ["formEngine", "consultancyAuditQueries"],
+    files: ["formEngine", "consultancyAuditQueries", "procurementQuotes"],
     entries: formEngineEntries(),
   },
   {

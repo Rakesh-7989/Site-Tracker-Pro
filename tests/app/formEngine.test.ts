@@ -60,6 +60,36 @@ describe("defineFormSchema", () => {
     expect(() => defineFormSchema(def)).toThrow("select field 'kind' requires options");
   });
 
+  it("accepts a select field that supplies groups instead of options", () => {
+    const def: FormSchema<F> = {
+      id: "x", name: "x",
+      fields: [{ name: "kind", label: "K", type: "select", groups: [{ label: "Group A", options: [{ value: "a", label: "A" }] }] }],
+    };
+    expect(() => defineFormSchema(def)).not.toThrow();
+  });
+
+  it("throws when a select group is empty", () => {
+    const def: FormSchema<F> = {
+      id: "x", name: "x",
+      fields: [{ name: "kind", label: "K", type: "select", groups: [{ label: "", options: [] }] }],
+    };
+    expect(() => defineFormSchema(def)).toThrow("has an empty group");
+  });
+
+  it("preserves prefix / suffix adornments on number and text fields", () => {
+    const def: FormSchema<F> = {
+      id: "x", name: "x",
+      fields: [
+        { name: "qty", label: "Q", type: "number", prefix: "₹", suffix: "/h" },
+        { name: "title", label: "T", type: "text", suffix: "%" },
+      ],
+    };
+    const s = defineFormSchema(def);
+    expect(s.fields[0].prefix).toBe("₹");
+    expect(s.fields[0].suffix).toBe("/h");
+    expect(s.fields[1].suffix).toBe("%");
+  });
+
   it("throws when visibleWhen is not a function", () => {
     const def = {
       id: "x", name: "x",

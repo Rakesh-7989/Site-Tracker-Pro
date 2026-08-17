@@ -88,6 +88,64 @@ describe("SchemaForm — controls", () => {
   });
 });
 
+describe("SchemaForm — select groups + field adornments", () => {
+  type G = "vendor" | "itemName" | "unitPrice" | "qty" | "notes";
+
+  const grouped = defineFormSchema<G>({
+    id: "grouped-demo",
+    name: "grouped demo",
+    fields: [
+      {
+        name: "vendor", label: "Vendor", type: "select",
+        options: [{ value: "", label: "— Select —" }],
+        groups: [
+          { label: "Cement", options: [{ value: "c1", label: "Sri Cements" }, { value: "c2", label: "Ultra" }] },
+          { label: "Steel", options: [{ value: "s1", label: "Tata Steel" }] },
+        ],
+      },
+      { name: "itemName", label: "Item", type: "text", placeholder: "Item name" },
+      { name: "unitPrice", label: "Unit price", type: "number", prefix: "₹", validate: { min: 0 } },
+      { name: "qty", label: "Qty", type: "number", suffix: "nos", defaultValue: 1, validate: { min: 1 } },
+      { name: "notes", label: "Notes", type: "text" },
+    ],
+  });
+
+  it("renders select groups as optgroup blocks alongside plain options", () => {
+    render(<SchemaForm schema={grouped} submitLabel="Save" onSubmit={() => {}} />);
+    const select = screen.getByLabelText("Vendor") as HTMLSelectElement;
+    const groups = select.querySelectorAll("optgroup");
+    expect(groups).toHaveLength(2);
+    expect(groups[0].label).toBe("Cement");
+    expect(groups[0].querySelectorAll("option")).toHaveLength(2);
+    expect(groups[1].label).toBe("Steel");
+    // plain placeholder option survives as a sibling of the optgroups
+    expect(select.querySelector("option[value='']")?.textContent).toBe("— Select —");
+  });
+
+  it("renders prefix / suffix adornments on number fields", () => {
+    render(<SchemaForm schema={grouped} submitLabel="Save" onSubmit={() => {}} />);
+    // unitPrice carries a ₹ prefix; qty carries a nos suffix
+    expect(screen.getAllByText("₹")).toHaveLength(1);
+    expect(screen.getAllByText("nos")).toHaveLength(1);
+  });
+
+  it("applies min from validate to the number input and submits valid values", () => {
+    const onSubmit = vi.fn();
+    render(<SchemaForm schema={grouped} submitLabel="Save" onSubmit={onSubmit} />);
+    const price = screen.getByLabelText("Unit price") as HTMLInputElement;
+    expect(price).toHaveProperty("min", "0");
+    fireEvent.change(price, { target: { value: "1500" } });
+    const qty = screen.getByLabelText("Qty") as HTMLInputElement;
+    expect(qty).toHaveProperty("min", "1");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const values = onSubmit.mock.calls[0][0] as FormValues<G>;
+    expect(values.unitPrice).toBe("1500");
+    expect(values.qty).toBe(1); // explicit defaultValue
+    expect(values.vendor).toBe(""); // placeholder option selected
+  });
+});
+
 describe("SchemaForm — initial values (edit prefill)", () => {
   it("prefills initialValues over defaults", () => {
     render(

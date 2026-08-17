@@ -54,6 +54,8 @@ function renderControl<V extends string>(
           {...common}
           type={field.type === "date" ? "date" : "text"}
           placeholder={field.placeholder}
+          prefix={field.prefix}
+          suffix={field.suffix}
           onChange={e => onChange(e.target.value)}
         />
       );
@@ -63,6 +65,10 @@ function renderControl<V extends string>(
           {...common}
           type="number"
           placeholder={field.placeholder}
+          prefix={field.prefix}
+          suffix={field.suffix}
+          min={field.validate?.min}
+          max={field.validate?.max}
           onChange={e => onChange(e.target.value)}
         />
       );
@@ -84,6 +90,7 @@ function renderControl<V extends string>(
           value={String(value ?? "")}
           invalid={!!err}
           options={field.options ?? []}
+          groups={field.groups}
           onChange={e => onChange(e.target.value)}
         />
       );

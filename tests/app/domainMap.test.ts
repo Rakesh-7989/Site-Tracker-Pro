@@ -60,10 +60,10 @@ describe("domain map — shared engines (the rails)", () => {
     expect(boundary.entries).toEqual(entries);
   });
 
-  it("form engine entries match the declared checklist schema id", () => {
+  it("form engine entries match the declared schema ids", () => {
     const entries = formEngineEntries();
-    // P1.2 shipped exactly one schema (inspection checklist).
-    expect(entries).toEqual(["inspection-checklist"]);
+    // P1.2 shipped the inspection checklist schema; P2.2 added the procurement-quote schema.
+    expect(entries).toEqual(["inspection-checklist", "procurement-quote"]);
     expect(new Set(entries).size).toBe(entries.length);
     const boundary = ENGINE_BOUNDARIES.find(e => e.id === "form")!;
     expect(boundary.entries).toEqual(entries);
