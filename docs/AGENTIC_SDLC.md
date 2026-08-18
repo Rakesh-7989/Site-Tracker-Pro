@@ -1,7 +1,8 @@
 # Agentic SDLC — Operating Model, Loop & Routing
 
 > The "how" of building Site-Tracker-Pro: a repeatable agentic loop, a team of AI agents, and prompt→agent routing.
-> Plan: `docs/END_TO_END_PLAN.md`. Research source: `docs/research/01_CHAT_SOURCE.md`.
+> Plan: `docs/END_TO_END_PLAN.md` (product) + `docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` (Principal-SDE hardening/VNEXT).
+> Research sources: `docs/research/01_CHAT_SOURCE.md` (product design) + `docs/research/02_CHATGPT_SITETRACK_OVERVIEW.md` (competitor study, blueprint, RBAC V2, Principal SDE review).
 
 ## 1. Operating Model
 

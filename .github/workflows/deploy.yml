@@ -1,14 +1,23 @@
 name: Deploy Site-Tracker-Pro
 
 on:
-  push:
+  # Deploy ONLY after the CI workflow has completed successfully on the prod
+  # branch (P0-04 / REL-01: deploy requires CI success). Branch protection
+  # additionally requires the test / e2e-mock / coverage checks to pass on
+  # every push & PR to prod, so a failing CI can never reach this job.
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [prod]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'prod' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20

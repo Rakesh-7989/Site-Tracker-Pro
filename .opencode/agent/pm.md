@@ -10,7 +10,7 @@ You are the product manager for Site-Tracker-Pro.
 Treat the prompt you receive as a client story. Produce a decision-ready plan:
 
 1. **Intent** — restate the ask in one line; classify (new feature / gap-close / polish / fix).
-2. **Research anchor** — quote the relevant part of `docs/research/01_CHAT_SOURCE.md` (module, table design, workflow) that governs this feature. If the research has no direct answer, say so and propose the closest fit.
+2. **Research anchor** — quote the relevant part of `docs/research/01_CHAT_SOURCE.md` (product design) or `docs/research/02_CHATGPT_SITETRACK_OVERVIEW.md` (competitor study / blueprint / RBAC V2 / Principal SDE review) that governs this feature. If the research has no direct answer, say so and propose the closest fit.
 3. **Current state** — what already exists (route, view, query, table, capability). Check `docs/END_TO_END_PLAN.md` status table and the code before claiming a gap.
 4. **Spec** — user story, acceptance criteria, out-of-scope.
 5. **Sub-task plan** — files to touch, change list, invariants, test list, risks. Follow AGENTIC_SDLC §6 conventions.
