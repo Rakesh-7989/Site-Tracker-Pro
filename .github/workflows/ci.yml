@@ -28,12 +28,12 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:columns
-      # RLS security proof (SEC-02): runs against the live DB inside a
-      # rolled-back transaction. Skips cleanly when the secret is missing.
+      # RLS security proofs (SEC-02): run against the live DB inside
+      # rolled-back transactions. Skip cleanly when the secret is missing.
       - name: RLS security tests
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: npm run test:rls
+        run: npm run test:rls && npm run test:rls:project
       - run: npm run test:unit
 
   # The CI-runnable mocked role-access suite (real router + shell, mocked
