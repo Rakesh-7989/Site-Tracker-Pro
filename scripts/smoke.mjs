@@ -615,7 +615,7 @@ add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint")
 add("Build script exists", pkg.scripts?.build === "vite build");
 add("Smoke script exists", pkg.scripts?.smoke === "node scripts/smoke.mjs");
 add("test:ef script exists", pkg.scripts?.["test:ef"] === "node scripts/test-ef-harness.mjs");
-add("test:rls script exists", pkg.scripts?.["test:rls"] === "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs");
+add("test:rls script exists", pkg.scripts?.["test:rls"] === "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs && node scripts/test-rbac-v2-shadow.mjs");
 add("check:supabase script exists", pkg.scripts?.["check:supabase"] === "node scripts/check-supabase-connection.mjs");
 add("setup script exists", pkg.scripts?.setup === "node scripts/setup.mjs");
 add("check:mcp script exists", pkg.scripts?.["check:mcp"] === "node scripts/check-mcp.mjs");

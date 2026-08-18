@@ -45,8 +45,12 @@ const NO_RLS_ALLOWLIST = new Set(["spatial_ref_sys", "schema_migrations", "site_
 const GATE_HELPERS = [
   "user_project_ids", "user_org_ids", "has_project_role", "has_org_tier",
   "has_identity_role", "is_orgadmin", "is_superadmin", "can_read_project",
-  "can_write_project", "current_role_text",
+  "can_write_project", "current_role_text", "v2_check_access", "v2_policy_check",
 ];
+
+// RBAC V2 shadow-adoption helpers (Phase 1 / 1.1 Policy-Core signal). A policy
+// whose gate references these computes the V2 decision per row in shadow/enforce.
+const V2_HELPERS = ["v2_check_access", "v2_policy_check"];
 
 // ── env / config (mirrors check-column-drift.mjs) ────────────────────────────
 function loadEnv() {
@@ -147,18 +151,20 @@ for (const t of tables) {
   const cnt = { SELECT: 0, INSERT: 0, UPDATE: 0, DELETE: 0, ALL: 0 };
   let permissiveAll = 0;
   let helperGates = 0;
+  let v2Gates = 0;
   for (const p of pols) {
     cnt[p.cmd] = (cnt[p.cmd] ?? 0) + 1;
     if (p.cmd === "ALL" && p.permissive === "PERMISSIVE") permissiveAll++;
     const gate = `${p.qual ?? ""} ${p.with_check ?? ""}`;
     if (GATE_HELPERS.some(h => gate.includes(h))) helperGates++;
+    if (V2_HELPERS.some(h => gate.includes(h))) v2Gates++;
   }
 
   const hasDmlGrant = grantAuth.length > 0 || grantAnon.length > 0;
   const covered = t.rls_enabled || NO_RLS_ALLOWLIST.has(t.table);
   const row = {
     table: t.table, rls: t.rls_enabled, covered,
-    cnt, permissiveAll, helperGates, grantAuth: grantAuth.join(","), grantAnon: grantAnon.join(","),
+    cnt, permissiveAll, helperGates, v2Gates, grantAuth: grantAuth.join(","), grantAnon: grantAnon.join(","),
   };
   rows.push(row);
   if (!covered && hasDmlGrant) exposed.push(row);
@@ -172,7 +178,7 @@ const failCount = exposed.length + drift.length;
 const md = [];
 md.push("# RLS Coverage Matrix — auto-generated");
 md.push("");
-md.push(`> Generated ${new Date().toISOString()} by \`node scripts/rls-coverage.mjs\` (Phase 0 / 0.8 — SEC-02 + DB-05).`);
+md.push(`> Generated ${new Date().toISOString()} by \`node scripts/rls-coverage.mjs\` (Phase 0 / 0.8 — SEC-02 + DB-05; Phase 1.1 — RBAC V2 shadow).`);
 md.push("> **Do not edit by hand.** Regenerate with `npm run check:rls:coverage`.");
 md.push("");
 md.push("## Summary");
@@ -182,6 +188,7 @@ md.push(`- RLS enabled (or allowlisted infra): **${coveredCount} / ${totalTables
 md.push(`- Tables exposing authenticated/anon DML without RLS: **${exposed.length}** ${exposed.length ? "🚨" : "✅"}`);
 md.push(`- Policies: **${policies.length}** (SELECT ${policies.length ? rows.reduce((s, r) => s + r.cnt.SELECT, 0) : 0} / INSERT ${policies.length ? rows.reduce((s, r) => s + r.cnt.INSERT, 0) : 0} / UPDATE ${policies.length ? rows.reduce((s, r) => s + r.cnt.UPDATE, 0) : 0} / DELETE ${policies.length ? rows.reduce((s, r) => s + r.cnt.DELETE, 0) : 0} / ALL ${policies.length ? rows.reduce((s, r) => s + r.cnt.ALL, 0) : 0})`);
 md.push(`- Permissive-ALL write policies: **${rows.reduce((s, r) => s + r.permissiveAll, 0)}**`);
+md.push(`- Policies referencing a RBAC V2 shadow gate (Policy-Core): **${rows.reduce((s, r) => s + r.v2Gates, 0)}** across **${rows.filter(r => r.v2Gates > 0).length}** tables`);
 md.push(`- Capabilities in app catalog: **${caps.length}**`);
 md.push(`- Capability tokens in the RLS map: **${rlsMapCaps.length}**`);
 md.push(`- Drift (RLS-map tokens missing from capabilities.ts): **${drift.length}** ${drift.length ? "🚨" : "✅"}`);
@@ -209,13 +216,13 @@ if (drift.length) {
 
 md.push("## Matrix");
 md.push("");
-md.push("| Table | RLS | S | I | U | D | ALL | Perm-ALL | Helper gates | Auth DML | Anon DML |");
-md.push("|---|---|---|---|---|---|---|---|---|---|---|");
+md.push("| Table | RLS | S | I | U | D | ALL | Perm-ALL | Helper gates | V2 gates | Auth DML | Anon DML |");
+md.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|");
 for (const r of rows) {
-  md.push(`| ${r.table} | ${r.rls ? "✅" : "—"} | ${r.cnt.SELECT} | ${r.cnt.INSERT} | ${r.cnt.UPDATE} | ${r.cnt.DELETE} | ${r.cnt.ALL} | ${r.permissiveAll} | ${r.helperGates} | ${r.grantAuth || "—"} | ${r.grantAnon || "—"} |`);
+  md.push(`| ${r.table} | ${r.rls ? "✅" : "—"} | ${r.cnt.SELECT} | ${r.cnt.INSERT} | ${r.cnt.UPDATE} | ${r.cnt.DELETE} | ${r.cnt.ALL} | ${r.permissiveAll} | ${r.helperGates} | ${r.v2Gates} | ${r.grantAuth || "—"} | ${r.grantAnon || "—"} |`);
 }
 md.push("");
-md.push("Legend: RLS ✅ = `enable row level security` present · Perm-ALL = number of `PERMISSIVE ... FOR ALL` policies (a broad write surface) · Helper gates = policies whose USING/WITH CHECK references a canonical gate helper · Auth/Anon DML = DML grants to that role.");
+md.push("Legend: RLS ✅ = `enable row level security` present · Perm-ALL = number of `PERMISSIVE ... FOR ALL` policies (a broad write surface) · Helper gates = policies whose USING/WITH CHECK references a canonical gate helper · V2 gates = policies referencing `v2_policy_check`/`v2_check_access` (RBAC V2 shadow adoption, Phase 1.1) · Auth/Anon DML = DML grants to that role.");
 
 await db.end();
 

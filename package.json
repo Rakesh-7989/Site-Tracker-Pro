@@ -51,7 +51,7 @@
     "test:e2e:install": "playwright install chromium",
     "test:e2e:mock": "npx playwright test --config=playwright.mock.config.ts",
     "test:ef": "node scripts/test-ef-harness.mjs",
-    "test:rls": "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs",
+    "test:rls": "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs && node scripts/test-rbac-v2-shadow.mjs",
     "test:rls:project": "node scripts/test-project-scope-rls.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "analyze": "ANALYZE=true vite build",
