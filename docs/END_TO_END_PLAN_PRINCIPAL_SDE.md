@@ -17,7 +17,7 @@
 | 0.5 Project UPDATE protects org_id + field-level authz | SEC-004/005 (P0/P1) | UPDATE policy cannot change `org_id`; field-level scoping + tests | [x] |
 | 0.6 Project scope unification (SELECT/members) | SEC-002/003, AUTH-001 | `projects` SELECT + `project_members` SELECT honor project scope | [x] |
 | 0.7 Migration ledger + checksum + prod reset guard | DB-01/02/03 | Migration runner records ledger/checksum; `--reset` blocked in prod | [x] |
-| 0.8 RLS coverage matrix + RLS vs app-RBAC audit | SEC-02, DB-05 | Auto-generated coverage matrix; drift between app caps and RLS cataloged | [ ] |
+| 0.8 RLS coverage matrix + RLS vs app-RBAC audit | SEC-02, DB-05 | Auto-generated coverage matrix; drift between app caps and RLS cataloged | [x] |
 | 0.9 Staging deploy + production smoke + health check | REL-02/03/06 | Staging target in deploy.yml; prod smoke script; post-deploy health probe | [ ] |
 
 **Phase 0 gate:** full gate suite green (`lint`, `tsc --noEmit`, `vitest`, `smoke`, `build`, `test:rls`, `test:e2e:mock`), `test:rls` covers every new policy, prod branch rules live, deploy workflow gates on CI.
