@@ -86,15 +86,21 @@ export function resolveCapabilities(
   let capabilities = all;
   let v2Trace: { mode: string; denies: Capability[]; grants: Capability[] } | undefined;
   if (rbac2 && rbac2.mode === "enforce") {
-    const composed = composeV2Caps({
-      matrix: all,
-      ctx: rbac2,
-      userId: user.id,
-      identityRole: user.identityRole,
-      orgTier: orgTierForContext(session, context),
-      resource: context.resource,
-      clientEmail: context.clientEmail ?? (user.identityRole === "client" ? user.email : undefined),
-    });
+    // SEC-05 fail-closed: an enforce-mode context whose fetch failed mid-way
+    // (fetchError) denies EVERYTHING — never silently downgrade to the broader
+    // matrix. Server-side RLS (v2_policy_check in enforce) agrees: it has no
+    // data either, so it denies too.
+    const composed = rbac2.fetchError
+      ? new Set<Capability>()
+      : composeV2Caps({
+          matrix: all,
+          ctx: rbac2,
+          userId: user.id,
+          identityRole: user.identityRole,
+          orgTier: orgTierForContext(session, context),
+          resource: context.resource,
+          clientEmail: context.clientEmail ?? (user.identityRole === "client" ? user.email : undefined),
+        });
     capabilities = composed;
     v2Applied = true;
     const removed = new Set<Capability>(all);
@@ -137,6 +143,8 @@ export function can(
     const matrix = resolveCapabilities(session, context).capabilities;
     // shadow = matrix decides (V2 computed but never gates).
     if (rbac2.mode === "shadow") return matrix.has(capability);
+    // SEC-05 fail-closed: enforce context fetch failure → deny (not matrix).
+    if (rbac2.fetchError) return false;
     const d = decideV2({
       capability,
       matrixAllowed: matrix.has(capability),

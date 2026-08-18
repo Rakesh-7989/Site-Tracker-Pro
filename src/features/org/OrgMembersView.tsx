@@ -26,13 +26,15 @@ type ViewMode = "grid" | "list";
 export function OrgMembersView(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const { allowed: canManage, plan } = useCanWithPlan({
+  const { allowed: canManage, plan, planLoading } = useCanWithPlan({
     capability: "org:members:manage",
     context: activeOrg ? { orgId: activeOrg.orgId } : {},
   });
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
+  // SEC-05: plan caps still resolving → hold the spinner, don't flash AccessDenied.
+  if (planLoading) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!canManage) return <AccessDenied message="Only an org admin can manage people." />;
 
   return (

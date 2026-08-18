@@ -113,9 +113,10 @@ export function useCanWithPlan(input: UseCanWithPlanInput): UseCanWithPlanReturn
 
   const planOk = useMemo(() => {
     if (!input.planFeature) return true;
-    if (planLoading) return true;
+    // SEC-05 fail-closed: while the plan caps are still loading (or failed to
+    // load) the plan gate is NOT granted — `planCan` returns false on loading.
     return planCan(input.planFeature);
-  }, [input.planFeature, planLoading, planCan]);
+  }, [input.planFeature, planCan]);
 
   const reasons: string[] = [];
   if (!rbac.can) reasons.push(rbac.reason);
@@ -173,14 +174,15 @@ export function RequireRole({ roles, children, fallback = null }: RequireRolePro
  * Hook form of the staff-area check (migration 106). Returns true when the
  * current session may access the given admin area. Owner/head (and any
  * non-member, e.g. a superadmin without a member tier) see everything; a
- * staff MEMBER is scoped to its granted areas (empty grants → all).
+ * staff MEMBER is scoped to its granted areas (fail-closed SEC-05: a member
+ * with NO grants gets NO admin areas).
  */
 export function useHasStaffArea(area: string): boolean {
   const { session } = useAuth();
   if (!session) return false;
   if (session.user.staffTier !== "member") return true;
   const areas = session.user.staffAreas ?? [];
-  return areas.length === 0 || areas.includes(area);
+  return areas.includes(area);
 }
 
 export interface RequireStaffAreaProps {

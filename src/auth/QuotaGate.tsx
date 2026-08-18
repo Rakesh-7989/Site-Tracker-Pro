@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import { Card, Icon, Badge, ProgressBar } from "@/components/ui/atoms";
+import { Card, Icon, Badge, ProgressBar, Spinner } from "@/components/ui/atoms";
 import { useOrgSwitcher } from "./useOrgSwitcher";
 import { usePlanCaps } from "./usePlanCaps";
 import { usageRollup, type QuotaRollup } from "@/app/quotaQueries";
@@ -81,8 +81,11 @@ export function QuotaGate({ resource, children, fallback }: QuotaGateProps): JSX
     return () => { cancelled = true; };
   }, [orgId]);
 
-  if (loading || capsLoading) return <>{children}</>; // fail-open while loading
-  if (!rollup) return <>{children}</>; // fail-open if no data
+  // SEC-05 fail-closed: while usage/plan data loads we render a neutral
+  // placeholder — never children (would grant before quota is known) and never
+  // the upgrade card (would flash at a legitimately-entitled user).
+  if (loading || capsLoading) return <QuotaGateLoading />;
+  if (!rollup) return <QuotaGateUnknown />; // fetch error → deny, not grant
 
   const atLimit = rollup[resource].atQuota;
   if (!atLimit) return <>{children}</>;
@@ -103,6 +106,28 @@ export function QuotaGate({ resource, children, fallback }: QuotaGateProps): JSX
       <Link to="/org/billing" className="inline-block mt-4 text-sm font-semibold text-white bg-accent hover:bg-accent-2 px-4 py-2 rounded-lg transition">
         View plans & upgrade →
       </Link>
+    </Card>
+  );
+}
+
+/** Neutral "checking usage" placeholder — the fail-closed loading state. */
+function QuotaGateLoading(): JSX.Element {
+  return (
+    <Card className="p-6 text-center max-w-md mx-auto">
+      <div className="flex items-center justify-center gap-2 text-fg-secondary text-sm">
+        <Spinner size={16} />
+        <span>Checking usage limits…</span>
+      </div>
+    </Card>
+  );
+}
+
+/** Fail-closed state when the usage fetch errors (unknown ≠ under-quota). */
+function QuotaGateUnknown(): JSX.Element {
+  return (
+    <Card className="p-6 text-center max-w-md mx-auto">
+      <div className="w-11 h-11 rounded-xl bg-bg-secondary text-fg-tertiary grid place-items-center mx-auto mb-3"><Icon name="shield" size={20} /></div>
+      <div className="text-sm text-fg-secondary">Couldn’t verify usage limits. Please retry.</div>
     </Card>
   );
 }

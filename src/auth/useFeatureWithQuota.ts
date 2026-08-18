@@ -9,6 +9,10 @@
 // - atQuota: true when the specific quota resource is at limit
 // - planCap: raw plan capability check result
 // - quota: raw quota check result (for display)
+//
+// Fail-closed (SEC-05): `available` is false while loading, with no active org,
+// or after a fetch error — a feature is only "available" once positively known
+// to be under quota AND on the plan.
 
 import { useEffect, useState } from "react";
 
@@ -43,7 +47,7 @@ export function useFeatureWithQuota(feature: PlanFeature, resource?: "users" | "
   const { activeOrg } = useOrgSwitcher();
   const orgId = activeOrg?.orgId ?? null;
   const [state, setState] = useState<UseFeatureWithQuotaReturn>({
-    available: true,
+    available: false,
     atQuota: false,
     planCap: false,
     quota: null,
@@ -61,7 +65,7 @@ export function useFeatureWithQuota(feature: PlanFeature, resource?: "users" | "
     let cancelled = false;
     if (!orgId) {
       setState({
-        available: true, atQuota: false, planCap: true, quota: null,
+        available: false, atQuota: false, planCap: false, quota: null,
         rollup: {
           users: { current: 0, max: null, pct: null, atQuota: false },
           projects: { current: 0, max: null, pct: null, atQuota: false },
@@ -79,7 +83,7 @@ export function useFeatureWithQuota(feature: PlanFeature, resource?: "users" | "
         const client = await getClient();
         if (!client) {
           setState({
-            available: true, atQuota: false, planCap: false, quota: null,
+            available: false, atQuota: false, planCap: false, quota: null,
             rollup: {
               users: { current: 0, max: null, pct: null, atQuota: false },
               projects: { current: 0, max: null, pct: null, atQuota: false },
@@ -120,7 +124,7 @@ export function useFeatureWithQuota(feature: PlanFeature, resource?: "users" | "
       } catch (e) {
         if (!cancelled) {
           setState({
-            available: true, atQuota: false, planCap: false, quota: null,
+            available: false, atQuota: false, planCap: false, quota: null,
             rollup: {
               users: { current: 0, max: null, pct: null, atQuota: false },
               projects: { current: 0, max: null, pct: null, atQuota: false },

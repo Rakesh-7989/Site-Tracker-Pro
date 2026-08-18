@@ -267,7 +267,15 @@ export async function fetchCustomRoleOverrides(
 
 /**
  * Fetch the RBAC V2 context (migrations 203–205) for the ACTIVE org.
- * Best-effort: returns undefined on failure / no org / matrix mode.
+ *
+ * Fail-closed (SEC-05): once we KNOW the org runs 'enforce', a partial/failed
+ * context fetch returns an EMPTY enforce context — `decideV2` is deny-by-
+ * default, so the UI refuses rather than silently downgrading to the broader
+ * matrix. `undefined` is returned ONLY for the legitimate matrix cases (no
+ * active org, no settings row, or mode = 'matrix'); a failed MODE read also
+ * returns undefined because we cannot know the org enforces V2 at all (the
+ * org-level matrix default applies — documented residual in
+ * docs/SECURITY_AUDIT_REGISTER.md).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchRbac2Context(
@@ -305,6 +313,20 @@ export async function fetchRbac2Context(
 
     return { mode, profiles, bindings, acl, clientPermissions, vendorScopes };
   } catch {
+    // Mode known 'enforce' but the context fetch failed mid-way: fail closed
+    // with an empty enforce context so deny-by-default V2 decides (never the
+    // broader matrix). When the MODE read itself failed we fall through to
+    // undefined (cannot know the org enforces) — see the doc comment above.
+    const modeRes = await client
+      .from("org_rbac_settings")
+      .select("mode")
+      .eq("org_id", activeOrgId)
+      .maybeSingle()
+      .catch(() => ({ data: null }));
+    const mode = (modeRes?.data as { mode?: string } | null)?.mode as Rbac2Mode | null;
+    if (mode === "enforce" || mode === "shadow") {
+      return { mode, profiles: [], bindings: [], acl: [], clientPermissions: [], vendorScopes: [], fetchError: true };
+    }
     return undefined;
   }
 }
@@ -345,7 +367,8 @@ export async function fetchAuthSession(
     if (!normalized.ok) return normalized;
 
     // Staff admin-area access (migration 106): owner/head see all; a member is
-    // scoped to its granted areas (empty grants → all, the default).
+    // scoped to its granted areas. Fail-closed (SEC-05): a member with NO
+    // grants (or a failed grants fetch) gets NO areas — never "all".
     const ALL_AREAS = ["signups", "orgs", "users", "roles", "upgrades"];
     const tierNow = normalized.user.staffTier;
     if (tierNow === "owner" || tierNow === "head") {
@@ -354,8 +377,8 @@ export async function fetchAuthSession(
       try {
         const ag = await client.from("staff_area_grants").select("area").eq("staff_id", input.authUserId);
         const granted = Array.isArray(ag?.data) ? (ag.data as Array<Record<string, unknown>>).map(r => String(r.area)) : [];
-        normalized.user.staffAreas = granted.length ? granted : ALL_AREAS;
-      } catch { normalized.user.staffAreas = ALL_AREAS; }
+        normalized.user.staffAreas = granted;
+      } catch { normalized.user.staffAreas = []; }
     }
 
     // 2. org_members joined with organizations

@@ -117,6 +117,13 @@ export interface Rbac2Context {
   vendorScopes: VendorProjectScope[];
   /** Optional project scope for VNext hierarchy alignment. */
   projectId?: string;
+  /**
+   * SEC-05 fail-closed marker: the org runs 'enforce' (or 'shadow') but the
+   * context fetch failed mid-way, so profiles/bindings/acl/etc. are EMPTY.
+   * The resolver MUST treat an enforce fetchError as deny-all (never the
+   * broader matrix fallback). Set only by fetchRbac2Context on partial failure.
+   */
+  fetchError?: boolean;
 }
 
 /** Result of the V2 decision. */
