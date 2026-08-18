@@ -8,9 +8,39 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: [prod]
+    branches: [main, prod]
 
 jobs:
+  # Staging target (REL-02): every green push to `main` gets a Vercel PREVIEW
+  # deployment, then the prod smoke probe runs against THAT preview URL. The
+  # preview carries the app shell, so a bad build surfaces here instead of prod.
+  staging:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Deploy preview to Vercel (staging)
+        id: preview
+        run: |
+          OUT="$(npx vercel@latest --yes --token ${{ secrets.VERCEL_TOKEN }} 2>&1)"
+          echo "$OUT"
+          URL="$(printf '%s' "$OUT" | grep -oE 'https://[a-zA-Z0-9-]+\.vercel\.app' | tail -1)"
+          echo "STAGING_URL=$URL" >> "$GITHUB_ENV"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      - name: Staging smoke probe
+        run: npm run prod:smoke -- "${{ steps.preview.outputs.url }}"
+
   deploy:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'prod' }}
@@ -29,3 +59,5 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      - name: Post-deploy health probe (prod smoke)
+        run: npm run prod:smoke -- https://sitetrack-rakesh.vercel.app

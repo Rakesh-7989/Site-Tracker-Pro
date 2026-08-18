@@ -34,6 +34,7 @@
     "check:columns": "node scripts/check-column-drift.mjs",
     "check:rls:coverage": "node scripts/rls-coverage.mjs",
     "uptime": "node scripts/uptime-check.mjs",
+    "prod:smoke": "node scripts/prod-smoke.mjs",
     "qa:roles": "node scripts/role-access-probe.mjs",
     "verify:keys": "node scripts/verify-keys.mjs",
     "deploy:all": "node scripts/deploy-all.mjs",

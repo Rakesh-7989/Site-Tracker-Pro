@@ -20,8 +20,15 @@ const env = existsSync(join(root, ".env.local"))
   : {};
 
 const APP = (process.argv[2] || env.VITE_APP_URL || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
-const SUPA = env.VITE_SUPABASE_URL || "https://nntkxojdeyziemdhyjvg.supabase.co";
-const ANON = env.VITE_SUPABASE_ANON_KEY || "";
+// In CI there is no .env.local, so read the committed public config (RLS-safe —
+// same values every browser downloads). Prefer the explicit env var when set.
+let SUPA = env.VITE_SUPABASE_URL || "";
+let ANON = env.VITE_SUPABASE_ANON_KEY || "";
+try {
+  const cfg = readFileSync(join(root, "src/lib/supabasePublicConfig.ts"), "utf8");
+  SUPA = SUPA || (cfg.match(/PUBLIC_SUPABASE_URL[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+  ANON = ANON || (cfg.match(/PUBLIC_SUPABASE_ANON_KEY[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+} catch { /* fall through — env vars are authoritative when set */ }
 
 let pass = 0, fail = 0;
 const ok = (m) => { console.log(`  ✅ ${m}`); pass++; };
