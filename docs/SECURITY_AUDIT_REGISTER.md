@@ -190,6 +190,54 @@ Plan reference: `docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` §1.5 (SEC-04).
   10 affected tables; `npm run db:apply` → 209 passed, only the 2 benign
   pre-existing failures (105/120); 220/221/222 ledgered as applied.
 
+## SEC-05 — Project lifecycle enforcement server-side (2026-08-19)
+
+Audit date: 2026-08-19. Scope: server-side project lifecycle enforcement
+(migration 223, `npm run test:rls:lifecycle`). Disposition: **fixed**.
+Plan reference: `docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` §1.6 (BIZ-001..004).
+
+### Root cause
+
+The lifecycle state machine lived ONLY in the client
+(`src/lib/projectLifecycle.ts`). Status transitions and `archived_at`
+archive/restore were plain PostgREST `UPDATE`s on `projects`, gated only by the
+generic role-based UPDATE policies (`update_project_architect` migration 213,
+`orgadmin_update_project` 03). Consequences for direct-API callers:
+
+| # | Issue | Direct-API impact before fix |
+|---|-------|------------------------------|
+| BIZ-001 | illegal transitions accepted | `paused -> on_hold` / `paused -> deactivated` succeeded (client ladder skipped) |
+| BIZ-002 | terminal states mutable | `completed -> paused`, `completed -> cancelled` succeeded |
+| BIZ-003/004 | archive/restore not authorized in DB | any in-scope updater (architect/pm/prospector) could set/clear `archived_at`, bypassing the frontend `project:archive`/`project:restore` capability gate |
+
+### Fix (migration `223_project_lifecycle_enforcement.sql`, applied live + ledgered)
+
+One `BEFORE UPDATE OF status, archived_at` trigger
+`trg_projects_lifecycle_guard` → `guard_project_lifecycle_transition()`:
+
+1. **Transition legality** — mirrors `nextLifecycleOptions()` exactly:
+   `active → paused/on_hold/deactivated/completed/cancelled`;
+   `paused/on_hold/deactivated → active/completed/cancelled`;
+   `completed/cancelled → active` only. No-op (old = new) allowed (restore
+   re-sends `active`).
+2. **Terminal immutability** — `completed`/`cancelled` can only reactivate to
+   `active`; terminal→terminal and terminal→paused are rejected.
+3. **Archive/restore authorization** — `archived_at` set/clear requires
+   `is_orgadmin() OR has_org_tier(org_id,'admin') OR is_superadmin()`, mirroring
+   the `project:archive`/`project:restore` capability grants (identity orgadmin,
+   org-tier admin, superadmin).
+
+Non-lifecycle column updates (rename, etc.) are untouched (trigger fires only on
+`status`/`archived_at`), so `recompute_project_financials` etc. are unaffected.
+
+### Proof (live, rolled-back tx — `scripts/test-project-lifecycle-rls.mjs`)
+
+21/21 green: legal transitions by orgadmin + pm succeed; illegal transitions
+(paused→on_hold, paused→deactivated, completed→paused, completed→cancelled)
+rejected; pm archive/restore rejected; orgadmin/org-tier-admin/superadmin
+archive+restore allowed; pm rename unaffected. `npm run db:apply` → 210 passed,
+only the 2 benign pre-existing failures (105/120); 223 ledgered as applied.
+
 ## Residual risk (accepted, tracked)
 
 - `can_read_project` is org-wide within-org (any org member can read the org's
