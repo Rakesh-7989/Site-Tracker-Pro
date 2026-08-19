@@ -44,3 +44,45 @@ uncertainty (`no default-true`).
 ## Residual risk (accepted, tracked)
 
 - Server RBAC V2 (edge RPCs) is not yet wired to the same fetchError semantics — today the RLS `v2_policy_check` is the enforce gate and is unaffected by client fetch failures. If the org later ships server-side RBAC V2 enforcement outside RLS, apply the same deny-on-uncertainty rule.
+
+---
+
+# Security Audit Register — SEC-06/07 (Vendor Permissions + Approval SoD)
+
+Audit date: 2026-08-19 · Scope: vendor write/read surface on `purchase_orders` +
+`procurement_quotes`, and the approval trail on purchase/change orders (approver
+≠ requester). Disposition: **fixed** (migration 218). Plan reference:
+`docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` §1.3 (SEC-06/07) · research source:
+`docs/research/02_CHATGPT_SITETRACK_OVERVIEW.md` SEC-06/07.
+
+## Fixed (migration `218_po_approval_sod.sql`, applied live)
+
+| # | Site | Before (hole) | After (fix) |
+|---|------|----------------|-------------|
+| 1 | Vendor PO read | `v4_vendor_read_pos` (migration 126): `is_vendor() AND is_project_member(project_id)` → vendor read **ALL** POs on any project they're a member of (over-broad; coexisted with restrictive `po_vendor_read` from 174) | policy **dropped, never re-created**; vendors read only POs on their own `vendor_id` via `po_vendor_read` (`vendors.profile_id = auth.uid()`) |
+| 2 | Vendor PO insert | `v4_pos_insert` vendor branch: `is_vendor() AND is_project_member(...)` → vestigial ability for a vendor to create a PO on a project they're a member of | `v4_pos_insert` **re-created without the vendor branch** (pm-on-project OR superadmin only); vendor PO creation is not a portal surface (`po:create` for vendor = submit `procurement_quotes`) |
+| 3 | Vendor quote scope | `procurement_quotes_insert` org-tier vendor branch accepted any `vendor_id` in the org | vendor branch requires `vendor_id` = their **own** vendor row (`vendors.profile_id = auth.uid()`); manager branch unchanged |
+| 4 | PO approval trail | `purchase_orders` had **no** `requested_by`/`approved_by`/`approved_at` — approvals were unverifiable and SoD unenforceable (change_orders already had the trail) | 3 columns added; `requested_by` **force-stamped** to `auth.uid()` via BEFORE INSERT trigger (`trg_po_stamp_requested_by`) — spoof-proof for authenticated writers, service_role keeps explicit value |
+| 5 | PO self-approval | guard `guard_approval_status_update` (migration 110) enforced SoD only for change_orders (`raised_by`) | **PO status→`approved` raises** `'requester cannot approve their own purchase order'` when `new.requested_by = auth.uid()`; change_order SoD (vs `raised_by`) kept; `approved_by := coalesce(auth.uid(), new.approved_by)` (spoof-proof id) + `approved_at := coalesce(new.approved_at, now())` on both |
+| 6 | Org PO rollup trail | `org_purchase_orders(uuid)` RPC surfaced no approval fields | **recreated** with `requested_by`, `requested_by_name`, `approved_by`, `approved_by_name`, `approved_at` OUT params (DROP+CREATE — no deps; `profiles` joins) |
+
+## Frontend (approver ≠ requester enforced in UI + approval trail surfaced)
+
+- `src/app/financeQueries.ts` — `PurchaseOrder` + `listPOs` carry
+  `requestedById/requestedByName/approvedById/approvedByName/approvedAt` (embeds
+  `requested:requested_by(name)` / `approved:approved_by(name)`).
+- `src/features/project/tabs/POsTab.tsx` — exported `poStatusOptionsFor(po, profileId)`
+  **removes the "approved" option for self-requested rows** (deny at the control
+  surface; backend RLS still the gate) + `poApprovalDate(approvedAt)`; meta line
+  shows `by {requester}` / `approved {approver} {date}`.
+- `src/app/crossPoQueries.ts` + `src/features/org/CrossProjectPOsView.tsx` — org
+  rollup now shows the approval trail per PO.
+
+## Residual risk (accepted, tracked)
+
+- SoD applies to the status transition into `approved` only; a superadmin/org-admin
+  can still approve their own PO when they are not the `requested_by` row
+  (identity-based dual-role flows are allowed — the requester column is the
+  enforced separator).
+- `vendors` org directory read (`v3_read_vendors`) remains org-scoped — vendors can
+  see the org's vendor directory (acceptable, org-scoped by design).

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useCan, useOrgSwitcher } from "@/auth";
+import { useCan, useOrgSwitcher, useSession } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { ProgressBar } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
@@ -13,9 +13,26 @@ import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "delivered", label: "Delivered" }, { value: "cancelled", label: "Cancelled" }];
 
+/**
+ * PO status options for the current viewer. The approver != requester rule
+ * (SEC-07) is enforced at the DB layer; the UI additionally removes the
+ * "approved" transition so a requester never sees a self-approval affordance.
+ */
+export function poStatusOptionsFor(po: PurchaseOrder, profileId: string | null): { options: typeof STT; selfRequested: boolean } {
+  const selfRequested = !!profileId && po.requestedById === profileId;
+  return { options: selfRequested ? STT.filter(s => s.value !== "approved") : STT, selfRequested };
+}
+
+/** Short YYYY-MM-DD for the approval timestamp (pure, testable). */
+export function poApprovalDate(approvedAt: string | null): string | null {
+  return approvedAt ? String(approvedAt).slice(0, 10) : null;
+}
+
 export function POsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const orgId = activeOrg?.orgId;
+  const { user } = useSession();
+  const profileId = user?.id ?? null;
   const ctx = { orgId, projectId };
   const canCreate = useCan("po:create", ctx);
   const canApprove = useCan("po:approve", ctx);
@@ -58,7 +75,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
     const v = vendorId ? vendors.find(x => x.id === vendorId) : undefined;
     const r = reqId ? requests.find(x => x.id === reqId) : undefined;
     await run("add", c => createPO(c, { projectId, poNo: poNo.trim(), items: (r?.item || items.trim()) || undefined, amount: amt, deliveryDate: dd || null, vendorId: v?.id ?? null, materialRequestId: r?.id ?? null }), {
-      apply: () => setRows(prev => [{ id: tmpId, poNo: poNo.trim(), items: (r?.item || items.trim()) || null, amount: amt, deliveryDate: dd || null, status: "pending" as POStatus, vendorId: v?.id ?? null, vendorName: v?.name ?? null, quoteId: null, quoteItem: null, materialRequestId: r?.id ?? null, materialRequestItem: r?.item ?? null }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, poNo: poNo.trim(), items: (r?.item || items.trim()) || null, amount: amt, deliveryDate: dd || null, status: "pending" as POStatus, vendorId: v?.id ?? null, vendorName: v?.name ?? null, quoteId: null, quoteItem: null, materialRequestId: r?.id ?? null, materialRequestItem: r?.item ?? null, requestedById: profileId, requestedByName: null, approvedById: null, approvedByName: null, approvedAt: null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setPoNo(""); setItems(""); setAmount(""); setDd(""); setVendorId(""); setReqId("");
@@ -141,15 +158,21 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
       render: r => (
         <div>
           <div className="text-sm font-semibold text-fg-primary truncate">{r.poNo} · {fmtRupees(r.amount)}</div>
-          <div className="text-[11px] text-fg-tertiary truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`, r.vendorName && `vendor ${r.vendorName}`, r.quoteItem && `from quote "${r.quoteItem}"`, r.materialRequestItem && `request "${r.materialRequestItem}"`].filter(Boolean).join(" · ") || "—"}</div>
+          <div className="text-[11px] text-fg-tertiary truncate">{[r.items, r.deliveryDate && `due ${r.deliveryDate}`, r.vendorName && `vendor ${r.vendorName}`, r.quoteItem && `from quote "${r.quoteItem}"`, r.materialRequestItem && `request "${r.materialRequestItem}"`, r.requestedByName && `by ${r.requestedByName}`, r.approvedByName && `approved ${r.approvedByName}${poApprovalDate(r.approvedAt) ? ` ${poApprovalDate(r.approvedAt)}` : ""}`].filter(Boolean).join(" · ") || "—"}</div>
         </div>
       ),
     },
     {
       key: "status", header: "Status", className: "flex-shrink-0",
-      render: r => canApprove ? (
-        <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as POStatus; void run(`s-${r.id}`, c => setPOStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
-      ) : <span className="text-xs text-fg-secondary">{r.status}</span>,
+      render: r => {
+        const st = poStatusOptionsFor(r, profileId);
+        return canApprove ? (
+          <div className="flex flex-col gap-1 items-end">
+            <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as POStatus; void run(`s-${r.id}`, c => setPOStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={st.options} />
+            {st.selfRequested && <span className="text-[10px] text-fg-tertiary">self-requested — cannot approve</span>}
+          </div>
+        ) : <span className="text-xs text-fg-secondary">{r.status}</span>;
+      },
     },
     {
       key: "delivery", header: "", className: "flex-shrink-0",
