@@ -34,7 +34,7 @@
 | 1.4 Multi-org isolation + client portal isolation | SEC-03/08 | Active-org scope enforced; client portal reads bounded to project scope | [x] |
 | 1.5 Cross-tenant attack tests | SEC-04 | RLS tests assert cross-tenant access denied for every core table | [x] |
 | 1.6 Project lifecycle enforcement server-side | BIZ-001..004 | Lifecycle transitions validated in RPC/DB; terminal states immutable; archive/restore authorized mutations | [x] |
-| 1.7 Quota TOCTOU fix | DB-001 | Quota enforcement uses transaction-safe check (no race) | [ ] |
+| 1.7 Quota TOCTOU fix | DB-001 | Quota enforcement uses transaction-safe check (no race) | [x] |
 
 **Phase 1 gate:** RLS coverage matrix shows Policy-Core pattern across core domain tables; cross-tenant tests green; fail-closed verified.
 
