@@ -192,6 +192,32 @@ describe("authenticate() — project gate", () => {
   });
 });
 
+describe("authenticate() — org membership filter (SEC-03, phase 1.4)", () => {
+  beforeEach(() => { mockGetUser = vi.fn(); mockFrom = vi.fn(); });
+
+  it("filters the org_members read to status='active' AND removed_at IS NULL", async () => {
+    mockGetUser = vi.fn(async () => ({ data: { user: { id: "u-1", email: "t@e.in" } }, error: null }));
+    const captured: string[] = [];
+    mockFrom = vi.fn((table: string) => {
+      if (table === "profiles") return fluent({ data: { role: "architect", is_staff: false } });
+      if (table === "org_members") {
+        const chain = fluent({ data: [{ org_id: "o-1", role: "admin" }] });
+        const rawEq = chain.eq;
+        chain.eq = vi.fn((k: string, v: any) => { captured.push(`eq:${k}:${String(v)}`); return rawEq(k, v); });
+        const rawIs = chain.is;
+        chain.is = vi.fn((k: string, v: any) => { captured.push(`is:${k}:${String(v)}`); return rawIs(k, v); });
+        return chain;
+      }
+      return fluent({ data: null });
+    });
+    const res = await authenticate(reqWithAuth("ok"), { requireOrgId: "o-1" });
+    expect(res.ok).toBe(true);
+    expect(captured).toContain("eq:profile_id:u-1");
+    expect(captured).toContain("eq:status:active");
+    expect(captured).toContain("is:removed_at:null");
+  });
+});
+
 describe("authenticateCron()", () => {
   it("passes when Bearer matches env value", () => {
     const req = reqWithAuth("test-cron-secret-xyz");

@@ -5,7 +5,7 @@
 import { describe, it, expect } from "vitest";
 import {
   clientPaymentRollup, upcomingMilestones, approvedDrawings, buildActivityFeed,
-  getClientProject, listClientInvoices, listClientMilestones, listClientDrawings,
+  getClientProject, listClientProjects, listClientInvoices, listClientMilestones, listClientDrawings,
   listClientUpdates, listClientActivity,
   type ClientInvoice, type ClientMilestone, type ClientDrawing, type ClientUpdate,
 } from "@/app/clientPortalQueries";
@@ -302,5 +302,44 @@ describe("listClientActivity mapper", () => {
     const res = await listClientActivity(client as never, "p1");
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe("denied");
+  });
+});
+
+// SEC-08 (phase 1.4): every client-portal read is hard-scoped to the caller's
+// email-matched project — a source-contract lock so the surface can never
+// broaden into cross-project reads.
+describe("client portal query isolation (SEC-08)", () => {
+  function recordingClient() {
+    const calls: string[] = [];
+    const chain = {
+      select: () => chain,
+      eq: (k: string, v: unknown) => { calls.push(`eq:${k}:${String(v)}`); return chain; },
+      contains: (k: string, v: unknown[]) => { calls.push(`contains:${k}:${v.join(",")}`); return chain; },
+      in: (k: string, v: unknown[]) => { calls.push(`in:${k}:${(v as string[]).length}`); return Promise.resolve({ error: null, data: [] }); },
+      maybeSingle: () => Promise.resolve({ error: null, data: null }),
+      order: () => Promise.resolve({ error: null, data: [] }),
+    };
+    const client = { from: (_t: string) => ({ ...chain, select: () => chain }) };
+    return { client, calls };
+  }
+
+  it("listClientProjects is filtered by the caller's email only", async () => {
+    const { client, calls } = recordingClient();
+    await listClientProjects(client as never, "client@x.in");
+    expect(calls).toEqual(["eq:client_email:client@x.in"]);
+  });
+
+  it("getClientProject requires BOTH the project id and the caller's email", async () => {
+    const { client, calls } = recordingClient();
+    await getClientProject(client as never, "p-1", "client@x.in");
+    expect(calls).toEqual(["eq:id:p-1", "eq:client_email:client@x.in"]);
+  });
+
+  it("every child-table read is scoped to .eq('project_id', projectId)", async () => {
+    for (const fn of [listClientInvoices, listClientMilestones, listClientDrawings, listClientUpdates, listClientActivity]) {
+      const { client, calls } = recordingClient();
+      await fn(client as never, "p-1");
+      expect(calls.some(c => c === "eq:project_id:p-1")).toBe(true);
+    }
   });
 });

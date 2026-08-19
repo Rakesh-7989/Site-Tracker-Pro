@@ -86,3 +86,79 @@ Audit date: 2026-08-19 · Scope: vendor write/read surface on `purchase_orders` 
   enforced separator).
 - `vendors` org directory read (`v3_read_vendors`) remains org-scoped — vendors can
   see the org's vendor directory (acceptable, org-scoped by design).
+
+---
+
+# Security Audit Register — SEC-03/08 (Multi-org Isolation + Client Portal Isolation)
+
+Audit date: 2026-08-19 · Scope: cross-tenant org data boundaries (SEC-03) and the
+client portal read surface (SEC-08). Disposition: **fixed** (migration 219 + EF
+filter + RLS proof). Plan reference:
+`docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` §1.4 (SEC-03/08) · research source:
+`docs/research/02_CHATGPT_SITETRACK_OVERVIEW.md` SEC-03/08.
+
+## Deep-dive finding: the only cross-tenant context primitive had no membership gate
+
+- `set_tenant_context(p_org_id)` (migration 118) is SECURITY DEFINER and callable by
+  ANY authenticated user; it set `app.org_id` to an arbitrary org id with **no
+  membership check**. Nothing reads `app.org_id` today (grep: 118 is the only
+  setter) and no edge function calls it — so there was no live exploit, but the
+  primitive was unsafe for the documented "EFs set tenant context" pattern.
+- EF `_shared/auth.ts` `authenticate()` fetched org memberships filtered only by
+  `profile_id` — invited/removed memberships (status ≠ active, or `removed_at` set)
+  would count for EF `requireOrgId`, diverging from RLS `user_org_ids()`.
+
+## Fixed
+
+| # | Site | Before (hole) | After (fix) |
+|---|------|----------------|-------------|
+| 1 | Tenant-context RPC | `set_tenant_context` accepted ANY org id from any authenticated user | **migration 219** `219_tenant_context_scope.sql`: raises `errcode 42501` unless `is_superadmin() OR p_org_id = any(user_org_ids())`; membership gate runs **before** any `set_config` (fail-closed); `app.role` still set on every call; grants `authenticated` only (anon/public revoked) |
+| 2 | EF membership read | `authenticate()` org_members select filtered only by `profile_id` | adds `.eq("status", "active").is("removed_at", null)` — EF membership semantics now equal RLS `user_org_ids()` |
+
+## Already-correct substrate (verified live, no change needed)
+
+- `user_org_ids()` filters `status='active'` + `removed_at IS NULL`; `user_project_ids()`
+  (migration 132) restricts clients to email-matched projects and pm rows to
+  `removed_at IS NULL`; `can_read_project` = superadmin OR org member OR active pm.
+- Client portal RLS is already bounded: drawings client rule = released-to-client +
+  `current` only (`149_drawings_file_register.sql`); `read_pos`/`read_ra_bills` exclude
+  `current_role_text() = 'client'`; share links token-scoped with password/OTP/expiry/
+  max-views (`185`); payments via `can_read_project`.
+- Client portal query layer (`clientPortalQueries.ts`) filters every read by
+  `.eq("project_id", projectId)` (or `client_email` for the project list/header) and
+  fails closed.
+
+## Proof (live, rolled-back tx — `scripts/test-multi-org-client-portal-rls.mjs`)
+
+All 16 assertions green on the live DB (roles via `SET LOCAL ROLE authenticated` +
+JWT sub claim):
+
+- **ISO-001/002 (SEC-03):** an org-A admin reads org A but NOT org B's
+  `organizations` row, `org_members`, `leads`, `procurement_quotes`, or `vendors`.
+- **ISO-003 (SEC-03):** `set_tenant_context` membership-gated — org-A admin CAN set
+  A, CANNOT set B; email-linked client cannot set any org; superadmin CAN set any.
+- **CL-001..005 (SEC-08):** client sees email-matched P_A but NOT P_B; cannot read
+  POs/RA bills of their own project; sees ONLY the current released-to-client
+  drawing; cannot read another project's invoices/milestones; CAN read their own
+  project's invoices/milestones.
+
+## Source-contract tests (lock the posture)
+
+- `tests/efAuthHelper.test.ts` — org_members read includes `eq:status:active` +
+  `is:removed_at:null`.
+- `tests/app/clientPortalDepth.test.ts` — SEC-08 block: `listClientProjects` is
+  email-filtered only; `getClientProject` requires id AND email; every child-table
+  read is `.eq("project_id", projectId)`.
+- `tests/multiOrgIsolation.test.ts` — migration 219 source contract: raises 42501,
+  gates on `user_org_ids()`/`is_superadmin()`, membership check precedes
+  `set_config`, grants authenticated-only; `tenantContext.ts` fail-open behaviour
+  (null org = no-op, RPC errors swallowed).
+
+## Residual risk (accepted, tracked)
+
+- `can_read_project` is org-wide within-org (any org member can read the org's
+  project rows incl. payments) — within-org only, NOT cross-tenant; tightening to
+  project-membership-only would break org-rollup views by design.
+- Org-scoped tables (leads, procurement_quotes, vendors, org_members) are visible
+  to any active member of the org (RLS `user_org_ids()`); delete gates are
+  manager-scoped.
