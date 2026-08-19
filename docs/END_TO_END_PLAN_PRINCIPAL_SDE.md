@@ -32,7 +32,7 @@
 | 1.2 Fail-closed authorization paths | SEC-05 | Every authz fetch fails closed (no default-true); audit register updated | [x] |
 | 1.3 Vendor permissions + Approval SoD | SEC-06/07 | Vendor PO approvals verified; approver ≠ requester enforced | [x] |
 | 1.4 Multi-org isolation + client portal isolation | SEC-03/08 | Active-org scope enforced; client portal reads bounded to project scope | [x] |
-| 1.5 Cross-tenant attack tests | SEC-04 | RLS tests assert cross-tenant access denied for every core table | [ ] |
+| 1.5 Cross-tenant attack tests | SEC-04 | RLS tests assert cross-tenant access denied for every core table | [x] |
 | 1.6 Project lifecycle enforcement server-side | BIZ-001..004 | Lifecycle transitions validated in RPC/DB; terminal states immutable; archive/restore authorized mutations | [ ] |
 | 1.7 Quota TOCTOU fix | DB-001 | Quota enforcement uses transaction-safe check (no race) | [ ] |
 

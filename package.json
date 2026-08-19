@@ -54,6 +54,7 @@
     "test:rls": "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs && node scripts/test-rbac-v2-shadow.mjs",
     "test:rls:project": "node scripts/test-project-scope-rls.mjs",
     "test:rls:isolation": "node scripts/test-multi-org-client-portal-rls.mjs",
+    "test:rls:cross-tenant": "node scripts/test-cross-tenant-rls.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "analyze": "ANALYZE=true vite build",
     "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit"

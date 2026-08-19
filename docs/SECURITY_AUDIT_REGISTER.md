@@ -154,6 +154,42 @@ JWT sub claim):
   `set_config`, grants authenticated-only; `tenantContext.ts` fail-open behaviour
   (null org = no-op, RPC errors swallowed).
 
+## SEC-04 — Cross-tenant attack matrix (2026-08-19)
+
+Audit date: 2026-08-19. Scope: automated cross-tenant RLS attack matrix
+(`scripts/test-cross-tenant-rls.mjs`, `npm run test:rls:cross-tenant`) asserting
+CT-000..CT-005 per tenant table against the LIVE DB. Disposition: **fixed**.
+Plan reference: `docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` §1.5 (SEC-04).
+
+### Matrix coverage
+
+- 128 tenant-scoped tables scanned; 506 assertions (CT-000 RLS enabled, CT-001
+  org B owner reads own seeded row, CT-002 org A admin CANNOT read org B row,
+  CT-003/004 write/delete bounded, CT-005 org A admin INSERT claiming B scope
+  rejected). **All green** (0 reds). 27 tables remain seed-skipped for FK/unique
+  constraint reasons (documented in the script's skip output); the same leak
+  classes on those tables were fixed in migration 222 (below).
+- Live run: `SET LOCAL ROLE authenticated` + JWT claims, rolled-back tx
+  (net read-only), per-assertion SAVEPOINTs, fixtures org A / org B / user C.
+
+### Findings fixed
+
+| Mig | Root cause | Live impact before fix | Fix |
+|-----|-----------|------------------------|-----|
+| **220** | `notify_payment_received` trigger read `created_by` from `invoices`/`ra_bills`, which lack the column → every insert threw (tx aborted, no delivery). Also hardened NULL-array FOREACH. | Payments never delivered notifications | trigger rewritten to source `created_by` from existing columns; NULL-safe FOREACH |
+| **221** | `dpr_messages`/`dpr_delivery_log` read/insert/update policies used `org_id = (select org_id from profiles where id = auth.uid())`; `profiles` has **no** `org_id` column → correlated `org_id` resolved to the outer table → **always TRUE**. Any authenticated user could read/update every org's DPR rows and insert rows claiming any org. | CT-002/003/005 failed on dpr_messages; full cross-tenant DPR breach | policies scoped to `org_id = any(public.user_org_ids())` (active memberships, migration 173) + superadmin bypass (221) |
+| **222** | Four `FOR SELECT USING (true)` read policies on org-scoped RBAC V2 tables (`org_rbac_settings`, `rbac_profile_assignments`, `vendor_project_scopes`, `digest_dispatches`/`digest_subscriptions` broken always-true pattern, plus latent `rbac_role_profiles`, `rbac_profile_bindings`, `resource_acl_entries`, `client_portal_permissions`, `buildnow_anchors`). Any authenticated user could enumerate another org's RBAC mode, profile assignments, vendor scopes, ACL entries, client permissions, and digest state. | CT-002 failed on 4 tables | all 11 read policies scoped to `user_org_ids()` + superadmin; `rbac_role_profiles`/`rbac_profile_bindings` keep platform system rows (`org_id IS NULL`) readable by all (shared metadata, same as `rbac_capabilities`) |
+
+### Posture locked
+
+- Frontend reads of the scoped tables are all current-org filtered
+  (`fetchAuthSession.ts` `fetchRbac2Context` and `rbac2/queries.ts` read with
+  `.eq("org_id", activeOrgId)`; `digestQueries.ts` org-scoped), so no client
+  breakage. Superadmin bypass preserved via `role = 'superadmin'` clause.
+- Gate: `scripts/verify-222.mjs` confirmed 0 leaky read policies remain on the
+  10 affected tables; `npm run db:apply` → 209 passed, only the 2 benign
+  pre-existing failures (105/120); 220/221/222 ledgered as applied.
+
 ## Residual risk (accepted, tracked)
 
 - `can_read_project` is org-wide within-org (any org member can read the org's
