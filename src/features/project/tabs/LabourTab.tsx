@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { fmtRupees } from "@/app/financeQueries";
 import { listLabour, createLabour, deleteLabour, type LabourEntry } from "@/app/siteAdminQueries";
@@ -58,14 +58,18 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
         </Card>
       )}
       {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No workers registered.</div>
+        : rows.length === 0 ? <div className="text-center py-20 text-fg-secondary">
+          <span className="text-4xl mb-3">👷</span>
+          <p>No workers registered yet.</p>
+          <p className="text-[12px] text-fg-tertiary">Add the first worker using the form above.</p>
+        </div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.name}{r.trade ? <span className="text-fg-tertiary font-normal"> · {r.trade}</span> : null}</div>
                 <div className="text-[11px] text-fg-tertiary">{[r.aadhaarMasked, r.joined && `joined ${r.joined}`, r.epf && `EPF ${r.epf}`, r.esi && `ESI ${r.esi}`].filter(Boolean).join(" · ") || "—"}</div></div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 {r.wage != null && <span className="text-sm font-semibold text-fg-primary">{fmtRupees(r.wage)}<span className="text-[11px] text-fg-tertiary font-normal">/day</span></span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLabour(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLabour(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
               </div>
             </Card>))}</div>}
       <WageSummary labour={rows} attendance={attendance} />

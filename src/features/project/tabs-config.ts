@@ -161,11 +161,27 @@ export const DEFAULT_TAB = "overview";
  * Compute the ordered list of tabs a user sees for a project, given their
  * aggregate capability set + the project's type.
  *
+ * Filter order (each is independent — a tab is excluded if ANY filter rejects it):
+ *   1. projectTypes  — project type must match (or be omitted)
+ *   2. requires      — user must hold this single capability
+ *   3. requiresAny   — user must hold at least one of these capabilities
+ *   4. planFeature   — plan predicate must return true (or planCan be omitted)
+ *   5. segments      — org's segment must be in tab's segments list (or be null/omitted)
+ *   6. moduleId      — tab's module must be enabled (or moduleEnabled be omitted/undefined)
+ *   7. locationId    — VNEXT-005: selected location must be compatible with tab's location requirement
+ *
+ * Edge‑case behaviour:
+ *   • segment === null  (legacy org, no segment set)  →  segment‑gated tabs are excluded
+ *   • moduleEnabled === undefined  →  module gate is off (back‑compat, all modules appear enabled)
+ *   • planCan === undefined  →  no plan gating (back‑compat, all plan‑feature tabs appear unlocked)
+ *
  * @param caps               the user's capabilities (from capabilitiesAnywhere or
  *                           a context-scoped resolve)
  * @param projectType        the project.type
- * @param planCan            plan-unlock predicate (omit = no plan gating)
- * @param segment            the active org's company segment (migration 134)
+ * @param planCan            plan-unlock predicate (omit = no plan gating); when omitted,
+ *                           tabs with planFeature are always shown
+ * @param segment            the active org's company segment (migration 134);
+ *                           null means legacy org with no segment → segment‑gated tabs hidden
  * @param catalog            the tab catalog to filter (defaults to TAB_CATALOG;
  *                           tests inject synthetic segment-gated tabs)
  * @param moduleEnabled      v4 Phase 3 module predicate — when supplied, tabs that
@@ -174,7 +190,9 @@ export const DEFAULT_TAB = "overview";
  *                           (back-compat with pre-module callers).
  * @param currentLocationId  vNext-005: when supplied, tabs whose content is not
  *                           location-scoped are filtered; tabs that require a location
- *                           are shown only when a location is selected.
+ *                           are shown only when a location is selected and its ID
+ *                           appears in tab.locationId.
+ * @returns                  ordered list of TabDef the user can see, in catalog order
  */
 export function visibleTabs(
   caps: ReadonlySet<Capability>,
@@ -186,19 +204,22 @@ export function visibleTabs(
   currentLocationId?: string,
 ): TabDef[] {
   return catalog.filter(tab => {
+    // 1. projectTypes — tab must be applicable to this project type
     if (tab.projectTypes && !tab.projectTypes.includes(projectType)) return false;
+    // 2. requires — user must hold this single capability
     if (tab.requires && !caps.has(tab.requires)) return false;
+    // 3. requiresAny — user must hold at least one of these capabilities
     if (tab.requiresAny && !tab.requiresAny.some(cap => caps.has(cap))) return false;
-    // Plan gate: when a predicate is supplied, hide tabs the plan doesn't unlock.
+    // 4. planFeature — plan predicate must unlock the tab
     if (tab.planFeature && planCan && !planCan(tab.planFeature)) return false;
-    // Segment gate: when declared, the active org's segment must be in the list.
+    // 5. segments — org's segment must be in tab's segments list;
+    //    segment === null (legacy org) excludes segment‑gated tabs
     if (tab.segments && (!segment || !tab.segments.includes(segment))) return false;
-    // Module gate (v4 Phase 3): when the tab owns a module and a predicate is
-    // supplied, require that module to be enabled.
+    // 6. moduleId — tab's module must be enabled; moduleEnabled === undefined means
+    //    module gate is off (back‑compat, all modules appear enabled)
     if (tab.moduleId && moduleEnabled && !moduleEnabled(tab.moduleId)) return false;
-    // VNEXT-005: location gating — when a currentLocationId is supplied, only
-    // show tabs that are compatible with a selected location (i.e. tabs without
-    // a location requirement, or tabs whose content can be scoped by location).
+    // 7. VNEXT-005: location gating — when a currentLocationId is supplied,
+    //    only show tabs compatible with the selected location.
     if (currentLocationId && tab.locationId && !tab.locationId.includes(currentLocationId)) return false;
     return true;
   });

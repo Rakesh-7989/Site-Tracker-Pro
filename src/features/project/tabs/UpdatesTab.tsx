@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Textarea } from "@/components/ui/forms";
 import { listUpdates, createUpdate, deleteUpdate, type SiteUpdate } from "@/app/updateQueries";
 
@@ -76,7 +76,7 @@ export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
                       {u.weather ? ` · ${u.weather}` : ""}{u.workersCount != null ? ` · ${u.workersCount} workers` : ""}
                     </div>
                   </div>
-                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${u.id}`, c => deleteUpdate(c, u.id), { apply: () => setRows(prev => prev.filter(x => x.id !== u.id)), rollback: () => setRows(prev => [...prev, u]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${u.id}`, c => deleteUpdate(c, u.id), { apply: () => setRows(prev => prev.filter(x => x.id !== u.id)), rollback: () => setRows(prev => [...prev, u]) })}><span className="text-error">✕</span></Button>}
                 </div>
               </Card>
             ))}

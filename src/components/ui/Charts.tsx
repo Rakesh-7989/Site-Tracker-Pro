@@ -46,9 +46,12 @@ export interface BarChartProps {
   /** Format bar values for value labels, tooltips and the aria summary. */
   formatValue?: (value: number) => string;
   className?: string;
+  onSelect?: (datum: ChartDatum) => void;
+  responsive?: boolean;
+  responsiveOptions?: string;
 }
 
-export function BarChart({ data, color = "var(--st-accent)", showValues = false, formatValue, className }: BarChartProps): JSX.Element {
+export function BarChart({ data, color = "var(--st-accent)", showValues = false, formatValue, className, onSelect, responsive = true, responsiveOptions, }: BarChartProps): JSX.Element {
   const max = chartMax(data);
   const fmt = formatValue ?? ((v: number) => String(v));
   return (
@@ -65,6 +68,7 @@ export function BarChart({ data, color = "var(--st-accent)", showValues = false,
                 className="w-full rounded-t-sm"
                 style={{ height: `${pct}%`, backgroundColor: d.color ?? color }}
                 title={`${d.label}: ${fmt(d.value)}`}
+                onClick={() => onSelect?.(d)}
               />
             </div>
           );
@@ -97,6 +101,9 @@ export interface BarGroupProps {
   /** Format bar values for value labels, tooltips and the aria summary. */
   formatValue?: (value: number) => string;
   className?: string;
+  onSelect?: (series: BarGroupSeries, value: number, group: string) => void;
+  responsive?: boolean;
+  responsiveOptions?: string;
 }
 
 /** Max across all series values (floor 1 so zero-only data never divides by zero). */
@@ -117,7 +124,7 @@ export function barGroupAriaLabel(groups: string[], series: BarGroupSeries[], fo
   return rows.join(", ");
 }
 
-export function BarGroup({ groups, series, showValues = false, formatValue, className }: BarGroupProps): JSX.Element {
+export function BarGroup({ groups, series, showValues = false, formatValue, className, onSelect, responsive = true, responsiveOptions, }: BarGroupProps): JSX.Element {
   const max = barGroupMax(groups, series);
   const fmt = formatValue ?? ((v: number) => String(v));
   return (
@@ -141,6 +148,7 @@ export function BarGroup({ groups, series, showValues = false, formatValue, clas
                     className="w-full rounded-t-sm"
                     style={{ height: `${pct}%`, backgroundColor: s.color ?? CHART_COLORS[si % CHART_COLORS.length] }}
                     title={`${g} · ${s.name}: ${fmt(v)}`}
+                    onClick={() => onSelect?.(s, v, g)}
                   />
                 </div>
               );
@@ -191,21 +199,40 @@ export interface PieChartProps {
   thickness?: number;
   centerLabel?: ReactNode;
   className?: string;
+  responsive?: boolean;
+  responsiveOptions?: string;
 }
 
-export function PieChart({ data, size = 120, thickness = 22, centerLabel, className }: PieChartProps): JSX.Element {
+export function PieChart({ data, size = 120, thickness = 22, centerLabel, className, responsive = true, responsiveOptions, }: PieChartProps): JSX.Element {
   const r = size / 2 - thickness / 2;
   const segs = pieSegments(data, r);
   const cx = size / 2;
+  const hasData = segs.length > 0;
+  const viewBox = `0 0 ${size} ${size}`;
+  const svgWidth = size;
+  const svgHeight = size;
+  const circleContent = hasData
+    ? segs.map((s, i) => (
+        <circle
+          key={i}
+          cx={cx}
+          cy={cx}
+          r={r}
+          fill="none"
+          stroke={s.color}
+          strokeWidth={thickness}
+          strokeDasharray={`${s.dash} ${s.gap}`}
+          strokeDashoffset={-s.offset}
+        />
+      ))
+    : (
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="var(--st-bg-elevated)" strokeWidth={thickness} />
+      );
   return (
     <div role="img" aria-label={`Pie chart: ${chartAriaLabel(data)}`} className={cn("relative inline-flex items-center justify-center", className)}>
-      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="block">
+      <svg viewBox={viewBox} width={svgWidth} height={svgHeight} className="block">
         <g transform={`rotate(-90 ${cx} ${cx})`}>
-          {segs.length === 0 ? (
-            <circle cx={cx} cy={cx} r={r} fill="none" stroke="var(--st-bg-elevated)" strokeWidth={thickness} />
-          ) : segs.map((s, i) => (
-            <circle key={i} cx={cx} cy={cx} r={r} fill="none" stroke={s.color} strokeWidth={thickness} strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset} />
-          ))}
+          {circleContent}
         </g>
       </svg>
       {centerLabel && (
@@ -253,9 +280,10 @@ export interface LineChartProps {
   area?: boolean;
   showPoints?: boolean;
   className?: string;
+  onSelect?: (datum: ChartDatum) => void;
 }
 
-export function LineChart({ data, color = "var(--st-accent)", area = true, showPoints = false, className }: LineChartProps): JSX.Element {
+export function LineChart({ data, color = "var(--st-accent)", area = true, showPoints = false, className, onSelect }: LineChartProps): JSX.Element {
   const pts = linePoints(data);
   return (
     <div role="img" aria-label={`Line chart: ${chartAriaLabel(data)}`} className={cn("flex flex-col w-full h-full", className)}>
@@ -272,6 +300,7 @@ export function LineChart({ data, color = "var(--st-accent)", area = true, showP
             className="absolute w-2 h-2 rounded-full"
             style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%,-50%)", backgroundColor: color, boxShadow: "0 0 0 2px var(--st-bg-panel)" }}
             title={`${data[i].label}: ${data[i].value}`}
+            onClick={() => onSelect?.(data[i])}
           />
         ))}
       </div>

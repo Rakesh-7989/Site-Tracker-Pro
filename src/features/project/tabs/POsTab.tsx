@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher, useSession } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { ProgressBar } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert, ProgressBar } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listPOs, createPO, setPOStatus, deletePO, fmtRupees, type PurchaseOrder, type POStatus } from "@/app/financeQueries";
@@ -127,9 +126,9 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
                   <div className="text-sm font-semibold text-fg-primary">{r.qty} × {fmtRupees(r.unitPrice)} = {fmtRupees(r.amount)}</div>
                   <div className="text-[11px] text-fg-tertiary truncate">{r.receivedDate}{r.notes ? ` · ${r.notes}` : ""}{r.receivedByName ? ` · by ${r.receivedByName}` : ""}</div>
                 </div>
-                {canApprove && (
+{canApprove && (
                   <Button size="sm" variant="ghost" disabled={busy === `dr-${r.id}`} onClick={() => void removeReceipt(r)}>
-                    <Icon name="trash" size={13} className="text-error" />
+                    <span className="text-error">✕</span>
                   </Button>
                 )}
               </div>
@@ -186,7 +185,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
       key: "actions" as const, header: "", className: "flex-shrink-0",
       render: (r: PurchaseOrder) => (
         <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePO(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
-          <Icon name="trash" size={14} className="text-error" />
+          <span className="text-error">✕</span>
         </Button>
       ),
     }] : []),

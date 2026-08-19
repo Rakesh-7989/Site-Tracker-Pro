@@ -65,7 +65,7 @@ export function FieldOpsTab({ projectId }: { projectId: string }): JSX.Element {
                     {r.notes && <div className="text-[11px] text-fg-tertiary truncate">{r.notes}</div>}</div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {r.hours != null && <span className="text-sm font-semibold text-fg-primary">{r.hours}<span className="text-[11px] text-fg-tertiary font-normal"> hrs</span></span>}
-                    {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteWorklog(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                    {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteWorklog(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
                   </div>
                 </Card>))}</div>
             </div>))}</div>}
