@@ -72,8 +72,11 @@ build. No schema/EF change.
 - WhatsApp/Twilio/push delivery (no provider keys) · CAD preview · subdomain
   white-label · mobile app / Play Store · V4/V5 industry depth.
 
-## Do-not-commit artifacts (unchanged)
+## Do-not-commit artifacts (updated 2026-08-20)
 `AGENTIC_LOOPING_METHODOLOGY.md`, `e2eout.txt`, `error.txt`, `tmp.txt`,
-`tsout*.txt`, `scripts/apply-195.mjs`, `scripts/apply-201.mjs`,
-`scripts/probe-199.mjs`, `scripts/probe-202.mjs`, `scripts/verify-195.mjs`,
-`scripts/supabase/200_storage_usage.sql`.
+`tsout*.txt`. All `scripts/apply-*.mjs` / `probe-*.mjs` / `verify-*.mjs`
+temp runners and `migration_status.txt` / `test-output.txt` output dumps were
+**removed from the repo 2026-08-20**; the CI `test` job's **Stray-artifact guard**
+now fails if any of them (or a future temp runner) is ever committed again.
+Note: `scripts/supabase/200_storage_usage.sql` is **migration 200** (storage
+usage RPC, applied live) — a legitimate migration file, NOT a temp artifact.

@@ -2547,9 +2547,7 @@ subdomains, mobile, AI, analytics).
 **db:apply result** (2026-08-14): **175 passed / 1 failed** (only benign pre-existing `120_seed_test_data`). Live probe 23/23: B1 tables/columns/RPCs + anon grants, 187 triggers ×5, 186 delivery, 188 broadcast, B2/B3 RPCs. Full gate green: tsc · lint 0 err · smoke **378** · vitest **192 files/2278 tests** · build · e2e-mock **11/11**. Track B next candidates (needs user go): real email/WhatsApp delivery, CAD preview, B6 subdomains/mobile/AI.
 
 ### Notes
-- Do-not-commit temp scripts still present: `scripts/apply-175.mjs`,
-  `scripts/apply-183.mjs`, `scripts/verify-183.mjs`, `scripts/scan-card-headers.mjs`,
-  `scripts/verify-184.mjs`.
+- Do-not-commit temp scripts: **removed 2026-08-20** (`apply-173/174/175/183.mjs`, `verify-183/184.mjs`, `scan-card-headers.mjs` deleted — main `apply-migrations.mjs` + ledger handle all migrations). Enforced going forward by the **Stray-artifact guard** step in CI `test` (fails if any temp runner or output dump — `migration_status.txt`, `test-output.txt`, `e2eout.txt`, `error.txt`, `tmp.txt`, `tsout*.txt`, apply-/probe-/verify-* runners — is committed).
 - **Track A — Super Admin Platform Panel: COMPLETE** (SA-F → SA-T all shipped,
   verified, live).
 - **Track B — B1/B2/B3: COMPLETE** (code + live DB substrate shipped, `e9c5889`).
