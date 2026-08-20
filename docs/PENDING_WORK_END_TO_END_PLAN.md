@@ -69,8 +69,14 @@ build. No schema/EF change.
 3. Update `AGENTS.md` work-state + close `docs/ZOHO_SIGNUP_REDESIGN_PHASE_C_PLAN.md` §8 items.
 
 ## Non-goals (deferred, unchanged)
-- WhatsApp/Twilio/push delivery (no provider keys) · CAD preview · subdomain
+- WhatsApp/Twilio/push delivery (no provider keys) · subdomain
   white-label · mobile app / Play Store · V4/V5 industry depth.
+
+> **Updated 2026-08-20**: CAD preview is **no longer deferred** — base preview
+> shipped `ef4e601` (2026-08-15) and the depth pass shipped `6727d0b` (BLOCK→
+> INSERT expansion, ACI/LAYER colors, MTEXT, ELLIPSE, layer-count + warnings in
+> `CadPreviewModal`; `parseDxfDoc`/`aciColor`/`resolveStroke`/`layerCounts`;
+> 42 dxf tests; smoke 455; PR #3 squash → prod, live 200).
 
 ## Do-not-commit artifacts (updated 2026-08-20)
 `AGENTIC_LOOPING_METHODOLOGY.md`, `e2eout.txt`, `error.txt`, `tmp.txt`,
