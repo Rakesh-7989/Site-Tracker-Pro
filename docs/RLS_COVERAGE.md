@@ -1,6 +1,6 @@
 # RLS Coverage Matrix — auto-generated
 
-> Generated 2026-08-18T22:34:20.221Z by `node scripts/rls-coverage.mjs` (Phase 0 / 0.8 — SEC-02 + DB-05; Phase 1.1 — RBAC V2 shadow).
+> Generated 2026-08-20T07:34:06.881Z by `node scripts/rls-coverage.mjs` (Phase 0 / 0.8 — SEC-02 + DB-05; Phase 1.1 — RBAC V2 shadow).
 > **Do not edit by hand.** Regenerate with `npm run check:rls:coverage`.
 
 ## Summary
@@ -8,9 +8,9 @@
 - Public tables: **150**
 - RLS enabled (or allowlisted infra): **150 / 150** (100%)
 - Tables exposing authenticated/anon DML without RLS: **0** ✅
-- Policies: **422** (SELECT 178 / INSERT 66 / UPDATE 56 / DELETE 36 / ALL 86)
+- Policies: **421** (SELECT 177 / INSERT 66 / UPDATE 56 / DELETE 36 / ALL 86)
 - Permissive-ALL write policies: **86**
-- Policies referencing a RBAC V2 shadow gate (Policy-Core): **20** across **5** tables
+- Policies referencing a RBAC V2 shadow gate (Policy-Core): **19** across **5** tables
 - Capabilities in app catalog: **119**
 - Capability tokens in the RLS map: **26**
 - Drift (RLS-map tokens missing from capabilities.ts): **0** ✅
@@ -32,11 +32,11 @@
 | branding | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | budget_changes | ✅ | 1 | 1 | 1 | 0 | 0 | 0 | 3 | 0 | INSERT,SELECT,UPDATE | — |
 | buildings | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
-| buildnow_anchors | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | — |
+| buildnow_anchors | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | — | — |
 | cashfree_events | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | — | — |
 | change_orders | ✅ | 2 | 0 | 0 | 0 | 2 | 2 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | checklist_items | ✅ | 2 | 0 | 0 | 0 | 2 | 2 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
-| client_portal_permissions | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| client_portal_permissions | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | collection_documents | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 4 | DELETE,INSERT,SELECT | — |
 | comments | ✅ | 1 | 1 | 1 | 0 | 0 | 0 | 3 | 0 | — | — |
 | compliance | ✅ | 2 | 0 | 0 | 0 | 2 | 2 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
@@ -48,11 +48,11 @@
 | deliverables | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | design_workflow | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | diary | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | — | — |
-| digest_dispatches | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | SELECT | — |
-| digest_subscriptions | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| digest_dispatches | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | SELECT | — |
+| digest_subscriptions | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | download_events | ✅ | 1 | 1 | 0 | 0 | 0 | 0 | 2 | 0 | INSERT,SELECT | — |
-| dpr_delivery_log | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | SELECT | — |
-| dpr_messages | ✅ | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | INSERT,SELECT,UPDATE | — |
+| dpr_delivery_log | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | SELECT | — |
+| dpr_messages | ✅ | 1 | 1 | 1 | 0 | 0 | 0 | 3 | 0 | INSERT,SELECT,UPDATE | — |
 | drawing_comments | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | drawings | ✅ | 3 | 1 | 1 | 0 | 1 | 1 | 6 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | equipment | ✅ | 2 | 0 | 0 | 0 | 2 | 2 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
@@ -95,7 +95,7 @@
 | org_invitations | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | — | — |
 | org_member_roles | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | org_members | ✅ | 1 | 0 | 0 | 0 | 3 | 3 | 3 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
-| org_rbac_settings | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| org_rbac_settings | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | org_role_capabilities | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | org_roles | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | organizations | ✅ | 2 | 1 | 1 | 1 | 0 | 0 | 4 | 0 | SELECT | — |
@@ -107,23 +107,23 @@
 | platform_feature_flags | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | platform_settings | ✅ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | — |
 | po_receipts | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
-| procurement_quotes | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 4 | DELETE,INSERT,SELECT,UPDATE | — |
+| procurement_quotes | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 3 | DELETE,INSERT,SELECT,UPDATE | — |
 | profiles | ✅ | 2 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | SELECT,UPDATE | — |
 | project_access_requests | ✅ | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | INSERT,SELECT,UPDATE | — |
 | project_members | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | projects | ✅ | 1 | 2 | 2 | 0 | 0 | 0 | 5 | 0 | INSERT,SELECT,UPDATE | — |
 | punch | ✅ | 2 | 0 | 0 | 0 | 2 | 2 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
-| purchase_orders | ✅ | 4 | 1 | 1 | 0 | 1 | 1 | 6 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| purchase_orders | ✅ | 3 | 1 | 1 | 0 | 1 | 1 | 6 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | ra_bills | ✅ | 2 | 1 | 0 | 0 | 1 | 1 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | rate_cards | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | rbac_capabilities | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | SELECT | — |
-| rbac_profile_assignments | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
-| rbac_profile_bindings | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
-| rbac_role_profiles | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| rbac_profile_assignments | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| rbac_profile_bindings | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| rbac_role_profiles | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | research_collections | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 4 | DELETE,INSERT,SELECT,UPDATE | — |
 | research_documents | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 4 | DELETE,INSERT,SELECT,UPDATE | — |
 | resend_delivery_events | ✅ | 1 | 1 | 0 | 0 | 0 | 0 | 1 | 0 | SELECT | — |
-| resource_acl_entries | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| resource_acl_entries | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | retainers | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | review_rounds | ✅ | 1 | 1 | 1 | 0 | 0 | 0 | 3 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | rfi | ✅ | 2 | 0 | 0 | 0 | 2 | 2 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
@@ -158,7 +158,7 @@
 | user_project_locations | ✅ | 1 | 1 | 1 | 1 | 0 | 0 | 4 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | vendor_performance | ✅ | 1 | 1 | 1 | 0 | 0 | 0 | 3 | 0 | INSERT,SELECT,UPDATE | — |
 | vendor_profiles | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | SELECT | — |
-| vendor_project_scopes | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 1 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
+| vendor_project_scopes | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | vendors | ✅ | 1 | 0 | 0 | 0 | 1 | 1 | 2 | 0 | DELETE,INSERT,SELECT,UPDATE | — |
 | voice_transcripts | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | — |
 | whatsapp_log | ✅ | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | — | — |
