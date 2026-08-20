@@ -10,7 +10,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-import { Card, Icon, Badge } from "@/components/ui/atoms";
+import { Card, Icon, Badge, Spinner } from "@/components/ui/atoms";
 import { usePlanCaps } from "./usePlanCaps";
 import { PLAN_FEATURE_LABEL, FEATURE_MIN_PLAN, type PlanFeature } from "./planCaps";
 
@@ -18,7 +18,11 @@ const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", busines
 
 export function PlanGate({ feature, children, fallback }: { feature: PlanFeature; children: ReactNode; fallback?: ReactNode }): JSX.Element {
   const { can, loading } = usePlanCaps();
-  if (loading || can(feature)) return <>{children}</>;
+  // SEC-05 fail-closed: while plan caps load we render a neutral placeholder —
+  // never children (would grant before the caps are known) and never the
+  // upsell card (would flash "upgrade" at a legitimately-entitled user).
+  if (loading) return <PlanGateLoading label={PLAN_FEATURE_LABEL[feature]} />;
+  if (can(feature)) return <>{children}</>;
   if (fallback !== undefined) return <>{fallback}</>;
   const needs = PLAN_LABEL[FEATURE_MIN_PLAN[feature]] ?? "a higher";
   return (
@@ -32,6 +36,18 @@ export function PlanGate({ feature, children, fallback }: { feature: PlanFeature
       <Link to="/org/billing" className="inline-block mt-4 text-sm font-semibold text-white bg-accent hover:bg-accent-2 px-4 py-2 rounded-lg transition">
         View plans & upgrade →
       </Link>
+    </Card>
+  );
+}
+
+/** Neutral "checking plan" placeholder — the fail-closed loading state. */
+function PlanGateLoading({ label }: { label: string }): JSX.Element {
+  return (
+    <Card className="p-6 text-center max-w-md mx-auto">
+      <div className="flex items-center justify-center gap-2 text-fg-secondary text-sm">
+        <Spinner size={16} />
+        <span>Checking {label} on your plan…</span>
+      </div>
     </Card>
   );
 }

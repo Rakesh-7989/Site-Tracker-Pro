@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
 import { getClient } from "@/lib/supabase";
@@ -96,7 +96,7 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
                       <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>
                     </button>
                   ) : <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>}
-                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${tk.id}`, c => deleteTask(c, tk.id), { apply: () => setRows(prev => prev.filter(x => x.id !== tk.id)), rollback: () => setRows(prev => [...prev, tk]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${tk.id}`, c => deleteTask(c, tk.id), { apply: () => setRows(prev => prev.filter(x => x.id !== tk.id)), rollback: () => setRows(prev => [...prev, tk]) })}><span className="text-error">✕</span></Button>}
                 </div>
               </Card>
             ))}

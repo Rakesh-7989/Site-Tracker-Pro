@@ -53,7 +53,11 @@ function ResultsPanel({ checklistId, canManage }: { checklistId: string; canMana
   };
 
   const toggle = async (r: InspectionResult) => {
-    const next = (r.result === "pass" ? "fail" : r.result === "fail" ? "na" : "pass") as ResultVerdict;
+    // Cycle: pass → fail → na → pass (only when managing)
+    const order: ResultVerdict[] = ["pass", "fail", "na"];
+    const currentIndex = order.indexOf(r.result as ResultVerdict);
+    const nextIndex = (currentIndex + 1) % order.length;
+    const next = order[nextIndex];
     await run(`v-${r.id}`, c => setResultVerdict(c, r.id, next));
   };
 
@@ -169,12 +173,14 @@ export function AuditTab({ projectId }: { projectId: string }) {
   if (loading) return <Spinner size={22} />;
   if (error) return <Alert variant="danger">{error}</Alert>;
 
+  const checklistTitle = editing ? t("audit.editChecklist") : t("audit.newChecklist");
+
   return (
     <div className="space-y-4">
       {canManage && (
         <div className="flex justify-end">
           <Button onClick={() => { setEditing(null); setCreating(true); }}>
-            {t("audit.newChecklist")}
+            {checklistTitle}
           </Button>
         </div>
       )}
@@ -219,7 +225,7 @@ export function AuditTab({ projectId }: { projectId: string }) {
       )}
 
       {creating && (
-        <Card padding="md" className="border-accent" title={<h4 className="font-display text-base font-bold text-fg-primary">{editing ? t("audit.editChecklist") : t("audit.newChecklist")}</h4>}>
+        <Card padding="md" className="border-accent" title={checklistTitle}>
           <SchemaForm
             key={editing?.id ?? "new"}
             schema={schema}

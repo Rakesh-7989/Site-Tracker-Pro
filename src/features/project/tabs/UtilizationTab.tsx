@@ -31,20 +31,32 @@ export function UtilizationTab({ projectId }: { projectId: string }): JSX.Elemen
       if (!client) { setError("Backend not configured."); setLoading(false); return; }
       const res = await getProjectUtilizationByPhase(client, projectId);
       if (!alive) return;
-      if (res.ok) setRows(res.data); else setError(res.error);
+      if (res.ok) setRows(res.data); else setError(res.error ?? "Failed to load utilization.");
       setLoading(false);
     })();
     return () => { alive = false; };
   }, [projectId]);
 
-  if (loading) return <div className="flex justify-center py-16"><Spinner size={28} /></div>;
+  if (loading) return (
+    <div className="flex justify-center py-16">
+      <Spinner size={28} />
+      <div className="mt-4 animate-pulse bg-elevated rounded-md h-12 w-48 mx-auto"></div>
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
+
+  if (rows.length === 0) return (
+    <div className="text-center py-20 text-fg-secondary">
+      <Spinner size={48} className="mx-auto mb-3" />
+      <p>No fee phases or billable time logged yet.</p>
+    </div>
+  );
 
   const fee = rows.reduce((s, r) => s + r.feeAmount, 0);
   const hours = rows.reduce((s, r) => s + r.loggedHours, 0);
   const value = rows.reduce((s, r) => s + r.billedValue, 0);
   const pct = fee > 0 ? Math.round((value / fee) * 100) : 0;
-  const variance = fee - value;
+  const variance = fee - value; // positive = under budget, negative = over
 
   const columns: Column<UtilizationPhaseRow>[] = [
     {
@@ -86,6 +98,8 @@ export function UtilizationTab({ projectId }: { projectId: string }): JSX.Elemen
     },
   ];
 
+  const varianceLabel = variance >= 0 ? "under budget" : "over budget";
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -104,7 +118,7 @@ export function UtilizationTab({ projectId }: { projectId: string }): JSX.Elemen
         <Card className="p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Utilization</div>
           <div className={`font-display text-xl font-bold tracking-editorial ${pct >= 100 ? "text-warning" : "text-success"}`}>{pct}%</div>
-          <div className="text-[10px] text-fg-tertiary">{fmtRupees(variance)} remaining</div>
+          <div className="text-[10px] text-fg-tertiary">{fmtRupees(variance)} {varianceLabel}</div>
         </Card>
       </div>
 

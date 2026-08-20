@@ -231,7 +231,7 @@ export function buildNav(session: AuthSession | null, catalog: NavItem[] = NAV_C
       : !item.requires || caps.has(item.requires);
     return capOk &&
     (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))) &&
-    (!item.area || !isMember || areas.length === 0 || areas.includes(item.area)) &&
+    (!item.area || !isMember || areas.includes(item.area)) &&
     (!item.stubId || isStaff) &&
     (!item.segments || (activeSegment !== null && item.segments.includes(activeSegment))) &&
     (!item.modules || activeModules === null || item.modules.some(m => activeModules.includes(m)));

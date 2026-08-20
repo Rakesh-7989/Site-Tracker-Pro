@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listCompliance, createCompliance, setComplianceStatus, deleteCompliance, type ComplianceItem, type ComplianceKind, type ComplianceStatus } from "@/app/siteAdminQueries";
 
@@ -63,7 +63,7 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as ComplianceStatus; void run(`s-${r.id}`, c => setComplianceStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STATUS_OPTS} />
                   : <Badge tone={tone(r.status)}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteCompliance(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteCompliance(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
               </div>
             </Card>))}</div>}
     </div>

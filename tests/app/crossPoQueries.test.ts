@@ -22,7 +22,7 @@ describe("getOrgPurchaseOrders", () => {
 });
 
 describe("poTotals", () => {
-  const mk = (amount: number, status: CrossPO["status"]): CrossPO => ({ id: "x", poNo: "", projectId: "p", projectName: "", vendorName: null, items: null, amount, status, createdDate: null, deliveryDate: null, receivedAmount: 0, openAmount: amount });
+  const mk = (amount: number, status: CrossPO["status"]): CrossPO => ({ id: "x", poNo: "", projectId: "p", projectName: "", vendorName: null, items: null, amount, status, createdDate: null, deliveryDate: null, receivedAmount: 0, openAmount: amount, requestedByName: null, approvedByName: null, approvedAt: null });
   it("sums value excluding cancelled + groups by status", () => {
     const t = poTotals([mk(100, "pending"), mk(200, "approved"), mk(50, "cancelled"), mk(300, "delivered")]);
     expect(t.count).toBe(4);

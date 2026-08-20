@@ -94,13 +94,13 @@ describe("buildNav", () => {
     expect(paths).not.toContain("/admin/staff");
   });
 
-  it("staff MEMBER with empty grants sees ALL admin areas (empty = full access)", () => {
+  it("staff MEMBER with empty grants sees NO admin areas (SEC-05 fail-closed — empty is not full access)", () => {
     const nav = buildNav(session({
       user: { id: "u", email: "a@b", name: "M", identityRole: "superadmin", isStaff: true, staffTier: "member", staffAreas: [] },
     }));
     const paths = nav.map(n => n.to);
     for (const p of ["/admin/signups", "/admin/users", "/admin/orgs", "/admin/roles", "/admin/upgrades"]) {
-      expect(paths).toContain(p);
+      expect(paths).not.toContain(p);
     }
   });
 

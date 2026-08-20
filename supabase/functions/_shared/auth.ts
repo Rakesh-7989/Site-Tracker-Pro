@@ -149,11 +149,14 @@ export async function authenticate(
     };
   }
 
-  // Fetch all org memberships.
+  // Fetch all ACTIVE org memberships (matches RLS user_org_ids() semantics —
+  // SEC-03: invited or removed memberships must not count for EF authz).
   const { data: orgRows, error: orgRowsErr } = await sb
     .from("org_members")
     .select("org_id, role")
-    .eq("profile_id", authUser.id);
+    .eq("profile_id", authUser.id)
+    .eq("status", "active")
+    .is("removed_at", null);
   if (orgRowsErr) {
     return {
       ok: false,

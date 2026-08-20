@@ -5,9 +5,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { Input, Select } from "@/components/ui/forms";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { Modal } from "@/components/ui/Modal";
-import { DiffView } from "@/features/shared/DiffView";
+import { Input, Select } from "@/components/ui/forms";
 import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
@@ -16,14 +16,14 @@ import {
 import { logDownloadEvent } from "@/app/downloadAuditQueries";
 import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
 import { resolveDiffPair } from "@/app/drawingDiffSources";
-import type { DiffImageSource } from "@/features/shared/DiffView";
+import { DiffView, type DiffImageSource } from "@/features/shared/DiffView";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
 import { isCadFileName } from "@/lib/dxfPreview";
 import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
 import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
 import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicitany
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "current", label: "Current" }, { value: "superseded", label: "Superseded" }];
@@ -95,8 +95,8 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const add = async () => {
     if (!title.trim() || !session) return;
     const tmpId = "tmp-" + Date.now();
-    const added: Drawing = { id: tmpId, projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null, designStage: "concept", supersededBy: null };
-    await run("add", c => createDrawing(c, { projectId, title: title.trim(), type, revision: rev.trim() || "Rev A", releasedBy: session.user.id }), {
+    const added: Drawing = { id: tmpId, projectId, title: title.trim(), type: type.trim(), revision: rev.trim() || "Rev A", status: "current" as DrawingStatus, releaseDate: new Date().toISOString().slice(0, 10), storagePath: null, previewUrl: null, designStage: "concept", supersededBy: null };
+    await run("add", c => createDrawing(c, { projectId, title: title.trim(), type: type.trim(), revision: rev.trim() || "Rev A", releasedBy: session.user.id }), {
       apply: () => setRows(prev => [added, ...applyAutoSupersede(prev, added)]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
@@ -176,8 +176,8 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
                 <Button size="sm" onClick={() => void run("appr-flow", c => approveDesignWorkflow(c, projectId, session?.user.id ?? ""), { apply: () => setFlow("approved"), rollback: () => void loadFlow() })} disabled={busy === "appr-flow" || flow === "approved"}>
                   {busy === "appr-flow" ? <Spinner size={14} /> : "Approve"}
                 </Button>
-              </div>
-          )}>
+          </div>
+        )}>
           <ol className="flex items-center gap-1 overflow-x-auto">
             {DESIGN_STAGES.map((s, i) => {
               const reached = DESIGN_STAGES.indexOf(flow) >= i;
@@ -206,71 +206,82 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
         ref={inputRef} type="file" className="hidden"
         onChange={(e) => void onPickFile(e)}
       />
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No drawings released.</div>
-        : <div className="space-y-2">{rows.map(r => (
-            <Card key={r.id} className={`p-3 ${r.status === "superseded" ? "opacity-60" : ""}`}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
-                  <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}{r.status === "superseded" && r.supersededBy ? ` · superseded by ${rows.find(x => x.id === r.supersededBy)?.revision ?? "newer revision"}` : ""}</div></div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
-                    : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}
-                  {canEdit && (
-                    <Select fit
-                      className="w-auto text-xs"
-                      value={r.designStage || "concept"}
-                      onChange={e => { const v = e.target.value; void run(`stg-${r.id}`, c => setDrawingStage(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: r.designStage } : x)) }); }}
-                      options={DESIGN_STAGES.map(s => ({ value: s, label: DESIGN_STAGE_LABEL[s] }))}
-                    />
-                  )}
-                  {canEdit && (
-                    <>
-                      <Button size="sm" variant="secondary" onClick={() => openPicker(r.id)} disabled={uploading === r.id || !uploadGate.canUpload}>
-                        {uploading === r.id ? <Spinner size={14} /> : <Icon name="upload" size={14} />}
-                        <span className="ml-1 hidden sm:inline">Attach</span>
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteDrawing(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-2 space-y-1">
-                {fileLoading === r.id ? (
-                  <div className="flex items-center gap-2 text-[11px] text-fg-tertiary"><Spinner size={12} /> Loading files…</div>
-                ) : (files[r.id] ?? []).length === 0 ? (
-                  <div className="text-[11px] text-fg-tertiary">No files attached.</div>
-                ) : (
-                  (files[r.id] ?? []).map(f => (
-                    <div key={f.name} className="flex items-center justify-between gap-2 rounded bg-bg-secondary px-2 py-1 text-[12px]">
-                      <span className="truncate text-fg-primary" title={f.name}>
-                        <Icon name="doc" size={13} className="mr-1.5 inline text-fg-tertiary" />
-                        {f.name}
-                        <span className="ml-1.5 text-fg-tertiary">{formatBytes(f.size)}</span>
-                      </span>
-                      <span className="flex items-center gap-1 flex-shrink-0">
-                        {isCadFileName(f.name) && (
-                          <Button size="sm" variant="ghost" onClick={() => setPreviewTarget({ id: r.id, name: f.name })} title="Preview">
-                            <Icon name="eye" size={14} />
-                          </Button>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => void download(r, f.name)} title="Download">
-                          <Icon name="download" size={14} />
-                        </Button>
-                        {canEdit && (
-                          <Button size="sm" variant="ghost" onClick={() => void removeFile(r, f.name)} title="Delete file">
-                            <Icon name="trash" size={13} className="text-error" />
-                          </Button>
-                        )}
-                      </span>
-                    </div>
-                  ))
+      {loading ? (
+        <div className="grid place-items-center py-10">
+          <Spinner size={22} />
+          <Skeleton className="animate-pulse bg-elevated rounded-md h-12 w-48 mx-auto" />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="text-center py-20 text-fg-secondary">
+          <Icon name="image" size={48} className="mx-auto mb-3 text-error" />
+          <p>No drawings released yet.</p>
+          <p className="text-[12px] text-fg-tertiary">Upload your first drawing using the form above.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">{rows.map(r => (
+          <Card key={r.id} className={`p-3 ${r.status === "superseded" ? "opacity-60" : ""}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.title} <Badge tone="neutral">{r.revision}</Badge></div>
+                <div className="text-[11px] text-fg-tertiary capitalize">{r.type}{r.releaseDate ? ` · ${r.releaseDate}` : ""}{r.status === "superseded" && r.supersededBy ? ` · superseded by ${rows.find(x => x.id === r.supersededBy)?.revision ?? "newer revision"}` : ""}</div></div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as DrawingStatus; void run(`s-${r.id}`, c => setDrawingStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
+                  : <Badge tone={r.status === "current" ? "success" : "neutral"}>{r.status}</Badge>}
+                {canEdit && (
+                  <Select fit
+                    className="w-auto text-xs"
+                    value={r.designStage || "concept"}
+                    onChange={e => { const v = e.target.value; void run(`stg-${r.id}`, c => setDrawingStage(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, designStage: r.designStage } : x)) }); }}
+                    options={DESIGN_STAGES.map(s => ({ value: s, label: DESIGN_STAGE_LABEL[s] }))}
+                  />
+                )}
+                {canEdit && (
+                  <>
+                    <Button size="sm" variant="secondary" onClick={() => openPicker(r.id)} disabled={uploading === r.id || !uploadGate.canUpload}>
+                      {uploading === r.id ? <Spinner size={14} /> : <Icon name="upload" size={14} />}
+                      <span className="ml-1 hidden sm:inline">Attach</span>
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteDrawing(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>
+                  </>
                 )}
               </div>
-            </Card>))}</div>}
+            </div>
 
-      <Modal open={compareOpen} onClose={() => setCompareOpen(false)} size="full" title="Compare drawing revisions" subtitle={pairs[pairIndex] ? `${pairs[pairIndex].old.title} (${pairs[pairIndex].old.type})` : undefined}>
+            <div className="mt-2 space-y-1">
+              {fileLoading === r.id ? (
+                <div className="flex items-center gap-2 text-[11px] text-fg-tertiary"><Spinner size={12} /> Loading files…</div>
+              ) : (files[r.id] ?? []).length === 0 ? (
+                <div className="text-[11px] text-fg-tertiary">No files attached.</div>
+              ) : (
+                (files[r.id] ?? []).map(f => (
+                  <div key={f.name} className="flex items-center justify-between gap-2 rounded bg-bg-secondary px-2 py-1 text-[12px]">
+                    <span className="truncate text-fg-primary" title={f.name}>
+                      <Icon name="doc" size={13} className="mr-1.5 inline text-fg-tertiary" />
+                      {f.name}
+                      <span className="ml-1.5 text-fg-tertiary">{formatBytes(f.size)}</span>
+                    </span>
+                    <span className="flex items-center gap-1 flex-shrink-0">
+                      {isCadFileName(f.name) && (
+                        <Button size="sm" variant="ghost" onClick={() => setPreviewTarget({ id: r.id, name: f.name })} title="Preview">
+                          <Icon name="eye" size={14} />
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => void download(r, f.name)} title="Download">
+                        <Icon name="download" size={14} />
+                      </Button>
+                      {canEdit && (
+                        <Button size="sm" variant="ghost" onClick={() => void removeFile(r, f.name)} title="Delete file">
+                          <Icon name="trash" size={13} className="text-error" />
+                        </Button>
+                      )}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>))}</div>
+      )}
+
+      <Modal open={compareOpen} onClose={() => setCompareOpen(false)} size="full" title="Compare drawing revisions" subtitle={pairs[pairIndex] ? `${pairs[pairIndex].old.title} (${pairs[pairIndex].old.type})` : undefined} ariaLabel="Compare drawing revisions">
         {pairs.length > 0 ? (
           <div className="flex flex-col gap-3">
             <Select fit

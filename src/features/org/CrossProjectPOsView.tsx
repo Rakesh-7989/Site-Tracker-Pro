@@ -38,7 +38,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     { key: "po", header: "PO", render: (po: CrossPO) => (
       <div>
         <div className="text-sm font-semibold text-fg-primary truncate">{po.poNo}{po.vendorName ? ` \u00b7 ${po.vendorName}` : ""}</div>
-        <div className="text-[11px] text-fg-tertiary truncate">{po.projectName}{po.items ? ` \u00b7 ${po.items}` : ""}{po.deliveryDate ? ` \u00b7 due ${po.deliveryDate}` : ""}</div>
+        <div className="text-[11px] text-fg-tertiary truncate">{[po.projectName, po.items, po.deliveryDate && `due ${po.deliveryDate}`, po.requestedByName && `by ${po.requestedByName}`, po.approvedByName && `approved ${po.approvedByName}${po.approvedAt ? ` ${String(po.approvedAt).slice(0, 10)}` : ""}`].filter(Boolean).join(" \u00b7 ") || "—"}</div>
       </div>
     )},
     { key: "amount", header: "Amount", render: (po: CrossPO) => (

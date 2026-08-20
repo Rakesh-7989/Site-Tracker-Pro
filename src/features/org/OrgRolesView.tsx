@@ -21,6 +21,8 @@ export function OrgRolesView(): JSX.Element {
   });
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
+  // SEC-05: plan caps still resolving → hold the spinner, don't flash AccessDenied.
+  if (planLoading) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!canManage) return <AccessDenied message="Org admin access required." />;
 
   return (

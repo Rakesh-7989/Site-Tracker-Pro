@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listLedger, createLedgerTxn, deleteLedgerTxn, stockRows, type LedgerTxn, type LedgerDirection } from "@/app/financeQueries";
 import { buildCsv, downloadCsv, csvDateStamp } from "@/lib/genericCsv";
@@ -98,7 +98,7 @@ export function LedgerTab({ projectId }: { projectId: string }): JSX.Element {
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate flex items-center gap-2"><Badge tone={dirTone(r.direction)}>{r.direction}</Badge>{r.material} · {r.qty}{r.unit ? ` ${r.unit}` : ""}</div>
                 <div className="text-[11px] text-fg-tertiary">{r.txnDate}{r.refNo ? ` · ${r.refNo}` : ""}{r.issuedTo ? ` · → ${r.issuedTo}` : ""}{r.recordedByName ? ` · by ${r.recordedByName}` : ""}{r.notes ? ` · ${r.notes}` : ""}</div></div>
-              {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLedgerTxn(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+              {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLedgerTxn(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
             </Card>))}</div>}
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listAttendance, createAttendance, setAttendanceStatus, deleteAttendance, type AttendanceRow, type AttendanceStatus, type AttendeeKind } from "@/app/attendanceQueries";
 import { listShiftRoster, createShiftRoster, deleteShiftRoster, SHIFT_LABEL, type ShiftRoster, type ShiftName } from "@/app/shiftQueries";
@@ -66,7 +66,7 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => void run(`s-${r.id}`, c => setAttendanceStatus(c, r.id, e.target.value as AttendanceStatus))} options={STT} />
                   : <span className="text-xs text-fg-secondary">{r.status.replace("_", " ")}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteAttendance(c, r.id))}><Icon name="trash" size={14} className="text-error" /></Button>}
+                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteAttendance(c, r.id))}><span className="text-error">✕</span></Button>}
               </div>
             </Card>))}</div>}
       <Card padding="sm" title={<h3 className="text-sm font-bold text-fg-primary">Shift roster</h3>} action={shifts.length > 0 ? <span className="text-xs text-fg-secondary">{shifts.length} scheduled</span> : undefined}>
@@ -86,7 +86,7 @@ export function AttendanceTab({ projectId }: { projectId: string }): JSX.Element
                 <div className="min-w-0"><span className="font-medium text-fg-primary">{s.workerName}</span> <span className="text-xs text-fg-tertiary">· {fmtShift(s)}</span></div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-bg-secondary text-fg-secondary">{SHIFT_LABEL[s.shiftName]}</span>
-                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`sd-${s.id}`, c => deleteShiftRoster(c, s.id))}><Icon name="trash" size={14} className="text-error" /></Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`sd-${s.id}`, c => deleteShiftRoster(c, s.id))}><span className="text-error">✕</span></Button>}
                 </div>
               </div>))}</div>}
       </Card>

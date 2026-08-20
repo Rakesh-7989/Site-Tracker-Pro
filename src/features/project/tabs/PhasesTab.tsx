@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { fmtRupees } from "@/app/financeQueries";
 import {
@@ -129,7 +129,7 @@ export function PhasesTab({ projectId }: { projectId: string }): JSX.Element {
                 )}
                 {canManage && (
                   <Button size="sm" variant="ghost" onClick={() => void run(`d-${p.id}`, c => deleteFeePhase(c, p.id), { apply: () => setRows(prev => prev.filter(x => x.id !== p.id)), rollback: () => setRows(prev => [...prev, p]) })}>
-                    <Icon name="trash" size={14} className="text-error" />
+                    <span className="text-error">✕</span>
                   </Button>
                 )}
               </div>

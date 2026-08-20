@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Spinner, Alert, Badge, AccessDenied } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Input, Textarea } from "@/components/ui/forms";
 import { listMoodBoards, upsertMoodBoard, deleteMoodBoard, type MoodBoard } from "@/app/interiorQueries";
 
@@ -28,13 +28,11 @@ export function MoodBoardsTab({ projectId }: { projectId: string }): JSX.Element
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await listMoodBoards(client, projectId);
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
   }, [projectId]);
-
   useEffect(() => { void reload(); }, [reload]);
 
   const { busy, run } = useAction(reload, setError);
@@ -113,7 +111,11 @@ export function MoodBoardsTab({ projectId }: { projectId: string }): JSX.Element
       {loading ? (
         <div className="grid place-items-center py-10"><Spinner size={22} /></div>
       ) : rows.length === 0 ? (
-        <div className="text-sm text-fg-secondary">No mood boards yet.{canManage ? " Add the first one above." : ""}</div>
+        <div className="text-center py-20 text-fg-secondary">
+          <span className="text-4xl mb-3">🏠</span>
+          <p>No mood boards yet.</p>
+          <p className="text-[12px] text-fg-tertiary">Add the first one using the form above.</p>
+        </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map(b => (

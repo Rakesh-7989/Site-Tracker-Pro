@@ -1,10 +1,12 @@
 // SiteTrack Pro — usePlanCaps hook + useCanByPlan.
 //
 // Loads the active org's plan + feature_caps and exposes a per-feature check.
-// Fail-open is deliberate: while loading OR if the fetch errors, caps are null
-// and callers should treat features as available until proven gated — we never
-// want a transient fetch failure to hide a paid feature the org actually has.
-// The hard enforcement for dangerous actions lives server-side (planCheck.ts).
+// Fail-closed (SEC-05): while loading OR if the fetch errors, `can` returns
+// false — a feature is only available once its plan caps are positively known.
+// The gate components (PlanGate/QuotaGate) render a loading placeholder while
+// caps fetch, so there is no "access denied" flicker and no accidental grant
+// on a transient miss. Hard enforcement for dangerous/paid actions stays
+// server-side (planCheck.ts, also fail-closed after SEC-05).
 
 import { useEffect, useState } from "react";
 
@@ -22,7 +24,7 @@ export interface UsePlanCapsReturn {
   plan: string | null;
   caps: Record<string, unknown> | null;
   loading: boolean;
-  /** Does the active org's plan unlock this feature? Unknown while loading → true (fail-open in UI). */
+  /** Does the active org's plan unlock this feature? Unknown (loading/error) → false (fail-closed). */
   can: (feature: PlanFeature) => boolean;
   /** Numeric limit (null = unlimited / unknown). */
   limit: (key: PlanLimit) => number | null;
@@ -60,8 +62,9 @@ export function usePlanCaps(): UsePlanCapsReturn {
     plan: state?.plan ?? null,
     caps: state?.caps ?? null,
     loading,
-    // Fail-open while loading / unknown: don't hide a feature on a transient miss.
-    can: (feature: PlanFeature) => (loading || !state ? true : hasPlanCap(state.caps, feature)),
+    // Fail-closed (SEC-05): only grants when plan caps are positively known.
+    // `state` is null while loading AND after a fetch failure, so both deny.
+    can: (feature: PlanFeature) => !!state && hasPlanCap(state.caps, feature),
     limit: (key: PlanLimit) => planLimit(state?.caps, key),
     trialActive: !!state?.trialActive,
     trialEndsAt: state?.trialEndsAt ?? null,

@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { fmtRupees } from "@/app/financeQueries";
 import { listBoq } from "@/app/siteAdminQueries";
@@ -13,36 +13,14 @@ import { listEstimates, createEstimate, setEstimateStatus, deleteEstimate, estim
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
+
 const NEXT: Record<EstimateStatus, EstimateStatus> = { draft: "submitted", submitted: "approved", approved: "superseded", superseded: "draft", rejected: "draft" };
-const tone = (s: EstimateStatus): "neutral" | "info" | "success" | "danger" => (s === "approved" ? "success" : s === "submitted" ? "info" : s === "rejected" ? "danger" : "neutral");
+const STATUS_TONE: Record<EstimateStatus, "neutral" | "success" | "info" | "danger"> = {
+  draft: "neutral", submitted: "info", approved: "success", superseded: "info", rejected: "danger",
+};
+const getTone = (s: EstimateStatus) => STATUS_TONE[s];
 
-const pct = (v: string): number => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : 0; };
-
-/** Compact breakdown line for a build-up estimate row. */
-export function buildUpLine(up: EstimateBuildUp): string {
-  return `base ${fmtRupees(up.baseAmount)} · +${up.markupPct}% · +${up.overheadPct}% OH · +${up.contingencyPct}% · GST ${up.gstPct}%`;
-}
-
-function BuildUpPreview({ up }: { up: EstimateBuildUp }): JSX.Element {
-  const rows: Array<[string, string, boolean]> = [
-    ["BOQ base", fmtRupees(up.baseAmount), false],
-    [`Markup (${up.markupPct}%)`, fmtRupees(up.markup), true],
-    [`Overhead (${up.overheadPct}%)`, fmtRupees(up.overhead), true],
-    [`Contingency (${up.contingencyPct}%)`, fmtRupees(up.contingency), true],
-    [`Subtotal`, fmtRupees(up.subtotal), false],
-    [`GST (${up.gstPct}%)`, fmtRupees(up.gst), true],
-    [`Grand total`, fmtRupees(up.total), false],
-  ];
-  return (
-    <div className="mt-2 w-full max-w-sm rounded-lg bg-bg-secondary/60 px-3 py-2 text-[11px]">
-      {rows.map(([label, val, dim]) => (
-        <div key={label} className={`flex items-center justify-between gap-3 ${dim ? "text-fg-tertiary" : label === "Grand total" ? "font-bold text-fg-primary" : "text-fg-secondary"}`}>
-          <span>{label}</span><span>{val}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+function pct(v: string): number { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : 0; }
 
 export function EstimateTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
@@ -68,6 +46,7 @@ export function EstimateTab({ projectId }: { projectId: string }): JSX.Element {
     setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
+
   const { busy, run } = useAction(reload, setError);
 
   const up = useMemo<EstimateBuildUp>(() => estimateBuildUp({ baseAmount: boqTotal, markupPct: pct(markupPct), overheadPct: pct(overheadPct), contingencyPct: pct(contingencyPct), gstPct: pct(gstPct) }), [boqTotal, markupPct, overheadPct, contingencyPct, gstPct]);
@@ -100,24 +79,49 @@ export function EstimateTab({ projectId }: { projectId: string }): JSX.Element {
             {boqLoading ? <span className="text-[11px] text-fg-tertiary">Loading BOQ base…</span>
               : boqTotal <= 0 ? <span className="text-[11px] text-warning">Add BOQ line items first — the estimate base is the BOQ total.</span>
               : <span className="text-[11px] text-fg-secondary">Base (BOQ total): <b className="text-fg-primary">{fmtRupees(boqTotal)}</b></span>}
-            <BuildUpPreview up={up} />
+            <span className="text-[11px] text-fg-tertiary mt-2">Markup: {markupPct}% | Overhead: {overheadPct}% | Contingency: {contingencyPct}% | GST: {gstPct}%</span>
           </div>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
-        : rows.length === 0 ? <div className="text-sm text-fg-secondary">No estimates.</div>
-        : <div className="space-y-2">{rows.map(r => (
+
+      {loading ? (
+        <div className="grid place-items-center py-10">
+          <Spinner size={22} />
+          <span className="text-fg-secondary animate-pulse">Loading…</span>
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="text-center py-20 text-fg-secondary">
+          <span className="text-4xl mb-3">📋</span>
+          <p>No estimates yet.</p>
+          <p className="text-[12px] text-fg-tertiary">Create the first estimate using the form above (BOQ must have line items).</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.name} <span className="text-[11px] text-fg-tertiary font-normal">v{r.version}</span></div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-fg-primary truncate">{r.name} <span className="text-[11px] text-fg-tertiary font-normal">v{r.version}</span></div>
                 <div className="text-[11px] text-fg-secondary">{fmtRupees(r.totalAmount)}</div>
-                {r.baseAmount != null && <div className="mt-0.5 text-[11px] text-fg-tertiary truncate">{buildUpLine({ baseAmount: r.baseAmount, markupPct: r.markupPct, overheadPct: r.overheadPct, contingencyPct: r.contingencyPct, gstPct: r.gstPct, markup: 0, overhead: 0, contingency: 0, subtotal: 0, gst: 0, total: r.totalAmount })}</div>}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {canEdit ? <button type="button" disabled={busy === `s-${r.id}`} onClick={() => { const ns = NEXT[r.status]; void run(`s-${r.id}`, c => setEstimateStatus(c, r.id, ns), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: ns } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }}><Badge tone={tone(r.status)}>{r.status}</Badge></button>
-                  : <Badge tone={tone(r.status)}>{r.status}</Badge>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEstimate(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                {canEdit ? (
+                  <button type="button" disabled={busy === `s-${r.id}`} onClick={() => {
+                    const ns = NEXT[r.status]; void run(`s-${r.id}`, c => setEstimateStatus(c, r.id, ns), {
+                      apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: ns } : x)),
+                      rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)),
+                    });
+                  }}><Badge tone={getTone(r.status)}>{r.status}</Badge></button>
+                ) : (
+                  <Badge tone={getTone(r.status)}>{r.status}</Badge>
+                )}
+                {canEdit && (
+                  <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteEstimate(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>
+                )}
               </div>
-            </Card>))}</div>}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -20,9 +20,9 @@ const FRONTEND = process.argv[2] || "https://sitetrack-rakesh.vercel.app";
 
 // Pull the public Supabase URL + anon key from the committed public config
 // (RLS-safe — same values every browser already downloads).
-const cfg = readFileSync(join(process.cwd(), "src/lib/supabasePublicConfig.js"), "utf8");
-const SUPABASE_URL = (cfg.match(/PUBLIC_SUPABASE_URL\s*=\s*"([^"]+)"/) || [])[1];
-const ANON = (cfg.match(/PUBLIC_SUPABASE_ANON_KEY\s*=\s*"([^"]+)"/) || [])[1];
+const cfg = readFileSync(join(process.cwd(), "src/lib/supabasePublicConfig.ts"), "utf8");
+const SUPABASE_URL = (cfg.match(/PUBLIC_SUPABASE_URL[^\n=]*=\s*"([^"]+)"/) || [])[1];
+const ANON = (cfg.match(/PUBLIC_SUPABASE_ANON_KEY[^\n=]*=\s*"([^"]+)"/) || [])[1];
 
 const TIMEOUT_MS = 15000;
 

@@ -8,6 +8,7 @@ import {
   pickActiveOrgId,
   buildAuthSession,
   fetchAuthSession,
+  fetchRbac2Context,
 } from "@/auth/fetchAuthSession";
 
 describe("normalizeProfile", () => {
@@ -197,9 +198,9 @@ function makeClient(handlers: Record<string, (q: { col?: string; value?: string 
         async maybeSingle() {
           return handlers[table]?.({ }) ?? { data: null, error: null };
         },
-        then(resolve: (v: { data: unknown; error: unknown | null }) => unknown) {
+        then(resolve: (v: { data: unknown; error: unknown | null }) => unknown, reject?: (e: unknown) => unknown) {
           const p = handlers[table]?.({ }) ?? Promise.resolve({ data: [], error: null });
-          return p.then(resolve);
+          return p.then(resolve, reject);
         },
       };
       return builder;
@@ -265,5 +266,84 @@ describe("fetchAuthSession", () => {
       expect(r.session.projectMemberships.length).toBe(1);
       expect(r.session.activeOrgId).toBe("o-1");
     }
+  });
+});
+
+// ── SEC-05 fail-closed: staff areas + RBAC2 context ──
+describe("fetchAuthSession staff areas (SEC-05)", () => {
+  function staffMemberClient(grantHandler?: () => Promise<{ data: unknown; error: unknown }>) {
+    return makeClient({
+      profiles: async () => ({ data: { id: "u-1", name: "S", role: "superadmin", avatar: null, is_staff: true, staff_tier: "member" }, error: null }),
+      staff_area_grants: async () => (grantHandler ? await grantHandler() : { data: [], error: null }),
+      org_members: async () => ({ data: [], error: null }),
+      project_members: async () => ({ data: [], error: null }),
+    });
+  }
+
+  it("member with grants gets exactly the granted areas", async () => {
+    const c = staffMemberClient(async () => ({
+      data: [{ area: "signups" }, { area: "users" }],
+      error: null,
+    }));
+    const r = await fetchAuthSession(c, { authUserId: "u-1", authUserEmail: "staff@site-trak" }, null);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.session.user.staffAreas).toEqual(["signups", "users"]);
+  });
+
+  it("member with EMPTY grants gets NO admin areas (was: all)", async () => {
+    const r = await fetchAuthSession(staffMemberClient(), { authUserId: "u-1", authUserEmail: "staff@site-trak" }, null);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.session.user.staffAreas).toEqual([]);
+  });
+
+  it("member whose grants fetch FAILS gets NO admin areas (fail-closed)", async () => {
+    const c = staffMemberClient(async () => {
+      throw new Error("connection lost");
+    });
+    const r = await fetchAuthSession(c, { authUserId: "u-1", authUserEmail: "staff@site-trak" }, null);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.session.user.staffAreas).toEqual([]);
+  });
+});
+
+describe("fetchRbac2Context (SEC-05 fail-closed)", () => {
+  function rbacClient(modeRow: unknown, aclHandler: () => Promise<{ data: unknown; error: unknown }> = async () => ({ data: [], error: null })) {
+    return makeClient({
+      org_rbac_settings: async () => ({ data: modeRow, error: null }),
+      rbac_profile_assignments: async () => ({ data: [], error: null }),
+      resource_acl_entries: aclHandler,
+      client_portal_permissions: async () => ({ data: [], error: null }),
+      vendor_project_scopes: async () => ({ data: [], error: null }),
+    });
+  }
+
+  it("returns undefined when no rbac mode row exists", async () => {
+    const ctx = await fetchRbac2Context(rbacClient(null), "u-1", "o-1");
+    expect(ctx).toBeUndefined();
+  });
+
+  it("returns undefined for matrix mode", async () => {
+    const ctx = await fetchRbac2Context(rbacClient({ mode: "matrix" }), "u-1", "o-1");
+    expect(ctx).toBeUndefined();
+  });
+
+  it("enforce mode with partial fetch failure returns enforce + fetchError", async () => {
+    const ctx = await fetchRbac2Context(
+      rbacClient({ mode: "enforce" }, async () => { throw new Error("acl query failed"); }),
+      "u-1",
+      "o-1",
+    );
+    expect(ctx).toBeDefined();
+    expect(ctx!.mode).toBe("enforce");
+    expect(ctx!.fetchError).toBe(true);
+    expect(ctx!.bindings).toEqual([]);
+    expect(ctx!.acl).toEqual([]);
+  });
+
+  it("enforce mode on the happy path does NOT set fetchError", async () => {
+    const ctx = await fetchRbac2Context(rbacClient({ mode: "enforce" }), "u-1", "o-1");
+    expect(ctx).toBeDefined();
+    expect(ctx!.mode).toBe("enforce");
+    expect(ctx!.fetchError).toBeUndefined();
   });
 });

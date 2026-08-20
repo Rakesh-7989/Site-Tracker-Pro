@@ -68,46 +68,89 @@ async function sendOrgWelcomeEmail(
   tempPassword: string,
   loginUrl: string,
 ): Promise<boolean> {
+  const smtpHost = Deno.env.get("SMTP_HOST");
+  const smtpPort = Deno.env.get("SMTP_PORT");
+  const smtpUser = Deno.env.get("SMTP_USER");
+  const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+
+  if (smtpHost && smtpPort && smtpUser && smtpPassword) {
+    // Send via SMTP
+    try {
+      const from = `"SiteTrack Pro" <${smtpUser}>`;
+      const socket = await Deno.net.connect({
+        hostname: smtpHost,
+        port: parseInt(smtpPort),
+      });
+
+      // Start TLS
+      await new Promise<void>((resolve, reject) => {
+        socket.secureAsyncResolve = resolve;
+        socket.secureAsyncReject = reject;
+        socket.startTLS({ hostname: smtpHost });
+      });
+
+      // Authenticate
+      const write = (data: string) => new Promise<void>((resolve, reject) => {
+        socket.write(new TextEncoder().encode(data + "\r\n"));
+        setTimeout(resolve, 1000);
+      });
+
+      const readLine = (): Promise<string> => new Promise((resolve) => {
+        let data = "";
+        socket.ondata = (event: any) => {
+          data += new TextDecoder().decode(event.data);
+          if (data.includes("\n")) {
+            const line = data.substring(0, data.indexOf("\n"));
+            socket.ondata = undefined;
+            resolve(line);
+          }
+        };
+      });
+
+      await readLine(); // 220
+      await write(`EHLO ${smtpHost}`);
+      await readLine(); // 250
+      await write(`AUTH LOGIN`);
+      await readLine(); // 334
+      await write(Buffer.from(smtpUser).toString("base64"));
+      await readLine(); // 334
+      await write(Buffer.from(smtpPassword).toString("base64"));
+      await readLine(); // 235
+
+      // Mail from
+      await write(`MAIL FROM:<${smtpUser}>`);
+      await readLine(); // 250
+
+      // RCPT TO
+      await write(`RCPT TO:<${to}>`);
+      await readLine(); // 250
+
+      // DATA
+      await write(`DATA`);
+      await readLine(); // 354
+
+      await write(`${html}\r\n.\r\n`);
+      await readLine(); // 250
+      await write(`QUIT`);
+      await readLine(); // 221
+
+      socket.close();
+      return true;
+    } catch (e) {
+      console.error("SMTP send failed, falling back to REST API", e);
+      // Fall through to REST API below
+    }
+  }
+
+  // Fall back to REST API
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return false;
-
   const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
-  const html = `
-    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto">
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="width:48px;height:48px;border-radius:12px;background:#ea580c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">S</div>
-      </div>
-      <h2 style="color:#1c1917;text-align:center">Your SiteTrack Pro workspace is ready</h2>
-      <p style="color:#57534e">Hi Team <b>${esc(orgName)}</b>,</p>
-      <p style="color:#57534e">Your organisation has been created on the <b>${esc(PLAN_LABEL[plan] || plan)}</b> plan. Below are your login credentials:</p>
-      <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#fafaf9;border-radius:8px;font-size:14px">
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Workspace</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(orgName)}</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Plan</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(PLAN_LABEL[plan] || plan)}</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c;border-bottom:1px solid #e7e5e4">Email</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;border-bottom:1px solid #e7e5e4">${esc(adminEmail)}</td></tr>
-        <tr><td style="padding:10px 16px;color:#78716c">Temporary password</td><td style="padding:10px 16px;font-weight:600;color:#1c1917;font-family:monospace;letter-spacing:1px">${esc(tempPassword)}</td></tr>
-      </table>
-      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13px;color:#991b1b">
-        <strong>Important:</strong> Please change your password after first login.
-      </div>
-      <p style="text-align:center;margin:28px 0">
-        <a href="${esc(loginUrl)}" style="background:#ea580c;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">
-          Sign in to SiteTrack Pro
-        </a>
-      </p>
-      <p style="color:#78716c;font-size:13px;text-align:center">If the button does not work, copy this URL:<br>${esc(loginUrl)}</p>
-      <p style="color:#78716c;font-size:13px;text-align:center">- Team SiteTrack Pro</p>
-    </div>`;
-
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        from,
-        to,
-        subject: `Your SiteTrack Pro workspace "${orgName}" is ready`,
-        html,
-      }),
+      body: JSON.stringify({ from, to, subject: `Your SiteTrack Pro workspace "${orgName}" is ready`, html }),
     });
     return r.ok;
   } catch {

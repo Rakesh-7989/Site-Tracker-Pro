@@ -14,12 +14,22 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 
-const env = Object.fromEntries(
-  readFileSync(join(process.cwd(), ".env.local"), "utf8").split(/\r?\n/)
-    .map(l => l.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/)).filter(Boolean)
-    .map(m => [m[1], m[2].replace(/^"|"$/g, "").trim()]));
+let DB_URL = process.env.SUPABASE_DB_URL;
+if (!DB_URL) {
+  try {
+    const env = Object.fromEntries(
+      readFileSync(join(process.cwd(), ".env.local"), "utf8").split(/\r?\n/)
+        .map(l => l.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/)).filter(Boolean)
+        .map(m => [m[1], m[2].replace(/^"|"$/g, "").trim()]));
+    DB_URL = env.SUPABASE_DB_URL;
+  } catch { /* no .env.local — rely on the env var */ }
+}
+if (!DB_URL) {
+  console.error("SUPABASE_DB_URL is not set (env or .env.local). Skipping RLS tests.");
+  process.exit(0);
+}
 
-const c = new pg.Client({ connectionString: env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
+const c = new pg.Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
 await c.connect();
 await c.query("reset role");
 

@@ -111,16 +111,95 @@ async function sendEmail(
   subject: string,
   htmlBody: string
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const smtpHost = Deno.env.get("SMTP_HOST");
+  const smtpPort = Deno.env.get("SMTP_PORT");
+  const smtpUser = Deno.env.get("SMTP_USER");
+  const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+
+  if (smtpHost && smtpPort && smtpUser && smtpPassword) {
+    // Send via SMTP
+    try {
+      const from = `"SiteTrack Pro" <${smtpUser}>`;
+      const socket = await Deno.net.connect({
+        hostname: smtpHost,
+        port: parseInt(smtpPort),
+      });
+
+      // Start TLS
+      await new Promise<void>((resolve, reject) => {
+        socket.secureAsyncResolve = resolve;
+        socket.secureAsyncReject = reject;
+        socket.startTLS({ hostname: smtpHost });
+      });
+
+      // Authenticate
+      const write = (data: string) => new Promise<void>((resolve, reject) => {
+        socket.write(new TextEncoder().encode(data + "\r\n"));
+        setTimeout(resolve, 1000);
+      });
+
+      const readLine = (): Promise<string> => new Promise((resolve) => {
+        let data = "";
+        socket.ondata = (event: any) => {
+          data += new TextDecoder().decode(event.data);
+          if (data.includes("\n")) {
+            const line = data.substring(0, data.indexOf("\n"));
+            socket.ondata = undefined;
+            resolve(line);
+          }
+        };
+      });
+
+      await readLine(); // 220
+      await write(`EHLO ${smtpHost}`);
+      await readLine(); // 250
+      await write(`AUTH LOGIN`);
+      await readLine(); // 334
+      await write(Buffer.from(smtpUser).toString("base64"));
+      await readLine(); // 334
+      await write(Buffer.from(smtpPassword).toString("base64"));
+      await readLine(); // 235
+
+      // Mail from
+      await write(`MAIL FROM:<${smtpUser}>`);
+      await readLine(); // 250
+
+      // RCPT TO
+      await write(`RCPT TO:<${to}>`);
+      await readLine(); // 250
+
+      // DATA
+      await write(`DATA`);
+      await readLine(); // 354
+
+      // Build email
+      const emailHtml = htmlBody;
+      await write(`${emailHtml}\r\n.\r\n`);
+      await readLine(); // 250
+      await write(`QUIT`);
+      await readLine(); // 221
+
+      socket.close();
+      return { ok: true, id: "smtp-" + Date.now() };
+    } catch (e) {
+      console.error("SMTP send failed, falling back to REST API", e);
+      // Fall through to REST API below
+    }
+  }
+
+  // Fall back to REST API
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return { ok: false, error: "RESEND_API_KEY not set" };
   const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-    body: JSON.stringify({ from, to, subject, html: htmlBody }),
-  });
-  const j = await res.json();
-  return res.ok ? { ok: true, id: j.id } : { ok: false, error: j.message };
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+      body: JSON.stringify({ from, to, subject, html: htmlBody }),
+    });
+    const j = await res.json();
+    return res.ok ? { ok: true, id: j.id } : { ok: false, error: j.message };
+  } catch { return { ok: false, error: "send-failed" }; }
 }
 
 async function sendSms(to: string, body: string): Promise<{ ok: boolean; sid?: string; error?: string }> {

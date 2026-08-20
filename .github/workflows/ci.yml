@@ -16,6 +16,21 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Stray-artifact guard: fail the build if known do-not-commit artifacts
+      # (captured CLI stderr dumps, temp probe/apply runners, scratch files)
+      # ever get committed again. Keeps the tree clean like the AGENTS.md
+      # "Do-not-commit artifacts" list.
+      - name: Stray-artifact guard
+        run: |
+          stray="$(git ls-files | grep -Ei '(^|/)(migration_status\.txt|test-output\.txt|e2eout\.txt|error\.txt|tmp\.txt|tsout[^/]*\.txt)$' || true)"
+          stray="$stray
+          $(git ls-files | grep -Ei 'scripts/(apply-(173|174|175|183|195|201)\.mjs|probe-(199|202)\.mjs|verify-(183|184|195)\.mjs|scan-card-headers\.mjs)$' || true)"
+          if [ -n "$(printf '%s' "$stray" | tr -d '[:space:]')" ]; then
+            echo "::error::Stray do-not-commit artifacts present in the tree:"
+            printf '%s\n' "$stray"
+            exit 1
+          fi
+          echo "No stray do-not-commit artifacts."
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
@@ -28,6 +43,12 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:columns
+      # RLS security proofs (SEC-02): run against the live DB inside
+      # rolled-back transactions. Skip cleanly when the secret is missing.
+      - name: RLS security tests
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run test:rls && npm run test:rls:project && npm run check:rls:coverage
       - run: npm run test:unit
 
   # The CI-runnable mocked role-access suite (real router + shell, mocked

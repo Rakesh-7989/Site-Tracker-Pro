@@ -29,7 +29,7 @@ const EMPTY = { name: "", area: "", notes: "" };
 function Installations({ roomId, canManage }: { roomId: string; canManage: boolean }): JSX.Element {
   const [rows, setRows] = useState<RoomInstallation[]>([]);
   const [item, setItem] = useState("");
-  const [planned, setPlanned] = useState("");
+  const [plannedStr, setPlannedStr] = useState("");
 
   const reload = useCallback(async () => {
     const client = await getClient(); if (!client) return;
@@ -42,8 +42,8 @@ function Installations({ roomId, canManage }: { roomId: string; canManage: boole
   const add = async () => {
     if (!item.trim()) return;
     const client = await getClient(); if (!client) return;
-    const r = await addInstallation(client, { roomId, item: item.trim(), plannedDate: planned || null });
-    if (r.ok) { setItem(""); setPlanned(""); void reload(); }
+    const r = await addInstallation(client, { roomId, item: item.trim(), plannedDate: plannedStr || null });
+    if (r.ok) { setItem(""); setPlannedStr(""); void reload(); }
   };
 
   const toggle = async (i: RoomInstallation) => {
@@ -60,7 +60,7 @@ function Installations({ roomId, canManage }: { roomId: string; canManage: boole
       {canManage && (
         <div className="flex flex-wrap gap-2 items-center">
           <Input fit className="w-48" placeholder="Item e.g. Wardrobe" value={item} onChange={e => setItem(e.target.value)} />
-          <Input fit type="date" className="w-36" value={planned} onChange={e => setPlanned(e.target.value)} />
+          <Input fit type="date" className="w-36" value={plannedStr} onChange={e => setPlannedStr(e.target.value)} />
           <Button size="sm" onClick={() => void add()} disabled={!item.trim()}>Add item</Button>
         </div>
       )}
@@ -69,11 +69,7 @@ function Installations({ roomId, canManage }: { roomId: string; canManage: boole
       ) : (
         rows.map(i => (
           <div key={i.id} className="flex items-center justify-between gap-2 rounded-lg bg-elevated px-2.5 py-1.5">
-            <div className="text-sm text-fg-primary truncate">
-              {i.item}
-              {i.plannedDate ? <span className="text-[11px] text-fg-tertiary"> · planned {i.plannedDate}</span> : ""}
-              {i.doneDate ? <span className="text-[11px] text-fg-tertiary"> · done {i.doneDate}</span> : ""}
-            </div>
+            <div className="text-sm text-fg-primary truncate">{i.item}</div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {canManage ? (
                 <button type="button" onClick={() => void toggle(i)} title="Advance status">
@@ -105,13 +101,11 @@ export function RoomsTab({ projectId }: { projectId: string }): JSX.Element {
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await listInteriorRooms(client, projectId);
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
   }, [projectId]);
-
   useEffect(() => { void reload(); }, [reload]);
 
   const { busy, run } = useAction(reload, setError);
@@ -203,7 +197,11 @@ export function RoomsTab({ projectId }: { projectId: string }): JSX.Element {
       {loading ? (
         <div className="grid place-items-center py-10"><Spinner size={22} /></div>
       ) : rows.length === 0 ? (
-        <div className="text-sm text-fg-secondary">No rooms yet.{canManage ? " Add the first one above." : ""}</div>
+        <div className="text-center py-20 text-fg-secondary">
+          <span className="text-4xl mb-3">🏗️</span>
+          <p>No rooms yet.</p>
+          <p className="text-[12px] text-fg-tertiary">Add the first one using the form above.</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {rows.map(r => (

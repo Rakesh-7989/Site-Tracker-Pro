@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
@@ -61,7 +61,7 @@ export function BoqTab({ projectId }: { projectId: string }): JSX.Element {
       key: "actions" as const, header: "", className: "flex-shrink-0",
       render: (r: BoqItem) => (
         <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteBoq(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>
-          <Icon name="trash" size={14} className="text-error" />
+          <span className="text-error">✕</span>
         </Button>
       ),
     }] : []),
