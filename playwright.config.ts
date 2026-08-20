@@ -7,7 +7,7 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "https://sitetrack-rakesh.vercel.app",
+    baseURL: "https://sitetrackpro.in",
     screenshot: "only-on-failure",
     trace: "on-first-retry",
   },

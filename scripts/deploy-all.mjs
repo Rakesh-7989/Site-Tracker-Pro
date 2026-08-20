@@ -2,7 +2,7 @@
 // SiteTrack Pro — interactive deploy driver.
 //
 // Walks through every step needed to take the codebase from "local dev only"
-// to "fully live at app.sitetrack.in + Supabase + Cashfree EFs + GH Actions
+// to "fully live at sitetrackpro.in + Supabase + Cashfree EFs + GH Actions
 // CI". Each step:
 //   1. Detects current state via a quick probe.
 //   2. If already done, prints ✅ and moves on.
@@ -238,14 +238,14 @@ info("  VITE_SUPABASE_ANON_KEY= <anon public key, NOT service_role>");
 info("Then redeploy: vercel --prod");
 await pause();
 
-// ── Step 9: DNS — app.sitetrack.in ─────────────────────────────────────
-step(9, "DNS — app.sitetrack.in");
-const appStatus = await head("https://app.sitetrack.in");
+// ── Step 9: DNS — sitetrackpro.in ─────────────────────────────────────
+step(9, "DNS — sitetrackpro.in");
+const appStatus = await head("https://sitetrackpro.in");
 if (appStatus === 200 || appStatus === 401) {
-  ok(`app.sitetrack.in responds HTTP ${appStatus}`);
+  ok(`sitetrackpro.in responds HTTP ${appStatus}`);
 } else {
-  warn(`app.sitetrack.in returns HTTP ${appStatus || "no-response"} — not pointed yet`);
-  action("In Vercel: Settings → Domains → Add 'app.sitetrack.in'");
+  warn(`sitetrackpro.in returns HTTP ${appStatus || "no-response"} — not pointed yet`);
+  action("In Vercel: Settings → Domains → Add 'sitetrackpro.in'");
   info("Vercel will give a CNAME like: CNAME app  →  cname.vercel-dns.com");
   info("Add it in your DNS provider (GoDaddy / BigRock / Cloudflare).");
   info("Propagation: 5-30 min.");
@@ -262,7 +262,7 @@ cmd("supabase secrets set CASHFREE_APP_ID=…");
 cmd("supabase secrets set CASHFREE_SECRET=…");
 cmd("supabase secrets set CASHFREE_WEBHOOK_SECRET=…");
 cmd("supabase secrets set CASHFREE_ENV=sandbox");
-cmd("supabase secrets set CASHFREE_ALLOWED_ORIGINS=https://app.sitetrack.in");
+cmd("supabase secrets set CASHFREE_ALLOWED_ORIGINS=https://sitetrackpro.in");
 info("Without Supabase CLI: paste files manually via Dashboard → Edge Functions");
 await pause();
 
@@ -270,8 +270,8 @@ await pause();
 step(11, "Final live probe");
 const urls = [
   ["https://github.com/Rakesh-7989/Site-Tracker-Pro", "GitHub repo"],
-  ["https://sitetrack.in", "Marketing site"],
-  ["https://app.sitetrack.in", "App SPA"],
+  ["https://sitetrackpro.in", "Marketing site"],
+  ["https://sitetrackpro.in", "App SPA"],
 ];
 for (const [u, label] of urls) {
   const code = await head(u);

@@ -19,7 +19,7 @@ sessions 30 → 30.4. Founder reference card — keep open while running Sprint
 | Edge Functions | 8 | **11** (whatsapp_dpr_send + voice_transcribe + buildnow_anchor) |
 | Marketing-site falsified claims | 11 | **0** |
 | Sprint 1 task list | 73 tasks | **88 tasks** — all completed except founder field-work in Days 3-15 |
-| Production URL | `sitetrack-rakesh.vercel.app` | Same, with **VITE_STAFF_EMAILS configured** + freeze gate live |
+| Production URL | `sitetrackpro.in` | Same, with **VITE_STAFF_EMAILS configured** + freeze gate live |
 | Stub views hidden from non-staff | 0 | **16** — see `docs/FEATURE_FREEZE.md` |
 | Pricing tiers | ₹999/2,999/7,999 monthly (falsified anchor) | **₹29,999/49,999/89,999/2,49,999+ annual per-org** — verified vs Powerplay |
 | Demo Hyderabad Builder org seeded in prod | No | **Yes** (`8eaaa1e7-c4e1-463c-9812-f5e48f5c1587`) |
@@ -50,7 +50,7 @@ The starting point was the user asking to fix login + signup auth professionally
 
 **Validation**: lint 0 errors, smoke 320/320, tests 556/556 → all PASS.
 
-**Deployed** to `https://sitetrack-rakesh.vercel.app`.
+**Deployed** to `https://sitetrackpro.in`.
 
 ---
 
@@ -214,7 +214,7 @@ Multi-phase orchestrated workflow:
 | Apply `49_feature_flags_freeze.sql` to prod Supabase | ✅ Applied — `staff_only_features` table + `is_staff` column + RPC + 16 seed rows + RLS live |
 | Run `seed-first-org.mjs` against prod | ✅ Org seeded `8eaaa1e7-c4e1-463c-9812-f5e48f5c1587` ("Demo Hyderabad Builder", slug `demo-hyderabad-builder`, plan `pro`) |
 | Set `VITE_STAFF_EMAILS=boyapatirakesh7989@gmail.com` in Vercel prod env | ✅ Added via `vercel env add` |
-| Build + deploy + alias to `sitetrack-rakesh.vercel.app` | ✅ Live |
+| Build + deploy + alias to `sitetrackpro.in` | ✅ Live |
 
 **Validation**: lint 0 errors, smoke 324/324 (+4 parity checks), tests 588/588 (+32 featureFlags tests), build clean.
 
@@ -325,8 +325,8 @@ Multi-phase orchestrated workflow:
 
 | Layer | Status |
 |-------|--------|
-| URL | `https://sitetrack-rakesh.vercel.app` |
-| Marketing | `https://sitetrack-rakesh.vercel.app/landing.html` — repositioned to Hyderabad-first / WhatsApp Telugu / BuildNow Telangana / per-org pricing |
+| URL | `https://sitetrackpro.in` |
+| Marketing | `https://sitetrackpro.in/landing.html` — repositioned to Hyderabad-first / WhatsApp Telugu / BuildNow Telangana / per-org pricing |
 | Auth | Magic-link + password + OTP fallback. Demo role logins permanently removed. 15+ Supabase errors mapped to friendly English |
 | Feature freeze gate | 16 stub views hidden from non-staff users (compliance, forecast, material-prices, ar-overlay, kiosks, broken-persistence admin surfaces) |
 | Staff bypass | Founder email `boyapatirakesh7989@gmail.com` in `VITE_STAFF_EMAILS` — sees full 16 stubs for QA |
@@ -406,7 +406,7 @@ Multi-phase orchestrated workflow:
 - **Tests**: 660/660 PASS across 33 test files (was 556; +104 new tests across featureFlags + voiceTranscribe + offlineQueue + buildnowAnchor)
 - **Build**: ~7-12s clean
 - **Migrations applied to prod Supabase**: 49 + 50 + 51 + 52 all live via `scripts/apply-only.mjs`
-- **Production URL**: ✅ `https://sitetrack-rakesh.vercel.app`
+- **Production URL**: ✅ `https://sitetrackpro.in`
 
 ---
 

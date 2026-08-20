@@ -30,7 +30,7 @@ if (!TOKEN) { console.error("❌ SUPABASE_ACCESS_TOKEN missing in .env.local"); 
 const url = env.VITE_SUPABASE_URL || "";
 const ref = (url.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1];
 if (!ref) { console.error(`❌ could not derive project ref from VITE_SUPABASE_URL (${url})`); process.exit(1); }
-const APP = (env.VITE_APP_URL || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
+const APP = (env.VITE_APP_URL || "https://sitetrackpro.in").replace(/\/+$/, "");
 
 const api = `https://api.supabase.com/v1/projects/${ref}/config/auth`;
 const headers = { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" };

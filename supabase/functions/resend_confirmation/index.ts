@@ -14,7 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
 
-const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,http://localhost:5173")
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrackpro.in,http://localhost:5173")
   .split(",").map(s => s.trim()).filter(Boolean);
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": ALLOWED[0] ?? "*",
@@ -44,7 +44,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // so this is the single send — no duplicate branded email. redirectTo =
   // canonical app URL (the default site_url is a stale preview URL). Throws if
   // the user is already confirmed or doesn't exist — surface as a friendly error.
-  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
+  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrackpro.in").replace(/\/+$/, "");
   let link: string;
   try {
     const { data, error } = await admin.auth.admin.generateLink({

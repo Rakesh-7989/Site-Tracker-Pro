@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Sprint 4 (Session 30.10) handover packet tests.
+// SiteTrack Pro — Sprint 4 (Session 30.10) handover packet tests.
 
 import { describe, it, expect } from "vitest";
 
@@ -151,7 +151,7 @@ describe("buildHandoverManifest()", () => {
 describe("verifyUrl()", () => {
   it("builds the canonical verify URL with root param", () => {
     const url = verifyUrl("0xabc123");
-    expect(url).toMatch(/^https:\/\/sitetrack\.in\/handover\/verify\?root=0xabc123/);
+    expect(url).toMatch(/^https:\/\/sitetrackpro\.in\/handover\/verify\?root=0xabc123/);
   });
 
   it("includes optional chain + tx params", () => {
@@ -172,7 +172,7 @@ describe("summarizeHandover()", () => {
     expect(s).toContain("Site photos: 1");
     expect(s).toContain("Payments total: ₹8,00,000");
     expect(s).toContain("Merkle root:");
-    expect(s).toContain("https://sitetrack.in/handover/verify?root=");
+    expect(s).toContain("https://sitetrackpro.in/handover/verify?root=");
   });
 });
 

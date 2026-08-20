@@ -63,7 +63,7 @@ insert into public.signup_requests (firm_name, contact_name, email, phone, plan,
 values (
   'Demo Builder — UPI Test',
   'Demo User',
-  'demo.upi@sitetrack.in',
+  'demo.upi@sitetrackpro.in',
   '9876543210',
   'pro',
   'Testing UPI payment flow end-to-end.',

@@ -184,7 +184,7 @@ lines.push(`# SiteTrack Pro — Test User Credentials`);
 lines.push("");
 lines.push(`*Generated ${new Date().toISOString()} — DO NOT COMMIT.*`);
 lines.push("");
-lines.push(`**Production app:** https://sitetrack-rakesh.vercel.app`);
+lines.push(`**Production app:** https://sitetrackpro.in`);
 lines.push("");
 lines.push(`**How to test:**`);
 lines.push(`1. Hard reload the app (Ctrl+Shift+R).`);

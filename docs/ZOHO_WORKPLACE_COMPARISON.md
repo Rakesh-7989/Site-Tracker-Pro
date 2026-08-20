@@ -30,7 +30,7 @@ SiteTrack Pro has **two parallel signup paths** that coexist:
 3. Create organization row: `slug` (slugify firmName + random UUID suffix), `name`, `plan`, `billing_period`, `segment` (if provided)
 4. Create profile: `id`=auth user ID, `name`, `role`=`orgadmin`, `phone`, `consent_version`/`consent_updated_at`
 5. Add org membership: `org_id`, `profile_id`, `role`=`admin`, `removed_at`=null
-6. Send welcome email via **Resend API** (`from`=`hello@sitetrack.in`, `to`=user email, HTML template with firm name, plan, billing, temporary password, login CTA)
+6. Send welcome email via **Resend API** (`from`=`hello@sitetrackpro.in`, `to`=user email, HTML template with firm name, plan, billing, temporary password, login CTA)
 7. Return `{ok: true, orgId, userId, emailSent, message}` to frontend
 
 **Email sent**: Always (if Resend key configured). Template includes:

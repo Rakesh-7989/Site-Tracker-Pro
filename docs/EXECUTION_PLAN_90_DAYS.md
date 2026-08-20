@@ -64,7 +64,7 @@ them off early means they're ready when you need them.
   (PAN, GST, bank, signed director letter). ETA: 5-7 business days.
 - 📞 [10 AM] Apply for Razorpay (lighter KYC — for invoice one-off payments).
   Usually approved same-day.
-- 📞 [11 AM] Buy domain **sitetrack.in** at GoDaddy or BigRock. ~₹800/year.
+- 📞 [11 AM] Buy domain **sitetrackpro.in** at GoDaddy or BigRock. ~₹800/year.
 - 📞 [12 PM] Buy a corporate SIM card (Airtel/Jio business plan). This number
   will be the WhatsApp Business Account display number for the entire WABA
   lifetime — never use it for personal WhatsApp. Keep in a basic phone.
@@ -146,7 +146,7 @@ magic link without breaking.
 - **DoD**: Local dev points at real Supabase, magic link works, you are superadmin in the live DB.
 
 ### Day 2 (Tuesday)
-**Goal**: App deployed to `app.sitetrack.in`.
+**Goal**: App deployed to `sitetrackpro.in`.
 - 🛠️ [9-11 AM] `vercel login`. From repo root `vercel --prod` (project
   name: `sitetrack-app`). When prompted, accept the existing `vercel.json`.
 - 🛠️ [11 AM - 12 PM] Vercel dashboard → Project Settings → Environment
@@ -154,30 +154,30 @@ magic link without breaking.
   - `VITE_BACKEND=supabase`
   - `VITE_SUPABASE_URL=https://<your-project>.supabase.co`
   - `VITE_SUPABASE_ANON_KEY=<anon>`
-- 🛠️ [12 - 1 PM] Redeploy so env takes effect. Add domain `app.sitetrack.in`.
+- 🛠️ [12 - 1 PM] Redeploy so env takes effect. Add domain `sitetrackpro.in`.
   Update DNS at registrar with the CNAME Vercel shows.
 - 🛠️ [2-3 PM] Wait for DNS propagation (~minutes to ~hours). Test
-  `https://app.sitetrack.in` from your phone (mobile network bypasses any
+  `https://sitetrackpro.in` from your phone (mobile network bypasses any
   local DNS cache).
 - 🛠️ [3-5 PM] Topbar pill should show green **DB Live**. Sign in via magic
   link from a clean browser session — works.
 - 📞 [5-6 PM] Forward the Cashfree KYC reminder if no update yet.
-- **DoD**: app.sitetrack.in is live with HTTPS, topbar pill green, magic-link login works.
+- **DoD**: sitetrackpro.in is live with HTTPS, topbar pill green, magic-link login works.
 
 ### Day 3 (Wednesday)
-**Goal**: Marketing site deployed to `sitetrack.in`.
+**Goal**: Marketing site deployed to `sitetrackpro.in`.
 - 🛠️ [9-11 AM] `cd marketing && vercel --prod` (project name:
-  `sitetrack-marketing`). Add domains `sitetrack.in` AND `www.sitetrack.in`
+  `sitetrack-marketing`). Add domains `sitetrackpro.in` AND `www.sitetrackpro.in`
   (with `www` redirecting to apex).
 - 🛠️ [11 AM - 1 PM] DNS records at registrar. A record for apex, CNAME for
   www. Wait for propagation.
 - 🛠️ [2-3 PM] Verify the landing page's CTAs (`Start free trial`, `Sign in`)
-  resolve to `app.sitetrack.in`. Cross-domain navigation works.
+  resolve to `sitetrackpro.in`. Cross-domain navigation works.
 - 🛠️ [3-5 PM] Replace placeholder phone number + email in
   `marketing/index.html`. Replace pricing if needed. Re-deploy.
-- 📞 [5-6 PM] Apply for Google Search Console + submit `sitetrack.in/sitemap.xml`
+- 📞 [5-6 PM] Apply for Google Search Console + submit `sitetrackpro.in/sitemap.xml`
   (the landing is one page, so sitemap is trivial but submit anyway).
-- **DoD**: sitetrack.in landing live, all CTAs work, GSC verification submitted.
+- **DoD**: sitetrackpro.in landing live, all CTAs work, GSC verification submitted.
 
 ### Day 4 (Thursday)
 **Goal**: Edge Functions for Cashfree deployed (test mode).
@@ -188,14 +188,14 @@ magic link without breaking.
   supabase functions deploy cashfree-webhook --no-verify-jwt
   ```
 - 🛠️ [12 - 2 PM] Supabase dashboard → Edge Functions → Secrets. Add
-  `CORS_ALLOWED_ORIGINS=https://app.sitetrack.in,https://sitetrack.in`.
+  `CORS_ALLOWED_ORIGINS=https://sitetrackpro.in,https://sitetrackpro.in`.
   Leave `CASHFREE_WEBHOOK_SECRET` empty until Day 8 (real Cashfree active).
 - 🛠️ [2-4 PM] Local curl test against the deployed `cashfree-subscription`:
   ```bash
   curl -X POST https://<proj>.supabase.co/functions/v1/cashfree-subscription \
     -H "Authorization: Bearer <YOUR JWT from app>" \
     -H "Content-Type: application/json" \
-    -d '{"org_id":"<your-org-uuid>","plan":"pro","return_url":"https://app.sitetrack.in/"}'
+    -d '{"org_id":"<your-org-uuid>","plan":"pro","return_url":"https://sitetrackpro.in/"}'
   ```
   Should return `400 Cashfree not configured` — correct (we have no creds yet).
 - 🛠️ [4-6 PM] Re-run `npm test` against production env to confirm nothing
@@ -217,7 +217,7 @@ magic link without breaking.
 
 ### Day 6 (Saturday) — Wait day
 **Goal**: Use cheap-energy time for content + non-build work.
-- 📞 [Morning] Set up support inbox `hello@sitetrack.in` (Google Workspace
+- 📞 [Morning] Set up support inbox `hello@sitetrackpro.in` (Google Workspace
   ~$6/mo) + auto-responder. Forward to your real inbox.
 - 📞 Polish the landing page copy after re-reading aloud — typos, tone,
   CTA strength. Push fixes.
@@ -238,7 +238,7 @@ magic link without breaking.
   - `sitetrack_basic_monthly` — ₹999
   - `sitetrack_pro_monthly` — ₹2,999
   - `sitetrack_business_monthly` — ₹7,999
-- 🛠️ [2-3 PM] Sign in to app.sitetrack.in as orgadmin → My Org →
+- 🛠️ [2-3 PM] Sign in to sitetrackpro.in as orgadmin → My Org →
   Integrations → Cashfree → paste app_id + secret + env="sandbox".
 - 🛠️ [3-4 PM] Set `CASHFREE_WEBHOOK_SECRET` in Supabase EF Secrets.
 - 🛠️ [4-6 PM] Test the full flow: Org Admin → Billing → Upgrade to Pro →
@@ -312,7 +312,7 @@ magic link without breaking.
 ### Day 14 (Sunday) — Phase 1 retrospective
 **Goal**: Confirm Phase 1 DoD.
 - 📞 [Morning] Check each KPI:
-  - ✅ app.sitetrack.in HTTPS green padlock
+  - ✅ sitetrackpro.in HTTPS green padlock
   - ✅ Magic-link login works
   - ✅ Cashfree subscription live on your test org
   - ✅ `.aab` in Internal Testing
@@ -500,7 +500,7 @@ nothing in our marketing is theoretical.
   `vercel.json` to add `https://*.ingest.sentry.io`.
 - 🛠️ [5-6 PM] Trigger a deliberate error from devtools — verify it lands
   in Sentry within 30 seconds.
-- **DoD**: Sentry receives errors from app.sitetrack.in.
+- **DoD**: Sentry receives errors from sitetrackpro.in.
 
 ### Day 26 (Friday)
 **Goal**: Production-readiness checklist run-through.
@@ -615,7 +615,7 @@ not from yourself.
 ### Day 46 (Thursday)
 **Goal**: Demo video FINAL cut shipped.
 - 📞 Approve final cut from editor. Upload to YouTube + LinkedIn + embed
-  on `sitetrack.in` hero.
+  on `sitetrackpro.in` hero.
 - **DoD**: Video live on all 3 surfaces.
 
 ### Day 47 (Friday)
@@ -626,10 +626,10 @@ not from yourself.
 - **DoD**: 5 angel emails sent.
 
 ### Day 48-50 (Sat-Mon)
-- 📞 Case study published at sitetrack.in/customers.
+- 📞 Case study published at sitetrackpro.in/customers.
 - 📞 Share case study on LinkedIn + WhatsApp groups.
 - 🛠️ SEO Tag 1: "How to file RERA monthly progress in 5 minutes" — 800
-  word blog post on sitetrack.in/blog.
+  word blog post on sitetrackpro.in/blog.
 
 ### Day 51 (Tuesday)
 **Goal**: 2nd + 3rd paying customers.
@@ -648,7 +648,7 @@ not from yourself.
 ### Day 57 (Monday)
 **Goal**: Self-serve signup LIVE.
 - 🛠️ Deploy self-serve. Test it once with a clean email.
-- 📞 Update LinkedIn + Twitter — "Self-serve trial now live at sitetrack.in".
+- 📞 Update LinkedIn + Twitter — "Self-serve trial now live at sitetrackpro.in".
 - **DoD**: Anyone can sign up without manual provisioning.
 
 ### Day 58-60 (Tue-Thu)
@@ -745,7 +745,7 @@ noted. Do NOT block on them; build code-only features in the wait gaps.
 | Line item | Cost (₹) | When |
 | --------- | -------- | ---- |
 | Cashfree KYC + first sub | 1,000 | Day -3, Day 9 |
-| Domain sitetrack.in | 800 | Day -3 |
+| Domain sitetrackpro.in | 800 | Day -3 |
 | Corporate SIM + plan | 1,500 | Day -3 |
 | Google Play Console signup | 2,100 ($25) | Day 11 |
 | Vercel Pro (after free tier) | 0 | Free until ~100 GB bandwidth/mo |

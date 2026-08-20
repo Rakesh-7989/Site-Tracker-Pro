@@ -147,7 +147,7 @@ export function AssignMemberModal({
       setNotice(
         pw
           ? `Invited ${inviteName || email} as ${roleLabel}. Email failed to send. Share this temporary password: ${pw}`
-          : `Invited ${inviteName || email} as ${roleLabel}. Email not sent — ask them to use "Forgot password" at sitetrack.in.`
+          : `Invited ${inviteName || email} as ${roleLabel}. Email not sent — ask them to use "Forgot password" at sitetrackpro.in.`
       );
     } else {
       setNotice(`Invited ${inviteName || email} as ${roleLabel}.`);

@@ -63,7 +63,7 @@ sending domain (see `docs/RESEND_SMTP_SETUP.md`).
 3. Verify the key + see which domains are verified:
    ```bash
    npm run verify:keys
-   # 🟢 RESEND_API_KEY  valid — N domain(s), verified: sitetrack.in
+   # 🟢 RESEND_API_KEY  valid — N domain(s), verified: sitetrackpro.in
    ```
 4. Push it to the Edge Functions as a secret (so the server can use it):
    ```bash

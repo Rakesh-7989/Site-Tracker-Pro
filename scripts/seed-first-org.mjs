@@ -106,7 +106,7 @@ try {
 
   console.log(`\n📦 Next steps:`);
   console.log(`   1. Set VITE_STAFF_EMAILS to founder email so founder bypasses freeze in production`);
-  console.log(`   2. Sign in to https://sitetrack-rakesh.vercel.app with your founder email`);
+  console.log(`   2. Sign in to https://sitetrackpro.in with your founder email`);
   console.log(`   3. The signup trigger (34_signup_self_serve.sql) auto-creates a separate org`);
   console.log(`      from your auth metadata — this seed org is for staff/demo use only`);
   console.log(`   4. Verify the 16 frozen views are hidden from non-staff in your live app`);

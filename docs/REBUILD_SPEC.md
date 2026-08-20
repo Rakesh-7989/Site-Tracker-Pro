@@ -7,7 +7,7 @@
 - **Goal:** Rebuild SiteTrack Pro on the new 25-role architecture from a clean foundation.
 - **Stack:** React 18 + Vite + Supabase (UNCHANGED) + TypeScript (NEW).
 - **Pattern:** Strangler-fig — keep `src/App.jsx` running while new TS code grows alongside.
-- **Demo continuity:** Existing prod app (`sitetrack-rakesh.vercel.app`) keeps serving Sprint 1+2 demos. Switch over only after rebuild reaches feature parity.
+- **Demo continuity:** Existing prod app (`sitetrackpro.in`) keeps serving Sprint 1+2 demos. Switch over only after rebuild reaches feature parity.
 - **Founder time:** Sprint 1 fieldwork (8 interviews + 5 meetings) continues in parallel — I do the rebuild autonomously, sync each evening.
 - **Budget:** Zero rupees. Same free tiers throughout.
 

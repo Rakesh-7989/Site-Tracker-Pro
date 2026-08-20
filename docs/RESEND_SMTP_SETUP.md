@@ -87,18 +87,18 @@ pilots.
 
 **Option 2b — Better: Verified domain (recommended for production)**
 
-If you own a domain (e.g. `sitetrack.in`), this lets emails come
-from `hello@sitetrack.in` instead of a Gmail address.
+If you own a domain (e.g. `sitetrackpro.in`), this lets emails come
+from `hello@sitetrackpro.in` instead of a Gmail address.
 
 1. In the Resend dashboard, click **Domains** → **Add Domain**.
-2. Type your domain: `sitetrack.in` (or whichever you own).
+2. Type your domain: `sitetrackpro.in` (or whichever you own).
 3. Resend shows you 3 DNS records to add:
    - SPF record (TXT, content: `v=spf1 include:_spf.resend.com ~all`)
    - DKIM record (TXT, content provided by Resend, starts with
      `resend._domainkey`)
    - Return-path record (CNAME, content provided)
 4. Open your domain registrar (Cloudflare / GoDaddy / Hostinger /
-   Namecheap). Find the DNS settings for `sitetrack.in`.
+   Namecheap). Find the DNS settings for `sitetrackpro.in`.
 5. Add the 3 records exactly as Resend shows them. Each one is a
    single row in your DNS table.
 6. Save the DNS changes.
@@ -106,7 +106,7 @@ from `hello@sitetrack.in` instead of a Gmail address.
    completes within 5 minutes (sometimes up to 60 minutes for
    DNS propagation).
 8. Once green, you can send from any address on the domain (e.g.
-   `hello@sitetrack.in`, `noreply@sitetrack.in`).
+   `hello@sitetrackpro.in`, `noreply@sitetrackpro.in`).
 
 ### Step 3 — Create an API key (2 min)
 
@@ -128,7 +128,7 @@ from `hello@sitetrack.in` instead of a Gmail address.
 
    | Field | Value |
    |---|---|
-   | Sender email | `hello@sitetrack.in` (or your verified single sender like `boyapatirakesh7989@gmail.com`) |
+   | Sender email | `hello@sitetrackpro.in` (or your verified single sender like `boyapatirakesh7989@gmail.com`) |
    | Sender name | `SiteTrack Pro` |
    | Host | `smtp.resend.com` |
    | Port | `465` |
@@ -157,7 +157,7 @@ locally:
 
 ```bash
 RESEND_API_KEY=re_xxxxx \
-RESEND_FROM=hello@sitetrack.in \
+RESEND_FROM=hello@sitetrackpro.in \
   node scripts/test-resend-smtp.mjs your-personal-email@gmail.com
 ```
 
@@ -165,7 +165,7 @@ Expected output on success:
 
 ```
 Sending test email …
-  From:    hello@sitetrack.in
+  From:    hello@sitetrackpro.in
   To:      your-personal-email@gmail.com
   API key: re_xxx…last4
 
@@ -180,7 +180,7 @@ just be moving a broken config into Supabase.
 
 ### Step 6 — Test signup (5 min)
 
-1. Open <https://sitetrack-rakesh.vercel.app> or your localhost.
+1. Open <https://sitetrackpro.in> or your localhost.
 2. Click **Start a firm**.
 3. Fill firm name + your name + a real email (`yourname@yourdomain.in`).
 4. Pick **Free trial** (the default).
@@ -190,7 +190,7 @@ just be moving a broken config into Supabase.
    - See HTTP 200 in the network tab.
    - See a friendly status banner: "Verification email sent to ..."
    - Receive an email within 30 seconds at the address you entered.
-   - The email comes FROM `hello@sitetrack.in` (or your single sender).
+   - The email comes FROM `hello@sitetrackpro.in` (or your single sender).
 8. Click the magic link in the email → you land on the dashboard.
 
 ### Step 7 — Run the full verification gate (5 min)
@@ -237,7 +237,7 @@ and mark PART B as **DONE**. Push.
 ### "Email arrives but the magic link is broken"
 
 Check that `VITE_APP_URL` env var in Vercel matches your production
-URL: `https://sitetrack-rakesh.vercel.app`. The magic link uses
+URL: `https://sitetrackpro.in`. The magic link uses
 `emailRedirectTo: window.location.origin` for browser sessions, so
 local + prod work independently.
 

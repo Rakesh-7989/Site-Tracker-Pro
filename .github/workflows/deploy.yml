@@ -60,4 +60,4 @@ jobs:
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       - name: Post-deploy health probe (prod smoke)
-        run: npm run prod:smoke -- https://sitetrack-rakesh.vercel.app
+        run: npm run prod:smoke -- https://sitetrackpro.in

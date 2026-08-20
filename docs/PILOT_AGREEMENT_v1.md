@@ -52,7 +52,7 @@ lives here for amendment trail.
    may be incorporated into the product, with no IP claim by Builder
    on incorporated work.
 2. **Case study publication** — Builder agrees to:
-   - Logo placement on `sitetrack.in` and pitch materials.
+   - Logo placement on `sitetrackpro.in` and pitch materials.
    - One ≤500-word published case study (Builder reviews + signs off
      before publication; redactions allowed for commercially sensitive
      numbers).

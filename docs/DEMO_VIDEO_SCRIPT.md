@@ -130,13 +130,13 @@
 - Cut to pricing slide: 4 plans, ₹999 / ₹2,999 / ₹7,999 / Custom
 - Caption: "Procore charges ₹31,000 per user. We charge ₹999 per ORG."
 - Caption: "Built in India. For Indian sites. By GiggleZen Technologies, Hyderabad."
-- Final card: sitetrack.in + hello@sitetrack.in + 14-day free trial
+- Final card: sitetrackpro.in + hello@sitetrackpro.in + 14-day free trial
 
 **Voiceover (Telugu):**
 > "Procore monthly ₹31,000 per user. Memu ₹999 — per ORG. Per user kaadu. Per firm. 14 days free trial. Cashfree UPI AutoPay billing. Mee firm ni mundhuki teesukuvellandi — site tracker dot in."
 
 **English subs:**
-> "Procore charges ₹31,000 per user, monthly. We charge ₹999 — per ORG. Not per user. Per firm. 14-day free trial. Cashfree UPI AutoPay billing. Move your firm forward — sitetrack.in."
+> "Procore charges ₹31,000 per user, monthly. We charge ₹999 — per ORG. Not per user. Per firm. 14-day free trial. Cashfree UPI AutoPay billing. Move your firm forward — sitetrackpro.in."
 
 **Music cue:** Crescendo at 2:48, soft resolve at 2:55
 
@@ -148,7 +148,7 @@
 > SiteTrack Pro — Construction record for Indian builders (3-min demo)
 
 **YouTube description (first 200 chars):**
-> One workspace for BOQ, RA bills, drawings, RERA, GST, UPI. From ₹999/org/month. Built in Hyderabad for Indian builders. Start free at sitetrack.in.
+> One workspace for BOQ, RA bills, drawings, RERA, GST, UPI. From ₹999/org/month. Built in Hyderabad for Indian builders. Start free at sitetrackpro.in.
 
 **YouTube tags:**
 construction software india, BOQ software, RA bills software, RERA filing, builder management, Procore alternative india, Powerplay alternative, construction SaaS india, site tracker, builder firm software
@@ -166,7 +166,7 @@ construction software india, BOQ software, RA bills software, RERA filing, build
 - [ ] Color grade: warm shadows, slightly cool highlights — matches the cream/amber brand
 - [ ] LUFS normalize voiceover to -16 LUFS (YouTube standard)
 - [ ] Generate thumbnail: hero image of dashboard + "₹999 per ORG" overlay
-- [ ] Upload to: YouTube, Vimeo, LinkedIn, sitetrack.in homepage (embed top of hero)
+- [ ] Upload to: YouTube, Vimeo, LinkedIn, sitetrackpro.in homepage (embed top of hero)
 - [ ] A/B test 2 thumbnails on YouTube for first 2 weeks
 
 ---

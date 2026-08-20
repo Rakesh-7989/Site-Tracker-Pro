@@ -287,7 +287,7 @@ Sure — Pro tier ₹49,999/yr per org (not per user — add as many site
 supervisors as you want), Business ₹89,999/yr. Pilot ₹29,999/yr if
 you're one of the first 5.
 
-Full breakdown: [docs/PRICING.md or pricing page on sitetrack.in].
+Full breakdown: [docs/PRICING.md or pricing page on sitetrackpro.in].
 
 Want to talk through what's right for [Firm]? 15 min next week.
 ```

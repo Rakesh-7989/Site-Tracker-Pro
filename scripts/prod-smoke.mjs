@@ -19,7 +19,7 @@ const env = existsSync(join(root, ".env.local"))
       .map(m => [m[1], m[2].replace(/^"|"$/g, "").trim()]))
   : {};
 
-const APP = (process.argv[2] || env.VITE_APP_URL || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
+const APP = (process.argv[2] || env.VITE_APP_URL || "https://sitetrackpro.in").replace(/\/+$/, "");
 // In CI there is no .env.local, so read the committed public config (RLS-safe —
 // same values every browser downloads). Prefer the explicit env var when set.
 let SUPA = env.VITE_SUPABASE_URL || "";

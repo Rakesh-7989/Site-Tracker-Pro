@@ -34,7 +34,7 @@ npm run db:apply   # apply pending Supabase migrations (expect NNN passed / 28 b
 ```
 
 ## Deploy (Vercel — the ONLY prod path)
-- **Production branch: `prod`**. Vercel auto-deploys from `prod`; URL `https://sitetrack-rakesh.vercel.app`.
+- **Production branch: `prod`**. Vercel auto-deploys from `prod`; URL `https://sitetrackpro.in`.
 - Project: `sitetrack-rakesh` (ID `prj_9GzKLtGC26ABI9C5Kc1IiEss7uNW`, org `team_Qd2Yf5z3r5asmq3HeHxCSie1`). Deploys are triggered by pushing `prod`; secrets live in Vercel env vars + GitHub Secrets (VERCEL_TOKEN etc. — NEVER commit).
 - `vercel.json` — SPA rewrites + SW headers. `netlify.toml` exists but Netlify is NOT the prod host.
 - GitHub Actions: `.github/workflows/ci.yml` runs on push/PR. Deployment status can be watched via `gh run watch`.
@@ -44,7 +44,7 @@ npm run db:apply   # apply pending Supabase migrations (expect NNN passed / 28 b
 2. `npm run test` — full gate green before pushing.
 3. `git push origin prod` — triggers Vercel Deploy + GitHub CI.
 4. Watch `gh run list` / `gh run watch` for CI green, then the Vercel Deploy workflow green.
-5. Verify live: `curl -s -o NUL -w "%{http_code}" https://sitetrack-rakesh.vercel.app` → 200.
+5. Verify live: `curl -s -o NUL -w "%{http_code}" https://sitetrackpro.in` → 200.
 6. Fast-forward `main` to `prod` when desired: `git checkout main && git merge --ff-only prod && git push origin main`.
 
 ## Environment Variable Checklist (never commit)

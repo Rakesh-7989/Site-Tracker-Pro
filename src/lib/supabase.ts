@@ -5,10 +5,11 @@ const ENV: Record<string, string | undefined> = typeof import.meta !== "undefine
 
 const SUPABASE_URL: string = ENV.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY: string = ENV.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_ANON_KEY;
-export const CANONICAL_APP_URL = "https://sitetrack-rakesh.vercel.app";
+export const CANONICAL_APP_URL = "https://sitetrackpro.in";
 
 const BLOCKED_APP_HOSTS = new Set([
   "app.sitetrack.in",
+  "app.sitetrackpro.in",
 ]);
 
 function isLocalAppHost(hostname: string): boolean {

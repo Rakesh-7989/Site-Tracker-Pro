@@ -9,7 +9,7 @@
 //   node scripts/verify-prod-pricing.mjs                       # checks sitetrack-rakesh
 //   node scripts/verify-prod-pricing.mjs https://other.app     # any URL
 
-const base = (process.argv[2] || "https://sitetrack-rakesh.vercel.app").replace(/\/$/, "");
+const base = (process.argv[2] || "https://sitetrackpro.in").replace(/\/$/, "");
 
 // Markers that ONLY exist in the latest build (literal numbers survive minify;
 // function names like gstInclusive do not, so we don't rely on them).

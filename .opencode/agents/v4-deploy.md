@@ -10,7 +10,7 @@ model: ollama/qwen2.5-coder:1.5b
 Release SiteTrack Pro to production: push the `prod` branch, confirm GitHub Actions CI and the Vercel Deploy both go green, verify the live site returns HTTP 200, and (optionally) fast-forward `main`. Always verify BEFORE and AFTER the push.
 
 ## Context
-- Production branch: `prod`. Vercel auto-deploys from `prod` → https://sitetrack-rakesh.vercel.app
+- Production branch: `prod`. Vercel auto-deploys from `prod` → https://sitetrackpro.in
 - Project: `sitetrack-rakesh` (ID `prj_9GzKLtGC26ABI9C5Kc1IiEss7uNW`, org `team_Qd2Yf5z3r5asmq3HeHxCSie1`).
 - Deploy/secrets: GitHub Secrets + Vercel env vars only. NEVER commit them.
 - Migrations deploy separately (`v4-db` runs `db:apply` against the live DB) — migrations and code are decoupled; if schema and code must land together, run `v4-db` first.
@@ -23,7 +23,7 @@ Release SiteTrack Pro to production: push the `prod` branch, confirm GitHub Acti
 5. Watch status:
    - `gh run list --branch prod` and `gh run watch <run-id>` — wait for CI green.
    - Wait for the Vercel Deploy workflow to complete (deployment status; can check the Vercel dashboard link in the run output).
-6. **Verify live:** `curl -s -o NUL -w "%{http_code}" https://sitetrack-rakesh.vercel.app` → expect `200`. If not 200, report the status + check the Vercel deploy logs.
+6. **Verify live:** `curl -s -o NUL -w "%{http_code}" https://sitetrackpro.in` → expect `200`. If not 200, report the status + check the Vercel deploy logs.
 7. (If requested) Fast-forward main to prod:
    `git checkout main` → `git merge --ff-only prod` → `git push origin main` → `git checkout prod` (restore working branch).
 8. Report: pushed commits (sha + message), CI status, Vercel deploy status, live HTTP status, main sync status (if done).

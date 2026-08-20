@@ -5,8 +5,8 @@ modelled on how HRMS separates its frontend deploy from its backend
 (`docs/HRMS_DEPLOYMENT_STUDY.md`), adapted to SiteTrack's Supabase stack.
 
 ```
-sitetrack.in       →  marketing/ (static landing — no build)
-app.sitetrack.in   →  repo root  (Vite SPA → Supabase)
+sitetrackpro.in       →  marketing/ (static landing — no build)
+sitetrackpro.in   →  repo root  (Vite SPA → Supabase)
 Supabase project   →  managed Postgres + auth + RLS + realtime
 ```
 
@@ -16,7 +16,7 @@ Total: ~2-3 hours, most of it waiting for DNS + Supabase provisioning.
 
 ## Prerequisites
 
-- A domain (suggested: `sitetrack.in` — ~₹800/year on GoDaddy / BigRock)
+- A domain (suggested: `sitetrackpro.in` — ~₹800/year on GoDaddy / BigRock)
 - A Vercel account (free tier is enough to start)
 - A Supabase account (free tier is enough to start)
 - Node 18+ locally
@@ -54,7 +54,7 @@ Follow `docs/CONNECT_SUPABASE.md` fully. The short version:
 
 ---
 
-## Phase 2 — Deploy the APP to app.sitetrack.in — 30 min
+## Phase 2 — Deploy the APP to sitetrackpro.in — 30 min
 
 From the repo root:
 
@@ -81,7 +81,7 @@ After deploy, add environment variables in the Vercel dashboard:
   the dashboard "Redeploy" button).
 
 Add the domain:
-- Project → Settings → Domains → add `app.sitetrack.in`
+- Project → Settings → Domains → add `sitetrackpro.in`
 - Vercel shows the CNAME record. Add it at your registrar.
 
 > ⚠️ Vite bakes env vars at BUILD time. After changing any `VITE_*` var in
@@ -89,7 +89,7 @@ Add the domain:
 
 ---
 
-## Phase 3 — Deploy the MARKETING site to sitetrack.in — 20 min
+## Phase 3 — Deploy the MARKETING site to sitetrackpro.in — 20 min
 
 ```bash
 cd marketing
@@ -102,11 +102,11 @@ When prompted:
 - Override settings? **No**
 
 Add the apex domain:
-- Project → Settings → Domains → add `sitetrack.in` AND `www.sitetrack.in`
+- Project → Settings → Domains → add `sitetrackpro.in` AND `www.sitetrackpro.in`
 - Vercel shows the A / CNAME records. Add them at your registrar.
 - Set `www` → redirect to apex (or vice versa) in the Domains panel.
 
-The landing page's CTAs already point to `https://app.sitetrack.in`, so the
+The landing page's CTAs already point to `https://sitetrackpro.in`, so the
 two sites link up automatically once both domains resolve.
 
 ---
@@ -118,15 +118,15 @@ Vercel showed you. Typically:
 
 | Type  | Name | Value                      | For                |
 | ----- | ---- | -------------------------- | ------------------ |
-| A     | @    | `76.76.21.21`              | sitetrack.in (apex)|
+| A     | @    | `76.76.21.21`              | sitetrackpro.in (apex)|
 | CNAME | www  | `cname.vercel-dns.com`     | www redirect       |
-| CNAME | app  | `cname.vercel-dns.com`     | app.sitetrack.in   |
+| CNAME | app  | `cname.vercel-dns.com`     | sitetrackpro.in   |
 
 (Vercel shows the exact values — use theirs, not these examples.)
 
 DNS propagation is usually minutes, occasionally up to 24h. Check with:
 ```bash
-nslookup app.sitetrack.in
+nslookup sitetrackpro.in
 ```
 
 ---
@@ -135,8 +135,8 @@ nslookup app.sitetrack.in
 
 Once both domains resolve:
 
-- [ ] Visit `sitetrack.in` → landing page loads, HTTPS green padlock
-- [ ] Click "Start free trial" → lands on `app.sitetrack.in`
+- [ ] Visit `sitetrackpro.in` → landing page loads, HTTPS green padlock
+- [ ] Click "Start free trial" → lands on `sitetrackpro.in`
 - [ ] App topbar pill shows **green "DB Live"** (not "Local mode")
 - [ ] Sign in via magic link → email arrives → click → logged in
 - [ ] SQL-promote yourself to superadmin:
@@ -157,8 +157,8 @@ When every box is ticked, **you are live.** Onboard your first design partner.
 
 | Concern | HRMS does it via | SiteTrack does it via |
 | ------- | ---------------- | --------------------- |
-| Serve marketing page | Static host | `marketing/` on Vercel → sitetrack.in |
-| Serve the app UI | Vite static build | repo root on Vercel → app.sitetrack.in |
+| Serve marketing page | Static host | `marketing/` on Vercel → sitetrackpro.in |
+| Serve the app UI | Vite static build | repo root on Vercel → sitetrackpro.in |
 | Database | AWS RDS Postgres | Supabase Postgres (managed) |
 | Auth | Express JWT server | Supabase magic link |
 | Row isolation (RLS) | Express `SET app.tenant_id` | Supabase RLS policies |

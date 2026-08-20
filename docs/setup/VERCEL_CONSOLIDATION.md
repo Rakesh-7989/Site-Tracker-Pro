@@ -2,12 +2,12 @@
 
 # Vercel consolidation — one canonical production
 
-**Goal:** `https://sitetrack-rakesh.vercel.app` becomes the single, always-fresh
+**Goal:** `https://sitetrackpro.in` becomes the single, always-fresh
 production. Retire the duplicate `site-tracker-pro-smoky`.
 
 ## Current canonical rule (2026-06-20)
 
-- Canonical production URL: `https://sitetrack-rakesh.vercel.app`.
+- Canonical production URL: `https://sitetrackpro.in`.
 - If the duplicate hostname appears in the Vercel dashboard, remove or disable
   that domain/project there too.
 
@@ -55,7 +55,7 @@ Run locally (or just open the site):
 node scripts/verify-prod-pricing.mjs   # checks sitetrack-rakesh has ₹5,999 / ₹11,999 + GST
 node scripts/uptime-check.mjs           # 🟢 frontend + backend
 ```
-Or open `https://sitetrack-rakesh.vercel.app` (hard-refresh Ctrl+Shift+R) and
+Or open `https://sitetrackpro.in` (hard-refresh Ctrl+Shift+R) and
 confirm pricing shows **Basic ₹5,999 / Pro ₹11,999** + the Monthly/Annual toggle.
 
 ## Part 4 — Retire `site-tracker-pro-smoky` (after Part 3 passes)
@@ -69,7 +69,7 @@ confirm pricing shows **Basic ₹5,999 / Pro ₹11,999** + the Monthly/Annual to
 ## Part 5 — Auth redirect (already correct)
 
 Supabase Auth **Site URL** + redirect allow-list already point at
-`sitetrack-rakesh.vercel.app` (set earlier this project). So once
+`sitetrackpro.in` (set earlier this project). So once
 `sitetrack-rakesh` is live, magic-link / password-reset / invite emails land on
 the right place automatically. No change needed.
 

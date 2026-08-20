@@ -218,7 +218,7 @@ end $$;
 -- ============================================================================
 
 insert into auth.users(id, email)
-  values ('99999999-9999-9999-9999-999999999999'::uuid, 'super@sitetrack.in')
+  values ('99999999-9999-9999-9999-999999999999'::uuid, 'super@sitetrackpro.in')
   on conflict do nothing;
 insert into profiles(id, name, role)
   values ('99999999-9999-9999-9999-999999999999'::uuid, 'Super User', 'superadmin')

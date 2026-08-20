@@ -3,14 +3,14 @@
 // is a white-label subdomain of the app's base domain and extract the org
 // subdomain label. Testable without a window.
 
-const DEFAULT_BASE_HOST = "sitetrack.in";
+const DEFAULT_BASE_HOST = "sitetrackpro.in";
 
 /** Subdomain labels that must never be treated as white-label org hosts. */
 const RESERVED_LABELS = new Set(["www", "app"]);
 
 /**
  * Split a hostname into [subdomain, baseHost] where baseHost is the app's
- * canonical base (e.g. "garch.sitetrack.in" → ["garch", "sitetrack.in"]).
+ * canonical base (e.g. "garch.sitetrackpro.in" → ["garch", "sitetrackpro.in"]).
  * Returns null when the host is the bare base, an unknown domain, a reserved
  * label, or a localhost/dev host.
  */

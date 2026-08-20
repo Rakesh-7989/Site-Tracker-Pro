@@ -5,7 +5,7 @@ Status: PLAN (2026-08-07) · Owner: Product Owner (human) · Method: agentic loo
 
 ## 1. Why this, now
 
-All six V4 research gaps (A CRM, B Interior, C Consultancy-audit, D Risk, E Design-workflow, F Branding) are shipped, verified, and **live** (`prod` @ `9a7e4c6`, https://sitetrack-rakesh.vercel.app → 200).
+All six V4 research gaps (A CRM, B Interior, C Consultancy-audit, D Risk, E Design-workflow, F Branding) are shipped, verified, and **live** (`prod` @ `9a7e4c6`, https://sitetrackpro.in → 200).
 
 The **largest market segment — Construction — never got a v4 depth phase.** The V4 plan §3 named only CRM/interior/consultancy/AI/white-label/design-workflow as gaps; construction's core (site_ops, people, procurement, compliance) predates v4 and is thin versus the market's expectations (Powerplay/RDash/Onsite feature set). This phase closes those construction gaps end-to-end, then closes the two open CRM follow-ups, then runs the full testing loop and live push.
 

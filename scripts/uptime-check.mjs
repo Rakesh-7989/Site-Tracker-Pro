@@ -16,7 +16,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const FRONTEND = process.argv[2] || "https://sitetrack-rakesh.vercel.app";
+const FRONTEND = process.argv[2] || "https://sitetrackpro.in";
 
 // Pull the public Supabase URL + anon key from the committed public config
 // (RLS-safe — same values every browser already downloads).

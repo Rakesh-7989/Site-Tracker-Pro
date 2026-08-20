@@ -87,7 +87,7 @@ function footerLabel(slide, color = C.ink400) {
     x: 0.6, y: 5.7, w: 11, h: 0.6,
     fontFace: B, fontSize: 18, color: "D5CFC2",
   });
-  s.addText("Rakesh Boyapati  ·  Founder & CEO  ·  hello@sitetrack.in  ·  +91 ●●●●● ●●●●●", {
+  s.addText("Rakesh Boyapati  ·  Founder & CEO  ·  hello@sitetrackpro.in  ·  +91 ●●●●● ●●●●●", {
     x: 0.6, y: 6.5, w: 11, h: 0.4,
     fontFace: B, fontSize: 12, color: C.amberL, charSpacing: 2,
   });
@@ -491,7 +491,7 @@ function footerLabel(slide, color = C.ink400) {
     x: 0.6, y: 5.7, w: 12, h: 0.5,
     fontFace: H, fontSize: 18, italic: true, color: "8E887C",
   });
-  s.addText("Rakesh Boyapati  ·  hello@sitetrack.in  ·  sitetrack.in  ·  +91 ●●●●● ●●●●●", {
+  s.addText("Rakesh Boyapati  ·  hello@sitetrackpro.in  ·  sitetrackpro.in  ·  +91 ●●●●● ●●●●●", {
     x: 0.6, y: 6.4, w: 12, h: 0.4,
     fontFace: B, fontSize: 14, color: C.amberL, charSpacing: 2,
   });

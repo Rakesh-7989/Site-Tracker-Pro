@@ -126,7 +126,7 @@ Creates the lead→meeting→quotation→agreement pipeline as a first-class mod
 ## 7. Live Push
 - `npm run db:apply` (applies new migrations 161+ to live DB)
 - `git push origin prod` → Vercel auto-deploy
-- Verify `https://sitetrack-rakesh.vercel.app` returns 200 + new route works.
+- Verify `https://sitetrackpro.in` returns 200 + new route works.
 
 ## 8. Open Decisions (I'll default unless you object)
 - **Phase order**: A (CRM) first — biggest market gap, cleanest module boundary.

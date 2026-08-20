@@ -24,7 +24,7 @@ describe("resend_confirmation — email-confirm dispatch", () => {
     expect(src).toMatch(/email,/);
     expect(src).toMatch(/options: \{ redirectTo: siteUrl \}/);
     expect(src).toMatch(/PUBLIC_SITE_URL/);
-    expect(src).toContain("https://sitetrack-rakesh.vercel.app");
+    expect(src).toContain("https://sitetrackpro.in");
   });
 
   it("treats the GoTrue dispatch as the single send (no duplicate Resend)", () => {

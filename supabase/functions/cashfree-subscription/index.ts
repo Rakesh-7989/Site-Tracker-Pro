@@ -15,7 +15,7 @@
 //   curl -X POST https://<proj>.supabase.co/functions/v1/cashfree-subscription \
 //     -H "Authorization: Bearer <user JWT>" \
 //     -H "Content-Type: application/json" \
-//     -d '{"org_id":"...","plan":"pro","return_url":"https://app.sitetrack.in/"}'
+//     -d '{"org_id":"...","plan":"pro","return_url":"https://sitetrackpro.in/"}'
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
@@ -30,7 +30,7 @@ import { requirePlanFeature } from "../_shared/planCheck.ts";
 // In production, you should explicitly set this to ONLY your real app
 // origins. "*" is REJECTED to prevent token leak via CSRF-like flows.
 const ALLOWED_ORIGINS = (Deno.env.get("CORS_ALLOWED_ORIGINS") ||
-  "https://app.sitetrack.in,https://sitetrack.in,http://localhost:5173"
+  "https://sitetrackpro.in,https://sitetrackpro.in,http://localhost:5173"
 ).split(",").map(s => s.trim()).filter(Boolean);
 function corsHeadersFor(req: Request): Record<string, string> {
   const origin = req.headers.get("Origin") || "";

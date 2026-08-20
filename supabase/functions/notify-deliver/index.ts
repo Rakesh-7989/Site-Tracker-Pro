@@ -190,7 +190,7 @@ async function sendEmail(
   // Fall back to REST API
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return { ok: false, error: "RESEND_API_KEY not set" };
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
