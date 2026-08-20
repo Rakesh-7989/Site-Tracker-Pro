@@ -81,7 +81,7 @@ async function main() {
   const recs = records.records || [];
   console.log("current records:", recs.map((r) => `${r.type} ${r.name || "(apex)"} -> ${r.value}`).join(" | ") || "(none)");
 
-  const RESEND_MX = { type: "MX", name: "send", value: "feedback-smtp.ap-northeast-1.amazonses.com", priority: 10 };
+  const RESEND_MX = { type: "MX", name: "send", value: "10 feedback-smtp.ap-northeast-1.amazonses.com", ttl: 60 };
   const stale = recs.filter((r) => {
     const name = trimDot(r.name);
     const value = trimDot(r.value);
@@ -108,7 +108,7 @@ async function main() {
   const hasApex = now.some((r) => r.type === "A" && trimDot(r.value) === "76.76.21.21");
   const hasWww = now.some((r) => r.type === "CNAME" && trimDot(r.name) === "www" && trimDot(r.value) === "cname.vercel-dns.com");
   const hasSendMx = now.some(
-    (r) => r.type === "MX" && trimDot(r.name) === "send" && trimDot(r.value) === RESEND_MX.value,
+    (r) => r.type === "MX" && trimDot(r.name) === "send" && trimDot(r.value).includes("feedback-smtp.ap-northeast-1.amazonses.com"),
   );
   if (!hasApex) {
     await api("POST", `/v1/domains/${DOMAIN}/records?${q}`, { type: "A", name: "", value: "76.76.21.21", ttl: 60 });
