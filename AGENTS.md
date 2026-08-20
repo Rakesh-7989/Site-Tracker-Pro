@@ -1,4 +1,23 @@
-﻿## Goal
+﻿## Session — 2026-08-20: Batch-24 CI unblock + DrawingsTab regression fix (complete)
+
+**Context**: `prod` was behind `main`; PR #2 "Hard Refresh" (main→prod) was blocked because the CI `test` check failed at `npm run typecheck` on commit `0de2194` (Batch 24). Root cause: Batch 24 removed the DiffView/CadPreviewModal render blocks from `DrawingsTab.tsx`, leaving `compareImages`/`previewTarget` + the `Modal`/`DiffView`/`CadPreviewModal` imports never-read (TS6133); `Charts.tsx` had dead `responsive`/`responsiveOptions` interface fields; `AttendanceTab`/`MaterialsTab` had unused `Badge` imports. The uncommitted WIP had masked this with `@ts-ignore` hacks.
+
+**Fixes shipped** (commits `d4dd66f`, `3864f70`, pushed to `main`):
+- `src/features/project/tabs/DrawingsTab.tsx` — restored the **compare-revisions** Modal (`Select` revision picker + `<DiffView>`) and the **CAD preview** (`<CadPreviewModal>`) render blocks; re-added `Modal`/`DiffView`/`CadPreviewModal` imports; removed 4 `@ts-ignore` lines and the stale eslint-disable on `isCadFileName`.
+- `src/components/ui/Charts.tsx` — removed `responsive?: boolean` + `responsiveOptions?: string` from `BarChartProps`/`BarGroupProps`/`PieChartProps` (no consumers).
+- `AttendanceTab.tsx`/`MaterialsTab.tsx` — kept the WIP's unused-`Badge` import removal.
+- Removed stray `migration_status.txt` (captured supabase CLI stderr dump, do-not-commit artifact).
+- Batch 24 audit: EstimateTab/InvoicesTab changes are complete intentional redesigns (no dangling state) — DrawingsTab was the only real regression.
+
+**Result**: PR #2 CI **all green** (test / e2e-mock / coverage / Vercel / Supabase Preview) on head `3864f70`; PR is MERGEABLE and waiting only on the required **1 approving review** (GH protects prod with `required_approving_review_count: 1` + `enforce_admins: true` — cannot self-merge). Nightly-regression typecheck failure was the same pre-fix issue.
+
+**Live verification (all green)**: `db:apply` 224/224 migrations in sync (only benign 105/120 fail); `check:columns` no drift (155 tables / 433 files / 351 selects); RLS cross-tenant **506/506**; lifecycle RLS 21/21; quota TOCTOU 13/13; `check:rls:coverage` 150/150; prod smoke 3/3; uptime 200.
+
+**Pending**: merge PR #2 (needs user review) to ship `d4dd66f`/`3864f70` + the 3 legitimate user commits already on `main` (`0de2194` Batch 24 redesign, `7c00961` _redirects, `e2e8e66` SMTP fallback, `140635a` quota TOCTOU/migration 224) to `prod`.
+
+---
+
+## Goal
 Implement the structured UI update plan across the full application: auth gap closure, PlanGate integration, and query extraction.
 
 ## Constraints & Preferences
