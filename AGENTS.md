@@ -1,3 +1,23 @@
+## Session — 2026-08-20: sitetrackpro.in infra wired — Vercel DNS live (complete; 2 dashboard items pending user)
+
+**Context**: Follow-up to the domain-migration session. The user switched the domain's **nameservers to Vercel** (`ns1/ns2.vercel-dns.com`) and directed "work on those 3 things now". I drove the remaining Vercel + DNS work autonomously via the `VERCEL_TOKEN` GitHub secret (local CLI token invalid; no local `SUPABASE_ACCESS_TOKEN`).
+
+**Vercel + DNS (DONE, live)**: one-shot infra script `scripts/vercel-domain-migration.mjs` + temporary `workflow_dispatch` job `vercel-domain-migration.yml` (now removed) ran against the Vercel API:
+- Domain `sitetrackpro.in` already on the team + attached to project `sitetrack-rakesh` (user had done this).
+- Zone cleanup: deleted stale `www` CNAME → `links1.resend-dns.com` (was overriding the wildcard so www went to Resend), apex inbound MX → `inbound-smtp.ap-northeast-1.amazonaws.com` (SES inbound), `send` MX → `feedback-smtp.ap-northeast-1.amazonses.com` (this was actually Resend's required record — restored it once the API's `mxPriority` field was discovered).
+- Added apex A → `76.76.21.21` + `www` CNAME → `cname.vercel-dns.com` (idempotent).
+- **Verified live**: `https://sitetrackpro.in` → 308 → `https://www.sitetrackpro.in` → **200** (Vercel), page title "SiteTrack Pro"; `send.sitetrackpro.in` MX pref 10 in place; Resend DKIM + SPF TXT intact.
+- `node scripts/prod-smoke.mjs` against `https://sitetrackpro.in` → **3/3** (landing, Supabase REST + anon key, signup EF). The deploy-workflow prod:smoke will now pass on next prod deploy.
+- API gotchas recorded: Vercel `/v1/domains/{d}/records` rejects `priority`; MX requires separate `mxPriority` (integer) with `value` = host only.
+
+**Resend**: `sitetrackpro.in` domain **already exists + verified** (status `verified`, 0 pending records) — confirmed via `GET api.resend.com/domains` with the key in `.env.local`. All EFs already default `RESEND_FROM_EMAIL` to `SiteTrack <hello@sitetrackpro.in>` (code fallback, migrated earlier).
+
+**Supabase auth config (BLOCKED, dashboard-only)**: `auth.config` is not reachable via SQL on this project (`relation "auth.config" does not exist` even as `postgres`); `scripts/set-supabase-auth-url.mjs` needs a `SUPABASE_ACCESS_TOKEN` (none local). User action: dashboard → Authentication → URL Configuration → Site URL `https://sitetrackpro.in`, Redirect URLs add `https://sitetrackpro.in/**` + `http://localhost:5173/**`. Also check Edge Functions → Secrets: if `RESEND_FROM_EMAIL` is set to the old `onboarding@resend.dev` value it overrides the new code fallback (unset or set to `SiteTrack <hello@sitetrackpro.in>`).
+
+**Gate**: tsc clean · lint 0 errors · build clean · smoke 455 · vitest 224 files/2856 tests (unchanged code, infra-only). Commit `4819f10` (migration) → prod `4b8d031` (PR #4) still the source of truth; infra commits `9b161fb`/`9146ae7`/`5568524`/`3afa5d3` on `main` only (script evolution + this session record).
+
+---
+
 ## Session — 2026-08-20: Domain migration to sitetrackpro.in (complete — code/docs; infra wiring pending user)
 
 **Context**: User purchased **`sitetrackpro.in`** as the product's FINAL domain and directed that code and all docs follow it from now on. Migrated every old-domain reference (`sitetrack-rakesh.vercel.app`, `sitetrack.in`, `app.sitetrack.in`, `staging.app.sitetrack.in`, `sitetrack-rakesh-rakesh15.vercel.app`, `hello@sitetrack.in`) → `sitetrackpro.in` across **95 tracked files** (bulk replace with ordered patterns to avoid substring collisions, then targeted fixes). Canonical URL is the apex `https://sitetrackpro.in`.
