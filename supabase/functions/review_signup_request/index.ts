@@ -202,11 +202,10 @@ async function sendTempPasswordEmail(
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify({ from, to, subject: `Your SiteTrack Pro workspace is ready — ${firm}`, html }),
     });
-    return r.ok;
+return r.ok;
   } catch {
     return false;
   }
-}
 }
 
 // E2: seed billing_history for gateway-paid signups at org creation (org_id

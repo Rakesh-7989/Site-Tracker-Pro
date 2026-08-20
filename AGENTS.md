@@ -1,3 +1,18 @@
+## Session — 2026-08-20: Edge Function CORS fix — "Failed to send a request to the Edge Function" (complete)
+
+**Context**: User reported "Failed to send a request to the Edge Function" recurring in the live app. Root cause: the **`CORS_ALLOWED_ORIGINS` Edge Function secret was STALE** — it still pointed at the old `https://sitetrack.in` domain, so every EF honoring it (`remove_org_member`, `cashfree-subscription`, + the `_shared/cors.ts` consumers) responded with `Access-Control-Allow-Origin: https://sitetrack.in` while the browser sat at `https://www.sitetrackpro.in` → **CORS mismatch → browser blocks → supabase-js throws exactly that message**. (Preflight was never the problem — the Supabase gateway answers OPTIONS with `*`; the real POST response's ACAO was the mismatch.)
+
+**Fix (live + verified)**:
+- **Secret updated** (Management API, `POST /v1/projects/nntkxojdeyziemdhyjvg/secrets`): `CORS_ALLOWED_ORIGINS` = `https://sitetrackpro.in,https://www.sitetrackpro.in,http://localhost:5173` (was effectively old `sitetrack.in`). Runtime fix applies immediately (read at request time). Verified: POST from `Origin: https://www.sitetrackpro.in` to `remove_org_member` + `cashfree-subscription` now echoes `Access-Control-Allow-Origin: https://www.sitetrackpro.in` (was `https://sitetrack.in`).
+- **Code defaults hardened** (so a future secret removal can't regress): `_shared/cors.ts`, `remove_org_member`, `cashfree-subscription` defaults now include `https://www.sitetrackpro.in`. **Redeployed all 5 CORS consumers** (`remove_org_member` v18, `cashfree-subscription` v28, `mh-rera-submit` v28, `ka-rera-submit` v28, `whatsapp-send` v29) via `supabase functions deploy` + `SUPABASE_ACCESS_TOKEN` from `.env.local`.
+- **`_shared/auth.ts` hardened** — `authenticate()` failure responses (401/403/500/404 — expired/invalid tokens, missing profile, role/org/project gates) previously carried **no CORS header**, which for a lapsed session produces the SAME "Failed to send a request to the Edge Function" error instead of the real message. `json()` now takes `req` and echoes the request origin against `CORS_ALLOWED_ORIGINS` (falls back to first allowed / `*`). **Redeployed all 15 functions importing `_shared/auth.ts`** (13 direct + the 2 RERA/whatsapp already redeployed). Verified: valid-JWT-but-failing-auth request now returns the error with `Access-Control-Allow-Origin: https://www.sitetrackpro.in`.
+- **Pre-existing bug found + fixed**: `review_signup_request/index.ts` had a **stray `}` at line 210** (introduced in the domain-migration edit `4819f10`) → the repo source would NOT bundle (`Expression expected`). Deployed v29 was an older valid bundle. Removed the brace → redeployed v31. (`tg-rera-submit` source is also unbundleable — imports `src/lib/compliance.js` deleted in the JS→TS migration; live v26 still works, left as a noted follow-up.)
+- **Note**: `Access-Control-Allow-Origin: *` on some error paths is CORS-*permissive* (browser-readable) — not a blocker; the original bug was a *mismatched specific* origin.
+
+**Gates**: tsc clean · eslint 0 errors (EF files ignored by config) · vitest **224 files / 2856 tests** (full suite, incl. efAuthHelper/efAuthWiring/efRegisterOrg/efResendConfirmation/efPlanCheck/efInternals 63 tests).
+
+---
+
 ## Session — 2026-08-20: Supabase Auth + Resend delivery LIVE — sitetrackpro.in fully live (complete)
 
 **Context**: User pasted a `SUPABASE_ACCESS_TOKEN` (`sbp_…`, saved to `.env.local` only — gitignored, never committed) to finish the last two infra items. Both done + verified live.

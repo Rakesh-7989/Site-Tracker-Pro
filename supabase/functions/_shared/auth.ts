@@ -77,11 +77,17 @@ export interface AuthenticateOpts {
   requireOrgId?: string | undefined;
 }
 
-const json = (data: unknown, status: number): Response =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+const json = (data: unknown, status: number, req?: Request): Response => {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (req) {
+    const origin = req.headers.get("origin") ?? "";
+    const allowed = (Deno.env.get("CORS_ALLOWED_ORIGINS")
+      ?? "https://sitetrackpro.in,https://www.sitetrackpro.in,http://localhost:5173")
+      .split(",").map(s => s.trim()).filter(Boolean);
+    headers["Access-Control-Allow-Origin"] = allowed.includes(origin) ? origin : (allowed[0] ?? "*");
+  }
+  return new Response(JSON.stringify(data), { status, headers });
+};
 
 function getServiceClient(): SupabaseClient {
   const url = Deno.env.get("SUPABASE_URL");
@@ -113,7 +119,7 @@ export async function authenticate(
   if (!bearer) {
     return {
       ok: false,
-      response: json({ ok: false, error: "missing-bearer-token" }, 401),
+      response: json({ ok: false, error: "missing-bearer-token" }, 401, req),
     };
   }
   const token = bearer[1].trim();
@@ -124,7 +130,7 @@ export async function authenticate(
   if (userErr || !userData?.user) {
     return {
       ok: false,
-      response: json({ ok: false, error: "invalid-token", detail: userErr?.message }, 401),
+      response: json({ ok: false, error: "invalid-token", detail: userErr?.message }, 401, req),
     };
   }
   const authUser = userData.user;
@@ -139,13 +145,13 @@ export async function authenticate(
   if (profileErr) {
     return {
       ok: false,
-      response: json({ ok: false, error: "profile-lookup-failed", detail: profileErr.message }, 500),
+      response: json({ ok: false, error: "profile-lookup-failed", detail: profileErr.message }, 500, req),
     };
   }
   if (!profile) {
     return {
       ok: false,
-      response: json({ ok: false, error: "no-profile-row" }, 403),
+      response: json({ ok: false, error: "no-profile-row" }, 403, req),
     };
   }
 
@@ -160,7 +166,7 @@ export async function authenticate(
   if (orgRowsErr) {
     return {
       ok: false,
-      response: json({ ok: false, error: "org-memberships-lookup-failed", detail: orgRowsErr.message }, 500),
+      response: json({ ok: false, error: "org-memberships-lookup-failed", detail: orgRowsErr.message }, 500, req),
     };
   }
   const orgMemberships = (orgRows ?? []).map((r: OrgMemberRow) => ({ org_id: String(r.org_id), role: String(r.role) }));
@@ -190,7 +196,7 @@ export async function authenticate(
           error: "insufficient-role",
           required: opts.requireRole,
           actual: user.identityRole,
-        }, 403),
+        }, 403, req),
       };
     }
   }
@@ -205,7 +211,7 @@ export async function authenticate(
           ok: false,
           error: "not-org-member",
           required_org_id: opts.requireOrgId,
-        }, 403),
+        }, 403, req),
       };
     }
   }
@@ -223,10 +229,10 @@ export async function authenticate(
         .eq("id", opts.requireProjectId)
         .maybeSingle();
       if (projectErr) {
-        return { ok: false, response: json({ ok: false, error: "project-lookup-failed", detail: projectErr.message }, 500) };
+        return { ok: false, response: json({ ok: false, error: "project-lookup-failed", detail: projectErr.message }, 500, req) };
       }
       if (!project) {
-        return { ok: false, response: json({ ok: false, error: "project-not-found" }, 404) };
+        return { ok: false, response: json({ ok: false, error: "project-not-found" }, 404, req) };
       }
       const isOrgAdmin = orgMemberships.some(
         (m: OrgMemberRow) => m.org_id === project.org_id && m.role === "admin",
@@ -243,10 +249,10 @@ export async function authenticate(
           .is("removed_at", null)
           .maybeSingle();
         if (pmErr) {
-          return { ok: false, response: json({ ok: false, error: "project-membership-lookup-failed", detail: pmErr.message }, 500) };
+          return { ok: false, response: json({ ok: false, error: "project-membership-lookup-failed", detail: pmErr.message }, 500, req) };
         }
         if (!pm) {
-          return { ok: false, response: json({ ok: false, error: "not-project-member", required_project_id: opts.requireProjectId }, 403) };
+          return { ok: false, response: json({ ok: false, error: "not-project-member", required_project_id: opts.requireProjectId }, 403, req) };
         }
         projectMembership = { project_id: opts.requireProjectId, role: String(pm.role) };
       }
