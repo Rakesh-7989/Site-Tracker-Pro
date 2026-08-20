@@ -16,6 +16,23 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Stray-artifact guard: fail the build if known do-not-commit artifacts
+      # (captured CLI stderr dumps, temp probe/apply runners, scratch files)
+      # ever get committed again. Keeps the tree clean like the AGENTS.md
+      # "Do-not-commit artifacts" list.
+      - name: Stray-artifact guard
+        run: |
+          stray="$(git ls-files | grep -Ei '(^|/)(migration_status\.txt|e2eout\.txt|error\.txt|tmp\.txt|tsout[^/]*\.txt)$' || true)"
+          stray="$stray
+          $(git ls-files | grep -Ei 'scripts/(apply-(175|183|201|195)\.mjs|probe-(199|202)\.mjs|verify-(183|195)\.mjs)$' || true)"
+          stray="$stray
+          $(git ls-files | grep -Ei 'scripts/supabase/200_storage_usage\.sql$' || true)"
+          if [ -n "$(printf '%s' "$stray" | tr -d '[:space:]')" ]; then
+            echo "::error::Stray do-not-commit artifacts present in the tree:"
+            printf '%s\n' "$stray"
+            exit 1
+          fi
+          echo "No stray do-not-commit artifacts."
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build

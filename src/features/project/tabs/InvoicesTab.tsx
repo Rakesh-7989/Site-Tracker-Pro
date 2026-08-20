@@ -29,6 +29,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
   const [no, setNo] = useState(""); const [amount, setAmount] = useState("");
   const [gst, setGst] = useState("18"); const [tds, setTds] = useState("2");
   const [openPay, setOpenPay] = useState<string | null>(null);
+  const draftTax = invoiceTaxBreakup(Number(amount) || 0, Number(gst) || 0, Number(tds) || 0);
 
   const [summary, setSummary] = useState({ total: 0, paid: 0, outstanding: 0, count: 0 });
 
@@ -150,7 +151,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
           <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">TDS %</span><Input fit className="mt-1 w-20" type="number" suffix="%" value={tds} onChange={e => setTds(e.target.value)} /></div>
           <Button onClick={() => void add()} disabled={busy === "add" || !no.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Raise"}</Button>
           <div className="w-full text-[11px] text-fg-secondary">
-            GST {fmtRupees(invoiceTaxBreakup(Number(amount) || 0, Number(gst) || 0, Number(tds) || 0).gstAmount)} · TDS {fmtRupees(invoiceTaxBreakup(Number(amount) || 0, Number(gst) || 0, Number(tds) || 0).tdsAmount)} · <span className="text-fg-primary font-semibold">Net receivable {fmtRupees(invoiceTaxBreakup(Number(amount) || 0, Number(gst) || 0, Number(tds) || 0).netReceivable)}</span>
+            GST {fmtRupees(draftTax.gstAmount)} · TDS {fmtRupees(draftTax.tdsAmount)} · <span className="text-fg-primary font-semibold">Net receivable {fmtRupees(draftTax.netReceivable)}</span>
           </div>
         </Card>
       )}
