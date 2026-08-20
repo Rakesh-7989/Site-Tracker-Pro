@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listAttendance, createAttendance, setAttendanceStatus, deleteAttendance, type AttendanceRow, type AttendanceStatus, type AttendeeKind } from "@/app/attendanceQueries";
 import { listShiftRoster, createShiftRoster, deleteShiftRoster, SHIFT_LABEL, type ShiftRoster, type ShiftName } from "@/app/shiftQueries";

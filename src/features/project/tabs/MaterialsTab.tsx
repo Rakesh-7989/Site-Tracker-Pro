@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listMaterials, createMaterial, setMaterialStatus, deleteMaterial, type Material, type MaterialStatus } from "@/app/siteOpsQueries";
 import { listMaterialRequests, createMaterialRequest, setMaterialRequestStatus, deleteMaterialRequest, requestTotals, REQUEST_NEXT, REQUEST_STATUS_LABEL, type MaterialRequest, type RequestStatus } from "@/app/materialRequestQueries";

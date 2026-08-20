@@ -6,10 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Input, Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { DiffView } from "@/features/shared/DiffView";
+import { Input, Select } from "@/components/ui/forms";
 import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
@@ -18,9 +16,8 @@ import {
 import { logDownloadEvent } from "@/app/downloadAuditQueries";
 import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
 import { resolveDiffPair } from "@/app/drawingDiffSources";
-import type { DiffImageSource } from "@/features/shared/DiffView";
+import { DiffView, type DiffImageSource } from "@/features/shared/DiffView";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { isCadFileName } from "@/lib/dxfPreview";
 import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
 import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
@@ -283,6 +280,43 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
             </div>
           </Card>))}</div>
       )}
+
+      <Modal open={compareOpen} onClose={() => setCompareOpen(false)} size="full" title="Compare drawing revisions" subtitle={pairs[pairIndex] ? `${pairs[pairIndex].old.title} (${pairs[pairIndex].old.type})` : undefined} ariaLabel="Compare drawing revisions">
+        {pairs.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            <Select fit
+              className="w-full sm:w-auto"
+              value={String(pairIndex)}
+              onChange={e => { setPairIndex(Number(e.target.value)); setCompareImages({ oldImage: null, newImage: null }); }}
+              options={pairs.map((p, i) => ({ value: String(i), label: `${p.old.revision} → ${p.newer.revision} · ${p.old.title}` }))}
+            />
+            {compareImages.oldImage && compareImages.newImage && (
+              <DiffView
+                title={`${pairs[pairIndex].old.title} (${pairs[pairIndex].old.type})`}
+                oldImage={compareImages.oldImage}
+                newImage={compareImages.newImage}
+                onClose={() => setCompareOpen(false)}
+                onDownload={s => { if (s.url) window.open(s.url, "_blank", "noopener,noreferrer"); }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-fg-secondary">No two-revision pairs to compare.</div>
+        )}
+      </Modal>
+
+      <CadPreviewModal
+        open={previewTarget !== null}
+        onClose={() => setPreviewTarget(null)}
+        fileName={previewTarget?.name ?? null}
+        label="drawing"
+        getUrl={async () => {
+          const client = await getClient();
+          if (!client) return { ok: false, error: "Backend not configured." };
+          if (!previewTarget) return { ok: false, error: "No file selected." };
+          return drawingFileUrl(client, drawingObjectPath(projectId, previewTarget.id, previewTarget.name), 120);
+        }}
+      />
     </div>
   );
 }

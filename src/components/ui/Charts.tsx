@@ -47,11 +47,9 @@ export interface BarChartProps {
   formatValue?: (value: number) => string;
   className?: string;
   onSelect?: (datum: ChartDatum) => void;
-  responsive?: boolean;
-  responsiveOptions?: string;
 }
 
-export function BarChart({ data, color = "var(--st-accent)", showValues = false, formatValue, className, onSelect, responsive = true, responsiveOptions, }: BarChartProps): JSX.Element {
+export function BarChart({ data, color = "var(--st-accent)", showValues = false, formatValue, className, onSelect, }: BarChartProps): JSX.Element {
   const max = chartMax(data);
   const fmt = formatValue ?? ((v: number) => String(v));
   return (
@@ -102,8 +100,6 @@ export interface BarGroupProps {
   formatValue?: (value: number) => string;
   className?: string;
   onSelect?: (series: BarGroupSeries, value: number, group: string) => void;
-  responsive?: boolean;
-  responsiveOptions?: string;
 }
 
 /** Max across all series values (floor 1 so zero-only data never divides by zero). */
@@ -124,7 +120,7 @@ export function barGroupAriaLabel(groups: string[], series: BarGroupSeries[], fo
   return rows.join(", ");
 }
 
-export function BarGroup({ groups, series, showValues = false, formatValue, className, onSelect, responsive = true, responsiveOptions, }: BarGroupProps): JSX.Element {
+export function BarGroup({ groups, series, showValues = false, formatValue, className, onSelect, }: BarGroupProps): JSX.Element {
   const max = barGroupMax(groups, series);
   const fmt = formatValue ?? ((v: number) => String(v));
   return (
@@ -199,11 +195,9 @@ export interface PieChartProps {
   thickness?: number;
   centerLabel?: ReactNode;
   className?: string;
-  responsive?: boolean;
-  responsiveOptions?: string;
 }
 
-export function PieChart({ data, size = 120, thickness = 22, centerLabel, className, responsive = true, responsiveOptions, }: PieChartProps): JSX.Element {
+export function PieChart({ data, size = 120, thickness = 22, centerLabel, className, }: PieChartProps): JSX.Element {
   const r = size / 2 - thickness / 2;
   const segs = pieSegments(data, r);
   const cx = size / 2;
