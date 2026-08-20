@@ -81,7 +81,7 @@ async function main() {
   const recs = records.records || [];
   console.log("current records:", recs.map((r) => `${r.type} ${r.name || "(apex)"} -> ${r.value}`).join(" | ") || "(none)");
 
-  const RESEND_MX = { type: "MX", name: "send", value: "10 feedback-smtp.ap-northeast-1.amazonses.com", ttl: 60 };
+  const RESEND_MX = { type: "MX", name: "send", value: "feedback-smtp.ap-northeast-1.amazonses.com", mxPriority: 10, ttl: 60 };
   const stale = recs.filter((r) => {
     const name = trimDot(r.name);
     const value = trimDot(r.value);
