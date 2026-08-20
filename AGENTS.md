@@ -1,3 +1,22 @@
+## Session — 2026-08-20: Supabase Auth + Resend delivery LIVE — sitetrackpro.in fully live (complete)
+
+**Context**: User pasted a `SUPABASE_ACCESS_TOKEN` (`sbp_…`, saved to `.env.local` only — gitignored, never committed) to finish the last two infra items. Both done + verified live.
+
+**Supabase Auth config (DONE via Management API `set-supabase-auth-url.mjs --apply`)**: was stale (`site_url=https://www.sitetrackpro.in/`, allow-list = old `sitetrack-rakesh.vercel.app`/`sitetrack-rakesh-rakesh15.vercel.app` set) → now:
+- `site_url = https://sitetrackpro.in`
+- `uri_allow_list = https://sitetrackpro.in, https://sitetrackpro.in/**, http://localhost:5173, http://localhost:5173/**`
+Verified via `GET /v1/projects/nntkxojdeyziemdhyjvg/config/auth`. Confirm/magic-link/reset emails now redirect to the canonical site.
+
+**Resend `RESEND_FROM_EMAIL` EF secret (DONE)**: the project already had the secret set (16 secrets). User requested `SiteTrackPro <boyapatirakesh7777@gmail.com>` — **Resend rejects it** (`403 "The gmail.com domain is not verified"`; the account can only send from the verified `sitetrackpro.in` domain). Set to **`SiteTrackPro <hello@sitetrackpro.in>`** (user's chosen display name + the verified domain) via `POST /v1/projects/…/secrets` (secrets are write-only; names only listed). **Verified live end-to-end**: test email from that From → delivered to `boyapatirakesh7777@gmail.com` (`status=delivered`).
+- Also found + cleared a **manual Resend suppression** on `boyapatirakesh7777@gmail.com` (added 2026-08-19, `origin=manual`) via `DELETE /api.resend.com/suppressions/{email}` — it would have silently blocked all emails to the founder's inbox.
+- EF code fallbacks still read `"SiteTrack <hello@sitetrackpro.in>"` — the live secret override (`SiteTrackPro …`) wins; fallbacks only matter if the secret is ever removed.
+
+**Domain-migration session's remaining blockers are now ALL closed**: Vercel DNS (apex A 76.76.21.21 + www CNAME + Resend `send` MX restored, live 200) · Supabase Auth URL/redirects (canonical) · Resend (domain verified + real delivery). `scripts/vercel-domain-migration.mjs` retained as reusable tooling. `main`==`prod` (`c1b0970`).
+
+**Gate**: infra/docs only — no app code changed this session. Token in `.env.local` is gitignored; do not commit it.
+
+---
+
 ## Session — 2026-08-20: sitetrackpro.in infra wired — Vercel DNS live (complete; 2 dashboard items pending user)
 
 **Context**: Follow-up to the domain-migration session. The user switched the domain's **nameservers to Vercel** (`ns1/ns2.vercel-dns.com`) and directed "work on those 3 things now". I drove the remaining Vercel + DNS work autonomously via the `VERCEL_TOKEN` GitHub secret (local CLI token invalid; no local `SUPABASE_ACCESS_TOKEN`).
