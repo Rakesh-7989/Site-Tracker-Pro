@@ -13,7 +13,7 @@ merge to `main` (= production) only once it looks good.
 
 | Branch    | Vercel deployment            | Use for |
 |-----------|------------------------------|---------|
-| `main`    | **Production** → `https://sitetrack-rakesh.vercel.app` | only tested, ready-to-ship code |
+| `main`    | **Production** → `https://sitetrackpro.in` | only tested, ready-to-ship code |
 | `staging` | **Preview** → `https://sitetrack-rakesh-git-staging-<scope>.vercel.app` | trying things out, QA, pilot demos |
 
 Both branches point at the **same Supabase database**. (Free tier = one project.

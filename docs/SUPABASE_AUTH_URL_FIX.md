@@ -3,7 +3,7 @@
 ## Symptom
 
 Founder clicks "Forgot password" or a magic-link email from
-https://sitetrack-rakesh.vercel.app, but the link opens either:
+https://sitetrackpro.in, but the link opens either:
 
 - `http://localhost:5173/...`
 
@@ -17,7 +17,7 @@ reset email link points:
 
 1. `redirectTo` / `emailRedirectTo` - what our code passes when calling
    Supabase Auth. We centralize this through `getCanonicalAppUrl()` in
-   `src/lib/supabase.js` so it returns `https://sitetrack-rakesh.vercel.app`
+   `src/lib/supabase.js` so it returns `https://sitetrackpro.in`
    in production.
 2. Dashboard "Site URL" + "Redirect URLs" allow-list - Supabase's URL guard.
    If the redirect we pass is not in the allow-list, Supabase can fall back to
@@ -33,12 +33,12 @@ place.
    https://supabase.com/dashboard/project/nntkxojdeyziemdhyjvg/auth/url-configuration
 2. Set **Site URL** to:
    ```text
-   https://sitetrack-rakesh.vercel.app
+   https://sitetrackpro.in
    ```
 3. Set **Redirect URLs** to include:
    ```text
-   https://sitetrack-rakesh.vercel.app
-   https://sitetrack-rakesh.vercel.app/**
+   https://sitetrackpro.in
+   https://sitetrackpro.in/**
    http://localhost:5173
    http://localhost:5173/**
    ```
@@ -52,7 +52,7 @@ baked URL.
 1. Do not click "Request Access" in Vercel. That is Vercel deployment
    protection, not SiteTrack login.
 2. Open the canonical app directly:
-   https://sitetrack-rakesh.vercel.app/login
+   https://sitetrackpro.in/login
 3. Request a fresh magic link from there, or use password login.
 4. If the email contains a 6-digit OTP, enter that OTP on the login screen
    instead of using the broken link.
@@ -63,7 +63,7 @@ Trigger one more auth email and inspect the email link. The `redirect_to=`
 parameter should contain:
 
 ```text
-https://sitetrack-rakesh.vercel.app
+https://sitetrackpro.in
 ```
 
 It should not contain:
@@ -74,12 +74,12 @@ http://localhost:5173
 
 ## Future Domain Change
 
-When `https://app.sitetrack.in` is actually live and owned:
+When `https://sitetrackpro.in` is actually live and owned:
 
 1. Add it to Vercel.
-2. Update Vercel env `VITE_APP_URL=https://app.sitetrack.in`.
+2. Update Vercel env `VITE_APP_URL=https://sitetrackpro.in`.
 3. Update Supabase Site URL and Redirect URLs to include the new domain.
-4. Keep `https://sitetrack-rakesh.vercel.app/**` for a transition window.
+4. Keep `https://sitetrackpro.in/**` for a transition window.
 
-Until then, `https://sitetrack-rakesh.vercel.app` is the only production app
+Until then, `https://sitetrackpro.in` is the only production app
 URL.

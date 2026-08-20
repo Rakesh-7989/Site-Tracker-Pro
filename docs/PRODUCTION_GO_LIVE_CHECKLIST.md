@@ -117,7 +117,7 @@ to close before flipping the "open for business" switch.*
 
 | Check | Status | Notes |
 |-------|--------|-------|
-| Custom domain (e.g. app.sitetrack.in) | ⚠️ 🔵 | Currently `sitetrack-rakesh.vercel.app` |
+| Custom domain (e.g. sitetrackpro.in) | ⚠️ 🔵 | Currently `sitetrackpro.in` |
 | HTTPS / valid cert | ✅ | Vercel auto |
 | Supabase Auth Site URL = prod URL | ✅ | Fixed this session |
 | **Resend sending domain verified** | ⚠️ 🔵 | Needed for branded customer emails (DNS records) |

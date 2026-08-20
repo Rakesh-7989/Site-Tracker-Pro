@@ -37,7 +37,7 @@ Pair this with:
 |-----|----------|--------------|
 | 0–3 | Arrive. Founder badge. Builder POC introduction. | Be 5 min early. Wait outside, don't enter at exactly 0:00. |
 | 3–7 | Coffee + small talk. Read the room — is the promoter joining or just the GM Projects? | If promoter joins: shift more time to slide 8 (promoter digest). If only GM: shift to slide 6 (supervisor workflow). |
-| 7–10 | Lay laptop on table, open `https://sitetrack-rakesh.vercel.app` already signed in to the seed org. | Pre-clear browser cache to avoid stale state. |
+| 7–10 | Lay laptop on table, open `https://sitetrackpro.in` already signed in to the seed org. | Pre-clear browser cache to avoid stale state. |
 
 ### Minutes 10–25 — The product, the way they'll actually use it
 

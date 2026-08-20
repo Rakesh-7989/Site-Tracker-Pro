@@ -256,7 +256,7 @@ async function notifySignupPaid(
   const firm = String(row.firm_name ?? "Your firm");
   const contact = String(row.contact_name ?? "");
 
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
       <h2 style="color:#16a34a">Payment received</h2>
@@ -301,7 +301,7 @@ async function notifyOrgAdmins(
     return;
   }
 
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
   const { subject, html } = buildEmail(orgName, newStatus, prevStatus);
 
   await Promise.all(emails.map(async (to) => {

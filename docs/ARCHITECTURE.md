@@ -12,8 +12,8 @@
 
 Site-Tracker-Pro is a **multi-tenant SaaS for Indian builders** that runs as:
 
-1. **A web SPA** at `app.sitetrack.in` (cream/editorial UI, English/Telugu/Hindi).
-2. **A static marketing site** at `sitetrack.in` (one-pager + pricing + sign-up).
+1. **A web SPA** at `sitetrackpro.in` (cream/editorial UI, English/Telugu/Hindi).
+2. **A static marketing site** at `sitetrackpro.in` (one-pager + pricing + sign-up).
 3. **An Android app** wrapping the SPA via Capacitor (kiosks + offline-first capture).
 4. **Edge functions** running on Supabase Deno for webhook-signature-required work
    (Cashfree subscription, RERA submit).
@@ -62,7 +62,7 @@ The five sections that follow describe each layer **and** how it composes with t
                                   │ HTTPS         │ HTTPS
               (static one-pager)  ▼               ▼  (signed-in SPA)
                        ┌────────────────────┐  ┌────────────────────────┐
-                       │ sitetrack.in       │  │ app.sitetrack.in       │
+                       │ sitetrackpro.in       │  │ sitetrackpro.in       │
                        │ Vercel · static    │  │ Vercel · SPA           │
                        │ /landing.html      │  │ Vite dist/             │
                        └────────────────────┘  └─────────┬──────────────┘
@@ -110,10 +110,10 @@ The five sections that follow describe each layer **and** how it composes with t
 ### 1.3 Data flow — magic-link login (full path)
 
 ```
-1. User types email on app.sitetrack.in
+1. User types email on sitetrackpro.in
 2. SPA calls supabase.auth.signInWithOtp({email})  ──► Supabase Auth
 3. Supabase emails magic link  ──► User's inbox
-4. User clicks link  ──► returns to app.sitetrack.in?code=...
+4. User clicks link  ──► returns to sitetrackpro.in?code=...
 5. SPA exchanges code for JWT (auto, Supabase SDK)
 6. JWT contains: sub, email, app_metadata.tenant_id, app_metadata.role
 7. SPA stores JWT in localStorage (Supabase SDK default)
@@ -181,8 +181,8 @@ Pure-function core is testable without RPC; see [src/lib/blockchainAnchor.js](sr
 |---|---|---|---|---|
 | **local-demo** | localhost:5173 | localStorage (no Supabase) | — | Dev + offline demos |
 | **local-live** | localhost:5173 | dev Supabase project | — | Pre-production validation |
-| **staging** | staging.app.sitetrack.in | staging Supabase project | Internal | QA + investor demos |
-| **production** | app.sitetrack.in | prod Supabase project (`ap-south-1`) | Closed/Open | Real customers |
+| **staging** | staging.sitetrackpro.in | staging Supabase project | Internal | QA + investor demos |
+| **production** | sitetrackpro.in | prod Supabase project (`ap-south-1`) | Closed/Open | Real customers |
 
 The same Vite build runs everywhere; the only difference is the `VITE_BACKEND` /
 `VITE_SUPABASE_*` env vars (and the Capacitor wrapper for mobile).
@@ -780,7 +780,7 @@ before the next layer can ship.
           ▼                                            ▼
        ┌──────────────────────────────────────────────────┐
        │  S8. Production launch                           │
-       │  Vercel · DNS · sitetrack.in · app.sitetrack.in  │
+       │  Vercel · DNS · sitetrackpro.in · sitetrackpro.in  │
        └─────────────────────┬────────────────────────────┘
                              ▼
        ┌──────────────────────────────────────────────────┐

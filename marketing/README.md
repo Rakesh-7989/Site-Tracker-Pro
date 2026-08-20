@@ -1,6 +1,6 @@
 # SiteTrack Marketing Site
 
-The public landing page for **sitetrack.in**. Self-contained static site —
+The public landing page for **sitetrackpro.in**. Self-contained static site —
 no build step, no framework, no dependencies. Just `index.html` + inline CSS.
 
 Mirrors the HRMS frontend/backend separation pattern (see
@@ -11,12 +11,12 @@ rebuild and vice-versa.
 ## Architecture
 
 ```
-sitetrack.in        →  this folder (static landing)
-app.sitetrack.in    →  the repo root (Vite SPA, deploys from / )
+sitetrackpro.in        →  this folder (static landing)
+sitetrackpro.in    →  the repo root (Vite SPA, deploys from / )
 ```
 
 The landing page's CTAs (`Start free trial`, `Sign in`) all point to
-`https://app.sitetrack.in`, so the two sites are linked but deployed
+`https://sitetrackpro.in`, so the two sites are linked but deployed
 separately.
 
 ## Deploy to Vercel (recommended)
@@ -38,7 +38,7 @@ vercel --prod
 ```
 
 Then in the Vercel dashboard:
-- Project → Settings → Domains → add `sitetrack.in` + `www.sitetrack.in`
+- Project → Settings → Domains → add `sitetrackpro.in` + `www.sitetrackpro.in`
 - Point your domain registrar's DNS to Vercel (Vercel shows the exact records)
 
 ### Option B — Netlify drop
@@ -50,7 +50,7 @@ deploy. Then add the custom domain in Site Settings.
 
 The canonical source is `marketing/index.html`. A mirror exists at
 `public/landing.html` so the page is also reachable at
-`app.sitetrack.in/landing.html` during development. When you edit one,
+`sitetrackpro.in/landing.html` during development. When you edit one,
 copy to the other:
 
 ```bash
@@ -60,8 +60,8 @@ cp marketing/index.html public/landing.html
 
 ## What to update before going live
 
-- [ ] Replace `app.sitetrack.in` links if your app domain differs
-- [ ] Replace `hello@sitetrack.in` with your real inbox
+- [ ] Replace `sitetrackpro.in` links if your app domain differs
+- [ ] Replace `hello@sitetrackpro.in` with your real inbox
 - [ ] Replace the `+91 ●●●●● ●●●●●` placeholder phone number
 - [ ] Add a real signup form action (currently CTAs link to the app)
 - [ ] Add Google Analytics / Plausible snippet before `</head>`

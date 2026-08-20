@@ -117,7 +117,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
             <Icon name="plug" size={14} className="text-fg-tertiary" />
           </div>
           <p className="text-xs text-fg-secondary mt-1">
-            Serve this org on its own branded subdomain (e.g. <span className="font-mono text-fg-primary">yourco.sitetrack.in</span>). Landing, login, and the whole app auto-apply this org's logo + accent and auto-switch members into it. Leave empty to use the shared app URL.
+            Serve this org on its own branded subdomain (e.g. <span className="font-mono text-fg-primary">yourco.sitetrackpro.in</span>). Landing, login, and the whole app auto-apply this org's logo + accent and auto-switch members into it. Leave empty to use the shared app URL.
           </p>
         </div>
         {subError && <Alert variant="danger">{subError}</Alert>}
@@ -127,7 +127,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
             <Input className="mt-1" value={subdomain} onChange={e => setSubdomain(e.target.value)} placeholder="yourco" />
             <p className="text-xs text-fg-tertiary mt-1">Letters, numbers and hyphens only.</p>
           </div>
-          <span className="text-sm text-fg-secondary pb-2">.sitetrack.in</span>
+          <span className="text-sm text-fg-secondary pb-2">.sitetrackpro.in</span>
           <Button onClick={() => void saveSubdomain()} disabled={subSaving}>{subSaving ? <Spinner size={14} /> : <Icon name="check" size={14} />} Save</Button>
         </div>
       </Card>

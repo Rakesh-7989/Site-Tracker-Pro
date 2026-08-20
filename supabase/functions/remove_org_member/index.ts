@@ -20,7 +20,7 @@ declare const Deno: {
   serve(h: (req: Request) => Promise<Response> | Response): void;
 };
 
-const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,https://sitetrack-rakesh.vercel.app,http://localhost:5173")
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrackpro.in,http://localhost:5173")
   .split(",").map(s => s.trim()).filter(Boolean);
 const ALLOWED_SET = new Set(ALLOWED);
 

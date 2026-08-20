@@ -20,7 +20,7 @@ laptop/phone in the room. The runbook is what you do after they say yes.
 
 ## Before the meeting (2 min setup)
 
-1. Open `sitetrack-rakesh.vercel.app/?shell=v3` once on the demo device.
+1. Open `sitetrackpro.in/?shell=v3` once on the demo device.
    The `?shell=v3` flag persists in localStorage — you only append it once.
 2. Have **two** logins ready from `TEST_USERS_CREDENTIALS.md` (gitignored):
    - **Promoter** — `test-promoter@sitetrack.test` (the buyer's view)

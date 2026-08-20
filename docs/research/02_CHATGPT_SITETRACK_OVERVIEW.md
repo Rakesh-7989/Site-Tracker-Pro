@@ -11,7 +11,7 @@
 
 ## 1. Research Flow (27 user prompts)
 
-1. **Deep-dive** of `https://sitetrack-rakesh.vercel.app/` — what it is, why use it.
+1. **Deep-dive** of `https://sitetrackpro.in/` — what it is, why use it.
 2. **Competitor analysis** — 10 construction applications shortlisted and analyzed.
 3. **Architecture study** — of those 10 platforms (public APIs / integration architecture).
 4. **Blueprint** — SiteTrack Pro New Version Architecture & Implementation Blueprint (multi-industry).

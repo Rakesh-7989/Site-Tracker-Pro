@@ -57,7 +57,7 @@ there, click "Not spam" + add to contacts.
 **Permanent fix (zero spend):** Wire Resend SMTP. See
 [docs/RESEND_SMTP_SETUP.md](RESEND_SMTP_SETUP.md). Resend's free tier
 is 3,000 emails/month + you get to use a sender on your own verified
-domain (`auth@sitetrack.in`) which Gmail trusts.
+domain (`auth@sitetrackpro.in`) which Gmail trusts.
 
 ---
 
@@ -145,7 +145,7 @@ email body bypasses this (plain text, not a clickable URL).
 To prevent these symptoms reaching pilots:
 
 - [ ] Wire Resend SMTP per `docs/RESEND_SMTP_SETUP.md` (free, ~15 min)
-- [ ] Verify domain `sitetrack.in` on Resend (DNS records — TXT + MX)
+- [ ] Verify domain `sitetrackpro.in` on Resend (DNS records — TXT + MX)
 - [ ] Supabase Dashboard → Auth → SMTP Settings → switch from shared
       to Resend custom SMTP
 - [ ] Email template includes both `{{.ConfirmationURL}}` AND `{{.Token}}`

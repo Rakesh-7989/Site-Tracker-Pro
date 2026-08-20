@@ -14,7 +14,7 @@ you hear about an outage from a robot — not from an angry pilot customer.
 
 | # | Name | URL | Type | Success rule |
 |---|------|-----|------|--------------|
-| 1 | **SiteTrack Frontend** | `https://sitetrack-rakesh.vercel.app` | HTTP(s) + keyword | HTTP 200 **and** page contains `id="root"` |
+| 1 | **SiteTrack Frontend** | `https://sitetrackpro.in` | HTTP(s) + keyword | HTTP 200 **and** page contains `id="root"` |
 | 2 | **SiteTrack Backend (Supabase)** | `https://nntkxojdeyziemdhyjvg.supabase.co/auth/v1/health` | HTTP(s) | HTTP 200 (send header `apikey: <anon key>`) |
 
 - **Monitor 1** proves the website loads (Vercel up + a real app shell, not an
@@ -44,7 +44,7 @@ Go to <https://uptimerobot.com> → **Sign Up Free** → verify email.
 **Add New Monitor** →
 - **Monitor Type:** `Keyword`
 - **Friendly Name:** `SiteTrack Frontend`
-- **URL:** `https://sitetrack-rakesh.vercel.app`
+- **URL:** `https://sitetrackpro.in`
 - **Keyword Type:** `exists`
 - **Keyword:** `id="root"`
 - **Monitoring Interval:** `5 minutes` (free-tier minimum)

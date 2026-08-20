@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Sprint 1 (Session 30.2) Feature Freeze tests.
+// SiteTrack Pro — Sprint 1 (Session 30.2) Feature Freeze tests.
 //
 // Verifies the freeze gate is bulletproof — non-staff users must not be
 // able to see or navigate to any of the 16 frozen views, and the three
@@ -148,20 +148,20 @@ describe("isStaffUser() — three bypass paths", () => {
   });
 
   it("path 2 — returns true when role === 'superadmin'", () => {
-    expect(isStaffUser({ id: "u6", role: "superadmin", email: "ops@sitetrack.in" })).toBe(true);
+    expect(isStaffUser({ id: "u6", role: "superadmin", email: "ops@sitetrackpro.in" })).toBe(true);
   });
 
   it("path 3 — returns true when email is in VITE_STAFF_EMAILS allowlist (case-insensitive)", () => {
     if (typeof import.meta.env === "undefined") return;
-    import.meta.env.VITE_STAFF_EMAILS = "founder@sitetrack.in, ops@sitetrack.in";
-    expect(isStaffUser({ id: "u7", role: "client", email: "founder@sitetrack.in" })).toBe(true);
-    expect(isStaffUser({ id: "u8", role: "client", email: "FOUNDER@SITETRACK.IN" })).toBe(true);
-    expect(isStaffUser({ id: "u9", role: "client", email: "  ops@sitetrack.in  " })).toBe(true);
+    import.meta.env.VITE_STAFF_EMAILS = "founder@sitetrackpro.in, ops@sitetrackpro.in";
+    expect(isStaffUser({ id: "u7", role: "client", email: "founder@sitetrackpro.in" })).toBe(true);
+    expect(isStaffUser({ id: "u8", role: "client", email: "FOUNDER@SITETRACKPRO.IN" })).toBe(true);
+    expect(isStaffUser({ id: "u9", role: "client", email: "  ops@sitetrackpro.in  " })).toBe(true);
   });
 
   it("path 3 — does NOT trigger for non-allowlisted email", () => {
     if (typeof import.meta.env === "undefined") return;
-    import.meta.env.VITE_STAFF_EMAILS = "founder@sitetrack.in";
+    import.meta.env.VITE_STAFF_EMAILS = "founder@sitetrackpro.in";
     expect(isStaffUser({ id: "u10", role: "client", email: "rando@firm.in" })).toBe(false);
   });
 
@@ -175,7 +175,7 @@ describe("isStaffUser() — three bypass paths", () => {
 describe("isViewStubBlocked() — the actual gate", () => {
   const regularUser = { id: "u1", role: "client", email: "rita@firm.in" };
   const staffUser = { id: "u2", role: "client", email: "x@y.com", is_staff: true };
-  const superadmin = { id: "u3", role: "superadmin", email: "ops@sitetrack.in" };
+  const superadmin = { id: "u3", role: "superadmin", email: "ops@sitetrackpro.in" };
 
   it("blocks every frozen view for a regular client user", () => {
     for (const id of STUB_VIEWS) {

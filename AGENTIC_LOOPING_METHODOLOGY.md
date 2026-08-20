@@ -189,7 +189,7 @@ START → Phase 1 → [Deep Dive → Plan → Build → Verify → Commit] × N 
 ## Current Project State (as of 2026-08-14)
 
 ### Track A - Super Admin Platform Panel: COMPLETE
-All panels (Orgs, Users, Staff, Billing, Usage, Settings, Signups/Upgrades/Support) shipped and live at https://sitetrack-rakesh.vercel.app
+All panels (Orgs, Users, Staff, Billing, Usage, Settings, Signups/Upgrades/Support) shipped and live at https://sitetrackpro.in
 - Full gate suite: tsc 0 errors · lint 0 errors · build clean · smoke 351+ checks · e2e-mock 11/11
 - DB apply: 171 passed / 1 failed (benign: migration 120 seed data)
 

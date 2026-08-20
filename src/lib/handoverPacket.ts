@@ -166,7 +166,7 @@ export function verifyUrl(
   const params = new URLSearchParams({ root: manifestMerkleRoot });
   if (opts.chain)  params.set("chain", opts.chain);
   if (opts.txHash) params.set("tx", opts.txHash);
-  return `https://sitetrack.in/handover/verify?${params.toString()}`;
+  return `https://sitetrackpro.in/handover/verify?${params.toString()}`;
 }
 
 export function summarizeHandover(manifest: HandoverManifest): string {

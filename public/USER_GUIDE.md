@@ -2,7 +2,7 @@
 
 > Indian builders ki construction management software. Site nundi office daaka — every drawing, every measurement, every rupee tracked in one place.
 >
-> **Live at**: [https://sitetrack-rakesh.vercel.app](https://sitetrack-rakesh.vercel.app) (will move to `app.sitetrack.in` soon).
+> **Live at**: [https://sitetrackpro.in](https://sitetrackpro.in) (will move to `sitetrackpro.in` soon).
 
 ---
 
@@ -37,7 +37,7 @@
 
 ### Steps
 
-1. Open: **https://sitetrack-rakesh.vercel.app** in any browser (Chrome / Safari / Edge — works on phone too)
+1. Open: **https://sitetrackpro.in** in any browser (Chrome / Safari / Edge — works on phone too)
 2. You'll see the **Welcome back** login screen
 3. **Pick one of 3 paths**:
 
@@ -707,7 +707,7 @@ For sites where you want a single-purpose screen (not a full app).
 
 Single-tap attendance for site gate tablets.
 
-- Set tablet to URL: `https://sitetrack-rakesh.vercel.app/?mode=labour-kiosk`
+- Set tablet to URL: `https://sitetrackpro.in/?mode=labour-kiosk`
 - Sidebar hidden, only attendance grid visible
 - Worker walks in → site supervisor taps "Present" next to name → done
 - Optional QR code scan for fast attendance (worker shows ID card with QR)
@@ -985,7 +985,7 @@ A: Yes — bring your own GSP credentials. We build the IRP payload + send to yo
 ### 🟥 Support
 
 **Q: How do I contact support?**
-A: hello@sitetrack.in or in-app: Profile → Help → Email support.
+A: hello@sitetrackpro.in or in-app: Profile → Help → Email support.
 
 **Q: What's the response time?**
 A: Pro plan: 24 hours. Business plan: 8 hours. Enterprise: 1 hour, with named CSM.
@@ -1012,7 +1012,7 @@ A: Yes — Profile → Feedback → Submit. Top votes → roadmap. We ship ~2 cu
 ## 📞 Need help
 
 - **In-app**: Profile → Help → Search docs or contact support
-- **Email**: hello@sitetrack.in
+- **Email**: hello@sitetrackpro.in
 - **WhatsApp business**: +91 78989 71337
 - **GitHub issues** (technical): github.com/Rakesh-7989/Site-Tracker-Pro/issues
 

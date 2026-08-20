@@ -1,7 +1,7 @@
 # Case Study Template — SiteTrack Pro
 
 Fillable Markdown template for the first 10 design partners. Each case
-study is ~600-900 words, formatted for the website (sitetrack.in/customers)
+study is ~600-900 words, formatted for the website (sitetrackpro.in/customers)
 and as a PDF for sales conversations.
 
 Use one of these per customer. Replace `{{...}}` placeholders. Keep the
@@ -129,8 +129,8 @@ projects, more team members, new modules.}}
 ## Try it yourself
 
 {{Firm}} got to ROI in {{N}} weeks. Most builder firms see meaningful wins in
-the first 30 days. Start a free 14-day trial at **[sitetrack.in](https://sitetrack.in)**
-or email **hello@sitetrack.in** to talk to a human.
+the first 30 days. Start a free 14-day trial at **[sitetrackpro.in](https://sitetrackpro.in)**
+or email **hello@sitetrackpro.in** to talk to a human.
 
 ---
 
@@ -141,7 +141,7 @@ or email **hello@sitetrack.in** to talk to a human.
 - [ ] Legal review if mentioning competitors by name
 - [ ] Logo + headshot files received (PNG transparent + 800x800 JPG)
 - [ ] Tagline + headline approved by customer
-- [ ] Cross-link from sitetrack.in/customers
+- [ ] Cross-link from sitetrackpro.in/customers
 - [ ] Add to investor data room (Notion → Case Studies folder)
 - [ ] Pitch as guest article on Inc42 / YourStory / Entrackr
 - [ ] Cut into 4 social-media graphics (LinkedIn carousel)

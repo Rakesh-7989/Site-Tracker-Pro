@@ -112,8 +112,8 @@ console.log(`
     npm run check:supabase   ${C.dim}# verify the database connection${C.reset}
 
   ${C.bold}Deploy (see docs/DEPLOY_NOW.md)${C.reset}
-    Marketing site → sitetrack.in       ${C.dim}# cd marketing && vercel --prod${C.reset}
-    App            → app.sitetrack.in   ${C.dim}# vercel --prod (from repo root)${C.reset}
+    Marketing site → sitetrackpro.in       ${C.dim}# cd marketing && vercel --prod${C.reset}
+    App            → sitetrackpro.in   ${C.dim}# vercel --prod (from repo root)${C.reset}
 
   ${C.green}${C.bold}Done.${C.reset} Open the app with: ${C.cyan}npm run dev${C.reset}
 `);

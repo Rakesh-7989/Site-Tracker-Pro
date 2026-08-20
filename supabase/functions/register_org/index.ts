@@ -10,7 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
 
-const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,http://localhost:5173")
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrackpro.in,http://localhost:5173")
   .split(",").map(s => s.trim()).filter(Boolean);
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": ALLOWED[0] ?? "*",
@@ -68,7 +68,7 @@ async function sendWelcomeEmail(to: string, firmName: string): Promise<boolean> 
     // Fall back to REST API
     const key = Deno.env.get("RESEND_API_KEY");
     if (!key) return false;
-    const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+    const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
     try {
       const r = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -164,7 +164,7 @@ async function sendWelcomeEmail(to: string, firmName: string): Promise<boolean> 
     // Fall back to REST API
     const key = Deno.env.get("RESEND_API_KEY");
     if (!key) return false;
-    const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+    const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
     try {
       const r = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -324,7 +324,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   //    configured SMTP (Gmail). redirectTo = canonical app URL — the default
   //    site_url is a stale preview URL. Single source of truth for the confirm
   //    link = GoTrue's own email.
-  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
+  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrackpro.in").replace(/\/+$/, "");
   let confirmDispatched = false;
   {
     const { error: confirmErr } = await admin.auth.admin.generateLink({

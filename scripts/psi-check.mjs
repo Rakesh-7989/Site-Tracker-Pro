@@ -3,7 +3,7 @@
 // Reports the performance score + core web vitals for the live URL.
 // Usage: node scripts/psi-check.mjs [url] [mobile|desktop]
 
-const url = process.argv[2] || "https://sitetrack-rakesh.vercel.app";
+const url = process.argv[2] || "https://sitetrackpro.in";
 const strategy = process.argv[3] || "mobile";
 const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance`;
 

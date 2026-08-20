@@ -15,7 +15,7 @@ export const MOCK_USERS: Record<string, MockUser> = {
   contractor:{id:"u4",name:"Karthik Builders",email:"site@karthikbuilders.in",role:"contractor",avatar:"KB",org_id:"org1"},
   client:    {id:"u3",name:"Vikram Nair",email:"vikram@client.in",role:"client",avatar:"VN",org_id:"org1"},
   orgadmin:  {id:"u200",name:"Mohan Boyapati",email:"owner@buildco.in",role:"orgadmin",avatar:"MB",org_id:"org1"},
-  superadmin:{id:"u100",name:"Rakesh Boyapati",email:"admin@sitetrack.in",role:"superadmin",avatar:"RB",org_id:null},
+  superadmin:{id:"u100",name:"Rakesh Boyapati",email:"admin@sitetrackpro.in",role:"superadmin",avatar:"RB",org_id:null},
   project_admin: {id:"u201",name:"Naveen Yadav",email:"naveen@buildco.in",role:"project_admin",avatar:"NY",org_id:"org1"},
   prospector:    {id:"u202",name:"Geetha Rao",email:"geetha@buildco.in",role:"prospector",avatar:"GR",org_id:"org1"},
   project_head:   {id:"u203",name:"Ravi Teja",     email:"ravi@buildco.in",   role:"project_head",   avatar:"RT",org_id:"org1"},
@@ -95,7 +95,7 @@ export const INIT_ADMIN_USERS: AdminUser[] = [
   {id:"u13",name:"Ravi Menon",email:"head@nair.in",role:"client",org_id:"org4",status:"active",joined:"2024-12-10",last_seen:"2025-04-19T10:00:00Z"},
   {id:"u14",name:"Greenfield Owner",email:"gf@green.in",role:"architect",org_id:"org5",status:"active",joined:"2025-05-05",last_seen:"2025-05-05T11:00:00Z"},
   {id:"u200",name:"Mohan Boyapati",email:"owner@buildco.in",role:"orgadmin",org_id:"org1",status:"active",joined:"2024-10-01",last_seen:"2025-04-21T10:30:00Z"},
-  {id:"u100",name:"Rakesh Boyapati",email:"admin@sitetrack.in",role:"superadmin",org_id:null,status:"active",joined:"2024-09-01",last_seen:"2025-04-21T10:00:00Z"},
+  {id:"u100",name:"Rakesh Boyapati",email:"admin@sitetrackpro.in",role:"superadmin",org_id:null,status:"active",joined:"2024-09-01",last_seen:"2025-04-21T10:00:00Z"},
 ];
 
 interface SupportMessage {

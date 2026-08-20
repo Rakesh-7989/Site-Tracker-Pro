@@ -30,7 +30,7 @@ export interface StaffInvite {
 export function staffJoinUrl(token: string): string {
   const origin = typeof window !== "undefined" && window.location?.origin
     ? window.location.origin
-    : "https://sitetrack-rakesh.vercel.app";
+    : "https://sitetrackpro.in";
   return `${origin}/staff/join?token=${encodeURIComponent(token)}`;
 }
 

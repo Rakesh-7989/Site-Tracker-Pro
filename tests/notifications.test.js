@@ -1,10 +1,10 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import { notifsForUser } from "../src/lib/notifications";
 
 const arch  = { id: "u1", name: "Arjun", email: "a@buildco.in", role: "architect" };
 const pm    = { id: "u2", name: "Priya", email: "p@buildco.in", role: "pm" };
 const cli   = { id: "u3", name: "Vikram", email: "vikram@client.in", role: "client" };
-const sup   = { id: "u100", name: "Rakesh", email: "admin@sitetrack.in", role: "superadmin" };
+const sup   = { id: "u100", name: "Rakesh", email: "admin@sitetrackpro.in", role: "superadmin" };
 const con   = { id: "u4", name: "Karthik", email: "k@kb.in", role: "contractor" };
 
 const PROJECTS = [

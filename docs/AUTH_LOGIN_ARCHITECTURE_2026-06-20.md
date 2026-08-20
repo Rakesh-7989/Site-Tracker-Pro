@@ -8,7 +8,7 @@ request before the SiteTrack app could run and showed "You Need Access".
 Canonical app URL:
 
 ```text
-https://sitetrack-rakesh.vercel.app
+https://sitetrackpro.in
 ```
 
 Old emails are immutable: the redirect target is baked into the email when it
@@ -104,27 +104,27 @@ not different auth systems.
 `getCanonicalAppUrl()` now rejects:
 
 - any non-canonical `*.vercel.app` preview/duplicate host
-- stale placeholder `https://app.sitetrack.in`
+- stale placeholder `https://sitetrackpro.in`
 
 Local dev `http://localhost:5173` still works. Production auth emails should
-always use `https://sitetrack-rakesh.vercel.app`.
+always use `https://sitetrackpro.in`.
 
 ## Dashboard Checks Still Required
 
 These cannot be changed from this machine without Supabase/Vercel tokens:
 
 1. Supabase Auth -> URL Configuration:
-   - Site URL: `https://sitetrack-rakesh.vercel.app`
+   - Site URL: `https://sitetrackpro.in`
    - Redirect URLs:
-     - `https://sitetrack-rakesh.vercel.app`
-     - `https://sitetrack-rakesh.vercel.app/**`
+     - `https://sitetrackpro.in`
+     - `https://sitetrackpro.in/**`
      - `http://localhost:5173`
      - `http://localhost:5173/**`
 2. Supabase Auth -> Email Templates:
    - Prefer `{{ .ConfirmationURL }}` plus visible `{{ .Token }}`.
    - Do not build links from `{{ .SiteURL }}` if Site URL might drift.
 3. Edge Function secrets:
-   - `PUBLIC_SITE_URL=https://sitetrack-rakesh.vercel.app`
+   - `PUBLIC_SITE_URL=https://sitetrackpro.in`
 4. Vercel:
    - Disable/remove duplicate protected hostname/project if it still appears.
    - Keep Git production deployment attached to `sitetrack-rakesh`.

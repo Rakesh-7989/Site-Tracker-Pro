@@ -30,7 +30,7 @@ import { validateRera } from "../../../src/lib/compliance.js";  // type-only imp
 import { authenticate } from "../_shared/auth.ts";
 
 const ALLOWED_ORIGINS = (Deno.env.get("CORS_ALLOWED_ORIGINS") ||
-  "https://app.sitetrack.in,http://localhost:5173"
+  "https://sitetrackpro.in,http://localhost:5173"
 ).split(",").map(s => s.trim()).filter(Boolean);
 
 function cors(req: Request) {

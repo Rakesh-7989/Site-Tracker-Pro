@@ -67,6 +67,6 @@ describe("register_org — company segment (v4 C0)", () => {
 
   it("uses the canonical app URL for the confirm redirect", () => {
     expect(src).toMatch(/PUBLIC_SITE_URL/);
-    expect(src).toContain("https://sitetrack-rakesh.vercel.app");
+    expect(src).toContain("https://sitetrackpro.in");
   });
 });

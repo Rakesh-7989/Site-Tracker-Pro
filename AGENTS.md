@@ -1,4 +1,26 @@
-﻿## Session — 2026-08-20: Autonomous CAD-preview depth + PO receipt row expansion (complete)
+## Session — 2026-08-20: Domain migration to sitetrackpro.in (complete — code/docs; infra wiring pending user)
+
+**Context**: User purchased **`sitetrackpro.in`** as the product's FINAL domain and directed that code and all docs follow it from now on. Migrated every old-domain reference (`sitetrack-rakesh.vercel.app`, `sitetrack.in`, `app.sitetrack.in`, `staging.app.sitetrack.in`, `sitetrack-rakesh-rakesh15.vercel.app`, `hello@sitetrack.in`) → `sitetrackpro.in` across **95 tracked files** (bulk replace with ordered patterns to avoid substring collisions, then targeted fixes). Canonical URL is the apex `https://sitetrackpro.in`.
+
+**Code (runtime)**:
+- `src/lib/supabase.ts` — `CANONICAL_APP_URL = "https://sitetrackpro.in"`; `BLOCKED_APP_HOSTS = { "app.sitetrack.in", "app.sitetrackpro.in" }` (legacy/reserved placeholders rejected).
+- `src/lib/subdomain.ts` — white-label `DEFAULT_BASE_HOST = "sitetrackpro.in"`.
+- `src/app/staffQueries.ts` default URL → sitetrackpro.in; `src/lib/handoverPacket.ts` verify links → sitetrackpro.in.
+- Edge functions — `CORS_ALLOWED_ORIGINS` / `_shared/cors.ts` defaults → `https://sitetrackpro.in,http://localhost:5173` (deduped `remove_org_member`); `PUBLIC_SITE_URL` fallbacks → sitetrackpro.in; `RESEND_FROM_EMAIL` fallback → `hello@sitetrackpro.in`.
+
+**Config/CI/scripts/tests**: `.env.example` (VITE_APP_URL / CASHFREE_RETURN_URL / CASHFREE_ALLOWED_ORIGINS), `.github/workflows/deploy.yml` prod:smoke URL, `playwright.config.ts` + `e2e/*` BASE, `scripts/{prod-smoke,uptime-check,psi-check,verify-prod-pricing,set-supabase-auth-url,seed-first-org,seed-garchitects-roles,create-test-users,deploy-all,setup}.mjs` defaults, `public/USER_GUIDE.md`, `marketing/` + `public/landing.html` CTAs → sitetrackpro.in. Tests updated: canonicalAppUrl (canonical now sitetrackpro.in; stale-placeholder test still blocks `app.sitetrack.in`), handoverPacket regex, gSubdomain uppercase + reserved-label cases, featureFlags uppercase staff email, efRegisterOrg/efResendConfirmation source-contract assertions.
+
+**Docs**: AGENTS.md (live-URL refs + Phase A plan now targets `sitetrackpro.in`; old Resend domain `sitetrack.in` id `ddf2ce85…` documented as superseded), PENDING_WORK_END_TO_END_PLAN.md, ARCHITECTURE.md, DEPLOY_NOW.md, END_TO_END_PLAN.md, EXECUTION_PLAN_90_DAYS.md, RESEND_SMTP_SETUP.md, AUTH_LOGIN_ARCHITECTURE, USER_GUIDE, VERCEL_CONSOLIDATION (project-name refs kept), .opencode agent guides, and ~30 more. Vercel **project-name** references (`sitetrack-rakesh` project slug) and preview-domain patterns (`-git-staging-*.vercel.app`, `-git-feature-*.vercel.app`) intentionally kept.
+
+**Also fixed**: `.env.local` latent bug — `CASHFREE_ALLOWED_ORIGINS` and `RESEND_API_KEY` were merged on one line via a literal `\n` (RESEND_API_KEY was silently unreachable); split + `CASHFREE_ALLOWED_ORIGINS=https://sitetrackpro.in`. `docs/pitch/SiteTrack-Pitch-Deck.pptx` is binary — restored from git (still bakes the old email; regenerate via `docs/pitch/build-deck.mjs` when convenient).
+
+**Gate (all green)**: tsc clean · eslint 0 errors (4 pre-existing warnings) · build clean · smoke **455 checks** · vitest **224 files / 2856 tests**.
+
+**NOT yet done (needs user)**: Vercel project domain add + DNS (apex A → `76.76.21.21`, www CNAME → `cname.vercel-dns.com`; current apex = parked `216.198.79.65` w/ 308, `www` → wrong Resend links CNAME, stray MX → AWS SES), Supabase Auth site_url + redirect allowlist, Resend `sitetrackpro.in` domain (old `sitetrack.in` domain superseded), then `main`→`prod` deploy via the PR route + live verify.
+
+---
+
+## Session — 2026-08-20: Autonomous CAD-preview depth + PO receipt row expansion (complete)
 
 **Context**: Autonomous 5-hour session (user delegated all decisions). Baseline clean on `main` (`c976af8`, == `origin/main`). Picked the standing **CAD preview depth** backlog item as the main deliverable, plus wired the unused DataTable Phase-17 row expansion into a real consumer. Shipped via commit `808c2b5` (main) → PR #3 → squash `6727d0b` (prod), live 200.
 
@@ -14,7 +36,7 @@
 
 **Verification**: tsc clean · lint 0 errors · build clean · vitest **224 files / 2856 tests** (+23 dxf) · smoke **455 checks** (was 446; +9 markers/scan) · e2e-mock **11/11** · prod CI success on `6727d0b` · prod:smoke **3/3** · uptime frontend+backend 200 · live 200. No migrations added (no db:apply needed).
 
-**Next backlog candidates (needs user go)**: verify live feature flows (DrawingsTab CAD compare/preview, redesigned tabs); Phase A sitetrack.in email DNS; WhatsApp/Twilio/push delivery keys; CAD preview depth follow-ups (DWG via converter, CAD file list thumbnails); B6 subdomains/mobile/AI.
+**Next backlog candidates (needs user go)**: verify live feature flows (DrawingsTab CAD compare/preview, redesigned tabs); Phase A sitetrackpro.in email DNS; WhatsApp/Twilio/push delivery keys; CAD preview depth follow-ups (DWG via converter, CAD file list thumbnails); B6 subdomains/mobile/AI.
 
 ---
 
@@ -468,7 +490,7 @@ First slice of the "One Platform, Multiple Industry Modules" strategy: an org-le
 - `npm run lint` clean Â· `npx tsc --noEmit` clean Â· `npm run build` clean (13.14s) Â· `vitest` **112 files / 1439 tests pass** (+23).
 - Commit `3100cd5` (v4 Phase 1). Also committed `a3cb746` (fix recurring build failure: handover JSX, Badge size prop, invalid icons/capability, test fixes â€” 7 files).
 - **Live DB apply**: `npm run db:apply` â†’ **118 passed / 28 failed** (28 = the same benign pre-existing). Migration **155** applied + verified live: `organizations.enabled_modules` present, GIN index + CHECK constraint live. `orgs with modules: 0` (correct until onboarding sets it).
-- **Live deploy** (2026-08-06): pushed `prod`; Vercel Deploy + GitHub CI both green; site 200 OK at https://sitetrack-rakesh.vercel.app.
+- **Live deploy** (2026-08-06): pushed `prod`; Vercel Deploy + GitHub CI both green; site 200 OK at https://sitetrackpro.in.
   - Note: `npm run smoke` initially failed 8 "App marker" checks for views that moved from router.tsx into the plugin catalog â€” fixed by adding `src/plugins/catalog.ts` to the smoke scan (commit `2c819bc`, "fix(smoke): scan plugin catalog for module-gated view markers").
 
 ### Next Phase
@@ -637,7 +659,7 @@ First slice of the research's "Module 1: CRM & Sales" gap: an org-scoped lead pi
 ### Final gate + live push (2026-08-07)
 - Full verify: lint clean · tsc clean · build clean · vitest **137 files / 1716 tests pass** · smoke **255 checks** · `npm run test:e2e:mock` **7/7**.
 - `npm run db:apply` → **128 passed / 28 failed** (28 = same benign pre-existing already-exists rows); migrations **161–166** all applied + NOTICE-verified live (leads=0, design_workflow table + manager/orgadmin write policies, drawings.design_stage column).
-- `git push origin prod` (7a55996..63e9387) → Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **200**.
+- `git push origin prod` (7a55996..63e9387) → Vercel auto-deploy; live https://sitetrackpro.in returns **200**.
 
 ### Notes / Follow-ups
 - Risk card reads project `budget` directly (projects table) - RLS member-scoped like the other feeds; no new capability/plan gate (rides Overview visibility).
@@ -786,7 +808,7 @@ One-tap conversion from an accepted quotation into a pending agreement, idempote
 ### Verification
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 275 checks · `test:e2e:mock` 7/7.
 - **Live DB apply**: `npm run db:apply` → 132 passed / 28 failed (28 = benign pre-existing). Migration 172 applied (NOTICE-verified).
-- **Live deploy**: `git push origin prod` (commit `9a01f15`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **200**.
+- **Live deploy**: `git push origin prod` (commit `9a01f15`); Vercel auto-deploy; live https://sitetrackpro.in returns **200**.
 
 ---
 
@@ -795,7 +817,7 @@ One-tap conversion from an accepted quotation into a pending agreement, idempote
 ### Done
 - Migration 172 applied live via `npm run db:apply` (132 passed / 28 failed — 28 benign pre-existing).
 - Pushed `prod` branch (commit `9a01f15`).
-- Vercel auto-deploy successful; live site https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+- Vercel auto-deploy successful; live site https://sitetrackpro.in returns **HTTP 200**.
 
 ---
 
@@ -818,7 +840,7 @@ Add inspection checklists, per-item results (pass/fail/na), and consultancy repo
 ### Verification
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 143 files / 1794 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 7/7.
 - **Live DB apply**: `npm run db:apply` → 133 passed / 28 failed (28 = benign pre-existing). Migration 163 applied (NOTICE-verified).
-- **Live deploy**: `git push origin prod` (commit `7be5cb2`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **200**.
+- **Live deploy**: `git push origin prod` (commit `7be5cb2`); Vercel auto-deploy; live https://sitetrackpro.in returns **200**.
 
 ---
 
@@ -844,7 +866,7 @@ Enable users to belong to multiple organizations with an explicit invitation →
 ### Verification
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
 - **Live DB apply**: `npm run db:apply` → 133 passed / 28 failed (28 = benign pre-existing). Migration 173 applied (NOTICE-verified: "relation org_members_invited_idx already exists, skipping").
-- **Live deploy**: `git push origin prod` (commit `420b8a6`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+- **Live deploy**: `git push origin prod` (commit `420b8a6`); Vercel auto-deploy; live https://sitetrackpro.in returns **HTTP 200**.
 
 ---
 
@@ -870,7 +892,7 @@ Enhance the existing Vendor Portal (`/vendor`) so vendors can: (1) submit quotes
 ### Verification
 - `npm run lint` clean (errors only in temp fix script) · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
 - **Live DB apply**: `npm run db:apply` → 134 passed / 28 failed (28 = benign pre-existing). Migration 174 applied (NOTICE-verified: "relation purchase_orders_invoice_idx already exists, skipping").
-- **Live deploy**: `git push origin prod` (commit `3157b4c`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+- **Live deploy**: `git push origin prod` (commit `3157b4c`); Vercel auto-deploy; live https://sitetrackpro.in returns **HTTP 200**.
 
 ---
 
@@ -891,7 +913,7 @@ Add org-wide invoice register with payment reconciliation: net receivable, recei
 ### Verification
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
 - **Live DB apply**: `npm run db:apply` → 133 passed / 28 failed (28 = benign pre-existing). Migration 174 already applied.
-- **Live deploy**: `git push origin prod` (commit `3157b4c`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+- **Live deploy**: `git push origin prod` (commit `3157b4c`); Vercel auto-deploy; live https://sitetrackpro.in returns **HTTP 200**.
 
 ---
 
@@ -910,7 +932,7 @@ Surface the interior/architecture design-register tabs (Mood Boards, Rooms/Insta
 
 ### Verification
 - `npm run lint` clean · `npx tsc --noEmit` clean · `npm run build` clean · `vitest` 142 files / 1778 tests · `npm run smoke` 284 checks · `npm run test:e2e:mock` 11/11.
-- **Live deploy**: `git push origin prod` (commit `1bac3bc`); Vercel auto-deploy; live https://sitetrack-rakesh.vercel.app returns **HTTP 200**.
+- **Live deploy**: `git push origin prod` (commit `1bac3bc`); Vercel auto-deploy; live https://sitetrackpro.in returns **HTTP 200**.
 
 ---
 
@@ -1251,7 +1273,7 @@ button on won leads in LeadDrawer, with tests in `tests/app/crmQueries.test.ts`
 ### Verify
 `npm run lint` 0 errors · `npx tsc --noEmit` clean · `npm run build` clean ·
 vitest **145 files / 1848 tests** · `npm run smoke` **309 checks** ·
-live https://sitetrack-rakesh.vercel.app **200**.
+live https://sitetrackpro.in **200**.
 
 ---
 
@@ -1302,7 +1324,7 @@ plan features — no new capabilities.
   stays out of commits like apply-175); verified via pg — project-tier gate,
   retainer bounds, and line-item emission all present on both RPCs.
 - **Live deploy**: `git push origin prod` (`f13c49c..ff6042f`); Vercel
-  auto-deploy; live https://sitetrack-rakesh.vercel.app **200**.
+  auto-deploy; live https://sitetrackpro.in **200**.
 
 ### Notes / Follow-ups
 - Temp runners (`apply-183.mjs`, `verify-183.mjs`, `apply-175.mjs`) stay out
@@ -1333,7 +1355,7 @@ plan features — no new capabilities.
 ### Verify (Batch A)
 - lint clean · `tsc --noEmit` clean · build clean (8.6s) · vitest
   **145 files / 1848 tests pass** · smoke **309 checks** · e2e-mock **11/11**
-  · live https://sitetrack-rakesh.vercel.app **200**.
+  · live https://sitetrackpro.in **200**.
 
 ### Next (Batch B) — shipped 2026-08-11 (commit TBD, pushed `prod`, live 200)
 
@@ -2629,15 +2651,15 @@ users were told "check your inbox" but **no confirmation email was ever dispatch
   (`confirmation_sent_at` set immediately after the raw REST call, smtp.gmail.com:587,
   sender "SiteTrack Pro"). So `generateLink` is the single source of truth for the
   confirm email; `createUser` is NOT.
-- The redirect `site_url` on the project is **stale**
+- The redirect `site_url` on the project was **stale**
   (`https://sitetrack-rakesh-rakesh15.vercel.app/`) but the redirect allowlist
-  includes `https://sitetrack-rakesh.vercel.app` → must pass `redirectTo` explicitly.
+  includes the canonical URL → must pass `redirectTo` explicitly.
 
 ### Fix (commit `7cd711b`, pushed `prod`, live 200)
 - `supabase/functions/register_org/index.ts` — after the org/profile/member steps
   succeed, dispatch the confirm email via
   `admin.auth.admin.generateLink({ type: "signup", email, options: { redirectTo: siteUrl } })`
-  where `siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app")
+  where `siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrackpro.in")
   .replace(/\/+$/, "")`. `emailSent` now reflects the confirm dispatch
   (`confirmDispatched`); a new `welcomeSent` field reports the Resend heads-up email.
   The welcome email comment updated (GoTrue's email is the single confirm-link source).
@@ -2651,7 +2673,7 @@ users were told "check your inbox" but **no confirmation email was ever dispatch
   (+4: generateLink dispatch, emailSent=confirm dispatch, canonical redirect URL).
 - **Verified live** (probe org/user cleaned): register_org → `emailSent:true`,
   `confirmation_sent_at` **set** (was NULL before the fix); resend_confirmation →
-  **200** with `link` carrying `redirect_to=https://sitetrack-rakesh.vercel.app`.
+  **200** with `link` carrying `redirect_to=https://sitetrackpro.in`.
 - Gates: `tsc` clean · eslint 0 errors · vitest **207 files / 2562 tests** · smoke
   **396 checks**.
 - Deploy gotcha: `supabase functions deploy <fn>` intermittently failed with
@@ -2687,15 +2709,18 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 - Gates: tsc clean · eslint 0 errors · vitest **209 files / 2577 tests** · smoke
   **398 checks** · build clean · e2e-mock **11/11**.
 
-### Phase A — Real email delivery via sitetrack.in (BLOCKED on user DNS)
-- Resend domain `sitetrack.in` created (id `ddf2ce85-70c8-4b59-a734-a0d58d301976`,
-  region us-east-1, status `not_started`). User must add 3 records at the DNS
-  provider: **TXT `resend._domainkey`** = the `p=...` value from the domain's
-  `records` API, **TXT `send`** = `v=spf1 include:amazonses.com ~all`, **MX `send`**
-  (pri 10) = `feedback-smtp.us-east-1.amazonses.com`. After DNS propagates, agent
-  verifies in Resend, flips `RESEND_FROM_EMAIL` → `hello@sitetrack.in` (env.local +
-  Supabase EF secret), live-tests delivery to `boyapatirakesh7777@gmail.com`
-  (test domain only reaches `boyapatirakesh.mahespaddy@gmail.com`), then does the
-  §8 manual confirm round-trip.
+### Phase A — Real email delivery via sitetrackpro.in (BLOCKED on user DNS)
+- **Domain migration (2026-08-20)**: the product's final domain is now
+  **`sitetrackpro.in`** (user-purchased; all code + docs migrated off
+  `sitetrack-rakesh.vercel.app` / `sitetrack.in`). The previously-created Resend
+  domain was `sitetrack.in` (id `ddf2ce85-70c8-4b59-a734-a0d58d301976`, never
+  verified) — superseded. Create a **new** Resend domain for `sitetrackpro.in`
+  and have the user add its 3 records at the DNS provider: **TXT
+  `resend._domainkey`** = the `p=...` value from the domain's `records` API,
+  **TXT `send`** = `v=spf1 include:amazonses.com ~all`, **MX `send`** (pri 10) =
+  `feedback-smtp.us-east-1.amazonses.com`. After DNS propagates, agent verifies
+  in Resend, flips `RESEND_FROM_EMAIL` → `hello@sitetrackpro.in` (env.local +
+  Supabase EF secret), live-tests delivery to `boyapatirakesh7777@gmail.com`,
+  then does the §8 manual confirm round-trip.
 - `RESEND_FROM_EMAIL` is currently `SiteTrack <onboarding@resend.dev>` (test
   domain) — works only to the account owner email.

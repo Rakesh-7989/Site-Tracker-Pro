@@ -1,6 +1,6 @@
 # Manual QA — G-Arch Seeded Role Sign-In Checklist
 
-Runs against **live** https://sitetrack-rakesh.vercel.app using the seeded
+Runs against **live** https://sitetrackpro.in using the seeded
 "G Architects" org (2026-08-10). One user per identity role; one construction
 project **G Arch Demo Villa** (`55419fbe-2cc2-4ddd-a2b1-d9219f2af159`).
 

@@ -7,11 +7,11 @@
 //
 // Usage:
 //   RESEND_API_KEY=re_xxx \
-//   RESEND_FROM=hello@sitetrack.in \
+//   RESEND_FROM=hello@sitetrackpro.in \
 //     node scripts/test-resend-smtp.mjs you@example.com
 //
 //   # Or pass everything as CLI args:
-//   node scripts/test-resend-smtp.mjs --key re_xxx --from hello@sitetrack.in --to you@example.com
+//   node scripts/test-resend-smtp.mjs --key re_xxx --from hello@sitetrackpro.in --to you@example.com
 //
 // Exit codes:
 //   0 = success (you'll see message_id; check the recipient inbox)

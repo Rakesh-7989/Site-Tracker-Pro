@@ -21,7 +21,7 @@ import { cashfreeBaseUrl } from "../_shared/cashfree.ts";
 // @ts-ignore — Deno global.
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
 
-const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrack.in,http://localhost:5173")
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrackpro.in,http://localhost:5173")
   .split(",").map(s => s.trim()).filter(Boolean);
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": ALLOWED[0] ?? "*",
@@ -65,7 +65,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const base = cashfreeBaseUrl({ env: cfEnv });
   const linkId = `st_${requestId.slice(0, 8)}_${plan}_${period}`.replace(/[^a-zA-Z0-9_]/g, "");
-  const site = Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app";
+  const site = Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrackpro.in";
 
   const r = await fetch(`${base}/links`, {
     method: "POST",

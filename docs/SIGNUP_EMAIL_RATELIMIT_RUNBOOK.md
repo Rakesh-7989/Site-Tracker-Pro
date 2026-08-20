@@ -56,7 +56,7 @@ subsequent signup fails the same way.
 Step-by-step:
 
 1. **Sign up** at https://resend.com/ — free, no credit card.
-2. **Add and verify your sending domain** (e.g. `sitetrack.in` or
+2. **Add and verify your sending domain** (e.g. `sitetrackpro.in` or
    the founder's personal domain). Verification = 3 DNS records
    added in your domain registrar (Cloudflare, GoDaddy, etc).
 3. **Generate an API key** in the Resend dashboard.
@@ -64,7 +64,7 @@ Step-by-step:
    https://supabase.com/dashboard/project/nntkxojdeyziemdhyjvg/auth/templates
 5. Click "Settings" → "SMTP Settings" → **Enable Custom SMTP**.
 6. Enter:
-   - Sender email: `hello@sitetrack.in` (or your verified domain)
+   - Sender email: `hello@sitetrackpro.in` (or your verified domain)
    - Sender name: `SiteTrack Pro`
    - Host: `smtp.resend.com`
    - Port: `465`

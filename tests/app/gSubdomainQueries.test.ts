@@ -21,8 +21,8 @@ function rpcMock(data: unknown, error: unknown) {
 describe("normalizeSubdomainInput (P-G3)", () => {
   it("lowercases, trims, strips protocol/domain/whitespace and bad chars", () => {
     expect(normalizeSubdomainInput("  GARCH  ")).toBe("garch");
-    expect(normalizeSubdomainInput("https://garch.sitetrack.in")).toBe("garch");
-    expect(normalizeSubdomainInput("www.garch.sitetrack.in")).toBe("garch");
+    expect(normalizeSubdomainInput("https://garch.sitetrackpro.in")).toBe("garch");
+    expect(normalizeSubdomainInput("www.garch.sitetrackpro.in")).toBe("garch");
     expect(normalizeSubdomainInput("your_co!")).toBe("yourco");
     expect(normalizeSubdomainInput("")).toBe("");
   });
@@ -81,7 +81,7 @@ describe("setOrgSubdomain / getOrgSubdomain (P-G3)", () => {
         return { data: [{ ok: true, reason: "ok" }], error: null };
       },
     };
-    const res = await setOrgSubdomain(client, "o1", "https://GARCH.sitetrack.in");
+    const res = await setOrgSubdomain(client, "o1", "https://GARCH.sitetrackpro.in");
     expect(res.ok).toBe(true);
     expect(calledWith).toEqual({ p_org_id: "o1", p_subdomain: "garch" });
   });

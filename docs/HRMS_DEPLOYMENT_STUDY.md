@@ -123,21 +123,21 @@ So a fresh HRMS environment = `psql -f setup.sql` → `node scripts/setup.js`
 ```
    ┌──────────────────────┐                ┌─────────────────────────────┐
    │  Marketing (static)  │                │  Supabase (managed cloud)   │
-   │  sitetrack.in        │                │  · Postgres + RLS           │
+   │  sitetrackpro.in        │                │  · Postgres + RLS           │
    │  marketing/index.html│                │  · Auth (magic link)        │
    └──────────────────────┘                │  · Realtime                 │
                                             │  · Storage                  │
    ┌──────────────────────┐    SDK calls   │  · Edge Functions           │
    │  App (Vite SPA)      │ ──────────────> │    (cron via pg_cron)       │
-   │  app.sitetrack.in    │ <────────────── └─────────────────────────────┘
+   │  sitetrackpro.in    │ <────────────── └─────────────────────────────┘
    │  static host         │   rows + realtime
    └──────────────────────┘
 ```
 
 **Two pieces, one of them fully managed:**
 
-1. **Marketing site** — static `marketing/index.html` → sitetrack.in
-2. **App** — static Vite SPA → app.sitetrack.in
+1. **Marketing site** — static `marketing/index.html` → sitetrackpro.in
+2. **App** — static Vite SPA → sitetrackpro.in
 3. **Backend** — there is NO custom backend to run. Supabase is the backend:
    Postgres, auth, RLS, realtime, storage, and Edge Functions (for the
    Cashfree webhook + cron) are all managed.
@@ -201,11 +201,11 @@ topology.**
 Mirroring HRMS's "two independently-deployable units" idea, SiteTrack now has:
 
 ```
-marketing/        ← deploys to sitetrack.in (static, no build)
+marketing/        ← deploys to sitetrackpro.in (static, no build)
   index.html      ← the landing page (canonical home)
   vercel.json     ← static config + security headers
 
-(repo root)       ← deploys to app.sitetrack.in (Vite SPA)
+(repo root)       ← deploys to sitetrackpro.in (Vite SPA)
   src/, dist/     ← the React app
   vercel.json     ← SPA config (already present)
 ```

@@ -15,7 +15,7 @@ sequenceDiagram
     SPA-->>U: "Check your email" panel
 
     Mail->>U: shows link with code
-    U->>SPA: click link  (loads app.sitetrack.in?code=…)
+    U->>SPA: click link  (loads sitetrackpro.in?code=…)
     SPA->>SA: exchange code → session JWT
     SA-->>SPA: JWT {sub, email, app_metadata.tenant_id, role}
 

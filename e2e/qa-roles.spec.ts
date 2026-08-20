@@ -1,6 +1,6 @@
 import { test, expect, Page } from "@playwright/test";
 
-const BASE = "https://sitetrack-rakesh.vercel.app";
+const BASE = "https://sitetrackpro.in";
 
 const USERS = {
   owner:  { email: "boyapatirakesh.mahespaddy@gmail.com", pw: "Test@123", loginPage: "staff" },

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const BASE = "https://sitetrack-rakesh.vercel.app";
+const BASE = "https://sitetrackpro.in";
 
 test("Staff/Owner — login at /staff/login, reach admin", async ({ page }) => {
   test.setTimeout(60000);

@@ -18,19 +18,19 @@
 | `resend_confirmation` EF | ✅ shipped + live | exists |
 | Resend API key + webhook secret wired | ✅ live | `RESEND_API_KEY`/`RESEND_WEBHOOK_SECRET` set |
 | resend-webhook receiver + `resend_delivery_events` (migration 201) | ✅ shipped + live | `ff5adef` |
-| `sitetrack.in` Resend domain | 🟡 **created, DNS not verified** | domain `ddf2ce85…`, status `not_started` |
+| `sitetrackpro.in` Resend domain | 🟡 **create for the new domain (2026-08-20)** | old Resend domain was `sitetrack.in` (id `ddf2ce85…`, unverified) — superseded |
 | `RESEND_FROM_EMAIL` | 🟡 test domain `onboarding@resend.dev` | only reaches account-owner inbox |
 | `OrgRegisterView` i18n | 🟡 **hardcoded strings, no `useT`** | LoginScreenV3 is i18n'd — register screen is the outlier |
 
 ## Phase A — Real email delivery (primary blocker)
 
 **Goal**: real confirmation + notification emails reach any recipient, not just
-the account owner. Requires the `sitetrack.in` DNS verification (user-side).
+the account owner. Requires the `sitetrackpro.in` DNS verification (user-side).
 
 | # | Sub-task | Action | Depends |
 |---|----------|--------|---------|
 | A1 | DNS + Resend verify | User adds 3 DNS records (DKIM TXT, SPF TXT, MX) → I verify in Resend (API `GET /domains/{id}` status=verified) | **user DNS** |
-| A2 | Flip `RESEND_FROM_EMAIL` | `.env.local` + Supabase EF secret → `SiteTrack <hello@sitetrack.in>` | A1 |
+| A2 | Flip `RESEND_FROM_EMAIL` | `.env.local` + Supabase EF secret → `SiteTrack <hello@sitetrackpro.in>` | A1 |
 | A3 | Live delivery test | Send to `boyapatirakesh7777@gmail.com` via Resend → 200 + `email.sent` webhook → `resend_delivery_events` row | A2 |
 | A4 | §8 manual confirm round-trip | Register a real org with routable inbox → click confirm link → sign in → onboarding plan step → trial banner visible | A2 |
 
@@ -65,7 +65,7 @@ build. No schema/EF change.
 ## Phase D — Release + push live
 
 1. Commit per sub-task (Phase A/B), `git push origin main:prod`.
-2. Vercel auto-deploy → live `https://sitetrack-rakesh.vercel.app` HTTP 200.
+2. Vercel auto-deploy → live `https://sitetrackpro.in` HTTP 200.
 3. Update `AGENTS.md` work-state + close `docs/ZOHO_SIGNUP_REDESIGN_PHASE_C_PLAN.md` §8 items.
 
 ## Non-goals (deferred, unchanged)

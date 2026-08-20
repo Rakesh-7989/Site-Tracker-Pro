@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   cashfreeBaseUrl, isCashfreeConfigured,
   buildSubscriptionRequest, buildCancellationRequest, buildUpgradeOperations,
@@ -24,7 +24,7 @@ describe("cashfree — config helpers", () => {
 
 describe("cashfree — buildSubscriptionRequest", () => {
   it("returns subscription_id + payload with correct plan_id", () => {
-    const { subscription_id, payload } = buildSubscriptionRequest(org, "pro", "https://app.sitetrack.in/");
+    const { subscription_id, payload } = buildSubscriptionRequest(org, "pro", "https://sitetrackpro.in/");
     expect(subscription_id).toMatch(/^st_/);
     expect(payload.plan_id).toBe("sitetrack_pro_monthly");
     expect(payload.customer_details.customer_email).toBe(org.contact_email);

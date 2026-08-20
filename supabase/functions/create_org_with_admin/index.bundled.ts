@@ -361,7 +361,7 @@ async function sendOrgWelcomeEmail(
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return false;
 
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto">
       <div style="text-align:center;margin-bottom:24px">
@@ -456,7 +456,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!url || !key) return json({ ok: false, error: "service-not-configured" }, 500);
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app").replace(/\/+$/, "");
+  const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrackpro.in").replace(/\/+$/, "");
   const loginUrl = `${siteUrl}/login`;
 
   const tempPassword = generateTempPassword();

@@ -3,7 +3,7 @@
 > Step-by-step guide to understand how roles, features, and workflows work.
 > Each section ends with **test scenarios** — use these to verify you've learned correctly.
 
-**Live at**: [https://sitetrack-rakesh.vercel.app](https://sitetrack-rakesh.vercel.app)
+**Live at**: [https://sitetrackpro.in](https://sitetrackpro.in)
 
 ---
 
@@ -53,7 +53,7 @@ Construction site management software built for Indian builders. Tracks every dr
 | Consultant | 6 tabs (Inspections + Submittals + Audit) | PMC, QS firms |
 
 **3 access modes:**
-- **Browser** — full app at app.sitetrack.in
+- **Browser** — full app at sitetrackpro.in
 - **Mobile** — same app, responsive layout, bottom tab bar
 - **Kiosk** — single-purpose screens for site gate / site office TV
 
@@ -72,7 +72,7 @@ Each section follows the same pattern:
 
 ### Goal: Sign up, pick a role, see your dashboard
 
-1. Open **app.sitetrack.in** in Chrome / Safari / Edge
+1. Open **sitetrackpro.in** in Chrome / Safari / Edge
 2. You see the **Welcome back** login screen
 3. Choose a sign-in path:
 
@@ -548,7 +548,7 @@ Each role family below includes: who they are → what they see → daily workfl
 
 1. **Setup:**
    - Org Admin → Features → Enable "Labour Kiosk"
-   - Set tablet URL to: `https://app.sitetrack.in/kiosk/labour`
+   - Set tablet URL to: `https://sitetrackpro.in/kiosk/labour`
 2. **Daily use:**
    - Tablet displays worker grid with photos
    - Worker walks in → Supervisor taps **Present** next to name
@@ -736,7 +736,7 @@ SiteTrack offers 4 kiosk modes for single-purpose screens at site.
 
 **Setup:**
 1. Org Admin → Features → Enable "Labour Kiosk"
-2. Set tablet URL: `https://app.sitetrack.in/kiosk/labour`
+2. Set tablet URL: `https://sitetrackpro.in/kiosk/labour`
 3. PIN-locked: Can't exit without 4-digit PIN
 
 **Daily use:**
@@ -760,7 +760,7 @@ SiteTrack offers 4 kiosk modes for single-purpose screens at site.
 **Purpose**: Wall-mounted TV in site office showing live project status.
 
 **Setup:**
-- URL: `https://app.sitetrack.in/kiosk/site-wall`
+- URL: `https://sitetrackpro.in/kiosk/site-wall`
 - No interaction needed — passive display
 
 **Display:**
@@ -774,7 +774,7 @@ SiteTrack offers 4 kiosk modes for single-purpose screens at site.
 
 **Purpose**: Single-page project status summary.
 
-**URL**: `https://app.sitetrack.in/kiosk/snapshot`
+**URL**: `https://sitetrackpro.in/kiosk/snapshot`
 
 **Shows:**
 - Labour count today
@@ -882,7 +882,7 @@ Platform admin (superadmin) views for managing the entire SaaS.
 |---------|-----|
 | "Something broke" error screen | Click "Reload" — usually fixes it |
 | Recurring crash | Click "Reload and clear data" (wipes cache, server data safe) |
-| Report a bug | Profile → Help → Report, or email hello@sitetrack.in |
+| Report a bug | Profile → Help → Report, or email hello@sitetrackpro.in |
 
 ---
 

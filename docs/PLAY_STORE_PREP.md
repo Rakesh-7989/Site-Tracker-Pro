@@ -218,9 +218,9 @@ useEffect(() => {
 - [ ] `npm test` all green (272 + new tests)
 - [ ] `docs/CONNECT_SUPABASE.md` checklist passed (production DB live)
 - [ ] `docs/CASHFREE_ONBOARDING.md` Edge Functions deployed
-- [ ] Privacy policy URL live (`sitetrack.in/privacy`)
-- [ ] Terms of service URL live (`sitetrack.in/terms`)
-- [ ] Support email monitored (`hello@sitetrack.in`)
+- [ ] Privacy policy URL live (`sitetrackpro.in/privacy`)
+- [ ] Terms of service URL live (`sitetrackpro.in/terms`)
+- [ ] Support email monitored (`hello@sitetrackpro.in`)
 - [ ] Sentry MCP connected for crash monitoring (see `docs/MCP_TOOLKIT.md`
       Part C)
 - [ ] First internal tester installed from Play Store and signed in

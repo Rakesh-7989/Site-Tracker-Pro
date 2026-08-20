@@ -158,7 +158,7 @@ For your first paid pilot:
 - **DB size monitor**: Settings → Usage. At 80% of free tier (500 MB), upgrade.
 
 ### Domain
-- **Recommended .in domains**: `sitetrack.in` (~₹600/yr at GoDaddy/Namecheap), `buildco.app` (₹900/yr), `sitetrack.co.in` (~₹400/yr).
+- **Recommended .in domains**: `sitetrackpro.in` (~₹600/yr at GoDaddy/Namecheap), `buildco.app` (₹900/yr), `sitetrack.co.in` (~₹400/yr).
 - Buy + park first; switch DNS when you're ready.
 
 ### Monitoring

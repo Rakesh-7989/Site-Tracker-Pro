@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — getCanonicalAppUrl() tests.
+// SiteTrack Pro — getCanonicalAppUrl() tests.
 //
 // Verifies the redirect URL helper picks the right URL across dev / prod /
 // missing-env / stale-placeholder scenarios. This is the source of truth
@@ -34,17 +34,17 @@ describe("getCanonicalAppUrl()", () => {
   });
 
   it("uses VITE_APP_URL when set to a real URL", () => {
-    import.meta.env.VITE_APP_URL = "https://sitetrack-rakesh.vercel.app";
-    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+    import.meta.env.VITE_APP_URL = "https://sitetrackpro.in";
+    expect(getCanonicalAppUrl()).toBe("https://sitetrackpro.in");
   });
 
   it("strips trailing slash from VITE_APP_URL", () => {
-    import.meta.env.VITE_APP_URL = "https://sitetrack-rakesh.vercel.app/";
-    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+    import.meta.env.VITE_APP_URL = "https://sitetrackpro.in/";
+    expect(getCanonicalAppUrl()).toBe("https://sitetrackpro.in");
   });
 
   it("rejects the stale placeholder app.sitetrack.in", () => {
-    // We don't own this domain yet — pasting it into Supabase would NXDOMAIN.
+    // Legacy placeholder we never served — pasting it into Supabase would NXDOMAIN.
     import.meta.env.VITE_APP_URL = "https://app.sitetrack.in";
     // Falls back to window.location.origin
     expect(getCanonicalAppUrl()).toBe("http://localhost:5173");
@@ -52,12 +52,12 @@ describe("getCanonicalAppUrl()", () => {
 
   it("rejects Vercel preview origins for auth email redirects", () => {
     globalThis.window = { location: { origin: "https://sitetrack-rakesh-git-feature-rakesh15.vercel.app" } };
-    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+    expect(getCanonicalAppUrl()).toBe("https://sitetrackpro.in");
   });
 
   it("falls back to window.location.origin when VITE_APP_URL missing", () => {
-    globalThis.window = { location: { origin: "https://sitetrack-rakesh.vercel.app" } };
-    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+    globalThis.window = { location: { origin: "https://sitetrackpro.in" } };
+    expect(getCanonicalAppUrl()).toBe("https://sitetrackpro.in");
   });
 
   it("works in dev (localhost) via window fallback", () => {
@@ -66,7 +66,7 @@ describe("getCanonicalAppUrl()", () => {
 
   it("hardcoded prod fallback when window AND env both missing (SSR/tests)", () => {
     globalThis.window = undefined;
-    expect(getCanonicalAppUrl()).toBe("https://sitetrack-rakesh.vercel.app");
+    expect(getCanonicalAppUrl()).toBe("https://sitetrackpro.in");
   });
 
   it("strips trailing slash from window.location.origin too", () => {

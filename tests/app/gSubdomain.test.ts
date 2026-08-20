@@ -13,17 +13,17 @@ import {
 
 describe("resolveSubdomain (P-G2)", () => {
   it("resolves a single-label subdomain of the base host", () => {
-    expect(resolveSubdomain("garch.sitetrack.in")).toEqual({ subdomain: "garch", baseHost: "sitetrack.in" });
+    expect(resolveSubdomain("garch.sitetrackpro.in")).toEqual({ subdomain: "garch", baseHost: "sitetrackpro.in" });
   });
 
   it("is case-insensitive and strips a trailing dot", () => {
-    expect(resolveSubdomain("  GARCH.SITETRACK.IN.")).toEqual({ subdomain: "garch", baseHost: "sitetrack.in" });
+    expect(resolveSubdomain("  GARCH.SITETRACKPRO.IN.")).toEqual({ subdomain: "garch", baseHost: "sitetrackpro.in" });
   });
 
   it("returns null for the bare base host", () => {
-    expect(resolveSubdomain("sitetrack.in")).toBeNull();
-    expect(resolveSubdomain("www.sitetrack.in")).toBeNull();
-    expect(resolveSubdomain("app.sitetrack.in")).toBeNull();
+    expect(resolveSubdomain("sitetrackpro.in")).toBeNull();
+    expect(resolveSubdomain("www.sitetrackpro.in")).toBeNull();
+    expect(resolveSubdomain("app.sitetrackpro.in")).toBeNull();
   });
 
   it("returns null for localhost / dev / vercel hosts", () => {
@@ -34,7 +34,7 @@ describe("resolveSubdomain (P-G2)", () => {
 
   it("returns null for unknown domains and nested subdomains", () => {
     expect(resolveSubdomain("example.com")).toBeNull();
-    expect(resolveSubdomain("a.b.sitetrack.in")).toBeNull();
+    expect(resolveSubdomain("a.b.sitetrackpro.in")).toBeNull();
     expect(resolveSubdomain("")).toBeNull();
     expect(resolveSubdomain(null)).toBeNull();
     expect(resolveSubdomain(undefined)).toBeNull();
@@ -46,8 +46,8 @@ describe("resolveSubdomain (P-G2)", () => {
   });
 
   it("isWhiteLabelHost mirrors resolveSubdomain", () => {
-    expect(isWhiteLabelHost("garch.sitetrack.in")).toBe(true);
-    expect(isWhiteLabelHost("sitetrack.in")).toBe(false);
+    expect(isWhiteLabelHost("garch.sitetrackpro.in")).toBe(true);
+    expect(isWhiteLabelHost("sitetrackpro.in")).toBe(false);
     expect(isWhiteLabelHost("myapp.vercel.app")).toBe(false);
   });
 });

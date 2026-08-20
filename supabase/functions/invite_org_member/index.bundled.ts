@@ -353,7 +353,7 @@ async function sendRoleWelcomeEmail(
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) return false;
 
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrack.in>";
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
   const roleLabel = ROLE_LABEL[role] || role;
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
@@ -421,7 +421,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!url || !key) return json({ ok: false, error: "service-not-configured" }, 500);
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  const siteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrack-rakesh.vercel.app";
+  const siteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrackpro.in";
   const loginUrl = `${siteUrl}/login`;
 
   // ── 1. Create auth user (with temp password or invite) ──

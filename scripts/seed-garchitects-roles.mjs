@@ -264,7 +264,7 @@ doc.push(`# G Architects — Role Demo Credentials`);
 doc.push(``);
 doc.push(`*Generated ${new Date().toISOString()} — DO NOT COMMIT.*`);
 doc.push(``);
-doc.push(`**App:** https://sitetrack-rakesh.vercel.app · **Org:** ${org.name} (${org.slug})`);
+doc.push(`**App:** https://sitetrackpro.in · **Org:** ${org.name} (${org.slug})`);
 doc.push(`**Project:** ${PROJECT.name} (${PROJECT.type})`);
 doc.push(``);
 doc.push(`**Login:** Sign in → **Password** method → email + password below.`);
