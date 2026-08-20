@@ -81,10 +81,15 @@ async function main() {
   const recs = records.records || [];
   console.log("current records:", recs.map((r) => `${r.type} ${r.name || "(apex)"} -> ${r.value}`).join(" | ") || "(none)");
 
+  const RESEND_MX = { type: "MX", name: "send", value: "feedback-smtp.ap-northeast-1.amazonses.com", priority: 10 };
   const stale = recs.filter((r) => {
     const name = trimDot(r.name);
     const value = trimDot(r.value);
-    if (r.type === "MX") return true;
+    if (r.type === "MX") {
+      // Keep Resend's required `send` subdomain MX; drop only apex (SES inbound) MX.
+      if (name === "send") return false;
+      return true;
+    }
     if (r.type === "A" && (name === DOMAIN || name === "") && value !== "76.76.21.21") return true;
     if (r.type === "CNAME" && name === "www" && value !== "cname.vercel-dns.com") return true;
     return false;
@@ -102,6 +107,9 @@ async function main() {
   const now = after.records || [];
   const hasApex = now.some((r) => r.type === "A" && trimDot(r.value) === "76.76.21.21");
   const hasWww = now.some((r) => r.type === "CNAME" && trimDot(r.name) === "www" && trimDot(r.value) === "cname.vercel-dns.com");
+  const hasSendMx = now.some(
+    (r) => r.type === "MX" && trimDot(r.name) === "send" && trimDot(r.value) === RESEND_MX.value,
+  );
   if (!hasApex) {
     await api("POST", `/v1/domains/${DOMAIN}/records?${q}`, { type: "A", name: "", value: "76.76.21.21", ttl: 60 });
     console.log("added apex A 76.76.21.21");
@@ -109,6 +117,10 @@ async function main() {
   if (!hasWww) {
     await api("POST", `/v1/domains/${DOMAIN}/records?${q}`, { type: "CNAME", name: "www", value: "cname.vercel-dns.com", ttl: 60 });
     console.log("added www CNAME cname.vercel-dns.com");
+  }
+  if (!hasSendMx) {
+    await api("POST", `/v1/domains/${DOMAIN}/records?${q}`, RESEND_MX);
+    console.log("restored Resend send MX ->", RESEND_MX.value);
   }
 
   console.log("DONE");
