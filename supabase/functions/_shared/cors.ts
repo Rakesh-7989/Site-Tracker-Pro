@@ -5,7 +5,7 @@
 // origin for non-browser / preflight requests.  This is safer than "*"
 // while still supporting localhost dev + the deployed app.
 
-const DEFAULT_ORIGINS = "https://sitetrackpro.in,http://localhost:5173";
+const DEFAULT_ORIGINS = "https://sitetrackpro.in,https://www.sitetrackpro.in,http://localhost:5173";
 
 export function corsHeaders(req: Request): Record<string, string> {
   const allowed = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? DEFAULT_ORIGINS)
