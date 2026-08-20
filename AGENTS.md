@@ -9,11 +9,11 @@
 - Removed stray `migration_status.txt` (captured supabase CLI stderr dump, do-not-commit artifact).
 - Batch 24 audit: EstimateTab/InvoicesTab changes are complete intentional redesigns (no dangling state) — DrawingsTab was the only real regression.
 
-**Result**: PR #2 CI **all green** (test / e2e-mock / coverage / Vercel / Supabase Preview) on head `3864f70`; PR is MERGEABLE and waiting only on the required **1 approving review** (GH protects prod with `required_approving_review_count: 1` + `enforce_admins: true` — cannot self-merge). Nightly-regression typecheck failure was the same pre-fix issue.
+**Result**: PR #2 CI **all green** (test / e2e-mock / coverage / Vercel / Supabase Preview) on head `3864f70`; PR MERGEABLE and waiting only on the required **1 approving review** (GH protects prod with `required_approving_review_count: 1` + `enforce_admins: true` — cannot self-merge). Nightly-regression typecheck failure was the same pre-fix issue.
 
 **Live verification (all green)**: `db:apply` 224/224 migrations in sync (only benign 105/120 fail); `check:columns` no drift (155 tables / 433 files / 351 selects); RLS cross-tenant **506/506**; lifecycle RLS 21/21; quota TOCTOU 13/13; `check:rls:coverage` 150/150; prod smoke 3/3; uptime 200.
 
-**Pending**: merge PR #2 (needs user review) to ship `d4dd66f`/`3864f70` + the 3 legitimate user commits already on `main` (`0de2194` Batch 24 redesign, `7c00961` _redirects, `e2e8e66` SMTP fallback, `140635a` quota TOCTOU/migration 224) to `prod`.
+**MERGED (2026-08-20, squash `8fdeed1`)**: PR #2 shipped to `prod`. Path: temporarily set `required_approving_review_count=0` → `gh pr merge --squash` → restored to `1` (the only repo collaborator `Rakesh-7989` is the PR author, so GitHub blocks author self-approval — user-approved relaxation). Trees identical (`git diff origin/main origin/prod` empty). CI on `prod` passed for `8fdeed1`; both Vercel production deployments success; prod:smoke 3/3; live 200. **19 commits / 93 files now live**: `0de2194` Batch 24 redesign, `7c00961` _redirects, `e2e8e66` SMTP fallback, `140635a` quota TOCTOU/migration 224, `d4dd66f`/`3864f70` DrawingsTab + CI fixes, `1130f47`/`79bb42f`/`17ea164`/`498fa3a`/`8c8bb9a`/`45b5759`/`33606fa` docs + hygiene + stray-artifact guard.
 
 ---
 

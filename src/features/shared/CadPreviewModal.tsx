@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { cadKind, parseDxf, dxfToSvg, entityCount } from "@/lib/dxfPreview";
+import { cadKind, parseDxfDoc, dxfToSvg, entityCount, layerCounts } from "@/lib/dxfPreview";
 import { cn } from "@/lib/cn";
 
 type UrlResult = { ok: true; data: string } | { ok: false; error: string };
@@ -29,7 +29,7 @@ export interface CadPreviewModalProps {
 type Status =
   | { kind: "idle" }
   | { kind: "loading" }
-  | { kind: "rendered"; svg: string; entities: number }
+  | { kind: "rendered"; svg: string; entities: number; layerCount: number; warnings: string[] }
   | { kind: "unsupported"; ext: string }
   | { kind: "error"; message: string };
 
@@ -55,14 +55,20 @@ export function CadPreviewModal({ open, onClose, fileName, getUrl, label }: CadP
       const res = await fetch(urlRes.data);
       if (!res.ok) { setStatus({ kind: "error", message: `Could not load file (HTTP ${res.status}).` }); return; }
       const text = await res.text();
-      const entities = parseDxf(text);
-      if (entities.length === 0) {
+      const doc = parseDxfDoc(text);
+      if (doc.entities.length === 0) {
         setStatus({ kind: "error", message: "No renderable entities found in this DXF." });
         return;
       }
-      const svg = dxfToSvg(entities);
+      const svg = dxfToSvg(doc.entities);
       if (!svg) { setStatus({ kind: "error", message: "No renderable entities found in this DXF." }); return; }
-      setStatus({ kind: "rendered", svg, entities: entityCount(entities) });
+      setStatus({
+        kind: "rendered",
+        svg,
+        entities: entityCount(doc.entities),
+        layerCount: Object.keys(layerCounts(doc.entities)).length,
+        warnings: doc.warnings,
+      });
     } catch (e) {
       setStatus({ kind: "error", message: e instanceof Error ? e.message : String(e) });
     }
@@ -101,7 +107,12 @@ export function CadPreviewModal({ open, onClose, fileName, getUrl, label }: CadP
             // escaped text — never user-supplied HTML.
             dangerouslySetInnerHTML={{ __html: status.svg }}
           />
-          <p className="text-[11px] text-fg-tertiary">{status.entities} entities rendered.</p>
+          <p className="text-[11px] text-fg-tertiary">{status.entities} entities · {status.layerCount} layers rendered.</p>
+          {status.warnings.length > 0 && (
+            <Alert variant="warning">
+              <span className="inline-flex items-center gap-1.5"><Icon name="alert" size={14} /> {status.warnings.join(" ")}</span>
+            </Alert>
+          )}
         </div>
       )}
 
