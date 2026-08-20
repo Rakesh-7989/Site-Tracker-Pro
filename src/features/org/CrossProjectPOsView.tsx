@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrgSwitcher } from "@/auth";
-import { Card, Badge, Alert } from "@/components/ui/atoms";
+import { Card, Badge, Alert, ProgressBar } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/financeQueries";
 import { getOrgPurchaseOrders, poTotals, type CrossPO, type POStatus } from "@/app/crossPoQueries";
+import { listPoReceipts, deliveryProgress, type PoReceipt } from "@/app/poReceiptQueries";
 
 import { getClient } from "@/lib/supabase";
 const FILTERS = [{ value: "all", label: "All" }, { value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "delivered", label: "Delivered" }, { value: "cancelled", label: "Cancelled" }];
@@ -23,6 +24,9 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [receiptsByPo, setReceiptsByPo] = useState<Record<string, PoReceipt[]>>({});
+  const [receiptsLoading, setReceiptsLoading] = useState<Record<string, boolean>>({});
+  const [receiptsError, setReceiptsError] = useState<Record<string, string | null>>({});
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -30,6 +34,20 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     const res = await getOrgPurchaseOrders(client, orgId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
   }, [orgId]);
   useEffect(() => { void reload(); }, [reload]);
+
+  const loadReceipts = useCallback(async (poId: string) => {
+    setReceiptsLoading(p => ({ ...p, [poId]: true }));
+    setReceiptsError(p => ({ ...p, [poId]: null }));
+    const client = await getClient();
+    if (client) {
+      const res = await listPoReceipts(client, poId);
+      if (res.ok) setReceiptsByPo(p => ({ ...p, [poId]: res.data }));
+      else setReceiptsError(p => ({ ...p, [poId]: res.error }));
+    } else {
+      setReceiptsError(p => ({ ...p, [poId]: "Backend not configured." }));
+    }
+    setReceiptsLoading(p => ({ ...p, [poId]: false }));
+  }, []);
 
   const totals = useMemo(() => poTotals(rows), [rows]);
   const shown = filter === "all" ? rows : rows.filter(r => r.status === filter);
@@ -48,6 +66,41 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       <Badge tone={tone(po.status)}>{po.status}</Badge>
     )},
   ];
+
+  const expandedContent = (po: CrossPO) => {
+    const receipts = receiptsByPo[po.id] ?? [];
+    const pct = deliveryProgress(po.amount, receipts);
+    return (
+      <div className="space-y-2.5">
+        <div className="flex items-center gap-3">
+          <ProgressBar value={pct} color={pct === 100 ? "emerald" : "orange"} className="flex-1" ariaLabel={`${pct}% delivered`} />
+          <div className="text-xs text-fg-secondary whitespace-nowrap">
+            {fmtRupees(po.receivedAmount)} of {fmtRupees(po.amount)} received
+          </div>
+        </div>
+        {receiptsLoading[po.id] ? (
+          <div className="text-xs text-fg-tertiary">Loading receipts…</div>
+        ) : receiptsError[po.id] ? (
+          <div className="text-xs text-error">{receiptsError[po.id]}</div>
+        ) : receipts.length === 0 ? (
+          <div className="text-xs text-fg-tertiary">No receipts recorded yet.</div>
+        ) : (
+          <ul className="space-y-1.5">
+            {receipts.map(r => (
+              <li key={r.id} className="flex items-baseline justify-between gap-3 text-xs">
+                <div className="text-fg-secondary min-w-0">
+                  <span className="font-semibold text-fg-primary">{r.receivedDate || "—"}</span>
+                  <span className="text-fg-tertiary"> · {r.qty} × {fmtRupees(r.unitPrice)}</span>
+                  {r.receivedByName ? <span className="text-fg-tertiary"> · by {r.receivedByName}</span> : null}
+                </div>
+                <span className="font-semibold text-fg-primary whitespace-nowrap">{fmtRupees(r.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -72,6 +125,8 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
         error={error}
         emptyMessage={filter === "all" ? "No purchase orders." : `No ${filter} purchase orders.`}
         variant="card"
+        expandedContent={expandedContent}
+        onExpandedChange={(po, expanded) => { if (expanded) void loadReceipts(po.id); }}
         onRowClick={po => navigate(`/projects/${po.projectId}/po`)}
       />
     </div>
