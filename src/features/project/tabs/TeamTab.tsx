@@ -17,9 +17,10 @@ import {
 } from "@/app/projectMemberQueries";
 import { AddProjectMemberModal } from "../AddProjectMemberModal";
 
-export function TeamTab({ projectId, orgId, members, onReload }: {
+export function TeamTab({ projectId, orgId, projectType, members, onReload }: {
   projectId: string;
   orgId: string;
+  projectType?: any;
   members: ProjectMemberRow[];
   onReload: () => void;
 }): JSX.Element {
@@ -123,6 +124,7 @@ export function TeamTab({ projectId, orgId, members, onReload }: {
           onClose={() => setShowAdd(false)}
           projectId={projectId}
           orgId={orgId}
+          projectType={projectType}
           currentMemberIds={members.map(m => m.profileId)}
           onAdded={() => { onReload(); void reloadPending(); }}
         />

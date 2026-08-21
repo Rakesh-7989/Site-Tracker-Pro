@@ -18,6 +18,7 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
   const ctx = { orgId: activeOrg?.orgId, projectId };
   const canCreate = useCan("changeorder:create", ctx);
   const canApprove = useCan("changeorder:approve", ctx);
+  const canDelete = useCan("update:delete", ctx) || useCan("project:settings:edit", ctx);
   const [rows, setRows] = useState<ChangeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export function ChangeOrdersTab({ projectId }: { projectId: string }): JSX.Eleme
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canApprove ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as CoStatus; void run(`s-${r.id}`, c => setCoStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
                   : <span className="text-xs text-fg-secondary">{r.status}</span>}
-                {canCreate && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteChangeOrder(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                {canDelete && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteChangeOrder(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
               </div>
             </Card>))}</div>}
     </div>

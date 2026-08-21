@@ -3,8 +3,20 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "./supabasePublicC
 
 const ENV: Record<string, string | undefined> = typeof import.meta !== "undefined" ? import.meta.env : {};
 
-const SUPABASE_URL: string = ENV.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY: string = ENV.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_ANON_KEY;
+function isValidUrl(val: string | undefined): boolean {
+  if (!val || typeof val !== "string") return false;
+  if (val.includes("YOUR_") || val.includes("example.com")) return false;
+  return val.startsWith("http://") || val.startsWith("https://");
+}
+
+function isValidJwt(val: string | undefined): boolean {
+  if (!val || typeof val !== "string") return false;
+  if (val.includes("YOUR_")) return false;
+  return val.startsWith("eyJ");
+}
+
+const SUPABASE_URL: string = isValidUrl(ENV.VITE_SUPABASE_URL) ? (ENV.VITE_SUPABASE_URL as string) : PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY: string = isValidJwt(ENV.VITE_SUPABASE_ANON_KEY) ? (ENV.VITE_SUPABASE_ANON_KEY as string) : PUBLIC_SUPABASE_ANON_KEY;
 export const CANONICAL_APP_URL = "https://sitetrackpro.in";
 
 const BLOCKED_APP_HOSTS = new Set([
@@ -58,9 +70,22 @@ export async function getSupabaseClient(): Promise<SupabaseClient | null> {
   _clientPromise = (async () => {
     try {
       const { createClient } = await import("@supabase/supabase-js");
-      return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+
+      // In dev, preview, or sandboxed environments where Supabase blocks CORS or third-party origins,
+      // route requests through the same-origin Vite proxy (/api/supabase) for seamless connectivity.
+      const resolvedUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("sitetrackpro.in"))
+        ? `${window.location.origin}/api/supabase`
+        : SUPABASE_URL;
+
+      const client = createClient(resolvedUrl, SUPABASE_ANON_KEY, {
         auth: { persistSession: true, autoRefreshToken: true },
+        global: {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+          },
+        },
       });
+      return client;
     } catch (err) {
       console.error("Supabase SDK load failed — falling back to local mode", err);
       return null;
@@ -231,9 +256,12 @@ interface RedeemStaffInviteArgs {
 
 export async function redeemStaffInvite({ token, name, email, password }: RedeemStaffInviteArgs): Promise<RedeemStaffInviteResult> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return { ok: false, error: "backend-disabled" };
+  const functionsBase = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("sitetrackpro.in"))
+    ? `${window.location.origin}/api/ef`
+    : `${SUPABASE_URL}/functions/v1`;
   let res: Response;
   try {
-    res = await fetch(`${SUPABASE_URL}/functions/v1/redeem-staff-invite`, {
+    res = await fetch(`${functionsBase}/redeem-staff-invite`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

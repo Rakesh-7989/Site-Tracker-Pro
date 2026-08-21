@@ -130,7 +130,7 @@ const app = [
   read("scripts/supabase/201_signup_attempts.sql"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
-const vite = read("vite.config.js");
+const vite = existsSync("vite.config.ts") ? read("vite.config.ts") : read("vite.config.js");
 
 [
   "contractor",

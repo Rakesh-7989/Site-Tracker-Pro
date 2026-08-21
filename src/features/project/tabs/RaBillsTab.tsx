@@ -21,6 +21,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
   const ctx = { orgId: activeOrg?.orgId, projectId };
   const canCreate = useCan("rabill:create", ctx);
   const canApprove = useCan("rabill:approve", ctx);
+  const canDelete = useCan("update:delete", ctx) || useCan("project:settings:edit", ctx);
   const [rows, setRows] = useState<RaBill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function RaBillsTab({ projectId }: { projectId: string }): JSX.Element {
         <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as RaBillStatus; void run(`s-${r.id}`, c => setRaBillStatus(c, r.id, v, v === "paid" ? raNetPayable(r) : undefined), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={STT} />
       ) : <span className="text-xs text-fg-secondary">{r.status}</span>,
     },
-    ...(canCreate ? [{
+    ...(canDelete ? [{
       key: "actions" as const, header: "", className: "flex-shrink-0",
       render: (r: RaBill) => (
         <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRaBill(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>

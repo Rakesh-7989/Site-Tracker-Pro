@@ -35,6 +35,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
   const ctx = { orgId, projectId };
   const canCreate = useCan("po:create", ctx);
   const canApprove = useCan("po:approve", ctx);
+  const canDelete = useCan("update:delete", ctx) || useCan("project:settings:edit", ctx);
   const [rows, setRows] = useState<PurchaseOrder[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [requests, setRequests] = useState<MaterialRequest[]>([]);
@@ -181,7 +182,7 @@ export function POsTab({ projectId }: { projectId: string }): JSX.Element {
         </Button>
       ),
     },
-    ...(canCreate ? [{
+    ...(canDelete ? [{
       key: "actions" as const, header: "", className: "flex-shrink-0",
       render: (r: PurchaseOrder) => (
         <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deletePO(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}>

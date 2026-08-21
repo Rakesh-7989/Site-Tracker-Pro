@@ -17,6 +17,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
   const ctx = { orgId: activeOrg?.orgId, projectId };
   const canAsk = useCan("rfi:create", ctx);
   const canRespond = useCan("rfi:respond", ctx);
+  const canDelete = useCan("update:delete", ctx) || useCan("project:settings:edit", ctx);
   const [rows, setRows] = useState<Rfi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +74,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
                   {r.response && <div className="text-[12px] text-success mt-1 pl-2 border-l-2 border-success">↳ {r.response}</div>}</div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {canRespond && r.status !== "answered" && r.status !== "closed" && <Button size="sm" variant="secondary" onClick={() => { setReplyFor(replyFor === r.id ? null : r.id); setReply(""); }}>Reply</Button>}
-                  {canAsk && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRfi(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
+                  {canDelete && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteRfi(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
                 </div>
               </div>
               {replyFor === r.id && (

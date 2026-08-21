@@ -1,4 +1,4 @@
-﻿{
+{
   "$meta": {
     "language": "en",
     "name": "English",
@@ -214,10 +214,14 @@
     "errConsentRequired": "Please agree to the Terms & Privacy Policy.",
     "errCouldNotSendLink": "Could not send link.",
     "errCouldNotSendReset": "Could not send reset link.",
+    "errEmailNotConfirmed": "Your email address is not verified yet. Please check your inbox or tap Resend below.",
     "errEnter6": "Enter the 6-digit code.",
     "errEnterEmailFirst": "Enter your email above first, then tap Forgot password.",
     "errInvalidCode": "Invalid code.",
+    "errInvalidCredentials": "Invalid email or password. Please check your credentials and try again.",
     "errInvalidEmail": "Enter a valid email.",
+    "resendVerificationBtn": "Resend verification email",
+    "verificationResent": "Verification email sent to {email}! Please check your inbox.",
     "errOrgUseOrgLogin": "This account belongs to a customer organization. Use the org login page.",
     "errPasswordMin": "Password must be at least 8 characters.",
     "errPasswordMismatch": "Passwords do not match.",

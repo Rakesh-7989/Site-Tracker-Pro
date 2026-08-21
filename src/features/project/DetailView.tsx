@@ -145,7 +145,7 @@ export function DetailView(): JSX.Element {
     <div>
       {/* Render requested tab content (even if not visible in tab bar) so AccessDenied triggers */}
       {requestedId === "overview" && <OverviewTab project={project} members={members} />}
-      {requestedId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
+      {requestedId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} projectType={project.type} members={members} onReload={reload} />}
       {requestedId === "milestones" && <MilestonesTab projectId={project.id} />}
       {requestedId === "tasks" && <TasksTab projectId={project.id} />}
       {requestedId === "updates" && <UpdatesTab projectId={project.id} />}

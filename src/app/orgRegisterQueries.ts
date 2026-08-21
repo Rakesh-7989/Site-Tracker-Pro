@@ -38,7 +38,56 @@ export async function registerOrg(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = injectedClient ?? (await getClient());
     if (!client) return { ok: false, error: "Backend not configured." };
-    const { data, error } = await client.functions.invoke("register_org", { body: input });
+    
+    const anonKey = (client as any).supabaseKey || "";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let data: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let error: any = null;
+
+    const invokeHeaders: Record<string, string> = {};
+    if (anonKey) {
+      invokeHeaders.apikey = anonKey;
+      invokeHeaders.Authorization = `Bearer ${anonKey}`;
+    }
+
+    try {
+      const res = await client.functions.invoke("register_org", {
+        body: input,
+        headers: invokeHeaders,
+      });
+      data = res.data;
+      error = res.error;
+    } catch (invErr) {
+      error = invErr;
+    }
+
+    // Resilient fallback: if Edge function fails due to CORS/network or invalid auth headers
+    const errMsg = String(error?.message || "");
+    const isNetworkOrAuthErr = errMsg.includes("Failed to send") || errMsg.includes("Invalid JWT") || error?.name === "FunctionsFetchError" || error?.name === "FunctionsHttpError";
+
+    if (error && isNetworkOrAuthErr) {
+      try {
+        if (typeof window !== "undefined" && window.location?.origin) {
+          const proxyRes = await fetch(`${window.location.origin}/api/ef/register_org`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {}),
+            },
+            body: JSON.stringify(input),
+          });
+          const proxyData = await proxyRes.json().catch(() => ({}));
+          if (proxyRes.ok && proxyData?.ok) {
+            return { ok: true, orgId: proxyData.orgId, emailSent: proxyData.emailSent ?? false, plan: proxyData.plan, trialEndsAt: proxyData.trialEndsAt };
+          }
+          if (proxyData?.message || proxyData?.error) {
+            return { ok: false, error: String(proxyData.message ?? proxyData.error) };
+          }
+        }
+      } catch { /* proceed to default error handler */ }
+    }
+
     if (error) {
       try {
         const body = await (error as any).context?.json?.();
@@ -64,7 +113,55 @@ export async function resendConfirmation(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = injectedClient ?? (await getClient());
     if (!client) return { ok: false, error: "Backend not configured." };
-    const { data, error } = await client.functions.invoke("resend_confirmation", { body: { email } });
+    
+    const anonKey = (client as any).supabaseKey || "";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let data: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let error: any = null;
+
+    const invokeHeaders: Record<string, string> = {};
+    if (anonKey) {
+      invokeHeaders.apikey = anonKey;
+      invokeHeaders.Authorization = `Bearer ${anonKey}`;
+    }
+
+    try {
+      const res = await client.functions.invoke("resend_confirmation", {
+        body: { email },
+        headers: invokeHeaders,
+      });
+      data = res.data;
+      error = res.error;
+    } catch (invErr) {
+      error = invErr;
+    }
+
+    const errMsg = String(error?.message || "");
+    const isNetworkOrAuthErr = errMsg.includes("Failed to send") || errMsg.includes("Invalid JWT") || error?.name === "FunctionsFetchError" || error?.name === "FunctionsHttpError";
+
+    if (error && isNetworkOrAuthErr) {
+      try {
+        if (typeof window !== "undefined" && window.location?.origin) {
+          const proxyRes = await fetch(`${window.location.origin}/api/ef/resend_confirmation`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {}),
+            },
+            body: JSON.stringify({ email }),
+          });
+          const proxyData = await proxyRes.json().catch(() => ({}));
+          if (proxyRes.ok && proxyData?.ok) {
+            return { ok: true, emailSent: proxyData.emailSent ?? false };
+          }
+          if (proxyData?.message || proxyData?.error) {
+            return { ok: false, error: String(proxyData.message ?? proxyData.error) };
+          }
+        }
+      } catch { /* proceed to default error handler */ }
+    }
+
     if (error) {
       try {
         const body = await (error as any).context?.json?.();

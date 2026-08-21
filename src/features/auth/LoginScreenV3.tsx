@@ -21,13 +21,14 @@ import { Card, Button, Icon } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { getMfaChallenge, verifyMfa } from "@/auth/mfa";
+import { resendConfirmation } from "@/app/orgRegisterQueries";
 
 type Method = "password" | "magic";
 type Status =
   | { kind: "idle" }
   | { kind: "busy" }
   | { kind: "sent"; msg: string }
-  | { kind: "error"; msg: string };
+  | { kind: "error"; msg: string; unconfirmedEmail?: string };
 
 const LOGIN_META = {
   org: {
@@ -68,9 +69,38 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [resendingEmail, setResendingEmail] = useState(false);
   // MFA challenge (only shown when the just-signed-in user has a verified factor).
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+
+  const onResendVerification = async (targetEmail: string) => {
+    if (!targetEmail) return;
+    setResendingEmail(true);
+    try {
+      const res = await resendConfirmation(targetEmail.trim().toLowerCase());
+      if (res.ok) {
+        setStatus({
+          kind: "sent",
+          msg: t("auth.verificationResent", { email: targetEmail }),
+        });
+      } else {
+        setStatus({
+          kind: "error",
+          msg: res.error || t("auth.errCouldNotSendLink"),
+          unconfirmedEmail: targetEmail,
+        });
+      }
+    } catch (err: any) {
+      setStatus({
+        kind: "error",
+        msg: err?.message || t("auth.errCouldNotSendLink"),
+        unconfirmedEmail: targetEmail,
+      });
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   useEffect(() => {
     writeStoredLoginLane(lane);
@@ -129,38 +159,68 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
     if (!validEmail(email)) return setStatus({ kind: "error", msg: t("auth.errInvalidEmail") });
     if (!password) return setStatus({ kind: "error", msg: t("auth.errPasswordRequired") });
     setStatus({ kind: "busy" });
-    const lib = await authLib();
-    const res = await lib.signInWithPassword(email.trim().toLowerCase(), password);
-    if (res.ok) await proceedOrChallenge();
-    else setStatus({ kind: "error", msg: res.error ?? t("auth.errSignInFailed") });
+    try {
+      const lib = await authLib();
+      const res = await lib.signInWithPassword(email.trim().toLowerCase(), password);
+      if (res.ok) {
+        await proceedOrChallenge();
+      } else {
+        const errStr = String(res.error || "");
+        if (errStr.toLowerCase().includes("email not confirmed") || errStr.toLowerCase().includes("email_not_confirmed")) {
+          setStatus({
+            kind: "error",
+            msg: t("auth.errEmailNotConfirmed"),
+            unconfirmedEmail: email.trim().toLowerCase(),
+          });
+        } else if (errStr.toLowerCase().includes("invalid login credentials") || errStr.toLowerCase().includes("invalid_credentials")) {
+          setStatus({ kind: "error", msg: t("auth.errInvalidCredentials") });
+        } else {
+          setStatus({ kind: "error", msg: res.error ?? t("auth.errSignInFailed") });
+        }
+      }
+    } catch (err: any) {
+      setStatus({ kind: "error", msg: err?.message || t("auth.errSignInFailed") });
+    }
   };
 
   const onMagicLink = async () => {
     if (!validEmail(email)) return setStatus({ kind: "error", msg: t("auth.errInvalidEmail") });
     setStatus({ kind: "busy" });
-    const lib = await authLib();
-    const res = await lib.signInWithMagicLink(email.trim().toLowerCase());
-    if (res.ok) setStatus({ kind: "sent", msg: t("auth.magicSent", { email }) });
-    else setStatus({ kind: "error", msg: res.error ?? t("auth.errCouldNotSendLink") });
+    try {
+      const lib = await authLib();
+      const res = await lib.signInWithMagicLink(email.trim().toLowerCase());
+      if (res.ok) setStatus({ kind: "sent", msg: t("auth.magicSent", { email }) });
+      else setStatus({ kind: "error", msg: res.error ?? t("auth.errCouldNotSendLink") });
+    } catch (err: any) {
+      setStatus({ kind: "error", msg: err?.message || t("auth.errCouldNotSendLink") });
+    }
   };
 
   const onForgotPassword = async () => {
     if (!validEmail(email)) return setStatus({ kind: "error", msg: t("auth.errEnterEmailFirst") });
     setStatus({ kind: "busy" });
-    const lib = await authLib();
-    const res = await lib.resetPassword(email.trim().toLowerCase());
-    if (res.ok) setStatus({ kind: "sent", msg: t("auth.resetSent", { email }) });
-    else setStatus({ kind: "error", msg: res.error ?? t("auth.errCouldNotSendReset") });
+    try {
+      const lib = await authLib();
+      const res = await lib.resetPassword(email.trim().toLowerCase());
+      if (res.ok) setStatus({ kind: "sent", msg: t("auth.resetSent", { email }) });
+      else setStatus({ kind: "error", msg: res.error ?? t("auth.errCouldNotSendReset") });
+    } catch (err: any) {
+      setStatus({ kind: "error", msg: err?.message || t("auth.errCouldNotSendReset") });
+    }
   };
 
   const onVerifyOtp = async () => {
     const code = otp.replace(/\s/g, "").trim();
     if (!/^\d{6}$/.test(code)) return setStatus({ kind: "error", msg: t("auth.errEnter6") });
     setStatus({ kind: "busy" });
-    const lib = await authLib();
-    const res = await lib.verifyEmailOtp(email.trim().toLowerCase(), code);
-    if (res.ok) await proceedOrChallenge();
-    else setStatus({ kind: "error", msg: res.error ?? t("auth.errInvalidCode") });
+    try {
+      const lib = await authLib();
+      const res = await lib.verifyEmailOtp(email.trim().toLowerCase(), code);
+      if (res.ok) await proceedOrChallenge();
+      else setStatus({ kind: "error", msg: res.error ?? t("auth.errInvalidCode") });
+    } catch (err: any) {
+      setStatus({ kind: "error", msg: err?.message || t("auth.errInvalidCode") });
+    }
   };
 
   // Already signed in (e.g. arriving via an invite / magic-link redirect) →
@@ -306,8 +366,26 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
             </div>
           )}
           {status.kind === "error" && (
-            <div className="mt-3 rounded-lg bg-error-tint border border-error p-3 text-[12px] text-error flex items-start gap-2">
-              <Icon name="alert" size={15} className="text-error mt-0.5" /> {status.msg}
+            <div className="mt-3 rounded-lg bg-error-tint border border-error p-3 text-[12px] text-error">
+              <div className="flex items-start gap-2">
+                <Icon name="alert" size={15} className="text-error mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div>{status.msg}</div>
+                  {status.unconfirmedEmail && (
+                    <div className="mt-2 pt-2 border-t border-error/20">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={resendingEmail}
+                        onClick={() => onResendVerification(status.unconfirmedEmail!)}
+                        className="text-xs w-full py-1.5"
+                      >
+                        {resendingEmail ? t("auth.pleaseWait") : t("auth.resendVerificationBtn")}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

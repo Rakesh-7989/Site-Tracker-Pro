@@ -405,7 +405,7 @@ export const ENGINE_BOUNDARIES: readonly EngineBoundary[] = [
     label: "Event outbox + delivery (P1.3, migration 208)",
     ownedBy: consumersOf("outbox"),
     files: [
-      "outboxQueries", "orgBroadcastQueries", "notificationQueries",
+      "outboxQueries", "eventOutbox", "orgBroadcastQueries", "notificationQueries",
       "financeQueries", "procurementQuotes", "qualityQueries",
     ],
     entries: outboxEventEntries(),

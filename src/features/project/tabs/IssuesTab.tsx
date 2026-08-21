@@ -22,6 +22,7 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
   const ctx = { orgId: activeOrg?.orgId, projectId };
   const canAdd = useCan("issue:add", ctx);
   const canResolve = useCan("issue:resolve", ctx);
+  const canDelete = useCan("update:delete", ctx) || useCan("project:settings:edit", ctx);
 
   const [rows, setRows] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +102,7 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
                         {i.status === "open" ? "Resolve" : "Reopen"}
                       </Button>
                     )}
-                    {canAdd && <Button size="sm" variant="ghost" onClick={() => void run(`d-${i.id}`, c => deleteIssue(c, i.id), { apply: () => setRows(prev => prev.filter(x => x.id !== i.id)), rollback: () => setRows(prev => [...prev, i]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
+                    {canDelete && <Button size="sm" variant="ghost" onClick={() => void run(`d-${i.id}`, c => deleteIssue(c, i.id), { apply: () => setRows(prev => prev.filter(x => x.id !== i.id)), rollback: () => setRows(prev => [...prev, i]) })}><Icon name="trash" size={14} className="text-error" /></Button>}
                   </div>
                 </div>
               </Card>

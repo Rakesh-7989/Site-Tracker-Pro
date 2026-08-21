@@ -16,6 +16,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const canEdit = useCan("material:add", { orgId: activeOrg?.orgId, projectId });
+  const canDelete = useCan("update:delete", { orgId: activeOrg?.orgId, projectId }) || useCan("project:settings:edit", { orgId: activeOrg?.orgId, projectId });
   const [rows, setRows] = useState<Material[]>([]);
   const [requests, setRequests] = useState<MaterialRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +109,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
                   ) : (
                     <span className="text-xs text-fg-secondary">{r.status}</span>
                   )}
-                  {canEdit && (
+                  {canDelete && (
                     <Button size="sm" variant="ghost" onClick={() => void run(`rd-${r.id}`, c => deleteMaterialRequest(c, r.id), { apply: () => setRequests(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRequests(prev => [...prev, r]) })}>
                       <span className="text-error">✕</span>
                     </Button>
@@ -138,7 +139,7 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canEdit ? <Select fit className="w-auto text-xs" value={r.status} onChange={e => { const v = e.target.value as MaterialStatus; void run(`s-${r.id}`, c => setMaterialStatus(c, r.id, v), { apply: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: v } : x)), rollback: () => setRows(prev => prev.map(x => x.id === r.id ? { ...x, status: r.status } : x)) }); }} options={ST} />
                   : <span className="text-xs text-fg-secondary">{r.status}</span>}
-                {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteMaterial(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
+                {canDelete && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteMaterial(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
               </div>
             </Card>))}</div>}
     </div>
