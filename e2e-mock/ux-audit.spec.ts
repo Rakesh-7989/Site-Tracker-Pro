@@ -45,12 +45,21 @@ async function auditPage(page: Page, role: string, vp: VP, route: string): Promi
   f.offenders = await page.evaluate(() => {
     const vw = window.innerWidth;
     const out: string[] = [];
+    // Elements inside a horizontal-scroll container are BY DESIGN able to
+    // extend past the viewport (dense tables, tab strips) — not cut-off bugs.
+    const inScrollX = (el: HTMLElement): boolean => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        const ox = getComputedStyle(p).overflowX;
+        if (ox === "auto" || ox === "scroll") return true;
+      }
+      return false;
+    };
     for (const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))) {
       const r = el.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) continue;
       // Only count elements that START inside the viewport but END past it —
       // i.e. visible content being cut off (not off-screen drawers/modals).
-      if (r.left < vw && r.right > vw + 3) {
+      if (r.left < vw && r.right > vw + 3 && !inScrollX(el)) {
         const cls = String(el.className).split(" ").slice(0, 3).join(".");
         out.push(`${el.tagName.toLowerCase()}${cls ? "." + cls : ""} right=${Math.round(r.right)} w=${Math.round(r.width)}`);
         if (out.length >= 5) break;

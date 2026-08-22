@@ -4,7 +4,7 @@
 //
 // `document`/`window`/`HTMLElement` below run INSIDE page.evaluate() (browser
 // context) - not in this Node process.
-/* global document, window, HTMLElement */
+/* global document, window, HTMLElement, getComputedStyle */
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -36,10 +36,19 @@ for (const vp of VPS) {
     const offenders = await page.evaluate(() => {
       const vw = window.innerWidth;
       const out = [];
-      for (const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))) {
+      // Elements inside a horizontal-scroll container extend past the viewport
+      // BY DESIGN (dense tables, tab strips) — not cut-off bugs.
+      const inScrollX = (el) => {
+        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+          const ox = getComputedStyle(p).overflowX;
+          if (ox === "auto" || ox === "scroll") return true;
+        }
+        return false;
+      };
+      for (const el of Array.from(document.querySelectorAll("body *"))) {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) continue;
-        if (r.left < vw && r.right > vw + 3) {
+        if (r.left < vw && r.right > vw + 3 && !inScrollX(el)) {
           const cls = String(el.className).split(" ").slice(0, 3).join(".");
           out.push(`${el.tagName.toLowerCase()}${cls ? "." + cls : ""} right=${Math.round(r.right)} w=${Math.round(r.width)}`);
           if (out.length >= 5) break;
