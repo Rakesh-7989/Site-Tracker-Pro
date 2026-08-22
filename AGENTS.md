@@ -1,3 +1,27 @@
+## Session — 2026-08-22: Broken-WIP rescue + Pillar-1 Intelligence salvage + server-side risk signals cron (migration 225) (complete)
+
+**Context**: Working tree was left badly broken by a prior session: shipped CRM web code (`crmQueries.ts`, `CrmView.tsx`, `tests/app/crmQueries.test.ts`, migration `161_crm_leads.sql`, `OnboardingView.tsx`) had been wholesale-replaced with **React Native / Expo code** (`react-native`/`expo-font` imports in a Vite web app — 41 tsc errors), plus half-finished "intelligence engine" files and broken scripts (undefined `faker` global). `main` was otherwise up to date with origin.
+
+**Rescue**:
+- **Reverted to HEAD** (shipped versions restored from git): `src/app/crmQueries.ts`, `src/features/org/CrmView.tsx`, `tests/app/crmQueries.test.ts`, `scripts/supabase/161_crm_leads.sql`, `src/features/org/OnboardingView.tsx` (the WIP diff there was a non-functional `alert()` demo-project stub).
+- **Quarantined** (moved to `%TEMP%\opencode\stp-quarantine`, nothing deleted): RN UI files (`IntelligenceView/Dashboard`, `QuickUpdateScreen`), express mock server (`src/mocks/`, `src/app/api.ts`, broken `mock:api` script), 5 broken scripts (`extend-beta/feedback/incorporate-feedback/seed-demo-project/test-beta.mjs`), `crash-report.mjs` (`require()` inside `.mjs` — crashes on run; RN-centric; app already has Sentry), `.bak/.tmp` artifacts, error dumps.
+- **Salvaged & repaired** (pure-TS Pillar-1 logic from `docs/NEXT_PHASE_PLAN.md`): `riskQueries.ts` (+ pure `predictStockOut()`, `computeProductivity()` 5-arg form, `costForecast{projected,variance,confidence 0–1}` + `burnAccelerating` on `RiskResult`; fixed out-of-scope `burn` ref + backwards efficiency formula), `RiskSignalsCard.tsx` (confidence % display), new `intelligenceEngine.ts` / `siteUpdateModel.ts` / `intentParser.ts` (const-reassignment bugs, missing namespace imports, percent-scaling fixes), `tests/ai/engine.test.ts` wired to vitest (10 tests).
+
+**Migration 225 deep-dive → full rewrite** (user option (a)): the unreviewed `225_risk_signals_cron.sql` was non-functional — fictional `risk_result_tmp` table, nonexistent `issue_attributes`/`expenses.direction`/`rfis` references, invalid RLS cast (`::org_id` not a type → would fail at apply time), no scoring logic at all (built input jsonb then never used it). Rewritten as a correct SECURITY DEFINER plpgsql port of `computeRiskSignals`:
+- `project_risk_signals` table (score 0–100, level, delay_probability ≤0.9, delay_days, burn_accelerating); RLS read via `can_read_project()`; **cron-only writes** (no DML grants to authenticated).
+- Scoring mirrors TS weights: slip ≥3d (+20, ≥14d escalates +34), burn ≥80%/≥100% (+20/+34 + accelerating flag between), open high-severity issues (>0 +20, ≥3 +34); cap 100; bands critical≥70/high≥45/medium≥25. RFI-lag signal intentionally omitted server-side (no `rfis` table exists) — documented.
+- `#variable_conflict use_column` for the RETURNS-TABLE OUT-param ambiguity; pg_cron job `compute-risk-signals` daily 02:05 UTC (07:35 IST), idempotent re-schedule. Applied live via `db:apply` (ledgered; checksum-drift recovery path used once mid-edit: ledger row delete + function drop + re-apply).
+
+**New test harness**: `scripts/test-risk-signals-cron.mjs` (`npm run test:rls:risk`) — live-DB rolled-back-tx matrix **RSK-001…009, 21/21 green** (scoring math incl. resolved-issue exclusion + cap-at-100/prob-0.9, completed projects skipped, idempotent overwrite, member/org RLS scoping both directions, superadmin bypass, authenticated INSERT denied, cron registration). Live functional run scored **15 active production projects** (all low). Harness bugs found+fixed during verify: null-status fixture silently skipped by `status='active'` filter (made two assertions vacuously green), 2-vs-3 open highs, missing resolved-issue case.
+
+**Kept untracked docs** (secret-scanned clean, valid UTF-8): `NEXT_PHASE_PLAN.md` (roadmap driving this pillar), `PRODUCT_CASE_STUDY(.TE).md`, `INTERVIEW_CHEAT_SHEET.md`.
+
+**Gates**: tsc clean · eslint 0 errors · vitest **225 files / 2866 tests** (+1 file/+10 engine tests vs baseline) · smoke **455 checks** · build clean · e2e-mock **11/11** · db:apply 225 applied (only benign pre-existing `105_platform_settings` fail).
+
+**Notes**: Nothing committed beyond this checkpoint yet; `prod` push + Vercel deploy NOT done (needs user go). RiskSignalsCard still computes client-side — wiring it to the new table is a follow-up candidate.
+
+---
+
 ## Session — 2026-08-20: Edge Function CORS fix — "Failed to send a request to the Edge Function" (complete)
 
 **Context**: User reported "Failed to send a request to the Edge Function" recurring in the live app. Root cause: the **`CORS_ALLOWED_ORIGINS` Edge Function secret was STALE** — it still pointed at the old `https://sitetrack.in` domain, so every EF honoring it (`remove_org_member`, `cashfree-subscription`, + the `_shared/cors.ts` consumers) responded with `Access-Control-Allow-Origin: https://sitetrack.in` while the browser sat at `https://www.sitetrackpro.in` → **CORS mismatch → browser blocks → supabase-js throws exactly that message**. (Preflight was never the problem — the Supabase gateway answers OPTIONS with `*`; the real POST response's ACAO was the mismatch.)

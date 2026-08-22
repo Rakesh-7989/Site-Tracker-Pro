@@ -82,6 +82,13 @@ export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.El
         {result.delayDays > 0 ? ` · ~${result.delayDays} day${result.delayDays === 1 ? "" : "s"} late` : ""}
       </div>
 
+      {result.costForecast.projected > 0 && (
+        <div className="text-xs text-fg-secondary mt-1">
+          ₹{result.costForecast.projected.toLocaleString("en-IN")} projected remaining cost ({Math.round(result.costForecast.confidence * 100)}% confidence)
+          {result.burnAccelerating && " · burn accelerating"}
+        </div>
+      )}
+
       <ul className="mt-3 space-y-1.5">
         {result.signals.map(s => <SignalRow key={s.code} s={s} />)}
       </ul>
