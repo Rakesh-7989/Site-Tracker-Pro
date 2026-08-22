@@ -53,10 +53,8 @@ begin
 end $$;
 grant execute on function public.submit_payment_claim(uuid, text) to authenticated, anon;
 
--- public: load a signup request for the /pay page (firm/plan/status).
-create or replace function public.get_signup_for_pay(p_request uuid)
-  returns table(firm_name text, plan text, email text, payment_status text)
-  language sql stable security definer set search_path = public as $$
-  select firm_name, plan, email, payment_status from public.signup_requests where id = p_request
-$$;
-grant execute on function public.get_signup_for_pay(uuid) to authenticated, anon;
+-- public pay-page loader (get_signup_for_pay) is OWNED BY 196_signup_pay_amount.sql,
+-- which creates it (with plan_amount_inr + paid_amount_paise columns) and grants
+-- execute there. Do NOT recreate an older narrow-signature copy here —
+-- CREATE OR REPLACE cannot narrow an existing RETURN TABLE and this file would
+-- fail forever after 196 has run.

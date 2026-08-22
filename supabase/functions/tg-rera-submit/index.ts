@@ -26,7 +26,7 @@
 //   TG_RERA_SCRAPER_ENABLED=true   ← gate so this never accidentally runs against
 //                                    the real portal until you've explicitly opted in
 
-import { validateRera } from "../../../src/lib/compliance.js";  // type-only import via Deno
+import { validateRera } from "../../../src/lib/compliance.ts";  // type-only import via Deno
 import { authenticate } from "../_shared/auth.ts";
 
 const ALLOWED_ORIGINS = (Deno.env.get("CORS_ALLOWED_ORIGINS") ||

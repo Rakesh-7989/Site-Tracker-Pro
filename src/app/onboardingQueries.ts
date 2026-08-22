@@ -100,3 +100,22 @@ export async function completeOnboarding(client: any, orgId: string): Promise<PR
     return { ok: true, data: undefined };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
+
+/**
+ * Has the org completed the onboarding wizard? (ops_toggles key/value —
+ * readable by that org's admin via ops_write FOR ALL.)
+ * Fail-open: any read error or missing access returns TRUE so a user is never
+ * trapped in a redirect loop; only a fresh org's absent row returns FALSE.
+ */
+export async function isOnboardingDone(client: any, orgId: string): Promise<boolean> {
+  try {
+    const { data } = await client.from("ops_toggles")
+      .select("value")
+      .eq("org_id", orgId)
+      .eq("key", "onboarding_done")
+      .maybeSingle();
+    return data?.value !== "true" ? false : true;
+  } catch {
+    return true;
+  }
+}

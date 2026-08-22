@@ -256,7 +256,7 @@ try {
     || f.ref === "vendors" || f.ref === "templates" || f.ref === "rate_cards");
   // recursive FK chain: any FK whose ref is itself a scope table gets seeded
   // via seedParent so deep chains (zones→floors→blocks→sites→projects) resolve.
-  const fkChainColOf = (tbl) => (fkByTable.get(tbl) || []).filter(f =>
+  const _fkChainColOf = (tbl) => (fkByTable.get(tbl) || []).filter(f =>
     f.ref !== "auth.users" && f.ref !== "profiles" && !["projects","organizations","purchase_orders","deliverables","invoices","vendors","templates","rate_cards"].includes(f.ref));
   const buildVals = (tbl) => {
     const meta = tables.find(t => t.tbl === tbl);

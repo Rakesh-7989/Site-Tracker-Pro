@@ -21,6 +21,7 @@ import { Card, Button, Icon } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { getMfaChallenge, verifyMfa } from "@/auth/mfa";
+import { isOnboardingDone } from "@/app/onboardingQueries";
 
 type Method = "password" | "magic";
 type Status =
@@ -94,6 +95,19 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
     if ((lane === "org" && staff) || (lane === "staff" && !staff)) {
       navigate(staff ? "/staff/login" : "/login", { replace: true });
       return;
+    }
+    // Growth: a brand-new org admin lands in the onboarding wizard, not an
+    // empty dashboard. Fail-open (isOnboardingDone defaults true on errors),
+    // and only org admins are routed — members join already-set-up orgs.
+    if (!staff && refreshed.activeOrgId && refreshed.user.identityRole === "orgadmin") {
+      try {
+        const lib = await authLib();
+        const sb = await lib.getSupabaseClient();
+        if (sb && !(await isOnboardingDone(sb, refreshed.activeOrgId))) {
+          navigate("/org/onboarding", { replace: true });
+          return;
+        }
+      } catch { /* fall through to the normal landing path */ }
     }
     navigate(postLoginPathForSession(refreshed, lane));
   };
