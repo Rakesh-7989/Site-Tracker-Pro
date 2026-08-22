@@ -1,12 +1,16 @@
 // SiteTrack Pro — deterministic project "Risk signals" card (v4 Phase D).
-// Feeds milestones, expenses-vs-budget, open issues and RFI lag into
-// computeRiskSignals() and renders the score + signal list. Pure math (no
-// external AI); shown on the Overview tab for every project member.
+// Prefers the nightly server snapshot (project_risk_signals — migrations
+// 225/226) when fresh; otherwise feeds milestones, expenses-vs-budget, open
+// issues and RFI lag into computeRiskSignals() on the fly. Renders the score
+// + signal list. Pure math (no external AI); shown on Overview for members.
 
 import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase";
 import { Card, Badge, Spinner, Icon, ProgressBar } from "@/components/ui/atoms";
-import { computeRiskSignals, type RiskSignal, type RiskLevel } from "@/app/riskQueries";
+import {
+  computeRiskSignals, getProjectRiskSnapshot, isSnapshotFresh,
+  type StoredRiskSnapshot, type RiskSignal, type RiskLevel,
+} from "@/app/riskQueries";
 import { listMilestones } from "@/app/milestoneQueries";
 import { listIssues } from "@/app/issueQueries";
 import { listExpenses } from "@/app/financeQueries";
@@ -18,14 +22,38 @@ const LEVEL_TONE: Record<RiskLevel, "neutral" | "info" | "success" | "warning" |
   low: "success", medium: "warning", high: "danger", critical: "danger",
 };
 
+type CardResult = ReturnType<typeof computeRiskSignals>;
+
+/** Adapt a persisted nightly row into the client-computed render shape.
+ *  Cost forecast isn't persisted server-side → zeroed (line hides itself). */
+function snapshotToResult(snap: StoredRiskSnapshot): CardResult {
+  return {
+    score: snap.score,
+    level: snap.level,
+    signals: snap.signals as RiskSignal[],
+    delayProbability: snap.delayProbability,
+    delayDays: snap.delayDays,
+    costForecast: { projected: 0, variance: 0, confidence: 0 },
+    burnAccelerating: snap.burnAccelerating,
+    stockOutDays: 0,
+    stockOutCritical: false,
+  };
+}
+
 export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.Element {
-  const [result, setResult] = useState<ReturnType<typeof computeRiskSignals> | null>(null);
+  const [loaded, setLoaded] = useState<{ res: CardResult; fromStore: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     const client = await getClient();
     if (!client) { setLoading(false); return; }
+    const snap = await getProjectRiskSnapshot(client, project.id);
+    if (snap.ok && snap.data && isSnapshotFresh(snap.data)) {
+      setLoaded({ res: snapshotToResult(snap.data), fromStore: true });
+      setLoading(false);
+      return;
+    }
     const today = localDateISO();
     const [milestones, issues, expenses, rfis, budgetRow] = await Promise.all([
       listMilestones(client, project.id),
@@ -38,12 +66,15 @@ export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.El
       ? Number(budgetRow.data.budget)
       : 0;
     const spent = expenses.ok ? expenses.data.reduce((sum, e) => sum + e.amount, 0) : 0;
-    setResult(computeRiskSignals({
-      milestones: milestones.ok ? milestones.data : undefined,
-      budget: allocated > 0 ? { allocated, spent } : undefined,
-      openIssues: issues.ok ? issues.data : undefined,
-      rfis: rfis.ok ? rfis.data : undefined,
-    }, today));
+    setLoaded({
+      res: computeRiskSignals({
+        milestones: milestones.ok ? milestones.data : undefined,
+        budget: allocated > 0 ? { allocated, spent } : undefined,
+        openIssues: issues.ok ? issues.data : undefined,
+        rfis: rfis.ok ? rfis.data : undefined,
+      }, today),
+      fromStore: false,
+    });
     setLoading(false);
   }, [project.id]);
   useEffect(() => { void load(); }, [load]);
@@ -55,6 +86,8 @@ export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.El
       </Card>
     );
   }
+  const result = loaded?.res ?? null;
+  const fromStore = loaded?.fromStore ?? false;
   if (!result) return <></>;
   if (result.score === 0) {
     return (
@@ -80,7 +113,15 @@ export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.El
       <div className="text-xs text-fg-secondary">
         {Math.round(result.delayProbability * 100)}% estimated delay probability
         {result.delayDays > 0 ? ` · ~${result.delayDays} day${result.delayDays === 1 ? "" : "s"} late` : ""}
+        {fromStore ? " · nightly snapshot" : ""}
       </div>
+
+      {result.costForecast.projected > 0 && (
+        <div className="text-xs text-fg-secondary mt-1">
+          ₹{result.costForecast.projected.toLocaleString("en-IN")} projected remaining cost ({Math.round(result.costForecast.confidence * 100)}% confidence)
+          {result.burnAccelerating && " · burn accelerating"}
+        </div>
+      )}
 
       <ul className="mt-3 space-y-1.5">
         {result.signals.map(s => <SignalRow key={s.code} s={s} />)}

@@ -17,6 +17,13 @@
 
 // deno-lint-ignore-file no-explicit-any
 
+export interface AtRiskProject {
+  name: string;
+  score: number;        // 0–100 (project_risk_signals.risk_score)
+  level: "low" | "medium" | "high" | "critical";
+  delayDays: number;
+}
+
 export interface DigestInput {
   projectName: string;
   sentForDate: string;             // 'YYYY-MM-DD'
@@ -30,6 +37,8 @@ export interface DigestInput {
   actualProgressPct?: number;      // 0..100 — what site says
   // Risks
   openIssues?: { title: string; severity: "low" | "medium" | "high" | "critical" }[];
+  // Org-level intelligence (project_risk_signals nightly snapshot)
+  atRiskProjects?: AtRiskProject[];
   // Photo
   marqueePhotoUrl?: string;        // yesterday's most-recent DPR photo
   marqueePhotoCaption?: string;    // optional EXIF date + supervisor name
@@ -65,6 +74,7 @@ const STRINGS = {
     cost: "Cost-to-date",
     schedule: "Schedule",
     risks: (n: number) => n === 0 ? "No open risks" : n === 1 ? "1 open risk" : `${n} open risks`,
+    atRisk: (n: number) => n === 1 ? "1 project needs attention" : `${n} projects need attention`,
     onSchedule: "On schedule",
     aheadDays: (d: number) => `${d} day${d === 1 ? "" : "s"} ahead`,
     behindDays: (d: number) => `${d} day${d === 1 ? "" : "s"} behind`,
@@ -79,6 +89,7 @@ const STRINGS = {
     cost: "Inta varaku spend",
     schedule: "Schedule",
     risks: (n: number) => n === 0 ? "Risks ledhu" : n === 1 ? "1 risk undi" : `${n} risks unayi`,
+    atRisk: (n: number) => n === 1 ? "1 project ki attention kavali" : `${n} projects ki attention kavali`,
     onSchedule: "Schedule prakaram",
     aheadDays: (d: number) => `${d} roju${d === 1 ? "" : "lu"} mundu`,
     behindDays: (d: number) => `${d} roju${d === 1 ? "" : "lu"} venuka`,
@@ -93,6 +104,7 @@ const STRINGS = {
     cost: "Ab tak spend",
     schedule: "Schedule",
     risks: (n: number) => n === 0 ? "Koi risk nahi" : n === 1 ? "1 risk hai" : `${n} risks hain`,
+    atRisk: (n: number) => n === 1 ? "1 project par dhyan chahiye" : `${n} projects par dhyan chahiye`,
     onSchedule: "Schedule par",
     aheadDays: (d: number) => `${d} din${d === 1 ? "" : ""} aage`,
     behindDays: (d: number) => `${d} din${d === 1 ? "" : ""} piche`,
@@ -166,6 +178,16 @@ export function renderDigest(input: DigestInput): DigestOutput {
   const risk = topRisk(input);
   lines.push(`⚠️ ${s.risks(risk.count)}`);
   if (risk.line) lines.push(`   ${risk.line}`);
+
+  // Org-level at-risk projects (nightly risk_signals snapshot, top 3)
+  if (input.atRiskProjects && input.atRiskProjects.length > 0) {
+    lines.push("");
+    lines.push(`🏢 ${s.atRisk(Math.min(3, input.atRiskProjects.length))}:`);
+    for (const p of input.atRiskProjects.slice(0, 3)) {
+      const late = p.delayDays > 0 ? ` · ~${p.delayDays}d late` : "";
+      lines.push(`   • ${p.name} — ${p.score}/100 ${p.level}${late}`);
+    }
+  }
 
   // Photo line
   if (input.marqueePhotoUrl) {

@@ -177,20 +177,27 @@ Deno.serve(async (req: Request) => {
  */
 async function hydrateDigestInput(
   sub: DueSubscription,
-  _supabaseUrl: string,
-  _serviceKey: string,
+  supabaseUrl: string,
+  serviceKey: string,
 ): Promise<DigestInput | null> {
   // TODO Sprint 3 mid-cycle: actual data fetches. For now we return
   // a synthetic payload so the cron + dispatch log + idempotency wiring
   // can be tested against real subscriptions without depending on the
   // queries being final.
+  //
+  // REAL slice: org-level top at-risk projects come from the nightly
+  // project_risk_signals snapshot (migrations 225/226) via PostgREST
+  // embedding through projects(org_id). Best-effort — failures degrade to
+  // "no at-risk section" rather than failing the whole digest.
+  const atRiskProjects = await fetchOrgAtRiskProjects(sub.org_id, supabaseUrl, serviceKey);
+
   return {
     projectName: `Project ${sub.project_id?.slice(0, 8) || "(no project)"}`,
     sentForDate: sub.sent_for_date,
     language: sub.language,
     promoterName: sub.promoter_name || undefined,
     // Synthetic placeholder values — replaced when real hydration ships
-    budgetInr: 150_00_00_000,        // ₹1.5 cr in paise
+    budgetInr: 150_00_00_000,        // ₹11.5 cr in paise
     costToDateInr: 87_50_00_000,     // ₹87.5 lakh in paise (58%)
     plannedProgressPct: 60,
     actualProgressPct: 56,
@@ -198,9 +205,50 @@ async function hydrateDigestInput(
       { title: "Pending RERA quarterly filing", severity: "high" },
       { title: "Cement supply delay from vendor", severity: "medium" },
     ],
+    atRiskProjects,
     marqueePhotoUrl: undefined,       // wires to dpr_messages.photo_url latest yesterday
     marqueePhotoCaption: undefined,
   };
+}
+
+/** Top-3 non-low risk projects for an org from the nightly risk snapshot. */
+async function fetchOrgAtRiskProjects(
+  orgId: string,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<DigestInput["atRiskProjects"]> {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/projects?org_id=eq.${encodeURIComponent(orgId)}&status=eq.active`
+        + `&select=name,project_risk_signals(risk_score,risk_level,delay_days)`
+        + `&project_risk_signals.risk_level=neq.low`,
+      {
+        headers: {
+          "apikey": serviceKey,
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+      },
+    );
+    if (!res.ok) return undefined;
+    type EmbeddedRow = {
+      name: string | null;
+      project_risk_signals: { risk_score: number | null; risk_level: string | null; delay_days: number | null }[] | null;
+    };
+    const rows = (await res.json()) as EmbeddedRow[];
+    if (!Array.isArray(rows)) return undefined;
+    const flat = rows.flatMap(r => (r.project_risk_signals || []).map(s => ({
+      name: r.name ?? "Untitled project",
+      score: Math.max(0, Math.min(100, Number(s.risk_score ?? 0))),
+      level: (s.risk_level === "critical" || s.risk_level === "high" || s.risk_level === "medium")
+        ? s.risk_level as "critical" | "high" | "medium"
+        : "low" as const,
+      delayDays: Math.max(0, Number(s.delay_days ?? 0)),
+    })));
+    flat.sort((a, b) => b.score - a.score);
+    return flat.slice(0, 3);
+  } catch {
+    return undefined;
+  }
 }
 
 /**

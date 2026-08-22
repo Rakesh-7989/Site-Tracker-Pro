@@ -2,6 +2,7 @@
 // 5-step first-time setup for new orgs. Persists to Supabase.
 
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, Button, Spinner, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
@@ -19,10 +20,12 @@ const TRIAL_DAYS = 14;
 
 export function OnboardingView(): JSX.Element {
   const t = useT();
+  const navigate = useNavigate();
   const [orgId, setOrgId] = useState("");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [seedingDemo, setSeedingDemo] = useState(false);
 
   // Step 1
   const [orgName, setOrgName] = useState("");
@@ -100,6 +103,28 @@ export function OnboardingView(): JSX.Element {
     const client = await getClient();
     await updateOrg(client, orgId, orgName, contactEmail, segment, modules, plan, billing);
     setStep(2);
+  };
+
+  // Growth quick-win: one click → a fully-populated demo villa project
+  // (milestones, tasks, issues, expenses) via the seed_demo_project RPC
+  // (migration 227 — org-admin gated, idempotent).
+  const loadDemoProject = async () => {
+    setSeedingDemo(true);
+    setError(null);
+    try {
+      const client = await getClient();
+      if (!client) { setError("Backend not configured."); return; }
+      const { data, error: rpcError } = await client.rpc("seed_demo_project");
+      if (rpcError || !data) {
+        setError(rpcError?.message ?? "Could not load the demo project. Please try again.");
+        return;
+      }
+      navigate(`/projects/${data}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSeedingDemo(false);
+    }
   };
 
   const savePlan = async () => {
@@ -229,6 +254,13 @@ export function OnboardingView(): JSX.Element {
                   </div>
                 </div>
               )}
+              <div className="mt-4 flex items-center gap-3">
+                <Button variant="secondary" onClick={loadDemoProject} disabled={seedingDemo}>
+                  {seedingDemo ? "Loading demo…" : "Load demo project"}
+                </Button>
+                <span className="text-xs text-fg-secondary">Pre-loads a sample villa project with milestones, tasks, issues and finance data.</span>
+              </div>
+              {error && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{error}</div>}
               <div className="flex justify-end pt-2"><Button onClick={saveOrg}>Continue</Button></div>
             </div>
           )}

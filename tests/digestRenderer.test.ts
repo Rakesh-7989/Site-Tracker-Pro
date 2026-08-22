@@ -220,3 +220,48 @@ describe("safeRenderDigest()", () => {
     expect(out.text).toContain("No open risks");
   });
 });
+
+describe("at-risk projects section (project_risk_signals wiring)", () => {
+  it("renders top at-risk projects with score, level and delay", () => {
+    const out = renderDigest({
+      ...baseInput,
+      marqueePhotoUrl: undefined,
+      atRiskProjects: [
+        { name: "Villa 04", score: 78, level: "critical", delayDays: 12 },
+        { name: "Villa 11", score: 40, level: "medium", delayDays: 0 },
+      ],
+    });
+    expect(out.text).toContain("2 projects need attention:");
+    expect(out.text).toContain("• Villa 04 — 78/100 critical · ~12d late");
+    expect(out.text).toContain("• Villa 11 — 40/100 medium");
+  });
+
+  it("caps the section at 3 projects", () => {
+    const many = [1, 2, 3, 4, 5].map(i => ({ name: `P${i}`, score: i * 10, level: "medium" as const, delayDays: 0 }));
+    const out = renderDigest({ ...baseInput, marqueePhotoUrl: undefined, atRiskProjects: many });
+    expect(out.text).toContain("3 projects need attention:");
+    expect(out.text).not.toContain("P4 —");
+  });
+
+  it("omits the section entirely when no at-risk projects", () => {
+    const out = renderDigest({ ...baseInput, marqueePhotoUrl: undefined });
+    expect(out.text).not.toContain("need attention");
+  });
+
+  it("localizes in Telugu and Hindi", () => {
+    const te = renderDigest({
+      ...baseInput,
+      language: "te",
+      marqueePhotoUrl: undefined,
+      atRiskProjects: [{ name: "Villa 04", score: 78, level: "critical", delayDays: 12 }],
+    });
+    expect(te.text).toContain("attention kavali");
+    const hi = renderDigest({
+      ...baseInput,
+      language: "hi",
+      marqueePhotoUrl: undefined,
+      atRiskProjects: [{ name: "Villa 04", score: 78, level: "critical", delayDays: 12 }],
+    });
+    expect(hi.text).toContain("par dhyan chahiye");
+  });
+});
