@@ -49,7 +49,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
             <div className="text-[10px] text-fg-tertiary truncate">{brand.tagline}</div>
           )}
         </div>
-        <span className="hidden sm:inline text-[10px] font-semibold tracking-[0.18em] uppercase text-accent bg-accent-tint px-1.5 py-0.5 rounded">v3</span>
+        <span className="hidden lg:inline text-[10px] font-semibold tracking-[0.18em] uppercase text-accent bg-accent-tint px-1.5 py-0.5 rounded">v3</span>
 
         {/* Offline / queue pill */}
         {!online && (
@@ -67,7 +67,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         {conn.state !== "unknown" && (
           <button
             onClick={() => alert(`Connection state: ${conn.state}\n\n${conn.detail || "No additional details."}`)}
-            className={`hidden sm:flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 cursor-pointer ${
+            className={`hidden lg:flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 cursor-pointer ${
               conn.state === "live" ? "bg-success-tint text-success" :
               conn.state === "off" ? "bg-secondary text-fg-primary" :
               conn.state === "degraded" ? "bg-secondary text-warning" :
@@ -89,8 +89,8 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         )}
       </div>
 
-      {/* Global search — md+ only; mobile uses the /search nav item */}
-      <div className="hidden md:flex flex-1 justify-center px-4">
+      {/* Global search — lg+ only; below lg the drawer nav + /search page serve mobile/tablet */}
+      <div className="hidden lg:flex flex-1 justify-center px-4">
         <GlobalSearch />
       </div>
 
@@ -131,7 +131,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         {session && (
           <Link to="/settings/profile" title={t("shell.viewProfile")} className="flex-shrink-0 flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-secondary transition">
             <Avatar initials={session.user.name} size="sm" role={session.user.identityRole} />
-            <div className="hidden md:block text-right leading-tight">
+            <div className="hidden lg:block text-right leading-tight">
               <div className="text-xs font-semibold text-fg-primary">{session.user.name}</div>
               <div className="text-[10px] text-fg-secondary">{ROLE_LABEL[session.user.identityRole]}</div>
             </div>
@@ -139,7 +139,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         )}
 
         <Button variant="ghost" size="sm" onClick={onSignOut} leftIcon={<Icon name="logout" size={14} />}>
-          <span className="hidden sm:inline">{t("shell.signOut")}</span>
+          <span className="hidden lg:inline">{t("shell.signOut")}</span>
         </Button>
       </div>
     </header>

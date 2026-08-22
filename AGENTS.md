@@ -1,3 +1,21 @@
+## Session — 2026-08-23: LIVE authenticated responsive audit (real logins) + tablet/signout/403 fixes (complete)
+
+**Follow-up to the UX-audit session**: seeded the demo tenant (`node scripts/seed-garchitects-roles.mjs` → GARCHITECTS_CREDENTIALS.md) and built `scripts/ux-audit-live-auth.mjs` — **real password grant against live GoTrue**, session planted in localStorage (supabase-js shape), then the overflow/offender/console sweep across **13 routes × 3 viewports × 3 roles against REAL production data**, including real project-detail tabs (SRI VILLAS). `UX_AUDIT_BASE` env points it at any host (live / vite preview).
+
+**New issues found (live, real data)**:
+1. **Tablet-768: "Sign out" button cut on EVERY page** (`right=772` on a 768 viewport). Below lg the shell shows drawer nav + hamburger AND full search AND sign-out text simultaneously — TopBar was compact only below sm/md, not below lg.
+2. **403 console error on every page**: `/rest/v1/subscriptions` had **NO grant to `authenticated`** (only postgres/service_role) — RLS allowed admins but the table grant blocked them; PostgREST returns 403 permission-denied. planCapsQueries already degrades to organizations.plan so no functional break, but the trial pill never rendered for its intended audience and prod logged an error per page load.
+3. False-positive class: elements inside `overflow-x-auto` containers (dense tables, DetailView tab strips) extend past the viewport BY DESIGN → auditor now skips elements with a scroll-x ancestor. Also fixed a TS generic that had silently broken the public auditor's offender scan.
+
+**Fixes**:
+- **Migration 230** `230_subscription_read_grant.sql` (applied live, db:apply 219/0): `grant select on public.subscriptions to authenticated` — additive (RLS remains admin/superadmin-gated).
+- **TopBar compact-until-lg**: v3 chip + DB-Live pill + avatar name/role + sign-out text now `lg:`-gated; search `hidden lg:flex`. Below lg: hamburger + logo + truncated org name (+ offline pill when offline) + compact right cluster.
+- Auditor: scroll-x ancestor skip (all three audit scripts), `/_vercel/**` stubbed with empty JS on non-Vercel hosts (vite preview SPA-fallback would otherwise mask it as HTML→"Unexpected token '<'"; live serves it 200 — analytics IS enabled in prod).
+
+**Verification**: preview-build audit with real logins **zero issues for orgadmin/pm/client × 39 page-views**; gates lint/tsc/smoke 460/e2e-mock 11/11 green.
+
+---
+
 ## Session — 2026-08-23: Responsive UI/UX audit (mobile/tablet/desktop) + shell fixes (complete)
 
 **Story-driven audit** (user asked to think like real users): Ravi site-engineer on a 360px phone (attendance/photos — tables cut off? buttons tappable?), Priya org-admin on 768px iPad (awkward middle), founder on 1440 desktop. Built a **programmatic UX probe** instead of eyeballing:
