@@ -64,9 +64,14 @@ const VPS = [
 ];
 const ROUTES = [
   "/", "/projects", "/calendar", "/teams", "/messages", "/notifications",
-  "/invoices", "/analytics", "/procurement",
+  "/invoices", "/analytics", "/procurement", "/org/members",
   ...(PROJECT_ID ? [`/projects/${PROJECT_ID}`, `/projects/${PROJECT_ID}/drawings`, `/projects/${PROJECT_ID}/messages`, `/projects/${PROJECT_ID}/estimate`] : []),
 ];
+// Route → visible button text that opens its primary modal (mobile pass only).
+const MODAL_ACTIONS = {
+  "/teams": "New channel",
+  "/org/members": "Invite Member",
+};
 const STORAGE_KEY = `sb-${REF}-auth-token`;
 const findings = [];
 
@@ -119,8 +124,69 @@ for (const vp of VPS) {
     });
     // Signed-in sanity: shell rendered?
     const signedIn = await page.evaluate(() => !document.body.textContent.includes("Sign in"));
+    // Strict tap targets (mobile): interactive element with rendered height < 40px.
+    let smallTargets = null;
+    if (vp.name === "mobile-360") {
+      smallTargets = await page.evaluate(() => {
+        const els = Array.from(document.querySelectorAll('button, a[href], select, input, [role="button"]'));
+        const bad = [];
+        for (const el of els) {
+          if (!el.offsetParent) continue;
+          const r = el.getBoundingClientRect();
+          if (r.height === 0 || r.height >= 40) continue;
+          bad.push(`${el.tagName.toLowerCase()} "${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 20)}" h=${Math.round(r.height)}`);
+        }
+        return { count: bad.length, samples: bad.slice(0, 6) };
+      });
+    }
     await page.screenshot({ path: join(REPORT_DIR, `${vp.name}-${route.replace(/[^a-z0-9]+/gi, "_")}.png`) }).catch(() => {});
-    findings.push({ vp: vp.name, route, overflowPx, offenders, consoleErrors: [...new Set(errors)].slice(0, 4), signedIn });
+    findings.push({ vp: vp.name, route, overflowPx, offenders, smallTargets, consoleErrors: [...new Set(errors)].slice(0, 4), signedIn });
+
+    // ── Modal-open pass: click a route's primary action, re-audit inside ────
+    const actionLabel = MODAL_ACTIONS[route];
+    if (actionLabel && vp.name === "mobile-360") {
+      const btn = page.locator("button", { hasText: actionLabel }).first();
+      if (await btn.count().catch(() => 0)) {
+        await btn.click({ timeout: 4000 }).catch(() => {});
+        await page.waitForTimeout(1200);
+        const mOverflow = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth));
+        const modalBox = await page.evaluate(() => {
+          // The Modal panel is the highest z-index fixed-position dialog.
+          const panels = Array.from(document.querySelectorAll("[role='dialog'], .fixed.inset-0"))
+            .filter(el => el.getBoundingClientRect().height > 0);
+          if (panels.length === 0) return null;
+          let deepest = panels[panels.length - 1];
+          for (const p of panels) { if (!deepest.contains(p)) deepest = p; }
+          const r = deepest.getBoundingClientRect();
+          return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height), vh: window.innerHeight, vw: window.innerWidth };
+        });
+        const mOffenders = await page.evaluate(() => {
+          const vw = window.innerWidth;
+          const out = [];
+          for (const el of Array.from(document.querySelectorAll("*"))) {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 || r.height === 0) continue;
+            if (r.left < vw && r.right > vw + 3 && el.closest("[role='dialog'], .fixed.inset-0")) {
+              out.push(`${el.tagName.toLowerCase()}.${String(el.className).split(" ").slice(0, 2).join(".")} right=${Math.round(r.right)}`);
+              if (out.length >= 4) break;
+            }
+          }
+          return out;
+        });
+        await page.screenshot({ path: join(REPORT_DIR, `${vp.name}-${route.replace(/[^a-z0-9]+/gi, "_")}-modal.png`) }).catch(() => {});
+        findings.push({
+          vp: vp.name, route: `${route}#modal(${actionLabel})`,
+          overflowPx: mOverflow,
+          offenders: mOffenders,
+          modalFit: modalBox ? (modalBox.bottom <= modalBox.vh + 2 ? "fits" : `overflows-vh(bottom=${modalBox.bottom},vh=${modalBox.vh})`) : "no-modal-found",
+          consoleErrors: [...new Set(errors)].slice(0, 3),
+          signedIn,
+        });
+        // Close via Escape for the next route.
+        await page.keyboard.press("Escape").catch(() => {});
+        await page.waitForTimeout(500);
+      }
+    }
   }
   errors.length = 0;
   await ctx.close();
@@ -133,12 +199,17 @@ for (const f of findings) {
   const flags = [];
   if ((f.overflowPx ?? 0) > 2) flags.push(`overflow=${f.overflowPx}px`);
   if (f.offenders?.length) flags.push(`offenders=${f.offenders.length}`);
+  if (f.smallTargets && f.smallTargets.count > 0) {
+    flags.push(`smallTargets=${f.smallTargets.count}`);
+  }
+  if (f.modalFit && f.modalFit !== "fits" && f.modalFit !== "no-modal-found") flags.push(`modalFit=${f.modalFit}`);
   if (f.consoleErrors?.length) flags.push(`consoleErr=${f.consoleErrors.length}`);
   if (!f.signedIn) flags.push("NOT-SIGNED-IN");
   if (flags.length) {
     issues++;
     console.log(`${f.vp} ${f.route}: ${flags.join(" | ")}`);
     f.offenders?.forEach(o => console.log(`   ${o}`));
+    if (f.smallTargets?.samples?.length) f.smallTargets.samples.forEach(s => console.log(`   target: ${s}`));
     f.consoleErrors?.forEach(e => console.log(`   ERR: ${e.slice(0, 160)}`));
   }
 }
