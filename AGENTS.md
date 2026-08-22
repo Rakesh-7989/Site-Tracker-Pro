@@ -1,3 +1,16 @@
+## Session — 2026-08-23: tg-rera-submit resync + promoter digest cron WIRED (migration 231) (complete)
+
+**tg-rera-submit source drift CLOSED**: AGENTS' old note ("source unbundleable") was stale — the import already pointed at `src/lib/compliance.ts` (exists, exports validateRera). Redeployed from source → bundle OK, live probe healthy (401 gateway auth). Repo↔live back in sync.
+
+**Promoter digest cron WIRED end-to-end** (was an orphan: EF fully built but nothing invoked it):
+- **Migration 231** `231_promoter_digest_schedule.sql` (applied live, db:apply 220/0): pg_cron job `promoter-digest-daily` @ `35 2 * * *` (08:05 IST, after risk-signal compute) → `net.http_post` to the EF with `Authorization: Bearer <notify_config.promoter_digest_cron_secret>`. Secret resolved at fire time from `notify_config` — migration file stays secret-free, rotation needs no redeploy.
+- **CRON_SECRET rotated**: `.env.local` copy was empty (old value unrecorded, secrets write-only) → generated new 48-char, set via Management API (secrets API takes an ARRAY body — object body 400s), stored in `notify_config`.
+- **Gateway gotcha fixed**: function had `verify_jwt=true`, so the gateway rejected the non-JWT bearer BEFORE the EF's own check (`UNAUTHORIZED_INVALID_JWT_FORMAT`). Redeployed `--no-verify-jwt` — the EF's internal CRON_SECRET gate is now the real one (bad-secret probe → 401 `{"error":"invalid-cron-secret"}`).
+- **Verified end-to-end through the exact pg_net path**: fired `net.http_post` manually → EF returned **200 `{"ok":true,...,"dry_run":true}`**.
+- **Posture note**: response says `dry_run:true` because `SITETRACK_DIGEST_LIVE` ≠ "true" — deliberate: the digest sends WhatsApp-only and `WHATSAPP_PERMANENT_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` are still missing (blocked on founder's Meta credentials). When those land: set the two EF secrets + `SITETRACK_DIGEST_LIVE=true` and the pipeline goes live automatically at 08:05 IST daily (EF is idempotent per date).
+
+---
+
 ## Session — 2026-08-23: LIVE authenticated responsive audit (real logins) + tablet/signout/403 fixes (complete)
 
 **Follow-up to the UX-audit session**: seeded the demo tenant (`node scripts/seed-garchitects-roles.mjs` → GARCHITECTS_CREDENTIALS.md) and built `scripts/ux-audit-live-auth.mjs` — **real password grant against live GoTrue**, session planted in localStorage (supabase-js shape), then the overflow/offender/console sweep across **13 routes × 3 viewports × 3 roles against REAL production data**, including real project-detail tabs (SRI VILLAS). `UX_AUDIT_BASE` env points it at any host (live / vite preview).
