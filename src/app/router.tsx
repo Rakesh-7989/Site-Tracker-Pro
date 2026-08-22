@@ -46,6 +46,7 @@ const CalendarView = lazy(() => import("@/features/org/CalendarView").then(m => 
 const GlobalSearchView = lazy(() => import("@/features/org/GlobalSearchView").then(m => ({ default: m.GlobalSearchView })));
 const NotificationsView = lazy(() => import("@/features/org/NotificationsView").then(m => ({ default: m.NotificationsView })));
 const MessagesView = lazy(() => import("@/features/org/MessagesView").then(m => ({ default: m.MessagesView })));
+const TeamChatView = lazy(() => import("@/features/org/TeamChatView").then(m => ({ default: m.TeamChatView })));
 const HelpView = lazy(() => import("@/features/org/HelpView").then(m => ({ default: m.HelpView })));
 const PMView = lazy(() => import("@/features/org/PMView").then(m => ({ default: m.PMView })));
 const OrgActivityView = lazy(() => import("@/features/org/OrgActivityView").then(m => ({ default: m.OrgActivityView })));
@@ -131,6 +132,7 @@ export const router = createBrowserRouter([
       { path: "search", element: <GlobalSearchView /> },
       { path: "notifications", element: <NotificationsView /> },
       { path: "messages", element: <MessagesView /> },
+      { path: "teams", element: <TeamChatView /> },
       { path: "help", element: <HelpView /> },
       { path: "pm", element: <PMView /> },
       { path: "activity", element: <OrgActivityView /> },

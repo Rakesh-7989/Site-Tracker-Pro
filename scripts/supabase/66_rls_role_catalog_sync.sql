@@ -183,6 +183,9 @@ GRANT SELECT ON public.role_catalog TO authenticated, anon;
 --   drawing approve/reject/lock                → drawing:approve
 --   share_links create/update/revoke           → share:link:manage
 --   handover_signatures read/insert (org)      → handover:sign
+--   chat_channels update/delete (229)          -> chat:manage
+--     (chat_messages insert is self-scoped via auth.uid(); posting rides the
+--      existing message:send capability in the UI, no new RLS gate)
 --
 -- RLS gap note: invoices / retainers / rate_cards read gates are project
 -- membership-based; org-wide rollups (utilization/revenue) therefore only

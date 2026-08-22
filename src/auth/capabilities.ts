@@ -142,6 +142,7 @@ export const CAPABILITIES = [
 
   // ── Communications ───────────────────────────────────────────────────────
   "message:send",
+  "chat:manage",          // create / rename / archive team chat channels (Teams P1)
   "notification:configure",
   "whatsapp:send",
   "digest:subscribe",

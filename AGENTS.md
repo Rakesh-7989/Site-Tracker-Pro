@@ -1,3 +1,45 @@
+## Session — 2026-08-22: Teams/Cliq P1 — channels + threads + @mentions (migration 229) (complete)
+
+**Scope**: org-scoped team chat (Cliq-style) at **`/teams`** ("Teams", Workspace group, `users` icon) — additive to the project-scoped chat (MessagesTab / /messages untouched).
+
+**Migration 229** `scripts/supabase/229_team_channels.sql` (applied live via db:apply; ledger green after a 66-checksum-drift recovery):
+- `chat_channels` (org-scoped, UNIQUE(org_id,name), is_archived) + `chat_messages` (parent_id NULL = top-level thread root; `mentions uuid[]`; trigger-maintained `reply_count`; sender_name snapshot like the legacy messages table).
+- Triggers: `trg_chat_thread_guard` (BEFORE INSERT — parent must be same channel/org; reply-to-reply flattens to the root), `trg_chat_bump_reply_count` (AFTER INSERT, SECURITY DEFINER), `trg_notify_chat_mentions` (AFTER INSERT, SECURITY DEFINER — one notifications row per mentioned member ≠ sender, kind `chat_mention`, deep link `/teams?c=<channel>&m=<msg>`).
+- RLS (161 posture): channels read/insert = org member, update/delete = manager set (`is_orgadmin()`/pm/project_admin/superadmin); messages read = member, insert self (`sender_id = auth.uid()`), delete own-or-manager. Grants DML authenticated, revoke anon.
+
+**RBAC**: new capability `chat:manage` (create/rename/archive channels) — capabilities.ts (Communications block), capabilityLabels.ts, permissions-matrix identity grants for orgadmin + pm + project_admin (+ RoleResolver ADMIN_EXTRA_CAPS), 66 comment-sync. Posting rides existing `message:send`. Nav item ungated (all members see Teams).
+
+**Code**: `src/app/chatQueries.ts` (listChannels/createChannel/setChannelArchived/deleteChannel/listChannelMessages/postChannelMessage/listThreadReplies + pure `extractMentionIds` longest-name-first matcher and `splitOnMentions` renderer-splitter); `src/features/org/TeamChatView.tsx` (channel rail + create form, stream with mention-highlight rendering + thread drawer modal, @mention autocomplete from `list_org_members`, deep-link `?c=` channel select, 20s poll refresh); router lazy route `/teams`; nav-config entry.
+
+**i18n**: `teams.*` namespace (20 keys × en/hi/te). en.json edited in-place (BOM preserved); hi/te patched TEXTUALLY at the tail via a temp script (CRLF/no-BOM preserved) — full-file JSON rewrite would have churned the whole file. Keyset parity verified programmatically.
+
+**Live RLS harness**: `scripts/test-team-channels-rls.mjs` (`npm run test:rls:teams`, added to CI RLS step) — rolled-back-tx matrix **TC-001…010, 21/21 green** (structures+triggers+secdef; duplicate-name reject; cross-tenant blind+post-deny; spoof deny; mention fan-out exact-recipients + deep links; reply bump; flatten-to-root; cross-channel-parent reject; update/delete gates).
+
+**Harness lessons recorded** (both bit during first run, both diagnosed via direct pg probes):
+1. `session_replication_role='replica'` (fixture seeding) **disables ordinary triggers** — must reset to `'origin'` before behavior tests or guard/bump/notify silently never fire.
+2. Postgres RLS UPDATE/DELETE policies using USING **filter rows silently** (rowCount 0) — they do NOT raise. Denial assertions must check row effects, not exceptions. (INSERT WITH CHECK violations DO raise.)
+3. Expected-error probes need per-assertion SAVEPOINTs — an RLS error aborts the whole tx otherwise.
+
+**Tests/gates**: tests/app/chatQueries.test.ts (18: mappers/error surfaces/create-insert bodies/mention helpers incl. Telugu names + overlap rules) · permissionsMatrix +4 (chat:manage grants/denies) · tsc clean · eslint clean · vitest **229 files / 2923 tests** · smoke **460 checks** (+TeamChatView/chatQueries/extractMentionIds/splitOnMentions markers) · build clean · e2e-mock **11/11** · db:apply **218 passed / 0 failed** (66 ledger row deleted + re-applied for the checksum drift; 229 live) · test:rls:teams **21/21**.
+
+---
+
+## Session — 2026-08-22: Prod ship PR #11 + live verification + CAD thumbnails PR #12 (complete)
+
+**Ship (PR #11, squash `1f1a545`)**: 53-commit main→prod PR blocked ("merge commit cannot be cleanly created") because PR #10's squash tip (`6cc0d0b`) was never synced into main. Fix = sync merge `origin/prod` into `main` (`d38740f`; single conflict `OnboardingView.tsx` — kept main's newer progressive-onboarding version via `--ours`, tsc clean). CI green → squash → **trees identical** (`git diff origin/main origin/prod` empty) → prod CI success → Vercel production deploy live (verified new bundle hash + `onb.finishTitle`/`onb.finishGo` progressive-onboarding strings present in the served JS; apex 308→www 200). Branch-protection relax/restore done twice via the full-protection PUT (the review-subresource endpoint now 404s): backup JSON kept at `%TEMP%\opencode\prod_protection_backup.json`, restore sets review count back to 1 + dismiss_stale true.
+
+**Live verification**: prod:smoke 3/3 · column-drift PASS (156 tables / 436 files) · risk RLS suite 26/26 · full prod CI (lint/typecheck/build/smoke/columns/RLS/unit + coverage + e2e-mock) green on both tips.
+
+**Backlog audit — WhatsApp delivery**: all four send paths (promoter_digest_cron, whatsapp_dpr_send, notify-deliver, whatsapp-send) are coded+deployed but return `whatsapp-not-configured`: the EF project has **zero WHATSAPP_* secrets**, and `.env.local` has the keys present but EMPTY (only `WHATSAPP_API_VERSION=v18`). Blocked on founder-provided Meta credentials (phone number ID + permanent token [+ WABA id/webhook token]). Twilio/push have no provider account either.
+
+**CAD thumbnails (PR #12, commit `f899967`, squash `ff7c2f8`, live)**:
+- New `src/features/shared/DxfThumbnail.tsx` — inline SVG preview per `.dxf` row in Drawings/Deliverables file lists, reusing `parseDxfDoc`+`dxfToSvg` (no new deps). Lazy via IntersectionObserver (immediate where unavailable); module-level promise cache keyed by storage path dedupes fetch/parse across tabs; failed loads evicted so a later mount retries (expired signed URLs); non-DXF keeps the doc glyph.
+- Wired into `DrawingsTab.tsx` + `DeliverablesTab.tsx` rows (left side is now a flex row: thumbnail/doc glyph + truncating filename).
+- Tests `tests/components/dxfThumbnail.test.tsx` (8): non-DXF no-fetch, load+inject, URL-provider/fetch/no-entity fallbacks, cacheKey dedupe across remounts, failure eviction, fileName default key, IO-deferred lazy load. **Test gotcha**: the `doc` icon svg contains literal `<line>` elements and a viewBox — assert the DXF render via `svg[aria-label='CAD drawing preview']`.
+- Gates: tsc clean · eslint clean · vitest **228 files / 2901 tests** (+1/+8) · smoke **456 checks** (+DxfThumbnail marker) · build clean · e2e-mock **11/11** · prod CI success · prod:smoke 3/3 · live bundle updated.
+
+---
+
 ## Session — 2026-08-22: Broken-WIP rescue + Pillar-1 Intelligence salvage + server-side risk signals cron (migration 225) (complete)
 
 **Context**: Working tree was left badly broken by a prior session: shipped CRM web code (`crmQueries.ts`, `CrmView.tsx`, `tests/app/crmQueries.test.ts`, migration `161_crm_leads.sql`, `OnboardingView.tsx`) had been wholesale-replaced with **React Native / Expo code** (`react-native`/`expo-font` imports in a Vite web app — 41 tsc errors), plus half-finished "intelligence engine" files and broken scripts (undefined `faker` global). `main` was otherwise up to date with origin.

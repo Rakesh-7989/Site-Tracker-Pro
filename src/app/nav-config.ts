@@ -71,6 +71,7 @@ export const NAV_CATALOG: NavItem[] = [
   { to: "/calendar", label: "Calendar", icon: "calendar", group: "Workspace" },
   { to: "/search", label: "Search", icon: "search", group: "Workspace" },
   { to: "/notifications", label: "Notifications", icon: "bell", group: "Workspace" },
+  { to: "/teams", label: "Teams", icon: "users", group: "Workspace" },
   { to: "/messages", label: "Messages", icon: "msgcircle", group: "Workspace" },
     { to: "/client", label: "Client Portal", icon: "shield", requires: "share:client:portal", group: "Workspace", segments: ["architecture", "interior", "multiple"], modules: ["clients"] },
   { to: "/vendor", label: "Vendor Portal", icon: "truck", requires: "po:create", group: "Workspace", modules: ["procurement"] },

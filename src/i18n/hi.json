@@ -797,5 +797,27 @@
     "noTasks": "अभी तक कोई कार्य नहीं।",
     "backendError": "बैकएंड कॉन्फ़िगर नहीं है।",
     "actionFailed": "कार्रवाई विफल रही।"
+  },
+  "teams": {
+    "title": "टीम्स",
+    "subtitle": "संगठन चैनल · थ्रेड · @मेंशन",
+    "newChannel": "नया चैनल",
+    "namePlaceholder": "जैसे site-updates",
+    "descPlaceholder": "विवरण (वैकल्पिक)",
+    "create": "बनाएँ",
+    "noChannelsTitle": "अभी कोई चैनल नहीं है",
+    "noChannelsBody": "चैनल साइट अपडेट, प्रोक्योरमेंट, डिज़ाइन समीक्षा और अधिक के लिए संगठन-व्यापी स्थान हैं।",
+    "createFirst": "अपना पहला चैनल बनाएँ",
+    "askAdmin": "चैनल बनाने के लिए संगठन व्यवस्थापक से कहें।",
+    "noMessagesYet": "अभी कोई संदेश नहीं — नमस्ते कहें!",
+    "replyInThread": "थ्रेड में जवाब दें",
+    "repliesCount": "{count} जवाब →",
+    "threadTitle": "थ्रेड",
+    "composerPlaceholder": "संदेश #…  (@ से मेंशन करें)",
+    "replyPlaceholder": "जवाब…  (@ से मेंशन करें)",
+    "send": "संदेश भेजें",
+    "sendReply": "जवाब भेजें",
+    "archive": "आर्काइव",
+    "delete": "हटाएँ"
   }
 }
