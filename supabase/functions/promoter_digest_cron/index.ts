@@ -32,6 +32,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { renderDigest, type DigestInput } from "../_shared/digest_renderer.ts";
 import { authenticateCron } from "../_shared/auth.ts";
+import { sendWhatsAppMessage } from "../_shared/whatsapp_client.ts";
 
 interface CronResponse {
   ok: boolean;
@@ -335,21 +336,39 @@ async function fetchOrgAtRiskProjects(
 }
 
 /**
- * Send the rendered digest via WhatsApp Cloud API. TODO Sprint 3 mid-cycle —
- * for now returns ok:false with a clear "not implemented" so the dispatch
- * log shows "failed: not implemented" rather than silent success.
+ * Send the rendered digest via WhatsApp Cloud API using the shared
+ * _shared/whatsapp_client. Requires WHATSAPP_PERMANENT_TOKEN +
+ * WHATSAPP_PHONE_NUMBER_ID env vars; the digest text is sent as a plain
+ * message (the approved-template payload from renderDigest is used when the
+ * template name is approved — same call shape).
  */
 async function sendDigestViaWhatsApp(
-  _sub: DueSubscription,
-  _rendered: ReturnType<typeof renderDigest>,
+  sub: DueSubscription,
+  rendered: ReturnType<typeof renderDigest>,
   env: Record<string, string>,
 ): Promise<{ ok: boolean; meta_message_id?: string; error?: string }> {
-  if (!env.WHATSAPP_PERMANENT_TOKEN) {
-    return { ok: false, error: "WHATSAPP_PERMANENT_TOKEN missing — set SITETRACK_DIGEST_LIVE=false to enable dry-run mode" };
+  const token = env.WHATSAPP_PERMANENT_TOKEN;
+  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneNumberId) {
+    return { ok: false, error: "WHATSAPP_PERMANENT_TOKEN / WHATSAPP_PHONE_NUMBER_ID missing — set SITETRACK_DIGEST_LIVE=false to keep dry-run mode" };
   }
-  // TODO: call Meta Cloud API template send endpoint here using
-  // _shared/whatsapp_client (which the whatsapp_dpr_send EF will share).
-  return { ok: false, error: "promoter digest WhatsApp send not implemented yet — Sprint 3 mid-cycle" };
+  if (sub.language !== "te" && sub.language !== "hi" && sub.language !== "en") {
+    return { ok: false, error: `unsupported language ${sub.language}` };
+  }
+  const result = await sendWhatsAppMessage({
+    phoneNumberId,
+    token,
+    message: {
+      kind: "text",
+      to: sub.promoter_phone_e164,
+      body: rendered.text,
+    },
+  });
+  return {
+    ok: result.ok,
+    meta_message_id: result.meta_message_id,
+    error: result.error ?? (result.ok ? undefined : `HTTP ${result.status_code ?? "?"} sending digest`),
+  };
 }
 
 /** Write one row to digest_dispatches. The UNIQUE (subscription_id,
