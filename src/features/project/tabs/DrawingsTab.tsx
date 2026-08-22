@@ -18,7 +18,8 @@ import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
 import { resolveDiffPair } from "@/app/drawingDiffSources";
 import { DiffView, type DiffImageSource } from "@/features/shared/DiffView";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
-import { isCadFileName } from "@/lib/dxfPreview";
+import { DxfThumbnail } from "@/features/shared/DxfThumbnail";
+import { isCadFileName, isDxfFileName } from "@/lib/dxfPreview";
 import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
 import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
 import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
@@ -254,10 +255,25 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
               ) : (
                 (files[r.id] ?? []).map(f => (
                   <div key={f.name} className="flex items-center justify-between gap-2 rounded bg-bg-secondary px-2 py-1 text-[12px]">
-                    <span className="truncate text-fg-primary" title={f.name}>
-                      <Icon name="doc" size={13} className="mr-1.5 inline text-fg-tertiary" />
-                      {f.name}
-                      <span className="ml-1.5 text-fg-tertiary">{formatBytes(f.size)}</span>
+                    <span className="flex min-w-0 items-center gap-1.5" title={f.name}>
+                      {isDxfFileName(f.name) ? (
+                        <DxfThumbnail
+                          fileName={f.name}
+                          size={20}
+                          cacheKey={drawingObjectPath(projectId, r.id, f.name)}
+                          getUrl={async () => {
+                            const client = await getClient();
+                            if (!client) return { ok: false as const, error: "Backend not configured." };
+                            return drawingFileUrl(client, drawingObjectPath(projectId, r.id, f.name), 300);
+                          }}
+                        />
+                      ) : (
+                        <Icon name="doc" size={13} className="flex-shrink-0 text-fg-tertiary" />
+                      )}
+                      <span className="truncate text-fg-primary">
+                        {f.name}
+                        <span className="ml-1.5 text-fg-tertiary">{formatBytes(f.size)}</span>
+                      </span>
                     </span>
                     <span className="flex items-center gap-1 flex-shrink-0">
                       {isCadFileName(f.name) && (
