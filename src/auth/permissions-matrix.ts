@@ -62,6 +62,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
     "ffe:manage", "statutory:manage", "procurement:view",
     "crm:view", "crm:manage",
+    "chat:manage",                   // Team channels (Teams P1): create/rename/archive.
     "audit:manage",
     "research:view", "research:manage",
     "drawing:comment", "drawing:approve", "share:link:manage",
@@ -96,6 +97,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
 "ffe:manage", "statutory:manage", "procurement:view",
     "crm:view",
+    "chat:manage",                   // Team channels (Teams P1): create/rename/archive.
     "audit:manage",
     "research:view", "research:manage",
     "drawing:comment", "drawing:approve", "share:link:manage",
@@ -148,6 +150,7 @@ const IDENTITY_CAPS: Record<IdentityRole, Capability[]> = {
     "rate:manage", "time:approve", "retainer:manage", "billing:generate", "revenue:view",
     "procurement:view",
     "crm:view",
+    "chat:manage",                   // Team channels (Teams P1): create/rename/archive.
     "audit:manage",
     "research:view", "research:manage",
     "drawing:comment", "drawing:approve", "share:link:manage",

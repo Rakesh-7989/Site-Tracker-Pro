@@ -16,6 +16,7 @@ const ADMIN_EXTRA_CAPS: Capability[] = [
   "org:templates:manage", "org:approvals:manage", "org:notifications:manage",
   "org:branding:manage", "org:features:configure", "notification:configure",
   "vendor:manage", "vendor:select",
+  "chat:manage",
   "project:create", "project:archive", "project:restore", "project:settings:edit",
   "team:manage",
   "compliance:view",

@@ -1,3 +1,29 @@
+## Session — 2026-08-22: Teams/Cliq P1 — channels + threads + @mentions (migration 229) (complete)
+
+**Scope**: org-scoped team chat (Cliq-style) at **`/teams`** ("Teams", Workspace group, `users` icon) — additive to the project-scoped chat (MessagesTab / /messages untouched).
+
+**Migration 229** `scripts/supabase/229_team_channels.sql` (applied live via db:apply; ledger green after a 66-checksum-drift recovery):
+- `chat_channels` (org-scoped, UNIQUE(org_id,name), is_archived) + `chat_messages` (parent_id NULL = top-level thread root; `mentions uuid[]`; trigger-maintained `reply_count`; sender_name snapshot like the legacy messages table).
+- Triggers: `trg_chat_thread_guard` (BEFORE INSERT — parent must be same channel/org; reply-to-reply flattens to the root), `trg_chat_bump_reply_count` (AFTER INSERT, SECURITY DEFINER), `trg_notify_chat_mentions` (AFTER INSERT, SECURITY DEFINER — one notifications row per mentioned member ≠ sender, kind `chat_mention`, deep link `/teams?c=<channel>&m=<msg>`).
+- RLS (161 posture): channels read/insert = org member, update/delete = manager set (`is_orgadmin()`/pm/project_admin/superadmin); messages read = member, insert self (`sender_id = auth.uid()`), delete own-or-manager. Grants DML authenticated, revoke anon.
+
+**RBAC**: new capability `chat:manage` (create/rename/archive channels) — capabilities.ts (Communications block), capabilityLabels.ts, permissions-matrix identity grants for orgadmin + pm + project_admin (+ RoleResolver ADMIN_EXTRA_CAPS), 66 comment-sync. Posting rides existing `message:send`. Nav item ungated (all members see Teams).
+
+**Code**: `src/app/chatQueries.ts` (listChannels/createChannel/setChannelArchived/deleteChannel/listChannelMessages/postChannelMessage/listThreadReplies + pure `extractMentionIds` longest-name-first matcher and `splitOnMentions` renderer-splitter); `src/features/org/TeamChatView.tsx` (channel rail + create form, stream with mention-highlight rendering + thread drawer modal, @mention autocomplete from `list_org_members`, deep-link `?c=` channel select, 20s poll refresh); router lazy route `/teams`; nav-config entry.
+
+**i18n**: `teams.*` namespace (20 keys × en/hi/te). en.json edited in-place (BOM preserved); hi/te patched TEXTUALLY at the tail via a temp script (CRLF/no-BOM preserved) — full-file JSON rewrite would have churned the whole file. Keyset parity verified programmatically.
+
+**Live RLS harness**: `scripts/test-team-channels-rls.mjs` (`npm run test:rls:teams`, added to CI RLS step) — rolled-back-tx matrix **TC-001…010, 21/21 green** (structures+triggers+secdef; duplicate-name reject; cross-tenant blind+post-deny; spoof deny; mention fan-out exact-recipients + deep links; reply bump; flatten-to-root; cross-channel-parent reject; update/delete gates).
+
+**Harness lessons recorded** (both bit during first run, both diagnosed via direct pg probes):
+1. `session_replication_role='replica'` (fixture seeding) **disables ordinary triggers** — must reset to `'origin'` before behavior tests or guard/bump/notify silently never fire.
+2. Postgres RLS UPDATE/DELETE policies using USING **filter rows silently** (rowCount 0) — they do NOT raise. Denial assertions must check row effects, not exceptions. (INSERT WITH CHECK violations DO raise.)
+3. Expected-error probes need per-assertion SAVEPOINTs — an RLS error aborts the whole tx otherwise.
+
+**Tests/gates**: tests/app/chatQueries.test.ts (18: mappers/error surfaces/create-insert bodies/mention helpers incl. Telugu names + overlap rules) · permissionsMatrix +4 (chat:manage grants/denies) · tsc clean · eslint clean · vitest **229 files / 2923 tests** · smoke **460 checks** (+TeamChatView/chatQueries/extractMentionIds/splitOnMentions markers) · build clean · e2e-mock **11/11** · db:apply **218 passed / 0 failed** (66 ledger row deleted + re-applied for the checksum drift; 229 live) · test:rls:teams **21/21**.
+
+---
+
 ## Session — 2026-08-22: Prod ship PR #11 + live verification + CAD thumbnails PR #12 (complete)
 
 **Ship (PR #11, squash `1f1a545`)**: 53-commit main→prod PR blocked ("merge commit cannot be cleanly created") because PR #10's squash tip (`6cc0d0b`) was never synced into main. Fix = sync merge `origin/prod` into `main` (`d38740f`; single conflict `OnboardingView.tsx` — kept main's newer progressive-onboarding version via `--ours`, tsc clean). CI green → squash → **trees identical** (`git diff origin/main origin/prod` empty) → prod CI success → Vercel production deploy live (verified new bundle hash + `onb.finishTitle`/`onb.finishGo` progressive-onboarding strings present in the served JS; apex 308→www 200). Branch-protection relax/restore done twice via the full-protection PUT (the review-subresource endpoint now 404s): backup JSON kept at `%TEMP%\opencode\prod_protection_backup.json`, restore sets review count back to 1 + dismiss_stale true.

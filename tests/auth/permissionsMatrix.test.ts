@@ -519,6 +519,27 @@ describe("v4 A — CRM capability assignment (identity tier)", () => {
   });
 });
 
+// Teams P1 (2026-08-22): chat:manage = create/rename/archive team channels.
+// Posting rides the existing message:send; channel admin is a manager cap.
+const CHAT_MANAGE_ROLES = ["orgadmin", "pm", "project_admin"] as const;
+
+describe("Teams P1 - chat:manage assignment (identity tier)", () => {
+  for (const role of CHAT_MANAGE_ROLES) {
+    it(`${role} holds chat:manage`, () => {
+      const caps = identityCapabilities(role);
+      expect(caps).toContain("chat:manage" as never);
+    });
+  }
+  it("channel-manage cap is absent from member/client/vendor roles", () => {
+    for (const role of ["architect", "site_inspector", "contractor", "client", "vendor", "sub_contractor", "promoter", "prospector", "superadmin"] as const) {
+      // superadmin holds everything by construction — exclude from the deny check.
+      if (role === "superadmin") continue;
+      const caps = identityCapabilities(role);
+      expect(caps, `role=${role}`).not.toContain("chat:manage" as never);
+    }
+  });
+});
+
 // research:view = read the org research library (documents, collections);
 // research:manage = create/edit documents + collections, add/remove docs.
 // orgadmin manages + holds view; pm + project_admin also manage; design /

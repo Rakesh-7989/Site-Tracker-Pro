@@ -797,5 +797,27 @@
     "noTasks": "No tasks yet.",
     "backendError": "Backend not configured.",
     "actionFailed": "Action failed."
+  },
+  "teams": {
+    "title": "Teams",
+    "subtitle": "Org channels · threads · @mentions",
+    "newChannel": "New channel",
+    "namePlaceholder": "e.g. site-updates",
+    "descPlaceholder": "Description (optional)",
+    "create": "Create",
+    "noChannelsTitle": "No channels yet",
+    "noChannelsBody": "Channels are org-wide spaces for site updates, procurement, design reviews and more.",
+    "createFirst": "Create your first channel",
+    "askAdmin": "Ask an org admin to create a channel.",
+    "noMessagesYet": "No messages yet — say hello!",
+    "replyInThread": "Reply in thread",
+    "repliesCount": "{count} replies →",
+    "threadTitle": "Thread",
+    "composerPlaceholder": "Message #…  (@ to mention)",
+    "replyPlaceholder": "Reply…  (@ to mention)",
+    "send": "Send message",
+    "sendReply": "Send reply",
+    "archive": "Archive",
+    "delete": "Delete"
   }
 }
