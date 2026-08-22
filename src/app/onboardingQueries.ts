@@ -119,3 +119,20 @@ export async function isOnboardingDone(client: any, orgId: string): Promise<bool
     return true;
   }
 }
+
+/**
+ * Does the org have at least one project? Used together with isOnboardingDone
+ * so pre-existing orgs (created before the wizard shipped, no flag recorded)
+ * are never force-routed into onboarding.
+ */
+export async function orgHasProjects(client: any, orgId: string): Promise<boolean> {
+  try {
+    const { data } = await client.from("projects")
+      .select("id")
+      .eq("org_id", orgId)
+      .limit(1);
+    return Array.isArray(data) && data.length > 0;
+  } catch {
+    return true;
+  }
+}

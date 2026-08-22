@@ -4,12 +4,15 @@
 // new auth layer powering the UI: the action tiles only appear when the
 // user holds the capability in the active-org context.
 
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth, useOrgSwitcher, useCan, ROLE_LABEL } from "@/auth";
 import { Card, Icon, Badge } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
 import { useT } from "@/i18n/I18nProvider";
+import { getClient } from "@/lib/supabase";
+import { isOnboardingDone } from "@/app/onboardingQueries";
 
 export function DashboardView(): JSX.Element {
   const { session } = useAuth();
@@ -21,6 +24,24 @@ export function DashboardView(): JSX.Element {
   const canViewDpr = useCan("dpr:view");
   const canManageMembers = useCan("org:members:manage", orgCtx);
   const canViewAudit = useCan("audit:read");
+
+  // Fresh-org guidance: org admins of an org that never completed the wizard
+  // get a "Finish setup" nudge. Fail-open hidden (default true) so nobody is
+  // nagged by a data error.
+  const [showSetupNudge, setShowSetupNudge] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!activeOrg || session?.user.identityRole !== "orgadmin") return;
+        const client = await getClient();
+        if (!client) return;
+        const done = await isOnboardingDone(client, activeOrg.orgId);
+        if (!done && !cancelled) setShowSetupNudge(true);
+      } catch { /* stay hidden */ }
+    })();
+    return () => { cancelled = true; };
+  }, [activeOrg?.orgId, session?.user.identityRole]);
 
   if (!session) return <></>;
 
@@ -35,6 +56,20 @@ export function DashboardView(): JSX.Element {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {/* Fresh-org setup nudge */}
+      {showSetupNudge && (
+        <Card className="p-4 flex items-center gap-3 border-accent/40 bg-accent-tint">
+          <Icon name="flag" size={18} className="text-accent flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-fg-primary">Finish setting up your workspace</div>
+            <div className="text-xs text-fg-secondary">Pick your plan, invite your team and explore — takes about a minute.</div>
+          </div>
+          <Link to="/org/onboarding" className="flex-shrink-0">
+            <span className="inline-flex items-center text-xs font-bold text-accent hover:underline">{t("common.view")} →</span>
+          </Link>
+        </Card>
+      )}
+
       {/* Greeting */}
       <div>
         <h1 className="font-display text-2xl font-bold text-fg-primary">

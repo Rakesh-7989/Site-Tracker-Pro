@@ -26,6 +26,7 @@ export function OnboardingView(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [seedingDemo, setSeedingDemo] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
   // Step 1
   const [orgName, setOrgName] = useState("");
@@ -134,7 +135,8 @@ export function OnboardingView(): JSX.Element {
   };
 
   const addPending = () => {
-    if (!inviteName.trim() || !inviteEmail.trim()) { alert("Name + email required"); return; }
+    if (!inviteName.trim() || !inviteEmail.trim()) { setFieldError(t("onb.errNameEmail")); return; }
+    setFieldError(null);
     setPending(p => [...p, { name: inviteName.trim(), email: inviteEmail.trim(), role: "pm" }]);
     setInviteName(""); setInviteEmail("");
   };
@@ -148,8 +150,9 @@ export function OnboardingView(): JSX.Element {
   };
 
   const saveProject = async () => {
-    if (!projName.trim()) { alert("Project name required"); return; }
-    if (!clientName.trim()) { alert("Client name required"); return; }
+    if (!projName.trim()) { setFieldError(t("onb.errProjectName")); return; }
+    if (!clientName.trim()) { setFieldError(t("onb.errClientName")); return; }
+    setFieldError(null);
     const client = await getClient();
     await createProject(client, orgId, projName, clientName, startDate, projType);
     setStep(5);
@@ -182,8 +185,8 @@ export function OnboardingView(): JSX.Element {
       <div className="max-w-lg w-full">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black text-fg-primary tracking-tight">Welcome to SiteTrack</h1>
-            <p className="text-fg-tertiary text-sm mt-1">Let's get your workspace set up</p>
+            <h1 className="text-3xl font-black text-fg-primary tracking-tight">{t("onb.title")}</h1>
+            <p className="text-fg-tertiary text-sm mt-1">{t("onb.subtitle")}</p>
           </div>
           <div className="text-xs font-bold text-fg-tertiary">{step} / 6</div>
         </div>
@@ -198,18 +201,18 @@ export function OnboardingView(): JSX.Element {
           {/* Step 1: Org details */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="font-bold text-lg">Organisation details</h2>
-              <p className="text-xs text-fg-secondary">Your company or firm name and contact email.</p>
+              <h2 className="font-bold text-lg">{t("onb.orgDetailsTitle")}</h2>
+              <p className="text-xs text-fg-secondary">{t("onb.orgDetailsSub")}</p>
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">Organisation name *</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.orgName")}</label>
                 <input value={orgName} onChange={e => setOrgName(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">Contact email</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.contactEmail")}</label>
                 <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">What does your company do? *</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.whatDo")}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {SEGMENTS.map(s => {
                     const active = segment === s;
@@ -226,8 +229,8 @@ export function OnboardingView(): JSX.Element {
               {segment && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-fg-primary block">Modules</label>
-                    <span className="text-[10px] text-fg-tertiary">Pre-selected for your industry — toggle any on or off</span>
+                    <label className="text-xs font-semibold text-fg-primary block">{t("onb.modules")}</label>
+                    <span className="text-[10px] text-fg-tertiary">{t("onb.modulesHint")}</span>
                   </div>
                   <div className="space-y-1.5">
                     {MODULES.map(m => {
@@ -243,8 +246,8 @@ export function OnboardingView(): JSX.Element {
                           <span className="flex-1">
                             <span className="flex items-center gap-2 text-sm font-semibold text-fg-primary">
                               {t(`module.${m.id}.label`)}
-                              {recommended && <span className="text-[9px] font-bold uppercase tracking-wide text-accent bg-accent-tint px-1.5 py-0.5 rounded-full">Recommended</span>}
-                              {locked && <span className="text-[9px] font-bold uppercase tracking-wide text-fg-tertiary px-1.5 py-0.5 rounded-full">Always on</span>}
+                              {recommended && <span className="text-[9px] font-bold uppercase tracking-wide text-accent bg-accent-tint px-1.5 py-0.5 rounded-full">{t("onb.recommended")}</span>}
+                              {locked && <span className="text-[9px] font-bold uppercase tracking-wide text-fg-tertiary px-1.5 py-0.5 rounded-full">{t("onb.alwaysOn")}</span>}
                             </span>
                             <span className="block text-[11px] text-fg-tertiary leading-snug">{t(`module.${m.id}.desc`)}</span>
                           </span>
@@ -256,32 +259,32 @@ export function OnboardingView(): JSX.Element {
               )}
               <div className="mt-4 flex items-center gap-3">
                 <Button variant="secondary" onClick={loadDemoProject} disabled={seedingDemo}>
-                  {seedingDemo ? "Loading demo…" : "Load demo project"}
+                  {seedingDemo ? t("onb.loadingDemo") : t("onb.loadDemo")}
                 </Button>
-                <span className="text-xs text-fg-secondary">Pre-loads a sample villa project with milestones, tasks, issues and finance data.</span>
+                <span className="text-xs text-fg-secondary">{t("onb.demoHint")}</span>
               </div>
-              {error && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{error}</div>}
-              <div className="flex justify-end pt-2"><Button onClick={saveOrg}>Continue</Button></div>
+              {(error || fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError ?? error}</div>}
+              <div className="flex justify-end pt-2"><Button onClick={saveOrg}>{t("onb.cont")}</Button></div>
             </div>
           )}
 
           {/* Step 2: Plan & billing */}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="font-bold text-lg">Choose your plan</h2>
+              <h2 className="font-bold text-lg">{t("onb.planTitle")}</h2>
               <div className="text-xs text-success bg-success-tint rounded-lg px-3 py-2">
-                You're on a <b>{TRIAL_DAYS}-day Pro free trial</b> — all Pro features are unlocked now. Pick the plan you'd like to keep after the trial ends.
+                {t("onb.trialLine", { days: TRIAL_DAYS })}
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-fg-primary block">Billing</label>
+                <label className="text-xs font-semibold text-fg-primary block">{t("onb.billing")}</label>
                 <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-secondary border border-default">
                   <button type="button" onClick={() => setBilling("monthly")}
                     className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition ${billing === "monthly" ? "bg-panel text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}>
-                    Monthly
+                    {t("onb.monthly")}
                   </button>
                   <button type="button" onClick={() => setBilling("annual")}
                     className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5 ${billing === "annual" ? "bg-panel text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}>
-                    Annual <span className="text-[10px] font-bold text-success bg-success-tint px-1.5 py-0.5 rounded-full">2 months free</span>
+                    {t("onb.annual")} <span className="text-[10px] font-bold text-success bg-success-tint px-1.5 py-0.5 rounded-full">{t("onb.twoMonthsFree")}</span>
                   </button>
                 </div>
               </div>
@@ -299,7 +302,7 @@ export function OnboardingView(): JSX.Element {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold">{pr.amount}<span className="text-xs font-normal text-fg-tertiary">{pr.cadence}</span></div>
-                          {billing === "annual" && <div className="text-[10px] text-success font-semibold">{pr.effectiveMonthly} &middot; Save {pr.savingsAmount}</div>}
+                          {billing === "annual" && <div className="text-[10px] text-success font-semibold">{pr.effectiveMonthly} &middot; {t("onb.saveLine", { amount: pr.savingsAmount ?? "" })}</div>}
                         </div>
                       </div>
                       <div className="text-[10px] text-fg-tertiary mt-0.5">{t("signup.gstLine", { amount: formatINR(gstInclusive(billing === "annual" ? p.annual : p.monthly)) })}</div>
@@ -308,20 +311,21 @@ export function OnboardingView(): JSX.Element {
                   );
                 })}
               </div>
-              <div className="flex justify-end pt-2"><Button onClick={savePlan}>Continue</Button></div>
+              <div className="flex justify-end pt-2"><Button onClick={savePlan}>{t("onb.cont")}</Button></div>
             </div>
           )}
 
           {/* Step 3: Invite team */}
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="font-bold text-lg">Invite your team</h2>
-              <p className="text-xs text-fg-secondary">Add at least an architect and a project manager.</p>
+              <h2 className="font-bold text-lg">{t("onb.inviteTitle")}</h2>
+              <p className="text-xs text-fg-secondary">{t("onb.inviteSub")}</p>
               <div className="flex gap-2">
-                <input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Name" className="flex-1 rounded-lg border border-default px-3 py-2 text-sm" />
-                <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Email" className="flex-1 rounded-lg border border-default px-3 py-2 text-sm" />
-                <Button variant="secondary" onClick={addPending}>Add</Button>
+                <input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder={t("onb.namePh")} className="flex-1 rounded-lg border border-default px-3 py-2 text-sm" />
+                <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={t("onb.emailPh")} className="flex-1 rounded-lg border border-default px-3 py-2 text-sm" />
+                <Button variant="secondary" onClick={addPending}>{t("onb.add")}</Button>
               </div>
+              {(fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError}</div>}
               {pending.length > 0 && (
                 <div className="space-y-1">
                   {pending.map((m, i) => (
@@ -333,8 +337,8 @@ export function OnboardingView(): JSX.Element {
                 </div>
               )}
               <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setStep(4)}>Skip</Button>
-                <Button onClick={commitInvites}>Continue</Button>
+                <Button variant="secondary" onClick={() => setStep(4)}>{t("onb.skip")}</Button>
+                <Button onClick={commitInvites}>{t("onb.cont")}</Button>
               </div>
             </div>
           )}
@@ -342,27 +346,28 @@ export function OnboardingView(): JSX.Element {
           {/* Step 4: First project */}
           {step === 4 && (
             <div className="space-y-4">
-              <h2 className="font-bold text-lg">Create your first project</h2>
-              <p className="text-xs text-fg-secondary">A project is what you deliver for a client.</p>
+              <h2 className="font-bold text-lg">{t("onb.projectTitle")}</h2>
+              <p className="text-xs text-fg-secondary">{t("onb.projectSub")}</p>
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">Project name *</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.projectName")}</label>
                 <input value={projName} onChange={e => setProjName(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">Client name *</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.clientName")}</label>
                 <input value={clientName} onChange={e => setClientName(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
               </div>
+              {(fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError}</div>}
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">Project type</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.projectType")}</label>
                 <Select value={projType} onChange={e => setProjType(e.target.value as ProjectType)} options={segmentProjectTypes(segment).map(pt => ({ value: pt, label: t(`projType.${pt}`) }))} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">Start date</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.startDate")}</label>
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
               </div>
               <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setStep(5)}>Skip</Button>
-                <Button onClick={saveProject}>Continue</Button>
+                <Button variant="secondary" onClick={() => setStep(5)}>{t("onb.skip")}</Button>
+                <Button onClick={saveProject}>{t("onb.cont")}</Button>
               </div>
             </div>
           )}
@@ -370,33 +375,33 @@ export function OnboardingView(): JSX.Element {
           {/* Step 5: Feature presets */}
           {step === 5 && (
             <div className="space-y-4">
-              <h2 className="font-bold text-lg">Feature preset</h2>
-              <p className="text-xs text-fg-secondary">Choose how many features to turn on by default.</p>
+              <h2 className="font-bold text-lg">{t("onb.presetTitle")}</h2>
+              <p className="text-xs text-fg-secondary">{t("onb.presetSub")}</p>
               {(["minimal", "balanced", "full"] as const).map(p => (
                 <label key={p} className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer border transition-all ${preset === p ? "border-accent bg-accent-tint" : "border-default"}`}>
                   <input type="radio" name="preset" checked={preset === p} onChange={() => setPreset(p)} className="accent-[var(--st-accent)]" />
                   <div>
                     <div className="font-semibold text-sm capitalize">{p}</div>
-                    <div className="text-xs text-fg-tertiary">{p === "minimal" ? "Only the essentials" : p === "balanced" ? "Most features, trim beta" : "Everything available"}</div>
+                    <div className="text-xs text-fg-tertiary">{p === "minimal" ? t("onb.presetMinimalHint") : p === "balanced" ? t("onb.presetBalancedHint") : t("onb.presetFullHint")}</div>
                   </div>
                 </label>
               ))}
-              <div className="flex justify-end pt-2"><Button onClick={applyPreset}>Continue</Button></div>
+              <div className="flex justify-end pt-2"><Button onClick={applyPreset}>{t("onb.cont")}</Button></div>
             </div>
           )}
 
           {/* Step 6: Integrations */}
           {step === 6 && (
             <div className="space-y-4">
-              <h2 className="font-bold text-lg">Integrations (optional)</h2>
-              <p className="text-xs text-fg-secondary">Connect your tools later from the Integrations panel.</p>
+              <h2 className="font-bold text-lg">{t("onb.integrationsTitle")}</h2>
+              <p className="text-xs text-fg-secondary">{t("onb.integrationsSub")}</p>
               <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">AI API key (optional)</label>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.aiKeyLabel")}</label>
                 <input value={aiKey} onChange={e => setAiKey(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" placeholder="sk-..." />
               </div>
               <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setAiKey("")}>Skip</Button>
-                <Button onClick={finish}>Finish</Button>
+                <Button variant="secondary" onClick={() => setAiKey("")}>{t("onb.skip")}</Button>
+                <Button onClick={finish}>{t("onb.finish")}</Button>
               </div>
             </div>
           )}
