@@ -104,6 +104,24 @@ export function isRecommendedForSegment(segment: CompanySegment | null | undefin
   return templateModules(segment).includes(id);
 }
 
+/**
+ * Union of segment templates across MULTIPLE picked segments (v5 Growth,
+ * migration 228). Order follows MODULES catalog so onboarding toggles render
+ * consistently; duplicates removed.
+ */
+export function templateModulesForSegments(
+  segments: ReadonlyArray<CompanySegment>,
+): ModuleId[] {
+  const set = new Set<ModuleId>();
+  for (const s of segments) {
+    for (const id of templateModules(s)) set.add(id);
+  }
+  // Emit in catalog order, then any template ids missing from the catalog
+  // (defensive — none today).
+  const ordered = MODULE_IDS.filter(id => set.has(id));
+  return ordered.length === set.size ? ordered : [...ordered, ...[...set].filter(id => !ordered.includes(id))];
+}
+
 /** Modules that can NEVER be turned off (core). */
 export function alwaysOnModules(): readonly ModuleId[] {
   return MODULES.filter(m => m.alwaysOn).map(m => m.id);

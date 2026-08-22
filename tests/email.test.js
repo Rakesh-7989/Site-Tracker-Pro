@@ -2,14 +2,12 @@
 // Uses pure functions only (no runtime imports) — safe for auth-layer & CI.
 
 import {
-  EmailType,
   EMAIL_TITLES,
   EMAIL_BODIES,
   generateTitle,
   generateBody,
   DEFAULT_PLACEHOLDERS,
   formatEmail,
-  EmailFormatted,
   EMAIL_COLOR_MAP,
 } from "@/app/emailTemplates";
 import { sendEmail, sendEmailWithType } from "@/lib/email";

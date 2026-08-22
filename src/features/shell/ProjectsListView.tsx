@@ -13,11 +13,12 @@
 // RLS (`update_project_architect`, migration 116) enforces writes server-side.
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useOrgSwitcher, useCan, RequireCapability } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { cn } from "@/lib/cn";
+import { getClient } from "@/lib/supabase";
 import {
   listProjectsForOrg, memberProjectScope, type ProjectSummary,
   setProjectStatus, archiveProject, restoreProject, deleteProject,
@@ -79,6 +80,7 @@ const FILTERS: Array<{ key: LifecycleFilter; label: string }> = [
 export function ProjectsListView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const session = useSession();
+  const navigate = useNavigate();
   const orgCtx = activeOrg ? { orgId: activeOrg.orgId } : {};
   const canCreate = useCan("project:create", orgCtx);
   const canArchive = useCan("project:archive", orgCtx);
@@ -90,6 +92,24 @@ export function ProjectsListView(): JSX.Element {
   const [sortKey, setSortKey] = useState<ProjectSortKey>("name");
   const [sortDir, setSortDir] = useState<SortDirection>("asc");
   const [busy, setBusy] = useState(false);
+  const [seedingDemo, setSeedingDemo] = useState(false);
+
+  // Growth quick-win: one click loads a fully-populated demo villa project
+  // (seed_demo_project RPC — migration 227; org-admin gated + idempotent).
+  const loadDemoProject = async () => {
+    setSeedingDemo(true);
+    try {
+      const client = await getClient();
+      if (!client) return;
+      const { data, error } = await client.rpc("seed_demo_project");
+      if (!error && data) {
+        setState({ kind: "loading" }); // refetch list with the new project
+        navigate(`/projects/${data}`);
+        return;
+      }
+    } catch { /* fall through: button re-enables */ }
+    setSeedingDemo(false);
+  };
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -279,11 +299,21 @@ export function ProjectsListView(): JSX.Element {
               : `No ${filter === "all" ? "" : filter + " "}projects match.`}
           </div>
           {state.projects.length === 0 && (
-            <RequireCapability capability="project:create" orgId={activeOrg?.orgId}>
-              <Link to="/projects/new">
-                <Button size="md" leftIcon={<Icon name="plus" size={16} />}>Create the first project</Button>
-              </Link>
-            </RequireCapability>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+              <RequireCapability capability="project:create" orgId={activeOrg?.orgId}>
+                <Link to="/projects/new">
+                  <Button size="md" leftIcon={<Icon name="plus" size={16} />}>Create the first project</Button>
+                </Link>
+              </RequireCapability>
+              <RequireCapability capability="project:create" orgId={activeOrg?.orgId}>
+                <Button size="md" variant="secondary" onClick={loadDemoProject} disabled={seedingDemo}>
+                  {seedingDemo ? "Loading demo…" : "Load demo project"}
+                </Button>
+              </RequireCapability>
+            </div>
+          )}
+          {state.projects.length === 0 && (
+            <div className="text-xs text-fg-tertiary mt-3">The demo project pre-fills milestones, tasks, issues and finance so you can explore every feature instantly.</div>
           )}
         </Card>
       )}

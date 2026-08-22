@@ -26,7 +26,7 @@ import {
   isProjectTierRole,
   isProjectType,
 } from "./roles";
-import { isCompanySegment } from "./segmentConfig";
+import { isCompanySegment, isCompanySegmentArray } from "./segmentConfig";
 import { normalizeModules } from "@/modules/registry";
 import { normalizeOverride } from "./capabilityOverrides";
 import { customRoleGrants } from "./customRoles";
@@ -123,6 +123,7 @@ export function normalizeOrgMembership(row: Record<string, unknown> | null): Org
     orgName,
     orgSlug,
     segment,
+    segments: isCompanySegmentArray(orgNested?.segments ?? row.segments),
     enabledModules: normalizeModules(orgNested?.enabled_modules ?? row.enabled_modules),
     isAdmin: Boolean(row.is_admin) || rowRole === "admin",
     joinedAt: String(row.joined_at ?? new Date().toISOString()),
@@ -384,7 +385,7 @@ export async function fetchAuthSession(
     // 2. org_members joined with organizations
     const orgsRes = await client
       .from("org_members")
-      .select("org_id, role, joined_at, organizations:org_id (id, name, slug, segment, enabled_modules)")
+      .select("org_id, role, joined_at, organizations:org_id (id, name, slug, segment, segments, enabled_modules)")
       .eq("profile_id", input.authUserId);
     if (orgsRes.error) {
       return { ok: false, error: String((orgsRes.error as { message?: string }).message ?? orgsRes.error), code: "db-error" };

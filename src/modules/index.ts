@@ -10,6 +10,7 @@ export {
   CORE_MODULE,
   INDUSTRY_TEMPLATES,
   templateModules,
+  templateModulesForSegments,
   isRecommendedForSegment,
   alwaysOnModules,
 } from "./registry";

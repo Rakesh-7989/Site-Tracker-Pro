@@ -31,6 +31,14 @@
 - **promoter_digest_cron redeployed live (v28)** with the at-risk fetch. Probe exposed that **`CRON_SECRET` was never set** on the project (anon-auth probe hit 500 `cron-secret-not-configured`; missing-auth 401 came from the gateway's verify_jwt, masking it). Set a generated 48-char `CRON_SECRET` via Management API (value not recorded here) — bad-auth now returns proper 401 `invalid-cron-secret`. Whoever schedules the digest cron must pass `Authorization: Bearer $CRON_SECRET`.
 - **Gates**: tsc clean · eslint 0 errors · vitest **225 files / 2877 tests** · smoke **455** · build clean · e2e-mock **11/11**.
 
+**Same-day follow-up #2 — Multi-segment organizations (migration 228, complete)**:
+- **Story**: an org can operate across ONE or MANY segments (construction/architecture/interior/consultancy) — the workspace surfaces the UNION of picked segments' modules/nav/tabs/project types.
+- **Migration 228** (applied live, db:apply 217/0): `organizations.segments text[]` (CHECK 1..4 core ids — 'multiple' NOT storable, it is derived; GIN index); backfill single-segment orgs; NULL = fall back to legacy column. Legacy `segment` kept in sync (1 pick = that pick, 2+ = 'multiple').
+- **Resolution**: `resolveOrgSegments(segmentsRaw, segment)` — array → as-is; legacy 'multiple' → all four; single → [that]; null → null (gated items hidden, unchanged). Nav `buildNav` + `visibleTabs`/`isTabVisible` now accept arrays (ANY-of intersection). **Semantics fix locked by tests**: legacy-'multiple' orgs now SEE all segment-gated features (previously hidden unless the item list contained 'multiple' — old behavior was the bug).
+- **UI**: OnboardingView Step 1 = multi-select industry checkboxes; enabled_modules default = union of picked INDUSTRY_TEMPLATES (`templateModulesForSegments`, catalog order); project-type dropdown = union (`projectTypesForSegments`); updateOrg carries segments; register_org EF accepts optional validated `segments[]` (derives the legacy column; back-compat with body.segment).
+- **Tests**: tests/auth/multiSegment.test.ts (16) + navConfig 'multiple' expectation updated to new semantics. Gates all green: tsc 0 · eslint 0 · vitest **227 files / 2893 tests** · smoke 455 · build clean · e2e-mock 11/11.
+- **Ops note**: a PowerShell string-surgery mistake briefly truncated this file during editing — restored from git (lesson recorded: use edit-tool anchors, not regex rewrites, on AGENTS.md).
+
 ---
 
 ## Session — 2026-08-20: Edge Function CORS fix — "Failed to send a request to the Edge Function" (complete)

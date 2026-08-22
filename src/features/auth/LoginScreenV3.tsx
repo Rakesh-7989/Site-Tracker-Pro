@@ -21,6 +21,7 @@ import { Card, Button, Icon } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { getMfaChallenge, verifyMfa } from "@/auth/mfa";
+import { isOnboardingDone, orgHasProjects } from "@/app/onboardingQueries";
 
 type Method = "password" | "magic";
 type Status =
@@ -94,6 +95,26 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
     if ((lane === "org" && staff) || (lane === "staff" && !staff)) {
       navigate(staff ? "/staff/login" : "/login", { replace: true });
       return;
+    }
+    // Growth: a brand-new org admin lands in the onboarding wizard, not an
+    // empty dashboard. Only when the org has NO onboarding flag AND no
+    // projects (pre-existing orgs are never force-routed). Fail-open both
+    // checks; members join already-set-up orgs and skip this entirely.
+    if (!staff && refreshed.activeOrgId && refreshed.user.identityRole === "orgadmin") {
+      try {
+        const lib = await authLib();
+        const sb = await lib.getSupabaseClient();
+        if (sb) {
+          const [done, hasProjects] = await Promise.all([
+            isOnboardingDone(sb, refreshed.activeOrgId),
+            orgHasProjects(sb, refreshed.activeOrgId),
+          ]);
+          if (!done && !hasProjects) {
+            navigate("/org/onboarding", { replace: true });
+            return;
+          }
+        }
+      } catch { /* fall through to the normal landing path */ }
     }
     navigate(postLoginPathForSession(refreshed, lane));
   };

@@ -13,7 +13,7 @@
 import { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
-import { useAuth, resolveCapabilities } from "@/auth";
+import { useAuth, resolveCapabilities, resolveOrgSegments } from "@/auth";
 import { Card, Icon, Spinner, Badge, StatusBadge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { Tabs, tabButtonId, tabPanelId } from "@/components/ui/Tabs";
@@ -99,9 +99,10 @@ export function DetailView(): JSX.Element {
   // ---- VNEXT-005: Visible tabs filtered by currentLocationId ----
   const tabs = useMemo(() => {
     if (state.kind !== "ready") return [];
-    const activeSegment = session?.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
+    const membership = session?.orgs.find(o => o.orgId === session.activeOrgId);
+    const activeSegments = resolveOrgSegments(membership?.segments ?? null, membership?.segment ?? null);
     // pass currentLocationId so visibleTabs can gate location-specific tabs
-    return visibleTabs(caps, state.project.type, planCan, activeSegment, TAB_CATALOG, moduleEnabled, currentLocationId);
+    return visibleTabs(caps, state.project.type, planCan, activeSegments, TAB_CATALOG, moduleEnabled, currentLocationId);
   }, [caps, state, planCan, session, moduleEnabled, currentLocationId]);
   // -----------------------------------------------
 

@@ -56,7 +56,7 @@ const MEMBER1 = randomUUID();
 const MEMBER2 = randomUUID();
 const RACERS = Array.from({ length: 6 }, () => randomUUID());
 const PROJECT_CAP = 5; // basic plan projects_max = 5
-const MEMBER_SLOTS = 5; // basic plan users_max = 5 (3 fixture members → 2 free)
+const _MEMBER_SLOTS = 5; // basic plan users_max = 5 (3 fixture members → 2 free)
 let pass = 0, fail = 0;
 const ok = (cond, label) => { if (cond) { pass++; console.log(`  🟢 ${label}`); } else { fail++; console.log(`  🔴 ${label}`); } };
 

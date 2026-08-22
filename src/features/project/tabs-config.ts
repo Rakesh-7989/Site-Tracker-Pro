@@ -198,11 +198,14 @@ export function visibleTabs(
   caps: ReadonlySet<Capability>,
   projectType: ProjectType,
   planCan?: (feature: PlanFeature) => boolean,
-  segment?: CompanySegment | null,
+  segment?: CompanySegment | CompanySegment[] | null,
   catalog: ReadonlyArray<TabDef> = TAB_CATALOG,
   moduleEnabled?: (id: ModuleId) => boolean,
   currentLocationId?: string,
 ): TabDef[] {
+  // Multi-segment orgs (migration 228): accept a single value or an array;
+  // a segment-gated tab shows when ANY of the org's segments is listed.
+  const segs: ReadonlyArray<CompanySegment> | null = Array.isArray(segment) ? segment : (segment ? [segment] : null);
   return catalog.filter(tab => {
     // 1. projectTypes — tab must be applicable to this project type
     if (tab.projectTypes && !tab.projectTypes.includes(projectType)) return false;
@@ -212,9 +215,9 @@ export function visibleTabs(
     if (tab.requiresAny && !tab.requiresAny.some(cap => caps.has(cap))) return false;
     // 4. planFeature — plan predicate must unlock the tab
     if (tab.planFeature && planCan && !planCan(tab.planFeature)) return false;
-    // 5. segments — org's segment must be in tab's segments list;
-    //    segment === null (legacy org) excludes segment‑gated tabs
-    if (tab.segments && (!segment || !tab.segments.includes(segment))) return false;
+    // 5. segments — org's segment set must intersect the tab's list;
+    //    null/empty (legacy org) excludes segment‑gated tabs
+    if (tab.segments && (!segs || segs.length === 0 || !tab.segments.some(s => segs.includes(s)))) return false;
     // 6. moduleId — tab's module must be enabled; moduleEnabled === undefined means
     //    module gate is off (back‑compat, all modules appear enabled)
     if (tab.moduleId && moduleEnabled && !moduleEnabled(tab.moduleId)) return false;
@@ -231,7 +234,7 @@ export function isTabVisible(
   caps: ReadonlySet<Capability>,
   projectType: ProjectType,
   planCan?: (feature: PlanFeature) => boolean,
-  segment?: CompanySegment | null,
+  segment?: CompanySegment | CompanySegment[] | null,
   catalog: ReadonlyArray<TabDef> = TAB_CATALOG,
   moduleEnabled?: (id: ModuleId) => boolean,
   currentLocationId?: string,
