@@ -20,6 +20,16 @@
 
 **Notes**: Nothing committed beyond this checkpoint yet; `prod` push + Vercel deploy NOT done (needs user go). RiskSignalsCard still computes client-side — wiring it to the new table is a follow-up candidate.
 
+**Same-day follow-up — origin-main gutted-repo recovery + risk wiring + Growth quick-wins (complete)**:
+- **origin/main had been GUTTED** by two foreign commits (`8b49bed` "Ai studio changes", `27def61`): **45,226 deletions across 332 files — `src/` and all `scripts/supabase/` migrations deleted entirely**, replaced by a "VNext blueprint" doc. Preserved the gutted tip on `backup/vnext-gutted-main` branch (nothing lost), then `--force-with-lease` restored healthy main (`785bd02`). **User should verify no other session force-pushes again; CI/prod flows depend on main.**
+- **Migration 226** `226_risk_signals_breakdown.sql` (applied live): `project_risk_signals.signals jsonb` — nightly scorer now persists per-signal breakdown `[{code,severity,title,detail}]` mirroring riskQueries.ts.
+- **RiskSignalsCard wired to the table**: prefers a fresh stored snapshot (≤26h via `isSnapshotFresh`) → renders score/level/signals with a "nightly snapshot" hint; falls back to on-the-fly client compute when absent/stale (costForecast line hides itself on the stored path). New read helpers in `riskQueries.ts`: `getProjectRiskSnapshot` / `mapRiskSignalsRow` / `isSnapshotFresh` / `RISK_SNAPSHOT_MAX_AGE_HOURS`.
+- **Promoter digest wired**: `_shared/digest_renderer.ts` gained `AtRiskProject` + an org-level "N projects need attention" section (top-3, en/te/hi); `promoter_digest_cron` hydration now does a REAL fetch of top-3 non-low risks for the sub's org via PostgREST embedding through `projects(org_id)` (best-effort — degrades to omitted section).
+- **Migration 227** `227_seed_demo_project.sql` (applied live): `seed_demo_project()` SECURITY DEFINER RPC — org-admin gated (`is_orgadmin()`), idempotent (re-call returns existing project), seeds "Demo Villa — Green Meadows" (₹2.5Cr budget, 6 milestones incl. one overdue, 6 tasks, 3 issues, 10 expenses ≈ **80% burn**) so Risk signals shows schedule-slip + burn live in a fresh org.
+- **OnboardingView Step 1**: real "Load demo project" button → RPC → navigates to `/projects/{id}`; error surfaced inline (replaces the reverted `alert()` stub idea). Trial banner quick-win verified ALREADY shipped (`TrialBanner.tsx` mounted in TopBar + tests) — skipped.
+- **Live probes**: RSK harness extended to **26/26** (signals-breakdown assertions); seed RPC probe **6/6** (child-row counts, overdue milestone, ~80% burn, idempotency).
+- **Gates**: tsc clean · eslint 0 errors · vitest **225 files / 2877 tests** · smoke **455** · build clean · e2e-mock **11/11**.
+
 ---
 
 ## Session — 2026-08-20: Edge Function CORS fix — "Failed to send a request to the Edge Function" (complete)

@@ -183,6 +183,25 @@ try {
   ok(rows2.rowCount === rows1.rowCount,
     `re-run overwrites without duplicating (${rows2.rowCount} rows after 2nd run)`);
 
+  console.log("RSK-006b signals breakdown (migration 226)");
+  const sig = await c.query(
+    `select project_id, signals from public.project_risk_signals where project_id = any($1)`,
+    [[P.red, P.slip, P.clean]]);
+  const sigBy = Object.fromEntries(sig.rows.map(r => [r.project_id, r.signals]));
+  const redSig = sigBy[P.red] || [];
+  ok(Array.isArray(redSig) && redSig.length === 3,
+    `red: 3 persisted signals (got ${Array.isArray(redSig) ? redSig.length : typeof redSig})`);
+  ok(redSig.some(s => s.code === "schedule_slip") && redSig.some(s => s.code === "budget_overrun")
+    && redSig.some(s => s.code === "high_severity_issues"),
+    "red: codes schedule_slip/budget_overrun/high_severity_issues present");
+  ok(redSig.every(s => typeof s.title === "string" && s.title.length > 0 && typeof s.detail === "string"),
+    "red: every signal carries title + detail");
+  const slipSig = (sigBy[P.slip] || [])[0];
+  ok(slipSig?.code === "schedule_slip" && slipSig?.severity === "high",
+    "slip: single signal escalated to high severity");
+  ok(Array.isArray(sigBy[P.clean]) && sigBy[P.clean].length === 0,
+    "clean: empty breakdown");
+
   console.log("RSK-007 RLS scoping");
   await asUser(U_M);
   const seenMember = await c.query(

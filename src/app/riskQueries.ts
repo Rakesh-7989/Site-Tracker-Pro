@@ -236,3 +236,91 @@ export function computeRiskSignals(input: RiskInput, today: string): RiskResult 
     stockOutCritical: false,
   };
 }
+
+// ── Stored nightly snapshot (project_risk_signals — migrations 225/226) ─────
+// The pg_cron job `compute-risk-signals` persists per-project rows nightly.
+// Read-side helpers below let the UI card prefer a fresh server snapshot and
+// fall back to on-the-fly computeRiskSignals() when none exists.
+
+export interface StoredRiskSignal {
+  code: string;
+  severity: "low" | "medium" | "high";
+  title: string;
+  detail: string;
+}
+
+export interface StoredRiskSnapshot {
+  projectId: string;
+  score: number;
+  level: RiskLevel;
+  delayProbability: number;
+  delayDays: number;
+  burnAccelerating: boolean;
+  signals: StoredRiskSignal[];
+  computedAt: string; // ISO timestamp of the nightly run
+}
+
+/** Cron fires daily at 02:05 UTC — snapshots older than this are stale. */
+export const RISK_SNAPSHOT_MAX_AGE_HOURS = 26;
+
+/** Pure freshness check (cron cadence + slack). */
+export function isSnapshotFresh(snap: StoredRiskSnapshot, now: Date = new Date()): boolean {
+  const t = Date.parse(snap.computedAt);
+  if (Number.isNaN(t)) return false;
+  return (now.getTime() - t) / 3_600_000 <= RISK_SNAPSHOT_MAX_AGE_HOURS;
+}
+
+type RiskSignalsRow = {
+  project_id: string;
+  risk_score: number | null;
+  risk_level: string | null;
+  delay_probability: number | string | null;
+  delay_days: number | null;
+  burn_accelerating: boolean | null;
+  signals: unknown;
+  updated_at: string | null;
+};
+
+/** Map a raw DB row to the snapshot shape; null when unrecognizable. */
+export function mapRiskSignalsRow(row: RiskSignalsRow): StoredRiskSnapshot | null {
+  if (!row || typeof row.project_id !== "string") return null;
+  const level = riskLevel(Number(row.risk_score ?? 0));
+  let signals: StoredRiskSignal[] = [];
+  if (Array.isArray(row.signals)) {
+    signals = row.signals
+      .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
+      .map(s => ({
+        code: typeof s.code === "string" ? s.code : "unknown",
+        severity: s.severity === "high" ? "high" : s.severity === "medium" ? "medium" : "low",
+        title: typeof s.title === "string" ? s.title : "",
+        detail: typeof s.detail === "string" ? s.detail : "",
+      }));
+  }
+  return {
+    projectId: row.project_id,
+    score: Math.max(0, Math.min(100, Number(row.risk_score ?? 0))),
+    level,
+    delayProbability: Math.max(0, Math.min(0.9, Number(row.delay_probability ?? 0))),
+    delayDays: Math.max(0, Number(row.delay_days ?? 0)),
+    burnAccelerating: row.burn_accelerating === true,
+    signals,
+    computedAt: typeof row.updated_at === "string" ? row.updated_at : "",
+  };
+}
+
+export type RiskQueryResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+/** Fetch the persisted nightly snapshot for one project; null when absent. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getProjectRiskSnapshot(client: any, projectId: string): Promise<RiskQueryResult<StoredRiskSnapshot | null>> {
+  try {
+    const { data, error } = await client.from("project_risk_signals")
+      .select("project_id,risk_score,risk_level,delay_probability,delay_days,burn_accelerating,signals,updated_at")
+      .eq("project_id", projectId)
+      .maybeSingle();
+    if (error) return { ok: false, error: error.message ?? "risk snapshot fetch failed" };
+    return { ok: true, data: data ? mapRiskSignalsRow(data as RiskSignalsRow) : null };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
