@@ -180,33 +180,116 @@ async function hydrateDigestInput(
   supabaseUrl: string,
   serviceKey: string,
 ): Promise<DigestInput | null> {
-  // TODO Sprint 3 mid-cycle: actual data fetches. For now we return
-  // a synthetic payload so the cron + dispatch log + idempotency wiring
-  // can be tested against real subscriptions without depending on the
-  // queries being final.
-  //
-  // REAL slice: org-level top at-risk projects come from the nightly
-  // project_risk_signals snapshot (migrations 225/226) via PostgREST
-  // embedding through projects(org_id). Best-effort — failures degrade to
-  // "no at-risk section" rather than failing the whole digest.
+  // REAL hydration (v5 backlog sweep). All fetches are best-effort via
+  // PostgREST with the service key; a failed section degrades to "omitted"
+  // rather than failing the whole digest. DigestInput units: money in PAISE.
+  const H = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+  // ── Project row (name + budget in ₹ → paise) ──────────────────────────────
+  let projectName = sub.project_id ? `Project ${sub.project_id.slice(0, 8)}` : "(no project)";
+  let budgetInrPaise: number | undefined;
+  if (sub.project_id) {
+    try {
+      const r = await fetch(`${supabaseUrl}/rest/v1/projects?id=eq.${sub.project_id}&select=name,budget`, { headers: H });
+      if (r.ok) {
+        const rows = await r.json();
+        if (Array.isArray(rows) && rows[0]) {
+          projectName = String(rows[0].name ?? projectName);
+          const b = Number(rows[0].budget ?? 0);
+          if (b > 0) budgetInrPaise = b * 100;
+        }
+      }
+    } catch { /* omit cost line */ }
+  }
+
+  // ── Spend to date (Σ expenses.amount ₹ → paise) ───────────────────────────
+  let costToDatePaise: number | undefined;
+  if (sub.project_id && budgetInrPaise !== undefined) {
+    try {
+      const r = await fetch(
+        `${supabaseUrl}/rest/v1/expenses?project_id=eq.${sub.project_id}&select=amount`,
+        { headers: H },
+      );
+      if (r.ok) {
+        const rows = await r.json();
+        if (Array.isArray(rows)) {
+          const sum = rows.reduce((a, e) => a + Number(e.amount ?? 0), 0);
+          costToDatePaise = sum * 100;
+        }
+      }
+    } catch { /* omit */ }
+  }
+
+  // ── Schedule proxy: completed milestones vs all (planned ≈ actual baseline)
+  let actualProgressPct: number | undefined;
+  if (sub.project_id) {
+    try {
+      const r = await fetch(
+        `${supabaseUrl}/rest/v1/milestones?project_id=eq.${sub.project_id}&select=status`,
+        { headers: H },
+      );
+      if (r.ok) {
+        const rows = await r.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          const done = rows.filter(m => m.status === "completed").length;
+          actualProgressPct = Math.round((done / rows.length) * 100);
+        }
+      }
+    } catch { /* omit schedule line */ }
+  }
+
+  // ── Open issues (top risks by severity) ───────────────────────────────────
+  let openIssues: DigestInput["openIssues"];
+  if (sub.project_id) {
+    try {
+      const r = await fetch(
+        `${supabaseUrl}/rest/v1/issues?project_id=eq.${sub.project_id}&status=eq.open`
+          + `&order=severity.desc&limit=5&select=title,severity`,
+        { headers: H },
+      );
+      if (r.ok) {
+        const rows = await r.json();
+        if (Array.isArray(rows)) {
+          openIssues = rows.map(i => ({
+            title: String(i.title ?? ""),
+            severity: (i.severity === "high" ? "high" : i.severity === "low" ? "low" : "medium") as "high" | "medium" | "low",
+          }));
+        }
+      }
+    } catch { /* omit risks */ }
+  }
+
+  // ── Marquee photo: latest DPR photo for the project ───────────────────────
+  let marqueePhotoUrl: string | undefined;
+  if (sub.project_id) {
+    try {
+      const r = await fetch(
+        `${supabaseUrl}/rest/v1/dpr_messages?project_id=eq.${sub.project_id}&photo_url=not.is.null`
+          + `&order=created_at.desc&limit=1&select=photo_url`,
+        { headers: H },
+      );
+      if (r.ok) {
+        const rows = await r.json();
+        if (Array.isArray(rows) && rows[0]?.photo_url) marqueePhotoUrl = String(rows[0].photo_url);
+      }
+    } catch { /* omit photo */ }
+  }
+
+  // ── Org-level at-risk projects (nightly risk snapshot) ────────────────────
   const atRiskProjects = await fetchOrgAtRiskProjects(sub.org_id, supabaseUrl, serviceKey);
 
   return {
-    projectName: `Project ${sub.project_id?.slice(0, 8) || "(no project)"}`,
+    projectName,
     sentForDate: sub.sent_for_date,
     language: sub.language,
     promoterName: sub.promoter_name || undefined,
-    // Synthetic placeholder values — replaced when real hydration ships
-    budgetInr: 150_00_00_000,        // ₹11.5 cr in paise
-    costToDateInr: 87_50_00_000,     // ₹87.5 lakh in paise (58%)
-    plannedProgressPct: 60,
-    actualProgressPct: 56,
-    openIssues: [
-      { title: "Pending RERA quarterly filing", severity: "high" },
-      { title: "Cement supply delay from vendor", severity: "medium" },
-    ],
+    budgetInr: budgetInrPaise,
+    costToDateInr: costToDatePaise,
+    plannedProgressPct: actualProgressPct, // no plan baseline yet — variance hidden when equal
+    actualProgressPct,
+    openIssues: openIssues?.length ? openIssues : undefined,
     atRiskProjects,
-    marqueePhotoUrl: undefined,       // wires to dpr_messages.photo_url latest yesterday
+    marqueePhotoUrl,
     marqueePhotoCaption: undefined,
   };
 }
