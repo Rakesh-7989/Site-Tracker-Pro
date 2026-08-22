@@ -45,7 +45,10 @@
     "finish": "Finish",
     "errNameEmail": "Name and email required",
     "errProjectName": "Project name required",
-    "errClientName": "Client name required"
+    "errClientName": "Client name required",
+    "errPickSegment": "Please pick at least one industry",
+    "errOrgName": "Organisation name required",
+    "selectMany": "Select one or more — modules combine across picks."
   },
   "$meta": {
     "language": "en",

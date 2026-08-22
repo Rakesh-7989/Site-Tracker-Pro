@@ -61,6 +61,12 @@ export interface OrgMembership {
    */
   segment: CompanySegment | null;
   /**
+   * Multi-segment picks (migration 228). Null = not configured (fall back to
+   * the legacy single `segment`); concrete picks otherwise. Use
+   * resolveOrgSegments() for the effective set.
+   */
+  segments?: CompanySegment[] | null;
+  /**
    * Which product modules the org has switched on (migration 155). Absent /
    * null = not configured yet → every module is treated as enabled
    * (back-compat with pre-module orgs).

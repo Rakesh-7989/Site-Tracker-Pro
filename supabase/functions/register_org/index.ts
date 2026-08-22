@@ -205,13 +205,30 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // older clients; when present it MUST be a known segment. Legacy rows keep
   // segment = null until the owner picks one in onboarding.
   const segment = body.segment ? String(body.segment).trim() : null;
+  // Multi-segment picks (v5 Growth, migration 228). Optional; when present it
+  // must be a non-empty array of CORE segments (no 'multiple' — derived).
+  // The legacy column is derived: 1 pick → that pick, 2+ → 'multiple'.
+  const CORE_SEGMENTS_OK = ["construction", "architecture", "interior", "consultancy"];
+  let segments: string[] | null = null;
+  if (Array.isArray(body.segments)) {
+    const raw = body.segments.map(s => String(s).trim());
+    if (raw.length === 0 || raw.length > 4 || raw.some(s => !CORE_SEGMENTS_OK.includes(s))) {
+      return json({ ok: false, error: "invalid-segments" }, 400);
+    }
+    segments = [...new Set(raw)];
+  } else if (body.segments != null) {
+    return json({ ok: false, error: "invalid-segments" }, 400);
+  }
+  const derivedSegment = segments
+    ? (segments.length === 1 ? segments[0] : "multiple")
+    : segment;
 
   if (!email || !email.includes("@")) return json({ ok: false, error: "invalid-email" }, 400);
   if (password.length < 8) return json({ ok: false, error: "password-too-short" }, 400);
   if (!firmName) return json({ ok: false, error: "firm-name-required" }, 400);
   if (!VALID_PLANS.includes(plan as typeof VALID_PLANS[number])) return json({ ok: false, error: "invalid-plan" }, 400);
   if (!VALID_BILLING.includes(billing as typeof VALID_BILLING[number])) return json({ ok: false, error: "invalid-billing" }, 400);
-  if (segment && !VALID_SEGMENTS.includes(segment as typeof VALID_SEGMENTS[number])) {
+  if (derivedSegment && !VALID_SEGMENTS.includes(derivedSegment as typeof VALID_SEGMENTS[number])) {
     return json({ ok: false, error: "invalid-segment" }, 400);
   }
 
@@ -262,10 +279,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // 2. Create org — plan = Pro (trial). billing/segment optional (segment only
   //    when present; back-compat with legacy orgs that leave it null).
+  //    segments[] (migration 228) stored when the client sent picks; the
+  //    legacy column gets the derived value.
   const trialEnd = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { data: orgData, error: orgErr } = await admin
     .from("organizations")
-    .insert({ slug: slugify(firmName), name: firmName, plan: TRIAL_PLAN, billing_period: billing, ...(segment ? { segment } : {}) })
+    .insert({
+      slug: slugify(firmName), name: firmName, plan: TRIAL_PLAN, billing_period: billing,
+      ...(derivedSegment ? { segment: derivedSegment } : {}),
+      ...(segments ? { segments } : {}),
+    })
     .select("id")
     .single();
 

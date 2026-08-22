@@ -6,9 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { Card, Button, Spinner, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
-import { SEGMENTS, defaultProjectTypeFor, segmentProjectTypes, type CompanySegment } from "@/auth";
+import { CORE_SEGMENTS, defaultProjectTypeFor, legacySegmentFor, projectTypesForSegments, type CompanySegment } from "@/auth";
 import type { ProjectType } from "@/auth";
-import { MODULES, CORE_MODULE, templateModules, isRecommendedForSegment, type ModuleId } from "@/modules";
+import { MODULES, CORE_MODULE, templateModules, templateModulesForSegments, type ModuleId } from "@/modules";
 import { useT } from "@/i18n/I18nProvider";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
 import type { SignupPlan } from "@/app/signupQueries";
@@ -32,6 +32,9 @@ export function OnboardingView(): JSX.Element {
   const [orgName, setOrgName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [segment, setSegment] = useState<CompanySegment | null>(null);
+  // Multi-segment picks (migration 228) — the source of truth for Step 1;
+  // `segment` above stays as the derived legacy value for back-compat readers.
+  const [segments, setSegments] = useState<CompanySegment[]>([]);
   const [enabledModules, setEnabledModules] = useState<ModuleId[]>([]);
 
   // Step 2 — plan & billing. Defaults to the Pro trial so the owner keeps
@@ -65,12 +68,20 @@ export function OnboardingView(): JSX.Element {
     if (res.data.org) {
       setOrgName(res.data.org.name ?? "");
       setContactEmail(res.data.org.contact_email ?? "");
-      if (res.data.org.segment) {
+      // Multi-segment (migration 228): prefer the array; fall back to legacy
+      // single value (expanding 'multiple' to all four core picks).
+      const initSegs = res.data.org.segments ?? (res.data.org.segment && res.data.org.segment !== "multiple" ? [res.data.org.segment] : res.data.org.segment === "multiple" ? [...CORE_SEGMENTS] : []);
+      if (initSegs.length) {
+        setSegments(initSegs);
+        setProjType(defaultProjectTypeFor(legacySegmentFor(initSegs) ?? undefined));
+      } else if (res.data.org.segment) {
         setSegment(res.data.org.segment);
         setProjType(defaultProjectTypeFor(res.data.org.segment));
       }
       if (res.data.org.enabled_modules) {
         setEnabledModules(res.data.org.enabled_modules);
+      } else if (initSegs.length) {
+        setEnabledModules([...templateModulesForSegments(initSegs)]);
       } else if (res.data.org.segment) {
         setEnabledModules([...templateModules(res.data.org.segment)]);
       }
@@ -82,10 +93,22 @@ export function OnboardingView(): JSX.Element {
 
   useEffect(() => { void load(); }, [load]);
 
-  const pickSegment = (s: CompanySegment) => {
-    setSegment(s);
-    setProjType(defaultProjectTypeFor(s));
-    setEnabledModules([...templateModules(s)]);
+  /** Multi-segment toggle (migration 228): recompute derived defaults from the UNION. */
+  const toggleSegment = (s: Exclude<CompanySegment, "multiple">) => {
+    setSegments(prev => {
+      const next = prev.includes(s)
+        ? prev.filter(x => x !== s)
+        : [...prev, s];
+      const legacy = legacySegmentFor(next);
+      if (legacy) {
+        setSegment(legacy);
+        setProjType(defaultProjectTypeFor(legacy));
+      } else {
+        setSegment(null);
+      }
+      setEnabledModules([...templateModulesForSegments(next)]);
+      return next;
+    });
   };
 
   const toggleModule = (id: ModuleId) => {
@@ -96,13 +119,14 @@ export function OnboardingView(): JSX.Element {
   };
 
   const saveOrg = async () => {
-    if (!orgName.trim()) { alert("Org name required"); return; }
-    if (!segment) { alert("Please select what your company does"); return; }
+    if (!orgName.trim()) { setFieldError(t("onb.errOrgName")); return; }
+    if (!segments.length) { setFieldError(t("onb.errPickSegment")); return; }
+    setFieldError(null);
     const modules = enabledModules.includes(CORE_MODULE)
       ? enabledModules
       : [CORE_MODULE, ...enabledModules];
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, segment, modules, plan, billing);
+    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), modules, plan, billing, segments);
     setStep(2);
   };
 
@@ -130,7 +154,7 @@ export function OnboardingView(): JSX.Element {
 
   const savePlan = async () => {
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, segment, enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules], plan, billing);
+    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules], plan, billing, segments);
     setStep(3);
   };
 
@@ -214,19 +238,26 @@ export function OnboardingView(): JSX.Element {
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.whatDo")}</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {SEGMENTS.map(s => {
-                    const active = segment === s;
+                  {CORE_SEGMENTS.map(s => {
+                    const active = segments.includes(s);
                     return (
-                      <button key={s} type="button" onClick={() => pickSegment(s)}
+                      <button key={s} type="button" onClick={() => toggleSegment(s)}
+                        aria-pressed={active}
                         className={`text-left p-3 rounded-xl border-2 transition ${active ? "border-accent bg-accent-tint" : "border-default"}`}>
-                        <div className="font-semibold text-sm">{t(`segment.label.${s}`)}</div>
+                        <div className="flex items-center justify-between">
+                          <div className="font-semibold text-sm">{t(`segment.label.${s}`)}</div>
+                          <span className={`w-4 h-4 grid place-items-center rounded border transition text-[10px] flex-shrink-0 ${active ? "bg-accent border-accent text-white" : "border-fg-tertiary/50"}`}>
+                            {active ? "✓" : ""}
+                          </span>
+                        </div>
                         <div className="text-[10px] text-fg-tertiary leading-snug mt-0.5">{t(`segment.tagline.${s}`)}</div>
                       </button>
                     );
                   })}
                 </div>
+                <p className="text-[10px] text-fg-tertiary mt-1">{t("onb.selectMany")}</p>
               </div>
-              {segment && (
+              {segments.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-semibold text-fg-primary block">{t("onb.modules")}</label>
@@ -235,7 +266,7 @@ export function OnboardingView(): JSX.Element {
                   <div className="space-y-1.5">
                     {MODULES.map(m => {
                       const on = enabledModules.includes(m.id);
-                      const recommended = isRecommendedForSegment(segment, m.id);
+                      const recommended = templateModulesForSegments(segments).includes(m.id);
                       const locked = m.id === CORE_MODULE;
                       return (
                         <button key={m.id} type="button" disabled={locked} onClick={() => toggleModule(m.id)}
@@ -359,7 +390,7 @@ export function OnboardingView(): JSX.Element {
               {(fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError}</div>}
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.projectType")}</label>
-                <Select value={projType} onChange={e => setProjType(e.target.value as ProjectType)} options={segmentProjectTypes(segment).map(pt => ({ value: pt, label: t(`projType.${pt}`) }))} />
+                <Select value={projType} onChange={e => setProjType(e.target.value as ProjectType)} options={projectTypesForSegments(segments.length ? segments : segment ? [segment] : []).map(pt => ({ value: pt, label: t(`projType.${pt}`) }))} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.startDate")}</label>

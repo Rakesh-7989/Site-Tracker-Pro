@@ -6,7 +6,7 @@
 // vs a client" without rendering React.
 
 import type { AuthSession } from "@/auth";
-import { capabilitiesAnywhere } from "@/auth";
+import { capabilitiesAnywhere, resolveOrgSegments } from "@/auth";
 import type { Capability } from "@/auth";
 import type { CompanySegment } from "@/auth";
 import type { IconName } from "@/components/ui/icons";
@@ -183,9 +183,11 @@ export function buildNav(session: AuthSession | null, catalog: NavItem[] = NAV_C
       } catch { return false; }
     })();
 
-  // Active org's segment (migration 134) — segment-gated nav items resolve
-  // against this. Legacy orgs (null segment) hide segment-gated items.
-  const activeSegment = session.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
+  // Active org's segment set (migrations 134/228) — segment-gated nav items
+  // resolve against this. Legacy orgs (no segments + null segment) hide
+  // segment-gated items; multi-segment orgs match ANY of their picks.
+  const membership = session.orgs.find(o => o.orgId === session.activeOrgId);
+  const activeSegments = resolveOrgSegments(membership?.segments ?? null, membership?.segment ?? null);
 
   // Active org's enabled modules (migration 155) — module-gated nav items
   // resolve against this. Legacy orgs (null config) show module-gated items.
@@ -233,7 +235,8 @@ export function buildNav(session: AuthSession | null, catalog: NavItem[] = NAV_C
     (!item.requiresStaffTier || (tier !== null && item.requiresStaffTier.includes(tier))) &&
     (!item.area || !isMember || areas.includes(item.area)) &&
     (!item.stubId || isStaff) &&
-    (!item.segments || (activeSegment !== null && item.segments.includes(activeSegment))) &&
+    (!item.segments || (activeSegments !== null && activeSegments.length > 0
+      && item.segments.some(s => activeSegments.includes(s)))) &&
     (!item.modules || activeModules === null || item.modules.some(m => activeModules.includes(m)));
   });
 }

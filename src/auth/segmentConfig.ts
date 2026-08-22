@@ -90,3 +90,62 @@ export function segmentProjectTypes(segment: CompanySegment | null | undefined):
   if (segment && isCompanySegment(segment)) return SEGMENT_CONFIG[segment].projectTypes;
   return SEGMENT_CONFIG.multiple.projectTypes;
 }
+
+// ── Multi-segment orgs (v5 Growth, migration 228) ───────────────────────────
+
+/** The segments a user can PICK (everything except the derived 'multiple'). */
+export const CORE_SEGMENTS: ReadonlyArray<Exclude<CompanySegment, "multiple">> =
+  SEGMENTS.filter((s): s is Exclude<CompanySegment, "multiple"> => s !== "multiple");
+
+/** The derived catch-all value (legacy column only — not storable in segments[]). */
+export const MULTIPLE_SEGMENT: CompanySegment = "multiple";
+
+/** All four core segments — what legacy `segment = 'multiple'` expands to. */
+export const ALL_CORE_SEGMENTS: ReadonlyArray<Exclude<CompanySegment, "multiple">> = CORE_SEGMENTS;
+
+/** Type guard for a raw text[] from the DB: dedupe + drop unknowns. */
+export function isCompanySegmentArray(raw: unknown): CompanySegment[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: CompanySegment[] = [];
+  for (const v of raw) {
+    if (isCompanySegment(v) && v !== MULTIPLE_SEGMENT && !out.includes(v)) out.push(v);
+  }
+  return out.length ? out : null;
+}
+
+/**
+ * Resolve an org's effective segment set (concrete picks only):
+ *   segments array → as-is; legacy 'multiple' → all four; single → [that];
+ *   null/unknown → null (legacy unconfigured — gated items hidden).
+ */
+export function resolveOrgSegments(
+  segmentsRaw: unknown,
+  segment: CompanySegment | null | undefined,
+): CompanySegment[] | null {
+  const arr = isCompanySegmentArray(segmentsRaw);
+  if (arr) return arr;
+  if (segment === MULTIPLE_SEGMENT) return [...ALL_CORE_SEGMENTS];
+  if (segment && isCompanySegment(segment)) return [segment];
+  return null;
+}
+
+/**
+ * The legacy single-value column to persist alongside an array:
+ * 1 pick → that pick; 2+ → 'multiple'; none → null.
+ */
+export function legacySegmentFor(segments: ReadonlyArray<CompanySegment>): CompanySegment | null {
+  if (segments.length === 1) return segments[0];
+  if (segments.length > 1) return MULTIPLE_SEGMENT;
+  return null;
+}
+
+/** Union of project types across picked segments (empty → all, back-compat). */
+export function projectTypesForSegments(segments: ReadonlyArray<CompanySegment>): ProjectType[] {
+  const out: ProjectType[] = [];
+  for (const s of segments) {
+    for (const pt of SEGMENT_CONFIG[s]?.projectTypes ?? []) {
+      if (!out.includes(pt)) out.push(pt);
+    }
+  }
+  return out.length ? out : [...SEGMENT_CONFIG.multiple.projectTypes];
+}

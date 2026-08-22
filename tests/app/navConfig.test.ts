@@ -230,7 +230,9 @@ describe("buildNav — segment gating (v4 C0)", () => {
     const catalog = [segItem(["consultancy"])];
     expect(buildNav(segOrg("consultancy"), catalog).map(n => n.to)).toContain("/segment-gated");
     expect(buildNav(segOrg("construction"), catalog).map(n => n.to)).not.toContain("/segment-gated");
-    expect(buildNav(segOrg("multiple"), catalog).map(n => n.to)).not.toContain("/segment-gated");
+    // v5 multi-segment (migration 228): legacy 'multiple' expands to ALL four
+    // core segments — a multi-segment firm sees every segment's features.
+    expect(buildNav(segOrg("multiple"), catalog).map(n => n.to)).toContain("/segment-gated");
   });
 
   it("a multi-segment item shows for each listed segment only", () => {

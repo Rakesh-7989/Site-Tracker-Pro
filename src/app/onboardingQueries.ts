@@ -13,6 +13,8 @@ export interface OrgDetails {
   contact_email: string;
   /** Company segment (migration 134); null until the owner picks one. */
   segment: CompanySegment | null;
+  /** Multi-segment picks (migration 228); null = not configured. */
+  segments?: CompanySegment[] | null;
   /** Enabled product modules (migration 155); null = not configured yet. */
   enabled_modules: EnabledModules;
   /** Plan id. Self-service orgs start on "pro" (14-day trial); null = legacy. */
@@ -31,7 +33,7 @@ export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; or
     if (omErr) return { ok: false, error: String(omErr.message ?? omErr) };
     if (!om?.org_id) return { ok: false, error: "No org membership." };
     const { data: org } = await client.from("organizations")
-      .select("id, name, contact_email, segment, enabled_modules, plan, billing_period").eq("id", om.org_id).maybeSingle();
+      .select("id, name, contact_email, segment, segments, enabled_modules, plan, billing_period").eq("id", om.org_id).maybeSingle();
     return { ok: true, data: { orgId: om.org_id, org: org ?? null } };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
@@ -41,10 +43,12 @@ export async function updateOrg(
   enabledModules?: EnabledModules,
   plan?: SignupPlan | null,
   billingPeriod?: BillingPeriod | null,
+  segments?: CompanySegment[] | null,
 ): Promise<PResult<void>> {
   try {
     const patch: Record<string, unknown> = { name: name.trim(), contact_email: contactEmail.trim() };
     if (segment) patch.segment = segment;
+    if (segments !== undefined) patch.segments = segments;
     if (enabledModules !== undefined) patch.enabled_modules = enabledModules;
     if (plan) patch.plan = plan;
     if (billingPeriod !== undefined && billingPeriod !== null) patch.billing_period = billingPeriod;
