@@ -15,7 +15,7 @@ import type { SignupPlan } from "@/app/signupQueries";
 
 
 import { getClient } from "@/lib/supabase";
-const STEPS = ["Org details", "Plan & billing", "Invite team", "First project", "Feature presets", "Integrations"];
+const STEPS = ["Org details", "Plan & billing", "Finish"]; // progressive: invites/projects/presets deferred (v5)
 const TRIAL_DAYS = 14;
 
 export function OnboardingView(): JSX.Element {
@@ -155,7 +155,7 @@ export function OnboardingView(): JSX.Element {
   const savePlan = async () => {
     const client = await getClient();
     await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules], plan, billing, segments);
-    setStep(3);
+    setStep(6); // progressive: skip invites/project/presets — finish screen applies balanced defaults
   };
 
   const addPending = () => {
@@ -196,9 +196,9 @@ export function OnboardingView(): JSX.Element {
 
   const finish = async () => {
     const client = await getClient();
+    await disableFeatureFlags(client, orgId, ["arOverlay", "dprAuto", "photoGeo"]); // balanced defaults
     await completeOnboarding(client, orgId);
-    // Signal parent to redirect (SS check will catch it)
-    window.location.href = "/org";
+    navigate("/projects"); // empty state offers Create-first / Load-demo
   };
 
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
@@ -424,15 +424,16 @@ export function OnboardingView(): JSX.Element {
           {/* Step 6: Integrations */}
           {step === 6 && (
             <div className="space-y-4">
-              <h2 className="font-bold text-lg">{t("onb.integrationsTitle")}</h2>
-              <p className="text-xs text-fg-secondary">{t("onb.integrationsSub")}</p>
-              <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.aiKeyLabel")}</label>
-                <input value={aiKey} onChange={e => setAiKey(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" placeholder="sk-..." />
-              </div>
+              <h2 className="font-bold text-lg">{t("onb.finishTitle")}</h2>
+              <p className="text-xs text-fg-secondary">{t("onb.finishSub")}</p>
+              <ul className="text-xs text-fg-secondary space-y-1 list-disc pl-4">
+                <li>{t("onb.finishInvite")}</li>
+                <li>{t("onb.finishProject")}</li>
+              </ul>
+              <div className="text-[11px] text-fg-tertiary">{t("onb.aiKeyLabel")}: {aiKey ? "✓" : "—"}</div>
               <div className="flex justify-end pt-2 gap-2">
                 <Button variant="secondary" onClick={() => setAiKey("")}>{t("onb.skip")}</Button>
-                <Button onClick={finish}>{t("onb.finish")}</Button>
+                <Button onClick={finish}>{t("onb.finishGo")}</Button>
               </div>
             </div>
           )}
