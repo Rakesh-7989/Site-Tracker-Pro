@@ -59,6 +59,7 @@
     "test:rls:quota": "node scripts/test-quota-toctou.mjs",
     "test:rls:risk": "node scripts/test-risk-signals-cron.mjs",
     "test:rls:teams": "node scripts/test-team-channels-rls.mjs",
+    "test:ux": "npx playwright test --config playwright.ux.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "analyze": "ANALYZE=true vite build",
     "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit"

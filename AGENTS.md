@@ -1,3 +1,24 @@
+## Session — 2026-08-23: Responsive UI/UX audit (mobile/tablet/desktop) + shell fixes (complete)
+
+**Story-driven audit** (user asked to think like real users): Ravi site-engineer on a 360px phone (attendance/photos — tables cut off? buttons tappable?), Priya org-admin on 768px iPad (awkward middle), founder on 1440 desktop. Built a **programmatic UX probe** instead of eyeballing:
+
+**Tooling**:
+- `e2e-mock/ux-audit.spec.ts` + `playwright.ux.config.ts` (`npm run test:ux`) — renders the REAL authenticated shell via the mocked-session infra at **3 viewports × 9 routes × 3 roles (81 page-views)** and records: horizontal overflow px, cut-off offenders (elements starting inside but ending past the viewport), sub-40px touch targets (mobile), console/page errors; screenshots + JSON report to `%TEMP%\opencode\ux-audit\`. Diagnostic only — never asserts.
+- `scripts/ux-audit-live.mjs` — same checks against the LIVE public pages (`/`, `/login`, `/register`). Browser globals inside `page.evaluate` need `/* global ... */` for eslint's node-globals scope.
+
+**Issues found (first run)**:
+1. **Right-side header cluster pushed past the viewport on mobile on EVERY page** — TopBar middle GlobalSearch is `flex-1` while the right cluster (org switcher select + TrialBanner + LanguageSwitcher + avatar + sign-out) had no shrink allowance → org switcher block measured right=546 on a 360px viewport (invisible/cut).
+2. **React DOM-property warnings on every page**: TopBar hamburger + Sidebar close-button SVGs used kebab-case `stroke-width`/`stroke-linecap`/`stroke-linejoin`.
+
+**Fixes (shell)**:
+- TopBar: header gets `gap-2`; left cluster `min-w-0`; decorative `v3` chip `hidden sm:inline`; DB-Live conn pill `hidden sm:flex` (**offline pill stays always-visible**); search wrapper `hidden md:flex` (mobile uses the /search nav item); right cluster `min-w-0 gap-2 sm:gap-3`; org-switcher select `max-w-[7.5rem] truncate` (sm+ unrestricted); avatar chip `flex-shrink-0`.
+- LanguageSwitcher select `max-w-[5.5rem] truncate`.
+- Both SVGs → camelCase props (`strokeWidth={2}` etc.). `dxfPreview.ts` string-SVG untouched (raw HTML via dangerouslySetInnerHTML — valid there).
+
+**Verification (re-run)**: authenticated audit **zero issues across all 81 page-views** (overflow/offenders/console all clean); live public audit **all clean** at 360/768/1440. Gates: lint · tsc · vitest **2923** · smoke **460** · build · e2e-mock **11/11** (audit excluded from the standard suite via `testIgnore`, run explicitly with `npm run test:ux`).
+
+---
+
 ## Session — 2026-08-22: Teams/Cliq P1 — channels + threads + @mentions (migration 229) (complete)
 
 **Scope**: org-scoped team chat (Cliq-style) at **`/teams`** ("Teams", Workspace group, `users` icon) — additive to the project-scoped chat (MessagesTab / /messages untouched).

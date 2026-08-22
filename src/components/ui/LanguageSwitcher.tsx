@@ -12,7 +12,7 @@ export function LanguageSwitcher(): JSX.Element {
       onChange={e => { if (isLocale(e.target.value)) setLocale(e.target.value); }}
       aria-label={t("shell.language")}
       title={t("shell.language")}
-      className="text-xs border border-default rounded-lg px-2 py-1.5 bg-bg-primary text-fg-primary outline-none focus:border-[var(--st-accent)]"
+      className="max-w-[5.5rem] truncate text-xs border border-default rounded-lg px-2 py-1.5 bg-bg-primary text-fg-primary outline-none focus:border-[var(--st-accent)]"
     >
       {locales.map(l => <option key={l.code} value={l.code}>{l.native}</option>)}
     </select>

@@ -1,16 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// UX-audit-only config: runs the diagnostic viewport sweep (ux-audit.spec.ts)
+// against the same mocked-session dev server. `npm run test:ux`.
 const mockPort = process.env.E2E_MOCK_PORT || "5176";
 
-// Runs the role-access suite against a LOCAL vite dev server in supabase mode
-// (no VITE_BACKEND=local → getSupabaseClient returns a real client), with the
-// Supabase session + REST mocked per-role. No credentials, no live DB.
 export default defineConfig({
   testDir: "./e2e-mock",
-  // ux-audit.spec.ts is a diagnostic sweep (~4min) — run it explicitly via
-  // `npm run test:ux` rather than in every gate/CI pass.
-  testIgnore: "**/ux-audit.spec.ts",
-  timeout: 60000,
+  testMatch: "**/ux-audit.spec.ts",
+  timeout: 300_000,
   retries: process.env.CI ? 1 : 0,
   fullyParallel: false,
   workers: 1,
