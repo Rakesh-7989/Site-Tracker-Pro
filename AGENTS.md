@@ -28,6 +28,7 @@
 - **Migration 227** `227_seed_demo_project.sql` (applied live): `seed_demo_project()` SECURITY DEFINER RPC — org-admin gated (`is_orgadmin()`), idempotent (re-call returns existing project), seeds "Demo Villa — Green Meadows" (₹2.5Cr budget, 6 milestones incl. one overdue, 6 tasks, 3 issues, 10 expenses ≈ **80% burn**) so Risk signals shows schedule-slip + burn live in a fresh org.
 - **OnboardingView Step 1**: real "Load demo project" button → RPC → navigates to `/projects/{id}`; error surfaced inline (replaces the reverted `alert()` stub idea). Trial banner quick-win verified ALREADY shipped (`TrialBanner.tsx` mounted in TopBar + tests) — skipped.
 - **Live probes**: RSK harness extended to **26/26** (signals-breakdown assertions); seed RPC probe **6/6** (child-row counts, overdue milestone, ~80% burn, idempotency).
+- **promoter_digest_cron redeployed live (v28)** with the at-risk fetch. Probe exposed that **`CRON_SECRET` was never set** on the project (anon-auth probe hit 500 `cron-secret-not-configured`; missing-auth 401 came from the gateway's verify_jwt, masking it). Set a generated 48-char `CRON_SECRET` via Management API (value not recorded here) — bad-auth now returns proper 401 `invalid-cron-secret`. Whoever schedules the digest cron must pass `Authorization: Bearer $CRON_SECRET`.
 - **Gates**: tsc clean · eslint 0 errors · vitest **225 files / 2877 tests** · smoke **455** · build clean · e2e-mock **11/11**.
 
 ---
