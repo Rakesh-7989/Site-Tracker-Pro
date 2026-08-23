@@ -1,3 +1,21 @@
+## Session — 2026-08-23: Chat P2 — reactions, unread badges, @all (migration 235/236) (complete)
+
+**Scope** (Cliq-research round): emoji reactions, per-channel unread badges, managers-only @all broadcast. File attachments shipped at DB layer but UI deferred (see TC-021 note).
+
+**Migrations**:
+- **235**: `chat_message_reactions` (PK message×user×emoji), `chat_channel_reads` (cursor per user×channel) + `chat_unread_counts()` SECURITY DEFINER RPC (readability-aware, own-messages excluded); `chat_mention_all_ids(channel)` managers-only RPC returning matrix-aware recipient ids (org-open = staff only; project = members; dm/private = explicit); chat attachment columns (`attachment_path/name/mime/size`) + private `chat-files` bucket with channel-folder policies. Gotchas: `(storage.foldername(name))[1]` needs parens inside policy expressions; `coalesce(uuid,'')` invalid — cast text explicitly.
+- **236**: **STRICT project-membership gates** — `can_read_project()` allows any same-org member (org-wide backstop), too broad for streams. New `chat_is_project_member()` + recreated `chat_channel_readable()`/`chat_ensure_project_stream()` using it for project scope. Managers keep orgadmin/has_project_role access.
+
+**Harness**: TC-018–020 added → **52/52 green** (+TC-021 SKIP). Deterministic unread test needed explicit `created_at` offsets — single-transaction `now()` makes cursor-vs-message comparisons equal (tx-timestamp semantics).
+
+**Deferred — TC-021 attachments storage policies**: direct SQL inserts into `storage.objects` fail under the harness GUC context even against battle-tested policies (deliverables control also fails; manual predicate evaluates TRUE; definer switch didn't help). Real uploads flow via Storage API/signed URLs — verify in app flows when attachment UI lands (columns + bucket + policies ship dormant). Outsider-denial direction verified ✓.
+
+**Frontend**: `chatQueries` += toggleReaction/markChannelRead/fetchUnreadCounts/mentionAllIds + reactions embed in CHAT_SELECT mapper; **ChatStream** reaction bar (optimistic flip + rollback refetch, 👍 quick-add on hover), mark-read on open/refresh, **@all chip** (managers) merging RPC ids into mentions; **rail unread badges** (red count chips on Projects/Channels/DMs, cleared on select, 20s refresh).
+
+**Gates**: tsc · eslint 0 err · vitest **228 files / 2924 tests** · smoke **461** · build clean · e2e-mock 11/11.
+
+---
+
 ## Session — 2026-08-23: EMAIL-FIRST digests — WhatsApp dependency removed (migrations 233/234, live) (complete)
 
 **User story** (founder): "WhatsApp usage lekunda digest pani cheyyali" — Meta phone-number/token/template setup + per-conversation costs avoid; Resend email is already live and free.

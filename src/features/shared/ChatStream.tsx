@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/Modal";
 import {
   listChannelMessages, postChannelMessage, listThreadReplies,
   getChatMessage, deleteChatMessage,
+  toggleReaction, markChannelRead, mentionAllIds,
   extractMentionIds, splitOnMentions,
   type ChatChannel, type ChatMessage,
 } from "@/app/chatQueries";
@@ -89,6 +90,15 @@ export function ChatStream({ channel, mentionCandidates, highlightMessageId }: C
     return () => clearInterval(timer);
   }, [reloadMsgs]);
 
+  // Mark-read on open + after every refresh (drives unread badges).
+  useEffect(() => {
+    if (!session || loadingMsgs) return;
+    const clientPromise = getClient();
+    void clientPromise.then(client => {
+      if (client) void markChannelRead(client, channel.id, session.user.id);
+    });
+  }, [channel.id, session, loadingMsgs]);
+
   // ── Mentions autocomplete ────────────────────────────────────────────────
   const onComposerChange = (v: string) => {
     setText(v);
@@ -141,7 +151,12 @@ export function ChatStream({ channel, mentionCandidates, highlightMessageId }: C
     setBusy(true); setError(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setBusy(false); return; }
-    const mentionIds = extractMentionIds(body, mentionCandidates);
+    let mentionIds = extractMentionIds(body, mentionCandidates);
+    // "@all" (managers only) → notify every eligible member of the channel.
+    if (/@all\b/i.test(body)) {
+      const all = await mentionAllIds(client, channel.id);
+      if (all.ok) mentionIds = [...new Set([...mentionIds, ...all.data])];
+    }
     const res = await postChannelMessage(client, {
       orgId, channelId: channel.id, parentId: null,
       senderId: session.user.id, senderName: session.user.name,
@@ -150,6 +165,25 @@ export function ChatStream({ channel, mentionCandidates, highlightMessageId }: C
     if (!res.ok) setError(res.error);
     else { setText(""); setMentionQuery(null); await reloadMsgs(); }
     setBusy(false);
+  };
+
+  /** Toggle my emoji reaction on a message. */
+  const react = async (m: ChatMessage, emoji: string) => {
+    if (!session) return;
+    const mineNow = (m.reactions[emoji] ?? []).includes(session.user.id);
+    // Optimistic flip.
+    setMsgs(prev => prev.map(x => {
+      if (x.id !== m.id) return x;
+      const cur = new Map(Object.entries(x.reactions).map(([k, v]) => [k, [...v]]));
+      let list = cur.get(emoji) ?? [];
+      list = mineNow ? list.filter(u => u !== session.user.id) : [...list, session.user.id];
+      if (list.length === 0) cur.delete(emoji); else cur.set(emoji, list);
+      return { ...x, reactions: Object.fromEntries(cur) };
+    }));
+    const client = await getClient();
+    if (!client) return;
+    const res = await toggleReaction(client, m.id, session.user.id, emoji, mineNow);
+    if (!res.ok) void reloadMsgs(); // rollback via refetch on failure
   };
 
   const removeMsg = async (m: ChatMessage) => {
@@ -206,12 +240,36 @@ export function ChatStream({ channel, mentionCandidates, highlightMessageId }: C
               return (
                 <div key={m.id} id={`chat-msg-${m.id}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div className={cn(
-                    "max-w-[82%] rounded-2xl px-4 py-3 transition",
+                    "group max-w-[82%] rounded-2xl px-4 py-3 transition",
                     mine ? "bg-accent text-white" : "bg-panel text-fg-primary border border-default",
                     hlId === m.id && "ring-2 ring-accent",
                   )}>
                     {!mine && <div className="text-xs font-bold text-fg-secondary mb-1">{m.senderName}</div>}
                     <MessageBody body={m.body} names={memberNames} />
+                    {/* Reactions */}
+                    <div className="mt-1.5 flex items-center gap-1 flex-wrap">
+                      {Object.entries(m.reactions).map(([emoji, users]) => (
+                        <button key={emoji} type="button"
+                          onClick={() => void react(m, emoji)}
+                          className={cn(
+                            "text-[11px] rounded-full px-1.5 py-0.5 border transition",
+                            session && users.includes(session.user.id)
+                              ? "border-accent bg-accent-tint text-accent font-semibold"
+                              : "border-default bg-bg-secondary text-fg-secondary hover:border-accent/50",
+                          )}
+                          title={users.length === 1 ? "1 reaction" : `${users.length} reactions`}
+                        >
+                          {emoji} {users.length}
+                        </button>
+                      ))}
+                      <button type="button"
+                        onClick={() => void react(m, "👍")}
+                        className="text-[11px] text-fg-tertiary hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition rounded px-1"
+                        aria-label="Add reaction" title="👍"
+                      >
+                        +
+                      </button>
+                    </div>
                     <div className={cn("text-[10px] mt-1 flex items-center gap-2", mine ? "text-white/70" : "text-fg-tertiary")}>
                       <span>{fmtTs(m.createdAt)}</span>
                       {canDelete && (
@@ -259,7 +317,14 @@ export function ChatStream({ channel, mentionCandidates, highlightMessageId }: C
               ))}
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {canManage && (
+              <button type="button" onClick={() => setText(p => (p.trim().length ? p + " " : "") + "@all ")}
+                className="text-[11px] font-bold rounded-full border border-default px-2 py-1.5 text-fg-secondary hover:border-accent hover:text-accent transition flex-shrink-0"
+                title="Notify everyone (managers)">
+                @all
+              </button>
+            )}
             <Input
               className="flex-1"
               placeholder={t("teams.composerPlaceholder")}
