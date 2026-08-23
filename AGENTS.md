@@ -1,3 +1,19 @@
+## Session — 2026-08-23: EMAIL-FIRST digests — WhatsApp dependency removed (migrations 233/234, live) (complete)
+
+**User story** (founder): "WhatsApp usage lekunda digest pani cheyyali" — Meta phone-number/token/template setup + per-conversation costs avoid; Resend email is already live and free.
+
+**Migration 233**: `digest_subscriptions.promoter_email` (nullable) — explicit recipient; null falls back to the org-admin account email at send time. **Migration 234**: `digest_subscriptions_due` RPC recreated (DROP+CREATE — OR REPLACE can't change RETURNS TABLE) to also return `promoter_email`.
+
+**promoter_digest_cron EF redeployed**:
+- New send-step channel selection: `DIGEST_CHANNEL=email` (default) | `whatsapp`. Email path = branded HTML (`renderDigestHtml` in `_shared/digest_renderer.ts` — cost burn / plan-vs-actual / top issues / marquee photo, en labels v1) via Resend; recipient = promoter_email → org-admin auth email (`/auth/v1/admin/users/<pid>` service-key lookup). WhatsApp branch stays but is dormant unless DIGEST_CHANNEL=whatsapp AND Meta creds exist.
+- **SITETRACK_DIGEST_LIVE=true set on the project** — digests are now LIVE over email with zero Meta dependency.
+
+**Live end-to-end verified**: seeded a real founder subscription (G-Arch · SRI VILLAS · boyapatirakesh7777@gmail.com), fired the exact pg_net cron path → **200 `{dispatched:1, failed:0}`**, dispatch row `outcome=sent` with a Resend message id.
+
+**Debug trail worth remembering**: (1) due-window requires `hour_local == current IST hour`; (2) the failed first attempt writes a dispatch row whose dedupe blocks retries — clear it to retry; (3) the project's server-side `RESEND_API_KEY` secret had gone STALE (401 invalid key) while `.env.local`'s copy was valid — refreshed via Management API (secrets POST takes an ARRAY body); (4) 232's DM channels carry empty names → 229's `unique(org_id,name)` had to become partial per-scope indexes (done inside 232).
+
+---
+
 ## Session — 2026-08-23: UNIFIED CHAT — Cliq-style /chat replaces Messages + Teams (migration 232, complete)
 
 **User story** (founder): "Rendu chat surfaces (project Messages tab + org Teams) remove chesi, okate Zoho-Cliq-laga app — project lo vuna members tho matladadam, veri project/org channels, DMs — kani **project admin ye decide chestadu evaru evaritho matladacho**, RBAC prakaram."
