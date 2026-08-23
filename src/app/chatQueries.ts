@@ -179,6 +179,35 @@ export async function listThreadReplies(
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
+/** Fetch one message by id (deep-link / mention-notification targets). */
+export async function getChatMessage(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  messageId: string,
+): Promise<CResult<ChatMessage | null>> {
+  try {
+    const { data, error } = await client.from("chat_messages")
+      .select(CHAT_SELECT)
+      .eq("id", messageId)
+      .maybeSingle();
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: data ? mapMessage(data as Record<string, unknown>) : null };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Delete a message (own — or any, for managers; RLS enforces). */
+export async function deleteChatMessage(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  messageId: string,
+): Promise<CResult<{ ok: true }>> {
+  try {
+    const { error } = await client.from("chat_messages").delete().eq("id", messageId);
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { ok: true } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
 // ─── Pure mention helpers ────────────────────────────────────────────────────
 
 export interface MentionCandidate {

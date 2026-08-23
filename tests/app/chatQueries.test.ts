@@ -5,6 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   listChannels, createChannel, setChannelArchived, deleteChannel,
   listChannelMessages, postChannelMessage, listThreadReplies,
+  getChatMessage, deleteChatMessage,
   extractMentionIds, splitOnMentions,
 } from "@/app/chatQueries";
 
@@ -116,6 +117,33 @@ describe("chatMessages mappers", () => {
   it("non-array mentions coerce to []", async () => {
     const res = await listChannelMessages(clientWith({ list: () => ({ data: [{ ...MSG_ROW, mentions: null }], error: null }) }), "ch1");
     if (res.ok) expect(res.data[0].mentions).toEqual([]);
+  });
+
+  it("getChatMessage maps a single row and null for missing", async () => {
+    const single = vi.fn(async () => ({ data: MSG_ROW, error: null }));
+    const client = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: single }) }) }) } as never;
+    const res = await getChatMessage(client, "m1");
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data).toMatchObject({ id: "m1", senderName: "Rakesh" });
+
+    const missing = await getChatMessage({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }) } as never, "nope");
+    expect(missing.ok).toBe(true);
+    if (missing.ok) expect(missing.data).toBeNull();
+  });
+
+  it("getChatMessage surfaces errors", async () => {
+    const client = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: { message: "rls" } }) }) }) }) } as never;
+    const res = await getChatMessage(client, "m1");
+    expect(res.ok).toBe(false);
+  });
+
+  it("deleteChatMessage ok + error paths", async () => {
+    const good = { from: () => ({ delete: () => ({ eq: async () => ({ error: null }) }) }) } as never;
+    expect((await deleteChatMessage(good, "m1")).ok).toBe(true);
+    const bad = { from: () => ({ delete: () => ({ eq: async () => ({ error: { message: "denied" } }) }) }) } as never;
+    const res = await deleteChatMessage(bad, "m1");
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toContain("denied");
   });
 });
 

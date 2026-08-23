@@ -1,3 +1,15 @@
+## Session — 2026-08-23: Teams P1.5 — message delete UI + deep-link message highlight (complete)
+
+**Follow-up on the Teams P1 thread**, closing two gaps left from the first build:
+1. **Delete own message UI** — trash icon in each bubble's meta row (own messages always; managers on any — mirrors `chat_messages_delete` RLS). Optimistic removal with rollback + error surface. New queries: `deleteChatMessage`, `getChatMessage` (single-row fetch for deep links).
+2. **Deep-link `?m=` handling** — mention-notification links (`/teams?c=&m=`) previously landed on the right channel but didn't point at the message. Now: top-level target → smooth-scroll to it + 4s accent-ring highlight; thread-reply target → resolves the parent, opens the thread drawer pre-loaded and highlights inside it (6s). Handled once per mount (`deepLinkHandled` ref).
+
+**Gates**: tsc clean · eslint 0 errors · vitest **229 files / 2926 tests** (+3 chatQueries) · smoke 460 · build clean · e2e-mock 11/11.
+
+**Known follow-up**: delete inside the open thread drawer still pending (main-stream only today); unread badges per channel need a read-state table (Teams P2).
+
+---
+
 ## Session — 2026-08-23: tg-rera-submit resync + promoter digest cron WIRED (migration 231) (complete)
 
 **tg-rera-submit source drift CLOSED**: AGENTS' old note ("source unbundleable") was stale — the import already pointed at `src/lib/compliance.ts` (exists, exports validateRera). Redeployed from source → bundle OK, live probe healthy (401 gateway auth). Repo↔live back in sync.
