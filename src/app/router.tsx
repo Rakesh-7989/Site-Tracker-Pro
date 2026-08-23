@@ -16,7 +16,7 @@
 // truth for module→route ownership; non-module routes below stay hardcoded.
 
 import { lazy } from "react";
-import { createBrowserRouter, Navigate, useSearchParams } from "react-router-dom";
+import { createBrowserRouter, Navigate, useLocation, useSearchParams } from "react-router-dom";
 
 // ── Eager: entry + first paint + small ──────────────────────────────────────
 import { RequireStaffArea } from "@/auth";
@@ -45,8 +45,14 @@ const DetailView = lazy(() => import("@/features/project/DetailView").then(m => 
 const CalendarView = lazy(() => import("@/features/org/CalendarView").then(m => ({ default: m.CalendarView })));
 const GlobalSearchView = lazy(() => import("@/features/org/GlobalSearchView").then(m => ({ default: m.GlobalSearchView })));
 const NotificationsView = lazy(() => import("@/features/org/NotificationsView").then(m => ({ default: m.NotificationsView })));
-const MessagesView = lazy(() => import("@/features/org/MessagesView").then(m => ({ default: m.MessagesView })));
 const TeamChatView = lazy(() => import("@/features/org/TeamChatView").then(m => ({ default: m.TeamChatView })));
+// Legacy mention-notification links (/teams?c=&m=) keep working.
+function TeamsAliasRedirect(): JSX.Element {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  params.set("from", "teams");
+  return <Navigate to={{ pathname: "/chat", search: params.toString() }} replace />;
+}
 const HelpView = lazy(() => import("@/features/org/HelpView").then(m => ({ default: m.HelpView })));
 const PMView = lazy(() => import("@/features/org/PMView").then(m => ({ default: m.PMView })));
 const OrgActivityView = lazy(() => import("@/features/org/OrgActivityView").then(m => ({ default: m.OrgActivityView })));
@@ -131,8 +137,8 @@ export const router = createBrowserRouter([
       { path: "calendar", element: <CalendarView /> },
       { path: "search", element: <GlobalSearchView /> },
       { path: "notifications", element: <NotificationsView /> },
-      { path: "messages", element: <MessagesView /> },
-      { path: "teams", element: <TeamChatView /> },
+      { path: "chat", element: <TeamChatView /> },
+      { path: "teams", element: <TeamsAliasRedirect /> },
       { path: "help", element: <HelpView /> },
       { path: "pm", element: <PMView /> },
       { path: "activity", element: <OrgActivityView /> },

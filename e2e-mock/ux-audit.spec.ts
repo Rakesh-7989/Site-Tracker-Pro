@@ -22,7 +22,7 @@ const VPS: VP[] = [
   { name: "desktop-1440", width: 1440, height: 900, mobile: false },
 ];
 
-const ROUTES = ["/", "/projects", "/calendar", "/teams", "/messages", "/notifications", "/invoices", "/analytics", "/procurement"];
+const ROUTES = ["/", "/projects", "/calendar", "/chat", "/notifications", "/invoices", "/analytics", "/procurement"];
 const ROLES = ["orgadmin", "pm", "client"] as const;
 
 interface Finding {

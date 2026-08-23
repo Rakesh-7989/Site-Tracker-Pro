@@ -170,7 +170,7 @@ export const MODULE_SURFACES: readonly ModuleSurface[] = [
     nav: moduleNav("projects"),
     queryFiles: [
       "queries", "milestoneQueries", "taskQueries", "riskQueries",
-      "issueQueries", "messageQueries", "searchQueries", "pmQueries",
+      "issueQueries", "chatQueries", "searchQueries", "pmQueries",
       "calendarQueries", "digestQueries", "approvalsQueries",
       "projectMemberQueries", "orgMemberQueries", "orgAdminQueries",
       "orgConfigQueries", "orgBroadcastQueries", "orgRegisterQueries",

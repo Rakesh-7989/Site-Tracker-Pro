@@ -799,7 +799,7 @@
     "actionFailed": "कार्रवाई विफल रही।"
   },
   "teams": {
-    "title": "टीम्स",
+    "title": "चैट",
     "subtitle": "संगठन चैनल · थ्रेड · @मेंशन",
     "newChannel": "नया चैनल",
     "namePlaceholder": "जैसे site-updates",
@@ -819,5 +819,24 @@
     "sendReply": "जवाब भेजें",
     "archive": "आर्काइव",
     "delete": "हटाएँ"
+  },
+  "chat": {
+    "subtitle": "प्रोजेक्ट स्ट्रीम · चैनल · डायरेक्ट संदेश",
+    "sectionProjects": "प्रोजेक्ट्स",
+    "sectionChannels": "चैनल",
+    "sectionDms": "डायरेक्ट संदेश",
+    "noProjects": "अभी कोई प्रोजेक्ट एक्सेस नहीं है।",
+    "noChannels": "अभी कोई स्टाफ़ चैनल नहीं है।",
+    "noDms": "अभी कोई बातचीत नहीं।",
+    "firstOpenCreates": "पहली विज़िट पर खुलता है",
+    "projectStreamSub": "प्रोजेक्ट स्ट्रीम — सभी प्रोजेक्ट सदस्य",
+    "channelSub": "संगठन-व्यापी स्टाफ़ चैनल",
+    "dmUnnamed": "डायरेक्ट संदेश",
+    "newDm": "नया DM",
+    "newDmTitle": "नया डायरेक्ट संदेश",
+    "searchPeople": "लोग खोजें…",
+    "noPeople": "कोई व्यक्ति नहीं मिला।",
+    "pickConversation": "बातचीत चुनें",
+    "pickConversationSub": "बाईं रेल से प्रोजेक्ट स्ट्रीम, चैनल या DM चुनें।"
   }
 }

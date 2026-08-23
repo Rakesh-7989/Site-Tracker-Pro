@@ -63,7 +63,10 @@ describe("chatChannels mappers", () => {
     const insert = vi.fn(() => ({ select: () => ({ single }) }));
     const client = { from: () => ({ insert }) } as never;
     const res = await createChannel(client, { orgId: "org1", name: "  general  ", description: "  lobby  " });
-    expect(insert).toHaveBeenCalledWith({ org_id: "org1", name: "general", description: "lobby" });
+    expect(insert).toHaveBeenCalledWith({
+      org_id: "org1", name: "general", description: "lobby",
+      scope: "org", project_id: null, visibility: "open",
+    });
     expect(res.ok).toBe(true);
   });
 

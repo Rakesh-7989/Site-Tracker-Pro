@@ -799,7 +799,7 @@
     "actionFailed": "Action failed."
   },
   "teams": {
-    "title": "Teams",
+    "title": "Chat",
     "subtitle": "Org channels · threads · @mentions",
     "newChannel": "New channel",
     "namePlaceholder": "e.g. site-updates",
@@ -819,5 +819,24 @@
     "sendReply": "Send reply",
     "archive": "Archive",
     "delete": "Delete"
+  },
+  "chat": {
+    "subtitle": "Project streams · channels · direct messages",
+    "sectionProjects": "Projects",
+    "sectionChannels": "Channels",
+    "sectionDms": "Direct messages",
+    "noProjects": "No project access yet.",
+    "noChannels": "No staff channels yet.",
+    "noDms": "No conversations yet.",
+    "firstOpenCreates": "Opens on first visit",
+    "projectStreamSub": "Project stream — all project members",
+    "channelSub": "Org-wide staff channel",
+    "dmUnnamed": "Direct message",
+    "newDm": "New DM",
+    "newDmTitle": "New direct message",
+    "searchPeople": "Search people…",
+    "noPeople": "No people found.",
+    "pickConversation": "Select a conversation",
+    "pickConversationSub": "Pick a project stream, channel or DM from the left rail."
   }
 }
