@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/Modal";
 import {
   listChannels, createChannel, setChannelArchived, deleteChannel,
   listChannelMessages, postChannelMessage, listThreadReplies,
+  getChatMessage, deleteChatMessage,
   extractMentionIds, splitOnMentions,
   type ChatChannel, type ChatMessage,
 } from "@/app/chatQueries";
@@ -99,7 +100,7 @@ export function TeamChatView(): JSX.Element {
     return () => { cancelled = true; };
   }, [orgId, session]);
 
-  // Deep link ?c=<channelId> (from mention notifications).
+  // Deep link ?c=<channelId>&m=<messageId> (from mention notifications).
   useEffect(() => {
     const c = params.get("c");
     if (c) setActiveId(c);
@@ -109,6 +110,41 @@ export function TeamChatView(): JSX.Element {
   useEffect(() => {
     if (!activeId && channels.length > 0) setActiveId(channels[0].id);
   }, [channels, activeId]);
+
+  // Deep-link message target: highlight it, or open its thread if it's a reply.
+  const [hlId, setHlId] = useState<string | null>(null);
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current || !activeId || loadingMsgs) return;
+    const m = params.get("m");
+    if (!m) { deepLinkHandled.current = true; return; }
+    deepLinkHandled.current = true;
+    void (async () => {
+      const client = await getClient();
+      if (!client) return;
+      const inList = msgs.find(x => x.id === m);
+      if (inList) {
+        setHlId(m);
+        document.getElementById(`chat-msg-${m}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => setHlId(null), 4000);
+        return;
+      }
+      // Not top-level here — likely a thread reply: resolve + open its thread.
+      const target = await getChatMessage(client, m);
+      if (!target.ok || !target.data) return;
+      const parentId = target.data.parentId ?? target.data.id;
+      const parent = parentId === target.data.id ? target.data : await getChatMessage(client, parentId).then(r => r.ok ? r.data : null);
+      if (!parent) return;
+      setActiveId(parent.channelId);
+      setThreadParent(parent); setThreadReplies([]); setThreadLoading(true);
+      const replies = await listThreadReplies(client, parent.id);
+      if (replies.ok) setThreadReplies(replies.data);
+      setThreadLoading(false);
+      setHlId(m);
+      setTimeout(() => setHlId(null), 6000);
+    })();
+  }, [params, activeId, loadingMsgs, msgs]);
+
 
   const reloadMsgs = useCallback(async (channelId: string) => {
     if (!channelId) return;
@@ -164,6 +200,19 @@ export function TeamChatView(): JSX.Element {
     if (!res.ok) setError(res.error);
     else { setText(""); setMentionQuery(null); await reloadMsgs(activeId); }
     setBusy(false);
+  };
+
+  // Delete own (or any, as manager) message — optimistic remove + rollback.
+  const removeMsg = async (m: ChatMessage) => {
+    const client = await getClient();
+    if (!client) { setError("Backend not configured."); return; }
+    const prev = msgs;
+    setMsgs(list => list.filter(x => x.id !== m.id));
+    const res = await deleteChatMessage(client, m.id);
+    if (!res.ok) {
+      setMsgs(prev);
+      setError(res.error);
+    }
   };
 
   // ── Channel admin ────────────────────────────────────────────────────────
@@ -319,13 +368,29 @@ export function TeamChatView(): JSX.Element {
                 : msgs.length === 0 ? <div className="text-center py-16 text-fg-tertiary text-sm">{t("teams.noMessagesYet")}</div>
                 : msgs.map(m => {
                     const mine = m.senderId != null && m.senderId === myId;
+                    const canDelete = mine || canManage;
                     return (
-                      <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div className={cn("max-w-[82%] rounded-2xl px-4 py-3", mine ? "bg-accent text-white" : "bg-panel text-fg-primary border border-default")}>
+                      <div key={m.id} id={`chat-msg-${m.id}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                        <div className={cn(
+                          "max-w-[82%] rounded-2xl px-4 py-3 transition",
+                          mine ? "bg-accent text-white" : "bg-panel text-fg-primary border border-default",
+                          hlId === m.id && "ring-2 ring-accent",
+                        )}>
                           {!mine && <div className="text-xs font-bold text-fg-secondary mb-1">{m.senderName}</div>}
                           <MessageBody body={m.body} names={memberNames} />
                           <div className={cn("text-[10px] mt-1 flex items-center gap-2", mine ? "text-white/70" : "text-fg-tertiary")}>
                             <span>{fmtTs(m.createdAt)}</span>
+                            {canDelete && (
+                              <button
+                                type="button"
+                                title={t("teams.delete")}
+                                aria-label={`${t("teams.delete")} message`}
+                                onClick={() => void removeMsg(m)}
+                                className="hover:text-error transition"
+                              >
+                                <Icon name="trash" size={11} />
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => void openThread(m)}
