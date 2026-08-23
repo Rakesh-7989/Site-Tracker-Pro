@@ -1,95 +1,76 @@
-﻿// SiteTrack Pro — Teams (org chat channels) at /teams — Cliq-style P1.
-// Left rail: channel list + create/archive (chat:manage). Main: message
-// stream with threads (reply drawer) and an @mention autocomplete composer.
-// Project-scoped chat stays in MessagesTab / /messages; this is org-wide.
+﻿// SiteTrack Pro — Chat hub at /chat (Cliq-style unified surface).
+// Left rail sections:
+//   PROJECTS  — every active membership; clicking lazily ensures that
+//               project's main stream and opens it.
+//   CHANNELS  — org-wide staff channels (+ archived, managers see them).
+//   DIRECT MESSAGES — 1:1 conversations via chat_open_dm.
+// The stream itself is the shared <ChatStream> (also embedded in the
+// project DetailView "Messages" tab).
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { useT } from "@/i18n/I18nProvider";
-import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Spinner, Alert, Icon, Avatar } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import {
   listChannels, createChannel, setChannelArchived, deleteChannel,
-  listChannelMessages, postChannelMessage, listThreadReplies,
-  getChatMessage, deleteChatMessage,
-  extractMentionIds, splitOnMentions,
-  type ChatChannel, type ChatMessage,
+  ensureProjectStream, openDm,
+  listDmPartnerNames,
+  type ChatChannel,
 } from "@/app/chatQueries";
 import type { MentionCandidate } from "@/app/chatQueries";
+import { ChatStream } from "@/features/shared/ChatStream";
 import { listOrgMembers } from "@/app/orgMemberQueries";
 import { getClient } from "@/lib/supabase";
 import { cn } from "@/lib/cn";
-
-const fmtTs = (iso: string): string => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-};
-
-/** Render a message body with @Name tokens highlighted. */
-export function MessageBody({ body, names }: { body: string; names: string[] }): JSX.Element {
-  const parts = useMemo(() => splitOnMentions(body, names), [body, names]);
-  return (
-    <p className="text-sm whitespace-pre-wrap break-words">
-      {parts.map((p, i) => p.mention ? (
-        <span key={i} className="font-semibold text-accent">{p.mention}</span>
-      ) : (
-        <span key={i}>{p.text}</span>
-      ))}
-    </p>
-  );
-}
 
 export function TeamChatView(): JSX.Element {
   const t = useT();
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const canPost = useCan("message:send");
   const canManage = useCan("chat:manage");
   const [params] = useSearchParams();
 
   const orgId = activeOrg?.orgId ?? "";
   const [channels, setChannels] = useState<ChatChannel[]>([]);
-  const [activeId, setActiveId] = useState<string>("");
-  const [msgs, setMsgs] = useState<ChatMessage[]>([]);
+  const [dmNames, setDmNames] = useState<Record<string, string>>({});
   const [members, setMembers] = useState<MentionCandidate[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-  // New-channel form
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  // Threads
-  const [threadParent, setThreadParent] = useState<ChatMessage | null>(null);
-  const [threadReplies, setThreadReplies] = useState<ChatMessage[]>([]);
-  const [threadLoading, setThreadLoading] = useState(false);
-  const [threadText, setThreadText] = useState("");
-  // Mentions autocomplete
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  // DM picker
+  const [showDmPicker, setShowDmPicker] = useState(false);
+  const [dmQuery, setDmQuery] = useState("");
+  const [openingDm, setOpeningDm] = useState(false);
 
-  const memberNames = useMemo(() => members.map(m => m.name), [members]);
+  const memberships = useMemo(() => session?.projectMemberships ?? [], [session]);
 
   const reloadChannels = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId || !session) { setLoading(false); return; }
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await listChannels(client, orgId);
-    if (res.ok) setChannels(res.data); else setError(res.error);
+    if (!res.ok) { setError(res.error); setLoading(false); return; }
+    setChannels(res.data);
+    const dmIds = res.data.filter(c => c.kind === "dm").map(c => c.id);
+    const names = await listDmPartnerNames(client, dmIds, session.user.id);
+    if (names.ok) setDmNames(names.data);
     setLoading(false);
-  }, [orgId]);
+  }, [orgId, session]);
 
   useEffect(() => { void reloadChannels(); }, [reloadChannels]);
 
-  // Mention candidates = active org members (list_org_members RPC).
+  // Mention candidates = active org members.
   useEffect(() => {
     if (!orgId || !session) return;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       const client = await getClient();
       if (!client || cancelled) return;
       const res = await listOrgMembers(client, orgId);
@@ -100,122 +81,48 @@ export function TeamChatView(): JSX.Element {
     return () => { cancelled = true; };
   }, [orgId, session]);
 
-  // Deep link ?c=<channelId>&m=<messageId> (from mention notifications).
+  // Deep link ?c=<channelId> selects directly.
   useEffect(() => {
     const c = params.get("c");
     if (c) setActiveId(c);
   }, [params]);
 
-  // Pick the first channel once loaded (deep link wins).
+  // Default selection once loaded (deep link wins).
   useEffect(() => {
-    if (!activeId && channels.length > 0) setActiveId(channels[0].id);
-  }, [channels, activeId]);
+    if (activeId && channels.some(c => c.id === activeId)) return;
+    if (activeId && !loading && !channels.some(c => c.id === activeId)) setActiveId("");
+    if (!activeId && channels.length > 0) {
+      const firstOrg = channels.find(c => c.kind === "channel" && c.scope === "org" && !c.isArchived)
+        ?? channels.find(c => !c.isArchived);
+      if (firstOrg) setActiveId(firstOrg.id);
+    }
+  }, [channels, activeId, loading]);
 
-  // Deep-link message target: highlight it, or open its thread if it's a reply.
-  const [hlId, setHlId] = useState<string | null>(null);
-  const deepLinkHandled = useRef(false);
-  useEffect(() => {
-    if (deepLinkHandled.current || !activeId || loadingMsgs) return;
-    const m = params.get("m");
-    if (!m) { deepLinkHandled.current = true; return; }
-    deepLinkHandled.current = true;
-    void (async () => {
-      const client = await getClient();
-      if (!client) return;
-      const inList = msgs.find(x => x.id === m);
-      if (inList) {
-        setHlId(m);
-        document.getElementById(`chat-msg-${m}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        setTimeout(() => setHlId(null), 4000);
-        return;
-      }
-      // Not top-level here — likely a thread reply: resolve + open its thread.
-      const target = await getChatMessage(client, m);
-      if (!target.ok || !target.data) return;
-      const parentId = target.data.parentId ?? target.data.id;
-      const parent = parentId === target.data.id ? target.data : await getChatMessage(client, parentId).then(r => r.ok ? r.data : null);
-      if (!parent) return;
-      setActiveId(parent.channelId);
-      setThreadParent(parent); setThreadReplies([]); setThreadLoading(true);
-      const replies = await listThreadReplies(client, parent.id);
-      if (replies.ok) setThreadReplies(replies.data);
-      setThreadLoading(false);
-      setHlId(m);
-      setTimeout(() => setHlId(null), 6000);
-    })();
-  }, [params, activeId, loadingMsgs, msgs]);
-
-
-  const reloadMsgs = useCallback(async (channelId: string) => {
-    if (!channelId) return;
-    setLoadingMsgs(true);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setLoadingMsgs(false); return; }
-    const res = await listChannelMessages(client, channelId);
-    if (res.ok) setMsgs(res.data); else setError(res.error);
-    setLoadingMsgs(false);
-  }, []);
-
-  useEffect(() => { if (activeId) void reloadMsgs(activeId); }, [activeId, reloadMsgs]);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs.length]);
-  // Light poll so teammates' messages appear without websockets.
-  useEffect(() => {
-    if (!activeId) return;
-    const timer = setInterval(() => { void reloadMsgs(activeId); }, 20000);
-    return () => clearInterval(timer);
-  }, [activeId, reloadMsgs]);
-
-  const active = channels.find(c => c.id === activeId) ?? null;
-  const myId = session?.user.id ?? null;
-
-  // ── Mentions autocomplete ────────────────────────────────────────────────
-  const onComposerChange = (v: string) => {
-    setText(v);
-    const m = /@([A-Za-z\u0C00-\u0C7F][^\s@]*)$/.exec(v);
-    setMentionQuery(m ? m[1] : null);
-  };
-  const mentionOptions = useMemo(() => {
-    if (mentionQuery == null) return [];
-    const q = mentionQuery.toLowerCase();
-    return members.filter(m => m.name.toLowerCase().includes(q)).slice(0, 6);
-  }, [mentionQuery, members]);
-
-  const applyMention = (name: string) => {
-    setText(prev => prev.replace(/@([A-Za-z\u0C00-\u0C7F][^\s@]*)$/, `@${name} `));
-    setMentionQuery(null);
-  };
-
-  const send = async () => {
-    const body = text.trim();
-    if (!body || !session || !activeId || !canPost) return;
-    setBusy(true); setError(null);
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); setBusy(false); return; }
-    const mentionIds = extractMentionIds(body, members);
-    const res = await postChannelMessage(client, {
-      orgId, channelId: activeId, parentId: null,
-      senderId: session.user.id, senderName: session.user.name,
-      body, mentionIds,
-    });
-    if (!res.ok) setError(res.error);
-    else { setText(""); setMentionQuery(null); await reloadMsgs(activeId); }
-    setBusy(false);
-  };
-
-  // Delete own (or any, as manager) message — optimistic remove + rollback.
-  const removeMsg = async (m: ChatMessage) => {
+  // ── Project streams: lazy ensure on click ────────────────────────────────
+  const openProjectStream = async (projectId: string) => {
+    setError(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); return; }
-    const prev = msgs;
-    setMsgs(list => list.filter(x => x.id !== m.id));
-    const res = await deleteChatMessage(client, m.id);
-    if (!res.ok) {
-      setMsgs(prev);
-      setError(res.error);
-    }
+    const res = await ensureProjectStream(client, projectId);
+    if (!res.ok) { setError(res.error); return; }
+    await reloadChannels();
+    setActiveId(res.data.id);
   };
 
-  // ── Channel admin ────────────────────────────────────────────────────────
+  const openDmWith = async (otherId: string) => {
+    if (!orgId) return;
+    setOpeningDm(true); setError(null);
+    const client = await getClient();
+    if (!client) { setError("Backend not configured."); setOpeningDm(false); return; }
+    const res = await openDm(client, orgId, otherId);
+    if (res.ok) {
+      setShowDmPicker(false); setDmQuery("");
+      await reloadChannels();
+      setActiveId(res.data.id);
+    } else setError(res.error);
+    setOpeningDm(false);
+  };
+
   const addChannel = async () => {
     if (!newName.trim() || !orgId) return;
     setBusy(true); setError(null);
@@ -230,14 +137,14 @@ export function TeamChatView(): JSX.Element {
     setBusy(false);
   };
 
-  const archive = async (c: ChatChannel) => {
+  const archiveChannel = async (c: ChatChannel) => {
     const client = await getClient();
     if (!client) { setError("Backend not configured."); return; }
     const res = await setChannelArchived(client, c.id, !c.isArchived);
     if (res.ok) await reloadChannels(); else setError(res.error);
   };
 
-  const remove = async (c: ChatChannel) => {
+  const removeChannel = async (c: ChatChannel) => {
     const client = await getClient();
     if (!client) { setError("Backend not configured."); return; }
     const res = await deleteChannel(client, c.id);
@@ -247,39 +154,27 @@ export function TeamChatView(): JSX.Element {
     } else setError(res.error);
   };
 
-  // ── Threads ──────────────────────────────────────────────────────────────
-  const openThread = async (m: ChatMessage) => {
-    setThreadParent(m); setThreadReplies([]); setThreadLoading(true);
-    const client = await getClient();
-    if (!client) { setThreadLoading(false); setError("Backend not configured."); return; }
-    const res = await listThreadReplies(client, m.id);
-    if (res.ok) setThreadReplies(res.data); else setError(res.error);
-    setThreadLoading(false);
-  };
+  const active = channels.find(c => c.id === activeId) ?? null;
+  const orgChannels = channels.filter(c => c.kind === "channel" && c.scope === "org" && !c.isArchived);
+  const archivedChannels = channels.filter(c => c.kind === "channel" && c.isArchived);
+  const dms = channels.filter(c => c.kind === "dm");
+  const mentionCandidates = useMemo(
+    () => members.filter(m => m.profileId !== session?.user.id),
+    [members, session],
+  );
+  const dmCandidates = useMemo(() => {
+    const q = dmQuery.toLowerCase();
+    return members
+      .filter(m => m.profileId !== session?.user.id)
+      .filter(m => q === "" || m.name.toLowerCase().includes(q))
+      .slice(0, 50);
+  }, [members, dmQuery, session]);
+  const partnerName = (c: ChatChannel): string => dmNames[c.id] ?? t("teams.dmUnnamed");
 
-  const sendReply = async () => {
-    const body = threadText.trim();
-    if (!body || !session || !threadParent) return;
-    const client = await getClient();
-    if (!client) { setError("Backend not configured."); return; }
-    const mentionIds = extractMentionIds(body, members);
-    const res = await postChannelMessage(client, {
-      orgId, channelId: threadParent.channelId, parentId: threadParent.id,
-      senderId: session.user.id, senderName: session.user.name,
-      body, mentionIds,
-    });
-    if (!res.ok) { setError(res.error); return; }
-    setThreadText("");
-    const refreshed = await listThreadReplies(client, threadParent.id);
-    if (refreshed.ok) setThreadReplies(refreshed.data);
-    await reloadMsgs(threadParent.channelId);
-    // Refresh the parent row's reply_count badge.
-    setMsgs(prev => prev.map(x => x.id === threadParent.id
-      ? { ...x, replyCount: refreshed.ok ? refreshed.data.length : x.replyCount + 1 }
-      : x));
-  };
-
-  const visibleChannels = channels.filter(c => !c.isArchived);
+  const railBtn = (sel: boolean) => cn(
+    "w-full text-left rounded-lg px-2.5 py-1.5 text-sm flex items-center gap-1.5 group min-w-0",
+    sel ? "bg-accent-tint text-accent font-semibold" : "hover:bg-bg-secondary text-fg-secondary",
+  );
 
   if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
 
@@ -288,9 +183,9 @@ export function TeamChatView(): JSX.Element {
       <div className="flex items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-black text-fg-primary flex items-center gap-2">
-            <Icon name="users" size={22} className="text-accent" />{t("teams.title")}
+            <Icon name="msgcircle" size={22} className="text-accent" />{t("teams.title")}
           </h1>
-          <p className="text-fg-tertiary text-sm mt-1">{t("teams.subtitle")}</p>
+          <p className="text-fg-tertiary text-sm mt-1">{t("chat.subtitle")}</p>
         </div>
         {canManage && (
           <Button size="sm" variant="secondary" onClick={() => setShowNew(v => !v)}>
@@ -311,198 +206,168 @@ export function TeamChatView(): JSX.Element {
         </Card>
       )}
 
-      {visibleChannels.length === 0 ? (
-        <EmptyChannels canManage={canManage} onCreate={canManage ? () => setShowNew(true) : undefined} />
-      ) : (
-        <div className="grid md:grid-cols-[220px_1fr] gap-4 items-start">
-          {/* Channel rail */}
-          <Card padding="sm" className="md:sticky md:top-20">
-            <div className="space-y-0.5">
-              {visibleChannels.map(c => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setActiveId(c.id)}
-                  className={cn(
-                    "w-full text-left rounded-lg px-2.5 py-1.5 text-sm flex items-center justify-between gap-2 group",
-                    c.id === activeId ? "bg-accent-tint text-accent font-semibold" : "hover:bg-bg-secondary text-fg-secondary",
-                  )}
+      <div className="grid md:grid-cols-[230px_1fr] gap-4 items-start">
+        {/* ── Left rail: Projects / Channels / DMs ── */}
+        <Card padding="sm" className="md:sticky md:top-20">
+          {/* PROJECTS */}
+          <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-tertiary px-1 pb-1">{t("chat.sectionProjects")}</div>
+          <div className="space-y-0.5">
+            {memberships.length === 0 && (
+              <div className="px-2.5 py-1 text-xs text-fg-tertiary">{t("chat.noProjects")}</div>
+            )}
+            {memberships.map(pm => {
+              const ch = channels.find(c => c.scope === "project" && c.projectId === pm.projectId && !c.isArchived);
+              const sel = !!ch && ch.id === activeId;
+              return (
+                <button key={pm.projectId} type="button"
+                  onClick={() => void openProjectStream(pm.projectId)}
+                  className={railBtn(sel)}
+                  title={pm.projectName}
                 >
-                  <span className="truncate">#{c.name}</span>
-                  {canManage && c.id === activeId && (
-                    <span className="flex-shrink-0 flex items-center gap-1 opacity-70 group-hover:opacity-100">
-                      <button type="button" aria-label={`${t("teams.archive")} #${c.name}`} title={t("teams.archive")} onClick={e => { e.stopPropagation(); void archive(c); }}>
-                        <Icon name="lock" size={12} />
-                      </button>
-                      <button type="button" aria-label={`${t("teams.delete")} #${c.name}`} title={t("teams.delete")} onClick={e => { e.stopPropagation(); void remove(c); }}>
-                        <Icon name="trash" size={12} className="text-error" />
-                      </button>
-                    </span>
-                  )}
+                  <Icon name="hardhat" size={13} className="flex-shrink-0" />
+                  <span className="truncate">{pm.projectName}</span>
+                  {!ch && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-fg-tertiary/50 flex-shrink-0" title={t("chat.firstOpenCreates")} />}
                 </button>
+              );
+            })}
+          </div>
+
+          {/* CHANNELS */}
+          {(orgChannels.length > 0 || canManage) && (
+            <>
+              <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-tertiary px-1 pt-3 pb-1">{t("chat.sectionChannels")}</div>
+              <div className="space-y-0.5">
+                {orgChannels.length === 0 && <div className="px-2.5 py-1 text-xs text-fg-tertiary">{t("chat.noChannels")}</div>}
+                {orgChannels.map(c => (
+                  <div key={c.id} className="relative">
+                    <button type="button" onClick={() => setActiveId(c.id)}
+                      className={cn(railBtn(c.id === activeId), "justify-between pr-6")}>
+                      <span className="truncate"># {c.name}</span>
+                    </button>
+                    {canManage && c.id === activeId && (
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-70">
+                        <button type="button" aria-label={`${t("teams.archive")} ${c.name}`} title={t("teams.archive")} onClick={() => void archiveChannel(c)}>
+                          <Icon name="lock" size={12} />
+                        </button>
+                        <button type="button" aria-label={`${t("teams.delete")} ${c.name}`} title={t("teams.delete")} onClick={() => void removeChannel(c)}>
+                          <Icon name="trash" size={12} className="text-error" />
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {canManage && archivedChannels.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-default space-y-0.5">
+              {archivedChannels.map(c => (
+                <div key={c.id} className="px-2.5 py-1 text-xs text-fg-tertiary truncate line-through opacity-60">#{c.name}</div>
               ))}
             </div>
-            {channels.some(c => c.isArchived) && (
-              <div className="mt-2 pt-2 border-t border-default space-y-0.5">
-                {channels.filter(c => c.isArchived).map(c => (
-                  <div key={c.id} className="px-2.5 py-1 text-xs text-fg-tertiary truncate line-through opacity-60">#{c.name}</div>
-                ))}
-              </div>
-            )}
-          </Card>
+          )}
 
-          {/* Stream */}
-          <Card className="overflow-hidden">
-            <div className="p-4 border-b border-default flex items-center justify-between gap-3 min-w-0">
-              <div className="min-w-0">
-                <div className="font-bold text-fg-primary truncate">#{active?.name ?? ""}</div>
-                <div className="text-xs text-fg-tertiary truncate">{active?.description || `${msgs.length} messages`}</div>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => activeId && void reloadMsgs(activeId)} title="Refresh">
-                <Icon name="refresh" size={14} />
-              </Button>
-            </div>
+          {/* DIRECT MESSAGES */}
+          <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-tertiary px-1 pt-3 pb-1 flex items-center justify-between">
+            <span>{t("chat.sectionDms")}</span>
+            <button type="button" onClick={() => setShowDmPicker(true)}
+              className="text-accent hover:text-accent/80" aria-label={t("chat.newDm")} title={t("chat.newDm")}>
+              <Icon name="plus" size={13} />
+            </button>
+          </div>
+          <div className="space-y-0.5">
+            {dms.length === 0 && <div className="px-2.5 py-1 text-xs text-fg-tertiary">{t("chat.noDms")}</div>}
+            {dms.map(c => (
+              <button key={c.id} type="button" onClick={() => setActiveId(c.id)} className={railBtn(c.id === activeId)}>
+                <Avatar initials={(partnerName(c)[0] ?? "?").toUpperCase()} size="sm" />
+                <span className="truncate">{partnerName(c)}</span>
+              </button>
+            ))}
+          </div>
+        </Card>
 
-            <div className="p-4 space-y-3 min-h-[360px] max-h-[520px] overflow-y-auto bg-panel">
-              {loadingMsgs ? <div className="grid place-items-center h-48"><Spinner size={20} /></div>
-                : msgs.length === 0 ? <div className="text-center py-16 text-fg-tertiary text-sm">{t("teams.noMessagesYet")}</div>
-                : msgs.map(m => {
-                    const mine = m.senderId != null && m.senderId === myId;
-                    const canDelete = mine || canManage;
-                    return (
-                      <div key={m.id} id={`chat-msg-${m.id}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div className={cn(
-                          "max-w-[82%] rounded-2xl px-4 py-3 transition",
-                          mine ? "bg-accent text-white" : "bg-panel text-fg-primary border border-default",
-                          hlId === m.id && "ring-2 ring-accent",
-                        )}>
-                          {!mine && <div className="text-xs font-bold text-fg-secondary mb-1">{m.senderName}</div>}
-                          <MessageBody body={m.body} names={memberNames} />
-                          <div className={cn("text-[10px] mt-1 flex items-center gap-2", mine ? "text-white/70" : "text-fg-tertiary")}>
-                            <span>{fmtTs(m.createdAt)}</span>
-                            {canDelete && (
-                              <button
-                                type="button"
-                                title={t("teams.delete")}
-                                aria-label={`${t("teams.delete")} message`}
-                                onClick={() => void removeMsg(m)}
-                                className="hover:text-error transition"
-                              >
-                                <Icon name="trash" size={11} />
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => void openThread(m)}
-                              className="underline hover:no-underline font-semibold"
-                            >
-                              {m.replyCount > 0 ? t("teams.repliesCount", { count: m.replyCount }) : t("teams.replyInThread")}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              <div ref={endRef} />
-            </div>
-
-            {canPost && activeId && (
-              <div className="p-4 border-t border-default relative">
-                {mentionOptions.length > 0 && (
-                  <div className="absolute bottom-full left-4 right-4 mb-1 rounded-xl border border-default bg-bg-primary shadow-lg overflow-hidden z-10" data-testid="mention-menu">
-                    {mentionOptions.map(m => (
-                      <button
-                        key={m.profileId}
-                        type="button"
-                        onClick={() => applyMention(m.name)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary flex items-center gap-2"
-                      >
-                        <span className="rounded-full bg-violet-tint text-violet w-6 h-6 grid place-items-center text-[10px] font-bold">
-                          {m.name.slice(0, 1).toUpperCase()}
-                        </span>
-                        {m.name}
-                      </button>
-                    ))}
+        {/* ── Main stream ── */}
+        <Card className="overflow-hidden min-w-0">
+          {active ? (
+            <>
+              <div className="p-4 border-b border-default flex items-center justify-between gap-3 min-w-0">
+                <div className="min-w-0 flex items-center gap-2">
+                  {active.scope === "project"
+                    ? <Icon name="hardhat" size={15} className="text-accent flex-shrink-0" />
+                    : active.kind === "dm"
+                      ? <Avatar initials={(partnerName(active)[0] ?? "?").toUpperCase()} size="sm" />
+                      : <span className="font-bold text-fg-primary">#</span>}
+                  <div className="min-w-0">
+                    <div className="font-bold text-fg-primary truncate">
+                      {active.kind === "dm" ? partnerName(active) : active.name}
+                    </div>
+                    <div className="text-xs text-fg-tertiary truncate">
+                      {active.description
+                        || (active.scope === "project" ? t("chat.projectStreamSub") : `${dms.length ? "" : ""}${t("chat.channelSub")}`)}
+                    </div>
                   </div>
-                )}
-                <div className="flex gap-2">
-                  <Input
-                    className="flex-1"
-                    placeholder={t("teams.composerPlaceholder")}
-                    value={text}
-                    onChange={e => onComposerChange(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-                  />
-                  <Button onClick={() => void send()} disabled={busy || !text.trim()} aria-label={t("teams.send")}>
-                    {busy ? <Spinner size={14} /> : <Icon name="send" size={16} />}
-                  </Button>
                 </div>
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
-
-      {/* Thread modal */}
-      <Modal
-        open={threadParent !== null}
-        onClose={() => setThreadParent(null)}
-        size="lg"
-        title={`${t("teams.threadTitle")} · #${active?.name ?? ""}`}
-        subtitle={threadParent ? t("teams.repliesCount", { count: threadParent.replyCount }) : undefined}
-        ariaLabel="Thread replies"
-      >
-        {threadParent && (
-          <div className="flex flex-col gap-3">
-            <div className="rounded-xl border border-default bg-panel px-4 py-3">
-              <div className="text-xs font-bold text-fg-secondary mb-1">{threadParent.senderName}</div>
-              <MessageBody body={threadParent.body} names={memberNames} />
-              <div className="text-[10px] text-fg-tertiary mt-1">{fmtTs(threadParent.createdAt)}</div>
-            </div>
-            <div className="max-h-[280px] overflow-y-auto space-y-3">
-              {threadLoading ? <div className="grid place-items-center py-8"><Spinner size={18} /></div>
-                : threadReplies.map(r => (
-                  <div key={r.id} className="px-1">
-                    <div className="text-xs font-bold text-fg-secondary">{r.senderName}</div>
-                    <MessageBody body={r.body} names={memberNames} />
-                    <div className="text-[10px] text-fg-tertiary mt-0.5">{fmtTs(r.createdAt)}</div>
-                  </div>
-                ))}
-            </div>
-            {canPost && (
-              <div className="flex gap-2">
-                <Input
-                  className="flex-1"
-                  placeholder={t("teams.replyPlaceholder")}
-                  value={threadText}
-                  onChange={e => setThreadText(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendReply(); } }}
-                />
-                <Button onClick={() => void sendReply()} disabled={!threadText.trim()} aria-label={t("teams.sendReply")}>
-                  <Icon name="send" size={16} />
+                <Button size="sm" variant="ghost" onClick={() => void reloadChannels()} title="Refresh">
+                  <Icon name="refresh" size={14} />
                 </Button>
               </div>
-            )}
-          </div>
-        )}
+              <ChatStreamBody
+                key={active.id}
+                channel={active}
+                mentionCandidates={mentionCandidates}
+                highlightMessageId={params.get("m")}
+              />
+            </>
+          ) : (
+            <EmptySelection />
+          )}
+        </Card>
+      </div>
+
+      {/* DM picker modal */}
+      <Modal
+        open={showDmPicker}
+        onClose={() => setShowDmPicker(false)}
+        size="sm"
+        title={t("chat.newDmTitle")}
+        ariaLabel="Pick a person to message"
+      >
+        <Input
+          className="mb-2"
+          placeholder={t("chat.searchPeople")}
+          value={dmQuery}
+          onChange={e => setDmQuery(e.target.value)}
+        />
+        <div className="max-h-[320px] overflow-y-auto space-y-0.5">
+          {dmCandidates.length === 0 && <div className="text-sm text-fg-tertiary py-4 text-center">{t("chat.noPeople")}</div>}
+          {dmCandidates.map(m => (
+            <button key={m.profileId} type="button"
+              onClick={() => void openDmWith(m.profileId)}
+              disabled={openingDm}
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-bg-secondary flex items-center gap-2 text-sm"
+            >
+              <Avatar initials={(m.name[0] ?? "?").toUpperCase()} size="sm" />
+              <span className="truncate">{m.name}</span>
+            </button>
+          ))}
+        </div>
       </Modal>
     </div>
   );
 }
 
-function EmptyChannels({ canManage, onCreate }: { canManage: boolean; onCreate?: () => void }): JSX.Element {
+function EmptySelection(): JSX.Element {
   const t = useT();
   return (
-    <div className="text-center py-20">
-      <Icon name="users" size={48} className="mx-auto mb-3 text-fg-tertiary" />
-      <p className="text-fg-primary font-semibold">{t("teams.noChannelsTitle")}</p>
-      <p className="text-[13px] text-fg-tertiary mt-1 max-w-md mx-auto">{t("teams.noChannelsBody")}</p>
-      {onCreate && (
-        <Button className="mt-4" variant="gold" onClick={onCreate}>
-          <Icon name="plus" size={14} /><span className="ml-1">{t("teams.createFirst")}</span>
-        </Button>
-      )}
-      {!canManage && <p className="text-[12px] text-fg-tertiary mt-3">{t("teams.askAdmin")}</p>}
+    <div className="grid place-items-center py-24 text-center px-6">
+      <Icon name="msgcircle" size={44} className="mx-auto mb-3 text-fg-tertiary" />
+      <p className="text-fg-secondary font-semibold">{t("chat.pickConversation")}</p>
+      <p className="text-[13px] text-fg-tertiary mt-1 max-w-sm">{t("chat.pickConversationSub")}</p>
     </div>
   );
+}
+
+// Thin wrapper kept local: ChatStream is the shared surface component.
+function ChatStreamBody(props: Parameters<typeof ChatStream>[0]): JSX.Element {
+  return <ChatStream {...props} />;
 }

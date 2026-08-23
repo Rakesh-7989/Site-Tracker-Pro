@@ -15,7 +15,7 @@ const ALL_ITEMS: NavItem[] = [
   { to: "/dashboard", icon: "dashboard", label: "Home" },
   { to: "/projects", icon: "building", label: "Projects" },
   { to: "/calendar", icon: "calendar", label: "Calendar" },
-  { to: "/messages", icon: "msgcircle", label: "Messages" },
+  { to: "/chat", icon: "msgcircle", label: "Chat" },
   { to: "/settings/profile", icon: "user", label: "Profile" },
 ];
 

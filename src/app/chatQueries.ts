@@ -1,16 +1,24 @@
-// SiteTrack Pro — Teams P1: org-scoped chat channels + threads + mentions.
-// DB-wired to chat_channels / chat_messages (migration 229). Threads are one
-// level deep (parent_id NULL = top-level); reply_count is trigger-maintained.
-// Mentions are resolved client-side against the org member list and stored as
-// uuid[]; the notify_chat_mentions trigger fans out notifications server-side.
+// SiteTrack Pro — unified Chat (Cliq-style): project streams + org channels
+// + DMs, with threads + @mentions. DB-wired to chat_channels / chat_messages /
+// chat_channel_members (migrations 229 + 232). Threads are one level deep
+// (parent_id NULL = top-level); reply_count is trigger-maintained. Mentions
+// are resolved client-side against the org member list and stored as uuid[];
+// the notify_chat_mentions trigger fans out /chat deep-link notifications.
 
 export type CResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+export type ChatChannelKind = "channel" | "dm";
+export type ChatChannelScope = "org" | "project";
 
 export interface ChatChannel {
   id: string;
   name: string;
   description: string | null;
   isArchived: boolean;
+  kind: ChatChannelKind;
+  scope: ChatChannelScope;
+  projectId: string | null;
+  visibility: "open" | "managers" | "private";
   createdAt: string;
 }
 
@@ -50,7 +58,7 @@ export async function listChannels(
 ): Promise<CResult<ChatChannel[]>> {
   try {
     const { data, error } = await client.from("chat_channels")
-      .select("id, name, description, is_archived, created_at")
+      .select("id, name, description, is_archived, kind, scope, project_id, visibility, created_at")
       .eq("org_id", orgId)
       .order("created_at", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -59,24 +67,97 @@ export async function listChannels(
       name: String(r.name ?? ""),
       description: r.description == null ? null : String(r.description),
       isArchived: Boolean(r.is_archived),
+      kind: (r.kind === "dm" ? "dm" : "channel") as ChatChannelKind,
+      scope: (r.scope === "project" ? "project" : "org") as ChatChannelScope,
+      projectId: r.project_id == null ? null : String(r.project_id),
+      visibility: (["open","managers","private"].includes(String(r.visibility)) ? String(r.visibility) : "open") as ChatChannel["visibility"],
       createdAt: String(r.created_at ?? ""),
     })) };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Resolve display names for DM channels (other participant per channel). */
+export async function listDmPartnerNames(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  dmChannelIds: string[],
+  myUserId: string,
+): Promise<CResult<Record<string, string>>> {
+  if (dmChannelIds.length === 0) return { ok: true, data: {} };
+  try {
+    const { data: rows, error } = await client.from("chat_channel_members")
+      .select("channel_id, profile_id")
+      .in("channel_id", dmChannelIds);
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    const partnerByChannel: Record<string, string> = {};
+    const partnerIds = new Set<string>();
+    for (const r of (rows ?? []) as Array<Record<string, unknown>>) {
+      const pid = String(r.profile_id);
+      if (pid === myUserId) continue;
+      partnerByChannel[String(r.channel_id)] = pid;
+      partnerIds.add(pid);
+    }
+    if (partnerIds.size === 0) return { ok: true, data: {} };
+    const { data: profs, error: perr } = await client.from("profiles")
+      .select("id, name").in("id", [...partnerIds]);
+    if (perr) return { ok: false, error: String(perr.message ?? perr) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const nameById = new Map(((profs ?? []) as any[]).map((p: any) => [String(p.id), String(p.name ?? "Member")]));
+    const out: Record<string, string> = {};
+    for (const [chanId, pid] of Object.entries(partnerByChannel)) {
+      if (typeof pid !== "string") continue;
+      out[chanId] = nameById.get(pid) ?? "Member";
+    }
+    return { ok: true, data: out };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Get-or-create the lazy main stream for a project (any member may call). */
+export async function ensureProjectStream(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  projectId: string,
+): Promise<CResult<{ id: string }>> {
+  try {
+    const { data, error } = await client.rpc("chat_ensure_project_stream", { p_project_id: projectId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { id: String(data) } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Get-or-create a 1:1 DM with another org member. */
+export async function openDm(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  orgId: string,
+  otherUserId: string,
+): Promise<CResult<{ id: string }>> {
+  try {
+    const { data, error } = await client.rpc("chat_open_dm", {
+      p_org_id: orgId, p_other: otherUserId,
+    });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: { id: String(data) } };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
 export async function createChannel(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
-  input: { orgId: string; name: string; description?: string },
+  input: { orgId: string; name: string; description?: string; projectId?: string; visibility?: "open" | "managers" | "private" },
 ): Promise<CResult<{ id: string }>> {
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Channel name is required." };
   try {
+    const isProject = !!input.projectId;
     const { data, error } = await client.from("chat_channels")
       .insert({
         org_id: input.orgId,
         name,
         ...(input.description && input.description.trim() ? { description: input.description.trim() } : {}),
+        scope: isProject ? "project" : "org",
+        project_id: input.projectId ?? null,
+        visibility: input.visibility ?? "open",
         // created_by is filled by the DB default (auth.uid()).
       })
       .select("id")

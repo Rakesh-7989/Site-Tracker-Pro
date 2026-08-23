@@ -63,13 +63,13 @@ const VPS = [
   { name: "desktop-1440", width: 1440, height: 900 },
 ];
 const ROUTES = [
-  "/", "/projects", "/calendar", "/teams", "/messages", "/notifications",
+  "/", "/projects", "/calendar", "/chat", "/notifications",
   "/invoices", "/analytics", "/procurement", "/org/members",
   ...(PROJECT_ID ? [`/projects/${PROJECT_ID}`, `/projects/${PROJECT_ID}/drawings`, `/projects/${PROJECT_ID}/messages`, `/projects/${PROJECT_ID}/estimate`] : []),
 ];
 // Route → visible button text that opens its primary modal (mobile pass only).
 const MODAL_ACTIONS = {
-  "/teams": "New channel",
+  "/chat": "New channel",
   "/org/members": "Invite Member",
 };
 const STORAGE_KEY = `sb-${REF}-auth-token`;

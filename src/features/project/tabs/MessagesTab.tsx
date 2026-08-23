@@ -1,71 +1,92 @@
-﻿// SiteTrack Pro — project Messages tab (v3 port). Append-only project chat.
+﻿// SiteTrack Pro — project "Messages" tab: embeds the unified ChatStream on
+// this project's lazy main stream (migration 232). Replaces the legacy
+// project-only chat; the same stream is reachable from the /chat hub rail.
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth, useCan, useOrgSwitcher } from "@/auth";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth, useOrgSwitcher } from "@/auth";
+import { useT } from "@/i18n/I18nProvider";
 import { Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { Input } from "@/components/ui/forms";
-import { listMessages, postMessage, type Message } from "@/app/messageQueries";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import {
+  ensureProjectStream,
+  type ChatChannel,
+} from "@/app/chatQueries";
+import { listOrgMembers } from "@/app/orgMemberQueries";
+import type { MentionCandidate } from "@/app/chatQueries";
+import { ChatStream } from "@/features/shared/ChatStream";
 import { getClient } from "@/lib/supabase";
-const fmtTs = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 
 export function MessagesTab({ projectId }: { projectId: string }): JSX.Element {
+  const t = useT();
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const canSend = useCan("message:send", { orgId: activeOrg?.orgId, projectId });
-  const [rows, setRows] = useState<Message[]>([]);
+  const orgId = activeOrg?.orgId ?? "";
+
+  const [channelId, setChannelId] = useState<string | null>(null);
+  const [members, setMembers] = useState<MentionCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const reload = useCallback(async () => {
-    setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
-    const res = await listMessages(client, projectId); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [projectId]);
-  useEffect(() => { void reload(); }, [reload]);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [rows.length]);
+  const ensure = useCallback(async () => {
+    if (!orgId || !session) return;
+    setLoading(true); setError(null);
+    const client = await getClient();
+    if (!client) { setError("Backend not configured."); setLoading(false); return; }
+    const res = await ensureProjectStream(client, projectId);
+    if (res.ok) setChannelId(res.data.id);
+    else setError(res.error);
+    setLoading(false);
+  }, [orgId, projectId, session]);
 
-  const send = async () => {
-    const body = text.trim(); if (!body || !session) return;
-    setBusy(true); setError(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(false); return; }
-    const res = await postMessage(client, { projectId, body, senderId: session.user.id, senderName: session.user.name });
-    if (!res.ok) setError(res.error); else setText("");
-    await reload(); setBusy(false);
-  };
+  useEffect(() => { void ensure(); }, [ensure, reloadKey]);
 
-  const myId = session?.user.id;
+  // Mention candidates = active org members.
+  useEffect(() => {
+    if (!orgId || !session) return;
+    let cancelled = false;
+    void (async () => {
+      const client = await getClient();
+      if (!client || cancelled) return;
+      const res = await listOrgMembers(client, orgId);
+      if (!cancelled && res.ok) {
+        setMembers(res.data.filter(m => m.active).map(m => ({ profileId: m.profileId, name: m.name })));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orgId, session]);
+
+  const channel: ChatChannel | null = channelId ? {
+    id: channelId,
+    name: "",           // header shows the project context instead
+    description: null,
+    isArchived: false,
+    kind: "channel",
+    scope: "project",
+    projectId,
+    visibility: "open",
+    createdAt: "",
+  } : null;
+
+  if (loading) return <div className="grid place-items-center py-12"><Spinner size={22} /></div>;
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col" style={{ height: "calc(100vh - 220px)", minHeight: 360 }}>
-      <h2 className="font-display text-lg font-bold text-fg-primary mb-3">Discussion</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {loading ? <div className="grid place-items-center h-full"><Spinner size={22} /></div>
-          : rows.length === 0 ? <div className="grid place-items-center h-full text-sm text-fg-tertiary"><div className="text-center"><Icon name="msgcircle" size={24} className="mx-auto text-fg-tertiary mb-2" />No messages yet. Start the conversation.</div></div>
-          : rows.map(m => {
-              const mine = m.senderId && m.senderId === myId;
-              return (
-                <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[78%] rounded-2xl px-3 py-2 ${mine ? "bg-accent text-white" : "bg-bg-secondary text-fg-primary"}`}>
-                    {!mine && <div className="text-[11px] font-semibold text-fg-secondary mb-0.5">{m.senderName}</div>}
-                    <div className="text-sm whitespace-pre-wrap break-words">{m.body}</div>
-                    <div className={`text-[10px] mt-0.5 ${mine ? "text-white/70" : "text-fg-tertiary"}`}>{fmtTs(m.createdAt)}</div>
-                  </div>
-                </div>
-              );
-            })}
-        <div ref={endRef} />
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <h2 className="font-display text-lg font-bold text-fg-primary flex items-center gap-2">
+          <Icon name="msgcircle" size={17} className="text-accent" />{t("projTab.messages")}
+        </h2>
+        <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent-tint text-accent font-semibold">
+          {t("chat.projectStreamSub")}
+        </span>
+        <Button size="sm" variant="ghost" className="ml-auto"
+          onClick={() => setReloadKey(k => k + 1)} title="Refresh">
+          <Icon name="refresh" size={14} />
+        </Button>
       </div>
-      {canSend && <div className="flex gap-2 pt-3 border-t border-border mt-2">
-        <Input className="flex-1" placeholder="Write a message..." value={text} onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} />
-        <Button onClick={() => void send()} disabled={busy || !text.trim()}>{busy ? <Spinner size={14} /> : <Icon name="send" size={16} />}</Button>
-      </div>}
+      {error && <Alert variant="danger">{error}</Alert>}
+      {channel
+        ? <ChatStream channel={channel} mentionCandidates={members} />
+        : null}
     </div>
   );
 }

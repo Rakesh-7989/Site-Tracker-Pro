@@ -1,3 +1,31 @@
+## Session — 2026-08-23: UNIFIED CHAT — Cliq-style /chat replaces Messages + Teams (migration 232, complete)
+
+**User story** (founder): "Rendu chat surfaces (project Messages tab + org Teams) remove chesi, okate Zoho-Cliq-laga app — project lo vuna members tho matladadam, veri project/org channels, DMs — kani **project admin ye decide chestadu evaru evaritho matladacho**, RBAC prakaram."
+
+**Design decisions** (user-confirmed):
+- Legacy `messages` table: leave as-is (code paths removed; data untouched)
+- Clients post in project main streams; excluded from managers-only + org channels
+- DMs in P1; surface renamed `/teams`→`/chat`, label "Chat"
+
+**Migration 232** `232_chat_unified.sql` (applied live, db:apply 221/0):
+- `chat_channels` + kind('channel'|'dm')/scope('org'|'project')/project_id/visibility('open'|'managers'|'private')/dm_key + shape constraint; name-unique now partial per scope (DMs empty-named, keyed by dm_key pair index)
+- `chat_channel_members` (DMs + private membership), RLS org-scoped
+- Access helpers (`chat_is_org_staff`, `chat_is_member`, `chat_is_manager`) + master `chat_channel_readable(cc)` — matrix: org-open=staff only (clients excluded); org-managers=manager set; private=explicit members (hidden even from admins); project-open=`can_read_project` (clients included); project-managers=`has_project_role`; dm=members
+- RPCs: `chat_open_dm(org, other)` — get-or-create by sorted pair key; **client boundary**: either side client ⇒ requires shared ACTIVE project (project membership = the admin-controlled permission); `chat_ensure_project_stream(project)` — lazy idempotent stream (slug name w/ suffix loop)
+- Mention trigger deep-links → `/chat?c=&m=`
+
+**Frontend**:
+- New shared **`ChatStream.tsx`** — messages+polling+threads+@mentions composer+deletes+deep-link highlight (?m= resolves top-level scroll/ring OR auto-opens parent thread drawer)
+- **TeamChatView** rewritten as /chat hub: rail sections PROJECTS (session.projectMemberships → ensure stream on click, dot hint before first open) / CHANNELS (org, staff-only by RLS; archived for managers) / DIRECT MESSAGES (partner names via members→profiles resolve; "+ New DM" picker modal)
+- **MessagesTab** replaced: embeds ChatStream on the ensured project stream (legacy chat gone)
+- Removals: MessagesView.tsx, messageQueries.ts (+test), /messages route & nav item; BottomNav Messages→Chat; nav "Teams"→"Chat"; router keeps `/teams` alias redirect preserving ?c=&m=
+- i18n: new `chat.*` namespace (17 keys × en/hi/te, tail-patched BOM/CRLF-safe); teams.title value → "Chat"
+- smoke markers swapped (−MessagesView/messageQueries, +TeamChatView/ChatStream); domainMap query-file updated
+
+**Verification**: RLS harness **TC-001…017 = 44/44 green** vs live DB (org-channel client exclusion, project-stream client posting, managers-only read/post gates at both scopes, private-channel isolation incl. admin-blindness, DM idempotency/outsider-blindness/client-boundary/cross-org rejection, stream ensure idempotency + outsider denial). Gates: tsc · eslint · vitest **2924** · smoke **461** · build · e2e-mock 11/11. Live-auth UX audit (real logins): orgadmin/pm/client all clean on the preview build incl. /chat modal pass.
+
+---
+
 ## Session — 2026-08-23: Teams P1.5 — message delete UI + deep-link message highlight (complete)
 
 **Follow-up on the Teams P1 thread**, closing two gaps left from the first build:
