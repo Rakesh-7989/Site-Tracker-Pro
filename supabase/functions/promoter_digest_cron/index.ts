@@ -30,7 +30,7 @@
 // Triggered hourly by Supabase pg_cron or an external scheduler.
 
 // deno-lint-ignore-file no-explicit-any
-import { renderDigest, type DigestInput } from "../_shared/digest_renderer.ts";
+import { renderDigest, renderDigestHtml, type DigestInput } from "../_shared/digest_renderer.ts";
 import { authenticateCron } from "../_shared/auth.ts";
 import { sendWhatsAppMessage } from "../_shared/whatsapp_client.ts";
 
@@ -50,6 +50,7 @@ interface DueSubscription {
   org_id: string;
   project_id: string | null;
   promoter_phone_e164: string;
+  promoter_email?: string | null;   // migration 233 — email-first recipient
   promoter_name: string | null;
   language: "te" | "hi" | "en";
   sent_for_date: string;
@@ -115,18 +116,28 @@ Deno.serve(async (req: Request) => {
 
       // ── 3. Render ──────────────────────────────────────────────────────
       const rendered = renderDigest(input);
+      const hydrated = input;
 
-      // ── 4. Send (or dry-run) ───────────────────────────────────────────
+      // ── 4. Send (or dry-run) — EMAIL-FIRST (WhatsApp-free product decision) ──
+      // DIGEST_CHANNEL: "email" (default) | "whatsapp" (dormant unless Meta
+      // creds are deliberately provided). dry_run wins when SITETRACK_DIGEST_LIVE≠true.
       let metaMessageId: string | null = null;
       let failureReason: string | null = null;
       if (dryRun) {
-        metaMessageId = `wamid.DRY_RUN_${Date.now()}_${sub.subscription_id.slice(0, 8)}`;
-      } else {
+        metaMessageId = `dry.DRY_RUN_${Date.now()}_${sub.subscription_id.slice(0, 8)}`;
+      } else if ((env.DIGEST_CHANNEL ?? "email") === "whatsapp") {
         const sendResult = await sendDigestViaWhatsApp(sub, rendered, env);
         if (sendResult.ok) {
           metaMessageId = sendResult.meta_message_id || null;
         } else {
           failureReason = sendResult.error || "unknown send failure";
+        }
+      } else {
+        const sendResult = await sendDigestViaEmail(sub, hydrated, env);
+        if (sendResult.ok) {
+          metaMessageId = sendResult.message_id || null;
+        } else {
+          failureReason = sendResult.error || "unknown email failure";
         }
       }
 
@@ -336,12 +347,89 @@ async function fetchOrgAtRiskProjects(
 }
 
 /**
- * Send the rendered digest via WhatsApp Cloud API using the shared
- * _shared/whatsapp_client. Requires WHATSAPP_PERMANENT_TOKEN +
- * WHATSAPP_PHONE_NUMBER_ID env vars; the digest text is sent as a plain
- * message (the approved-template payload from renderDigest is used when the
- * template name is approved — same call shape).
+ * EMAIL-FIRST delivery (WhatsApp-free product decision, migration 233).
+ *
+ * Recipient resolution order:
+ *   1. digest_subscriptions.promoter_email   (explicit)
+ *   2. the org's admin account email         (org_members role='admin')
+ *
+ * Sends a branded HTML email through Resend using RESEND_API_KEY +
+ * RESEND_FROM_EMAIL (falls back to the verified domain sender).
  */
+async function sendDigestViaEmail(
+  sub: DueSubscription,
+  input: DigestInput,
+  env: Record<string, string>,
+): Promise<{ ok: boolean; message_id?: string; error?: string }> {
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { ok: false, error: "RESEND_API_KEY missing — cannot send digest email" };
+  }
+
+  // ── Recipient ──
+  let to: string | null = sub.promoter_email?.trim() || null;
+  if (!to) {
+    to = await resolveOrgAdminEmail(sub.org_id, supabaseUrlFor(env), env.SUPABASE_SERVICE_ROLE_KEY ?? "");
+  }
+  if (!to) {
+    return { ok: false, error: "no recipient: promoter_email missing and org-admin email unresolvable" };
+  }
+
+  const from = env.RESEND_FROM_EMAIL || "SiteTrackPro <hello@sitetrackpro.in>";
+  const { subject, html } = renderDigestHtml(input);
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from, to, subject, html }),
+    });
+    const json = await res.json().catch(() => ({}) as Record<string, unknown>);
+    if (!res.ok) {
+      return { ok: false, error: `resend HTTP ${res.status}: ${JSON.stringify(json).slice(0, 200)}` };
+    }
+    return { ok: true, message_id: typeof json.id === "string" ? json.id : undefined };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+function supabaseUrlFor(env: Record<string, string>): string {
+  return env.SUPABASE_URL || "";
+}
+
+/** Org-admin account email via service-key REST (org_members → auth user). */
+async function resolveOrgAdminEmail(
+  orgId: string,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<string | null> {
+  if (!supabaseUrl || !serviceKey) return null;
+  const H = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+  try {
+    // 1. The org's admin membership (oldest = firm owner).
+    const memRes = await fetch(
+      `${supabaseUrl}/rest/v1/org_members?org_id=eq.${orgId}&role=eq.admin&removed_at=is.null&status=eq.active&select=profile_id&order=created_at.asc&limit=1`,
+      { headers: H },
+    );
+    if (!memRes.ok) return null;
+    const mems = await memRes.json() as Array<{ profile_id: string }>;
+    const pid = mems?.[0]?.profile_id;
+    if (!pid) return null;
+
+    // 2. profiles has no email column — read the auth user directly.
+    const uRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${pid}`, { headers: H });
+    if (!uRes.ok) return null;
+    const u = await uRes.json() as { email?: string };
+    return u.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function sendDigestViaWhatsApp(
   sub: DueSubscription,
   rendered: ReturnType<typeof renderDigest>,

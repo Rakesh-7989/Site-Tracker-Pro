@@ -253,3 +253,80 @@ export function safeRenderDigest(input: Partial<DigestInput> & { projectName: st
   } as DigestInput;
   return renderDigest(merged);
 }
+
+/**
+ * Email-first digest rendering (WhatsApp-free product decision).
+ * Builds a compact branded HTML email from the SAME DigestInput the
+ * WhatsApp text renderer consumes — sections mirror renderDigest:
+ *   cost burn · schedule variance · top risks · marquee photo.
+ *
+ * English-first labels (v1); te/hi fall back to en — i18n follow-up.
+ */
+export function renderDigestHtml(input: DigestInput): { subject: string; html: string } {
+  const esc = (s: string): string =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const budget = input.budgetInr != null ? `₹${(input.budgetInr / 10000000).toFixed(2)} Cr` : "—";
+  const spend = input.costToDateInr != null ? `₹${(input.costToDateInr / 10000000).toFixed(2)} Cr` : "—";
+  const burnPct = input.budgetInr && input.costToDateInr != null
+    ? Math.round((input.costToDateInr / input.budgetInr) * 100)
+    : null;
+
+  const planned = input.plannedProgressPct != null ? `${Math.round(input.plannedProgressPct)}%` : "—";
+  const actual = input.actualProgressPct != null ? `${Math.round(input.actualProgressPct)}%` : "—";
+
+  const riskRows = (input.openIssues ?? []).slice(0, 3).map(i => `
+    <tr>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;color:#1a1a1a;">${esc(i.title)}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;font-weight:600;text-transform:capitalize;color:${i.severity === "critical" || i.severity === "high" ? "#c0392b" : "#7f8c8d"};">${esc(i.severity)}</td>
+    </tr>`).join("");
+  const risksBlock = riskRows
+    ? `<h3 style="margin:18px 0 6px;font-size:14px;color:#555;">Open issues</h3>
+       <table width="100%" cellpadding="0" cellspacing="0">${riskRows}</table>`
+    : "";
+
+  const photo = input.marqueePhotoUrl
+    ? `<h3 style="margin:18px 0 6px;font-size:14px;color:#555;">Latest site photo</h3>
+       <img src="${esc(input.marqueePhotoUrl)}" alt="Site photo" style="max-width:100%;border-radius:8px;" />`
+    : "";
+
+  const subject = `Daily digest · ${input.projectName} · ${input.sentForDate}`;
+
+  // language intentionally unused in v1 (en labels; te/hi fallback documented)
+  void input.language;
+
+  const html = `<!doctype html>
+<html><body style="margin:0;background:#faf9f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:20px;">
+  <div style="background:#fff;border:1px solid #e8e4da;border-radius:12px;padding:22px;">
+    <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b8860b;font-weight:700;">SiteTrack Pro · Daily digest</div>
+    <h1 style="margin:6px 0 2px;font-size:20px;color:#1a1a1a;">${esc(input.projectName)}</h1>
+    <div style="font-size:12px;color:#999;">${esc(input.sentForDate)}${input.promoterName ? ` · for ${esc(input.promoterName)}` : ""}</div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+      <tr>
+        <td style="padding:10px;background:#faf9f5;border-radius:8px;width:33%;">
+          <div style="font-size:11px;color:#888;">Budget</div>
+          <div style="font-size:15px;font-weight:700;color:#1a1a1a;">${budget}</div></td>
+        <td style="width:12px;"></td>
+        <td style="padding:10px;background:#faf9f5;border-radius:8px;width:33%;">
+          <div style="font-size:11px;color:#888;">Spend to date</div>
+          <div style="font-size:15px;font-weight:700;color:#1a1a1a;">${spend}${burnPct != null ? `<span style="font-size:11px;color:#888;"> (${burnPct}%)</span>` : ""}</div></td>
+        <td style="width:12px;"></td>
+        <td style="padding:10px;background:#faf9f5;border-radius:8px;">
+          <div style="font-size:11px;color:#888;">Plan vs actual</div>
+          <div style="font-size:15px;font-weight:700;color:#1a1a1a;">${planned} → ${actual}</div></td>
+      </tr>
+    </table>
+    ${risksBlock}
+    ${photo}
+    <p style="margin-top:22px;font-size:11px;color:#aaa;">
+      You receive this because a daily digest is configured for this project.
+      Ask your org admin to pause or cancel it anytime.
+    </p>
+  </div>
+</div>
+</body></html>`;
+
+  return { subject, html };
+}
