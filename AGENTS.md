@@ -1,3 +1,24 @@
+## Session — 2026-08-24: VERSIONED CONCURRENCY — optimistic locking on important records (mig 238, complete)
+
+**Context**: ChatGPT deep-dive P0 (Domain): "Versioned concurrency for important records / never silently overwrite". Deep-dive found the only existing versioning was mig 179's `budget_version`/cost_forecasts; the three generic UI updaters (task status, issue resolve, milestone status) were blind last-write-wins.
+
+**Migration 238** `238_versioned_concurrency.sql` (applied live, db:apply 228/0):
+- `version int NOT NULL DEFAULT 1` + `updated_at timestamptz NOT NULL DEFAULT now()` on **milestones, tasks, issues, invoices, ra_bills, payments**.
+- Plain (non-definer) trigger fn `bump_record_version()` — search_path pinned per the 237 posture — forces `NEW.version = OLD.version + 1` on EVERY update: a client cannot forge monotonicity even by sending an explicit version value in the patch.
+- Additive/zero-break: PostgREST returns only requested columns; table GRANTs cover new columns; server-side RPC writers (release_ra_retention, retainer generation) bump transparently.
+
+**Conflict detection (query layer)**: new `src/lib/versionedUpdate.ts` — `versionedUpdateOutcome(res, expectedVersion?)`: guarded update matching 0 rows ⇒ `{ok:false, conflict:true, "record changed while you were away"}`; builder errors stay non-conflicts; unguarded calls keep legacy semantics. Wired with optional `{ expectedVersion }` into `setTaskStatus` / `setIssueResolved` / `setMilestoneStatus`; all three tabs pass the read-time version end-to-end (conflict surfaces via the standard error Alert after optimistic rollback). Lists select `version` (+ camelCase mapping, default 1).
+
+**Live proof**: new harness `scripts/test-versioned-concurrency.mjs` (`npm run test:rls:versions`, added to the CI RLS chain) — rolled-back-tx matrix **39/39 green**: structure (cols+triggers+fn posture ×6 tables), fresh insert v=1, matching guard applies→v2, stale guard matches 0 rows & record untouched, forged version overridden to monotonic, updated_at maintained (tx-clock semantics — wall-clock advance is per-request in prod), outsider blocked even WITH correct version (RLS layering), and the invoices/ra_bills split: **no direct authenticated UPDATE policy** (their writes flow through approval-guarded RPCs — correct posture discovered during the build), while owner-path updates still bump.
+
+**Harness lessons reinforced**: (1) `session_replication_role='replica'` kills ordinary triggers — reset to `'origin'` BEFORE behavior tests or the bump silently never fires; (2) `now()` is transaction-scoped — single-tx harnesses can't prove wall-clock advances.
+
+**Tests**: tests/lib/versionedUpdate.test.ts (6) + milestoneQueries.test.ts extended (+4: version mapping/default, guarded eq+select assertions, zero-row conflict, unguarded legacy path, error≠conflict).
+
+**Gates**: tsc clean · lint 0 err · vitest **231 files / 2952 tests** · smoke **462** · build clean · e2e-mock **11/11** · db:apply **228 passed / 0 failed** · test:rls:versions **39/39**.
+
+---
+
 ## Session — 2026-08-24: SECURITY DEFINER hardening (mig 237) + definer CI gate + Part-3 module audit (complete)
 
 **Context**: Continuing the external deep-dive's P0 list after the offline consolidation (`fabdec8`). Deep-dive verified "audit immutability" already shipped (mig 100 triggers on `audit_log_v2`/`activity_log` + grant-immutable `download_events`) — so the next open item was "Verify every SECURITY DEFINER function".

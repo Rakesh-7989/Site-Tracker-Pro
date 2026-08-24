@@ -1,5 +1,7 @@
 // SiteTrack Pro — task queries (v3 port, Batch 1). DB-wired to `tasks`.
 
+import { versionedUpdateOutcome, type VersionedUpdateOptions } from "@/lib/versionedUpdate";
+
 export type TaskStatus = "pending" | "in_progress" | "completed";
 export type TaskPriority = "high" | "medium" | "low";
 
@@ -10,6 +12,8 @@ export interface Task {
   dueDate: string | null;
   priority: TaskPriority;
   status: TaskStatus;
+  /** Trigger-forced optimistic-concurrency counter (migration 238). */
+  version: number;
 }
 
 export type TQResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -28,7 +32,7 @@ export async function listTasks(client: any, projectId: string): Promise<TQResul
   try {
     const { data, error } = await client
       .from("tasks")
-      .select("id, title, assignee_name, due_date, priority, status")
+      .select("id, title, assignee_name, due_date, priority, status, version")
       .eq("project_id", projectId)
       .order("created_at", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -39,6 +43,7 @@ export async function listTasks(client: any, projectId: string): Promise<TQResul
       dueDate: r.due_date == null ? null : String(r.due_date),
       priority: asPriority(r.priority),
       status: asStatus(r.status),
+      version: typeof r.version === "number" ? r.version : 1,
     }));
     return { ok: true, data: rows };
   } catch (e) {
@@ -67,11 +72,19 @@ export async function createTask(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function setTaskStatus(client: any, id: string, status: TaskStatus): Promise<TQResult<{ ok: true }>> {
+export async function setTaskStatus(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  id: string,
+  status: TaskStatus,
+  opts?: VersionedUpdateOptions,
+): Promise<TQResult<{ ok: true }>> {
   try {
-    const { error } = await client.from("tasks").update({ status }).eq("id", id);
-    if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: { ok: true } };
+    const q = client.from("tasks").update({ status }).eq("id", id);
+    const guarded = opts?.expectedVersion != null;
+    if (guarded) q.eq("version", opts.expectedVersion);
+    const res = await (guarded ? q.select("id") : q);
+    return versionedUpdateOutcome(res, guarded ? opts?.expectedVersion : undefined);
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }

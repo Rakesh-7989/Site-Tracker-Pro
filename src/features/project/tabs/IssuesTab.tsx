@@ -94,7 +94,7 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {canResolve && (
                       <Button size="sm" variant={i.status === "open" ? "secondary" : "ghost"} disabled={busy === `r-${i.id}`}
-                        onClick={() => session && void run(`r-${i.id}`, c => setIssueResolved(c, i.id, i.status === "open", session.user.id), {
+                        onClick={() => session && void run(`r-${i.id}`, c => setIssueResolved(c, i.id, i.status === "open", session.user.id, { expectedVersion: i.version }), {
                           apply: () => setRows(prev => prev.map(x => x.id === i.id ? { ...x, status: (i.status === "open" ? "resolved" : "open"), resolvedDate: i.status === "open" ? new Date().toISOString().slice(0, 10) : null } : x)),
                           rollback: () => setRows(prev => prev.map(x => x.id === i.id ? { ...x, status: i.status, resolvedDate: i.resolvedDate } : x)),
                         })}>

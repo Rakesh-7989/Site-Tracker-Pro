@@ -55,7 +55,7 @@ jobs:
       - name: RLS security tests
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: npm run test:rls && npm run test:rls:project && npm run test:rls:teams && npm run check:rls:coverage
+        run: npm run test:rls && npm run test:rls:project && npm run test:rls:teams && npm run test:rls:versions && npm run check:rls:coverage
       - run: npm run test:unit
 
   # The CI-runnable mocked role-access suite (real router + shell, mocked
