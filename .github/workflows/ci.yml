@@ -43,6 +43,13 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:columns
+      # SECURITY DEFINER search-path gate (audit P0): every non-extension
+      # definer function must pin search_path. SKIPs cleanly when the secret
+      # is missing, same contract as the column-drift gate above.
+      - name: Security-definer gate
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run check:definer -- --strict
       # RLS security proofs (SEC-02): run against the live DB inside
       # rolled-back transactions. Skip cleanly when the secret is missing.
       - name: RLS security tests

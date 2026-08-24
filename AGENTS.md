@@ -1,3 +1,19 @@
+## Session — 2026-08-24: SECURITY DEFINER hardening (mig 237) + definer CI gate + Part-3 module audit (complete)
+
+**Context**: Continuing the external deep-dive's P0 list after the offline consolidation (`fabdec8`). Deep-dive verified "audit immutability" already shipped (mig 100 triggers on `audit_log_v2`/`activity_log` + grant-immutable `download_events`) — so the next open item was "Verify every SECURITY DEFINER function".
+
+**Live-DB survey → real finding**: new `scripts/check-security-definer.mjs` (`npm run check:definer`, same SUPABASE_DB_URL/SKIP contract as check:columns) enumerated **157 SECURITY DEFINER functions live; 11 unpinned** — 6 of OURS (`accept_org_invitation`, `create_org_invitation`, `audit_flag_change`, `chat_channel_readable`, `record_cashfree_event`, `record_voice_cache_hit`) + 5 extension-owned (`graphql.get/increment_schema_version`, `st_estimatedextent` ×3 — allowlisted, platform replaces them on upgrade).
+
+**Migration 237** `237_definer_search_path_hardening.sql` (applied live, db:apply **227 passed / 0 failed**): `ALTER FUNCTION … SET search_path = public, extensions, pg_temp` on the 6 app functions — closes the search_path-hijack class (definer runs with owner privileges). Config-only change; RLS policies referencing `chat_channel_readable` unaffected. Post-fix strict gate: **152 pinned + 5 allowlisted = 157, 0 ours unpinned**.
+
+**CI**: `Security-definer gate` step added to ci.yml right after the column-drift gate (`npm run check:definer -- --strict`; SKIP-clean when the secret is absent). Script defaults to report-only exit 0; `--strict` fails on any non-allowlisted unpinned function.
+
+**Docs**: `docs/MODULE_AUDIT_2026-08.md` — the deep-dive's recommended "Part 3" module-by-module production-status table, VERIFIED against current code/live DB (supersedes its stale assumptions: audit immutability ✅ mig 100, cross-tenant ✅ 506/506, offline ✅ consolidated). Residual P0 queue split: agent-implementable (versioned concurrency for payments/tasks, financial-chain invariants, migration-from-empty replay) vs founder actions (restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡) vs blocked-on-decision (Capacitor foundation).
+
+**Gates**: db:apply 227/0 · check:definer --strict green · eslint clean · smoke 462. No src/ changes (scripts/CI/docs/migration only).
+
+---
+
 ## Session — 2026-08-24: OFFLINE CONSOLIDATION — one canonical engine (ChatGPT deep-dive P0 #1) (complete)
 
 **Context**: External audit (ChatGPT "App Build Deepdive", Part 2) flagged **two competing offline systems** as the repo's #1 unresolved technical issue. Deep-dive confirmed it and found it slightly WORSE than described:
