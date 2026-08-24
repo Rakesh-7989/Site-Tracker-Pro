@@ -1,5 +1,7 @@
 // SiteTrack Pro — v3 connection-status hook.
-// Mirrors the legacy App.jsx offline + backend connection pills.
+// `pendingOps` reflects the REAL offline queue depth (offlineQueue's
+// IndexedDB engine — the same items useOfflineSync drains), not a legacy
+// localStorage counter.
 
 import { useState, useEffect } from "react";
 
@@ -27,14 +29,22 @@ export function useConnectionStatus(): ConnectionStatus {
     (async () => {
       try {
         const offMod = await import("./offline");
+        const queueMod = await import("./offlineQueue");
         if (stopped) return;
         setOnline(offMod.isOnline());
-        setPendingOps(offMod.queueLength());
+        const depth = await queueMod.queueDepth();
+        if (!stopped) setPendingOps(depth.total);
 
         const unsub = offMod.onConnectivityChange(setOnline);
 
         const tick = setInterval(() => {
-          if (!stopped) setPendingOps(offMod.queueLength());
+          if (stopped) return;
+          void queueMod
+            .queueDepth()
+            .then(d => {
+              if (!stopped) setPendingOps(d.total);
+            })
+            .catch(() => {});
         }, 3000);
 
         const supMod = await import("./supabase");

@@ -1,3 +1,23 @@
+## Session — 2026-08-24: OFFLINE CONSOLIDATION — one canonical engine (ChatGPT deep-dive P0 #1) (complete)
+
+**Context**: External audit (ChatGPT "App Build Deepdive", Part 2) flagged **two competing offline systems** as the repo's #1 unresolved technical issue. Deep-dive confirmed it and found it slightly WORSE than described:
+- `src/lib/offline.ts` hosted THREE concerns: IndexedDB blob cache (`putBlob/getBlob/delBlob/listKeys` — **zero consumers**), a localStorage sync queue (`queueOpAdd/queueOpDrain/queueLength` — **zero producers**; only `queueLength()` was read), and connectivity (`isOnline/onConnectivityChange` — the live surface used by dprOfflineSync/DPRComposer/useConnectionStatus).
+- `src/lib/offlineQueue.ts` is the real engine (IndexedDB `sitetrack-offline-v1`, status machine pending→sending→sent/failed, 5-retry backoff 1s→256s, 7-day stale-failed GC, dpr/voice/photo kind whitelist, adapter pattern) — consumers: dprSubmit (enqueue), dprOfflineSync (drain+depth).
+- **Live bug fixed**: TopBar's connection pill (`useConnectionStatus.pendingOps`) polled the DEAD localStorage queue → always 0 even while real DPRs sat queued in IndexedDB.
+
+**Changes**:
+- `src/lib/offline.ts` → connectivity-only module (~25 lines; dead blob store + localStorage queue deleted, doc comment points at offlineQueue). Legacy keys `sitetrack_offline_v1` / `sitetrack_sync_queue_v1` had no other references anywhere (verified) — nothing to migrate since no producer ever wrote.
+- `useConnectionStatus.ts` → `pendingOps` now polls `queueDepth().total` from offlineQueue (same 3s cadence; rejects caught → degrades to 0 in non-IDB envs like jsdom).
+- `scripts/smoke.mjs` → marker `queueOpAdd` (dead) → `queueDepth` + `drainDprQueue`; scan list += `offlineQueue.ts` + `dprOfflineSync.ts` so deleting either file now fails smoke. **462 checks**.
+- **New tests** `tests/lib/offlineQueue.test.ts` (15): backoff table + exhaustion nulls; stale-failed window (7d, status-guarded); enqueue validation (key required, kind whitelist locked to dpr/voice/photo); drain: offline no-op, send-required guard, sent path clears last_error, fail→defer with backoff gate (no attempt before wait elapses), exhaustion to failed@5, recovery after failure, thrown-error capture, stale GC before drain; queueDepth by_kind/by_status buckets; clearAll count. Memory adapter only — no IndexedDB needed in Node.
+- **New tests** `tests/lib/useConnectionStatus.test.tsx` (2): pendingOps seeds from mocked queueDepth total; stays 0 when queue backend rejects.
+
+**Gates**: tsc clean · lint 0 errors · vitest **230 files / 2941 tests** (+2/+17) · smoke **462** · build clean · e2e-mock **11/11**. No DB change (no migration).
+
+**Next candidates from the same audit** (needs user go): versioned concurrency on important records (expected_version), restore drill + tenant-deletion test, Sentry DSN live + uptime monitor, Capacitor mobile foundation (P1), Part-3-style module-by-module production-status audit doc.
+
+---
+
 ## Session — 2026-08-23: Chat P2 — reactions, unread badges, @all (migration 235/236) (complete)
 
 **Scope** (Cliq-research round): emoji reactions, per-channel unread badges, managers-only @all broadcast. File attachments shipped at DB layer but UI deferred (see TC-021 note).
