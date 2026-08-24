@@ -16,7 +16,7 @@ export interface Milestone {
   version: number;
 }
 
-export type MQResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type MQResult<T> = { ok: true; data: T } | { ok: false; error: string; conflict?: boolean };
 
 const STATUSES: MilestoneStatus[] = ["pending", "in_progress", "completed"];
 const asStatus = (v: unknown): MilestoneStatus => (STATUSES.includes(v as MilestoneStatus) ? (v as MilestoneStatus) : "pending");

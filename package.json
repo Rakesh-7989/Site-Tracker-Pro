@@ -41,6 +41,7 @@
     "deploy:all": "node scripts/deploy-all.mjs",
     "db:apply": "node scripts/apply-migrations.mjs",
     "test:rls:versions": "node scripts/test-versioned-concurrency.mjs",
+    "test:rls:finance": "node scripts/test-financial-invariants.mjs",
     "db:reset": "node scripts/apply-migrations.mjs --reset",
     "lint": "eslint . --max-warnings=200",
     "lint:fix": "eslint . --fix",

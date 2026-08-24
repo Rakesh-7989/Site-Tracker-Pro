@@ -1,3 +1,23 @@
+## Session — 2026-08-25: FINANCIAL-CHAIN INVARIANTS — payment cap/target guards (mig 239, complete)
+
+**Context**: ChatGPT deep-dive P0 (Domain): "Financial invariants". Deep-dive found the **payments table EMPTY (0 live rows)** and no writers anywhere (UI/EF) — the flow hadn't launched, so guards could land before the first real rupee. Live probe also confirmed 0 violations on invoices/ra_bills/paid_amounts and NO existing guard against the polymorphic-target failure class.
+
+**Migration 239** `239_financial_invariants.sql` (applied live, db:apply 229/0):
+- **FI-1 target integrity**: `guard_payment_target()` BEFORE INSERT/UPDATE — payment target must EXIST and belong to the SAME project (`payments.target_id` is polymorphic with no FK; dangling/cross-project pointers would silently corrupt every org rollup).
+- **FI-2 outstanding cap**: Σpayments per target ≤ receivable cap computed from BASE columns at write time (concurrency-proof): invoice `round(amount×(1+gst%−tds%))` [GST/TDS are percentages — mirrors `invoiceTaxBreakup`, NOT the stale flat-add comment in crossInvoiceQueries], ra_bill `round(bill_amount×(1−retention%))`. Self-row excluded on UPDATE; DELETEs always free room.
+- **FI-3** `chk_ra_paid_range`: `ra_bills.paid_amount ∈ [0, bill_amount]`.
+- RLS untouched (who may write stays `can_write_project`); fires BEFORE the notify AFTER-trigger so notifications only fire for valid payments.
+
+**Live proof**: new harness `scripts/test-financial-invariants.mjs` (`npm run test:rls:finance`, added to the CI RLS chain) — rolled-back-tx matrix **18/18 green**: valid/exact-cap payments accepted, overpayment rejected w/ clear error, update-past-room rejected, both cross-project directions + dangling targets rejected, delete-frees-room cycle back to exact cap, RA retention-adjusted boundary (₹190000 ok / ₹190001-class rejected), CHECK violation on paid_amount, RLS layering (client-role member denied), percentage math locked at exactly ₹116000.
+
+**Harness lessons**: information_schema.triggers hides rows under authenticated → use pg_trigger; seed ALL cross-project fixtures as owner BEFORE switching to authenticated (RLS blocks mid-test seeding); org_members role CHECK admits only the 22-role set ('client', not 'member').
+
+**Type-level**: `TQResult/IQResult/MQResult` failure branch gained optional `conflict?: boolean` (completes yesterday's versionedUpdate wiring).
+
+**Gates**: tsc clean · lint 0 err · vitest **231 files / 2952 tests** · smoke **462** · build clean · e2e-mock **11/11** · db:apply **229 passed / 0 failed** · test:rls:finance **18/18**. MODULE_AUDIT_2026-08.md rows updated to 🟢.
+
+---
+
 ## Session — 2026-08-24: VERSIONED CONCURRENCY — optimistic locking on important records (mig 238, complete)
 
 **Context**: ChatGPT deep-dive P0 (Domain): "Versioned concurrency for important records / never silently overwrite". Deep-dive found the only existing versioning was mig 179's `budget_version`/cost_forecasts; the three generic UI updaters (task status, issue resolve, milestone status) were blind last-write-wins.

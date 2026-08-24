@@ -23,7 +23,9 @@ describe("versionedUpdateOutcome", () => {
       error: VERSION_CONFLICT_ERROR,
       conflict: true,
     });
-    expect(versionedUpdateOutcome({ data: null, error: null }, 2).conflict).toBe(true);
+    const r = versionedUpdateOutcome({ data: null, error: null }, 2);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.conflict).toBe(true);
   });
 
   it("keeps zero-rows NON-conflicting without a guard (legacy semantics)", () => {
@@ -34,11 +36,14 @@ describe("versionedUpdateOutcome", () => {
     const res = { data: null, error: { message: "permission denied" } };
     expect(versionedUpdateOutcome(res, 1)).toEqual({ ok: false, error: "permission denied", conflict: false });
     // undefined message falls back to stringifying the error
-    expect(versionedUpdateOutcome({ data: null, error: {} }, 1).error).toBe(String({}));
+    const r = versionedUpdateOutcome({ data: null, error: {} }, 1);
+    expect(!r.ok && r.error).toBe(String({}));
   });
 
   it("treats expectedVersion=0 as an active guard, not 'absent'", () => {
     // 0 is falsy but != null → guard semantics apply.
-    expect(versionedUpdateOutcome({ data: [], error: null }, 0).conflict).toBe(true);
+    const r = versionedUpdateOutcome({ data: [], error: null }, 0);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.conflict).toBe(true);
   });
 });

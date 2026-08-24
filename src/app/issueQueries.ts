@@ -17,7 +17,7 @@ export interface Issue {
   version: number;
 }
 
-export type IQResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type IQResult<T> = { ok: true; data: T } | { ok: false; error: string; conflict?: boolean };
 
 const SEV: IssueSeverity[] = ["high", "medium", "low"];
 const asSeverity = (v: unknown): IssueSeverity => (SEV.includes(v as IssueSeverity) ? (v as IssueSeverity) : "medium");

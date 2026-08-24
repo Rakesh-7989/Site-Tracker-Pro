@@ -16,7 +16,7 @@ export interface Task {
   version: number;
 }
 
-export type TQResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type TQResult<T> = { ok: true; data: T } | { ok: false; error: string; conflict?: boolean };
 
 const ST: TaskStatus[] = ["pending", "in_progress", "completed"];
 const PR: TaskPriority[] = ["high", "medium", "low"];

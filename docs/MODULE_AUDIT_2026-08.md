@@ -19,8 +19,8 @@
 | DPR / field capture | Composer→voice→geotag photo→submit→history→detail→retry + PDF export + delivery log + nightly risk-signal cron (mig 225/226) | Medium | 🟢 | Make mobile-first when Capacitor lands |
 | Pricing / plans | Frontend ₹5,999/₹11,999/₹19,999 == migration 94 == `plans` table; trial⇒Pro effective plan; subscriptions read grant fixed (mig 230) | Low | 🟢 | Keep DB canonical |
 | Payments ledger immutability | `payments` has UPDATE **and DELETE** policies (mig 160); no version columns | Data loss / dispute | 🟡 | Design optimistic-locking (`expected_version`) + restrict DELETE |
-| Versioned concurrency | Only `budget_version`/`version` on financial-depth tables (mig 179); core records unversioned | Silent overwrite | 🟡 | Extend to tasks/issues/attendance-corrections/invoices |
-| Financial chain invariants | BOQ→RA→Invoice→Payment divergence possible; 3-way-match tab exists client-side | High | 🟡 | Server-side invariant checks/RPC guards |
+| Versioned concurrency | **mig 238** (2026-08-24): `version`+`updated_at` + trigger-forced monotonic bump on milestones/tasks/issues/invoices/ra_bills/payments; guarded UI writes (task/issue/milestone tabs) surface typed conflicts; harness **39/39** (`test:rls:versions`, CI-wired) | Medium | 🟢 | Extend guard pattern to future native/mobile writers |
+| Financial chain invariants | **mig 239** (2026-08-24): payment guard — target existence/same-project + Σpayments ≤ receivable cap (invoice net = amount×(1+gst−tds), RA net = bill×(1−retention)); `chk_ra_paid_range`; harness **18/18** (`test:rls:finance`, CI-wired). Landed while payments table still empty (pre-launch). | Medium | 🟢 | BOQ-vs-RA caps remain a product decision (deliberately not enforced) |
 | Approval invariants | SoD approver≠requester enforced server-side (Phase 1.3 `[x]`) | Low | 🟢 | Maintain |
 | Audit immutability | Mig **100**: `audit_log_v2`+`activity_log` mutation-proof triggers (GUC escape hatch for DPDP erasure); `download_events` grant-immutable (159) | Low | 🟢 | Maintain |
 | SECURITY DEFINER hygiene | Live survey 2026-08-24: 157 definer fns; **6 unpinned ours → fixed mig 237** (`search_path = public, extensions, pg_temp`); extension-owned allowlisted; `check:definer --strict` CI gate added | High→Low | 🟢 | Gate enforces continuously |
@@ -41,12 +41,12 @@
 ## Residual P0 queue (verified 2026-08-24)
 
 **Agent-implementable (needs user go):**
-1. Versioned concurrency design + migration for payments/invoices/tasks/issues (optimistic locking, no silent overwrite on financial/approval records)
-2. Financial-chain invariant RPC/triggers (BOQ ≥ RA ≥ invoiced ≥ collected class checks)
+1. ~~Versioned concurrency~~ ✅ mig 238 (2026-08-24)
+2. ~~Financial-chain invariant RPC/triggers~~ ✅ mig 239 (2026-08-24) — payment cap/target guards; BOQ-vs-RA caps deliberately left as a product decision
 3. Migration-from-empty replay harness (scratch DB)
 
 **Founder actions (minutes each, agent cannot do):**
-4. Restore drill — restore latest backup to scratch project (closes the only 🔴 data item)
+4. Restore drill — restore latest Supabase backup to scratch project (closes the only 🔴 data item)
 5. Sentry DSN — free account → set `VITE_SENTRY_DSN` env
 6. UptimeRobot — free account → 2 monitors (frontend + Supabase REST)
 
