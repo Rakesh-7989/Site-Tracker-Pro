@@ -57,7 +57,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data, error } = await admin.auth.admin.generateLink({
       type: "signup",
       email,
-      options: { redirectTo: siteUrl },
+      options: { redirectTo: `${siteUrl}/login` },
     });
     if (error) throw error;
     const l = data?.properties?.action_link;

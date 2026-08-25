@@ -22,6 +22,12 @@ export default [
       // Capacitor native shell: generated + copied web bundle — never lint.
       "android/**",
       "ios/**",
+      // Greenfield v2 app (own toolchain; linted by its own config in CI).
+      "v2/android/**",
+      "v2/ios/**",
+      "v2/node_modules/**",
+      "v2/dist/**",
+      "public/v2/**",
       // Deno runtime edge functions — separate platform, own review gates.
       "supabase/functions/**",
     ],

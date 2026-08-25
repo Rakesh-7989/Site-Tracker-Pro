@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 
 import { useT } from "@/i18n/I18nProvider";
 import { usePlanCaps } from "@/auth/usePlanCaps";
+import { useAuth } from "@/auth/OrganizationContext";
 
 /** Whole days remaining until trialEndsAt (1 = today, 0 = none). Pure, testable. */
 export function trialDaysLeft(trialEndsAt: string | null, now: Date = new Date()): number {
@@ -22,7 +23,16 @@ export function trialDaysLeft(trialEndsAt: string | null, now: Date = new Date()
 export function TrialBanner(): JSX.Element | null {
   const t = useT();
   const { trialActive, trialEndsAt } = usePlanCaps();
-  if (!trialActive) return null;
+  // Owner-only countdown: the trial belongs to the org owner. Non-admin
+  // members cannot read subscriptions anyway (RLS), but gate explicitly so
+  // the pill can never leak to the whole team if that ever widens.
+  const { session } = useAuth();
+  const membership =
+    session && session.activeOrgId
+      ? session.orgs.find((m) => m.orgId === session.activeOrgId)
+      : undefined;
+  const isOwner = !!membership?.isAdmin || session?.user.identityRole === "superadmin";
+  if (!trialActive || !isOwner) return null;
   const days = trialDaysLeft(trialEndsAt);
   return (
     <Link

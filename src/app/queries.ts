@@ -122,7 +122,12 @@ export async function listProjectsForOrg(
  
 export async function createProject(
   client: any,
-  input: { orgId: string; name: string; type: ProjectType; location?: string; industrySubtype?: ConstructionIndustry | null },
+  input: {
+    orgId: string; name: string; type: ProjectType; location?: string;
+    industrySubtype?: ConstructionIndustry | string | null;
+    clientName?: string; clientEmail?: string; budget?: number | null;
+    startDate?: string | null; expectedEndDate?: string | null; description?: string;
+  },
 ): Promise<QueryResult<{ id: string }>> {
   try {
     const { data, error } = await client
@@ -133,6 +138,12 @@ export async function createProject(
         type: input.type,
         ...(input.location ? { location: input.location } : {}),
         ...(input.industrySubtype ? { industry_subtype: input.industrySubtype } : {}),
+        ...(input.clientName ? { client_name: input.clientName } : {}),
+        ...(input.clientEmail ? { client_email: input.clientEmail } : {}),
+        ...(input.budget != null ? { budget: Math.max(0, Math.round(input.budget)) } : {}),
+        ...(input.startDate ? { start_date: input.startDate } : {}),
+        ...(input.expectedEndDate ? { expected_end_date: input.expectedEndDate } : {}),
+        ...(input.description ? { description: input.description } : {}),
       })
       .select("id")
       .single();

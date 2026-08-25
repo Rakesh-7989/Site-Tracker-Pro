@@ -22,7 +22,7 @@ describe("resend_confirmation — email-confirm dispatch", () => {
 
   it("passes email + canonical redirectTo to GoTrue", () => {
     expect(src).toMatch(/email,/);
-    expect(src).toMatch(/options: \{ redirectTo: siteUrl \}/);
+    expect(src).toMatch(/options: \{ redirectTo: `\$\{siteUrl\}\/login` \}/);
     expect(src).toMatch(/PUBLIC_SITE_URL/);
     expect(src).toContain("https://sitetrackpro.in");
   });

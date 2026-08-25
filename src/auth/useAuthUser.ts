@@ -219,7 +219,15 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
         // re-hydrate silently in the background.
         if (!cancelled) {
           if (event === "SIGNED_OUT") { setSession(null); setStatus("signed-out"); return; }
-          if (event !== "SIGNED_IN") void hydrate(true);
+          if (event !== "SIGNED_IN") { void hydrate(true); return; }
+          // Safety net for email-link sign-ins: the URL-fragment session is
+          // consumed by auth-js during boot; if hydration already finished as
+          // signed-out/error before that event, re-hydrate once so link-based
+          // confirmations never strand the user signed-out.
+          setStatus((prev) => {
+            if (prev === "signed-out" || prev === "error") void hydrate(true);
+            return prev;
+          });
         }
       });
       subscription = res?.data?.subscription ?? null;

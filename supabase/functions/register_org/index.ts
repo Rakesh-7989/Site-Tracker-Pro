@@ -284,7 +284,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: linkData, error: confirmErr } = await admin.auth.admin.generateLink({
       type: "signup",
       email,
-      options: { redirectTo: siteUrl },
+      options: { redirectTo: `${siteUrl}/login` },
     });
     confirmDispatched = !confirmErr;
     if (!confirmErr) {
