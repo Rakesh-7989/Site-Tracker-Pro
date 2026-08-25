@@ -14,16 +14,21 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // @ts-ignore — Deno global.
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
 
-const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrackpro.in,http://localhost:5173")
+const ALLOWED = (Deno.env.get("CORS_ALLOWED_ORIGINS") ?? "https://sitetrackpro.in,https://www.sitetrackpro.in,http://localhost:5173")
   .split(",").map(s => s.trim()).filter(Boolean);
-const origin = ALLOWED[0] ?? "*";
-const CORS: Record<string, string> = {
-  "Access-Control-Allow-Origin": origin,
-  "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+// Echo the allow-listed request Origin (static ACAO breaks non-first origins).
+let REQ: Request | null = null;
+const CORS = (): Record<string, string> => {
+  const origin = REQ?.headers.get("origin") ?? "";
+  const match = ALLOWED.find(a => a === origin) ?? ALLOWED[0] ?? "*";
+  return {
+    "Access-Control-Allow-Origin": match,
+    "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
 };
 const json = (data: unknown, status: number): Response =>
-  new Response(JSON.stringify(data), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+  new Response(JSON.stringify(data), { status, headers: { ...CORS(), "Content-Type": "application/json" } });
 
 const PLANS = ["basic", "pro", "business", "custom"];
 const esc = (s: string): string => s.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] || c));
@@ -119,7 +124,8 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  REQ = req;
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS() });
   if (req.method !== "POST") return json({ ok: false, error: "method-not-allowed" }, 405);
 
   let body: Record<string, unknown>;
