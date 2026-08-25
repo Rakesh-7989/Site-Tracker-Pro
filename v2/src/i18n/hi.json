@@ -1,0 +1,112 @@
+{
+  "common": {
+    "loading": "लोड हो रहा है…",
+    "offline": "ऑफ़लाइन",
+    "online": "ऑनलाइन",
+    "cancel": "रद्द करें",
+    "copy": "कॉपी",
+    "copied": "कॉपी हो गया ✓"
+  },
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "projects": "प्रोजेक्ट",
+    "todaysDpr": "आज की रिपोर्ट",
+    "members": "सदस्य",
+    "staff": "प्लेटफ़ॉर्म"
+  },
+  "detail": {
+    "invoices": "इनवॉइस",
+    "raBills": "RA बिल",
+    "partners": "पार्टनर",
+    "clientAccess": "क्लाइंट एक्सेस",
+    "overview": "अवलोकन",
+    "dailyReports": "दैनिक रिपोर्ट",
+    "newInvoice": "नई इनवॉइस",
+    "amount": "राशि (₹)",
+    "gstPct": "GST %",
+    "tdsPct": "TDS %",
+    "createInvoice": "इनवॉइस बनाएँ",
+    "noInvoices": "अभी कोई इनवॉइस नहीं",
+    "noInvoicesHint": "ऊपर पहली इनवॉइस बनाएँ।",
+    "due": "बाकी",
+    "inviteFirm": "पार्टनर फर्म को आमंत्रित करें",
+    "accessScope": "एक्सेस स्कोप",
+    "genCode": "इनवाइट कोड बनाएँ",
+    "awaitingRedemption": "रिडेम्पशन प्रतीक्षित",
+    "revoke": "निरस्त",
+    "clientLinkTitle": "क्लाइंट एक्सेस लिंक",
+    "label": "लेबल",
+    "genLink": "लिंक बनाएँ"
+  },
+  "shell": {
+    "signOut": "साइन आउट",
+    "language": "भाषा",
+    "updateReady": "नया संस्करण तैयार — रीलोड करें"
+  },
+  "org": {
+    "membersTitle": "सदस्य",
+    "inviteTitle": "सदस्य को आमंत्रित करें",
+    "emailLabel": "ईमेल",
+    "roleLabel": "वर्कस्पेस भूमिका",
+    "sendInvite": "आमंत्रण भेजें",
+    "teamLabel": "टीम",
+    "you": "(आप)",
+    "adminChip": "एडमिन",
+    "activeChip": "सक्रिय",
+    "pendingChip": "प्रतीक्षारत"
+  },
+  "staff": {
+    "title": "प्लेटफ़ॉर्म स्टाफ",
+    "orgsStat": "संगठन",
+    "usersStat": "उपयोगकर्ता",
+    "pendingStat": "लंबित साइनअप",
+    "planMix": "प्लान मिक्स",
+    "orgsCard": "संगठन",
+    "queueCard": "साइनअप कतार (लंबित)",
+    "queueEmpty": "कतार खाली है।",
+    "approve": "स्वीकृत",
+    "reject": "अस्वीकृत"
+  },
+  "dash": {
+    "quickActions": "त्वरित क्रियाएँ",
+    "capabilities": "क्षमताएँ"
+  },
+  "auth": {
+    "appTitle": "SiteTrack Pro",
+    "subtitle": "अपने वर्कस्पेस में साइन इन करें",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "signIn": "साइन इन"
+  },
+  "dpr": {
+    "title": "आज की रिपोर्ट",
+    "project": "प्रोजेक्ट",
+    "noProject": "— कोई प्रोजेक्ट नहीं —",
+    "phone": "प्रमोटर व्हाट्सएप नंबर",
+    "language": "भाषा",
+    "notes": "प्रगति नोट्स",
+    "notesPh": "आज साइट पर क्या हुआ?",
+    "recordVoice": "वॉइस नोट रिकॉर्ड करें",
+    "stopRecording": "रिकॉर्डिंग रोकें",
+    "photoAttached": "फ़ोटो जुड़ी ✓",
+    "voiceAttached": "वॉइस जुड़ी ✓",
+    "addPhoto": "साइट फ़ोटो जोड़ें",
+    "geotagged": "जियोटैग्ड",
+    "sendReport": "रिपोर्ट भेजें",
+    "queuedOffline": "ऑफ़लाइन हैं — रिपोर्ट कतार में है। ऑनलाइन आने पर अपने-आप भेज दी जाएगी।",
+    "mediaQueued": "मीडिया अपलोड विफल ({reason}) — पुनः प्रयास के लिए कतार में।",
+    "sendFailedQueued": "भेजना विफल ({reason}) — पुनः प्रयास के लिए कतार में।",
+    "reportSent": "रिपोर्ट भेजी गई।",
+    "queueBadge": "{count} कतार में"
+  },
+  "projects": {
+    "noProjects": "अभी कोई प्रोजेक्ट नहीं",
+    "assignedHint": "आपको सौंपे गए प्रोजेक्ट यहाँ दिखेंगे।",
+    "sharedTitle": "मेरी फर्म के साथ साझा",
+    "inviteCodeLabel": "इनवाइट कोड है?",
+    "redeem": "रिडीम",
+    "chooseOrg": "संगठन चुनें…",
+    "checking": "साझा प्रोजेक्ट जाँचे जा रहे हैं…",
+    "noneShared": "अभी कोई प्रोजेक्ट साझा नहीं किया गया।"
+  }
+}

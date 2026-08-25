@@ -648,7 +648,7 @@ add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint")
   "sitetrack (1).jsx",
 ].forEach(path => add(`Cleaned up: ${path}`, !existsSync(join(root, path))));
 
-add("Build script exists", pkg.scripts?.build === "vite build");
+add("Build script exists", pkg.scripts?.build === "node scripts/build-v2.mjs && vite build");
 add("Smoke script exists", pkg.scripts?.smoke === "node scripts/smoke.mjs");
 add("test:ef script exists", pkg.scripts?.["test:ef"] === "node scripts/test-ef-harness.mjs");
 add("test:rls script exists", pkg.scripts?.["test:rls"] === "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs && node scripts/test-rbac-v2-shadow.mjs");

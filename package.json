@@ -25,7 +25,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/build-v2.mjs && vite build",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
     "setup": "node scripts/setup.mjs",

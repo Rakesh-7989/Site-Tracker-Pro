@@ -63,6 +63,14 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run test:rls && npm run test:rls:project && npm run test:rls:teams && npm run test:rls:versions && npm run test:rls:finance && npm run test:rls:partners && npm run check:rls:coverage
       - run: npm run test:unit
+      - name: V2 app gates (typecheck + lint + test + build)
+        run: |
+          cd v2
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
 
   # The CI-runnable mocked role-access suite (real router + shell, mocked
   # Supabase session/REST). Runs in parallel with the unit gate.

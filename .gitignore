@@ -40,3 +40,7 @@ android/build/
 android/local.properties
 android/*.iml
 android/.idea/
+
+v2/node_modules/
+v2/dist/
+public/v2/
