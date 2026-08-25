@@ -6,7 +6,7 @@ import { Card, Button, Spinner, Alert, StatCard } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listExpenses, createExpense, setExpenseStatus, deleteExpense, fmtRupees, type Expense, type ExpenseStatus } from "@/app/financeQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const CAT = [{ value: "material", label: "Material" }, { value: "labour", label: "Labour" }, { value: "equipment", label: "Equipment" }, { value: "admin", label: "Admin" }, { value: "permit", label: "Permit" }, { value: "other", label: "Other" }];

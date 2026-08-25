@@ -1,4 +1,4 @@
-// SiteTrack Pro � Site Wall Kiosk (/kiosk/site).
+// SiteTrack Pro - Site Wall Kiosk (/kiosk/site).
 // Wall-mounted situational awareness display. Shows latest project
 // updates, open safety incidents, and active milestones side-by-side.
 

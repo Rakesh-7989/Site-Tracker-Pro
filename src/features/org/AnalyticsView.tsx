@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { fmtRupees } from "@/app/financeQueries";
 import { getOrgAnalytics, toBars, type OrgAnalytics } from "@/app/analyticsQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 const STATUS_ORDER = ["active", "completed", "on_hold", "cancelled"];
 const PROG_ORDER = ["pending", "in_progress", "completed"];

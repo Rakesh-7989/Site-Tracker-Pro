@@ -10,7 +10,7 @@ import { fmtRupees } from "@/app/financeQueries";
 import { listBoq } from "@/app/siteAdminQueries";
 import { listEstimates, createEstimate, setEstimateStatus, deleteEstimate, estimateBuildUp, estimatePayload, nextEstimateVersion, type Estimate, type EstimateStatus, type EstimateBuildUp } from "@/app/designQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 

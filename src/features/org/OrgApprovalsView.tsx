@@ -8,7 +8,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/compo
 import { Input, Select } from "@/components/ui/forms";
 import { listChains, upsertChain, deleteChain, APPROVAL_RESOURCES, APPROVAL_RUNG_ROLES, type ApprovalChain, type ApprovalResource, type ApprovalRung } from "@/app/orgConfigQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const RES_LABEL: Record<ApprovalResource, string> = { expense: "Expense", po: "Purchase order", ra_bill: "RA bill", change_order: "Change order", invoice: "Invoice", drawing_release: "Drawing release" };

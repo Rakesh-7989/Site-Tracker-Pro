@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { drain, queueDepth, type QueueItem } from "./offlineQueue";
 import { isOnline, onConnectivityChange } from "./offline";
 import { invokeSendDpr } from "@/app/dprSubmit";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "./supabase";
 
 /**
@@ -50,8 +50,6 @@ export function useOfflineSync(intervalMs = 30_000): OfflineSyncState {
 
   useEffect(() => {
     let disposed = false;
-    let unsub: (() => void) | undefined;
-    let poll: ReturnType<typeof setInterval> | undefined;
 
     const run = async (opts: { drainQueue: boolean }) => {
       if (disposed) return;
@@ -74,10 +72,10 @@ export function useOfflineSync(intervalMs = 30_000): OfflineSyncState {
     };
 
     void run({ drainQueue: true });
-    unsub = onConnectivityChange(online => {
+    const unsub = onConnectivityChange(online => {
       if (online) void run({ drainQueue: true });
     });
-    poll = setInterval(() => void run({ drainQueue: false }), intervalMs);
+    const poll = setInterval(() => void run({ drainQueue: false }), intervalMs);
 
     return () => {
       disposed = true;

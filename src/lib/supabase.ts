@@ -84,7 +84,7 @@ interface SignUpResult extends AuthResult {
   needsConfirmation?: boolean;
 }
 
-interface VerifyOtpResult extends AuthResult {}
+type VerifyOtpResult = AuthResult;
 
 interface RedeemStaffInviteResult extends AuthResult {
   email?: string;

@@ -6,7 +6,7 @@ import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listSafety, createSafety, setSafetyStatus, deleteSafety, type SafetyIncident, type SafetySeverity, type SafetyStatus } from "@/app/siteOpsQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const SEV = [{ value: "near_miss", label: "Near miss" }, { value: "first_aid", label: "First aid" }, { value: "minor", label: "Minor" }, { value: "major", label: "Major" }, { value: "fatal", label: "Fatal" }];

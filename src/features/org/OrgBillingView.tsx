@@ -13,7 +13,7 @@ import { fetchOrgQuota, usageRollup, type QuotaRollup } from "@/app/quotaQueries
 import { QuotaMeter } from "@/auth/QuotaGate";
 import { useT } from "@/i18n/I18nProvider";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 const fmtDate = (iso: string | null): string => { if (!iso) return "—"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
 const fmtMoney = (n: number, cur: string): string => `${cur === "INR" ? "₹" : ""}${(n / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -61,7 +61,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
     setActionResult(null); setActionBusy(true);
     const client = await getClient();
     if (!client) { setActionBusy(false); return setActionResult({ ok: false, message: t("billing.backendError") }); }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const reason = kind === "cancel" ? "Cancelled by org admin" : "Reactivated by org admin";
     const res = await (client.rpc as any)("admin_set_subscription_status", { p_org: orgId, p_status: kind, p_reason: reason });
     const ok = !res.error;

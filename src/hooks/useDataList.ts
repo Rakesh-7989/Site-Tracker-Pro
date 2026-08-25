@@ -51,7 +51,7 @@ export function useDataList<T>(
     if (enabled) {
       void reload();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [reload, enabled]);
 
   const hasNext = rows.length >= pageSize;

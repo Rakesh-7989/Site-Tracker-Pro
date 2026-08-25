@@ -101,7 +101,7 @@ export async function listShiftRoster(client: any, projectId: string): Promise<R
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createShiftRoster(client: any, input: { projectId: string; workerName: string; shiftDate: string; shiftName?: ShiftName; startTime?: string; endTime?: string; notes?: string }): Promise<Result<{ id: string }>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const chain = client.from("shift_roster").insert({
     project_id: input.projectId, worker_name: input.workerName, shift_date: input.shiftDate, shift_name: input.shiftName || "day",
     start_time: input.startTime || null, end_time: input.endTime || null, notes: input.notes || null,

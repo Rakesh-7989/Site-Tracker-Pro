@@ -7,7 +7,7 @@ import { useOrgSwitcher } from "@/auth";
 import { Card, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/calendarQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 const todayISO = (): string => new Date().toISOString().slice(0, 10);
 const fmtDay = (iso: string): string => { const d = new Date(iso + "T00:00:00"); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); };

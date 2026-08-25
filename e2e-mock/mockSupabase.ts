@@ -278,7 +278,7 @@ export async function mockSupabase(page: Page, s: MockSession): Promise<void> {
         return;
       case "projects": {
         const allProjects = (s.projects ?? []).map(p => p.projects);
-        const projectId = query.get("id")?.replace("eq.", "");
+    const _projectId = query.get("id")?.replace("eq.", "");
         if (projectId) {
           const match = allProjects.find(p => p.id === projectId);
           await jsonReply(route, match ? [match] : []);

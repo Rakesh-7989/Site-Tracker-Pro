@@ -8,7 +8,7 @@ import { listAttendance, createAttendance, setAttendanceStatus, deleteAttendance
 import { listShiftRoster, createShiftRoster, deleteShiftRoster, SHIFT_LABEL, type ShiftRoster, type ShiftName } from "@/app/shiftQueries";
 import { loadProjectHierarchy, locationOptions, locationLabel, type SpatialHierarchy } from "@/app/spaceQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "present", label: "Present" }, { value: "absent", label: "Absent" }, { value: "half_day", label: "Half day" }, { value: "leave", label: "Leave" }, { value: "on_site_late", label: "Late" }, { value: "off_site", label: "Off-site" }];

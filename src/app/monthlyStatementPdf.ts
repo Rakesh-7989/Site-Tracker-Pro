@@ -165,7 +165,7 @@ export function downloadMonthlyStatementPdf(params: {
   let y = 48;
   y = drawSummary(doc, totals, y);
   y += 4;
-  y = drawTable(doc, rows, y);
+  drawTable(doc, rows, y);
 
   // Footer note
   doc.setFont(MONO, NORMAL); doc.setFontSize(7); doc.setTextColor(...GRAY);

@@ -139,7 +139,7 @@ export function DPRComposer(): JSX.Element {
     try {
       const mod = await import("../../lib/voiceTranscribe");
       const client = await getClient();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const res = client
         ? await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "auto", transport: "ef", efClient: client })
         : await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "mock", transport: "mock" });

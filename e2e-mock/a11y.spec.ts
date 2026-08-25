@@ -29,7 +29,7 @@ type Violation = {
   samples?: Array<{ target: string; msg: string | null }>;
 };
 
-async function scan(page: import("@playwright/test").Page, label: string): Promise<Violation[]> {
+async function scan(page: import("@playwright/test").Page, _label: string): Promise<Violation[]> {
   await page.addScriptTag({ path: AXE_PATH });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = await page.evaluate(() => (window as any).axe.run(document, {
@@ -51,7 +51,7 @@ async function scan(page: import("@playwright/test").Page, label: string): Promi
 }
 
 const findings: Array<{ page: string; violations: Violation[] }> = [];
-let axeSetup: ((page: import("@playwright/test").Page) => Promise<void>) | null = null;
+const axeSetup: ((page: import("@playwright/test").Page) => Promise<void>) | null = null;
 
 test.describe("Accessibility audit · mocked session + axe-core", () => {
 

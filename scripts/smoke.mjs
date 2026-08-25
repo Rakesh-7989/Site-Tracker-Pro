@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -699,6 +699,40 @@ add("Vite manual chunks configured", vite.includes("manualChunks") && vite.inclu
       && existsSync(join(root, "docs/POSITIONING.md"))
       && existsSync(join(root, "docs/SITETRACK_V3_PLAN.md")),
   );
+}
+
+// ── Migration numbering + src hygiene guards (2026-08-25) ──────────────────
+// Migration 237 was accidentally used by two different files; the ledger keys
+// on filename so both applied, but the collision makes ordering ambiguous.
+// Lock uniqueness permanently. Also lock the JS→TS migration: no .js/.jsx
+// source (or stray .txt artifacts) under src/.
+{
+  const migFiles = readdirSync(join(root, "scripts/supabase"))
+    .filter(f => /^\d+_.*\.sql$/.test(f));
+  // Legacy collisions (100/112/155/201/237) shipped before this guard: both
+  // files of each pair are already applied and ledger-immutable (the runner
+  // keys on filename, tie-break lexicographic). They are grandfathered; any
+  // NEW duplicate number fails.
+  const GRANDFATHERED = new Set(["100", "112", "155", "201", "237"]);
+  const seenNums = new Map();
+  const dupes = [];
+  for (const f of migFiles) {
+    const num = f.split("_", 1)[0];
+    if (seenNums.has(num)) {
+      if (!GRANDFATHERED.has(num)) dupes.push(`${num}: ${seenNums.get(num)} + ${f}`);
+    } else seenNums.set(num, f);
+  }
+  add("Migration numbers unique", dupes.length === 0, dupes.join("; "));
+
+  const straySrc = [];
+  const walkSrc = d => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.isDirectory()) walkSrc(join(d, e.name));
+      else if (/\.(js|jsx|txt)$/.test(e.name)) straySrc.push(join(d, e.name).replace(/\\/g, "/"));
+    }
+  };
+  walkSrc(join(root, "src"));
+  add("No .js/.jsx/.txt source files under src/", straySrc.length === 0, straySrc.slice(0, 5).join(", "));
 }
 
 const failures = checks.filter(c => !c.pass);

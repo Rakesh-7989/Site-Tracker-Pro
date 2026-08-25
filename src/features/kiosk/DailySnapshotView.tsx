@@ -1,4 +1,4 @@
-// SiteTrack Pro � Daily Snapshot (/kiosk/snapshot).
+// SiteTrack Pro - Daily Snapshot (/kiosk/snapshot).
 // Single-page project status summary with export and action buttons.
 
 import { useCallback, useEffect, useState } from "react";
@@ -100,7 +100,7 @@ function DailySnapshotInner(): JSX.Element {
         </div>
       </div>
       <div className="bg-secondary rounded-2xl p-4 border-l-4 border-default text-sm text-fg-primary">
-        <strong>Snapshot summary</strong> for <strong>{projects.find(p => p.id === selProject)?.name ?? "�"}</strong> � fetched in real time from the project's labour register, updates, issues, and RA bills. CSV export downloads instantly.
+        <strong>Snapshot summary</strong> for <strong>{projects.find(p => p.id === selProject)?.name ?? "—"}</strong> — fetched in real time from the project's labour register, updates, issues, and RA bills. CSV export downloads instantly.
       </div>
     </div>
   );

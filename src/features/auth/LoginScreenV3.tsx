@@ -281,7 +281,7 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
               <input
                 id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder={t("auth.emailPlaceholder")} autoComplete="email"
-                onKeyDown={e => { if (e.key === "Enter") method === "password" ? onPasswordLogin() : onMagicLink(); }}
+                onKeyDown={e => { if (e.key === "Enter") { if (method === "password") onPasswordLogin(); else onMagicLink(); } }}
                 className="w-full pl-10 pr-3.5 py-3 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
               />
             </div>

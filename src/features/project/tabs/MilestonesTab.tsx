@@ -16,7 +16,7 @@ import {
   type Milestone, type MilestoneStatus,
 } from "@/app/milestoneQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 const STATUS_TONE: Record<MilestoneStatus, "neutral" | "info" | "success"> = {
   pending: "neutral", in_progress: "info", completed: "success",

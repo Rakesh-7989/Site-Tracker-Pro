@@ -77,7 +77,7 @@ export async function listProjectBrandings(client: any, orgId: string): Promise<
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function upsertOrgBranding(
   client: any,
   orgId: string,
@@ -101,7 +101,7 @@ export async function upsertOrgBranding(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function upsertProjectBranding(
   client: any,
   orgId: string,

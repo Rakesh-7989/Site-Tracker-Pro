@@ -206,7 +206,7 @@ export function buildAuthSession(
  * Fetch capability overrides (migration 69) for a given identity role,
  * filtered to global + the given org. Best-effort: returns [] on failure.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function fetchCapabilityOverrides(
   client: any,
   identityRole: IdentityRole,
@@ -233,7 +233,7 @@ export async function fetchCapabilityOverrides(
  * Fetch custom-role grants (migration 70) for the given user + org.
  * Best-effort: returns [] on failure / no assignments.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function fetchCustomRoleOverrides(
   client: any,
   authUserId: string,
@@ -280,7 +280,7 @@ export async function fetchCustomRoleOverrides(
  * org-level matrix default applies — documented residual in
  * docs/SECURITY_AUDIT_REGISTER.md).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function fetchRbac2Context(
   client: any,
   authUserId: string,
@@ -341,7 +341,7 @@ export async function fetchRbac2Context(
  * NOTE: We use `any` for the client type to avoid coupling to the full
  * Supabase SDK typings. Real callers pass an actual SupabaseClient.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function fetchAuthSession(
   client: any,
   input: FetchInput,

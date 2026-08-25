@@ -19,7 +19,7 @@ import {
   listOrgRoles, createOrgRole, setOrgRoleCapabilities, updateOrgRole, deleteOrgRole, slugifyRoleKey,
 } from "@/app/customRoleQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 interface Draft {
   id: string | null;       // null = creating
@@ -65,7 +65,8 @@ export function CustomRolesPanel({ orgId, createdBy, hidePlatformCaps = false }:
   const toggleCap = (cap: Capability) => setDraft(d => {
     if (!d) return d;
     const caps = new Set(d.caps);
-    caps.has(cap) ? caps.delete(cap) : caps.add(cap);
+    if (caps.has(cap)) caps.delete(cap);
+    else caps.add(cap);
     return { ...d, caps };
   });
 

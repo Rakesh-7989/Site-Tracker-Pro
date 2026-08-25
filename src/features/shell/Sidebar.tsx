@@ -29,7 +29,7 @@ const NAV_KEY: Record<string, string> = {
   "/admin/upgrades": "nav.upgradeRequests", "/settings/security": "nav.security",
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 export function Sidebar({ mobileOpen, onClose, sidebarRef }: { mobileOpen: boolean; onClose: () => void; sidebarRef?: React.RefObject<HTMLElement | null> }): JSX.Element {
   const { session } = useAuth();

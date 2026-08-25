@@ -14,7 +14,7 @@ const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
 const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: String(e.message ?? e) });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function mapOrgLines(raw: unknown): { id: string; description: string; qty: number; unitPrice: number; amount: number }[] {
   if (!Array.isArray(raw)) return [];
   return raw.map(l => {

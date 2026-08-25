@@ -102,6 +102,7 @@ export function ChatStream({ channel, mentionCandidates, highlightMessageId }: C
   // ── Mentions autocomplete ────────────────────────────────────────────────
   const onComposerChange = (v: string) => {
     setText(v);
+    // eslint-disable-next-line no-misleading-character-class -- Telugu range intentionally includes combining marks for name matching
     const m = /@([A-Za-z\u0C00-\u0C7F][^\s@]*)$/.exec(v);
     setMentionQuery(m ? m[1] : null);
   };
@@ -112,6 +113,7 @@ export function ChatStream({ channel, mentionCandidates, highlightMessageId }: C
   }, [mentionQuery, mentionCandidates]);
 
   const applyMention = (name: string) => {
+    // eslint-disable-next-line no-misleading-character-class -- Telugu range intentionally includes combining marks for name matching
     setText(prev => prev.replace(/@([A-Za-z\u0C00-\u0C7F][^\s@]*)$/, `@${name} `));
     setMentionQuery(null);
   };

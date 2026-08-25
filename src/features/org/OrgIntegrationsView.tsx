@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/forms";
 import type { IconName } from "@/components/ui/icons";
 import { getIntegrationStatus, saveProvider, clearProvider, PROVIDERS, SECRET_FIELDS, type IntegrationStatus, type ProviderMeta } from "@/app/orgIntegrationsQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { useAction } from "@/hooks/useAction";
 
 import { getClient } from "@/lib/supabase";

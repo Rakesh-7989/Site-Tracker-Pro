@@ -24,7 +24,6 @@ import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/Sto
 import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
 import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicitany
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "current", label: "Current" }, { value: "superseded", label: "Superseded" }];

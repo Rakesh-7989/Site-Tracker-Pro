@@ -1,4 +1,4 @@
-// SiteTrack Pro � project Approvals tab (v3 port). A cross-entity "pending
+// SiteTrack Pro - project Approvals tab (v3 port). A cross-entity "pending
 // sign-off" queue: change orders, RA bills and POs awaiting approval. Each row
 // is decided only by the matching approver capability.
 
@@ -8,7 +8,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { fmtRupees } from "@/app/financeQueries";
 import { listPendingApprovals, decideApproval, type PendingApproval, type ApprovalKind } from "@/app/approvalsQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 const KIND_LABEL: Record<ApprovalKind, string> = { changeorder: "Change order", rabill: "RA bill", po: "Purchase order" };
 const KIND_TONE: Record<ApprovalKind, "info" | "warning" | "neutral"> = { changeorder: "info", rabill: "warning", po: "neutral" };
@@ -47,7 +47,7 @@ export function ApprovalsTab({ projectId }: { projectId: string }): JSX.Element 
             <Card key={k} className="p-3 flex items-center justify-between gap-3">
               <div className="min-w-0 flex items-center gap-2">
                 <Badge tone={KIND_TONE[r.kind]}>{KIND_LABEL[r.kind]}</Badge>
-                <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.ref} � {r.title}</div>
+                <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary truncate">{r.ref} — {r.title}</div>
                   {r.amount != null && <div className="text-[11px] text-fg-secondary">{fmtRupees(r.amount)}</div>}</div>
               </div>
               {canApprove ? (

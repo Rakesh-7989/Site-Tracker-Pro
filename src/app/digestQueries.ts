@@ -38,7 +38,7 @@ export async function updateDigestSubscription(client: any, id: string, patch: {
   } catch (e) { return err(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export interface DigestDispatch { id: string; sentForDate: string; dispatchedAt: string; outcome: string; metaMessageId: string | null; failureReason: string | null; }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

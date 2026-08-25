@@ -7,7 +7,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/compo
 import { Select } from "@/components/ui/forms";
 import { listRules, createRule, setRuleEnabled, deleteRule, NOTIF_CHANNELS, NOTIF_TRIGGERS, TRIGGER_LABEL, CHANNEL_LABEL, type NotifRule, type NotifChannel } from "@/app/orgConfigQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const TRIGGER_OPTS = NOTIF_TRIGGERS.map(t => ({ value: t.id, label: t.label }));

@@ -62,7 +62,7 @@ function MemberAreas({ staffId, initial }: { staffId: string; initial: string[] 
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 // ── Pure helpers (exported for the phase unit tests) ──────────────────────────
 

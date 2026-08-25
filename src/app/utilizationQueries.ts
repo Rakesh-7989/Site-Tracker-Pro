@@ -18,7 +18,7 @@ import { APPROVAL_STATUSES, type TimeEntry } from "./timeQueries";
 import { PROJECT_TYPES } from "@/auth/roles";
 import type { MemberProjectScope } from "./queries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });

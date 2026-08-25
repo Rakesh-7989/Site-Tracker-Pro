@@ -21,7 +21,7 @@ export interface RaMbEntry {
   status: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function mapRow(r: Record<string, unknown>): RaMbEntry {
   return {
     id: String(r.id),

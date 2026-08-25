@@ -91,7 +91,8 @@ export function ManageCustomRolesModal({
   const toggleCap = (cap: Capability) => setDraft(d => {
     if (!d) return d;
     const caps = new Set(d.caps);
-    caps.has(cap) ? caps.delete(cap) : caps.add(cap);
+    if (caps.has(cap)) caps.delete(cap);
+    else caps.add(cap);
     return { ...d, caps };
   });
 

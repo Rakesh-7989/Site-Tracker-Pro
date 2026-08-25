@@ -20,5 +20,5 @@ export function buildUpiUri({ vpa, name, amount, note }: UpiArgs): string {
 
 /** Loose VPA sanity check (something@handle). */
 export function isValidVpa(vpa: string): boolean {
-  return /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(vpa.trim());
+  return /^[\w.-]{2,}@[a-zA-Z]{2,}$/.test(vpa.trim());
 }

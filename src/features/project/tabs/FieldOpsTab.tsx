@@ -7,7 +7,7 @@ import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { listWorklogs, createWorklog, deleteWorklog, type WorkLog } from "@/app/siteAdminQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";

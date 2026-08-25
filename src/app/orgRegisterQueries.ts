@@ -35,7 +35,7 @@ export async function registerOrg(
   injectedClient?: any,
 ): Promise<RegisterResult> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const client = injectedClient ?? (await getClient());
     if (!client) return { ok: false, error: "Backend not configured." };
     const { data, error } = await client.functions.invoke("register_org", { body: input });
@@ -61,7 +61,7 @@ export async function resendConfirmation(
   injectedClient?: any,
 ): Promise<ResendResult> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const client = injectedClient ?? (await getClient());
     if (!client) return { ok: false, error: "Backend not configured." };
     const { data, error } = await client.functions.invoke("resend_confirmation", { body: { email } });

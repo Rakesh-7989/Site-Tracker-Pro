@@ -25,7 +25,7 @@ import { CustomRolesPanel } from "./CustomRolesPanel";
 
 type CellState = "inherit" | "grant" | "revoke";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 export function RoleManager(): JSX.Element {
   const { session } = useAuth();
