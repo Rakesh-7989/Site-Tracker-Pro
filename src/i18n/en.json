@@ -49,7 +49,7 @@
     "errPickSegment": "Please pick at least one industry",
     "errOrgName": "Organisation name required",
     "selectMany": "Select one or more — modules combine across picks."
-  },
+  },
   "$meta": {
     "language": "en",
     "name": "English",
@@ -509,6 +509,20 @@
       "interior": "Interior design & fit-out firms",
       "consultancy": "Structural / MEP / specialist consultants",
       "multiple": "Firms spanning several segments"
+    }
+  },
+  "orgType": {
+    "title": "Firm type",
+    "auto": "Auto (from industry)",
+    "label": {
+      "developer": "Real Estate Developer",
+      "builder": "Builder",
+      "architecture_firm": "Architecture Firm",
+      "interior_firm": "Interior Firm",
+      "contractor": "Contractor",
+      "consultant": "Consultant",
+      "pmc": "PMC",
+      "vendor": "Vendor"
     }
   },
   "module": {
