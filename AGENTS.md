@@ -1,3 +1,24 @@
+## Session — 2026-08-25: CONFIRMATION EMAILS not arriving — GoTrue SMTP switched Gmail→Resend (complete)
+
+**Founder report**: new workspace signup → confirmation email never arrives → sign-in blocked with "email not confirmed".
+
+**Deep-dive findings**:
+- `boyapatirakesh9@gmail.com` (today's signup): `confirmation_sent_at` WAS set at creation → GoTrue *attempted* dispatch, but Gmail-SMTP delivery is **invisible** (no logs on free tier) and silently breakable (Google app-password revocation class). Same stuck pattern on `vtu19889@veltech.edu.in` (Aug 21).
+- Custom SMTP was `smtp.gmail.com:587` + founder's personal gmail + app password + admin_email = personal gmail. Zero delivery visibility anywhere.
+
+**Fix applied (live config via Management API)**:
+- GoTrue custom SMTP → **Resend**: `smtp.resend.com:465`, user `resend`, pass = RESEND_API_KEY, from/admin = **`hello@sitetrackpro.in`** (verified domain), sender "SiteTrack Pro".
+- Benefits: verified-domain sender (deliverability), full send/bounce visibility in Resend dashboard, no dependency on founder's personal Google account security.
+- Permanent ops script kept: `scripts/set-gotrue-smtp-resend.mjs` (re-runnable; reads keys from .env.local only).
+
+**Re-dispatched** the pending confirmation for `boyapatirakesh9@gmail.com` through the new pipeline (`resend_confirmation` EF → 200, sent_at advanced 15:55:56 IST) + a direct Resend-API heads-up email (id `2a3461a6`) so the inbox is unambiguous.
+
+**Note**: Resend `/emails` API lists API-sent mail only — SMTP-relayed confirmations appear in dashboard UI, not this endpoint.
+
+**Awaiting founder confirmation of receipt**; if still nothing in ~10 min → manual confirm via SQL (`auth.users.email_confirmed_at`) as instant unblock. `vtu19889@veltech.edu.in` can get the same re-dispatch on request.
+
+---
+
 ## Session — 2026-08-25: ACCESSIBILITY AUDIT — axe-core wired, WCAG contrast fixes (complete)
 
 **New permanent tooling**: `npm run test:a11y` (report) / `test:a11y:strict` (fails on critical|serious) — axe-core 4.13 over the REAL authenticated shell via the mocked-session harness (7 surfaces: /, /projects, /chat, /calendar, /search, /analytics, public /login). Own Playwright config `playwright.a11y.config.ts` (testMatch pattern, ignored by the standard e2e-mock suite like ux-audit). Writes `test-results/a11y-report.json`.
