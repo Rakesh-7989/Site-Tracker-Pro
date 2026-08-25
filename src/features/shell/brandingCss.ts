@@ -7,7 +7,7 @@ export type AccentName = "amber" | "blue" | "emerald" | "violet" | "rose";
 
 /** Full accent token family per swatch (accent/2/light/tint). */
 export const ACCENT_THEMES: Record<AccentName, { accent: string; accent2: string; light: string; tint: string }> = {
-  amber:    { accent: "#FF6B1A", accent2: "#E55A0E", light: "#FF8A3D", tint: "#FFF1E6" },
+  amber:    { accent: "#C2410C", accent2: "#A83B08", light: "#FF8A3D", tint: "#FFF1E6" },
   blue:     { accent: "#2563EB", accent2: "#1D4ED8", light: "#3B82F6", tint: "#EFF6FF" },
   emerald:  { accent: "#059669", accent2: "#047857", light: "#10B981", tint: "#ECFDF5" },
   violet:   { accent: "#7C3AED", accent2: "#6D28D9", light: "#8B5CF6", tint: "#F5F3FF" },

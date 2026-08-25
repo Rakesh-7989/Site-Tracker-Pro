@@ -1,3 +1,21 @@
+## Session — 2026-08-25: ACCESSIBILITY AUDIT — axe-core wired, WCAG contrast fixes (complete)
+
+**New permanent tooling**: `npm run test:a11y` (report) / `test:a11y:strict` (fails on critical|serious) — axe-core 4.13 over the REAL authenticated shell via the mocked-session harness (7 surfaces: /, /projects, /chat, /calendar, /search, /analytics, public /login). Own Playwright config `playwright.a11y.config.ts` (testMatch pattern, ignored by the standard e2e-mock suite like ux-audit). Writes `test-results/a11y-report.json`.
+
+**First-run findings → root causes were 3 TOKEN-level issues (not per-component)**:
+1. Light `--st-text-tertiary #8E887C` on white = 3.52 (< 4.5) — the dominant failure (micro-labels everywhere) → **#767066** (4.91).
+2. Light accent `#FF6B1A` ↔ white = 2.85 in BOTH text directions → **#C2410C** (5.18 both ways, 4.68 on tint); pressed `--st-accent-2 #E55A0E` → **#A83B08** (6.38/5.76). Dark-theme accents untouched (#FF8A3D = 6.71 on dark panel).
+3. Dark `--st-text-tertiary #6B6E76` = 3.42 on #181A1E → **#85888F** (4.91).
+Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**: light-mode orange is now a deeper burnt orange — deliberate AA-compliance tradeoff, veto-able.
+
+**/login specifics**: hardcoded-dark hero used light tokens → new scoped `.on-ink` utility in index.css (redefines tertiary+accent for contained dark surfaces; mirrors .dark values). Landmark violations fixed by making the screen root `<main>`.
+
+**Result**: **7/7 surfaces ZERO axe violations** (was: color-contrast serious on every surface + login landmarks). Strict mode green.
+
+**Gates**: lint 0 · tsc 0 · vitest **231 files / 2956 tests** · smoke **462** · build · e2e-mock **11/11** · test:a11y:strict green. PSI API rate-limited today (429 — shared anon quota); perf scores pending retry.
+
+---
+
 ## Session — 2026-08-25: Restore drill prepped → DEFERRED to pre-pilot (founder decision) (complete)
 
 **What happened**: Started Option-A drill (free scratch Supabase project as restore target). Discoveries worth keeping:

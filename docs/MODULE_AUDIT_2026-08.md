@@ -50,5 +50,7 @@
 5. Sentry DSN — free account → set `VITE_SENTRY_DSN` env
 6. UptimeRobot — free account → 2 monitors (frontend + Supabase REST)
 
+**Accessibility audit** (2026-08-25): axe-core wired (`npm run test:a11y[:strict]`) — **7/7 app surfaces ZERO violations** after token-level WCAG contrast fixes (light tertiary #767066, light accent #C2410C family, dark tertiary #85888F) + login landmark/main + scoped `.on-ink` dark-surface utility. PSI perf scores pending (API rate-limited at audit time).
+
 **Blocked on product decision:**
 7. Capacitor foundation (audit P1) — recommend AFTER founder ops actions above
