@@ -55,6 +55,7 @@
     "test:e2e:mock": "npx playwright test --config=playwright.mock.config.ts",
     "test:a11y": "npx playwright test --config=playwright.a11y.config.ts",
     "test:a11y:strict": "cross-env A11Y_STRICT=1 npx playwright test --config=playwright.a11y.config.ts",
+    "mobile:build": "npm run build && npx cap sync android",
     "test:ef": "node scripts/test-ef-harness.mjs",
     "test:rls": "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs && node scripts/test-rbac-v2-shadow.mjs",
     "test:rls:project": "node scripts/test-project-scope-rls.mjs",
@@ -70,6 +71,15 @@
     "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/camera": "^8.2.3",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/filesystem": "^8.1.3",
+    "@capacitor/geolocation": "^8.2.2",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.3",
     "@supabase/supabase-js": "^2.108.2",
     "@types/qrcode": "^1.5.6",
     "@vercel/analytics": "^2.0.1",
@@ -85,6 +95,8 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0",
     "@eslint/js": "^9.14.0",
     "@playwright/test": "^1.61.0",
     "@testing-library/dom": "^10.4.1",

@@ -5,10 +5,19 @@ import { ErrorBoundary } from "./components/errorBoundary";
 
 import { initSentry } from "./lib/sentry";
 import { registerServiceWorker } from "./lib/pwa";
+import { isNativeMobile } from "./lib/platform";
 import "./index.css";
 
 initSentry();
-registerServiceWorker();
+// The web service worker is web-PWA-only: inside the Capacitor shell the
+// native layer owns caching/offline (documented in MOBILE_BUILD.md).
+if (isNativeMobile()) {
+  document.documentElement.classList.add("native-shell");
+  void import("./lib/native").then(m => m.initNativeShell());
+  void import("./lib/offline").then(m => m.initNetworkBridge());
+} else {
+  registerServiceWorker();
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SiteTrack Pro</string>
+    <string name="title_activity_main">SiteTrack Pro</string>
+    <string name="package_name">in.sitetrackpro.app</string>
+    <string name="custom_url_scheme">in.sitetrackpro.app</string>
+</resources>

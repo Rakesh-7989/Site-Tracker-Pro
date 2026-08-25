@@ -16,6 +16,8 @@ import { useCallback, useRef, useState } from "react";
 import { Button, Spinner, Icon } from "@/components/ui/atoms";
 import { extractExif, validateGeotag } from "@/lib/photoStorage";
 import { HYDERABAD_BBOX } from "@/lib/photoStorage";
+import { isNativeMobile } from "@/lib/platform";
+import { nativeGetPosition, nativeTakePhoto } from "@/lib/native-capabilities";
 
 export interface PhotoGeotagResult {
   blob: Blob;
@@ -94,17 +96,24 @@ export function PhotoGeotagCapture({ onCapture, accepted = "image/*", disabled, 
     onCapture(res);
   }, [onCapture]);
 
-  const onFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  /**
+   * Shared pipeline for web <input> files AND native-camera captures:
+   * EXIF geotag → native GPS fallback → device geolocation → finalize.
+   */
+  const processFile = useCallback((file: File) => {
     setState("processing");
     setGeoNote(null);
 
-    // Geotag from EXIF when the camera stamped it; else ask the device.
     void (async () => {
       const exif = await extractExif(file);
       if (exif?.gps?.lat != null && exif?.gps?.lon != null) {
         await finalize(file, file.name);
+        return;
+      }
+      // Native GPS first (higher accuracy + system permission flow).
+      const nativeGeo = await nativeGetPosition();
+      if (nativeGeo) {
+        await finalize(file, file.name, nativeGeo.lat, nativeGeo.lon);
         return;
       }
       if (!(typeof navigator !== "undefined" && navigator.geolocation)) {
@@ -123,6 +132,23 @@ export function PhotoGeotagCapture({ onCapture, accepted = "image/*", disabled, 
     });
   }, [finalize]);
 
+  /** Native camera path (Capacitor shell only). */
+  const onNativeCamera = useCallback(() => {
+    void (async () => {
+      setState("processing");
+      const blob = await nativeTakePhoto();
+      if (!blob) { setState("idle"); return; } // cancelled / permission denied
+      processFile(new File([blob], `dpr-${Date.now()}.jpg`, { type: blob.type || "image/jpeg" }));
+    })();
+  }, [processFile]);
+
+  const onFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [processFile]);
+
   const reset = useCallback(() => {
     setState("idle");
     setResult(null);
@@ -133,14 +159,17 @@ export function PhotoGeotagCapture({ onCapture, accepted = "image/*", disabled, 
 
   // ── Idle: capture CTA ──────────────────────────────────────────────────────
   if (state === "idle") {
+    const native = isNativeMobile();
     return (
       <div>
-        <input
-          ref={inputRef} type="file" accept={accepted} capture="environment"
-          className="hidden" onChange={onFile} disabled={disabled}
-          data-photo-input
-        />
-        <Button size="md" variant="secondary" onClick={() => inputRef.current?.click()} disabled={disabled} leftIcon={<Icon name="camera" size={16} />}>
+        {!native && (
+          <input
+            ref={inputRef} type="file" accept={accepted} capture="environment"
+            className="hidden" onChange={onFile} disabled={disabled}
+            data-photo-input
+          />
+        )}
+        <Button size="md" variant="secondary" onClick={() => (native ? onNativeCamera() : inputRef.current?.click())} disabled={disabled} leftIcon={<Icon name="camera" size={16} />}>
           Take site photo
         </Button>
       </div>

@@ -32,3 +32,11 @@ debug*.spec.ts
 e2e/debug*.spec.ts
 GARCHITECTS_CREDENTIALS.md
 coverage/
+
+# Capacitor android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/*.iml
+android/.idea/

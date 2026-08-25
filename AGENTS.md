@@ -1,3 +1,94 @@
+## Session — 2026-08-25: AEC OS DIRECTION — org firm-types substrate + 3 strategy docs (complete)
+
+**Research input**: founder's Zoho-for-Startups + "Role Intelligence Study" (SiteTrack as Real Estate & AEC Project OS; firm-type → roles → screens → AI agents; cross-org collaboration as the moat; Zoho as the BUSINESS layer, not a product replacement).
+
+**Reality-check**: much already exists — segments (228), multi-org users (173), CRM (161+), design workflow (165/166), procurement chain (G1/E5), consultancy billing (C1-C3), voice DPR. The genuine gaps = **firm-type substrate**, **cross-org collaboration**, **business-ops (Zoho) integration plan**.
+
+**Migration 240** `240_org_types.sql` (live, db:apply 231/0): `organizations.org_type` CHECK (developer|builder|architecture_firm|interior_firm|contractor|consultant|pmc|vendor) NULL-safe + index + UNAMBIGUOUS backfill from segments (construction/multiple left NULL on purpose — developer-vs-builder needs an answer, not a guess).
+
+**Code**: `src/auth/orgType.ts` (`ORG_TYPES`, `resolveOrgType()` explicit-first → unambiguous single-segment fallback, `isDesignFirm/isExecutionFirm`) + `OrgMembership.orgType` hydrated in fetchAuthSession (+tests 7). Onboarding picker wiring = follow-up.
+
+**Docs shipped**:
+- `docs/CROSS_ORG_COLLABORATION_PLAN.md` — THE moat designed: `project_partner_orgs` + `project_partner_members` substrate, RLS OR-arm for can_read_project, partner capability allow-list (never money tables), UI surfaces, C1-C4 rollout, security invariants. NOT built yet — build contract ready.
+- `docs/ZOHO_STARTUP_STACK_PLAN.md` — Zoho = business ops around the product; activate Mail/CRM-free/Desk-free/Books-free first; signup→CRM lead via Flow webhook using the notify_config secret pattern; Cashfree stays payment rail; DPDP guardrail on what leaves Supabase.
+- `docs/ROLE_INTELLIGENCE_STUDY.md` — every firm-role mapped to EXISTING coverage (mostly ✅/🟡) with phase-tagged gaps; build discipline locked to GTM order (Developer → Architect → Interior → Contractor/Consultant).
+
+**Gates**: lint 0 · tsc 0 · vitest **2974** (+7 orgType) · smoke **462**.
+
+---
+
+## Session — 2026-08-25: MOBILE PHASE 5 — native plugins (camera/GPS/network/share) (complete)
+
+**Deps += `@capacitor/camera` `geolocation` `network` `share` `filesystem` 8.x.** Push deliberately NOT installed (needs FCM/Google config — founder action, documented).
+
+**New `src/lib/native-capabilities.ts`** — every helper no-ops (`null`/false) on the web so callers keep browser paths untouched; dynamic imports everywhere:
+- `nativeTakePhoto()` — permission check → Camera.getPhoto (quality 80, width 1600, correctOrientation) → Blob via webPath fetch.
+- `nativeGetPosition()` — Geolocation high-accuracy coords.
+- `nativeShareFile({fileName,blob,title})` — Filesystem cache write (base64) → Share sheet with real file → temp cleanup.
+
+**Wired into the DPR field flow**:
+- `PhotoGeotagCapture`: native shell → "Take site photo" opens the NATIVE camera (hidden file input on web only); shared `processFile` pipeline now prefers native GPS before navigator.geolocation.
+- `offline.ts`: `initNetworkBridge()` (main.tsx native branch) upgrades the online source to the Network plugin (module-level override consulted by `isOnline()`); `onConnectivityChange` mirrors native transitions alongside browser events.
+- `dprPdf.ts`: split out `buildDprPdfDoc`/`getDprPdfBlob`; `DPRDetailView` gains a **Share PDF** button (native only) handing the REAL PDF to WhatsApp/Drive/mail via the share sheet.
+
+**Tests**: `tests/lib/nativeCapabilities.test.ts` (+4) — web path never invokes plugins; native paths return Blob/coords. Gotchas: Capacitor plugin objects are proxies (vi.spyOn fails — use vi.mock factories with `vi.hoisted` state); jsdom lacks Response (stub `{blob:async}`).
+
+**Gates**: lint 0 · tsc 0 · vitest **233 files / 2967 tests** · smoke **462** · build clean · e2e-mock **11/11**.
+
+---
+
+## Session — 2026-08-25: MOBILE PHASE 4 — native shell behaviour (complete)
+
+**Scope**: make the SAME bundle feel native inside the Capacitor shell (web PWA untouched).
+
+- **`src/lib/native.ts`** (new): `initNativeShell()` (status bar → brand cream, Style.Light; `.native-shell` class pre-paint) + `attachAndroidBackButton(consume)` contract. All plugin imports dynamic — web bundle never pays.
+- **Android hardware BACK contract** wired in ShellLayout: drawer open → close; else router `navigate(-1)`; at root → `App.exitApp()`.
+- **CSS**: `.native-shell` scoping (`-webkit-tap-highlight-color: transparent`, `overscroll-behavior-y: contain`) + BottomNav min-height with safe-area inset (no double-pad on web, env()=0 there).
+- **Branding**: `@capacitor/assets` generated **74 assets** from `assets/logo.svg` (= public/icon-512.svg) — app icons + splash in light/dark densities replace the default Capacitor robot; splash bg #0f172a / icon bg #FDFBF6.
+- Deps += `@capacitor/app`, `@capacitor/status-bar`, `@capacitor/assets` (dev).
+
+**Gotchas recorded**: (1) Capacitor CLI 8 needs Node ≥22 → nvm switch for cap/assets commands only (project stays on 20); (2) running npm install under the OTHER node's npm mid-session silently DROPPED @capacitor/* entries from package.json and broke the web build ("failed to resolve @capacitor/core") — re-installed pinned versions on Node 20; lesson: never switch node majors between installs in one session without re-verifying package.json.
+
+**Gates**: lint 0 · tsc 0 · vitest **233 files / 2963 tests** (+5 platform) · smoke **462** · build clean · e2e-mock **11/11**.
+
+---
+
+## Session — 2026-08-25: MOBILE PHASE 2 — Capacitor 8 foundation, android/ shell (complete)
+
+**ChatGPT-roadmap milestone "Mobile Field Platform" Phase 2 done**:
+- `@capacitor/core` + `@capacitor/android` (deps) + `@capacitor/cli` (devDep), all pinned **8.5.0**. Gotcha: CLI 8 needs **Node ≥22** — machine has nvm (`nvm use 24.11.0` for cap commands, back to 20 after; CI unaffected on 20).
+- `capacitor.config.ts`: appId **`in.sitetrackpro.app`**, appName SiteTrack Pro, webDir `dist`, `androidScheme https`.
+- **`android/` committed** (61 files): compileSdk/targetSdk = **36** → Aug-31-2026 Play target-API requirement met from day one; minSdk 24.
+- `src/lib/platform.ts` (`isNativeMobile()`/`getPlatform()`) + `main.tsx` skips the web service worker inside the shell (native owns caching per MOBILE_BUILD.md).
+- `npm run mobile:build` (= web build + cap sync android); eslint ignores android//ios generated assets; MOBILE_BUILD.md rewritten with real status + local command flow.
+
+**Gates**: lint 0 · tsc 0 · vitest **2958** · smoke **462** · web build clean.
+
+**Next mobile phases**: splash/icons via @capacitor/assets → mobile shell polish (bottom nav/safe-area) → Phase-5 plugins (camera/geolocation/push/share/network) → signed AAB to Play internal testing (needs Android Studio on founder machine).
+
+---
+
+## Session — 2026-08-25: CONFIRMATION EMAILS not arriving — GoTrue SMTP switched Gmail→Resend (complete)
+
+**Founder report**: new workspace signup → confirmation email never arrives → sign-in blocked with "email not confirmed".
+
+**Deep-dive findings**:
+- `boyapatirakesh9@gmail.com` (today's signup): `confirmation_sent_at` WAS set at creation → GoTrue *attempted* dispatch, but Gmail-SMTP delivery is **invisible** (no logs on free tier) and silently breakable (Google app-password revocation class). Same stuck pattern on `vtu19889@veltech.edu.in` (Aug 21).
+- Custom SMTP was `smtp.gmail.com:587` + founder's personal gmail + app password + admin_email = personal gmail. Zero delivery visibility anywhere.
+
+**Fix applied (live config via Management API)**:
+- GoTrue custom SMTP → **Resend**: `smtp.resend.com:465`, user `resend`, pass = RESEND_API_KEY, from/admin = **`hello@sitetrackpro.in`** (verified domain), sender "SiteTrack Pro".
+- Benefits: verified-domain sender (deliverability), full send/bounce visibility in Resend dashboard, no dependency on founder's personal Google account security.
+- Permanent ops script kept: `scripts/set-gotrue-smtp-resend.mjs` (re-runnable; reads keys from .env.local only).
+
+**Re-dispatched** the pending confirmation for `boyapatirakesh9@gmail.com` through the new pipeline (`resend_confirmation` EF → 200, sent_at advanced 15:55:56 IST) + a direct Resend-API heads-up email (id `2a3461a6`) so the inbox is unambiguous.
+
+**Note**: Resend `/emails` API lists API-sent mail only — SMTP-relayed confirmations appear in dashboard UI, not this endpoint.
+
+**Awaiting founder confirmation of receipt**; if still nothing in ~10 min → manual confirm via SQL (`auth.users.email_confirmed_at`) as instant unblock. `vtu19889@veltech.edu.in` can get the same re-dispatch on request.
+
+---
+
 ## Session — 2026-08-25: ACCESSIBILITY AUDIT — axe-core wired, WCAG contrast fixes (complete)
 
 **New permanent tooling**: `npm run test:a11y` (report) / `test:a11y:strict` (fails on critical|serious) — axe-core 4.13 over the REAL authenticated shell via the mocked-session harness (7 surfaces: /, /projects, /chat, /calendar, /search, /analytics, public /login). Own Playwright config `playwright.a11y.config.ts` (testMatch pattern, ignored by the standard e2e-mock suite like ux-audit). Writes `test-results/a11y-report.json`.

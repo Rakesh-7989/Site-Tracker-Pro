@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/forms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
 import { CORE_SEGMENTS, defaultProjectTypeFor, legacySegmentFor, projectTypesForSegments, type CompanySegment } from "@/auth";
 import type { ProjectType } from "@/auth";
+import { ORG_TYPES, isOrgType, type OrgType } from "@/auth/orgType";
 import { MODULES, CORE_MODULE, templateModules, templateModulesForSegments, type ModuleId } from "@/modules";
 import { useT } from "@/i18n/I18nProvider";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
@@ -35,6 +36,7 @@ export function OnboardingView(): JSX.Element {
   // Multi-segment picks (migration 228) — the source of truth for Step 1;
   // `segment` above stays as the derived legacy value for back-compat readers.
   const [segments, setSegments] = useState<CompanySegment[]>([]);
+  const [orgType, setOrgType] = useState<OrgType | null>(null);
   const [enabledModules, setEnabledModules] = useState<ModuleId[]>([]);
 
   // Step 2 — plan & billing. Defaults to the Pro trial so the owner keeps
@@ -87,6 +89,7 @@ export function OnboardingView(): JSX.Element {
       }
       if (res.data.org.plan) setPlan(res.data.org.plan);
       if (res.data.org.billing_period) setBilling(res.data.org.billing_period);
+      if (isOrgType(res.data.org.org_type)) setOrgType(res.data.org.org_type);
     }
     setLoading(false);
   }, []);
@@ -126,7 +129,7 @@ export function OnboardingView(): JSX.Element {
       ? enabledModules
       : [CORE_MODULE, ...enabledModules];
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), modules, plan, billing, segments);
+    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), modules, plan, billing, segments, orgType);
     setStep(2);
   };
 
@@ -154,7 +157,7 @@ export function OnboardingView(): JSX.Element {
 
   const savePlan = async () => {
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules], plan, billing, segments);
+    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules], plan, billing, segments, orgType);
     setStep(6); // progressive: skip invites/project/presets — finish screen applies balanced defaults
   };
 
@@ -256,6 +259,20 @@ export function OnboardingView(): JSX.Element {
                   })}
                 </div>
                 <p className="text-[10px] text-fg-tertiary mt-1">{t("onb.selectMany")}</p>
+              </div>
+              {/* Firm type (migration 240): what KIND of business — drives role
+                  templates + per-firm dashboards. Optional; null = derived from
+                  segments when unambiguous. */}
+              <div>
+                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("orgType.title")}</label>
+                <Select
+                  value={orgType ?? ""}
+                  onChange={e => setOrgType((e.target.value || null) as OrgType | null)}
+                  options={[
+                    { value: "", label: t("orgType.auto") },
+                    ...ORG_TYPES.map(ot => ({ value: ot, label: t(`orgType.label.${ot}`) })),
+                  ]}
+                />
               </div>
               {segments.length > 0 && (
                 <div>

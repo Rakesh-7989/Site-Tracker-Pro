@@ -169,10 +169,9 @@ function sectionTitle(doc: jsPDF, title: string, y: number): number {
 }
 
 /**
- * Build a DPR PDF and trigger a download. Pure-ish: the only side effect is
- * the browser download of the generated blob.
+ * Build the DPR PDF document (shared by browser download and native share).
  */
-export function downloadDprPdf(row: DprMessageRow, orgName: string): void {
+export function buildDprPdfDoc(row: DprMessageRow, orgName: string): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
   drawHeader(doc, row);
@@ -229,5 +228,15 @@ export function downloadDprPdf(row: DprMessageRow, orgName: string): void {
   doc.text(gen, MARGIN, PAGE_H - 14);
   doc.text(`${orgName} — SiteTrack Pro`, PAGE_W - MARGIN, PAGE_H - 14, { align: "right" });
 
-  doc.save(`dpr-${row.id.slice(0, 8)}.pdf`);
+  return doc;
+}
+
+/** Browser download path (unchanged behaviour). */
+export function downloadDprPdf(row: DprMessageRow, orgName: string): void {
+  buildDprPdfDoc(row, orgName).save(`dpr-${row.id.slice(0, 8)}.pdf`);
+}
+
+/** PDF as a Blob for native share targets. */
+export function getDprPdfBlob(row: DprMessageRow, orgName: string): Blob {
+  return buildDprPdfDoc(row, orgName).output("blob");
 }

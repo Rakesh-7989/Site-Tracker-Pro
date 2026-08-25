@@ -473,6 +473,19 @@ button.bg-orange-500, button.bg-orange-400 {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* Native shell only (html.native-shell, set by main.tsx inside Capacitor):
+   kill the web-y grey tap flash and contain rubber-banding; the web PWA keeps
+   its current feel. */
+.native-shell {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+.native-shell .safe-area-bottom {
+  /* BottomNav already sits above the system nav bar via env() — keep content
+     clear of the gesture bar without double-padding on web (env()=0 there). */
+  min-height: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+
 /* Smooth all transitions */
 button, a, input, select, textarea { transition: all .15s ease; }
 
