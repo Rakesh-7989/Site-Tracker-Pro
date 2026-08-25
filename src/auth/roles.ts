@@ -95,6 +95,33 @@ export const CONSTRUCTION_INDUSTRY_LABEL: Record<ConstructionIndustry, string> =
 };
 
 /**
+ * Optional per-type industry/segment vocabulary for the create-project form.
+ * Mirrors the widened CHECK in migration 248 — keep both in sync.
+ */
+export const PROJECT_INDUSTRIES_BY_TYPE: Record<ProjectType, ReadonlyArray<string>> = {
+  construction: CONSTRUCTION_INDUSTRIES,
+  interior: ["residential", "commercial", "hospitality", "healthcare", "retail", "office"],
+  design: ["residential", "commercial", "institutional", "industrial", "landscape", "urbanism"],
+  consultant: ["structural", "mep", "geotechnical", "quantity_surveying", "project_management", "safety"],
+};
+
+export const PROJECT_INDUSTRY_LABELS: Record<string, string> = {
+  ...CONSTRUCTION_INDUSTRY_LABEL,
+  hospitality: "Hospitality",
+  healthcare: "Healthcare",
+  retail: "Retail",
+  office: "Office / Workplace",
+  landscape: "Landscape",
+  urbanism: "Urbanism",
+  structural: "Structural",
+  mep: "MEP",
+  geotechnical: "Geotechnical",
+  quantity_surveying: "Quantity Surveying",
+  project_management: "Project Management",
+  safety: "Safety",
+};
+
+/**
  * Which project_member.role values are valid for a given project.type.
  * UI dropdowns + member-add forms enforce this. RLS does not (yet).
  */

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher, useCan } from "@/auth";
+import { PlanGate } from "@/auth/PlanGate";
 import { Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
@@ -34,10 +35,21 @@ function getDenyCountClass(auditEvents: any[]) {
 }
 
 export function RbacView(): JSX.Element {
-  const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const can = useCan("org:members:manage", { orgId: activeOrg?.orgId });
   if (!can) return <AccessDenied message="Org admin access required." />;
+  // RBAC V2 policy core is a Business+ capability (same tier as custom roles):
+  // wrap everything — including the loading skeleton — in the plan gate.
+  return (
+    <PlanGate feature="custom_roles">
+      <RbacViewBody />
+    </PlanGate>
+  );
+}
+
+function RbacViewBody(): JSX.Element {
+  const { session } = useAuth();
+  const { activeOrg } = useOrgSwitcher();
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
 

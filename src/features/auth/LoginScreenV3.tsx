@@ -85,6 +85,28 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
     }
   }, [location.search]);
 
+  // Email-confirmation callback outcome: GoTrue redirects back with the
+  // session in the URL fragment (#access_token=… — consumed by supabase-js)
+  // or, when the single-use token was already spent/expired (mail-scanner
+  // prefetch), with #error=access_denied&error_code=otp_expired. Surface a
+  // clear recovery state instead of stranding the user.
+  useEffect(() => {
+    if (!window.location.hash || !window.location.hash.startsWith("#")) return;
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    if (hash.get("error")) {
+      const code = hash.get("error_code");
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      setStatus({
+        kind: "error",
+        msg:
+          code === "otp_expired"
+            ? t("auth.errConfirmExpired")
+            : t("auth.errConfirmGeneric"),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const afterAuth = async () => {
     const refreshed = await refresh();
     if (!refreshed) {

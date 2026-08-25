@@ -35,11 +35,14 @@ const APP = (env.VITE_APP_URL || "https://sitetrackpro.in").replace(/\/+$/, "");
 const api = `https://api.supabase.com/v1/projects/${ref}/config/auth`;
 const headers = { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" };
 
-// Production URL + its sub-paths, PLUS localhost for local dev. Supabase
-// matches redirect targets against this allow-list (supports trailing /**).
+// Production URL + its sub-paths, PLUS the www host (Vercel serves the app on
+// www; confirm links must be allowed to land there) PLUS localhost for local
+// dev. Supabase matches redirect targets against this allow-list.
+const WWW = APP.replace(/^https:\/\/sitetrackpro\.in$/, "https://www.sitetrackpro.in");
 const allowList = [
   APP,
   `${APP}/**`,
+  ...(WWW !== APP ? [WWW, `${WWW}/**`] : []),
   "http://localhost:5173",
   "http://localhost:5173/**",
 ].join(",");

@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useOrgSwitcher, useCan, CONSTRUCTION_INDUSTRIES, CONSTRUCTION_INDUSTRY_LABEL, segmentProjectTypes, defaultProjectTypeFor, type ProjectType, type ConstructionIndustry } from "@/auth";
+import { useOrgSwitcher, useCan, PROJECT_INDUSTRIES_BY_TYPE, PROJECT_INDUSTRY_LABELS, segmentProjectTypes, defaultProjectTypeFor, type ProjectType } from "@/auth";
 import { createProject } from "@/app/queries";
 import { Card, Button, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
@@ -26,10 +26,18 @@ export function CreateProjectView(): JSX.Element {
 
   const [name, setName] = useState("");
   const [type, setType] = useState<ProjectType>("construction");
-  const [industrySubtype, setIndustrySubtype] = useState<ConstructionIndustry | "">("");
+  const [industrySubtype, setIndustrySubtype] = useState<string>("");
   const [location, setLocation] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [budget, setBudget] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const industryOptions = PROJECT_INDUSTRIES_BY_TYPE[type];
 
   // v4 C0 — org segment scopes which project types may be created. Legacy
   // orgs (null segment) keep the full catalog.
@@ -63,7 +71,13 @@ export function CreateProjectView(): JSX.Element {
       name: name.trim(),
       type,
       ...(location.trim() ? { location: location.trim() } : {}),
-      ...(industrySubtype ? { industrySubtype: industrySubtype as ConstructionIndustry } : {}),
+      ...(industrySubtype ? { industrySubtype } : {}),
+      ...(clientName.trim() ? { clientName: clientName.trim() } : {}),
+      ...(clientEmail.trim() ? { clientEmail: clientEmail.trim() } : {}),
+      ...(budget ? { budget: Number(budget) } : {}),
+      ...(startDate ? { startDate } : {}),
+      ...(endDate ? { endDate } : {}),
+      ...(description.trim() ? { description: description.trim() } : {}),
     });
     setBusy(false);
     if (res.ok) navigate("/projects");
@@ -87,21 +101,71 @@ export function CreateProjectView(): JSX.Element {
 
           <div>
             <label htmlFor="ptype" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Project type</label>
-            <Select id="ptype" value={type} onChange={e => setType(e.target.value as ProjectType)} options={allowedTypes.map(t => ({ value: t, label: TYPE_LABEL[t] }))} />
+            <Select id="ptype" value={type} onChange={e => { setType(e.target.value as ProjectType); setIndustrySubtype(""); }} options={allowedTypes.map(t => ({ value: t, label: TYPE_LABEL[t] }))} />
           </div>
 
-          {type === "construction" && (
+          <div>
+            <label htmlFor="pindustry" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">{TYPE_LABEL[type]} industry <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
+            <Select id="pindustry" value={industrySubtype} onChange={e => setIndustrySubtype(e.target.value)} options={[{ value: "", label: "Any industry" }, ...industryOptions.map(ind => ({ value: ind, label: PROJECT_INDUSTRY_LABELS[ind] ?? ind }))]} />
+          </div>
+
+          <div>
+            <label htmlFor="pclient" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Client name <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
+            <input
+              id="pclient" value={clientName} onChange={e => setClientName(e.target.value)}
+              placeholder="e.g. Vasavi Constructions"
+              className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="pemail" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Client email <span className="text-fg-tertiary normal-case tracking-normal">(optional — portal invites)</span></label>
+            <input
+              id="pemail" type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)}
+              placeholder="client@example.com"
+              className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label htmlFor="pindustry" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Construction industry <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
-              <Select id="pindustry" value={industrySubtype} onChange={e => setIndustrySubtype(e.target.value as ConstructionIndustry | "")} options={[{ value: "", label: "Any industry" }, ...CONSTRUCTION_INDUSTRIES.map(ind => ({ value: ind, label: CONSTRUCTION_INDUSTRY_LABEL[ind] }))]} />
+              <label htmlFor="pbudget" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Budget ₹ <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
+              <input
+                id="pbudget" type="number" min="0" value={budget} onChange={e => setBudget(e.target.value)}
+                placeholder="25000000"
+                className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
+              />
             </div>
-          )}
+            <div>
+              <label htmlFor="pstart" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Start date</label>
+              <input
+                id="pstart" type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
+              />
+            </div>
+            <div>
+              <label htmlFor="pend" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Expected end</label>
+              <input
+                id="pend" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
+              />
+            </div>
+          </div>
 
           <div>
             <label htmlFor="ploc" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Location <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
             <input
               id="ploc" value={location} onChange={e => setLocation(e.target.value)}
               placeholder="Banjara Hills, Hyderabad"
+              className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="pdesc" className="text-[10px] font-semibold tracking-[0.16em] uppercase text-fg-secondary block mb-1.5">Description <span className="text-fg-tertiary normal-case tracking-normal">(optional)</span></label>
+            <textarea
+              id="pdesc" rows={3} value={description} onChange={e => setDescription(e.target.value)}
+              placeholder="Scope summary — phases, built-up area, special requirements…"
               className="w-full px-3.5 py-2.5 border border-default rounded-lg text-sm outline-none focus:border-accent bg-panel"
             />
           </div>

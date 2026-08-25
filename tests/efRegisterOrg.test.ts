@@ -56,7 +56,7 @@ describe("register_org — company segment (v4 C0)", () => {
     // via SMTP (single source of truth). Locked so a future edit can't drop it.
     expect(src).toMatch(/generateLink\(\{/);
     expect(src).toMatch(/type: "signup"/);
-    expect(src).toMatch(/options: \{ redirectTo: siteUrl \}/);
+    expect(src).toMatch(/options: \{ redirectTo: `\$\{siteUrl\}\/login` \}/);
     expect(src).toMatch(/confirmDispatched = !confirmErr/);
   });
 

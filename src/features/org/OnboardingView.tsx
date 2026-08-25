@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Org Onboarding wizard (/org/onboarding).
+// SiteTrack Pro � Org Onboarding wizard (/org/onboarding).
 // 5-step first-time setup for new orgs. Persists to Supabase.
 
 import { useCallback, useEffect, useState } from "react";
@@ -8,7 +8,6 @@ import { Select } from "@/components/ui/forms";
 import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
 import { CORE_SEGMENTS, defaultProjectTypeFor, legacySegmentFor, projectTypesForSegments, type CompanySegment } from "@/auth";
 import type { ProjectType } from "@/auth";
-import { ORG_TYPES, isOrgType, type OrgType } from "@/auth/orgType";
 import { MODULES, CORE_MODULE, templateModules, templateModulesForSegments, type ModuleId } from "@/modules";
 import { useT } from "@/i18n/I18nProvider";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
@@ -33,13 +32,14 @@ export function OnboardingView(): JSX.Element {
   const [orgName, setOrgName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [segment, setSegment] = useState<CompanySegment | null>(null);
-  // Multi-segment picks (migration 228) — the source of truth for Step 1;
+  // Multi-segment picks (migration 228) � the source of truth for Step 1;
   // `segment` above stays as the derived legacy value for back-compat readers.
   const [segments, setSegments] = useState<CompanySegment[]>([]);
-  const [orgType, setOrgType] = useState<OrgType | null>(null);
+  // Firm-type picker (mig 240) hidden � org_type is never set from this UI;
+  // null derives from segments (resolveOrgType) when needed downstream.
   const [enabledModules, setEnabledModules] = useState<ModuleId[]>([]);
 
-  // Step 2 — plan & billing. Defaults to the Pro trial so the owner keeps
+  // Step 2 � plan & billing. Defaults to the Pro trial so the owner keeps
   // Pro unless they change it; billing defaults monthly.
   const [plan, setPlan] = useState<SignupPlan>("pro");
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
@@ -89,7 +89,6 @@ export function OnboardingView(): JSX.Element {
       }
       if (res.data.org.plan) setPlan(res.data.org.plan);
       if (res.data.org.billing_period) setBilling(res.data.org.billing_period);
-      if (isOrgType(res.data.org.org_type)) setOrgType(res.data.org.org_type);
     }
     setLoading(false);
   }, []);
@@ -129,13 +128,41 @@ export function OnboardingView(): JSX.Element {
       ? enabledModules
       : [CORE_MODULE, ...enabledModules];
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), modules, plan, billing, segments, orgType);
+    const r = await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), modules, plan, billing, segments);
+    if (!r.ok) { setFieldError(r.error ?? "Could not save. Please try again."); return; }
     setStep(2);
   };
 
-  // Growth quick-win: one click → a fully-populated demo villa project
+  // Skip with sane defaults: never leave segment/enabled_modules NULL � the
+  // four segment-gated nav surfaces stay dark otherwise. Construction basics.
+  const skipWithDefaults = async () => {
+    setFieldError(null);
+    try {
+      const client = await getClient();
+      const defaults = templateModulesForSegments(["construction"]);
+      const r = await updateOrg(
+        client,
+        orgId,
+        orgName || "My Workspace",
+        contactEmail,
+        "construction",
+        [CORE_MODULE, ...defaults.filter(m => m !== CORE_MODULE)],
+        plan,
+        billing,
+        ["construction"],
+      );
+      if (!r.ok) { setFieldError(r.error ?? "Could not save. Please try again."); return; }
+      setSegments(["construction"]);
+      setEnabledModules([CORE_MODULE, ...defaults.filter(m => m !== CORE_MODULE)]);
+      navigate("/projects");
+    } catch (e) {
+      setFieldError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  // Growth quick-win: one click ? a fully-populated demo villa project
   // (milestones, tasks, issues, expenses) via the seed_demo_project RPC
-  // (migration 227 — org-admin gated, idempotent).
+  // (migration 227 � org-admin gated, idempotent).
   const loadDemoProject = async () => {
     setSeedingDemo(true);
     setError(null);
@@ -157,8 +184,19 @@ export function OnboardingView(): JSX.Element {
 
   const savePlan = async () => {
     const client = await getClient();
-    await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules], plan, billing, segments, orgType);
-    setStep(6); // progressive: skip invites/project/presets — finish screen applies balanced defaults
+    const r = await updateOrg(
+      client,
+      orgId,
+      orgName,
+      contactEmail,
+      legacySegmentFor(segments),
+      enabledModules.includes(CORE_MODULE) ? enabledModules : [CORE_MODULE, ...enabledModules],
+      plan,
+      billing,
+      segments,
+    );
+    if (!r.ok) { setFieldError(r.error ?? "Could not save. Please try again."); return; }
+    setStep(6); // progressive: skip invites/project/presets � finish screen applies balanced defaults
   };
 
   const addPending = () => {
@@ -250,7 +288,7 @@ export function OnboardingView(): JSX.Element {
                         <div className="flex items-center justify-between">
                           <div className="font-semibold text-sm">{t(`segment.label.${s}`)}</div>
                           <span className={`w-4 h-4 grid place-items-center rounded border transition text-[10px] flex-shrink-0 ${active ? "bg-accent border-accent text-white" : "border-fg-tertiary/50"}`}>
-                            {active ? "✓" : ""}
+                            {active ? "?" : ""}
                           </span>
                         </div>
                         <div className="text-[10px] text-fg-tertiary leading-snug mt-0.5">{t(`segment.tagline.${s}`)}</div>
@@ -260,20 +298,9 @@ export function OnboardingView(): JSX.Element {
                 </div>
                 <p className="text-[10px] text-fg-tertiary mt-1">{t("onb.selectMany")}</p>
               </div>
-              {/* Firm type (migration 240): what KIND of business — drives role
-                  templates + per-firm dashboards. Optional; null = derived from
-                  segments when unambiguous. */}
-              <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("orgType.title")}</label>
-                <Select
-                  value={orgType ?? ""}
-                  onChange={e => setOrgType((e.target.value || null) as OrgType | null)}
-                  options={[
-                    { value: "", label: t("orgType.auto") },
-                    ...ORG_TYPES.map(ot => ({ value: ot, label: t(`orgType.label.${ot}`) })),
-                  ]}
-                />
-              </div>
+              {/* Firm-type picker (mig 240) intentionally hidden: no UI consumes
+                  org_type yet; null derives from segments. Re-show when per-firm
+                  dashboards ship (CROSS_ORG_COLLABORATION_PLAN C3). */}
               {segments.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -289,7 +316,7 @@ export function OnboardingView(): JSX.Element {
                         <button key={m.id} type="button" disabled={locked} onClick={() => toggleModule(m.id)}
                           className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition text-left ${on ? "border-accent bg-accent-tint" : "border-default"}`}>
                           <span className={`w-4 h-4 grid place-items-center rounded border transition text-[10px] ${on ? "bg-accent border-accent text-white" : "border-fg-tertiary/50"}`}>
-                            {on ? "✓" : ""}
+                            {on ? "?" : ""}
                           </span>
                           <span className="flex-1">
                             <span className="flex items-center gap-2 text-sm font-semibold text-fg-primary">
@@ -312,7 +339,12 @@ export function OnboardingView(): JSX.Element {
                 <span className="text-xs text-fg-secondary">{t("onb.demoHint")}</span>
               </div>
               {(error || fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError ?? error}</div>}
-              <div className="flex justify-end pt-2"><Button onClick={saveOrg}>{t("onb.cont")}</Button></div>
+              <div className="flex items-center justify-between pt-2">
+                <button type="button" onClick={skipWithDefaults} className="text-xs text-fg-tertiary hover:text-fg-secondary underline underline-offset-2">
+                  {t("onb.skipBasics")}
+                </button>
+                <Button onClick={saveOrg}>{t("onb.cont")}</Button>
+              </div>
             </div>
           )}
 
@@ -359,7 +391,11 @@ export function OnboardingView(): JSX.Element {
                   );
                 })}
               </div>
-              <div className="flex justify-end pt-2"><Button onClick={savePlan}>{t("onb.cont")}</Button></div>
+              {(error || fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError ?? error}</div>}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[11px] text-fg-tertiary">{t("onb.trialNote")}</span>
+                <Button onClick={savePlan}>{t("onb.cont")}</Button>
+              </div>
             </div>
           )}
 
@@ -447,7 +483,7 @@ export function OnboardingView(): JSX.Element {
                 <li>{t("onb.finishInvite")}</li>
                 <li>{t("onb.finishProject")}</li>
               </ul>
-              <div className="text-[11px] text-fg-tertiary">{t("onb.aiKeyLabel")}: {aiKey ? "✓" : "—"}</div>
+              <div className="text-[11px] text-fg-tertiary">{t("onb.aiKeyLabel")}: {aiKey ? "?" : "�"}</div>
               <div className="flex justify-end pt-2 gap-2">
                 <Button variant="secondary" onClick={() => setAiKey("")}>{t("onb.skip")}</Button>
                 <Button onClick={finish}>{t("onb.finishGo")}</Button>
