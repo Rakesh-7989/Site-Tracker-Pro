@@ -1,3 +1,17 @@
+## Session — 2026-08-25: SHIP — Production Hardening v1 to prod (PR #20, squash `172a1bf`) (complete)
+
+**Shipped**: 6-commit hardening batch (`fabdec8` offline consolidation · `311e311` definer hardening+audit · `b4e2a2b` versioned concurrency · `4ba794b` financial invariants · `1cda4c0` net-receivable fix · `3c745ff` sync merge) via PR #20 (user-approved).
+
+**Merge path**: PR auto-existed CONFLICTING (prod squash history not in main) → sync merge origin/prod into main, AGENTS.md kept main's newer version (`--ours`), tsc clean → pushed → all PR checks green (test 6m12s · e2e-mock · coverage ×2 · Vercel previews ×2 · Supabase Preview) → protection count 1→0 (backup JSON at %TEMP%\opencode\prod_protection_backup.json) → **squash `172a1bf`** → restore count 1 + dismiss_stale true.
+
+**Post-ship verification**: trees IDENTICAL (`git diff origin/main origin/prod` empty) · prod CI success on `172a1bf` · prod-smoke **3/3** · uptime frontend 200 / backend GoTrue 200 · live https://sitetrackpro.in healthy.
+
+**New permanent gates now live in CI**: `check:definer --strict` · `test:rls:versions` (39/39) · `test:rls:finance` (18/18). Migrations 237/238/239 live (db:apply 229/0).
+
+**Remaining backlog (non-agent items)**: founder actions — restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡; product decisions — Capacitor foundation, BOQ-vs-RA caps, migration-from-empty replay harness (needs scratch DB vs zero-spend policy).
+
+---
+
 ## Session — 2026-08-25: Net-receivable percentage fix — UI aligned with mig-239 cap (complete)
 
 **Follow-up to mig 239**: the deep-dive had flagged a client/server formula divergence. Confirmed real: `crossInvoiceQueries.netReceivable()` (shared by the org invoice register AND the client portal) computed `amount + gst − tds` — treating the GST/TDS columns as flat rupees when they are PERCENTAGES (`invoices.gst numeric(4,2) default 18`). A ₹1,00,000 invoice @18/2 showed net receivable **₹1,00,016** instead of ₹1,16,000; outstanding and paid/partial status were wrong on every taxed invoice.
