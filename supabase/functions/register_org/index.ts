@@ -60,127 +60,49 @@ function generateTempPassword(): string {
 
 // Reworked for the email-confirm + Pro-trial flow: the account is NOT yet
 // confirmed (email_confirm:false), so this email must NOT contain the password
-// or a "sign in now" CTA. The confirm link comes from GoTrue's own email
-// (dispatched via generateLink in the handler); this is a branded heads-up
-// about the Pro trial. Deliberately does not duplicate the confirm link
-// (single source of truth = GoTrue's confirm email).
-async function sendWelcomeEmail(to: string, firmName: string): Promise<boolean> {
-  const smtpHost = Deno.env.get("SMTP_HOST");
-  const smtpPort = Deno.env.get("SMTP_PORT");
-  const smtpUser = Deno.env.get("SMTP_USER");
-  const smtpPassword = Deno.env.get("SMTP_PASSWORD");
-
-  if (!smtpHost || !smtpPort || !smtpUser || !smtpPassword) {
-    console.error("SMTP config missing, falling back to REST API");
-    // Fall back to REST API
-    const key = Deno.env.get("RESEND_API_KEY");
-    if (!key) return false;
-    const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
-    try {
-      const r = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ from, to, subject: `Activate your ${firmName} workspace on SiteTrack Pro`, html }),
-      });
-      return r.ok;
-    } catch { return false; }
-  }
-
-  // Send via SMTP
-  const from = `"SiteTrack Pro" <${smtpUser}>`;
-  const subject = `Activate your ${firmName} workspace on SiteTrack Pro`;
-
-  // Simple SMTP send using Deno's net module
-  try {
-    const socket = await Deno.net.connect({
-      hostname: smtpHost,
-      port: parseInt(smtpPort),
-    });
-
-    // Start TLS
-    await new Promise<void>((resolve, reject) => {
-      socket.secureAsyncResolve = resolve;
-      socket.secureAsyncReject = reject;
-      socket.startTLS({ hostname: smtpHost });
-    });
-
-    // Authenticate
-    const write = (data: string) => new Promise<void>((resolve, reject) => {
-      socket.write(new TextEncoder().encode(data + "\r\n"));
-      setTimeout(resolve, 1000);
-    });
-
-    const readLine = (): Promise<string> => new Promise((resolve) => {
-      let data = "";
-      socket.ondata = (event: any) => {
-        data += new TextDecoder().decode(event.data);
-        if (data.includes("\n")) {
-          const line = data.substring(0, data.indexOf("\n"));
-          socket.ondata = undefined;
-          resolve(line);
-        }
-      };
-    });
-
-    await readLine(); // 220
-    await write(`EHLO ${smtpHost}`);
-    await readLine(); // 250
-    await write(`AUTH LOGIN`);
-    await readLine(); // 334
-    await write(Buffer.from(smtpUser).toString("base64"));
-    await readLine(); // 334
-    await write(Buffer.from(smtpPassword).toString("base64"));
-    await readLine(); // 235
-
-    // Mail from
-    await write(`MAIL FROM:<${smtpUser}>`);
-    await readLine(); // 250
-
-    // RCPT TO
-    await write(`RCPT TO:<${to}>`);
-    await readLine(); // 250
-
-    // DATA
-    await write(`DATA`);
-    await readLine(); // 354
-
-    // Build email
-    const html = `
+// or a "sign in now" CTA. The account is activated via the CONFIRMATION link,
+// which (since Aug-2026) ships INSIDE this welcome email as the primary CTA.
+// Branded welcome email — ALWAYS sent via the Resend API (delivered-status
+// visibility; GoTrue's own SMTP path silently dropped mail in Aug-2026, see
+// AGENTS.md). When generateLink produced an action_link we embed it as the
+// primary CTA so workspace activation no longer depends on GoTrue SMTP.
+async function sendWelcomeEmail(to: string, firmName: string, confirmUrl?: string | null): Promise<boolean> {
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) return false;
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
+  const cta = confirmUrl
+    ? `<div style="text-align:center;margin:24px 0">
+         <a href="${confirmUrl}" style="background:#C2410C;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;display:inline-block">Confirm your workspace</a>
+         <p style="color:#78716c;font-size:12px;margin-top:10px">This button confirms your email address too.</p>
+       </div>`
+    : `<p style="color:#57534e">To activate it, please confirm your email address using the confirmation link we sent separately.</p>`;
+  const html = `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
   <div style="text-align:center;margin-bottom:24px">
-    <div style="width:48px;height:48px;border-radius:12px;background:#ea580c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">S</div>
+    <div style="width:48px;height:48px;border-radius:12px;background:#C2410C;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">S</div>
   </div>
   <h2 style="color:#1c1917;text-align:center">Welcome to SiteTrack Pro</h2>
   <p style="color:#57534e">Hi there,</p>
-  <p style="color:#57534e">Your workspace <b>${firmName}</b> is being set up. To activate it, please confirm your email address using the confirmation link we sent separately — once confirmed, you can sign in and finish setting up your workspace.</p>
+  <p style="color:#57534e">Your workspace <b>${firmName}</b> is ready. Activate it below:</p>
+  ${cta}
   <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13px;color:#166534">
-    <strong>Your 14-day Pro free trial:</strong> your workspace starts on the <b>Pro plan</b> — all Pro features unlocked — free for 14 days. Pick a plan to keep after the trial ends.
+    <strong>Your 14-day Pro free trial:</strong> all Pro features unlocked \u2014 free for 14 days. Pick a plan to keep after the trial ends.
   </div>
   <p style="color:#78716c;font-size:13px;text-align:center">- Team SiteTrack Pro</p>
 </div>`;
-
-    await write(`${html}\r\n.\r\n`);
-    await readLine(); // 250
-    await write(`QUIT`);
-    await readLine(); // 221
-
-    socket.close();
-    return true;
-  } catch (e) {
-    console.error("SMTP send failed, falling back to REST API", e);
-    // Fall back to REST API
-    const key = Deno.env.get("RESEND_API_KEY");
-    if (!key) return false;
-    const from = Deno.env.get("RESEND_FROM_EMAIL") || "SiteTrack <hello@sitetrackpro.in>";
-    try {
-      const r = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ from, to, subject, html: `<p>Welcome to SiteTrack Pro - your workspace is being set up. Check your email for confirmation.</p>` }),
-      });
-      return r.ok;
-    } catch { return false; }
-  }
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: confirmUrl ? `Confirm your workspace: ${firmName} \u00b7 SiteTrack Pro` : `Activate your ${firmName} workspace on SiteTrack Pro`,
+        html,
+      }),
+    });
+    return r.ok;
+  } catch { return false; }
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -351,23 +273,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // 5. Dispatch the Supabase confirmation email. createUser(email_confirm:false)
   //    does NOT send one (verified live: confirmation_sent_at stays NULL), so we
-  //    explicitly generate a fresh signup link, which GoTrue emails via the
-  //    configured SMTP (Gmail). redirectTo = canonical app URL — the default
-  //    site_url is a stale preview URL. Single source of truth for the confirm
-  //    link = GoTrue's own email.
+  //    generate a fresh signup link. GoTrue also tries its own SMTP (belt),
+  //    but the DELIVERED path is the welcome email below, which now embeds
+  //    the action_link as the primary CTA — activation no longer depends on
+  //    GoTrue SMTP (which silently dropped mail in Aug-2026).
   const siteUrl = (Deno.env.get("PUBLIC_SITE_URL") || "https://sitetrackpro.in").replace(/\/+$/, "");
   let confirmDispatched = false;
+  let actionLink: string | null = null;
   {
-    const { error: confirmErr } = await admin.auth.admin.generateLink({
+    const { data: linkData, error: confirmErr } = await admin.auth.admin.generateLink({
       type: "signup",
       email,
       options: { redirectTo: siteUrl },
     });
     confirmDispatched = !confirmErr;
+    if (!confirmErr) {
+      actionLink = (linkData as { properties?: { action_link?: string } } | null)?.properties?.action_link ?? null;
+    }
   }
 
-  // 5b. Send branded heads-up email (the confirm link itself is sent above).
-  const welcomeSent = await sendWelcomeEmail(email, firmName);
+  // 5b. Branded welcome email with the confirm CTA (Resend API — visible).
+  const welcomeSent = await sendWelcomeEmail(email, firmName, actionLink);
 
   // 6. Record the successful attempt for the IP rate limit (best-effort —
   //    a failure here must never undo the org creation).
