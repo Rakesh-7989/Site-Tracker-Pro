@@ -25,6 +25,7 @@ import { useLocationContext } from "@/hooks/useLocationContext";
 import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS, TAB_CATALOG } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
+import { PartnersTab } from "./tabs/PartnersTab";
 import { RequestProjectAccess } from "./RequestProjectAccess";
 import { MilestonesTab } from "./tabs/MilestonesTab";
 import { TasksTab } from "./tabs/TasksTab";
@@ -146,7 +147,8 @@ export function DetailView(): JSX.Element {
     <div>
       {/* Render requested tab content (even if not visible in tab bar) so AccessDenied triggers */}
       {requestedId === "overview" && <OverviewTab project={project} members={members} />}
-      {requestedId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
+        {requestedId === "team" && <TeamTab projectId={project.id} orgId={project.orgId} members={members} onReload={reload} />}
+        {requestedId === "partners" && <PartnersTab projectId={project.id} />}
       {requestedId === "milestones" && <MilestonesTab projectId={project.id} />}
       {requestedId === "tasks" && <TasksTab projectId={project.id} />}
       {requestedId === "updates" && <UpdatesTab projectId={project.id} />}

@@ -13,6 +13,9 @@ const app = [
   read("src/app/router.tsx"),
   read("src/app/RouteErrorBoundary.tsx"),
   read("src/lib/db.ts"),
+  read("src/app/partnerQueries.ts"),
+  read("src/features/project/tabs/PartnersTab.tsx"),
+  read("src/features/shell/SharedProjectsCard.tsx"),
   read("src/plugins/catalog.ts"),
   read("src/features/shell/ShellLayout.tsx"),
   read("src/features/shell/TopBar.tsx"),
@@ -431,6 +434,9 @@ const vite = read("vite.config.js");
   "guardRoutes",
   "TypedSupabaseClient",
   "getTypedClient",
+  "invitePartnerOrg",
+  "acceptProjectPartnerInvite",
+  "SharedProjectsCard",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [

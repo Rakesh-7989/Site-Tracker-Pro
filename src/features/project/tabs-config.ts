@@ -57,7 +57,7 @@ const CONSULTANCY_TYPES: ReadonlyArray<ProjectType> = ["consultant", "design"];
 
 // Fixed set of tabs that have real implementations (not placeholders).
 export const REAL_TABS: ReadonlySet<string> = new Set([
-  "overview", "team", "milestones", "tasks", "updates", "issues", "punchlist", "drawings",
+  "overview", "team", "partners", "milestones", "tasks", "updates", "issues", "punchlist", "drawings",
   "drawing-review",
   "rfi", "changeorders", "boq", "estimate", "fieldops", "materials", "attendance", "labour",
   "safety", "inspections", "map", "boq", "gantt", "approvals", "messages",
@@ -72,6 +72,8 @@ export const TAB_CATALOG: readonly TabDef[] = [
   // Always-on for any project member
   { id: "overview",     label: "Overview",      icon: "dashboard" },
   { id: "team",         label: "Team",          icon: "users" },
+  // Cross-org collaboration C1 — host view of partner firms (invite/revoke).
+  { id: "partners",     label: "Partners",      icon: "share",   requiresAny: ["project:settings:edit", "team:manage"] },
 
   // Progress + planning
   { id: "milestones",   label: "Milestones",    icon: "flag",      requires: "milestone:add" },

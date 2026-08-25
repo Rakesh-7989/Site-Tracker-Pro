@@ -40,6 +40,7 @@ import {
   type ProjectLifecycleStatus,
   type StatusTone,
 } from "@/lib/projectLifecycle";
+import { SharedProjectsCard } from "./SharedProjectsCard";
 
 type LoadState =
   | { kind: "loading" }
@@ -209,6 +210,8 @@ export function ProjectsListView(): JSX.Element {
           </Link>
         )}
       </div>
+
+      <SharedProjectsCard />
 
       {actionError && (
         <Alert variant="danger" onDismiss={() => setActionError(null)}>{actionError}</Alert>

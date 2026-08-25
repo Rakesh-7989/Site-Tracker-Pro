@@ -69,7 +69,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "analyze": "ANALYZE=true vite build",
     "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit",
-    "db:types": "node scripts/generate-db-types.mjs"
+    "db:types": "node scripts/generate-db-types.mjs",
+    "test:rls:partners": "node scripts/test-partner-collab-rls.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
