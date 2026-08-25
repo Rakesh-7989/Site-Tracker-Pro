@@ -1,3 +1,17 @@
+## Session — 2026-08-25: Restore drill prepped → DEFERRED to pre-pilot (founder decision) (complete)
+
+**What happened**: Started Option-A drill (free scratch Supabase project as restore target). Discoveries worth keeping:
+- **Access token is PROJECT-scoped** — can list projects/orgs but CANNOT create projects (403 "Resource context not found" on all 3 orgs). Scratch project creation needs the dashboard (2-min founder step).
+- **`supabase db dump` requires Docker** on this machine (CLI v2.109 runs pg_dump in a container; Docker Desktop absent).
+- **Working dump path** (recorded for the future session): standalone binaries from `theseus-rs/postgresql-binaries` GitHub releases (`postgresql-17.5.0-x86_64-pc-windows-msvc.tar.gz`, ~77 MB, extract bin/) → `pg_dump.exe -d $SUPABASE_DB_URL --schema=public --no-owner --no-privileges --format=plain`. **Must be pg_dump 17.x** (server is PG 17.6; a 16.x client aborts with version mismatch). Live public schema dumped **824 KB in ~12s**.
+- Probe of live data: payments table EMPTY, zero financial violations (already known from mig-239 deep-dive).
+
+**Founder decision**: drill DEFERRED until real customer data exists (pre-pilot). Rationale: demo-scale data makes the exercise cheap-but-low-signal now; procedure re-run documented above takes minutes when it matters. No scratch project created (free slots untouched); temp downloads cleaned.
+
+**Docs**: MODULE_AUDIT_2026-08.md restore-drill row updated 🔴→🟡-deferred with the tooling pointer.
+
+---
+
 ## Session — 2026-08-25: SHIP — Production Hardening v1 to prod (PR #20, squash `172a1bf`) (complete)
 
 **Shipped**: 6-commit hardening batch (`fabdec8` offline consolidation · `311e311` definer hardening+audit · `b4e2a2b` versioned concurrency · `4ba794b` financial invariants · `1cda4c0` net-receivable fix · `3c745ff` sync merge) via PR #20 (user-approved).
