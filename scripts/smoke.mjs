@@ -11,6 +11,7 @@ const add = (name, pass, detail = "") => checks.push({ name, pass, detail });
 const app = [
   read("src/app/AppV3.tsx"),
   read("src/app/router.tsx"),
+  read("src/app/RouteErrorBoundary.tsx"),
   read("src/plugins/catalog.ts"),
   read("src/features/shell/ShellLayout.tsx"),
   read("src/features/shell/TopBar.tsx"),
@@ -425,6 +426,8 @@ const vite = read("vite.config.js");
   "getPlanCaps",
   "TrialBanner",
   "trialDaysLeft",
+  "RouteErrorBoundary",
+  "guardRoutes",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
