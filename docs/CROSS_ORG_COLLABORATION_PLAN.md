@@ -3,7 +3,9 @@
 > Research source: "Role Intelligence Study" (Aug-2026). This is the **moat feature**:
 > a developer's project workspace where the architect firm, interior firm, contractor
 > and consultants — each with their OWN organization/account — collaborate on ONE project.
-> Status: **DESIGNED, NOT YET BUILT**. This doc is the build contract.
+> Status: **C1 SHIPPED (2026-08-26, migrations 241–246 live)** — substrate, RLS read arm,
+> invite-code redemption RPC, host Partners tab + partner "Shared with us" card,
+> audit trail, 22/22 live-DB harness (`npm run test:rls:partners`). C2–C4 remain.
 
 ## Why this is the moat
 

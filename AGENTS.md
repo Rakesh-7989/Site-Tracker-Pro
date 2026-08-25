@@ -1,3 +1,48 @@
+## Session — 2026-08-26: ENTERPRISE HARDENING + MOAT C1 — lint truth, route resilience, typed DB boundary, cross-org partners (complete)
+
+**User mandate**: "malli redesign — deep-dive chesi enterprise SaaS product build" (all three phases via agentic loop). Deep-dive (explore agent) found the repo far past the stale homepage notes; chose hardening → moat → polish order.
+
+### P1-A — Debt cleanup + REAL TypeScript linting (`<commit>`)
+**Headline finding: ESLint was silently NOT linting any .ts/.tsx file** (flat config had no TS block; `eslint .` only covered scripts/docs/tests). Fixed with typescript-eslint 8.68 (recommended) + react-hooks on ts+tsx; EFs stay excluded (Deno). First real run: 422 errors → triaged:
+- Baseline warnings documented for burn-down: `no-explicit-any` (296, the known debt) + `react-hooks/rules-of-hooks` (~90 genuine early-return-before-hooks sites — latent crash class on org switch) both set to WARN temporarily; `--max-warnings` 200→520. Burn-down target = typed-boundary phase.
+- ALL new ERRORS fixed by hand across src/e2e-mock/tests (unused vars w/ `^_` policy + caughtErrors:none, no-empty allowEmptyCatch, ternary-statements→if/else in CustomRolesPanel/ManageCustomRolesModal/LoginScreenV3, prefer-let shadows in dprOfflineSync, ChatStream Telugu-range regex disables w/ reason, control-regex sanitizer disables, stale typo'd disable in DrawingsTab, empty interface→type alias in supabase.ts, `\-` escape in upi.ts, triple-slash ref removed).
+- **Mojibake sweep**: 11 U+FFFD sites fixed (SecurityView ×3, DailySnapshotView ×2, SiteWallKiosk, ApprovalsTab ×2, GanttTab, RfiTab ×2, ComplianceView corrupted ⚠ glyph); zero U+FFFD remain in src.
+- Stray files eliminated: `notificationPrefs.js`→typed `.ts`, `NotificationPreferencesView.jsx`→design-system `.tsx` (dead `bg-primary` classes were rendering unstyled!), `format_base64.txt` deleted.
+- smoke.mjs +2 guards (464): migration-number uniqueness (**found 5 legacy collisions** 100/112/155/201/237 — grandfathered, ledger-immutable; NEW dupes fail) + "no .js/.jsx/.txt under src/".
+
+### P1-B — Route-level error resilience (`<commit>`)
+New `src/app/RouteErrorBoundary.tsx` + `guardRoutes()` recursively attaches RRv7 `errorElement` to EVERY route (incl. plugin catalog): a crashed view renders the alert card INSIDE the shell outlet (chrome stays alive); layout crash degrades full-page; root ErrorBoundary remains last resort. Stale-chunk detection ("deployed a new version — reload") for hash-swap failures. Sentry captureException wired. Tests +13; smoke markers lock it (466).
+
+### P1-C — Typed Supabase boundary (`<commit>`)
+- `scripts/generate-db-types.mjs` (`npm run db:types`) — self-hosted supabase-gen replacement (CLI 2.109 shells to podman; absent). pg + information_schema → deterministic `Database` shape (158 tables Row/Insert/Update w/ NOT NULL accuracy, function arg maps, enums). `--check` mode = CI drift gate (added to ci.yml after column-drift; env-or-.env.local contract). `src/lib/database.types.ts` committed (214 KB, types-only).
+- `src/lib/db.ts`: `TypedSupabaseClient` + `getTypedClient()` (single documented bridge cast over the lazy singleton) + TableRow/Insert/Update shorthands.
+- Reference conversion: `milestoneQueries.ts` fully column-checked; **useAction now serves getTypedClient to every action callback** (legacy any-param fns unaffected — the adoption lever). Tests bridged via asTyped.
+- **The boundary paid off immediately during P2**: typed embed resolution flagged `SelectQueryError<"could not find relation">` on ppo→projects (generated Relationships map empty by design) → query restructured into two checked queries instead of a silent runtime break.
+- tsc cost of the 214 KB types file: ~45 s full check (acceptable).
+
+### P2 — CROSS-ORG COLLABORATION C1 SHIPPED (`<commit>`, mig 241–246 live)
+The designed moat is now REAL: partner FIRMS (own orgs) join a project.
+- **Invite model constrained by RLS truth**: host cannot look up other orgs (organizations_member_read own-org-only) → invite CODE flow; org binds at REDEMPTION. `project_partner_orgs.org_id` nullable while pending (242), partial unique indexes for bound links + one-pending-per-scope.
+- **RLS**: `can_read_project` + ONE additive OR-arm (active partner org); `user_project_ids()` gains the same arm (246) so drawings/DPRs/calendar/storage reads light up for partner members with ZERO per-table edits — host assigned-only semantics untouched. Writes ride untouched `can_write_project` → read-only C1. No recursion (policies scope on user_org_ids/has_org_tier directly, never can_read_project).
+- **Redemption RPC** `accept_project_partner_invite(text, uuid)` SECURITY DEFINER: admin-of-invited-org gate, multi-org disambiguation (choose-org error), name snapshot, auto-first-member. Three ledgered fixes captured as migrations (243 overload ambiguity from 241's text-only fn; 244 RETURNS-TABLE OUT-param shadowing → qualified predicates; 245 ON CONFLICT target collided with OUT params → EXISTS guard under the status-UPDATE row-lock serialization).
+- **Audit**: trigger on ppo writes → immutable audit_log_v2 with CHECK-legal actions (CREATE/UPDATE/DELETE; detail in message).
+- **UI**: `PartnersTab` (host: mint code w/ copy, scope Select per row, revoke confirm) at tab `partners` gated `requiresAny [project:settings:edit, team:manage]`; `SharedProjectsCard` on /projects (partner: shared list + code redemption, self-hiding when empty).
+- **Proof**: `scripts/test-partner-collab-rls.mjs` (`npm run test:rls:partners`, in CI RLS chain) **22/22 green** vs live DB — pre/post-redemption blindness, non-admin mint deny, duplicate pending scope reject, RPC bind, first-member, member-read arm, write denial (0-row gate), money hidden (invoices), audit rows for grant/update/revoke, decline-vs-scope gates, code replay reject, instant revocation blindness. Harness hit BOTH recorded lessons again: replica-mode disables ordinary triggers (reset before behavior tests); RLS UPDATE denials are silent row-filters.
+- partnerQueries.test.ts +12; smoke 471 (+5).
+
+### P3 verify
+e2e-mock **11/11** · a11y strict **7 surfaces / 0 violations** on the shipped tree.
+
+### Gates (final)
+lint 0 errors / 500 documented-debt warnings (budget 520) · tsc clean · build clean · smoke **471** · vitest **238 files / 2999 tests** · db:apply **236/0** · partners harness **22/22** · e2e-mock 11/11 · a11y strict green. Local commits on main; push/prod deploy awaits founder go.
+
+### Follow-ups queued
+1. rules-of-hooks burn-down (~90 early-return sites) then flip back to ERROR; same for no-explicit-any via progressive query-module conversions onto TypedSupabaseClient.
+2. Generator: emit Relationships[] from FK metadata to unlock typed embeds.
+3. Partners i18n keys (en/hi/te) + C2 contributor writes (scoped lanes) per plan rollout.
+
+---
+
 ## Session — 2026-08-25: AEC OS DIRECTION — org firm-types substrate + 3 strategy docs (complete)
 
 **Research input**: founder's Zoho-for-Startups + "Role Intelligence Study" (SiteTrack as Real Estate & AEC Project OS; firm-type → roles → screens → AI agents; cross-org collaboration as the moat; Zoho as the BUSINESS layer, not a product replacement).
