@@ -14,7 +14,14 @@ import globals from "globals";
 
 export default [
   {
-    ignores: ["dist/**", "node_modules/**", "package-lock.json"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "package-lock.json",
+      // Capacitor native shell: generated + copied web bundle — never lint.
+      "android/**",
+      "ios/**",
+    ],
   },
   js.configs.recommended,
   {

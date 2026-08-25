@@ -55,6 +55,7 @@
     "test:e2e:mock": "npx playwright test --config=playwright.mock.config.ts",
     "test:a11y": "npx playwright test --config=playwright.a11y.config.ts",
     "test:a11y:strict": "cross-env A11Y_STRICT=1 npx playwright test --config=playwright.a11y.config.ts",
+    "mobile:build": "npm run build && npx cap sync android",
     "test:ef": "node scripts/test-ef-harness.mjs",
     "test:rls": "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs && node scripts/test-rbac-v2-shadow.mjs",
     "test:rls:project": "node scripts/test-project-scope-rls.mjs",

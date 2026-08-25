@@ -2,7 +2,33 @@
 
 SiteTrack ships as a PWA out of the box. To distribute on the iOS App Store and Google Play, wrap the production build with Capacitor — no code rewrite required.
 
-## One-time setup
+## Current status (2026-08-25): FOUNDATION DONE ✅
+
+- **Capacitor 8.5.0** installed (`@capacitor/core` + `@capacitor/cli` devDep + `@capacitor/android`).
+- `capacitor.config.ts` committed — appId **`in.sitetrackpro.app`**, webDir `dist`, `androidScheme: https`.
+- **`android/` project generated and committed** — `compileSdk 36 / targetSdk 36` (meets the Aug-31-2026 Play target-API requirement from day one), minSdk 24.
+- Runtime detector: `src/lib/platform.ts` (`isNativeMobile()` / `getPlatform()`) — service worker already skipped inside the shell via this gate.
+- Scripts: `npm run mobile:build` = production web build + `cap sync android`.
+
+### Local commands (Node >=22 required by the Capacitor CLI)
+
+```sh
+nvm use 24.11.0        # CLI needs Node >=22 (project CI stays on Node 20)
+npm run mobile:build   # build dist/ + copy into android/
+npx cap open android   # Android Studio → Build > Generate Signed Bundle
+nvm use 20.19.5        # back to the project default
+```
+
+Building the AAB additionally requires Android Studio + SDK (founder machine); scaffolding/sync works without it.
+
+### Next phases
+1. Mobile shell polish (bottom nav, safe-area insets, native splash/icons via `@capacitor/assets`).
+2. Phase-5 plugins per the table below (`camera`, `geolocation`, `push`, `share`, `network`).
+3. Play Console: internal testing track with a signed AAB.
+
+---
+
+## One-time setup (historical reference — ALREADY DONE above)
 
 ```sh
 npm install --save-dev @capacitor/core @capacitor/cli
