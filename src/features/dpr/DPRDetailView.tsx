@@ -15,7 +15,9 @@ import { getClient } from "@/lib/supabase";
 import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
 import { loadProjectHierarchy, hierarchyPath } from "@/app/spaceQueries";
 import { invokeSendDpr } from "@/app/dprSubmit";
-import { downloadDprPdf, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
+import { downloadDprPdf, getDprPdfBlob, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
+import { isNativeMobile } from "@/lib/platform";
+import { nativeShareFile } from "@/lib/native-capabilities";
 
 export const fmtDateTime = (iso: string): string => {
   const d = new Date(iso);
@@ -125,8 +127,22 @@ const onRetry = useCallback(async () => {
 
   const whatsappShareData = {
     phone: row.promoterPhone,
-    title: `DPR ${fmtDateTime(row.createdAt)} · ${row.transcript?.slice(0, 120) ?? "Site update"}`,
+    title: `DPR ${fmtDateTime(row.createdAt)} — ${row.transcript?.slice(0, 120) ?? "Site update"}`,
   };
+
+  // Native share sheet: hands the REAL PDF to WhatsApp/Drive/mail etc.
+  const [sharing, setSharing] = useState(false);
+  const onNativeShare = useCallback(() => {
+    void (async () => {
+      setSharing(true);
+      try {
+        const blob = getDprPdfBlob(row, activeOrg.orgName);
+        await nativeShareFile({ fileName: `dpr-${row.id.slice(0, 8)}.pdf`, blob, title: "SiteTrack Pro DPR" });
+      } finally {
+        setSharing(false);
+      }
+    })();
+  }, [row, activeOrg.orgName]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 p-4 md:p-6">
@@ -136,6 +152,11 @@ const onRetry = useCallback(async () => {
           <Button size="sm" variant="ghost" onClick={() => void downloadDprPdf(row, activeOrg.orgName)} leftIcon={<Icon name="download" size={12} />}>
             {t("dpr.detail.downloadPdf")}
           </Button>
+          {isNativeMobile() && (
+            <Button size="sm" variant="ghost" onClick={onNativeShare} disabled={sharing} leftIcon={<Icon name="share" size={12} />}>
+              Share PDF
+            </Button>
+          )}
           { dprWhatsAppShareEnabled({ VITE_DPR_PDF_WHATSAPP: import.meta.env.VITE_DPR_PDF_WHATSAPP as string | undefined, DEV: import.meta.env.DEV }) && (
             <a href={waShareLink(whatsappShareData.phone, whatsappShareData.title)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-success hover:opacity-80">
               <Icon name="whatsapp" size={13} />{t("dpr.detail.shareWhatsApp")}

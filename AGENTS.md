@@ -1,3 +1,23 @@
+## Session — 2026-08-25: MOBILE PHASE 5 — native plugins (camera/GPS/network/share) (complete)
+
+**Deps += `@capacitor/camera` `geolocation` `network` `share` `filesystem` 8.x.** Push deliberately NOT installed (needs FCM/Google config — founder action, documented).
+
+**New `src/lib/native-capabilities.ts`** — every helper no-ops (`null`/false) on the web so callers keep browser paths untouched; dynamic imports everywhere:
+- `nativeTakePhoto()` — permission check → Camera.getPhoto (quality 80, width 1600, correctOrientation) → Blob via webPath fetch.
+- `nativeGetPosition()` — Geolocation high-accuracy coords.
+- `nativeShareFile({fileName,blob,title})` — Filesystem cache write (base64) → Share sheet with real file → temp cleanup.
+
+**Wired into the DPR field flow**:
+- `PhotoGeotagCapture`: native shell → "Take site photo" opens the NATIVE camera (hidden file input on web only); shared `processFile` pipeline now prefers native GPS before navigator.geolocation.
+- `offline.ts`: `initNetworkBridge()` (main.tsx native branch) upgrades the online source to the Network plugin (module-level override consulted by `isOnline()`); `onConnectivityChange` mirrors native transitions alongside browser events.
+- `dprPdf.ts`: split out `buildDprPdfDoc`/`getDprPdfBlob`; `DPRDetailView` gains a **Share PDF** button (native only) handing the REAL PDF to WhatsApp/Drive/mail via the share sheet.
+
+**Tests**: `tests/lib/nativeCapabilities.test.ts` (+4) — web path never invokes plugins; native paths return Blob/coords. Gotchas: Capacitor plugin objects are proxies (vi.spyOn fails — use vi.mock factories with `vi.hoisted` state); jsdom lacks Response (stub `{blob:async}`).
+
+**Gates**: lint 0 · tsc 0 · vitest **233 files / 2967 tests** · smoke **462** · build clean · e2e-mock **11/11**.
+
+---
+
 ## Session — 2026-08-25: MOBILE PHASE 4 — native shell behaviour (complete)
 
 **Scope**: make the SAME bundle feel native inside the Capacitor shell (web PWA untouched).

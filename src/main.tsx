@@ -14,6 +14,7 @@ initSentry();
 if (isNativeMobile()) {
   document.documentElement.classList.add("native-shell");
   void import("./lib/native").then(m => m.initNativeShell());
+  void import("./lib/offline").then(m => m.initNetworkBridge());
 } else {
   registerServiceWorker();
 }
