@@ -1,3 +1,15 @@
+## Session — 2026-08-25: Net-receivable percentage fix — UI aligned with mig-239 cap (complete)
+
+**Follow-up to mig 239**: the deep-dive had flagged a client/server formula divergence. Confirmed real: `crossInvoiceQueries.netReceivable()` (shared by the org invoice register AND the client portal) computed `amount + gst − tds` — treating the GST/TDS columns as flat rupees when they are PERCENTAGES (`invoices.gst numeric(4,2) default 18`). A ₹1,00,000 invoice @18/2 showed net receivable **₹1,00,016** instead of ₹1,16,000; outstanding and paid/partial status were wrong on every taxed invoice.
+
+**Fix**: `netReceivable()` → `round(amount × (1 + gst% − tds%))` — now identical to migration 239's server-side payment cap and `financeQueries.invoiceTaxBreakup`. Both consuming mappers (`listOrgInvoices`, `listClientInvoices`) flow through automatically; `outstanding`/`paymentStatus` inherit correctness. Stale comments updated. The `clientPortalDepth.test.ts` fixtures had baked the bug in (`gst: 18000` = "₹18,000 GST") → corrected to realistic percentages (`gst: 18`) with identical expected outputs (116000).
+
+**Tests**: new `tests/app/crossInvoiceNet.test.ts` (+5): percentage math, half-up rounding edges (38_666 / 38_669), NaN coercion, outstanding clamp.
+
+**Gates**: tsc clean · lint 0 err · vitest **231 files / 2956 tests** · smoke **462** · build clean · e2e-mock **11/11**.
+
+---
+
 ## Session — 2026-08-25: FINANCIAL-CHAIN INVARIANTS — payment cap/target guards (mig 239, complete)
 
 **Context**: ChatGPT deep-dive P0 (Domain): "Financial invariants". Deep-dive found the **payments table EMPTY (0 live rows)** and no writers anywhere (UI/EF) — the flow hadn't launched, so guards could land before the first real rupee. Live probe also confirmed 0 violations on invoices/ra_bills/paid_amounts and NO existing guard against the polymorphic-target failure class.
