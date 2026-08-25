@@ -67,6 +67,14 @@ export interface OrgMembership {
    */
   segments?: CompanySegment[] | null;
   /**
+   * What KIND of business runs this org (migration 240): developer / builder /
+   * architecture_firm / interior_firm / contractor / consultant / pmc /
+   * vendor. Null = legacy/unclassified — resolve with resolveOrgType() which
+   * derives from segments when unambiguous. Drives role templates + per-firm
+   * dashboards/AI agents (Role Intelligence Study, Aug-2026).
+   */
+  orgType?: import("./orgType").OrgType | null;
+  /**
    * Which product modules the org has switched on (migration 155). Absent /
    * null = not configured yet → every module is treated as enabled
    * (back-compat with pre-module orgs).

@@ -1,3 +1,22 @@
+## Session — 2026-08-25: AEC OS DIRECTION — org firm-types substrate + 3 strategy docs (complete)
+
+**Research input**: founder's Zoho-for-Startups + "Role Intelligence Study" (SiteTrack as Real Estate & AEC Project OS; firm-type → roles → screens → AI agents; cross-org collaboration as the moat; Zoho as the BUSINESS layer, not a product replacement).
+
+**Reality-check**: much already exists — segments (228), multi-org users (173), CRM (161+), design workflow (165/166), procurement chain (G1/E5), consultancy billing (C1-C3), voice DPR. The genuine gaps = **firm-type substrate**, **cross-org collaboration**, **business-ops (Zoho) integration plan**.
+
+**Migration 240** `240_org_types.sql` (live, db:apply 231/0): `organizations.org_type` CHECK (developer|builder|architecture_firm|interior_firm|contractor|consultant|pmc|vendor) NULL-safe + index + UNAMBIGUOUS backfill from segments (construction/multiple left NULL on purpose — developer-vs-builder needs an answer, not a guess).
+
+**Code**: `src/auth/orgType.ts` (`ORG_TYPES`, `resolveOrgType()` explicit-first → unambiguous single-segment fallback, `isDesignFirm/isExecutionFirm`) + `OrgMembership.orgType` hydrated in fetchAuthSession (+tests 7). Onboarding picker wiring = follow-up.
+
+**Docs shipped**:
+- `docs/CROSS_ORG_COLLABORATION_PLAN.md` — THE moat designed: `project_partner_orgs` + `project_partner_members` substrate, RLS OR-arm for can_read_project, partner capability allow-list (never money tables), UI surfaces, C1-C4 rollout, security invariants. NOT built yet — build contract ready.
+- `docs/ZOHO_STARTUP_STACK_PLAN.md` — Zoho = business ops around the product; activate Mail/CRM-free/Desk-free/Books-free first; signup→CRM lead via Flow webhook using the notify_config secret pattern; Cashfree stays payment rail; DPDP guardrail on what leaves Supabase.
+- `docs/ROLE_INTELLIGENCE_STUDY.md` — every firm-role mapped to EXISTING coverage (mostly ✅/🟡) with phase-tagged gaps; build discipline locked to GTM order (Developer → Architect → Interior → Contractor/Consultant).
+
+**Gates**: lint 0 · tsc 0 · vitest **2974** (+7 orgType) · smoke **462**.
+
+---
+
 ## Session — 2026-08-25: MOBILE PHASE 5 — native plugins (camera/GPS/network/share) (complete)
 
 **Deps += `@capacitor/camera` `geolocation` `network` `share` `filesystem` 8.x.** Push deliberately NOT installed (needs FCM/Google config — founder action, documented).
