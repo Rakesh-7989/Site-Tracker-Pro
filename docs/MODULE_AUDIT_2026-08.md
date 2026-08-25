@@ -27,7 +27,7 @@
 | Storage buckets | 7 buckets (deliverables, dpr-media, research-docs, chat-files, +3) — all private, folder-scoped org/project policies via `storage.foldername(name)[1]` pattern | Medium | 🟢 | Verify-in-CI candidate |
 | Edge Functions | Shared `_shared/auth.ts` gate + hardened CORS echo; register_org confirm-email fixed (generateLink dispatch); cron secrets via `notify_config` | Medium | 🟢 | Rotate stale secrets when flagged |
 | Cross-tenant attack pass | SEC-04 CT-000..005 matrix green (506 assertions) | High impact | 🟢 | Re-run per new table |
-| Restore drill | Backup ✅ + JSON export drill ✅; **restore never exercised** | Disaster recovery | 🔴 | FOUNDER: restore latest Supabase backup to a scratch project; document RTO/RPO |
+| Restore drill | Backup ✅ + JSON export drill ✅ + **dump path proven** (2026-08-25: live public schema dumped 824 KB via standalone pg_dump 17.5 in 12s — see AGENTS.md for tooling). **Restore verification deferred to pre-pilot** (founder decision: no customer data yet; re-run when real data lands). Scratch-target creation needs dashboard (access token is project-scoped, can't create projects). | Disaster recovery | 🟡 deferred | FOUNDER (pre-pilot): create free scratch project → restore dump → row-count/policy verification → record RTO |
 | Migration-from-empty replay | Ledger runner exists; old migrations rely on live-state (benign pre-existing fails) | Medium | 🟡 | Scratch-project replay test |
 | Tenant deletion / DPDP erasure | `delete_organization` RPC (92/122) + unified lifecycle | Medium | 🟢 | Drill annually |
 | Sentry error tracking | `initSentry()` wired in main.tsx; **DSN unset** | Blind spots | 🟡 | FOUNDER: create free sentry.io project, set `VITE_SENTRY_DSN` |
@@ -46,9 +46,11 @@
 3. Migration-from-empty replay harness (scratch DB)
 
 **Founder actions (minutes each, agent cannot do):**
-4. Restore drill — restore latest Supabase backup to scratch project (closes the only 🔴 data item)
+4. ~~Restore drill~~ → **DEFERRED to pre-pilot** (2026-08-25 founder decision — dump path already proven; full restore+verify when real customer data lands)
 5. Sentry DSN — free account → set `VITE_SENTRY_DSN` env
 6. UptimeRobot — free account → 2 monitors (frontend + Supabase REST)
+
+**Accessibility audit** (2026-08-25): axe-core wired (`npm run test:a11y[:strict]`) — **7/7 app surfaces ZERO violations** after token-level WCAG contrast fixes (light tertiary #767066, light accent #C2410C family, dark tertiary #85888F) + login landmark/main + scoped `.on-ink` dark-surface utility. PSI perf scores pending (API rate-limited at audit time).
 
 **Blocked on product decision:**
 7. Capacitor foundation (audit P1) — recommend AFTER founder ops actions above

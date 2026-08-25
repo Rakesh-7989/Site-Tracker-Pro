@@ -197,12 +197,13 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
   const meta = LOGIN_META[lane];
 
   return (
-    <div className="relative min-h-screen grid lg:grid-cols-2 bg-ink">
+    <main className="relative min-h-screen grid lg:grid-cols-2 bg-ink">
       {/* Pre-login language picker (top-right) */}
       <div className="absolute top-4 right-4 z-10"><LanguageSwitcher /></div>
 
-      {/* Left brand panel */}
-      <div className="hidden lg:flex flex-col justify-center px-12 text-white">
+      {/* Left brand panel — hardcoded dark surface, so scope dark-theme accent
+          tokens locally (`.on-ink`) or the light tokens fail contrast here. */}
+      <div className="on-ink hidden lg:flex flex-col justify-center px-12 text-white">
         <h1 className="font-display text-5xl font-bold leading-tight">
           {t("auth.heroTitle1")}
           <br />
@@ -360,7 +361,7 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
           </>)}
         </Card>
       </div>
-    </div>
+    </main>
   );
 }
 

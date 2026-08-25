@@ -1,3 +1,49 @@
+## Session — 2026-08-25: ACCESSIBILITY AUDIT — axe-core wired, WCAG contrast fixes (complete)
+
+**New permanent tooling**: `npm run test:a11y` (report) / `test:a11y:strict` (fails on critical|serious) — axe-core 4.13 over the REAL authenticated shell via the mocked-session harness (7 surfaces: /, /projects, /chat, /calendar, /search, /analytics, public /login). Own Playwright config `playwright.a11y.config.ts` (testMatch pattern, ignored by the standard e2e-mock suite like ux-audit). Writes `test-results/a11y-report.json`.
+
+**First-run findings → root causes were 3 TOKEN-level issues (not per-component)**:
+1. Light `--st-text-tertiary #8E887C` on white = 3.52 (< 4.5) — the dominant failure (micro-labels everywhere) → **#767066** (4.91).
+2. Light accent `#FF6B1A` ↔ white = 2.85 in BOTH text directions → **#C2410C** (5.18 both ways, 4.68 on tint); pressed `--st-accent-2 #E55A0E` → **#A83B08** (6.38/5.76). Dark-theme accents untouched (#FF8A3D = 6.71 on dark panel).
+3. Dark `--st-text-tertiary #6B6E76` = 3.42 on #181A1E → **#85888F** (4.91).
+Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**: light-mode orange is now a deeper burnt orange — deliberate AA-compliance tradeoff, veto-able.
+
+**/login specifics**: hardcoded-dark hero used light tokens → new scoped `.on-ink` utility in index.css (redefines tertiary+accent for contained dark surfaces; mirrors .dark values). Landmark violations fixed by making the screen root `<main>`.
+
+**Result**: **7/7 surfaces ZERO axe violations** (was: color-contrast serious on every surface + login landmarks). Strict mode green.
+
+**Gates**: lint 0 · tsc 0 · vitest **231 files / 2956 tests** · smoke **462** · build · e2e-mock **11/11** · test:a11y:strict green. PSI API rate-limited today (429 — shared anon quota); perf scores pending retry.
+
+---
+
+## Session — 2026-08-25: Restore drill prepped → DEFERRED to pre-pilot (founder decision) (complete)
+
+**What happened**: Started Option-A drill (free scratch Supabase project as restore target). Discoveries worth keeping:
+- **Access token is PROJECT-scoped** — can list projects/orgs but CANNOT create projects (403 "Resource context not found" on all 3 orgs). Scratch project creation needs the dashboard (2-min founder step).
+- **`supabase db dump` requires Docker** on this machine (CLI v2.109 runs pg_dump in a container; Docker Desktop absent).
+- **Working dump path** (recorded for the future session): standalone binaries from `theseus-rs/postgresql-binaries` GitHub releases (`postgresql-17.5.0-x86_64-pc-windows-msvc.tar.gz`, ~77 MB, extract bin/) → `pg_dump.exe -d $SUPABASE_DB_URL --schema=public --no-owner --no-privileges --format=plain`. **Must be pg_dump 17.x** (server is PG 17.6; a 16.x client aborts with version mismatch). Live public schema dumped **824 KB in ~12s**.
+- Probe of live data: payments table EMPTY, zero financial violations (already known from mig-239 deep-dive).
+
+**Founder decision**: drill DEFERRED until real customer data exists (pre-pilot). Rationale: demo-scale data makes the exercise cheap-but-low-signal now; procedure re-run documented above takes minutes when it matters. No scratch project created (free slots untouched); temp downloads cleaned.
+
+**Docs**: MODULE_AUDIT_2026-08.md restore-drill row updated 🔴→🟡-deferred with the tooling pointer.
+
+---
+
+## Session — 2026-08-25: SHIP — Production Hardening v1 to prod (PR #20, squash `172a1bf`) (complete)
+
+**Shipped**: 6-commit hardening batch (`fabdec8` offline consolidation · `311e311` definer hardening+audit · `b4e2a2b` versioned concurrency · `4ba794b` financial invariants · `1cda4c0` net-receivable fix · `3c745ff` sync merge) via PR #20 (user-approved).
+
+**Merge path**: PR auto-existed CONFLICTING (prod squash history not in main) → sync merge origin/prod into main, AGENTS.md kept main's newer version (`--ours`), tsc clean → pushed → all PR checks green (test 6m12s · e2e-mock · coverage ×2 · Vercel previews ×2 · Supabase Preview) → protection count 1→0 (backup JSON at %TEMP%\opencode\prod_protection_backup.json) → **squash `172a1bf`** → restore count 1 + dismiss_stale true.
+
+**Post-ship verification**: trees IDENTICAL (`git diff origin/main origin/prod` empty) · prod CI success on `172a1bf` · prod-smoke **3/3** · uptime frontend 200 / backend GoTrue 200 · live https://sitetrackpro.in healthy.
+
+**New permanent gates now live in CI**: `check:definer --strict` · `test:rls:versions` (39/39) · `test:rls:finance` (18/18). Migrations 237/238/239 live (db:apply 229/0).
+
+**Remaining backlog (non-agent items)**: founder actions — restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡; product decisions — Capacitor foundation, BOQ-vs-RA caps, migration-from-empty replay harness (needs scratch DB vs zero-spend policy).
+
+---
+
 ## Session — 2026-08-25: Net-receivable percentage fix — UI aligned with mig-239 cap (complete)
 
 **Follow-up to mig 239**: the deep-dive had flagged a client/server formula divergence. Confirmed real: `crossInvoiceQueries.netReceivable()` (shared by the org invoice register AND the client portal) computed `amount + gst − tds` — treating the GST/TDS columns as flat rupees when they are PERCENTAGES (`invoices.gst numeric(4,2) default 18`). A ₹1,00,000 invoice @18/2 showed net receivable **₹1,00,016** instead of ₹1,16,000; outstanding and paid/partial status were wrong on every taxed invoice.

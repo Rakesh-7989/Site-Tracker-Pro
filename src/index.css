@@ -19,13 +19,13 @@
   /* Text */
   --st-text-primary:   #0F1115;
   --st-text-secondary: #5A5248;
-  --st-text-tertiary:  #8E887C;
+  --st-text-tertiary:  #767066;
   --st-text-inverse:   #FFFFFF;
 
   /* Accents */
-  --st-accent:        #FF6B1A;  /* safety orange — primary CTA + active */
-  --st-accent-rgb:    255, 107, 26;  /* RGB decomposition for opacity */
-  --st-accent-2:      #E55A0E;  /* pressed */
+  --st-accent:        #C2410C;  /* burnt orange — primary CTA + active (WCAG AA: ≥4.5 on white/tint, white-on-it 5.18) */
+  --st-accent-rgb:    194, 65, 12;  /* RGB decomposition for opacity */
+  --st-accent-2:      #A83B08;  /* pressed */
   --st-accent-light:  #FF8A3D;  /* hover / gradient end */
   --st-accent-tint:   #FFF1E6;  /* saffron */
   --st-indigo:        #1E40AF;  /* info / link */
@@ -112,7 +112,7 @@
 
   --st-text-primary:   #EDEDEF;
   --st-text-secondary: #A0A2A8;
-  --st-text-tertiary:  #6B6E76;
+  --st-text-tertiary:  #85888F;
   --st-text-inverse:   #FFFFFF;
 
   --st-accent:        #FF8A3D;
@@ -354,6 +354,14 @@ button.bg-orange-500, button.bg-orange-400 {
 .text-fg-primary   { color: var(--st-text-primary); }
 .text-fg-secondary { color: var(--st-text-secondary); }
 .text-fg-tertiary  { color: var(--st-text-tertiary); }
+
+/* Contained dark surfaces (login hero, kiosk panels) that sit on `bg-ink`
+   WITHOUT toggling the global .dark class. Redefines the tokens whose light
+   values fail WCAG contrast on near-black backgrounds. */
+.on-ink {
+  --st-text-tertiary: #85888F;   /* ≥4.9 on #0F1115 */
+  --st-accent:        #FF8A3D;   /* ≥6.7 on #0F1115 (dark-theme accent) */
+}
 .text-inverse      { color: var(--st-text-inverse); }
 .border-default    { border-color: var(--st-border); }
 .border-accent     { border-color: var(--st-accent); }
