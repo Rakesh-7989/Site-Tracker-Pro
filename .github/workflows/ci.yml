@@ -43,6 +43,12 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:columns
+      # DB-types freshness gate (P1-C): src/lib/database.types.ts must mirror
+      # the live public schema. Same SKIP-when-secret-missing contract.
+      - name: DB-types freshness gate
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run db:types -- --check
       # SECURITY DEFINER search-path gate (audit P0): every non-extension
       # definer function must pin search_path. SKIPs cleanly when the secret
       # is missing, same contract as the column-drift gate above.

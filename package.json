@@ -68,7 +68,8 @@
     "test:ux": "npx playwright test --config playwright.ux.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "analyze": "ANALYZE=true vite build",
-    "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit"
+    "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit",
+    "db:types": "node scripts/generate-db-types.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

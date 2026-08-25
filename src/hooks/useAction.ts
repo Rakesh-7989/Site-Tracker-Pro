@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getTypedClient, type TypedSupabaseClient } from "@/lib/db";
 
-type ActionFn = (c: unknown) => Promise<{ ok: boolean; error?: string }>;
+type ActionFn = (c: TypedSupabaseClient) => Promise<{ ok: boolean; error?: string }>;
 
 export interface UseActionOptions {
   backendError?: string;
@@ -35,7 +35,7 @@ export function useAction(
 
       optimistic?.apply();
 
-      const client = await getClient();
+      const client = await getTypedClient();
       if (!client) {
         setError(beMsg);
         optimistic?.rollback?.();

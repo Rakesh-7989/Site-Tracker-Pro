@@ -1,5 +1,5 @@
 ﻿// SiteTrack Pro — project Milestones tab (v3 port, Batch 1, DB-wired).
-import { getClient } from "@/lib/supabase";
+import { getTypedClient } from "@/lib/db";
 import { useAction } from "@/hooks/useAction";
 //
 // Lists the project's milestones from the `milestones` table; add + status
@@ -37,7 +37,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
-    const client = await getClient();
+    const client = await getTypedClient();
     if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await listMilestones(client, projectId);
     if (res.ok) setRows(res.data); else setError(res.error);
