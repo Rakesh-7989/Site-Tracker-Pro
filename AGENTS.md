@@ -1,3 +1,18 @@
+## Session — 2026-08-25: MOBILE PHASE 2 — Capacitor 8 foundation, android/ shell (complete)
+
+**ChatGPT-roadmap milestone "Mobile Field Platform" Phase 2 done**:
+- `@capacitor/core` + `@capacitor/android` (deps) + `@capacitor/cli` (devDep), all pinned **8.5.0**. Gotcha: CLI 8 needs **Node ≥22** — machine has nvm (`nvm use 24.11.0` for cap commands, back to 20 after; CI unaffected on 20).
+- `capacitor.config.ts`: appId **`in.sitetrackpro.app`**, appName SiteTrack Pro, webDir `dist`, `androidScheme https`.
+- **`android/` committed** (61 files): compileSdk/targetSdk = **36** → Aug-31-2026 Play target-API requirement met from day one; minSdk 24.
+- `src/lib/platform.ts` (`isNativeMobile()`/`getPlatform()`) + `main.tsx` skips the web service worker inside the shell (native owns caching per MOBILE_BUILD.md).
+- `npm run mobile:build` (= web build + cap sync android); eslint ignores android//ios generated assets; MOBILE_BUILD.md rewritten with real status + local command flow.
+
+**Gates**: lint 0 · tsc 0 · vitest **2958** · smoke **462** · web build clean.
+
+**Next mobile phases**: splash/icons via @capacitor/assets → mobile shell polish (bottom nav/safe-area) → Phase-5 plugins (camera/geolocation/push/share/network) → signed AAB to Play internal testing (needs Android Studio on founder machine).
+
+---
+
 ## Session — 2026-08-25: CONFIRMATION EMAILS not arriving — GoTrue SMTP switched Gmail→Resend (complete)
 
 **Founder report**: new workspace signup → confirmation email never arrives → sign-in blocked with "email not confirmed".
