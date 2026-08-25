@@ -4,10 +4,11 @@
 // states via RequireSession, then the chrome + <Outlet/> for child routes.
 
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
-import { Outlet, Navigate, useLocation } from "react-router-dom";
+import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { RequireSession, useAuth } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
+import { isNativeMobile, getPlatform } from "@/lib/platform";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
@@ -51,6 +52,7 @@ export function ShellLayout(): JSX.Element {
  */
 function GatedShell(): JSX.Element {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const mainRef = useRef<HTMLElement>(null);
@@ -59,6 +61,24 @@ function GatedShell(): JSX.Element {
   useEffect(() => {
     if (isDesktop) setMobileOpen(false);
   }, [isDesktop]);
+
+  // Android hardware BACK: drawer first, then router history; at the root the
+  // handler returns false and native.ts exits the app.
+  useEffect(() => {
+    if (!isNativeMobile() || getPlatform() !== "android") return;
+    let dispose = () => {};
+    let cancelled = false;
+    void (async () => {
+      const { attachAndroidBackButton } = await import("@/lib/native");
+      if (cancelled) return;
+      dispose = await attachAndroidBackButton(() => {
+        if (mobileOpen) { setMobileOpen(false); return true; }
+        if (window.history.length > 1) { navigate(-1); return true; }
+        return false;
+      });
+    })();
+    return () => { cancelled = true; dispose(); };
+  }, [mobileOpen, navigate]);
 
   const openSidebar = useCallback(() => setMobileOpen(true), []);
   const closeSidebar = useCallback(() => setMobileOpen(false), []);

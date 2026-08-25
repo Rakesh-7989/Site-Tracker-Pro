@@ -1,3 +1,19 @@
+## Session — 2026-08-25: MOBILE PHASE 4 — native shell behaviour (complete)
+
+**Scope**: make the SAME bundle feel native inside the Capacitor shell (web PWA untouched).
+
+- **`src/lib/native.ts`** (new): `initNativeShell()` (status bar → brand cream, Style.Light; `.native-shell` class pre-paint) + `attachAndroidBackButton(consume)` contract. All plugin imports dynamic — web bundle never pays.
+- **Android hardware BACK contract** wired in ShellLayout: drawer open → close; else router `navigate(-1)`; at root → `App.exitApp()`.
+- **CSS**: `.native-shell` scoping (`-webkit-tap-highlight-color: transparent`, `overscroll-behavior-y: contain`) + BottomNav min-height with safe-area inset (no double-pad on web, env()=0 there).
+- **Branding**: `@capacitor/assets` generated **74 assets** from `assets/logo.svg` (= public/icon-512.svg) — app icons + splash in light/dark densities replace the default Capacitor robot; splash bg #0f172a / icon bg #FDFBF6.
+- Deps += `@capacitor/app`, `@capacitor/status-bar`, `@capacitor/assets` (dev).
+
+**Gotchas recorded**: (1) Capacitor CLI 8 needs Node ≥22 → nvm switch for cap/assets commands only (project stays on 20); (2) running npm install under the OTHER node's npm mid-session silently DROPPED @capacitor/* entries from package.json and broke the web build ("failed to resolve @capacitor/core") — re-installed pinned versions on Node 20; lesson: never switch node majors between installs in one session without re-verifying package.json.
+
+**Gates**: lint 0 · tsc 0 · vitest **233 files / 2963 tests** (+5 platform) · smoke **462** · build clean · e2e-mock **11/11**.
+
+---
+
 ## Session — 2026-08-25: MOBILE PHASE 2 — Capacitor 8 foundation, android/ shell (complete)
 
 **ChatGPT-roadmap milestone "Mobile Field Platform" Phase 2 done**:
