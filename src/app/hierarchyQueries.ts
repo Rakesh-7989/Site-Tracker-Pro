@@ -134,7 +134,7 @@ async function floorIdsForBlocks(client: any, blockIds: string[]): Promise<strin
   return ((data ?? []) as Array<Record<string, unknown>>).map(r => String(r.id));
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function createBlock(
   client: any,
   input: { projectId: string; name: string; code: string },
@@ -153,7 +153,7 @@ export async function createBlock(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function createFloor(
   client: any,
   input: { blockId: string; projectId: string; number: string },
@@ -173,7 +173,7 @@ export async function createFloor(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function createUnit(
   client: any,
   input: { floorId: string; blockId: string; projectId: string; name: string; type: string },

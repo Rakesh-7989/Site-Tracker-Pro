@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/atoms";
 import { listNotifications, markRead, markAllRead, type Notification } from "@/app/notificationQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { loadNotificationPrefs, saveNotificationPrefs, getEnabledNotificationTypes, DEFAULT_NOTIF_PREFS } from "@/lib/notificationPrefs";
 

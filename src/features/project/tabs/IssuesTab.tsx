@@ -11,7 +11,7 @@ import {
   type Issue, type IssueSeverity,
 } from "@/app/issueQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { useAction } from "@/hooks/useAction";
 
 const SEV_TONE: Record<IssueSeverity, "danger" | "warning" | "neutral"> = { high: "danger", medium: "warning", low: "neutral" };

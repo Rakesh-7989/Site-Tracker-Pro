@@ -36,7 +36,7 @@ export function projectIdFromPath(path: string): string | null {
 export function sanitizeFileName(name: string): string {
   return String(name ?? "")
     .trim()
-    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/[\u0000-\u001f\u007f]/g, "") // eslint-disable-line no-control-regex -- strip control chars from stored filenames
     .replace(/[\\/:*?"<>|]/g, "_")
     .slice(0, 120) || "file";
 }

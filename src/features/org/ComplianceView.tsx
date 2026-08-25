@@ -95,7 +95,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           const ok = verified && (row.result.status === "REGISTERED_ACTIVE" || row.result.status === "ACTIVE" || row.result.status === "COMPLIANT");
           return (<div key={row.key} className="bg-panel rounded-2xl p-5 shadow-editorial border-default">
             <div className="flex items-end justify-between mb-3 flex-wrap gap-2">
-              <div><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary">{row.label}</div>{row.result && <div className={`mt-1 text-[11px] font-bold ${ok ? "text-success" : verified ? "text-accent-2" : "text-error"}`}>{ok ? `✓ ${row.result.status}` : verified ? `âš  ${row.result.status}` : `✗ ${row.result.reason || "Verification failed"}`}{row.extra && ` — ${row.extra}`}</div>}</div>
+              <div><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary">{row.label}</div>{row.result && <div className={`mt-1 text-[11px] font-bold ${ok ? "text-success" : verified ? "text-accent-2" : "text-error"}`}>{ok ? `✓ ${row.result.status}` : verified ? `⚠  ${row.result.status}` : `✗ ${row.result.reason || "Verification failed"}`}{row.extra && ` — ${row.extra}`}</div>}</div>
             </div>
             <div className="flex gap-2">
               <input value={row.val} onChange={e => row.setVal(e.target.value)} placeholder={row.placeholder} className="flex-1 p-3 border border-default rounded-xl text-sm outline-none focus:border-accent" />

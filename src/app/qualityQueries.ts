@@ -66,7 +66,7 @@ export async function listCorrectiveActions(client: any, projectId: string): Pro
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createCorrectiveAction(client: any, input: { projectId: string; description: string; priority?: CorrectivePriority; assignedTo?: string; dueDate?: string | null; inspectionId?: string | null }): Promise<Result<{ id: string }>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const chain = client.from("corrective_actions").insert({
     project_id: input.projectId, description: input.description, priority: input.priority || "medium",
     assigned_to: input.assignedTo || null, due_date: input.dueDate || null, inspection_id: input.inspectionId || null, status: "open",
@@ -82,7 +82,7 @@ async function chainInsert(chain: any): Promise<Result<{ id: string }>> {
 export function setCorrectiveStatus(client: any, id: string, status: CorrectiveStatus, opts?: { verifiedBy?: string | null }): Promise<Result<{ ok: true }>> {
   const patch: Record<string, unknown> = { status };
   if (status === "verified") patch.verified_by = opts?.verifiedBy ?? null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const chain = client.from("corrective_actions").update(patch);
   return chainUpdate(chain, id);
 }

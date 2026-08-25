@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/forms";
 import type { IconName } from "@/components/ui/icons";
 import { getOrgOverview, deleteOrganization, PLAN_LABEL, type OrgOverview } from "@/app/orgAdminQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 import { getClient } from "@/lib/supabase";
 import { QuotaMeter } from "@/features/org/QuotaMeter";

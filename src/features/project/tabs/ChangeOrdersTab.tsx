@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { fmtRupees } from "@/app/financeQueries";
 import { listChangeOrders, createChangeOrder, setCoStatus, deleteChangeOrder, type ChangeOrder, type CoStatus } from "@/app/designQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "submitted", label: "Submitted" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "cancelled", label: "Cancelled" }];

@@ -12,7 +12,7 @@ import {
   type Task, type TaskStatus, type TaskPriority,
 } from "@/app/taskQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { useAction } from "@/hooks/useAction";
 
 const ST_TONE: Record<TaskStatus, "neutral" | "info" | "success"> = { pending: "neutral", in_progress: "info", completed: "success" };

@@ -1,5 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import { mockSessionFor, openMockedApp, type MockIdentityRole } from "./mockSupabase";
+import { mockSessionFor, openMockedApp } from "./mockSupabase";
 
 // Role-access e2e that renders the REAL v3 router + shell with a mocked
 // Supabase session — zero credentials, zero live DB, CI-runnable. Each test

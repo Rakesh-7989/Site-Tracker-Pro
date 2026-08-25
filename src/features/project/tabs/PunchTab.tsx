@@ -6,7 +6,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import { listPunch, createPunch, setPunchStatus, deletePunch, type PunchItem, type PunchSeverity, type PunchStatus } from "@/app/siteOpsQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const SEV = [{ value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" }, { value: "critical", label: "Critical" }];

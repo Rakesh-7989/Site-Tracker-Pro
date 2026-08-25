@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listMaterials, createMaterial, setMaterialStatus, deleteMaterial, type Material, type MaterialStatus } from "@/app/siteOpsQueries";
 import { listMaterialRequests, createMaterialRequest, setMaterialRequestStatus, deleteMaterialRequest, requestTotals, REQUEST_NEXT, REQUEST_STATUS_LABEL, type MaterialRequest, type RequestStatus } from "@/app/materialRequestQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const ST = [{ value: "expected", label: "Expected" }, { value: "received", label: "Received" }, { value: "rejected", label: "Rejected" }];

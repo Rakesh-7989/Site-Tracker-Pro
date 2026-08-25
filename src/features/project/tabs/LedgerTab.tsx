@@ -8,7 +8,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { listLedger, createLedgerTxn, deleteLedgerTxn, stockRows, type LedgerTxn, type LedgerDirection } from "@/app/financeQueries";
 import { buildCsv, downloadCsv, csvDateStamp } from "@/lib/genericCsv";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const DIR = [{ value: "inward", label: "Inward" }, { value: "outward", label: "Outward" }, { value: "return", label: "Return" }, { value: "wastage", label: "Wastage" }];

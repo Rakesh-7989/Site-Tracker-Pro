@@ -156,7 +156,7 @@ export function monthlyStatementTotals(rows: MonthlyStatementRow[]): MonthlyStat
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function listOrgMonthlyStatement(
   client: any,
   orgId: string,

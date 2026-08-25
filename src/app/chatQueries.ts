@@ -39,7 +39,7 @@ export interface ChatMessage {
 const CHAT_SELECT = `id, channel_id, parent_id, sender_id, sender_name, body, mentions, reply_count, created_at,
   chat_message_reactions(user_id, emoji)`;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function mapMessage(r: Record<string, unknown>): ChatMessage {
   const reactions: Record<string, string[]> = {};
   if (Array.isArray(r.chat_message_reactions)) {

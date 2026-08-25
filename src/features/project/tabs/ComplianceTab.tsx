@@ -8,7 +8,7 @@ import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listCompliance, createCompliance, setComplianceStatus, deleteCompliance, type ComplianceItem, type ComplianceKind, type ComplianceStatus } from "@/app/siteAdminQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const KIND_OPTS = [{ value: "rera", label: "RERA" }, { value: "gst", label: "GST" }, { value: "epfo", label: "EPFO" }, { value: "pan", label: "PAN" }, { value: "other", label: "Other" }];

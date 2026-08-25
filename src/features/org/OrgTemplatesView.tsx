@@ -7,7 +7,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/compo
 import { Input, Select } from "@/components/ui/forms";
 import { listTemplates, createTemplate, deleteTemplate, TEMPLATE_KINDS, type Template, type TemplateKind } from "@/app/orgConfigQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const KIND_OPTS = TEMPLATE_KINDS.map(k => ({ value: k, label: k[0].toUpperCase() + k.slice(1) }));

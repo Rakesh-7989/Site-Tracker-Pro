@@ -8,7 +8,7 @@ import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Textarea } from "@/components/ui/forms";
 import { listUpdates, createUpdate, deleteUpdate, type SiteUpdate } from "@/app/updateQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { useAction } from "@/hooks/useAction";
 
 import { getClient } from "@/lib/supabase";

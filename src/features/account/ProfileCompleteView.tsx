@@ -13,7 +13,7 @@ import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { completeMyProfile } from "@/app/profileQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 const LANGS = [{ value: "en", label: "English" }, { value: "te", label: "à°¤à±†à°²à±à°—à± (Telugu)" }, { value: "hi", label: "à¤¹à¤¿à¤‚à¤¦à¥€ (Hindi)" }];
 

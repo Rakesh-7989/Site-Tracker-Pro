@@ -59,7 +59,7 @@ export function formatCoordDms(lat: number, lon: number): string {
 // ---------------------------------------------------------------------------
 export function compassDirection(azimuth: number): string {
   // Normalize to 0–360
-  let a = ((azimuth % 360) + 360) % 360;
+  const a = ((azimuth % 360) + 360) % 360;
 
   // 8-point compass with 22.5° sectors
   const sectors: [number, string][] = [
@@ -138,6 +138,7 @@ function toRadians(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for API symmetry with toRadians (re-exported below)
 function toDegrees(rad: number): number {
   return (rad * 180) / Math.PI;
 }

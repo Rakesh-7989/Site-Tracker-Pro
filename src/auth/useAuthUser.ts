@@ -202,7 +202,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let subscription: { unsubscribe: () => void } | null = null;
     void (async () => {
       await hydrate();

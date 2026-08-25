@@ -1,7 +1,11 @@
-// SiteTrack Pro — milestone queries (v3 port, Batch 1). DB-wired to the
+// SiteTrack Pro - milestone queries (v3 port, Batch 1). DB-wired to the
 // `milestones` table (GRANT + RLS via migration 72).
+//
+// P1-C reference conversion: the client is TypedSupabaseClient, so column
+// names in select/insert/update/eq are checked against the live schema.
 
 import { versionedUpdateOutcome, type VersionedUpdateOptions } from "@/lib/versionedUpdate";
+import type { TypedSupabaseClient } from "@/lib/db";
 
 export type MilestoneStatus = "pending" | "in_progress" | "completed";
 
@@ -21,8 +25,7 @@ export type MQResult<T> = { ok: true; data: T } | { ok: false; error: string; co
 const STATUSES: MilestoneStatus[] = ["pending", "in_progress", "completed"];
 const asStatus = (v: unknown): MilestoneStatus => (STATUSES.includes(v as MilestoneStatus) ? (v as MilestoneStatus) : "pending");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listMilestones(client: any, projectId: string): Promise<MQResult<Milestone[]>> {
+export async function listMilestones(client: TypedSupabaseClient, projectId: string): Promise<MQResult<Milestone[]>> {
   try {
     const { data, error } = await client
       .from("milestones")
@@ -31,7 +34,7 @@ export async function listMilestones(client: any, projectId: string): Promise<MQ
       .order("sort_order", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: false });
     if (error) return { ok: false, error: String(error.message ?? error) };
-    const rows = ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
+    const rows = (data ?? []).map(r => ({
       id: String(r.id),
       title: String(r.title ?? "Untitled"),
       status: asStatus(r.status),
@@ -47,8 +50,7 @@ export async function listMilestones(client: any, projectId: string): Promise<MQ
 }
 
 export async function createMilestone(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
+  client: TypedSupabaseClient,
   input: { projectId: string; title: string; dueDate?: string | null; sortOrder?: number },
 ): Promise<MQResult<{ id: string }>> {
   try {
@@ -70,20 +72,25 @@ export async function createMilestone(
 }
 
 export async function setMilestoneStatus(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
+  client: TypedSupabaseClient,
   id: string,
   status: MilestoneStatus,
   opts?: VersionedUpdateOptions,
 ): Promise<MQResult<{ ok: true }>> {
   try {
-    const patch: Record<string, unknown> = { status };
-    patch.completed_date = status === "completed" ? new Date().toISOString().slice(0, 10) : null;
+    const patch = {
+      status,
+      completed_date: status === "completed" ? new Date().toISOString().slice(0, 10) : null,
+    };
     const q = client.from("milestones").update(patch).eq("id", id);
-    const guarded = opts?.expectedVersion != null;
-    if (guarded) q.eq("version", opts.expectedVersion);
+    const expected = opts?.expectedVersion;
+    const guarded = expected != null;
+    if (guarded && expected != null) q.eq("version", expected);
     const res = await (guarded ? q.select("id") : q);
-    return versionedUpdateOutcome(res, guarded ? opts?.expectedVersion : undefined);
+    return versionedUpdateOutcome(
+      res as unknown as { data: unknown; error: { message?: string } | null },
+      guarded ? opts?.expectedVersion : undefined,
+    );
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
@@ -94,8 +101,7 @@ export function nextStatus(s: MilestoneStatus): MilestoneStatus {
   return s === "pending" ? "in_progress" : s === "in_progress" ? "completed" : "pending";
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteMilestone(client: any, id: string): Promise<MQResult<{ ok: true }>> {
+export async function deleteMilestone(client: TypedSupabaseClient, id: string): Promise<MQResult<{ ok: true }>> {
   try {
     const { error } = await client.from("milestones").delete().eq("id", id);
     if (error) return { ok: false, error: String(error.message ?? error) };

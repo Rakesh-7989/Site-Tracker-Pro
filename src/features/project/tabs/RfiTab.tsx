@@ -1,4 +1,4 @@
-// SiteTrack Pro � project RFIs tab (v3 port, Batch 4, DB-wired).
+// SiteTrack Pro - project RFIs tab (v3 port, Batch 4, DB-wired).
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
@@ -6,7 +6,7 @@ import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Textarea } from "@/components/ui/forms";
 import { listRfis, createRfi, respondRfi, deleteRfi, type Rfi, type RfiStatus } from "@/app/designQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const tone = (s: RfiStatus): "info" | "success" | "neutral" | "danger" => (s === "open" ? "info" : s === "answered" ? "success" : s === "overdue" ? "danger" : "neutral");
@@ -68,7 +68,7 @@ export function RfiTab({ projectId }: { projectId: string }): JSX.Element {
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary flex items-center gap-2"><Badge tone={tone(r.status)}>{r.status}</Badge>{r.no} � {r.subject}</div>
+                <div className="min-w-0"><div className="text-sm font-semibold text-fg-primary flex items-center gap-2"><Badge tone={tone(r.status)}>{r.status}</Badge>{r.no} — {r.subject}</div>
                   <div className="text-[12px] text-fg-secondary mt-0.5">{r.question}</div>
                   {r.response && <div className="text-[12px] text-success mt-1 pl-2 border-l-2 border-success">↳ {r.response}</div>}</div>
                 <div className="flex items-center gap-1 flex-shrink-0">

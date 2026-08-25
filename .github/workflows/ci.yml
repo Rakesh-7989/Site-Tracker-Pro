@@ -43,6 +43,12 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:columns
+      # DB-types freshness gate (P1-C): src/lib/database.types.ts must mirror
+      # the live public schema. Same SKIP-when-secret-missing contract.
+      - name: DB-types freshness gate
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run db:types -- --check
       # SECURITY DEFINER search-path gate (audit P0): every non-extension
       # definer function must pin search_path. SKIPs cleanly when the secret
       # is missing, same contract as the column-drift gate above.
@@ -55,8 +61,16 @@ jobs:
       - name: RLS security tests
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: npm run test:rls && npm run test:rls:project && npm run test:rls:teams && npm run test:rls:versions && npm run test:rls:finance && npm run check:rls:coverage
+        run: npm run test:rls && npm run test:rls:project && npm run test:rls:teams && npm run test:rls:versions && npm run test:rls:finance && npm run test:rls:partners && npm run check:rls:coverage
       - run: npm run test:unit
+      - name: V2 app gates (typecheck + lint + test + build)
+        run: |
+          cd v2
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
 
   # The CI-runnable mocked role-access suite (real router + shell, mocked
   # Supabase session/REST). Runs in parallel with the unit gate.

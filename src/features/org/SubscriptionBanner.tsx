@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/atoms";
 import { getOrgSubscriptionAlerts, type BillingAlert } from "@/app/orgAdminQueries";
 import { Link } from "react-router-dom";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 import { getClient } from "@/lib/supabase";
 const bg: Record<string, string> = {

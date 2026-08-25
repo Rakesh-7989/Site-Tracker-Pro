@@ -117,7 +117,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<QueryR
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function createDelegation(
   client: any,
   input: { orgId: string; fromUserId: string; toUserId: string; scope: string; start: string; end: string; reason: string; createdBy: string },

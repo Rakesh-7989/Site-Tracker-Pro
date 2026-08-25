@@ -17,6 +17,7 @@
 
 import { lazy } from "react";
 import { createBrowserRouter, Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { guardRoutes } from "@/app/RouteErrorBoundary";
 
 // ── Eager: entry + first paint + small ──────────────────────────────────────
 import { RequireStaffArea } from "@/auth";
@@ -105,7 +106,7 @@ function SignupRedirect(): JSX.Element {
   return <Navigate to={to} replace />;
 }
 
-export const router = createBrowserRouter([
+export const router = createBrowserRouter(guardRoutes([
   // ── Public routes (no auth) ──
   { path: "/", element: <LandingView /> },
   // P-D unified signup: `/signup` (legacy approval-gated) redirects to the
@@ -181,4 +182,4 @@ export const router = createBrowserRouter([
   },
   // Public catch-all 404 (works signed-out too).
   { path: "*", element: <NotFoundView /> },
-]);
+]));

@@ -8,7 +8,7 @@ import { listInspections, createInspection, setInspectionResult, deleteInspectio
 import { listCorrectiveActions, createCorrectiveAction, setCorrectiveStatus, deleteCorrectiveAction, correctiveRollup, CORRECTIVE_NEXT, CORRECTIVE_STATUS_LABEL, CORRECTIVE_PRIORITY_LABEL, type CorrectiveAction, type CorrectiveStatus } from "@/app/qualityQueries";
 import { publishCorrectiveActionOpened } from "@/app/outboxQueries";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import { getClient } from "@/lib/supabase";
 import { useAction } from "@/hooks/useAction";
 const RES = [{ value: "pending", label: "Pending" }, { value: "pass", label: "Pass" }, { value: "fail", label: "Fail" }, { value: "conditional", label: "Conditional" }];

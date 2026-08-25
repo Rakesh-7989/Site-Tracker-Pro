@@ -41,7 +41,7 @@ const methodOf = (m: unknown): Receipt["method"] => (typeof m === "string" && ME
 type Client = any;
 
 /** Receipts for one invoice / RA bill, newest first, with payee name joined. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function listReceipts(client: Client, projectId: string, targetType: ReceiptTarget, targetId: string): Promise<PayResult<Receipt[]>> {
   try {
     const { data, error } = await client.from("payments")
@@ -69,7 +69,7 @@ export async function listReceipts(client: Client, projectId: string, targetType
 }
 
 /** Record a receipt against an invoice or RA bill. Sets received_by = current user. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function addReceipt(client: Client, input: ReceiptInput): Promise<PayResult<{ id: string }>> {
   try {
     const payload: Record<string, unknown> = {
@@ -88,7 +88,7 @@ export async function addReceipt(client: Client, input: ReceiptInput): Promise<P
 }
 
 /** Remove a mistaken receipt. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function deleteReceipt(client: Client, receiptId: string): Promise<PayResult<null>> {
   try {
     const { error } = await client.from("payments").delete().eq("id", receiptId);

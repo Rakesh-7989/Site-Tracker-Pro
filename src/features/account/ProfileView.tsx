@@ -12,7 +12,7 @@ import { Select } from "@/components/ui/forms";
 import { getMyProfile, completeMyProfile } from "@/app/profileQueries";
 import { useT } from "@/i18n/I18nProvider";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 import { getClient } from "@/lib/supabase";
 const LANGS: Record<string, string> = { en: "English", te: "à°¤à±†à°²à±à°—à± (Telugu)", hi: "à¤¹à¤¿à¤‚à¤¦à¥€ (Hindi)" };

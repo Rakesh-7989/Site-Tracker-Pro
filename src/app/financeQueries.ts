@@ -87,7 +87,7 @@ export interface Invoice {
 const asInv = oneOf<InvoiceStatus>(["sent", "paid", "overdue", "cancelled"], "sent");
 const asSource = oneOf<InvoiceSource>(["phase", "hourly", "retainer"], "phase");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function mapLines(raw: unknown): InvoiceLine[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((l) => {

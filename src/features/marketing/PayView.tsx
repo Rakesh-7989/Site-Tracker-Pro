@@ -11,7 +11,7 @@ import { buildUpiUri } from "@/lib/upi";
 import { getPaymentSettings, getSignupForPay, submitPaymentClaim, resolveSignupAmount } from "@/app/paymentQueries";
 import { PLAN_TIERS, formatINR } from "./plans";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 
 import { getClient } from "@/lib/supabase";
 export function PayView(): JSX.Element {

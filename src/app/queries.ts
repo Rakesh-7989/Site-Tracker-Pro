@@ -76,7 +76,7 @@ export function memberProjectScope(session: AuthSession): MemberProjectScope {
  * When `scope.mode === "member"`, rows are filtered server-side to the user's
  * assigned projects so unassigned ones never reach the client.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function listProjectsForOrg(
   client: any,
   orgId: string,
@@ -119,7 +119,7 @@ export async function listProjectsForOrg(
 /**
  * Create a project. Returns the new id on success.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function createProject(
   client: any,
   input: { orgId: string; name: string; type: ProjectType; location?: string; industrySubtype?: ConstructionIndustry | null },
@@ -228,7 +228,7 @@ export interface ProjectLifecyclePatch {
  * or → completed/cancelled). RLS (`update_project_architect`, migration 116)
  * gates who may update. Returns the new status.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function setProjectStatus(
   client: any,
   projectId: string,
