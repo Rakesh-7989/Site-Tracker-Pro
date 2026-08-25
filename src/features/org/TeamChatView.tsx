@@ -17,7 +17,7 @@ import { Modal } from "@/components/ui/Modal";
 import {
   listChannels, createChannel, setChannelArchived, deleteChannel,
   ensureProjectStream, openDm,
-  listDmPartnerNames,
+  listDmPartnerNames, fetchUnreadCounts,
   type ChatChannel,
 } from "@/app/chatQueries";
 import type { MentionCandidate } from "@/app/chatQueries";
@@ -48,6 +48,32 @@ export function TeamChatView(): JSX.Element {
   const [showDmPicker, setShowDmPicker] = useState(false);
   const [dmQuery, setDmQuery] = useState("");
   const [openingDm, setOpeningDm] = useState(false);
+  // channel_id -> unread count (P2 badges)
+  const [unread, setUnread] = useState<Record<string, number>>({});
+
+  const refreshUnread = useCallback(async () => {
+    const client = await getClient();
+    if (!client) return;
+    const res = await fetchUnreadCounts(client);
+    if (res.ok) setUnread(res.data);
+  }, []);
+
+  useEffect(() => { void refreshUnread(); }, [refreshUnread]);
+  useEffect(() => {
+    const timer = setInterval(() => { void refreshUnread(); }, 20000);
+    return () => clearInterval(timer);
+  }, [refreshUnread]);
+  // Selecting a channel clears its badge locally.
+  useEffect(() => { setUnread(prev => { if (!prev[activeId]) return prev; const n = { ...prev }; delete n[activeId]; return n; }); }, [activeId]);
+
+  const unreadFor = (projectIdOrChannelId: string): number | null => {
+    const n = unread[projectIdOrChannelId];
+    return n && n > 0 ? Math.min(n, 99) : null;
+  };
+  const unreadForProject = (projectId: string): number | null => {
+    const ch = channels.find(c => c.scope === "project" && c.projectId === projectId && !c.isArchived);
+    return ch ? unreadFor(ch.id) : null;
+  };
 
   const memberships = useMemo(() => session?.projectMemberships ?? [], [session]);
 
@@ -226,7 +252,12 @@ export function TeamChatView(): JSX.Element {
                 >
                   <Icon name="hardhat" size={13} className="flex-shrink-0" />
                   <span className="truncate">{pm.projectName}</span>
-                  {!ch && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-fg-tertiary/50 flex-shrink-0" title={t("chat.firstOpenCreates")} />}
+                  {unreadForProject(pm.projectId) != null && (
+                    <span className="ml-auto flex-shrink-0 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-error text-white text-[10px] font-bold">
+                      {unreadForProject(pm.projectId)}
+                    </span>
+                  )}
+                  {!ch && unreadForProject(pm.projectId) == null && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-fg-tertiary/50 flex-shrink-0" title={t("chat.firstOpenCreates")} />}
                 </button>
               );
             })}
@@ -243,6 +274,11 @@ export function TeamChatView(): JSX.Element {
                     <button type="button" onClick={() => setActiveId(c.id)}
                       className={cn(railBtn(c.id === activeId), "justify-between pr-6")}>
                       <span className="truncate"># {c.name}</span>
+                      {unreadFor(c.id) != null && (
+                        <span className="ml-auto flex-shrink-0 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-error text-white text-[10px] font-bold">
+                          {unreadFor(c.id)}
+                        </span>
+                      )}
                     </button>
                     {canManage && c.id === activeId && (
                       <span className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-70">
@@ -278,9 +314,16 @@ export function TeamChatView(): JSX.Element {
           <div className="space-y-0.5">
             {dms.length === 0 && <div className="px-2.5 py-1 text-xs text-fg-tertiary">{t("chat.noDms")}</div>}
             {dms.map(c => (
-              <button key={c.id} type="button" onClick={() => setActiveId(c.id)} className={railBtn(c.id === activeId)}>
-                <Avatar initials={(partnerName(c)[0] ?? "?").toUpperCase()} size="sm" />
-                <span className="truncate">{partnerName(c)}</span>
+              <button key={c.id} type="button" onClick={() => setActiveId(c.id)} className={cn(railBtn(c.id === activeId), "justify-between")}>
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <Avatar initials={(partnerName(c)[0] ?? "?").toUpperCase()} size="sm" />
+                  <span className="truncate">{partnerName(c)}</span>
+                </span>
+                {unreadFor(c.id) != null && (
+                  <span className="ml-auto flex-shrink-0 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-error text-white text-[10px] font-bold">
+                    {unreadFor(c.id)}
+                  </span>
+                )}
               </button>
             ))}
           </div>

@@ -352,6 +352,72 @@ try {
   const outsiderStream = await attempt(`select public.chat_ensure_project_stream($1)`, [PROJ]);
   ok(outsiderStream.error !== null, "TC-017 non-member cannot ensure another org's stream");
 
+  // ══════ Chat P2 (migration 235): reactions / reads / @all / files ══════
+  // Fresh top-level message in the project stream to react to.
+  await asUser(PM);
+  const reactMsg = (await c.query(
+    `insert into public.chat_messages (org_id, channel_id, sender_id, body) values ($1,$2,$3,'react to me') returning id`,
+    [ORG_A, PROJ_OPEN, PM])).rows[0].id;
+
+  // ── TC-018 reactions: toggle by self; outsider blocked ────────────────────
+  await asUser(CLIENTU);
+  await c.query(`insert into public.chat_message_reactions (message_id, user_id, emoji) values ($1,$2,$3)`,
+    [reactMsg, CLIENTU, "👍"]);
+  const dupReact = await attempt(
+    `insert into public.chat_message_reactions (message_id, user_id, emoji) values ($1,$2,$3)`,
+    [reactMsg, CLIENTU, "👍"]);
+  ok(dupReact.error !== null && /duplicate key/i.test(String(dupReact.error.message)),
+     "TC-018 duplicate reaction rejected by PK");
+  await asUser(MENTIONED);
+  const outReact = await attempt(
+    `insert into public.chat_message_reactions (message_id, user_id, emoji) values ($1,$2,$3)`,
+    [reactMsg, MENTIONED, "🔥"]);
+  ok(outReact.error !== null, "TC-018 non-project-member cannot react into the stream");
+  await asOwner();
+  const reactCount = (await c.query(`select count(*)::int n from public.chat_message_reactions where message_id=$1`, [reactMsg])).rows[0].n;
+  ok(reactCount === 1, "TC-018 reaction persisted for project member only");
+
+  // ── TC-019 unread counts (deterministic: explicit created_at offsets) ──────
+  const t0 = (await c.query(`select now()::text t`)).rows[0].t;
+  const ts = (sec) => `(('${t0}'::timestamptz) + interval '${sec} seconds')`;
+  await asUser(PM);
+  // PM cursor at +10s; his own msg at +20s must NOT count.
+  await c.query(`insert into public.chat_channel_reads (channel_id, user_id, last_read_at)
+    values ($1,$2, ${ts(10)}) on conflict (channel_id, user_id) do update set last_read_at = excluded.last_read_at`,
+    [PROJ_OPEN, PM]);
+  await c.query(`insert into public.chat_messages (org_id, channel_id, sender_id, body, created_at)
+    values ($1,$2,$3,'pm self msg', ${ts(20)})`, [ORG_A, PROJ_OPEN, PM]);
+  const pmUnreadOwn = (await c.query(`select coalesce(sum(unread),0)::int n from public.chat_unread_counts() where channel_id=$1`, [PROJ_OPEN])).rows[0].n;
+  ok(pmUnreadOwn === 0, `TC-019 own messages never count as unread (got ${pmUnreadOwn})`);
+  await asUser(DEV);
+  await c.query(`insert into public.chat_channel_reads (channel_id, user_id, last_read_at)
+    values ($1,$2, ${ts(30)}) on conflict (channel_id, user_id) do update set last_read_at = excluded.last_read_at`,
+    [PROJ_OPEN, DEV]);
+  await asUser(PM);
+  await c.query(`insert into public.chat_messages (org_id, channel_id, sender_id, body, created_at)
+    values ($1,$2,$3,'unread one', ${ts(40)})`, [ORG_A, PROJ_OPEN, PM]);
+  await asUser(DEV);
+  const devUnreadAfter = (await c.query(`select coalesce(sum(unread),0)::int n from public.chat_unread_counts() where channel_id=$1`, [PROJ_OPEN])).rows[0].n;
+  ok(devUnreadAfter === 1, `TC-019 messages after my cursor count as unread (got ${devUnreadAfter})`);
+
+  // ── TC-020 @all recipients: manager-gated + matrix-aware ───────────────────
+  await asUser(CLIENTU);
+  const cliAll = await attempt(`select * from public.chat_mention_all_ids($1)`, [PROJ_OPEN]);
+  ok(cliAll.error !== null && /managers-only/i.test(String(cliAll.error.message)),
+     "TC-020 client cannot trigger @all in project stream");
+  await asUser(PM);
+  const pmAll = (await c.query(`select count(*)::int n from public.chat_mention_all_ids($1)`, [PROJ_OPEN])).rows[0].n;
+  ok(pmAll === 3, `TC-020 pm @all covers project members (got ${pmAll})`);
+  const orgStaffAll = (await c.query(`select count(*)::int n from public.chat_mention_all_ids($1)`, [ORG_OPEN])).rows[0].n;
+  ok(orgStaffAll >= 3, "TC-020 org-channel @all covers staff (clients excluded)");
+
+  // ── TC-021 attachments: DEFERRED ──────────────────────────────────────────
+  // Direct SQL inserts into storage.objects fail under this harness's GUC
+  // context even against battle-tested policies (deliverables control also
+  // fails) — the real upload path flows through the Storage API + signed
+  // URLs, verified separately in app flows. Bucket + policies ship dormant.
+  console.log("  SKIP TC-021 attachment storage policies (deferred to app-flow verification)");
+
   await c.query("rollback");
   console.log("\nRolled back — net effect on live data: zero.");
 } catch (e) {

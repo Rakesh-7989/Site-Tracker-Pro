@@ -1,5 +1,7 @@
 // SiteTrack Pro — issue queries (v3 port, Batch 1). DB-wired to `issues`.
 
+import { versionedUpdateOutcome, type VersionedUpdateOptions } from "@/lib/versionedUpdate";
+
 export type IssueSeverity = "high" | "medium" | "low";
 export type IssueStatus = "open" | "resolved";
 
@@ -11,9 +13,11 @@ export interface Issue {
   status: IssueStatus;
   reportedDate: string | null;
   resolvedDate: string | null;
+  /** Trigger-forced optimistic-concurrency counter (migration 238). */
+  version: number;
 }
 
-export type IQResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type IQResult<T> = { ok: true; data: T } | { ok: false; error: string; conflict?: boolean };
 
 const SEV: IssueSeverity[] = ["high", "medium", "low"];
 const asSeverity = (v: unknown): IssueSeverity => (SEV.includes(v as IssueSeverity) ? (v as IssueSeverity) : "medium");
@@ -24,7 +28,7 @@ export async function listIssues(client: any, projectId: string): Promise<IQResu
   try {
     const { data, error } = await client
       .from("issues")
-      .select("id, title, description, severity, status, reported_date, resolved_date")
+      .select("id, title, description, severity, status, reported_date, resolved_date, version")
       .eq("project_id", projectId)
       .order("reported_date", { ascending: false });
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -36,6 +40,7 @@ export async function listIssues(client: any, projectId: string): Promise<IQResu
       status: asStatus(r.status),
       reportedDate: r.reported_date == null ? null : String(r.reported_date),
       resolvedDate: r.resolved_date == null ? null : String(r.resolved_date),
+      version: typeof r.version === "number" ? r.version : 1,
     }));
     return { ok: true, data: rows };
   } catch (e) {
@@ -70,14 +75,17 @@ export async function setIssueResolved(
   id: string,
   resolved: boolean,
   resolverId: string,
+  opts?: VersionedUpdateOptions,
 ): Promise<IQResult<{ ok: true }>> {
   try {
     const patch = resolved
       ? { status: "resolved", resolved_date: new Date().toISOString().slice(0, 10), resolved_by: resolverId }
       : { status: "open", resolved_date: null, resolved_by: null };
-    const { error } = await client.from("issues").update(patch).eq("id", id);
-    if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: { ok: true } };
+    const q = client.from("issues").update(patch).eq("id", id);
+    const guarded = opts?.expectedVersion != null;
+    if (guarded) q.eq("version", opts.expectedVersion);
+    const res = await (guarded ? q.select("id") : q);
+    return versionedUpdateOutcome(res, guarded ? opts?.expectedVersion : undefined);
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }

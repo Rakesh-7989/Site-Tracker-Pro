@@ -12,7 +12,7 @@ import {
 
 function inv(overrides: Partial<ClientInvoice> = {}): ClientInvoice {
   return {
-    id: "i1", no: "INV-001", amount: 100000, gst: 18000, tds: 2000, status: "sent",
+    id: "i1", no: "INV-001", amount: 100000, gst: 18, tds: 2, status: "sent",
     issuedDate: "2026-08-01", netReceivable: 116000, received: 0, outstanding: 116000,
     paymentStatus: "pending", payments: [], ...overrides,
   };
@@ -154,7 +154,7 @@ describe("listClientInvoices mapper", () => {
   function invoicesClient(overrides: { invoices?: Record<string, unknown>[]; payments?: Record<string, unknown>[] } = {}) {
     const tableData: Record<string, Record<string, unknown>[]> = {
       invoices: [
-        { id: "i1", no: "INV-001", amount: 100000, gst: 18000, tds: 2000, status: "sent", issued_date: "2026-08-01" },
+        { id: "i1", no: "INV-001", amount: 100000, gst: 18, tds: 2, status: "sent", issued_date: "2026-08-01" },
       ],
       payments: [
         { target_id: "i1", amount: 40000, method: "bank", received_on: "2026-08-05", reference: "R1" },

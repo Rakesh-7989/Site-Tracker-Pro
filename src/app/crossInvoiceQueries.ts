@@ -21,15 +21,20 @@ export interface CrossInvoice {
   projectId: string;
   projectName: string;
   projectType: string | null;
-  netReceivable: number;  // amount + gst - tds
+  netReceivable: number;  // amount × (1 + gst% − tds%) — GST/TDS are percentages
   received: number;       // sum of payments
   outstanding: number;    // net - received
   paymentStatus: "paid" | "partial" | "pending" | "overdue";
 }
 
-// Pure: compute net receivable = amount + gst - tds
+// Pure: net receivable = amount × (1 + gst% − tds%). GST/TDS columns are
+// PERCENTAGES (invoices.gst numeric(4,2) default 18) — matches migration
+// 239's server-side payment cap and financeQueries.invoiceTaxBreakup.
 export function netReceivable(amount: number, gst: number, tds: number): number {
-  return amount + gst - tds;
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const gstPct = Number.isFinite(gst) ? gst : 0;
+  const tdsPct = Number.isFinite(tds) ? tds : 0;
+  return Math.round(safeAmount * (1 + gstPct / 100 - tdsPct / 100));
 }
 
 // Pure: compute outstanding = net - received
@@ -129,9 +134,9 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
       const amount = Number(r.amount ?? 0);
       const gst = Number(r.gst ?? 0);
       const tds = Number(r.tds ?? 0);
-      const netReceivable = amount + gst - tds;
+      const net = netReceivable(amount, gst, tds);
       const received = (paymentsByInvoice[String(r.id)] ?? []).reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
-      const outstanding = Math.max(0, netReceivable - received);
+      const outstanding = Math.max(0, net - received);
       const project = r.project as { id?: string; name?: string; type?: string } | null;
       return {
         id: String(r.id),
@@ -144,10 +149,10 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
         projectId: String(r.project_id ?? ""),
         projectName: project?.name ?? "",
         projectType: project?.type ?? null,
-        netReceivable,
+        netReceivable: net,
         received,
         outstanding,
-        paymentStatus: paymentStatusFrom(received, netReceivable, r.due_date ?? r.issued_date ?? null),
+        paymentStatus: paymentStatusFrom(received, net, r.due_date ?? r.issued_date ?? null),
       };
     });
     return ok(invoices);

@@ -52,7 +52,7 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
     if (!title.trim()) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createTask(c, { projectId, title: title.trim(), assigneeName: assignee.trim() || undefined, priority, dueDate: due || null }), {
-      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), assigneeName: assignee.trim() || null, priority, dueDate: due || null, status: "pending" as TaskStatus }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), assigneeName: assignee.trim() || null, priority, dueDate: due || null, status: "pending" as TaskStatus, version: 1 }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setTitle(""); setAssignee(""); setDue("");
@@ -92,7 +92,7 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Badge tone={PR_TONE[tk.priority]}>{t(`tasksTab.${tk.priority}`)}</Badge>
                   {canEdit ? (
-                    <button type="button" disabled={busy === `s-${tk.id}`} onClick={() => { const ns = nextTaskStatus(tk.status); void run(`s-${tk.id}`, c => setTaskStatus(c, tk.id, ns), { apply: () => setRows(prev => prev.map(x => x.id === tk.id ? { ...x, status: ns } : x)), rollback: () => setRows(prev => prev.map(x => x.id === tk.id ? { ...x, status: tk.status } : x)) }); }}>
+                    <button type="button" disabled={busy === `s-${tk.id}`} onClick={() => { const ns = nextTaskStatus(tk.status); void run(`s-${tk.id}`, c => setTaskStatus(c, tk.id, ns, { expectedVersion: tk.version }), { apply: () => setRows(prev => prev.map(x => x.id === tk.id ? { ...x, status: ns } : x)), rollback: () => setRows(prev => prev.map(x => x.id === tk.id ? { ...x, status: tk.status } : x)) }); }}>
                       <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>
                     </button>
                   ) : <Badge tone={ST_TONE[tk.status]}>{stLabel(tk.status)}</Badge>}

@@ -1,3 +1,110 @@
+## Session — 2026-08-25: Net-receivable percentage fix — UI aligned with mig-239 cap (complete)
+
+**Follow-up to mig 239**: the deep-dive had flagged a client/server formula divergence. Confirmed real: `crossInvoiceQueries.netReceivable()` (shared by the org invoice register AND the client portal) computed `amount + gst − tds` — treating the GST/TDS columns as flat rupees when they are PERCENTAGES (`invoices.gst numeric(4,2) default 18`). A ₹1,00,000 invoice @18/2 showed net receivable **₹1,00,016** instead of ₹1,16,000; outstanding and paid/partial status were wrong on every taxed invoice.
+
+**Fix**: `netReceivable()` → `round(amount × (1 + gst% − tds%))` — now identical to migration 239's server-side payment cap and `financeQueries.invoiceTaxBreakup`. Both consuming mappers (`listOrgInvoices`, `listClientInvoices`) flow through automatically; `outstanding`/`paymentStatus` inherit correctness. Stale comments updated. The `clientPortalDepth.test.ts` fixtures had baked the bug in (`gst: 18000` = "₹18,000 GST") → corrected to realistic percentages (`gst: 18`) with identical expected outputs (116000).
+
+**Tests**: new `tests/app/crossInvoiceNet.test.ts` (+5): percentage math, half-up rounding edges (38_666 / 38_669), NaN coercion, outstanding clamp.
+
+**Gates**: tsc clean · lint 0 err · vitest **231 files / 2956 tests** · smoke **462** · build clean · e2e-mock **11/11**.
+
+---
+
+## Session — 2026-08-25: FINANCIAL-CHAIN INVARIANTS — payment cap/target guards (mig 239, complete)
+
+**Context**: ChatGPT deep-dive P0 (Domain): "Financial invariants". Deep-dive found the **payments table EMPTY (0 live rows)** and no writers anywhere (UI/EF) — the flow hadn't launched, so guards could land before the first real rupee. Live probe also confirmed 0 violations on invoices/ra_bills/paid_amounts and NO existing guard against the polymorphic-target failure class.
+
+**Migration 239** `239_financial_invariants.sql` (applied live, db:apply 229/0):
+- **FI-1 target integrity**: `guard_payment_target()` BEFORE INSERT/UPDATE — payment target must EXIST and belong to the SAME project (`payments.target_id` is polymorphic with no FK; dangling/cross-project pointers would silently corrupt every org rollup).
+- **FI-2 outstanding cap**: Σpayments per target ≤ receivable cap computed from BASE columns at write time (concurrency-proof): invoice `round(amount×(1+gst%−tds%))` [GST/TDS are percentages — mirrors `invoiceTaxBreakup`, NOT the stale flat-add comment in crossInvoiceQueries], ra_bill `round(bill_amount×(1−retention%))`. Self-row excluded on UPDATE; DELETEs always free room.
+- **FI-3** `chk_ra_paid_range`: `ra_bills.paid_amount ∈ [0, bill_amount]`.
+- RLS untouched (who may write stays `can_write_project`); fires BEFORE the notify AFTER-trigger so notifications only fire for valid payments.
+
+**Live proof**: new harness `scripts/test-financial-invariants.mjs` (`npm run test:rls:finance`, added to the CI RLS chain) — rolled-back-tx matrix **18/18 green**: valid/exact-cap payments accepted, overpayment rejected w/ clear error, update-past-room rejected, both cross-project directions + dangling targets rejected, delete-frees-room cycle back to exact cap, RA retention-adjusted boundary (₹190000 ok / ₹190001-class rejected), CHECK violation on paid_amount, RLS layering (client-role member denied), percentage math locked at exactly ₹116000.
+
+**Harness lessons**: information_schema.triggers hides rows under authenticated → use pg_trigger; seed ALL cross-project fixtures as owner BEFORE switching to authenticated (RLS blocks mid-test seeding); org_members role CHECK admits only the 22-role set ('client', not 'member').
+
+**Type-level**: `TQResult/IQResult/MQResult` failure branch gained optional `conflict?: boolean` (completes yesterday's versionedUpdate wiring).
+
+**Gates**: tsc clean · lint 0 err · vitest **231 files / 2952 tests** · smoke **462** · build clean · e2e-mock **11/11** · db:apply **229 passed / 0 failed** · test:rls:finance **18/18**. MODULE_AUDIT_2026-08.md rows updated to 🟢.
+
+---
+
+## Session — 2026-08-24: VERSIONED CONCURRENCY — optimistic locking on important records (mig 238, complete)
+
+**Context**: ChatGPT deep-dive P0 (Domain): "Versioned concurrency for important records / never silently overwrite". Deep-dive found the only existing versioning was mig 179's `budget_version`/cost_forecasts; the three generic UI updaters (task status, issue resolve, milestone status) were blind last-write-wins.
+
+**Migration 238** `238_versioned_concurrency.sql` (applied live, db:apply 228/0):
+- `version int NOT NULL DEFAULT 1` + `updated_at timestamptz NOT NULL DEFAULT now()` on **milestones, tasks, issues, invoices, ra_bills, payments**.
+- Plain (non-definer) trigger fn `bump_record_version()` — search_path pinned per the 237 posture — forces `NEW.version = OLD.version + 1` on EVERY update: a client cannot forge monotonicity even by sending an explicit version value in the patch.
+- Additive/zero-break: PostgREST returns only requested columns; table GRANTs cover new columns; server-side RPC writers (release_ra_retention, retainer generation) bump transparently.
+
+**Conflict detection (query layer)**: new `src/lib/versionedUpdate.ts` — `versionedUpdateOutcome(res, expectedVersion?)`: guarded update matching 0 rows ⇒ `{ok:false, conflict:true, "record changed while you were away"}`; builder errors stay non-conflicts; unguarded calls keep legacy semantics. Wired with optional `{ expectedVersion }` into `setTaskStatus` / `setIssueResolved` / `setMilestoneStatus`; all three tabs pass the read-time version end-to-end (conflict surfaces via the standard error Alert after optimistic rollback). Lists select `version` (+ camelCase mapping, default 1).
+
+**Live proof**: new harness `scripts/test-versioned-concurrency.mjs` (`npm run test:rls:versions`, added to the CI RLS chain) — rolled-back-tx matrix **39/39 green**: structure (cols+triggers+fn posture ×6 tables), fresh insert v=1, matching guard applies→v2, stale guard matches 0 rows & record untouched, forged version overridden to monotonic, updated_at maintained (tx-clock semantics — wall-clock advance is per-request in prod), outsider blocked even WITH correct version (RLS layering), and the invoices/ra_bills split: **no direct authenticated UPDATE policy** (their writes flow through approval-guarded RPCs — correct posture discovered during the build), while owner-path updates still bump.
+
+**Harness lessons reinforced**: (1) `session_replication_role='replica'` kills ordinary triggers — reset to `'origin'` BEFORE behavior tests or the bump silently never fires; (2) `now()` is transaction-scoped — single-tx harnesses can't prove wall-clock advances.
+
+**Tests**: tests/lib/versionedUpdate.test.ts (6) + milestoneQueries.test.ts extended (+4: version mapping/default, guarded eq+select assertions, zero-row conflict, unguarded legacy path, error≠conflict).
+
+**Gates**: tsc clean · lint 0 err · vitest **231 files / 2952 tests** · smoke **462** · build clean · e2e-mock **11/11** · db:apply **228 passed / 0 failed** · test:rls:versions **39/39**.
+
+---
+
+## Session — 2026-08-24: SECURITY DEFINER hardening (mig 237) + definer CI gate + Part-3 module audit (complete)
+
+**Context**: Continuing the external deep-dive's P0 list after the offline consolidation (`fabdec8`). Deep-dive verified "audit immutability" already shipped (mig 100 triggers on `audit_log_v2`/`activity_log` + grant-immutable `download_events`) — so the next open item was "Verify every SECURITY DEFINER function".
+
+**Live-DB survey → real finding**: new `scripts/check-security-definer.mjs` (`npm run check:definer`, same SUPABASE_DB_URL/SKIP contract as check:columns) enumerated **157 SECURITY DEFINER functions live; 11 unpinned** — 6 of OURS (`accept_org_invitation`, `create_org_invitation`, `audit_flag_change`, `chat_channel_readable`, `record_cashfree_event`, `record_voice_cache_hit`) + 5 extension-owned (`graphql.get/increment_schema_version`, `st_estimatedextent` ×3 — allowlisted, platform replaces them on upgrade).
+
+**Migration 237** `237_definer_search_path_hardening.sql` (applied live, db:apply **227 passed / 0 failed**): `ALTER FUNCTION … SET search_path = public, extensions, pg_temp` on the 6 app functions — closes the search_path-hijack class (definer runs with owner privileges). Config-only change; RLS policies referencing `chat_channel_readable` unaffected. Post-fix strict gate: **152 pinned + 5 allowlisted = 157, 0 ours unpinned**.
+
+**CI**: `Security-definer gate` step added to ci.yml right after the column-drift gate (`npm run check:definer -- --strict`; SKIP-clean when the secret is absent). Script defaults to report-only exit 0; `--strict` fails on any non-allowlisted unpinned function.
+
+**Docs**: `docs/MODULE_AUDIT_2026-08.md` — the deep-dive's recommended "Part 3" module-by-module production-status table, VERIFIED against current code/live DB (supersedes its stale assumptions: audit immutability ✅ mig 100, cross-tenant ✅ 506/506, offline ✅ consolidated). Residual P0 queue split: agent-implementable (versioned concurrency for payments/tasks, financial-chain invariants, migration-from-empty replay) vs founder actions (restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡) vs blocked-on-decision (Capacitor foundation).
+
+**Gates**: db:apply 227/0 · check:definer --strict green · eslint clean · smoke 462. No src/ changes (scripts/CI/docs/migration only).
+
+---
+
+## Session — 2026-08-24: OFFLINE CONSOLIDATION — one canonical engine (ChatGPT deep-dive P0 #1) (complete)
+
+**Context**: External audit (ChatGPT "App Build Deepdive", Part 2) flagged **two competing offline systems** as the repo's #1 unresolved technical issue. Deep-dive confirmed it and found it slightly WORSE than described:
+- `src/lib/offline.ts` hosted THREE concerns: IndexedDB blob cache (`putBlob/getBlob/delBlob/listKeys` — **zero consumers**), a localStorage sync queue (`queueOpAdd/queueOpDrain/queueLength` — **zero producers**; only `queueLength()` was read), and connectivity (`isOnline/onConnectivityChange` — the live surface used by dprOfflineSync/DPRComposer/useConnectionStatus).
+- `src/lib/offlineQueue.ts` is the real engine (IndexedDB `sitetrack-offline-v1`, status machine pending→sending→sent/failed, 5-retry backoff 1s→256s, 7-day stale-failed GC, dpr/voice/photo kind whitelist, adapter pattern) — consumers: dprSubmit (enqueue), dprOfflineSync (drain+depth).
+- **Live bug fixed**: TopBar's connection pill (`useConnectionStatus.pendingOps`) polled the DEAD localStorage queue → always 0 even while real DPRs sat queued in IndexedDB.
+
+**Changes**:
+- `src/lib/offline.ts` → connectivity-only module (~25 lines; dead blob store + localStorage queue deleted, doc comment points at offlineQueue). Legacy keys `sitetrack_offline_v1` / `sitetrack_sync_queue_v1` had no other references anywhere (verified) — nothing to migrate since no producer ever wrote.
+- `useConnectionStatus.ts` → `pendingOps` now polls `queueDepth().total` from offlineQueue (same 3s cadence; rejects caught → degrades to 0 in non-IDB envs like jsdom).
+- `scripts/smoke.mjs` → marker `queueOpAdd` (dead) → `queueDepth` + `drainDprQueue`; scan list += `offlineQueue.ts` + `dprOfflineSync.ts` so deleting either file now fails smoke. **462 checks**.
+- **New tests** `tests/lib/offlineQueue.test.ts` (15): backoff table + exhaustion nulls; stale-failed window (7d, status-guarded); enqueue validation (key required, kind whitelist locked to dpr/voice/photo); drain: offline no-op, send-required guard, sent path clears last_error, fail→defer with backoff gate (no attempt before wait elapses), exhaustion to failed@5, recovery after failure, thrown-error capture, stale GC before drain; queueDepth by_kind/by_status buckets; clearAll count. Memory adapter only — no IndexedDB needed in Node.
+- **New tests** `tests/lib/useConnectionStatus.test.tsx` (2): pendingOps seeds from mocked queueDepth total; stays 0 when queue backend rejects.
+
+**Gates**: tsc clean · lint 0 errors · vitest **230 files / 2941 tests** (+2/+17) · smoke **462** · build clean · e2e-mock **11/11**. No DB change (no migration).
+
+**Next candidates from the same audit** (needs user go): versioned concurrency on important records (expected_version), restore drill + tenant-deletion test, Sentry DSN live + uptime monitor, Capacitor mobile foundation (P1), Part-3-style module-by-module production-status audit doc.
+
+---
+
+## Session — 2026-08-23: Chat P2 — reactions, unread badges, @all (migration 235/236) (complete)
+
+**Scope** (Cliq-research round): emoji reactions, per-channel unread badges, managers-only @all broadcast. File attachments shipped at DB layer but UI deferred (see TC-021 note).
+
+**Migrations**:
+- **235**: `chat_message_reactions` (PK message×user×emoji), `chat_channel_reads` (cursor per user×channel) + `chat_unread_counts()` SECURITY DEFINER RPC (readability-aware, own-messages excluded); `chat_mention_all_ids(channel)` managers-only RPC returning matrix-aware recipient ids (org-open = staff only; project = members; dm/private = explicit); chat attachment columns (`attachment_path/name/mime/size`) + private `chat-files` bucket with channel-folder policies. Gotchas: `(storage.foldername(name))[1]` needs parens inside policy expressions; `coalesce(uuid,'')` invalid — cast text explicitly.
+- **236**: **STRICT project-membership gates** — `can_read_project()` allows any same-org member (org-wide backstop), too broad for streams. New `chat_is_project_member()` + recreated `chat_channel_readable()`/`chat_ensure_project_stream()` using it for project scope. Managers keep orgadmin/has_project_role access.
+
+**Harness**: TC-018–020 added → **52/52 green** (+TC-021 SKIP). Deterministic unread test needed explicit `created_at` offsets — single-transaction `now()` makes cursor-vs-message comparisons equal (tx-timestamp semantics).
+
+**Deferred — TC-021 attachments storage policies**: direct SQL inserts into `storage.objects` fail under the harness GUC context even against battle-tested policies (deliverables control also fails; manual predicate evaluates TRUE; definer switch didn't help). Real uploads flow via Storage API/signed URLs — verify in app flows when attachment UI lands (columns + bucket + policies ship dormant). Outsider-denial direction verified ✓.
+
+**Frontend**: `chatQueries` += toggleReaction/markChannelRead/fetchUnreadCounts/mentionAllIds + reactions embed in CHAT_SELECT mapper; **ChatStream** reaction bar (optimistic flip + rollback refetch, 👍 quick-add on hover), mark-read on open/refresh, **@all chip** (managers) merging RPC ids into mentions; **rail unread badges** (red count chips on Projects/Channels/DMs, cleared on select, 20s refresh).
+
+**Gates**: tsc · eslint 0 err · vitest **228 files / 2924 tests** · smoke **461** · build clean · e2e-mock 11/11.
+
+---
+
 ## Session — 2026-08-23: EMAIL-FIRST digests — WhatsApp dependency removed (migrations 233/234, live) (complete)
 
 **User story** (founder): "WhatsApp usage lekunda digest pani cheyyali" — Meta phone-number/token/template setup + per-conversation costs avoid; Resend email is already live and free.

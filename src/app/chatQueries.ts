@@ -32,12 +32,24 @@ export interface ChatMessage {
   mentions: string[];
   replyCount: number;
   createdAt: string;
+  /** emoji -> reacting user ids (P2). */
+  reactions: Record<string, string[]>;
 }
 
-const CHAT_SELECT = "id, channel_id, parent_id, sender_id, sender_name, body, mentions, reply_count, created_at";
+const CHAT_SELECT = `id, channel_id, parent_id, sender_id, sender_name, body, mentions, reply_count, created_at,
+  chat_message_reactions(user_id, emoji)`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapMessage(r: Record<string, unknown>): ChatMessage {
+  const reactions: Record<string, string[]> = {};
+  if (Array.isArray(r.chat_message_reactions)) {
+    for (const raw of r.chat_message_reactions as Array<Record<string, unknown>>) {
+      const emoji = String(raw.emoji ?? "");
+      const uid = String(raw.user_id ?? "");
+      if (!emoji || !uid) continue;
+      (reactions[emoji] ??= []).push(uid);
+    }
+  }
   return {
     id: String(r.id),
     channelId: String(r.channel_id ?? ""),
@@ -48,6 +60,7 @@ function mapMessage(r: Record<string, unknown>): ChatMessage {
     mentions: Array.isArray(r.mentions) ? (r.mentions as unknown[]).map(String) : [],
     replyCount: Number(r.reply_count ?? 0),
     createdAt: String(r.created_at ?? ""),
+    reactions,
   };
 }
 
@@ -286,6 +299,73 @@ export async function deleteChatMessage(
     const { error } = await client.from("chat_messages").delete().eq("id", messageId);
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: { ok: true } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Toggle the caller's emoji reaction on a message. */
+export async function toggleReaction(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  messageId: string,
+  userId: string,
+  emoji: string,
+  currentlyMine: boolean,
+): Promise<CResult<{ ok: true }>> {
+  try {
+    if (currentlyMine) {
+      const { error } = await client.from("chat_message_reactions")
+        .delete()
+        .eq("message_id", messageId).eq("user_id", userId).eq("emoji", emoji);
+      if (error) return { ok: false, error: String(error.message ?? error) };
+    } else {
+      const { error } = await client.from("chat_message_reactions")
+        .upsert({ message_id: messageId, user_id: userId, emoji });
+      if (error) return { ok: false, error: String(error.message ?? error) };
+    }
+    return { ok: true, data: { ok: true } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Upsert my read cursor for a channel (drives unread badges). */
+export async function markChannelRead(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  channelId: string,
+  userId: string,
+): Promise<void> {
+  try {
+    await client.from("chat_channel_reads").upsert({
+      channel_id: channelId, user_id: userId, last_read_at: new Date().toISOString(),
+    });
+  } catch { /* best-effort */ }
+}
+
+/** channel_id -> unread count (messages after my cursor, not mine). */
+export async function fetchUnreadCounts(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+): Promise<CResult<Record<string, number>>> {
+  try {
+    const { data, error } = await client.rpc("chat_unread_counts");
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    const out: Record<string, number> = {};
+    for (const r of (data ?? []) as Array<Record<string, unknown>>) {
+      out[String(r.channel_id)] = Number(r.unread ?? 0);
+    }
+    return { ok: true, data: out };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+/** Managers-only: every eligible @all recipient in a channel. */
+export async function mentionAllIds(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  channelId: string,
+): Promise<CResult<string[]>> {
+  try {
+    const { data, error } = await client.rpc("chat_mention_all_ids", { p_channel_id: channelId });
+    if (error) return { ok: false, error: String(error.message ?? error) };
+    return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => String(r.profile_id)) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 

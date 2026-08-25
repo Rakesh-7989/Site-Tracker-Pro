@@ -1,6 +1,8 @@
 // SiteTrack Pro — milestone queries (v3 port, Batch 1). DB-wired to the
 // `milestones` table (GRANT + RLS via migration 72).
 
+import { versionedUpdateOutcome, type VersionedUpdateOptions } from "@/lib/versionedUpdate";
+
 export type MilestoneStatus = "pending" | "in_progress" | "completed";
 
 export interface Milestone {
@@ -10,9 +12,11 @@ export interface Milestone {
   dueDate: string | null;
   completedDate: string | null;
   sortOrder: number;
+  /** Trigger-forced optimistic-concurrency counter (migration 238). */
+  version: number;
 }
 
-export type MQResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type MQResult<T> = { ok: true; data: T } | { ok: false; error: string; conflict?: boolean };
 
 const STATUSES: MilestoneStatus[] = ["pending", "in_progress", "completed"];
 const asStatus = (v: unknown): MilestoneStatus => (STATUSES.includes(v as MilestoneStatus) ? (v as MilestoneStatus) : "pending");
@@ -22,7 +26,7 @@ export async function listMilestones(client: any, projectId: string): Promise<MQ
   try {
     const { data, error } = await client
       .from("milestones")
-      .select("id, title, status, due_date, completed_date, sort_order")
+      .select("id, title, status, due_date, completed_date, sort_order, version")
       .eq("project_id", projectId)
       .order("sort_order", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: false });
@@ -34,6 +38,7 @@ export async function listMilestones(client: any, projectId: string): Promise<MQ
       dueDate: r.due_date == null ? null : String(r.due_date),
       completedDate: r.completed_date == null ? null : String(r.completed_date),
       sortOrder: Number(r.sort_order ?? 0),
+      version: typeof r.version === "number" ? r.version : 1,
     }));
     return { ok: true, data: rows };
   } catch (e) {
@@ -69,13 +74,16 @@ export async function setMilestoneStatus(
   client: any,
   id: string,
   status: MilestoneStatus,
+  opts?: VersionedUpdateOptions,
 ): Promise<MQResult<{ ok: true }>> {
   try {
     const patch: Record<string, unknown> = { status };
     patch.completed_date = status === "completed" ? new Date().toISOString().slice(0, 10) : null;
-    const { error } = await client.from("milestones").update(patch).eq("id", id);
-    if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: { ok: true } };
+    const q = client.from("milestones").update(patch).eq("id", id);
+    const guarded = opts?.expectedVersion != null;
+    if (guarded) q.eq("version", opts.expectedVersion);
+    const res = await (guarded ? q.select("id") : q);
+    return versionedUpdateOutcome(res, guarded ? opts?.expectedVersion : undefined);
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }

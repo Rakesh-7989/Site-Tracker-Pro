@@ -52,7 +52,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
     if (!title.trim()) return;
     const tmpId = "tmp-" + Date.now();
     await run("add", c => createMilestone(c, { projectId, title: title.trim(), dueDate: due || null, sortOrder: rows.length }), {
-      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), dueDate: due || null, sortOrder: rows.length, status: "pending" as MilestoneStatus, completedDate: null }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, title: title.trim(), dueDate: due || null, sortOrder: rows.length, status: "pending" as MilestoneStatus, completedDate: null, version: 1 }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setTitle(""); setDue("");
@@ -103,7 +103,7 @@ export function MilestonesTab({ projectId }: { projectId: string }): JSX.Element
                   <button
                     type="button"
                     disabled={busy === `s-${m.id}`}
-                    onClick={() => { const ns = nextStatus(m.status); void run(`s-${m.id}`, c => setMilestoneStatus(c, m.id, ns), { apply: () => setRows(prev => prev.map(x => x.id === m.id ? { ...x, status: ns, completedDate: ns === "completed" ? new Date().toISOString().slice(0, 10) : null } : x)), rollback: () => setRows(prev => prev.map(x => x.id === m.id ? { ...x, status: m.status, completedDate: m.completedDate } : x)) }); }}
+                    onClick={() => { const ns = nextStatus(m.status); void run(`s-${m.id}`, c => setMilestoneStatus(c, m.id, ns, { expectedVersion: m.version }), { apply: () => setRows(prev => prev.map(x => x.id === m.id ? { ...x, status: ns, completedDate: ns === "completed" ? new Date().toISOString().slice(0, 10) : null } : x)), rollback: () => setRows(prev => prev.map(x => x.id === m.id ? { ...x, status: m.status, completedDate: m.completedDate } : x)) }); }}
                     title="Cycle status"
                   >
                     <Badge tone={STATUS_TONE[m.status]}>{STATUS_LABEL[m.status]}</Badge>
