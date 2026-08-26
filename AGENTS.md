@@ -3276,3 +3276,13 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 **Live verification**: prod CI success on `a8dcd0c` · `/v2/` → **200** (title ok) · `/v2/assets/index-*.js` → 200 · `/v2/sw.js` → 200 · main `/` → 200 untouched · prod-smoke 3/3.
 
 **Canonical note**: `C:\Users\boyap\site-tracker-v2` sibling is now a stale local backup — all v2 work continues in-repo under `v2/`. Plan doc: `docs/REDESIGN_V2_PLAN.md`.
+
+---
+
+## Session — 2026-08-26: V2 CLOSED — single clean sitetrackpro.in (PR #27, squash `5c14146`)
+
+**Founder decision**: "/v2/ ela rakodadu — url lo only sitetrackpro.in undali." Greenfield-v2 shell removed from production entirely: `v2/` deleted (incl. gitignored disk leftovers), build chain restored to plain `vite build`, CI "V2 app gates" step dropped, eslint/gitignore entries cleaned, smoke marker reverted. REDESIGN_V2_PLAN.md marked CLOSED (deep-dive record retained; recoverable from git range `a62b2e0..79283b9`).
+
+**Zero product loss** — every user-facing piece had already been ported INTO the main app before closure: RBAC profile clone+compare (#25), per-type industry dropdowns + richer create form (mig 248), signup-confirm recovery + onboarding persistence (mig 247, #24), trial owner-only gate, firm-type hidden.
+
+**Ship**: rebase over founder's prod→main sync (#26) → PR #27 → sync-merge origin/prod (eslint auto) → CI success → squash `5c14146` → live verified: ROOT/LOGIN 200, /v2/ now falls through to the MAIN app SPA (no separate v2 bundle exists), prod-smoke 3/3.
