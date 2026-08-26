@@ -25,8 +25,6 @@ export function ReportsTab({ projectId }: { projectId: string }) {
   const t = useT();
   const canManage = useCan("audit:manage", { projectId });
 
-  if (!canManage) return <AccessDenied />;
-
   const [rows, setRows] = useState<ConsultancyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +43,8 @@ export function ReportsTab({ projectId }: { projectId: string }) {
   useEffect(() => { void reload(); }, [reload]);
 
   const { run } = useAction(reload, setError);
+
+  if (!canManage) return <AccessDenied />;
 
   const submit = async () => {
     if (!form.title.trim()) return;

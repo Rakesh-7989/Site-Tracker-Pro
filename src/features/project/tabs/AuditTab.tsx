@@ -118,8 +118,6 @@ export function AuditTab({ projectId }: { projectId: string }) {
   const t = useT();
   const canManage = useCan("audit:manage", { projectId });
 
-  if (!canManage) return <AccessDenied />;
-
   const [rows, setRows] = useState<InspectionChecklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,6 +147,8 @@ export function AuditTab({ projectId }: { projectId: string }) {
     () => checklistFormSchema(formLabels, editing !== null),
     [formLabels, editing],
   );
+
+  if (!canManage) return <AccessDenied />;
 
   const submit = async (values: ChecklistFormValues) => {
     await run(editing ? "edit" : "add", (c: any) => upsertChecklist(c, {

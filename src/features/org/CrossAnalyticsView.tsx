@@ -28,7 +28,9 @@ export function CrossAnalyticsView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const session = useSession();
   const ctx = { orgId: activeOrg?.orgId };
-  const canView = useCan("budget:view", ctx) || useCan("revenue:view", ctx);
+  const canViewBudget = useCan("budget:view", ctx);
+  const canViewRevenue = useCan("revenue:view", ctx);
+  const canView = canViewBudget || canViewRevenue;
 
   const [dashboard, setDashboard] = useState<ExecDashboard | null>(null);
   const [loading, setLoading] = useState(true);

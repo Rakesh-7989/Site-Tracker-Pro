@@ -41,9 +41,6 @@ export const TICKET_CSV_COLUMNS: ReadonlyArray<CsvColumn<keyof Ticket>> = [
 ];
 
 export function PlatformSupportView(): JSX.Element {
-  const can = useCan("platform:support:manage");
-  if (!can) return <AccessDenied message="Platform superadmin access required." />;
-
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [orgs, setOrgs] = useState<Record<string, string>>({});
   const [active, setActive] = useState<string | null>(null);
@@ -67,33 +64,14 @@ export function PlatformSupportView(): JSX.Element {
 
   useEffect(() => { void load(); }, [load]);
 
-  const sendReply = async () => {
-    if (!reply.trim() || !active) return;
-    const client = await getClient();
-    const msg = { id: `msg_${Date.now()}`, by: "admin", text: reply.trim(), time: new Date().toISOString() };
-    const ticket = tickets.find(t => t.id === active);
-    const msgs = [...(ticket?.messages ?? []), msg];
-    const res = await updateSupportTicket(client, active, { messages: msgs, status: "replied", replied_at: new Date().toISOString() });
-    if (res.ok) {
-      setTickets(p => p.map(t => t.id === active ? { ...t, messages: msgs, status: "replied" } : t));
-      setReply("");
-    } else setError(res.error);
-  };
-
-  const close = async () => {
-    if (!active) return;
-    const client = await getClient();
-    const res = await updateSupportTicket(client, active, { status: "closed", closed_at: new Date().toISOString() });
-    if (res.ok) setTickets(p => p.map(t => t.id === active ? { ...t, status: "closed" } : t));
-    else setError(res.error);
-  };
-
-  const summary = ticketSummary(tickets);
   const onExport = useCallback(() => {
     const content = buildCsv(tickets as unknown as Array<Record<string, unknown>>, TICKET_CSV_COLUMNS);
     if (!content) return;
     downloadCsv(`support-tickets-${csvDateStamp()}.csv`, content);
   }, [tickets]);
+
+  const can = useCan("platform:support:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
 
   if (loading) {
     return (
@@ -128,6 +106,28 @@ export function PlatformSupportView(): JSX.Element {
   }
 
   const ticket = tickets.find(t => t.id === active);
+  const summary = ticketSummary(tickets);
+
+  const sendReply = async () => {
+    if (!reply.trim() || !active) return;
+    const client = await getClient();
+    const msg = { id: `msg_${Date.now()}`, by: "admin", text: reply.trim(), time: new Date().toISOString() };
+    const ticket = tickets.find(t => t.id === active);
+    const msgs = [...(ticket?.messages ?? []), msg];
+    const res = await updateSupportTicket(client, active, { messages: msgs, status: "replied", replied_at: new Date().toISOString() });
+    if (res.ok) {
+      setTickets(p => p.map(t => t.id === active ? { ...t, messages: msgs, status: "replied" } : t));
+      setReply("");
+    } else setError(res.error);
+  };
+
+  const close = async () => {
+    if (!active) return;
+    const client = await getClient();
+    const res = await updateSupportTicket(client, active, { status: "closed", closed_at: new Date().toISOString() });
+    if (res.ok) setTickets(p => p.map(t => t.id === active ? { ...t, status: "closed" } : t));
+    else setError(res.error);
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">

@@ -31,7 +31,9 @@ function MonthlyStatementInner(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const session = useSession();
   const ctx = { orgId: activeOrg?.orgId };
-  const canView = useCan("budget:view", ctx) || useCan("revenue:view", ctx);
+  const canViewBudget = useCan("budget:view", ctx);
+  const canViewRevenue = useCan("revenue:view", ctx);
+  const canView = canViewBudget || canViewRevenue;
 
   const [rows, setRows] = useState<MonthlyStatementRow[]>([]);
   const [loading, setLoading] = useState(true);

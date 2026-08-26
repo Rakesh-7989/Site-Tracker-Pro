@@ -105,6 +105,13 @@ export function UpgradeRequestsView(): JSX.Element {
     setBusy(null);
   };
 
+  const summary = upgradeSummary(rows);
+  const onExport = useCallback(() => {
+    const content = buildCsv(rows as unknown as Array<Record<string, unknown>>, UPGRADE_CSV_COLUMNS);
+    if (!content) return;
+    downloadCsv(`upgrade-requests-${csvDateStamp()}.csv`, content);
+  }, [rows]);
+
   if (!isStaff) {
     return (
       <div className="max-w-xl mx-auto mt-10 p-4 md:p-6">
@@ -152,13 +159,6 @@ export function UpgradeRequestsView(): JSX.Element {
       ),
     },
   ];
-
-  const summary = upgradeSummary(rows);
-  const onExport = useCallback(() => {
-    const content = buildCsv(rows as unknown as Array<Record<string, unknown>>, UPGRADE_CSV_COLUMNS);
-    if (!content) return;
-    downloadCsv(`upgrade-requests-${csvDateStamp()}.csv`, content);
-  }, [rows]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-4 p-4 md:p-6">

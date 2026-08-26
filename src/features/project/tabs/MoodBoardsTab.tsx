@@ -18,8 +18,6 @@ export function MoodBoardsTab({ projectId }: { projectId: string }): JSX.Element
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("ffe:manage", { orgId: activeOrg?.orgId, projectId });
 
-  if (!canManage) return <AccessDenied />;
-
   const [rows, setRows] = useState<MoodBoard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +34,8 @@ export function MoodBoardsTab({ projectId }: { projectId: string }): JSX.Element
   useEffect(() => { void reload(); }, [reload]);
 
   const { busy, run } = useAction(reload, setError);
+
+  if (!canManage) return <AccessDenied />;
 
   const save = async () => {
     if (!form.title.trim()) return;

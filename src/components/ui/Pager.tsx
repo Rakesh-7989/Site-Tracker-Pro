@@ -70,6 +70,18 @@ export function Pager({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable ||
+          target.getAttribute("role") === "textbox" ||
+          target.getAttribute("role") === "combobox")
+      ) {
+        return;
+      }
       if (e.key === "ArrowLeft" && canGoPrev) {
         e.preventDefault();
         onPrev();

@@ -19,7 +19,10 @@ export function ComplianceTab({ projectId, orgId }: { projectId: string; orgId: 
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const ctx = { orgId: activeOrg?.orgId, projectId };
-  const canEdit = useCan("rera:file", ctx) || useCan("gstn:file", ctx) || useCan("epfo:file", ctx);
+  const canEditRera = useCan("rera:file", ctx);
+  const canEditGstn = useCan("gstn:file", ctx);
+  const canEditEpfo = useCan("epfo:file", ctx);
+  const canEdit = canEditRera || canEditGstn || canEditEpfo;
   const [rows, setRows] = useState<ComplianceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

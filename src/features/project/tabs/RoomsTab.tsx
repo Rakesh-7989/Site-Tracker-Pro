@@ -91,8 +91,6 @@ export function RoomsTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const canManage = useCan("ffe:manage", { orgId: activeOrg?.orgId, projectId });
 
-  if (!canManage) return <AccessDenied />;
-
   const [rows, setRows] = useState<InteriorRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +108,8 @@ export function RoomsTab({ projectId }: { projectId: string }): JSX.Element {
 
   const { busy, run } = useAction(reload, setError);
   const progress = useMemo(() => roomProgress(rows), [rows]);
+
+  if (!canManage) return <AccessDenied />;
 
   const save = async () => {
     if (!form.name.trim()) return;

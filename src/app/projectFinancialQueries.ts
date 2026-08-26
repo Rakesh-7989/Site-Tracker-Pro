@@ -82,7 +82,12 @@ export async function getProjectPnL(client: any, projectId: string): Promise<Res
     if (evRes.error) return dbe(evRes.error);
     const ev = (evRes.data ?? [])[0] as EarnedValue | undefined;
 
-    const billedRevenue = ((invRes.data ?? []) as any[]).reduce((s, r) => s + (Number(r.amount ?? 0) + Number(r.gst ?? 0) - Number(r.tds ?? 0)), 0);
+    const billedRevenue = ((invRes.data ?? []) as any[]).reduce((s, r) => {
+      const amount = Number(r.amount ?? 0);
+      const gstPct = Number(r.gst ?? 0);
+      const tdsPct = Number(r.tds ?? 0);
+      return s + Math.round(amount * (1 + gstPct / 100 - tdsPct / 100));
+    }, 0);
 
     const expensesByCat = ((expRes.data ?? []) as any[]).reduce((acc, r) => {
       const cat = String(r.category ?? "other");
@@ -104,7 +109,7 @@ const raBilled = ((raRes.data ?? []) as any[]).reduce((s, r) => {
     const actualCost = (ev?.actualCost ?? 0) + poTotal;
     const committedCost = poApproved;
     const totalCost = actualCost + committedCost;
-    const grossProfit = ev?.earnedValue ?? 0 - actualCost;
+    const grossProfit = (ev?.earnedValue ?? 0) - actualCost;
     const grossMarginPct = (ev?.earnedValue ?? 0) > 0 ? Math.round((grossProfit / (ev?.earnedValue ?? 1)) * 100) : 0;
 
     const forecastFinalCost = ev?.eac ?? contractValue;
@@ -120,7 +125,7 @@ const raBilled = ((raRes.data ?? []) as any[]).reduce((s, r) => {
       recognizedRevenue: ev?.earnedValue ?? 0,
       actualCost,
       committedCost,
-      laborCost: expensesByCat.labor ?? 0 + laborCost,
+      laborCost: (expensesByCat.labor ?? 0) + laborCost,
       materialCost: expensesByCat.material ?? 0,
       subcontractorCost: raBilled,
       overheadCost: expensesByCat.overhead ?? 0,

@@ -102,7 +102,7 @@ export default [
     plugins: { react, "react-hooks": reactHooks },
     rules: {
       "react/jsx-key": "warn",
-      "react-hooks/rules-of-hooks": "warn", // TEMPORARY baseline (~90 early-return-before-hooks sites) — burn down to "error" in the typed-boundary phase
+      "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       "react/no-unescaped-entities": "off",
       "react/react-in-jsx-scope": "off",

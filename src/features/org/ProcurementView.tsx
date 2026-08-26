@@ -103,9 +103,6 @@ function ProcurementInner(): JSX.Element {
 
   const { busy, run } = useAction(reload, setError);
 
-  if (!canView) return <AccessDenied message="You don't have permission to view procurement." />;
-
-  const unassigned = quotes.filter(q => !q.ffeEntryId && !q.projectId);
   const byFfe = useMemo(() => {
     const map = new Map<string, ProcurementQuote[]>();
     for (const q of quotes) {
@@ -116,6 +113,10 @@ function ProcurementInner(): JSX.Element {
     }
     return map;
   }, [quotes]);
+
+  if (!canView) return <AccessDenied message="You don't have permission to view procurement." />;
+
+  const unassigned = quotes.filter(q => !q.ffeEntryId && !q.projectId);
 
   const vendorName = (id: string | null) => vendors.find(v => v.id === id)?.name ?? "Unknown vendor";
   const vendorRating = (id: string | null): number | undefined => vendors.find(v => v.id === id)?.rating ?? undefined;
