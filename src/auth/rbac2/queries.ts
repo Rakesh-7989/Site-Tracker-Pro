@@ -510,3 +510,67 @@ export function auditSummary(events: ReadonlyArray<AuthorizationAuditEvent>): Au
   }
   return { total: events.length, allows, denies, byReason, byMode };
 }
+/**
+ * Clone any profile (system or org-scoped) into a NEW org-scoped copy — the
+ * Zoho "customize standard role" pattern: start from the shipped baseline and
+ * tweak. Copies code/name (+Copy suffix) and every capability binding.
+ */
+export async function cloneProfile(
+  client: QueryClient,
+  input: { sourceId: string; orgId: string },
+): Promise<Result<RoleProfile>> {
+  try {
+    const srcRes = await client
+      .from("rbac_role_profiles")
+      .select("*")
+      .eq("id", input.sourceId)
+      .single();
+    if (srcRes.error) return dbe(srcRes.error);
+    const source = normalizeRoleProfile(srcRes.data as Record<string, unknown>);
+    if (!source) return { ok: false, error: "source-profile-not-found" };
+
+    const suffix = Date.now().toString(36).slice(-4);
+    const created = await createProfile(client, {
+      code: `${source.code}-copy-${suffix}`,
+      name: `${source.name} (Copy)`,
+      description: source.description ?? `Cloned from ${source.name}`,
+      segment: source.segment,
+      scope: "org",
+      orgId: input.orgId,
+    });
+    if (!created.ok) return created;
+
+    const bindings = await listBindingsForProfiles(client, [source.id]);
+    if (bindings.ok) {
+      for (const b of bindings.data) {
+        await upsertBinding(client, {
+          profileId: created.data.id,
+          capability: b.capability,
+          effect: b.effect,
+          note: b.note,
+        });
+      }
+    }
+    return ok(created.data);
+  } catch (e) {
+    return dbe(e as { message?: string });
+  }
+}
+
+/** Effective binding state for one profile in compare views. */
+export type BindingState = "allow" | "deny" | "-";
+
+/** Pure: union of capabilities across two profiles, differences first. */
+export function compareBindings(
+  a: ReadonlyArray<ProfileBinding>,
+  b: ReadonlyArray<ProfileBinding>,
+): Array<{ capability: string; a: BindingState; b: BindingState; differs: boolean }> {
+  const mapA = new Map(a.map(x => [x.capability as string, x.effect]));
+  const mapB = new Map(b.map(x => [x.capability as string, x.effect]));
+  const caps = [...new Set([...mapA.keys(), ...mapB.keys()])].sort();
+  return caps.map(capability => {
+    const av = (mapA.get(capability) ?? "-") as BindingState;
+    const bv = (mapB.get(capability) ?? "-") as BindingState;
+    return { capability, a: av, b: bv, differs: av !== bv };
+  });
+}

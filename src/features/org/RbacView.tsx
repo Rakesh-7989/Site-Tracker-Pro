@@ -7,12 +7,15 @@ import { Select } from "@/components/ui/forms";
 import { getClient } from "@/lib/supabase";
 import {
   listProfiles,
+  cloneProfile,
+  compareBindings,
+  listBindingsForProfiles,
   listAclEntries,
   listAuditEvents,
   getOrgRbacMode,
   setOrgRbacMode,
 } from "@/auth/rbac2";
-import type { QueryClient } from "@/auth/rbac2";
+import type { QueryClient, RoleProfile } from "@/auth/rbac2";
 
 function getEffectClass(effect: string) {
   return effect === "allow" ? "text-fg-primary" : "text-error";
@@ -55,7 +58,13 @@ function RbacViewBody(): JSX.Element {
 
   const [mode, setMode] = useState<"matrix" | "shadow" | "enforce">("matrix");
   const [modeError, setModeError] = useState<string | null>(null);
-  const [profiles, setProfiles] = useState<Array<{ code: string; name: string }>>([]);
+  const [profiles, setProfiles] = useState<RoleProfile[]>([]);
+  const [cloningId, setCloningId] = useState<string | null>(null);
+  const [cloneError, setCloneError] = useState<string | null>(null);
+  const [compareA, setCompareA] = useState<string>("");
+  const [compareB, setCompareB] = useState<string>("");
+  const [compareRows, setCompareRows] = useState<ReturnType<typeof compareBindings> | null>(null);
+  const [comparing, setComparing] = useState(false);
   const [aclEntries, setAclEntries] = useState<Array<{ resourceType: string; capability: string; effect: string }>>([]);
   const [auditEvents, setAuditEvents] = useState<Array<{ capability: string; effect: string; mode: string; reason?: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -80,12 +89,7 @@ function RbacViewBody(): JSX.Element {
     // Fetch role profiles
     const profilesResult = await listProfiles(client as unknown as QueryClient);
     if (profilesResult.ok && profilesResult.data) {
-      const profileArray = profilesResult.data as Array<{ code: string; name: string } | null>;
-      setProfiles(
-        profileArray
-          .filter((p): p is NonNullable<typeof profileArray[0]> => p != null)
-          .map((p) => ({ code: p.code, name: p.name }))
-      );
+      setProfiles(profilesResult.data.filter((p): p is RoleProfile => p != null));
     }
 
     // Fetch resource ACL entries
@@ -140,6 +144,44 @@ function RbacViewBody(): JSX.Element {
     } catch (e) {
       setModeError("Failed to update org RBAC mode");
       setMode("matrix");
+    }
+  };
+
+  const handleClone = async (profileId: string) => {
+    setCloningId(profileId);
+    setCloneError(null);
+    try {
+      const client = await getClient();
+      if (!client) return;
+      const res = await cloneProfile(client as unknown as QueryClient, {
+        sourceId: profileId,
+        orgId: activeOrg.orgId,
+      });
+      if (!res.ok) setCloneError(res.error);
+      else await fetchData();
+    } catch (e) {
+      setCloneError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCloningId(null);
+    }
+  };
+
+  const runCompare = async () => {
+    if (!compareA || !compareB || compareA === compareB) return;
+    setComparing(true);
+    try {
+      const client = await getClient();
+      if (!client) return;
+      const qc = client as unknown as QueryClient;
+      const [ra, rb] = await Promise.all([
+        listBindingsForProfiles(qc, [compareA]),
+        listBindingsForProfiles(qc, [compareB]),
+      ]);
+      setCompareRows(
+        compareBindings(ra.ok ? ra.data : [], rb.ok ? rb.data : []),
+      );
+    } finally {
+      setComparing(false);
     }
   };
 
@@ -207,24 +249,86 @@ function RbacViewBody(): JSX.Element {
           </div>
           <div className="space-y-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary mb-2">System profiles</p>
-            <div className="text-xs text-fg-secondary">Default profiles (read-only)</div>
+            <ul className="space-y-1 text-sm">
+              {profiles.filter(p => p.isSystem).map((p) => (
+                <li key={p.id} className="flex items-center gap-2">
+                  <span className="text-fg-primary flex-1 truncate">{p.name}</span>
+                  <span className="text-[10px] text-fg-tertiary">{p.sourceRole ?? ""}</span>
+                  <Button variant="secondary" size="sm" disabled={cloningId === p.id} onClick={() => void handleClone(p.id)}>
+                    Clone
+                  </Button>
+                </li>
+              ))}
+            </ul>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary mb-2">Org-scoped profiles</p>
-            {profiles.length > 0 ? (
+            {profiles.some(p => !p.isSystem) ? (
               <ul className="space-y-1 text-sm">
-                {profiles.map((p) => (
-                  <li key={p.code} className="flex items-center">
-                    <span className="text-fg-secondary flex-1">{p.code}</span>
-                    <span className="text-fg-primary">{p.name}</span>
+                {profiles.filter(p => !p.isSystem).map((p) => (
+                  <li key={p.id} className="flex items-center gap-2">
+                    <span className="text-fg-primary flex-1 truncate">{p.name}</span>
+                    {p.sourceRole && <span className="text-[10px] text-fg-tertiary">base: {p.sourceRole}</span>}
+                    <Button variant="secondary" size="sm" disabled={cloningId === p.id} onClick={() => void handleClone(p.id)}>
+                      Clone
+                    </Button>
                   </li>
                 ))}
               </ul>
             ) : (
               <div className="p-3 border border-default rounded-xl text-center text-fg-secondary">
                 <Icon name="users" size={20} className="mx-auto mb-2 opacity-30" />
-                <p>No profiles found</p>
+                <p>No custom profiles yet — clone a system profile to start.</p>
               </div>
             )}
+            {cloneError && <Alert variant="danger">{cloneError}</Alert>}
           </div>
+        </div>
+
+        {/* Profile Compare Panel (Zoho-style side-by-side) */}
+        <div className="bg-panel rounded-2xl p-6 shadow-editorial border-default md:col-span-2">
+          <h2 className="font-display font-semibold text-fg-primary text-base md:text-lg mb-4">Compare Profiles</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <Select
+              aria-label="Profile A"
+              value={compareA}
+              onChange={e => setCompareA(e.target.value)}
+              options={[{ value: "", label: "Profile A…" }, ...profiles.map(p => ({ value: p.id, label: p.name }))]}
+            />
+            <Select
+              aria-label="Profile B"
+              value={compareB}
+              onChange={e => setCompareB(e.target.value)}
+              options={[{ value: "", label: "Profile B…" }, ...profiles.map(p => ({ value: p.id, label: p.name }))]}
+            />
+          </div>
+          <Button variant="secondary" size="sm" loading={comparing} disabled={!compareA || !compareB || compareA === compareB} onClick={() => void runCompare()}>
+            Compare
+          </Button>
+          {compareRows && (
+            compareRows.length === 0 ? (
+              <p className="text-sm text-fg-secondary mt-3">Neither profile carries explicit bindings — both inherit their base role matrix.</p>
+            ) : (
+              <div className="mt-3 max-h-80 overflow-y-auto border border-default rounded-xl">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-elevated">
+                    <tr className="text-left">
+                      <th className="px-3 py-2 font-semibold text-fg-secondary">Capability</th>
+                      <th className="px-3 py-2 font-semibold text-fg-secondary">{profiles.find(p => p.id === compareA)?.name ?? "A"}</th>
+                      <th className="px-3 py-2 font-semibold text-fg-secondary">{profiles.find(p => p.id === compareB)?.name ?? "B"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...compareRows].sort((x, y) => Number(y.differs) - Number(x.differs)).map(r => (
+                      <tr key={r.capability} className={r.differs ? "bg-warning-tint/40" : ""}>
+                        <td className="px-3 py-1.5 text-fg-primary">{r.capability}</td>
+                        <td className={`px-3 py-1.5 ${r.a === "deny" ? "text-error" : r.a === "allow" ? "text-success" : "text-fg-tertiary"}`}>{r.a}</td>
+                        <td className={`px-3 py-1.5 ${r.b === "deny" ? "text-error" : r.b === "allow" ? "text-success" : "text-fg-tertiary"}`}>{r.b}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
         </div>
 
         {/* Resource ACL Panel */}

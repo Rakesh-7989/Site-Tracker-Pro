@@ -57,4 +57,6 @@ export {
   writeAuditEvent,
   listAuditEvents,
   auditSummary,
+  cloneProfile,
+  compareBindings,
 } from "./queries";
