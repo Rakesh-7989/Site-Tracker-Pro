@@ -1,5 +1,12 @@
 # REDESIGN V2 PLAN — SiteTrack Pro (Greenfield Frontend)
 
+> **STATUS: CLOSED (2026-08-26) — v2 shell removed from production per founder decision.**
+> All user-facing value was ported DIRECTLY into the main app (v1): RBAC profile clone+compare
+> (PR #25), industry dropdowns + richer create form (mig 248, PR #24), signup-confirm recovery,
+> onboarding persistence fix (mig 247), trial owner-only gate, firm-type hidden. The `v2/`
+> folder lived at commit range `a62b2e0..79283b9` — recover from git history if ever needed.
+> This document remains as the deep-dive record.
+
 > Status: ACTIVE · Created 2026-08-26 · Source study: full-repo deep-dive @ `85a90a1` (main)
 > Scope decision (founder-confirmed): **Greenfield v2 frontend, SAME Supabase backend + RLS spine**, first slice = P0+P1+P2 shell, stack += TanStack Query.
 > New codebase lives at `C:\Users\boyap\site-tracker-v2` (sibling repo). This document is the canonical bridge.
