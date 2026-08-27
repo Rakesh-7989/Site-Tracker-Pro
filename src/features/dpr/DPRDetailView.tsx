@@ -11,13 +11,13 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { BuildNowBadge } from "@/features/dpr/BuildNowBadge";
 import { useT } from "@/i18n/I18nProvider";
-import { getClient } from "@/lib/supabase";
-import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
-import { loadProjectHierarchy, hierarchyPath } from "@/app/spaceQueries";
-import { invokeSendDpr } from "@/app/dprSubmit";
-import { downloadDprPdf, getDprPdfBlob, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
-import { isNativeMobile } from "@/lib/platform";
-import { nativeShareFile } from "@/lib/native-capabilities";
+import { getClient } from "@/lib/supabase/supabase";
+import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/queries/dprQueries";
+import { loadProjectHierarchy, hierarchyPath } from "@/app/queries/spaceQueries";
+import { invokeSendDpr } from "@/app/services/dprSubmit";
+import { downloadDprPdf, getDprPdfBlob, dprWhatsAppShareEnabled, waShareLink } from "@/app/services/dprPdf";
+import { isNativeMobile } from "@/lib/platform/platform";
+import { nativeShareFile } from "@/lib/platform/native-capabilities";
 
 export const fmtDateTime = (iso: string): string => {
   const d = new Date(iso);

@@ -6,11 +6,11 @@ import { Spinner, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 
 
-import { getClient } from "@/lib/supabase";
-import { buildCsvRows, downloadCsv, csvDateStamp } from "@/lib/genericCsv";
+import { getClient } from "@/lib/supabase/supabase";
+import { buildCsvRows, downloadCsv, csvDateStamp } from "@/lib/utils/genericCsv";
 export function DailySnapshotView(): JSX.Element {
   return <PlanGate feature="kiosks"><DailySnapshotInner /></PlanGate>;
 }

@@ -4,7 +4,7 @@
 // to show ₹100,016 instead of ₹116,000).
 
 import { describe, expect, it } from "vitest";
-import { netReceivable, outstanding } from "@/app/crossInvoiceQueries";
+import { netReceivable, outstanding } from "@/app/queries/crossInvoiceQueries";
 
 describe("netReceivable (percentage-based, aligned with mig-239 cap)", () => {
   it("computes amount × (1 + gst% − tds%)", () => {

@@ -1,7 +1,7 @@
 // SiteTrack Pro — org config query tests (templates / approval chains / notif).
 
 import { describe, it, expect } from "vitest";
-import { listTemplates, listChains, listRules, TRIGGER_LABEL } from "@/app/orgConfigQueries";
+import { listTemplates, listChains, listRules, TRIGGER_LABEL } from "@/app/queries/orgConfigQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

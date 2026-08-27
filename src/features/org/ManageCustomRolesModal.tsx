@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   IDENTITY_ROLES, ROLE_LABEL,
   baseCapabilitiesFor, capabilityGroups, capabilityLabel,
@@ -7,10 +7,10 @@ import {
 } from "@/auth";
 import {
   assignCustomRole, unassignCustomRole,
-} from "@/app/orgMemberQueries";
+} from "@/app/queries/orgMemberQueries";
 import {
   listOrgRoles, createOrgRole, slugifyRoleKey,
-} from "@/app/customRoleQueries";
+} from "@/app/queries/customRoleQueries";
 import { Modal } from "@/components/ui/Modal";
 import { Button, Spinner, Alert, Icon, Card } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";

@@ -10,7 +10,7 @@
 import { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "./OrganizationContext";
-import { STUB_VIEWS } from "@/lib/featureFlags";
+import { STUB_VIEWS } from "@/lib/integrations/featureFlags";
 import { AccessDenied } from "@/components/ui/atoms";
 
 export interface StubGuardProps {

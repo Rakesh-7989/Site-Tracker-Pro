@@ -5,7 +5,7 @@
 // no `id`/`scope` columns). See 24_feature_flags.sql.
 
 import { describe, it, expect } from "vitest";
-import { listOpsToggles, upsertOpsToggle } from "@/app/platformSettingsQueries";
+import { listOpsToggles, upsertOpsToggle } from "@/app/queries/platformSettingsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function tableClient(result: { data?: unknown; error?: unknown }, capture?: Array<{ table: string; op: string; args: unknown }>): any {

@@ -3,7 +3,7 @@
 // Category arrays + status color maps + tab labels -- everything that's pure
 // data driving dropdowns and pills. Extracted from App.jsx (LOW-5 / Split-2).
 
-// v2 Phase A: project type taxonomy -- see docs/ROLE_MODEL_V2.md.
+// v2 Phase A: project type taxonomy -- see docs/architecture/ROLE_MODEL_V2.md.
 // Every project belongs to exactly one type. Drives tab visibility,
 // default team template, and BOQ category presets per type.
 

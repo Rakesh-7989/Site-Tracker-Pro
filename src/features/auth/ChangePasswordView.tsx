@@ -13,7 +13,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 import { useAuth } from "@/auth";
 import { postLoginPathForSession, readStoredLoginLane } from "@/auth/loginRouting";
-import { updatePassword, getSupabaseClient } from "@/lib/supabase";
+import { updatePassword, getSupabaseClient } from "@/lib/supabase/supabase";
 
 export function ChangePasswordView(): JSX.Element {
   const navigate = useNavigate();

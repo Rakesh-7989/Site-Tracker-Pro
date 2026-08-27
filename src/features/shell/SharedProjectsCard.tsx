@@ -5,13 +5,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getTypedClient } from "@/lib/db";
+import { getTypedClient } from "@/lib/supabase/db";
 import {
   listSharedPartnerProjects,
   acceptProjectPartnerInvite,
   PARTNER_SCOPE_LABEL,
   type SharedPartnerProject,
-} from "@/app/partnerQueries";
+} from "@/app/queries/partnerQueries";
 import { Card, Button, Badge, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 

@@ -9,7 +9,7 @@ import {
   addDocumentToCollection, removeDocumentFromCollection, listCollectionDocuments,
   searchDocuments,
   SOURCE_TYPE_LABELS, CATEGORY_LABELS, STATUS_LABELS, STATUS_TONES,
-} from "@/app/researchQueries";
+} from "@/app/queries/researchQueries";
 
 function docRow(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {

@@ -8,7 +8,7 @@ import {
   listOrgLeads, createLead, createProjectFromLead, acceptedQuote,
   setLeadOwner, updateLead, getQuotation, acceptQuotationAsAgreement,
   type Lead, type LeadStage, type LeadQuotation,
-} from "@/app/crmQueries";
+} from "@/app/queries/crmQueries";
 
 function lead(overrides: Partial<Lead> = {}): Lead {
   return {

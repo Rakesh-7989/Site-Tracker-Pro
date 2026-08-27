@@ -4,7 +4,7 @@
 // capture via updateOrg, and type stamping via createProject.
 
 import { describe, it, expect } from "vitest";
-import { getMyOrg, updateOrg, createProject } from "@/app/onboardingQueries";
+import { getMyOrg, updateOrg, createProject } from "@/app/queries/onboardingQueries";
 
 type MockResult = { data: unknown; error: unknown | null };
 type Handler = () => MockResult;

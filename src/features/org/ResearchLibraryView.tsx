@@ -10,10 +10,10 @@
 // docs) additionally gated by `research:manage`.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Spinner, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
+import { Card, Button, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
 import { Select, Input, Textarea, FormField } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable } from "@/components/ui/DataTable";
@@ -23,8 +23,7 @@ import {
   addDocumentToCollection, removeDocumentFromCollection, listCollectionDocuments,
   SOURCE_TYPE_LABELS, CATEGORY_LABELS, STATUS_LABELS, STATUS_TONES,
   type ResearchDocument, type DocumentSourceType, type DocumentCategory, type DocumentStatus,
-  type ResearchCollection, type CollectionDocument,
-} from "@/app/researchQueries";
+  type ResearchCollection, type CollectionDocument } from "@/app/queries/researchQueries";
 import { useT } from "@/i18n/I18nProvider";
 
 const SOURCE_TYPES = Object.keys(SOURCE_TYPE_LABELS) as DocumentSourceType[];
@@ -172,24 +171,20 @@ function Library({ orgId }: { orgId: string }): JSX.Element {
             {SOURCE_TYPE_LABELS[d.sourceType]}{d.publicationYear ? ` · ${d.publicationYear}` : ""}{d.authors.length ? ` · ${d.authors.join(", ")}` : ""}
           </div>
         </div>
-      ),
-    },
+      ) },
     {
       key: "category", header: t("research.colCategory"), hideOnMobile: true, className: "flex-shrink-0",
-      render: (d: ResearchDocument) => <span className="text-xs text-fg-secondary">{CATEGORY_LABELS[d.category]}</span>,
-    },
+      render: (d: ResearchDocument) => <span className="text-xs text-fg-secondary">{CATEGORY_LABELS[d.category]}</span> },
     {
       key: "tags", header: t("research.colTags"), hideOnMobile: true, className: "flex-shrink-0 max-w-56",
       render: (d: ResearchDocument) => (
         <div className="flex flex-wrap gap-1">
           {d.tags.slice(0, 3).map(tag => <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-elevated text-fg-secondary">{tag}</span>)}
         </div>
-      ),
-    },
+      ) },
     {
       key: "status", header: t("research.colStatus"), className: "flex-shrink-0",
-      render: (d: ResearchDocument) => <Badge tone={STATUS_TONES[d.status]}>{STATUS_LABELS[d.status]}</Badge>,
-    },
+      render: (d: ResearchDocument) => <Badge tone={STATUS_TONES[d.status]}>{STATUS_LABELS[d.status]}</Badge> },
   ];
 
   return (
@@ -270,7 +265,18 @@ function Library({ orgId }: { orgId: string }): JSX.Element {
           </div>
 
           {loading ? (
-            <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+            <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
           ) : (
             <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-border">
               <DataTable
@@ -352,8 +358,7 @@ function DocumentModal({ doc, onClose, onSave, t }: {
       publicationYear: y != null && Number.isFinite(y) ? y : null,
       publisher: publisher.trim() || null,
       doi: doi.trim() || null,
-      isbn: isbn.trim() || null,
-    });
+      isbn: isbn.trim() || null });
   };
 
   return (

@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useOrgSwitcher, useCan, PROJECT_INDUSTRIES_BY_TYPE, PROJECT_INDUSTRY_LABELS, segmentProjectTypes, defaultProjectTypeFor, type ProjectType } from "@/auth";
-import { createProject } from "@/app/queries";
+import { createProject } from "@/app/queries/queries";
 import { Card, Button, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { QuotaGate } from "@/auth/QuotaGate";
@@ -70,7 +70,7 @@ export function CreateProjectView(): JSX.Element {
     }
     if (startDate && endDate && endDate < startDate) { setError("Expected end date cannot be before start date."); return; }
     setBusy(true); setError(null);
-    const mod = await import("../../lib/supabase");
+    const mod = await import("../../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = await (mod as any).getSupabaseClient();
     if (!client) { setBusy(false); setError("Backend not configured."); return; }

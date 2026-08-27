@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getProject, listProjectMembers, type ProjectDetail, type ProjectMemberRow } from "@/app/queries";
+import { getProject, listProjectMembers, type ProjectDetail, type ProjectMemberRow } from "@/app/queries/queries";
 
 export type ProjectLoad =
   | { kind: "loading" }
@@ -21,7 +21,7 @@ export function useProject(projectId: string | undefined): { state: ProjectLoad;
     void (async () => {
       if (!projectId) { setState({ kind: "error", message: "No project id." }); return; }
       setState({ kind: "loading" });
-      const mod = await import("../../lib/supabase");
+      const mod = await import("../../lib/supabase/supabase");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client = await (mod as any).getSupabaseClient();
       if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }

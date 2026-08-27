@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect } from "vitest";
-import { computeDelayRisk, computeCostRisk, computeProductivity, type DelayRiskInputs, type CostRiskInputs, type ProductivityInputs } from "@/app/intelligenceEngine";
+import { computeDelayRisk, computeCostRisk, computeProductivity, type DelayRiskInputs, type CostRiskInputs, type ProductivityInputs } from "@/app/engines/intelligenceEngine";
 
 describe("IntelligenceEngine — rule-based construction risk predictions", () => {
   describe("computeDelayRisk", () => {

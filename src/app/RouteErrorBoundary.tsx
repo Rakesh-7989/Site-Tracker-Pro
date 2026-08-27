@@ -9,7 +9,7 @@
 import { Link, isRouteErrorResponse, useRouteError, type RouteObject } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/atoms";
-import { captureException } from "@/lib/sentry";
+import { captureException } from "@/lib/integrations/sentry";
 
 /** Chunk-load failures happen when a deploy swaps hashes under an open tab. */
 export function isStaleChunkError(err: unknown): boolean {

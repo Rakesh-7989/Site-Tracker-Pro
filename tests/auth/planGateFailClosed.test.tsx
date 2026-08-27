@@ -14,7 +14,7 @@ import { MemoryRouter } from "react-router-dom";
 
 import { usePlanCaps } from "@/auth/usePlanCaps";
 import { useOrgSwitcher } from "@/auth/useOrgSwitcher";
-import { fetchOrgQuota } from "@/app/quotaQueries";
+import { fetchOrgQuota } from "@/app/queries/quotaQueries";
 
 vi.mock("@/auth/usePlanCaps", () => ({
   usePlanCaps: vi.fn(),
@@ -24,10 +24,10 @@ vi.mock("@/auth/useOrgSwitcher", () => ({
   useOrgSwitcher: vi.fn(),
 }));
 vi.mock("@/app/quotaQueries", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/app/quotaQueries")>();
+  const actual = await importOriginal<typeof import("@/app/queries/quotaQueries")>();
   return { ...actual, fetchOrgQuota: vi.fn() };
 });
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase/supabase", () => ({
   getSupabaseClient: vi.fn(async () => ({})),
 }));
 
@@ -200,7 +200,7 @@ describe("useFeatureWithQuota (SEC-05 fail-closed defaults)", () => {
 
   it("stays fail-closed when the supabase client is unavailable", async () => {
     const { useFeatureWithQuota } = await importHook();
-    const supabaseMock = await import("@/lib/supabase");
+    const supabaseMock = await import("@/lib/supabase/supabase");
     vi.mocked(supabaseMock.getSupabaseClient).mockResolvedValue(null as never);
     mockOrgSwitcher.mockReturnValue(orgState("o-1"));
     const { result } = renderHook(() => useFeatureWithQuota("crm", "users"));

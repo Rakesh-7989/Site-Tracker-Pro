@@ -5,11 +5,11 @@ import { useCan } from "@/auth";
 import { AccessDenied, Button, Icon, StatCard } from "@/components/ui/atoms";
 import { Textarea } from "@/components/ui/forms";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { listSupportTickets, listOrgsBrief, updateSupportTicket, type Ticket } from "@/app/platformSupportQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { listSupportTickets, listOrgsBrief, updateSupportTicket, type Ticket } from "@/app/queries/platformSupportQueries";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 export function fmtTime(iso: string): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });

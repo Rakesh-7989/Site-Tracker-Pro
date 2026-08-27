@@ -10,8 +10,8 @@ import {
   newInviteCode,
   PARTNER_SCOPE_LABEL,
   PARTNER_STATUS_LABEL,
-} from "@/app/partnerQueries";
-import type { TypedSupabaseClient } from "@/lib/db";
+} from "@/app/queries/partnerQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 const asTyped = (c: unknown): TypedSupabaseClient => c as unknown as TypedSupabaseClient;
 

@@ -1,7 +1,7 @@
 // Unit tests for runtime platform detection (Capacitor global probing).
 
 import { afterEach, describe, expect, it } from "vitest";
-import { getPlatform, isNativeMobile } from "@/lib/platform";
+import { getPlatform, isNativeMobile } from "@/lib/platform/platform";
 
 type CapStub = { isNativePlatform?: () => boolean; getPlatform?: () => string };
 

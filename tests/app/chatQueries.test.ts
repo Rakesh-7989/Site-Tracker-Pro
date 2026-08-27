@@ -7,7 +7,7 @@ import {
   listChannelMessages, postChannelMessage, listThreadReplies,
   getChatMessage, deleteChatMessage,
   extractMentionIds, splitOnMentions,
-} from "@/app/chatQueries";
+} from "@/app/queries/chatQueries";
 
 function clientWith(impl: Record<string, unknown>) {
   // Minimal fluent-mock mirroring the crmQueries.test.ts pattern.

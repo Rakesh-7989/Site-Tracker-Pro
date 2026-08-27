@@ -13,7 +13,7 @@ import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authLib(): Promise<any> {
-  return await import("../../lib/supabase");
+  return await import("../../lib/supabase/supabase");
 }
 
 type Phase = "checking" | "form" | "done" | "invalid";

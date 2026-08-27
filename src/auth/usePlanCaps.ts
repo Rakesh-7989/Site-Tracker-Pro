@@ -15,7 +15,7 @@ import { hasPlanCap, planLimit, type PlanFeature, type PlanLimit, type PlanCaps 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getClient(): Promise<any | null> {
-  const mod = await import("../lib/supabase");
+  const mod = await import("../lib/supabase/supabase");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return await (mod as any).getSupabaseClient();
 }
@@ -48,7 +48,7 @@ export function usePlanCaps(): UsePlanCapsReturn {
       try {
         const client = await getClient();
         if (!client) { if (!cancelled) { setState(null); setLoading(false); } return; }
-        const { getPlanCaps } = await import("@/app/planCapsQueries");
+        const { getPlanCaps } = await import("@/app/queries/planCapsQueries");
         const res = await getPlanCaps(client, orgId);
         if (cancelled) return;
         setState(res.ok ? res.data : null);

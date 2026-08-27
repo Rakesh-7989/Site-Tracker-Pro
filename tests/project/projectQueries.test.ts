@@ -1,7 +1,7 @@
 // SiteTrack Pro — getProject + listProjectMembers tests (Phase 6).
 
 import { describe, it, expect } from "vitest";
-import { getProject, listProjectMembers } from "@/app/queries";
+import { getProject, listProjectMembers } from "@/app/queries/queries";
 
 function mockClient(opts: {
   single?: { data: unknown; error: unknown | null };

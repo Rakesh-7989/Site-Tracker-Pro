@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   listAttendance, createAttendance, setAttendanceStatus, deleteAttendance, clockOutAttendance,
-} from "@/app/attendanceQueries";
+} from "@/app/queries/attendanceQueries";
 
 const fromClient = (result: { data?: unknown; error?: unknown }) => {
   // Supabase query builders are thenable: every method returns the chain and

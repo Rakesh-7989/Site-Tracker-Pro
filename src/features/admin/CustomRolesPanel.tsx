@@ -1,5 +1,5 @@
 ﻿// SiteTrack Pro — Custom Roles panel (superadmin, migration 70).
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 //
 // Shown inside RoleManager when a specific org is selected. Lets the founder
 // create org-specific roles ("Site Lead", "Billing Head"), pick their feature
@@ -17,7 +17,7 @@ import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms
 import { Input, Select } from "@/components/ui/forms";
 import {
   listOrgRoles, createOrgRole, setOrgRoleCapabilities, updateOrgRole, deleteOrgRole, slugifyRoleKey,
-} from "@/app/customRoleQueries";
+} from "@/app/queries/customRoleQueries";
 
  
 

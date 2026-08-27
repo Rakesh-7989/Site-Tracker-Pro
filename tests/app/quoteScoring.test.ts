@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import {
   scoreQuote, scoreQuoteAlone, bestScoredQuote, SCORE_WEIGHTS,
   type ProcurementQuote,
-} from "@/app/procurementQuotes";
+} from "@/app/queries/procurementQuotes";
 
 const q = (over: Partial<ProcurementQuote>): ProcurementQuote => ({
   id: "1", orgId: "o", ffeEntryId: null, projectId: null, vendorId: "v1",

@@ -10,11 +10,11 @@
 // (tabs-config.ts); this tab renders read-only.
 
 import { useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
-import { Card, Spinner, Alert } from "@/components/ui/atoms";
+import { getClient } from "@/lib/supabase/supabase";
+import { Card, Alert } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { getProjectUtilizationByPhase, type UtilizationPhaseRow } from "@/app/utilizationQueries";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { getProjectUtilizationByPhase, type UtilizationPhaseRow } from "@/app/queries/utilizationQueries";
 
 const UNASSIGNED_PHASE_ID = "__unassigned__";
 
@@ -38,16 +38,33 @@ export function UtilizationTab({ projectId }: { projectId: string }): JSX.Elemen
   }, [projectId]);
 
   if (loading) return (
-    <div className="flex justify-center py-16">
-      <Spinner size={28} />
-      <div className="mt-4 animate-pulse bg-elevated rounded-md h-12 w-48 mx-auto"></div>
+    <div role="status" aria-label="Loading utilization" aria-busy="true" className="space-y-3 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+            <div className="flex-1 space-y-2">
+              <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+              <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+            </div>
+            <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+          </div>
+        ))}
+      </div>
     </div>
   );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   if (rows.length === 0) return (
     <div className="text-center py-20 text-fg-secondary">
-      <Spinner size={48} className="mx-auto mb-3" />
+      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-elevated animate-pulse" />
       <p>No fee phases or billable time logged yet.</p>
     </div>
   );

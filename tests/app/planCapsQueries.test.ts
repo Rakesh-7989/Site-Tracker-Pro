@@ -1,7 +1,7 @@
 // SiteTrack Pro — planCapsQueries tests (v2 trial-end read-side check, §5.5a).
 
 import { describe, it, expect } from "vitest";
-import { getPlanCaps, resolveEffectivePlan, isTrialActive, type SubscriptionBrief } from "@/app/planCapsQueries";
+import { getPlanCaps, resolveEffectivePlan, isTrialActive, type SubscriptionBrief } from "@/app/queries/planCapsQueries";
 
 type MockResult = { data: unknown; error: unknown | null };
 type Handler = () => MockResult;

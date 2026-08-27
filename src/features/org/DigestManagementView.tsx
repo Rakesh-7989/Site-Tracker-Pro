@@ -5,9 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
-import { listDigestSubscriptions, createDigestSubscription, updateDigestSubscription, listDigestDispatches, type DigestSubscription, type DigestLang, type DigestStatus } from "@/app/digestQueries";
+import { listDigestSubscriptions, createDigestSubscription, updateDigestSubscription, listDigestDispatches, type DigestSubscription, type DigestLang, type DigestStatus } from "@/app/queries/digestQueries";
 
 const LANG_OPTS = [{ value: "en", label: "English" }, { value: "te", label: "తెలుగు" }, { value: "hi", label: "हिन्दी" }];
 const statusTone = (s: DigestStatus): "success" | "warning" | "danger" => (s === "active" ? "success" : s === "paused" ? "warning" : "danger");
@@ -75,7 +75,18 @@ export function DigestManagementView(): JSX.Element {
               <Button onClick={() => void add()} disabled={busy === "add" || !phone.trim()}>{busy === "add" ? <Spinner size={14} /> : "Subscribe"}</Button>
             </Card>
           )}
-          {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+          {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
             : subs.length === 0 ? <div className="text-sm text-fg-secondary">No digest subscriptions.</div>
             : <div className="space-y-2">{subs.map(s => (
                 <div key={s.id}>

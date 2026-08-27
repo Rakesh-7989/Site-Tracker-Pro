@@ -4,11 +4,11 @@ import { Card, Button, Badge, Alert, AccessDenied, Icon, Spinner, StatCard } fro
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { listSignupRequests, reviewSignupRequest, markSignupPaid, createCheckoutLink, type SignupRequestRow, type SignupStatus } from "@/app/signupAdminQueries";
-import { listStaff, assignSignupRequest, type StaffMember } from "@/app/staffQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { listSignupRequests, reviewSignupRequest, markSignupPaid, createCheckoutLink, type SignupRequestRow, type SignupStatus } from "@/app/queries/signupAdminQueries";
+import { listStaff, assignSignupRequest, type StaffMember } from "@/app/queries/staffQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const FILTERS = [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "all", label: "All" }];
 const PLAN_LABEL: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", custom: "Custom" };
 export const statusTone = (s: SignupStatus): "neutral" | "warning" | "success" | "danger" => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");

@@ -1,7 +1,7 @@
 // SiteTrack Pro — org-admin panel query tests (Batch 6).
 
 import { describe, it, expect } from "vitest";
-import { getOrgOverview, listOrgActivity, deleteOrganization } from "@/app/orgAdminQueries";
+import { getOrgOverview, listOrgActivity, deleteOrganization } from "@/app/queries/orgAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({

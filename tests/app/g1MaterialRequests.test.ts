@@ -5,7 +5,7 @@ import {
   listMaterialRequests, createMaterialRequest, setMaterialRequestStatus, deleteMaterialRequest,
   requestTotals, isOpenRequest, REQUEST_NEXT, REQUEST_STATUS_LABEL,
   type MaterialRequest, type RequestStatus,
-} from "@/app/materialRequestQueries";
+} from "@/app/queries/materialRequestQueries";
 
 const req = (status: RequestStatus, qty = 1): MaterialRequest => ({
   id: "x", item: "Cement", unit: "bag", qty, needDate: null, reason: null, status,

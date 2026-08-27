@@ -2,7 +2,7 @@
 // Renders a chronological timeline of payment events for an invoice or RA bill.
 
 import { Icon, Badge } from "@/components/ui/atoms";
-import { type PaymentTimelineEvent } from "@/app/receiptQueries";
+import { type PaymentTimelineEvent } from "@/app/queries/receiptQueries";
 
 const KIND_LABEL: Record<string, string> = {
   payment_received: "Payment Received",

@@ -10,21 +10,22 @@
 // segment orgs (segments gate in nav-config).
 
 import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
-import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { memberProjectScope } from "@/app/queries/queries";
+import { Card, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { ChartLegend, PieChart, type ChartDatum } from "@/components/ui/Charts";
-import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
-import { listProjectsByType, type ProjectBrief } from "@/app/utilizationQueries";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { fmtRupees, fmtCompactRupees } from "@/app/queries/financeQueries";
+import { listProjectsByType, type ProjectBrief } from "@/app/queries/utilizationQueries";
 import {
   listOrgInvoices, listOrgRetainers, billedToDate, billedBySource, retainerMrr,
   type OrgInvoiceRow,
-} from "@/app/billingQueries";
-import type { Retainer } from "@/app/retainerQueries";
+} from "@/app/queries/billingQueries";
+import type { Retainer } from "@/app/queries/retainerQueries";
 
 export function RevenueView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
@@ -155,7 +156,18 @@ export function RevenueView(): JSX.Element {
       </ChartCard>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading revenue" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <Skeleton decorative height={14} width="w-1/3" />
+                <Skeleton decorative height={12} width="w-1/4" />
+              </div>
+              <Skeleton decorative height={20} width="w-16" />
+              <Skeleton decorative height={20} width="w-16" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <Card className="p-10 text-center text-sm text-fg-secondary">
           No consultancy / design projects yet. Retainers and hourly / phase invoices on a project will appear here.

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { listEquipment, createEquipment, deleteEquipment, type Equipment, type EquipmentOwnership } from "@/app/siteOpsQueries";
-import { getClient } from "@/lib/supabase";
+import { listEquipment, createEquipment, deleteEquipment, type Equipment, type EquipmentOwnership } from "@/app/queries/siteOpsQueries";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 
 const OWN_OPTS = [{ value: "owned", label: "Owned" }, { value: "rental", label: "Rental" }, { value: "hire", label: "Hire" }];

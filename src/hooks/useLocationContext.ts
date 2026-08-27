@@ -30,7 +30,7 @@ import {
   hierarchyPath,
   type SpatialHierarchy,
   type SpatialLevel,
-} from "@/app/spaceQueries";
+} from "@/app/queries/spaceQueries";
 
 export interface LocationContext {
   /** Whether the space module is enabled for the active org. */
@@ -76,7 +76,7 @@ export function useLocationContext(projectId?: string): LocationContext {
       // Dynamic import mirrors useProject.ts (avoids importing lib/supabase
       // at module load so the auth layer stays dependency-free).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mod: any = await import("../lib/supabase");
+      const mod: any = await import("../lib/supabase/supabase");
       const client = await mod.getSupabaseClient();
       if (cancelled) return;
       if (!client) { setLoading(false); setError("Backend not configured."); return; }

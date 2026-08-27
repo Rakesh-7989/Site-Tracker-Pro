@@ -3,7 +3,7 @@
 // via a light JSDOM-ish check (mock blob/URL/document where available).
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { buildCsv, buildCsvRows, csvCell, csvDateStamp, CSV_BOM, downloadCsv, type CsvColumn } from "@/lib/genericCsv";
+import { buildCsv, buildCsvRows, csvCell, csvDateStamp, CSV_BOM, downloadCsv, type CsvColumn } from "@/lib/utils/genericCsv";
 
 afterEach(() => { vi.restoreAllMocks(); });
 

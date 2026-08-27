@@ -7,8 +7,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
-import { getClient } from "@/lib/supabase";
-import { validateShareLink, fetchSharePayload, type ShareLinkGate } from "@/app/approvalQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { validateShareLink, fetchSharePayload, type ShareLinkGate } from "@/app/queries/approvalQueries";
 
 interface SharePayload {
   project: {

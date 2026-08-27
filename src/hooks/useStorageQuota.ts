@@ -4,8 +4,8 @@
 // error (missing RPC / no client) so uploads never block on quota infra.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getClient } from "@/lib/supabase";
-import { storageByBucket, storagePercent, storageRemaining, storageTotal, storageUsed, type StorageByBucket } from "@/app/storageQuotaQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { storageByBucket, storagePercent, storageRemaining, storageTotal, storageUsed, type StorageByBucket } from "@/app/queries/storageQuotaQueries";
 
 export interface StorageQuotaState {
   loading: boolean;

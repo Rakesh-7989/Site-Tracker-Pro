@@ -6,9 +6,9 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Badge, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { listWipAging, createWipEntry, updateWipEntry, computeWipAgingBuckets, type WipAgingEntry, type WipAgingBuckets, type WipCategory } from "@/app/projectFinancialQueries";
-import { getClient } from "@/lib/supabase";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listWipAging, createWipEntry, updateWipEntry, computeWipAgingBuckets, type WipAgingEntry, type WipAgingBuckets, type WipCategory } from "@/app/queries/projectFinancialQueries";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 
 const CATEGORIES: WipCategory[] = ["labor", "material", "equipment", "subcontractor"];
@@ -62,7 +62,24 @@ export function ProjectWipView({ projectId }: { projectId: string }): JSX.Elemen
     );
   }
 
-  if (loading) return <div className="grid place-items-center py-8"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   const handleCreate = async () => {
@@ -105,7 +122,24 @@ export function ProjectWipView({ projectId }: { projectId: string }): JSX.Elemen
     setFormStatus(e.status);
   };
 
-  if (loading) return <div className="grid place-items-center py-8"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   const totalUnbilled = buckets?.total ?? 0;

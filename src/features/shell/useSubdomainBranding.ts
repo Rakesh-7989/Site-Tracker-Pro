@@ -5,9 +5,9 @@
 // subdomain resolves, applies nothing (canonical-host behavior).
 
 import { useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { resolveSubdomain } from "@/lib/subdomain";
-import { resolveOrgBySubdomain, type SubdomainOrg } from "@/app/subdomainQueries";
+import { resolveOrgBySubdomain, type SubdomainOrg } from "@/app/queries/subdomainQueries";
 import { accentToCssVars, normalizeAccent } from "./brandingCss";
 
 export interface SubdomainBrandingState {

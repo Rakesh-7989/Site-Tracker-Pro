@@ -3,13 +3,13 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
-import { getClient } from "@/lib/supabase";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries/queries";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   getOrgBranding, listProjectBrandings,
   upsertOrgBranding, upsertProjectBranding, deleteProjectBranding,
-} from "@/app/brandingQueries";
-import { resolveBranding, accentToHex } from "@/lib/branding";
+} from "@/app/queries/brandingQueries";
+import { resolveBranding, accentToHex } from "@/lib/integrations/branding";
 
 
 export function PlatformBrandingView(): JSX.Element {

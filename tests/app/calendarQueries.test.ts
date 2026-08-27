@@ -1,7 +1,7 @@
 // SiteTrack Pro — org calendar query + bucketing tests.
 
 import { describe, it, expect } from "vitest";
-import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/calendarQueries";
+import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/queries/calendarQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({ rpc: async () => result });

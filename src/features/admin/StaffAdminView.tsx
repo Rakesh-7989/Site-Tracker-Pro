@@ -1,5 +1,5 @@
 ﻿// SiteTrack Pro — platform Staff admin (/admin/staff). Owner + Head only.
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 //
 // Generate single-use staff invite links, see the staff hierarchy (Owner → Head
 // → Members), and revoke pending invites. The "block-by-default" signup control:
@@ -15,7 +15,7 @@ import {
   createStaffInvite, sendStaffInvite, listStaff, listStaffInvites, revokeStaffInvite,
   staffJoinUrl, inviteStatus, listAllStaffAreas, setStaffAreas, STAFF_AREAS, STAFF_AREA_LABEL,
   type StaffMember, type StaffInvite,
-} from "@/app/staffQueries";
+} from "@/app/queries/staffQueries";
 import { UpiSettingsCard } from "@/features/admin/UpiSettingsCard";
 
 export const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);

@@ -3,7 +3,7 @@
 // No client, no React. The rollup / filter / sort logic is extracted here so
 // the ProjectsListView stays thin and the behavior is unit-testable.
 
-import type { ProjectSummary } from "@/app/queries";
+import type { ProjectSummary } from "@/app/queries/queries";
 import { isProjectLifecycleStatus } from "@/lib/projectLifecycle";
 
 /** Counts across lifecycle states for the stat strip. `total` = live (non-archived). */

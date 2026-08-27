@@ -9,7 +9,7 @@ import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { GlobalSearch } from "./GlobalSearch";
 import { TrialBanner } from "./TrialBanner";
-import { useConnectionStatus } from "@/lib/useConnectionStatus";
+import { useConnectionStatus } from "@/lib/platform/useConnectionStatus";
 import { useOrgBranding } from "./useOrgBranding";
 
 export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Element {
@@ -22,7 +22,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
 
   const onSignOut = async () => {
     try {
-      const mod = await import("../../lib/supabase");
+      const mod = await import("../../lib/supabase/supabase");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (mod as any).signOut();
     } finally {

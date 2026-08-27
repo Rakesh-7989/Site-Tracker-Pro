@@ -7,7 +7,7 @@ import {
   getOrgSubdomain,
   normalizeSubdomainInput,
   mapSubdomainOrg,
-} from "@/app/subdomainQueries";
+} from "@/app/queries/subdomainQueries";
 
 function rpcMock(data: unknown, error: unknown) {
   return {

@@ -5,15 +5,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { useT } from "@/i18n/I18nProvider";
-import { Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Button, Alert, Icon } from "@/components/ui/atoms";
 import {
   ensureProjectStream,
-  type ChatChannel,
-} from "@/app/chatQueries";
-import { listOrgMembers } from "@/app/orgMemberQueries";
-import type { MentionCandidate } from "@/app/chatQueries";
+  type ChatChannel } from "@/app/queries/chatQueries";
+import { listOrgMembers } from "@/app/queries/orgMemberQueries";
+import type { MentionCandidate } from "@/app/queries/chatQueries";
 import { ChatStream } from "@/features/shared/ChatStream";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 export function MessagesTab({ projectId }: { projectId: string }): JSX.Element {
   const t = useT();
@@ -64,10 +63,26 @@ export function MessagesTab({ projectId }: { projectId: string }): JSX.Element {
     scope: "project",
     projectId,
     visibility: "open",
-    createdAt: "",
-  } : null;
+    createdAt: "" } : null;
 
-  if (loading) return <div className="grid place-items-center py-12"><Spinner size={22} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-3">

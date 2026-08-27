@@ -4,7 +4,7 @@ import {
   designStageFromOrder, MAX_DESIGN_STAGE_ORDER,
   getDesignWorkflow, ensureDesignWorkflow, advanceDesignWorkflow,
   approveDesignWorkflow, resetDesignWorkflow,
-} from "@/app/designWorkflowQueries";
+} from "@/app/queries/designWorkflowQueries";
 
 describe("designStageFromOrder", () => {
   it("maps ladder indices to canonical stages", () => {

@@ -3,9 +3,9 @@ import ReactDOM from "react-dom/client";
 import { AppV3 } from "./app/AppV3";
 import { ErrorBoundary } from "./components/errorBoundary";
 
-import { initSentry } from "./lib/sentry";
-import { registerServiceWorker } from "./lib/pwa";
-import { isNativeMobile } from "./lib/platform";
+import { initSentry } from "./lib/integrations/sentry";
+import { registerServiceWorker } from "./lib/platform/pwa";
+import { isNativeMobile } from "./lib/platform/platform";
 import "./index.css";
 
 initSentry();
@@ -13,8 +13,8 @@ initSentry();
 // native layer owns caching/offline (documented in MOBILE_BUILD.md).
 if (isNativeMobile()) {
   document.documentElement.classList.add("native-shell");
-  void import("./lib/native").then(m => m.initNativeShell());
-  void import("./lib/offline").then(m => m.initNetworkBridge());
+  void import("./lib/platform/native").then(m => m.initNativeShell());
+  void import("./lib/platform/offline").then(m => m.initNetworkBridge());
 } else {
   registerServiceWorker();
 }

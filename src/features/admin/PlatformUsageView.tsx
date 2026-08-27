@@ -7,11 +7,11 @@ import { Button, Icon, StatCard, AccessDenied, Alert } from "@/components/ui/ato
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { getUsageStats, listUsagePlanCounts, type UsageStats, type PlanCount } from "@/app/platformUsageQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { getUsageStats, listUsagePlanCounts, type UsageStats, type PlanCount } from "@/app/queries/platformUsageQueries";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 // ── Pure helpers (exported for the phase unit tests) ──────────────────────────
 

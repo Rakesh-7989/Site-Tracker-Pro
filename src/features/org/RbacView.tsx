@@ -4,7 +4,7 @@ import { PlanGate } from "@/auth/PlanGate";
 import { Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listProfiles,
   cloneProfile,

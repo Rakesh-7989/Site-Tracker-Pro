@@ -12,7 +12,7 @@ import { Card, Button, Icon } from "@/components/ui/atoms";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authLib(): Promise<any> {
-  return await import("../../lib/supabase");
+  return await import("../../lib/supabase/supabase");
 }
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);

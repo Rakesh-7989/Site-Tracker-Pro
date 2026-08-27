@@ -15,12 +15,12 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Button, Icon, Spinner, Alert, Badge } from "@/components/ui/atoms";
 import { FormField, Select, Textarea, Input } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
-import { normalizeE164, submitDpr, makeSupabaseDprRuntime, type DprSendStatus } from "@/app/dprSubmit";
-import { listProjectsForOrg, memberProjectScope } from "@/app/queries";
-import { loadProjectHierarchy, locationOptions, type SpatialHierarchy } from "@/app/spaceQueries";
-import { getClient } from "@/lib/supabase";
-import { isOnline } from "@/lib/offline";
-import { useOfflineSync } from "@/lib/dprOfflineSync";
+import { normalizeE164, submitDpr, makeSupabaseDprRuntime, type DprSendStatus } from "@/app/services/dprSubmit";
+import { listProjectsForOrg, memberProjectScope } from "@/app/queries/queries";
+import { loadProjectHierarchy, locationOptions, type SpatialHierarchy } from "@/app/queries/spaceQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { isOnline } from "@/lib/platform/offline";
+import { useOfflineSync } from "@/app/services/dprOfflineSync";
 import {
   dprReducer, EMPTY_DRAFT, canSubmit, meetsQualityBar, draftChecklist,
   type DprLanguage,
@@ -108,7 +108,7 @@ export function DPRComposer(): JSX.Element {
     dispatch({ type: "voice-start" });
     setTranscribing(true);
     try {
-      const mod = await import("../../lib/voiceTranscribe");
+      const mod = await import("../../lib/integrations/voiceTranscribe");
       const client = await getClient();
        
       const res = client

@@ -1,7 +1,7 @@
 // SiteTrack Pro — VNext P2.2: procurement-quote form schema parity.
 import { describe, it, expect } from "vitest";
-import { quoteFormSchema, QUOTE_STATUSES, type QuoteFormLabels } from "@/app/procurementQuotes";
-import { defaultValues, validateForm } from "@/app/formEngine";
+import { quoteFormSchema, QUOTE_STATUSES, type QuoteFormLabels } from "@/app/queries/procurementQuotes";
+import { defaultValues, validateForm } from "@/app/engines/formEngine";
 
 const labels: QuoteFormLabels = {
   fieldVendor: "Vendor",

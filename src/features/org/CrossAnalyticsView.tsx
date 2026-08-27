@@ -5,12 +5,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import { Card, Badge, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { getExecDashboard, type ProjectKPIs, type ExecDashboard, type CashFlowForecastRow } from "@/app/crossAnalyticsQueries";
-import { getClient } from "@/lib/supabase";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { getExecDashboard, type ProjectKPIs, type ExecDashboard, type CashFlowForecastRow } from "@/app/queries/crossAnalyticsQueries";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 
 const HEALTH_TONE: Record<"green" | "amber" | "red", "success" | "warning" | "neutral"> = {
@@ -63,7 +63,24 @@ export function CrossAnalyticsView(): JSX.Element {
     );
   }
 
-  if (loading) return <div className="grid place-items-center py-8"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
   if (!dashboard) return <div className="text-center py-8 text-fg-tertiary">No data.</div>;
 

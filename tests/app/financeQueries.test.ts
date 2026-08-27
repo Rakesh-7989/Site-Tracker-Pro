@@ -1,8 +1,8 @@
 // SiteTrack Pro — finance + attendance query tests (Batch 2/3).
 
 import { describe, it, expect } from "vitest";
-import { listPOs, listInvoices, listExpenses, fmtRupees, invoiceTaxBreakup, listLedger, createLedgerTxn, stockBalance, stockRows, stockLevel, type LedgerTxn } from "@/app/financeQueries";
-import { listAttendance } from "@/app/attendanceQueries";
+import { listPOs, listInvoices, listExpenses, fmtRupees, invoiceTaxBreakup, listLedger, createLedgerTxn, stockBalance, stockRows, stockLevel, type LedgerTxn } from "@/app/queries/financeQueries";
+import { listAttendance } from "@/app/queries/attendanceQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

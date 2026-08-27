@@ -6,10 +6,10 @@ import { useOrgSwitcher } from "@/auth";
 import { Card, Badge, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { listUnmatchedReceipts, matchReceiptToInvoice, type POReceipt } from "@/app/advancedProcurementQueries";
-import { listInvoices, type Invoice } from "@/app/financeQueries";
-import { getClient } from "@/lib/supabase";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listUnmatchedReceipts, matchReceiptToInvoice, type POReceipt } from "@/app/queries/advancedProcurementQueries";
+import { listInvoices, type Invoice } from "@/app/queries/financeQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 export function ThreeWayMatchingView({ projectId }: { projectId: string }): JSX.Element {
   useOrgSwitcher();
@@ -37,7 +37,24 @@ export function ThreeWayMatchingView({ projectId }: { projectId: string }): JSX.
 
   useEffect(() => { void reload(); }, [reload]);
 
-  if (loading) return <div className="grid place-items-center py-8"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   const columns: Column<POReceipt>[] = [

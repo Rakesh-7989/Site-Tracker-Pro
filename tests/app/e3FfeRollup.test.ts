@@ -7,7 +7,7 @@ import {
   ffeOrgRollup, listOrgFfe,
   FFE_STATUSES, FFE_CATEGORIES,
   type FfeOrgProject,
-} from "@/app/ffeQueries";
+} from "@/app/queries/ffeQueries";
 
 const entry = (status: "specified" | "selected" | "ordered" | "installed" | "cancelled", category: "furniture" | "fixture" | "equipment", qty: number, unitCost: number) => ({ qty, unitCost, status, category });
 

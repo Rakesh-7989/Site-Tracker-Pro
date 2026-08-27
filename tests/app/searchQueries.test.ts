@@ -1,7 +1,7 @@
 // SiteTrack Pro — global search query + url helper tests.
 
 import { describe, it, expect } from "vitest";
-import { globalSearch, hitUrl, type SearchHit } from "@/app/searchQueries";
+import { globalSearch, hitUrl, type SearchHit } from "@/app/queries/searchQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }, spy?: (args: unknown) => void): any => ({

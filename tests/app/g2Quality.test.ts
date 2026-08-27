@@ -5,7 +5,7 @@ import {
   listCorrectiveActions, createCorrectiveAction, setCorrectiveStatus, deleteCorrectiveAction,
   correctiveRollup, CORRECTIVE_NEXT, CORRECTIVE_STATUS_LABEL, CORRECTIVE_PRIORITY_LABEL,
   type CorrectiveAction, type CorrectiveStatus,
-} from "@/app/qualityQueries";
+} from "@/app/queries/qualityQueries";
 
 const act = (status: CorrectiveStatus, priority: CorrectiveAction["priority"] = "medium"): CorrectiveAction => ({
   id: "x", projectId: "proj", inspectionId: null, description: "Re-level slab", priority, status,

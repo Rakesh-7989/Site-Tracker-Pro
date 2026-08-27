@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from "vitest";
 import { jsPDF } from "jspdf";
-import { pdfRupees, pdfType, pdfMonthLabel } from "@/app/monthlyStatementPdf";
+import { pdfRupees, pdfType, pdfMonthLabel } from "@/app/services/monthlyStatementPdf";
 
 describe("pdfRupees", () => {
   it("formats whole rupees in en-IN grouping with a ₹ symbol", () => {

@@ -3,8 +3,8 @@
 // against the platform default, ready to apply CSS vars + shell surface.
 
 import { useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
-import { getOrgBranding, type BrandingRow } from "@/app/brandingQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { getOrgBranding, type BrandingRow } from "@/app/queries/brandingQueries";
 import { normalizeAccent, type AccentName } from "./brandingCss";
 
 const FALLBACK_TAGLINE = "Construction Suite";

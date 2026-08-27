@@ -8,22 +8,20 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
-import { Card, Spinner, Alert, AccessDenied, Badge, StatCard } from "@/components/ui/atoms";
+import { memberProjectScope } from "@/app/queries/queries";
+import { Card, Alert, AccessDenied, Badge, StatCard } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { PieChart, ChartLegend, type ChartDatum } from "@/components/ui/Charts";
 import {
   listOrgApprovalDrawings, approvalOrgRollup, APPROVAL_TONE,
-  type ApprovalDrawing,
-} from "@/app/approvalQueries";
+  type ApprovalDrawing } from "@/app/queries/approvalQueries";
 
 const APPROVAL_LABEL: Record<string, string> = {
-  not_requested: "Not requested", pending: "Pending review", approved: "Approved", rejected: "Rejected", locked: "Locked",
-};
+  not_requested: "Not requested", pending: "Pending review", approved: "Approved", rejected: "Rejected", locked: "Locked" };
 
 interface Row {
   id: string;
@@ -92,8 +90,7 @@ function ApprovalAnalyticsInner(): JSX.Element {
     approvalStatus: d.approvalStatus,
     changeNote: d.changeNote,
     approvedByName: d.approvedByName,
-    approvedAt: d.approvedAt,
-  })), [drawings, nameOf, typeOf]);
+    approvedAt: d.approvedAt })), [drawings, nameOf, typeOf]);
 
   const columns: Column<Row>[] = [
     { key: "drawing", header: "Drawing", render: r => <span className="text-[13px] font-semibold text-fg-primary">{r.revision}</span> },
@@ -170,8 +167,6 @@ function ApprovalAnalyticsInner(): JSX.Element {
           emptyIcon="image"
         />
       </Card>
-
-      {loading && <div className="flex justify-center py-4"><Spinner size={18} /></div>}
     </div>
   );
 }

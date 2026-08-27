@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, StatCard } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listExpenses, createExpense, setExpenseStatus, deleteExpense, fmtRupees, type Expense, type ExpenseStatus } from "@/app/financeQueries";
+import { listExpenses, createExpense, setExpenseStatus, deleteExpense, fmtRupees, type Expense, type ExpenseStatus } from "@/app/queries/financeQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const CAT = [{ value: "material", label: "Material" }, { value: "labour", label: "Labour" }, { value: "equipment", label: "Equipment" }, { value: "admin", label: "Admin" }, { value: "permit", label: "Permit" }, { value: "other", label: "Other" }];
 const STT = [{ value: "recorded", label: "Recorded" }, { value: "reimbursed", label: "Reimbursed" }, { value: "approved", label: "Approved" }, { value: "rejected", label: "Rejected" }, { value: "disputed", label: "Disputed" }];
@@ -56,7 +56,18 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add" || !desc.trim() || !amount}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? <div className="text-sm text-fg-secondary">No expenses recorded.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">

@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, Spinner, Alert, Icon, Badge, Button } from "@/components/ui/atoms";
 import { Input, Select, FormField } from "@/components/ui/forms";
-import { listVendorPOs, listMaterialPrices, type PO, type MPrice } from "@/app/vendorPortalQueries";
-import { listOrgQuotes, upsertQuote, type ProcurementQuote } from "@/app/procurementQuotes";
-import { listVendors, updateVendorProfile, type Vendor } from "@/app/vendorQueries";
+import { listVendorPOs, listMaterialPrices, type PO, type MPrice } from "@/app/queries/vendorPortalQueries";
+import { listOrgQuotes, upsertQuote, type ProcurementQuote } from "@/app/queries/procurementQuotes";
+import { listVendors, updateVendorProfile, type Vendor } from "@/app/queries/vendorQueries";
 import { useSession } from "@/auth/OrganizationContext";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useT } from "@/i18n/I18nProvider";
 
 const fmtCur = (n: number) => `₹${(n ?? 0).toLocaleString("en-IN")}`;
@@ -149,7 +149,24 @@ export function VendorPortalView(): JSX.Element {
 
   useEffect(() => { onProfileFormLoad(); }, [myVendor]);
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <div className="p-8"><Alert variant="danger">{error}</Alert></div>;
   if (!myVendor) return <div className="p-8 text-center"><Icon name="truck" size={32} className="mx-auto mb-3 opacity-30" /><p className="text-fg-secondary">No vendor profile linked to your account. Contact your admin.</p></div>;
 

@@ -8,7 +8,7 @@
 // signup_requests + plans table). Keep these numbers in sync with migration
 // 93_plans_pricing_2026.sql (the DB plans table).
 
-import type { SignupPlan } from "@/app/signupQueries";
+import type { SignupPlan } from "@/app/queries/signupQueries";
 
 export type BillingPeriod = "monthly" | "annual";
 

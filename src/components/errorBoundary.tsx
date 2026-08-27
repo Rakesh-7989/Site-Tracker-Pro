@@ -1,5 +1,5 @@
 import React from "react";
-import { captureException } from "../lib/sentry";
+import { captureException } from "../lib/integrations/sentry";
 import { Button } from "@/components/ui/atoms";
 
 interface ErrorBoundaryProps {

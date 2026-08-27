@@ -278,7 +278,7 @@ export async function fetchCustomRoleOverrides(
  * active org, no settings row, or mode = 'matrix'); a failed MODE read also
  * returns undefined because we cannot know the org enforces V2 at all (the
  * org-level matrix default applies — documented residual in
- * docs/SECURITY_AUDIT_REGISTER.md).
+ * docs/architecture/SECURITY_AUDIT_REGISTER.md).
  */
  
 export async function fetchRbac2Context(

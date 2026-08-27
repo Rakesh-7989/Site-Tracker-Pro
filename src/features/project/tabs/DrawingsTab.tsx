@@ -5,26 +5,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Select } from "@/components/ui/forms";
-import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/designQueries";
+import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/queries/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
   drawingObjectPath, formatBytes, type DrawingFileRef,
-} from "@/app/drawingFileQueries";
-import { logDownloadEvent } from "@/app/downloadAuditQueries";
+} from "@/app/queries/drawingFileQueries";
+import { logDownloadEvent } from "@/app/queries/downloadAuditQueries";
 import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
-import { resolveDiffPair } from "@/app/drawingDiffSources";
+import { resolveDiffPair } from "@/app/queries/drawingDiffSources";
 import { DiffView, type DiffImageSource } from "@/features/shared/DiffView";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
 import { DxfThumbnail } from "@/features/shared/DxfThumbnail";
 import { isCadFileName, isDxfFileName } from "@/lib/dxfPreview";
 import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
-import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/designWorkflow";
-import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/designWorkflowQueries";
+import { DESIGN_STAGES, DESIGN_STAGE_LABEL, type DesignStageId } from "@/app/engines/designWorkflow";
+import { getDesignWorkflow, advanceDesignWorkflow, approveDesignWorkflow } from "@/app/queries/designWorkflowQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "current", label: "Current" }, { value: "superseded", label: "Superseded" }];
 
@@ -207,9 +206,17 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
         onChange={(e) => void onPickFile(e)}
       />
       {loading ? (
-        <div className="grid place-items-center py-10">
-          <Spinner size={22} />
-          <Skeleton className="animate-pulse bg-elevated rounded-md h-12 w-48 mx-auto" />
+        <div role="status" aria-label="Loading drawings" aria-busy="true" className="space-y-2">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
         </div>
       ) : rows.length === 0 ? (
         <div className="text-center py-20 text-fg-secondary">

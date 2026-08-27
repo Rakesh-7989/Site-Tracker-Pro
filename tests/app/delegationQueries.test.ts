@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import {
   listDelegations, listOrgMembers, createDelegation, revokeDelegation,
-} from "@/app/delegationQueries";
+} from "@/app/queries/delegationQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function resp(data: unknown, error: unknown): any {

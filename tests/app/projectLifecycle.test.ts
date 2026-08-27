@@ -18,7 +18,7 @@ import {
   archiveProject,
   restoreProject,
   deleteProject,
-} from "@/app/queries";
+} from "@/app/queries/queries";
 
 describe("projectLifecycle pure helpers", () => {
   it("recognises the full status set", () => {

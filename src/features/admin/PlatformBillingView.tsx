@@ -8,12 +8,12 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { listOrgBillingRows, type OrgBillingRow } from "@/app/platformBillingQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { listOrgBillingRows, type OrgBillingRow } from "@/app/queries/platformBillingQueries";
 import { fmtMrr } from "@/features/admin/PlatformOrgsView";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 // ── Pure helpers (exported for the phase unit tests) ──────────────────────────
 

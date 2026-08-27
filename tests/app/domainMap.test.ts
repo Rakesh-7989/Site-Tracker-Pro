@@ -23,14 +23,14 @@ import {
   surfaceFor,
   engineBoundaryFor,
   moduleLabel,
-} from "@/app/domainMap";
+} from "@/app/config/domainMap";
 import { MODULE_IDS, isModuleId, type ModuleId } from "@/modules";
 import { PLUGIN_CATALOG, routeModules } from "@/plugins/catalog";
 import { TAB_CATALOG } from "@/features/project/tabs-config";
-import { NAV_CATALOG } from "@/app/nav-config";
-import { WORKFLOW_REGISTRY } from "@/app/workflowDefinitions";
-import { OutboxEventType } from "@/app/outboxQueries";
-import { SPATIAL_LEVELS } from "@/app/spaceQueries";
+import { NAV_CATALOG } from "@/app/config/nav-config";
+import { WORKFLOW_REGISTRY } from "@/app/engines/workflowDefinitions";
+import { OutboxEventType } from "@/app/queries/outboxQueries";
+import { SPATIAL_LEVELS } from "@/app/queries/spaceQueries";
 
 const APP_DIR = path.resolve(process.cwd(), "src/app");
 

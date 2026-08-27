@@ -1,7 +1,7 @@
 // SiteTrack Pro — VNext P1.2: inspection-checklist form schema parity.
 import { describe, it, expect } from "vitest";
-import { checklistFormSchema, CL_KIND_LABEL, CL_STATUS_LABEL } from "@/app/consultancyAuditQueries";
-import { defaultValues, validateForm, isFieldVisible } from "@/app/formEngine";
+import { checklistFormSchema, CL_KIND_LABEL, CL_STATUS_LABEL } from "@/app/queries/consultancyAuditQueries";
+import { defaultValues, validateForm, isFieldVisible } from "@/app/engines/formEngine";
 
 const labels = {
   fieldKind: "Type",

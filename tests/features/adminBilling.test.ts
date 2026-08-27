@@ -5,7 +5,7 @@ import {
   PLAN_ORDER,
   BILLING_CSV_COLUMNS,
 } from "@/features/admin/PlatformBillingView";
-import type { OrgBillingRow } from "@/app/platformBillingQueries";
+import type { OrgBillingRow } from "@/app/queries/platformBillingQueries";
 
 const row = (over: Partial<OrgBillingRow>): OrgBillingRow => ({ id: "o1", name: "Acme", plan: "pro", status: "active", mrr: 1000, ...over });
 

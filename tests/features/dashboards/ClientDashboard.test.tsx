@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ClientDashboard } from "@/features/dashboards/ClientDashboard";
-import { listClientProjects } from "@/app/clientPortalQueries";
-import { getClient } from "@/lib/supabase";
+import { listClientProjects } from "@/app/queries/clientPortalQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 vi.mock("@/auth", () => ({
   useAuth: () => ({
@@ -34,7 +34,7 @@ vi.mock("@/app/clientPortalQueries", () => ({
   listClientNotifications: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock("@/lib/supabase/supabase", () => ({
   getClient: vi.fn(),
 }));
 

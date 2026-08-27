@@ -5,10 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listTemplates, createTemplate, deleteTemplate, TEMPLATE_KINDS, type Template, type TemplateKind } from "@/app/orgConfigQueries";
+import { listTemplates, createTemplate, deleteTemplate, TEMPLATE_KINDS, type Template, type TemplateKind } from "@/app/queries/orgConfigQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const KIND_OPTS = TEMPLATE_KINDS.map(k => ({ value: k, label: k[0].toUpperCase() + k.slice(1) }));
 const kindTone = (k: TemplateKind): "info" | "success" | "warning" => (k === "project" ? "info" : k === "boq" ? "success" : "warning");
@@ -57,7 +57,18 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
         <div className="flex-1 min-w-[140px]"><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Description</span><Input className="mt-1" placeholder="optional" value={desc} onChange={e => setDesc(e.target.value)} /></div>
         <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
       </Card>
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? <div className="text-sm text-fg-secondary">No templates yet.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">

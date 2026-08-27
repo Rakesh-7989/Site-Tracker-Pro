@@ -12,8 +12,8 @@ import {
   TIER_LABEL,
   USER_CSV_COLUMNS,
 } from "@/features/admin/PlatformUsersView";
-import { buildCsv } from "@/lib/genericCsv";
-import type { PlatformUser } from "@/app/platformAdminQueries";
+import { buildCsv } from "@/lib/utils/genericCsv";
+import type { PlatformUser } from "@/app/queries/platformAdminQueries";
 
 const user = (over: Partial<PlatformUser>): PlatformUser => ({
   id: "u1", name: "Rakesh", email: "r@example.com", role: "orgadmin",

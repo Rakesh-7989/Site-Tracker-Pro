@@ -3,12 +3,12 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Alert, Icon, AccessDenied, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { delegationStatus } from "@/lib/delegations";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listDelegations, listOrgMembers,
   createDelegation, revokeDelegation as revokeDelegationQuery,
   type DelegationRow, type OrgMemberRow,
-} from "@/app/delegationQueries";
+} from "@/app/queries/delegationQueries";
 
 
 export function DelegationsView(): JSX.Element {

@@ -13,15 +13,15 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
 import {
   createOrgWithAdmin, listPlatformOrgs, setOrgPlan, ASSIGNABLE_PLANS, planUnlocksCustomRoles,
   PLAN_LABEL, ADMIN_PAGE_SIZE, adminDeleteOrg, adminSetSubscriptionStatus, getOrgSubscription,
   type AssignablePlan, type PlatformOrg, type OrgSubscriptionInfo,
-} from "@/app/platformAdminQueries";
-import { listOrgBillingRows, type OrgBillingRow } from "@/app/platformBillingQueries";
+} from "@/app/queries/platformAdminQueries";
+import { listOrgBillingRows, type OrgBillingRow } from "@/app/queries/platformBillingQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 const PLAN_OPTIONS = ASSIGNABLE_PLANS.map(p => ({ value: p, label: PLAN_LABEL[p] ?? p }));
 

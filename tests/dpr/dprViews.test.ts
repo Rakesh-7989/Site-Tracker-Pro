@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { sortByStatus, sortByDate, STATUS_ORDER } from "@/features/dpr/DPRHistoryView";
 import { outcomeVisual, fmtDateTime } from "@/features/dpr/DPRDetailView";
-import type { DprMessageRow } from "@/app/dprQueries";
+import type { DprMessageRow } from "@/app/queries/dprQueries";
 
 const row = (status: DprMessageRow["status"], createdAt: string): DprMessageRow =>
   ({

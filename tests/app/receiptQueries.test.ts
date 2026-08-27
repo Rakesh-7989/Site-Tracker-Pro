@@ -1,7 +1,7 @@
 // SiteTrack Pro — payment receipts & reconciliation tests (#30).
 
 import { describe, it, expect } from "vitest";
-import { listReceipts, reconcileInvoice, reconcileRaBill } from "@/app/receiptQueries";
+import { listReceipts, reconcileInvoice, reconcileRaBill } from "@/app/queries/receiptQueries";
 
 interface MockClient {
   from: (t: string) => {

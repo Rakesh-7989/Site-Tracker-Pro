@@ -3,9 +3,9 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
-import { listVendors, createVendor, setVendorRating, deleteVendor, type Vendor } from "@/app/vendorQueries";
+import { listVendors, createVendor, setVendorRating, deleteVendor, type Vendor } from "@/app/queries/vendorQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 
 export function VendorsView(): JSX.Element {

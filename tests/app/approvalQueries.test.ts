@@ -15,7 +15,7 @@ import {
   listHandoverSignatures, addHandoverSignature, validateShareLink, fetchSharePayload,
   approvalOrgRollup, listOrgApprovalDrawings,
   type ApprovalDrawing, type DrawingComment,
-} from "@/app/approvalQueries";
+} from "@/app/queries/approvalQueries";
 
 function ad(overrides: Partial<ApprovalDrawing> = {}): ApprovalDrawing {
   return {

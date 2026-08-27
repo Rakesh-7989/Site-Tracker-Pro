@@ -1,7 +1,7 @@
 // SiteTrack Pro — self-service org registration query tests (P-D unified signup).
 
 import { describe, it, expect } from "vitest";
-import { registerOrg, resendConfirmation, type RegisterInput } from "@/app/orgRegisterQueries";
+import { registerOrg, resendConfirmation, type RegisterInput } from "@/app/queries/orgRegisterQueries";
 
 const input: RegisterInput = {
   email: "owner@firm.com",

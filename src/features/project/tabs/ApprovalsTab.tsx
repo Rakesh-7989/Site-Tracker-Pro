@@ -5,11 +5,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { fmtRupees } from "@/app/financeQueries";
-import { listPendingApprovals, decideApproval, type PendingApproval, type ApprovalKind } from "@/app/approvalsQueries";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listPendingApprovals, decideApproval, type PendingApproval, type ApprovalKind } from "@/app/queries/approvalsQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const KIND_LABEL: Record<ApprovalKind, string> = { changeorder: "Change order", rabill: "RA bill", po: "Purchase order" };
 const KIND_TONE: Record<ApprovalKind, "info" | "warning" | "neutral"> = { changeorder: "info", rabill: "warning", po: "neutral" };
 
@@ -40,7 +40,18 @@ export function ApprovalsTab({ projectId }: { projectId: string }): JSX.Element 
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-fg-primary">Pending approvals</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? (
           <Card className="p-6 text-center text-sm text-fg-secondary"><Icon name="check" size={22} className="mx-auto text-success mb-2" />Nothing awaiting sign-off. ??</Card>
         ) : <div className="space-y-2">{rows.map(r => { const k = `${r.kind}-${r.id}`; const canApprove = r.kind === "changeorder" ? canApproveCo : r.kind === "rabill" ? canApproveRa : canApprovePo; return (

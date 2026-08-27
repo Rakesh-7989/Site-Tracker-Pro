@@ -8,7 +8,7 @@ import {
   type RoleCategory,
 } from "@/auth";
 import { RoleCard, type RoleOccupant } from "./RoleCard";
-import type { OrgMemberRow } from "@/app/orgMemberQueries";
+import type { OrgMemberRow } from "@/app/queries/orgMemberQueries";
 
 const CATEGORY_ORDER: RoleCategory[] = [
   "org-leadership",

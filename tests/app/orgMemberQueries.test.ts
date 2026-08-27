@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import {
   listOrgMembers, lookupUserForInvite, addOrgMember,
   deactivateMember, assignCustomRole, unassignCustomRole, inviteNewOrgMember,
-} from "@/app/orgMemberQueries";
+} from "@/app/queries/orgMemberQueries";
 
 // Minimal chainable mock: every builder method returns the same thenable that
 // resolves to `result`; .rpc() returns from the rpc map.

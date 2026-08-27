@@ -13,7 +13,7 @@ import {
   type NotifPrefs,
   type NotifTypeKey,
   type PrefRole,
-} from "@/lib/notificationPrefs";
+} from "@/lib/integrations/notificationPrefs";
 
 const ROLE_DISPLAY_NAMES: Record<PrefRole, string> = {
   architect: "Architect",

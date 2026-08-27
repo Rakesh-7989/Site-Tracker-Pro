@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { staffSummary, validEmail, type StaffSummary } from "@/features/admin/StaffAdminView";
-import type { StaffMember, StaffInvite } from "@/app/staffQueries";
+import type { StaffMember, StaffInvite } from "@/app/queries/staffQueries";
 
 const member = (over: Partial<StaffMember>): StaffMember => ({
   id: "s1", email: "a@example.com", name: "A", tier: "member", managerEmail: null,

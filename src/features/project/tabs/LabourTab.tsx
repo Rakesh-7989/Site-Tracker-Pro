@@ -6,12 +6,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
-import { fmtRupees } from "@/app/financeQueries";
-import { listLabour, createLabour, deleteLabour, type LabourEntry } from "@/app/siteAdminQueries";
-import { listAttendance, type AttendanceRow } from "@/app/attendanceQueries";
-import { attendanceTally, wageSlip, SHIFT_BASE_HOURS, OVER_TIME_MULTIPLIER } from "@/app/shiftQueries";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listLabour, createLabour, deleteLabour, type LabourEntry } from "@/app/queries/siteAdminQueries";
+import { listAttendance, type AttendanceRow } from "@/app/queries/attendanceQueries";
+import { attendanceTally, wageSlip, SHIFT_BASE_HOURS, OVER_TIME_MULTIPLIER } from "@/app/queries/shiftQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
@@ -57,7 +57,18 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
           <Button onClick={() => void add()} disabled={busy === "add" || !name.trim()}>{busy === "add" ? <Spinner size={14} /> : "Add"}</Button>
         </Card>
       )}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? <div className="text-center py-20 text-fg-secondary">
           <span className="text-4xl mb-3">👷</span>
           <p>No workers registered yet.</p>

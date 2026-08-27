@@ -1,19 +1,18 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
+import { Alert, Icon, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { LineChart, type ChartDatum } from "@/components/ui/Charts";
-import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
-import { getClient } from "@/lib/supabase";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries/queries";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   getProjectForecastDetail, getBoqForProject, getRaBillsForProject,
   getLedgerForProject, getUpdatesForProject,
-  type ProjectForecastDetail, type BoqItem, type RaBill, type LedgerEntry, type SiteUpdate,
-} from "@/app/forecastQueries";
-import { forecastWithLlm } from "@/lib/aiForecast";
-import { getProviderConfig } from "@/lib/ai";
+  type ProjectForecastDetail, type BoqItem, type RaBill, type LedgerEntry, type SiteUpdate } from "@/app/queries/forecastQueries";
+import { forecastWithLlm } from "@/lib/ai/aiForecast";
+import { getProviderConfig } from "@/lib/ai/ai";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtCur = (n: any) => { if (n == null || n === "") return "—"; const num = Number(n); if (!Number.isFinite(num)) return "—"; return "₹" + num.toLocaleString("en-IN"); };
 
@@ -124,9 +123,43 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     setBusy(false);
   }, [proj, selProject, projectDetail, boqItems, raBills, ledgerEntries, siteUpdates]);
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (projects.length === 0) return <div className="p-10 text-center text-fg-secondary">No projects to forecast.</div>;
-  if (dataLoading) return <div className="grid place-items-center p-12"><Spinner size={24} /><span className="mt-3 text-sm text-fg-secondary">Loading project data...</span></div>;
+  if (dataLoading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-10 max-w-5xl">

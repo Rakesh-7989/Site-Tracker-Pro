@@ -5,7 +5,7 @@ import { PLUGIN_CATALOG, pluginRoutes, routeModules } from "@/plugins/catalog";
 import { isModuleId } from "@/modules";
 import type { ModuleId } from "@/modules";
 import type { PluginRoute } from "@/plugins/types";
-import { NAV_CATALOG } from "@/app/nav-config";
+import { NAV_CATALOG } from "@/app/config/nav-config";
 
 function flattenRoutes(): Array<{ pluginModule: ModuleId; route: PluginRoute }> {
   return PLUGIN_CATALOG.flatMap(p => p.routes.map(route => ({ pluginModule: p.moduleId, route })));

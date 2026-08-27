@@ -4,11 +4,11 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
-import { listDprMessages, type DprMessageRow, type DprStatus } from "@/app/dprQueries";
+import { listDprMessages, type DprMessageRow, type DprStatus } from "@/app/queries/dprQueries";
 import { DPRStatusBadge } from "./DPRStatusBadge";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const fmtDate = (iso: string): string => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });

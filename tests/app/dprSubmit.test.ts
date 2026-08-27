@@ -5,7 +5,7 @@ import {
   buildDprPayload,
   submitDpr,
   voiceObjectPath,
-} from "@/app/dprSubmit";
+} from "@/app/services/dprSubmit";
 
 describe("normalizeE164", () => {
   it("strips spaces/dashes and adds + prefix", () => {

@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   quoteTotal, isComparable, bestQuote, QUOTE_NEXT, QUOTE_STATUSES,
   type ProcurementQuote, type QuoteStatus,
-} from "@/app/procurementQuotes";
+} from "@/app/queries/procurementQuotes";
 
 function q(overrides: Partial<ProcurementQuote> = {}): ProcurementQuote {
   return {

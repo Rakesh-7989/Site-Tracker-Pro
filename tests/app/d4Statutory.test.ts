@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import {
   isExpiring, STATUTORY_KINDS, STATUTORY_STATUSES, STATUTORY_NEXT,
   type StatutoryStatus,
-} from "@/app/statutoryQueries";
+} from "@/app/queries/statutoryQueries";
 
 describe("statutoryQueries isExpiring", () => {
   it("is true within 30 days of valid_until", () => {

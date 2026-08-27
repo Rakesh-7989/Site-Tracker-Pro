@@ -1,4 +1,4 @@
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 import { Card, Button, Badge, Icon } from "@/components/ui/atoms";
 import { DropdownMenu, DropdownItem } from "@/components/ui/DropdownMenu";
 

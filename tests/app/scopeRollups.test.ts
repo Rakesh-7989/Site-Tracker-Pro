@@ -5,17 +5,17 @@
 // empty result on an empty assignment set (PostgREST ignores `IN ()`).
 
 import { describe, it, expect } from "vitest";
-import { listProjectsByType, getOrgUtilization, getOrgUtilizationByPhase } from "@/app/utilizationQueries";
-import { getOrgRaBills } from "@/app/crossRaQueries";
-import { listOrgFfe } from "@/app/ffeQueries";
-import { listOrgMonthlyStatement } from "@/app/monthlyStatementQueries";
-import { listOrgInvoices } from "@/app/crossInvoiceQueries";
-import { listOrgDownloadEvents } from "@/app/downloadAuditQueries";
+import { listProjectsByType, getOrgUtilization, getOrgUtilizationByPhase } from "@/app/queries/utilizationQueries";
+import { getOrgRaBills } from "@/app/queries/crossRaQueries";
+import { listOrgFfe } from "@/app/queries/ffeQueries";
+import { listOrgMonthlyStatement } from "@/app/queries/monthlyStatementQueries";
+import { listOrgInvoices } from "@/app/queries/crossInvoiceQueries";
+import { listOrgDownloadEvents } from "@/app/queries/downloadAuditQueries";
 import {
   listProjectsWithBudget, getOrgProjectKPIs, getOrgCashFlowForecast, getExecDashboard,
-} from "@/app/crossAnalyticsQueries";
-import { listOrgProjects } from "@/app/procurementQuotes";
-import type { MemberProjectScope } from "@/app/queries";
+} from "@/app/queries/crossAnalyticsQueries";
+import { listOrgProjects } from "@/app/queries/procurementQuotes";
+import type { MemberProjectScope } from "@/app/queries/queries";
 
 type Raw = { data: unknown; error: unknown };
 

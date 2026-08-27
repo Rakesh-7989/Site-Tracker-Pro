@@ -17,7 +17,7 @@ vi.mock("@/lib/offline", () => ({
   onConnectivityChange: onConnectivityChange,
 }));
 
-import { useConnectionStatus } from "@/lib/useConnectionStatus";
+import { useConnectionStatus } from "@/lib/platform/useConnectionStatus";
 
 describe("useConnectionStatus pendingOps source", () => {
   it("seeds pendingOps from the real queue depth", async () => {

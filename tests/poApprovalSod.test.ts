@@ -6,8 +6,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { listPOs } from "@/app/financeQueries";
-import { getOrgPurchaseOrders } from "@/app/crossPoQueries";
+import { listPOs } from "@/app/queries/financeQueries";
+import { getOrgPurchaseOrders } from "@/app/queries/crossPoQueries";
 import { poStatusOptionsFor, poApprovalDate } from "@/features/project/tabs/POsTab";
 
 function chain(result: { data?: unknown; error?: unknown }) {

@@ -13,7 +13,7 @@ import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { CONSENT_VERSION } from "@/features/marketing/legalContent";
 import { type BillingPeriod } from "@/features/marketing/plans";
-import { registerOrg, resendConfirmation, type RegisterPlan } from "@/app/orgRegisterQueries";
+import { registerOrg, resendConfirmation, type RegisterPlan } from "@/app/queries/orgRegisterQueries";
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 

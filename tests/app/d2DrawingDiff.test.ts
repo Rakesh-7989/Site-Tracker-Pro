@@ -8,8 +8,8 @@ import {
   diffPairs, formatKey, isRasterFileName, rasterPathForDrawing,
   diffPixelMask, applyDiffMask, layerForDrawing,
 } from "@/lib/drawingDiffPair";
-import { drawingObjectPath } from "@/app/drawingFileQueries";
-import type { Drawing } from "@/app/designQueries";
+import { drawingObjectPath } from "@/app/queries/drawingFileQueries";
+import type { Drawing } from "@/app/queries/designQueries";
 
 function drawing(over: Partial<Drawing>): Drawing {
   return {

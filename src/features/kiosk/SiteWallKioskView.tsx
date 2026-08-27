@@ -7,10 +7,10 @@ import { Spinner } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 export function SiteWallKioskView(): JSX.Element {
   return <PlanGate feature="kiosks"><SiteWallKioskInner /></PlanGate>;
 }

@@ -4,7 +4,7 @@
 
 import { useStorageQuota } from "@/hooks/useStorageQuota";
 import { Alert } from "@/components/ui/atoms";
-import { fmtCompactRupees } from "@/app/financeQueries";
+import { fmtCompactRupees } from "@/app/queries/financeQueries";
 
 export interface StorageUploadGateResult {
   loading: boolean;

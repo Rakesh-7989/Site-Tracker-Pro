@@ -5,7 +5,7 @@
 // DB: interior_rooms / room_installations (migration 162).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
@@ -15,7 +15,7 @@ import {
   listInstallations, addInstallation, setInstallStatus, deleteInstallation,
   roomProgress, ROOM_FINISH_NEXT, INSTALL_NEXT, ROOM_FINISH_LABEL, INSTALL_LABEL,
   type InteriorRoom, type RoomFinishStatus, type RoomInstallation, type InstallStatus,
-} from "@/app/interiorQueries";
+} from "@/app/queries/interiorQueries";
 
 const FINISH_TONE: Record<RoomFinishStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
   planned: "neutral", in_progress: "info", installed: "success", cancelled: "danger",
@@ -195,7 +195,18 @@ export function RoomsTab({ projectId }: { projectId: string }): JSX.Element {
       )}
 
       {loading ? (
-        <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <div className="text-center py-20 text-fg-secondary">
           <span className="text-4xl mb-3">🏗️</span>

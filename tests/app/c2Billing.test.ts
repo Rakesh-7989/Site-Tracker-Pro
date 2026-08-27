@@ -4,15 +4,15 @@
 // org-wide invoice/retainer listers behind the Revenue view.
 
 import { describe, it, expect } from "vitest";
-import { effectiveRate, type RateCard } from "@/app/rateCardQueries";
-import { RETAINER_NEXT, type Retainer } from "@/app/retainerQueries";
+import { effectiveRate, type RateCard } from "@/app/queries/rateCardQueries";
+import { RETAINER_NEXT, type Retainer } from "@/app/queries/retainerQueries";
 import {
   unbilledSummary, unbilledByMember, pendingApproval, billedToDate, billedBySource, retainerMrr,
   listOrgInvoices, listOrgRetainers,
   type UnbilledSummary,
-} from "@/app/billingQueries";
-import type { TimeEntry } from "@/app/timeQueries";
-import type { Invoice } from "@/app/financeQueries";
+} from "@/app/queries/billingQueries";
+import type { TimeEntry } from "@/app/queries/timeQueries";
+import type { Invoice } from "@/app/queries/financeQueries";
 
 function entry(over: Partial<TimeEntry>): TimeEntry {
   return {

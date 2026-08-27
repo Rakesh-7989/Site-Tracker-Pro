@@ -3,7 +3,7 @@
 // current page came back full (a full page implies there may be more).
 // When `totalPages` is provided, it shows "Page X of Y" instead of "Page X".
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 import { useEffect, useState } from "react";
 import { Button } from "./atoms";
 import { Icon } from "./icons";

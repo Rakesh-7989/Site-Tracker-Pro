@@ -14,19 +14,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useOrgSwitcher, useCan, ROLE_LABEL, useAuth, resolveCapabilities, usePlanCaps } from "@/auth";
 import { useModules } from "@/modules";
-import { Card, StatCard, Badge, Icon, Alert, Spinner } from "@/components/ui/atoms";
+import { Card, StatCard, Badge, Icon, Alert } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/atoms";
-import type { ProjectDetail, ProjectMemberRow } from "@/app/queries";
+import type { ProjectDetail, ProjectMemberRow } from "@/app/queries/queries";
 import { roleMeta } from "@/components/ui/role-meta";
 import type { IdentityRole } from "@/auth";
 import { useT } from "@/i18n/I18nProvider";
-import { getClient } from "@/lib/supabase";
-import { listDrawings } from "@/app/designQueries";
-import { listFfeEntries } from "@/app/ffeQueries";
-import { listStatutoryApprovals, isExpiring } from "@/app/statutoryQueries";
-import { listPOs } from "@/app/financeQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { listDrawings } from "@/app/queries/designQueries";
+import { listFfeEntries } from "@/app/queries/ffeQueries";
+import { listStatutoryApprovals, isExpiring } from "@/app/queries/statutoryQueries";
+import { listPOs } from "@/app/queries/financeQueries";
 import { isTabVisible } from "@/features/project/tabs-config";
-import { localDateISO } from "@/lib/dateLocal";
+import { localDateISO } from "@/lib/utils/dateLocal";
 import { RiskSignalsCard } from "@/features/project/RiskSignalsCard";
 
 type RegisterCounts = { drawings: number; ffe: number; statutory: number; po: number };
@@ -39,8 +39,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
   const t = useT();
   const typeLabel = (ty: string): string => t(`projType.${ty}`);
   const canEditSettings = useCan("project:settings:edit", {
-    orgId: activeOrg?.orgId, projectId: project.id,
-  });
+    orgId: activeOrg?.orgId, projectId: project.id });
 
   const caps = useMemo(() => {
     if (!session) return new Set<never>();
@@ -67,8 +66,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
       drawings: draw?.ok ? draw.data.length : 0,
       ffe: ffe?.ok ? ffe.data.length : 0,
       statutory: stat?.ok ? stat.data.length : 0,
-      po: po?.ok ? po.data.length : 0,
-    });
+      po: po?.ok ? po.data.length : 0 });
     setLoading(false);
   }, [project.id, project.type, caps, planCan, segment]);
   useEffect(() => { void loadCounts(); }, [loadCounts]);
@@ -119,7 +117,18 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
       {registerChips.length > 0 && (
         <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Registers</h3>}>
           {loading ? (
-            <div className="grid place-items-center py-3"><Spinner size={18} /></div>
+            <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               {registerChips.map(c => (

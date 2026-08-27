@@ -11,15 +11,16 @@
 // gated by `crm:manage`.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
 import { defaultProjectTypeFor } from "@/auth/segmentConfig";
 import { useAction } from "@/hooks/useAction";
-import { Card, Button, Spinner, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
+import { Card, Button, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
 import { Select, Input, Textarea, FormField } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { fmtRupees } from "@/app/queries/financeQueries";
 import {
   listOrgLeads, createLead, updateLead, setLeadStage, setLeadOwner, deleteLead,
   listLeadMeetings, addMeeting, setMeetingOutcome, deleteMeeting,
@@ -28,7 +29,7 @@ import {
   createProjectFromLead, acceptedQuote, acceptQuotationAsAgreement,
   crmRollup, LEAD_STAGES, LEAD_SOURCES, LEAD_STAGE_NEXT,
   type Lead, type LeadSource, type LeadStage, type LeadMeeting, type LeadQuotation, type LeadAgreement,
-} from "@/app/crmQueries";
+} from "@/app/queries/crmQueries";
 import { useNavigate } from "react-router-dom";
 import { useT } from "@/i18n/I18nProvider";
 
@@ -201,7 +202,18 @@ function Pipeline({ orgId }: { orgId: string }): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading leads" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <Skeleton decorative height={14} width="w-1/3" />
+                <Skeleton decorative height={12} width="w-1/4" />
+              </div>
+              <Skeleton decorative height={20} width="w-16" />
+              <Skeleton decorative height={20} width="w-16" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-border">
           <DataTable
@@ -388,7 +400,19 @@ function MeetingsPanel({ leadId, canManage }: { leadId: string; canManage: boole
     await deleteMeeting(client, id); void reload();
   };
 
-  if (loading) return <Spinner size={18} />;
+  if (loading) return (
+    <div role="status" aria-label="Loading meetings" aria-busy="true" className="space-y-2">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="rounded-lg bg-elevated px-3 py-2 flex items-center gap-2">
+          <div className="flex-1 space-y-1.5">
+            <Skeleton decorative height={12} width="w-2/3" />
+            <Skeleton decorative height={10} width="w-1/3" />
+          </div>
+          <Skeleton decorative height={20} width="w-24" />
+        </div>
+      ))}
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
@@ -458,7 +482,19 @@ function QuotationsPanel({ leadId, canManage }: { leadId: string; canManage: boo
     if (r.ok) { void reload(); }
   };
 
-  if (loading) return <Spinner size={18} />;
+  if (loading) return (
+    <div role="status" aria-label="Loading quotations" aria-busy="true" className="space-y-2">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="rounded-lg bg-elevated px-3 py-2 flex items-center gap-2">
+          <div className="flex-1 space-y-1.5">
+            <Skeleton decorative height={12} width="w-2/3" />
+            <Skeleton decorative height={10} width="w-1/3" />
+          </div>
+          <Skeleton decorative height={20} width="w-24" />
+        </div>
+      ))}
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
@@ -524,7 +560,19 @@ function AgreementsPanel({ leadId, canManage }: { leadId: string; canManage: boo
     await setAgreementStatus(client, id, s, signer); void reload();
   };
 
-  if (loading) return <Spinner size={18} />;
+  if (loading) return (
+    <div role="status" aria-label="Loading agreements" aria-busy="true" className="space-y-2">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="rounded-lg bg-elevated px-3 py-2 flex items-center gap-2">
+          <div className="flex-1 space-y-1.5">
+            <Skeleton decorative height={12} width="w-2/3" />
+            <Skeleton decorative height={10} width="w-1/3" />
+          </div>
+          <Skeleton decorative height={20} width="w-24" />
+        </div>
+      ))}
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (

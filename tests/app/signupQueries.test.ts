@@ -1,7 +1,7 @@
 // SiteTrack Pro — public signup submission tests.
 
 import { describe, it, expect } from "vitest";
-import { submitSignupRequest, type SignupInput } from "@/app/signupQueries";
+import { submitSignupRequest, type SignupInput } from "@/app/queries/signupQueries";
 
 const input: SignupInput = { firmName: "Sri Builders", contactName: "Rakesh", email: "r@firm.com", plan: "pro" };
 

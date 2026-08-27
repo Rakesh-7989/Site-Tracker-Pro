@@ -3,13 +3,13 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Spinner, Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { exportAuditCsv } from "@/lib/audit";
-import { getClient } from "@/lib/supabase";
-import { downloadCsv as triggerCsv, csvDateStamp } from "@/lib/genericCsv";
+import { exportAuditCsv } from "@/lib/integrations/audit";
+import { getClient } from "@/lib/supabase/supabase";
+import { downloadCsv as triggerCsv, csvDateStamp } from "@/lib/utils/genericCsv";
 import {
   listAuditLog, getAuditActors, getAuditStats,
   type AuditLogRow, type AuditStats,
-} from "@/app/auditLogQueries";
+} from "@/app/queries/auditLogQueries";
 
 function fmtTime(iso: string): string {
   if (!iso) return "";

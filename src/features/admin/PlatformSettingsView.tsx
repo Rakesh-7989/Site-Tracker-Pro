@@ -5,10 +5,10 @@ import { useCan } from "@/auth";
 import { Card, AccessDenied, Alert, Spinner } from "@/components/ui/atoms";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { listOpsToggles, upsertOpsToggle } from "@/app/platformSettingsQueries";
+import { listOpsToggles, upsertOpsToggle } from "@/app/queries/platformSettingsQueries";
 import { UpiSettingsCard } from "@/features/admin/UpiSettingsCard";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 interface ToggleRow { id: string; key: string; label: string; desc: string; enabled: boolean; }
 
 

@@ -1,9 +1,9 @@
 // SiteTrack Pro — Batch 1 ported-tab query tests (tasks / updates / issues).
 
 import { describe, it, expect } from "vitest";
-import { listTasks, nextTaskStatus } from "@/app/taskQueries";
-import { listUpdates } from "@/app/updateQueries";
-import { listIssues } from "@/app/issueQueries";
+import { listTasks, nextTaskStatus } from "@/app/queries/taskQueries";
+import { listUpdates } from "@/app/queries/updateQueries";
+import { listIssues } from "@/app/queries/issueQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

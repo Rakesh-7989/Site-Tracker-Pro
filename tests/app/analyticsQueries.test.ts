@@ -1,7 +1,7 @@
 // SiteTrack Pro — org analytics query + helper tests.
 
 import { describe, it, expect } from "vitest";
-import { getOrgAnalytics, toBars } from "@/app/analyticsQueries";
+import { getOrgAnalytics, toBars } from "@/app/queries/analyticsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({ rpc: async () => result });

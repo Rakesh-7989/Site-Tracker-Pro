@@ -1,9 +1,9 @@
 // SiteTrack Pro — Batch 3/4 query tests (RA bills, ledger, drawings, RFI).
 
 import { describe, it, expect } from "vitest";
-import { raNetPayable, stockBalance, listRaBills, type LedgerTxn } from "@/app/financeQueries";
-import { listDrawings, listRfis, applyAutoSupersede, type Drawing } from "@/app/designQueries";
-import { approvalCapabilityForKind } from "@/app/approvalsQueries";
+import { raNetPayable, stockBalance, listRaBills, type LedgerTxn } from "@/app/queries/financeQueries";
+import { listDrawings, listRfis, applyAutoSupersede, type Drawing } from "@/app/queries/designQueries";
+import { approvalCapabilityForKind } from "@/app/queries/approvalsQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

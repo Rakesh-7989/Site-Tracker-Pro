@@ -6,10 +6,10 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Badge, Alert, AccessDenied } from "@/components/ui/atoms";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { listOrgActivity, type OrgActivityRow } from "@/app/orgAdminQueries";
+import { listOrgActivity, type OrgActivityRow } from "@/app/queries/orgAdminQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const fmtTs = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 const ACTION_TONE: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {
   CREATE: "success", APPROVE: "success", RELEASE: "success",

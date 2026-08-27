@@ -8,7 +8,7 @@ import {
   isSnapshotFresh,
   getProjectRiskSnapshot,
   RISK_SNAPSHOT_MAX_AGE_HOURS,
-} from "@/app/riskQueries";
+} from "@/app/queries/riskQueries";
 
 const H = 3_600_000;
 

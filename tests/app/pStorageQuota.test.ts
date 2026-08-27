@@ -5,7 +5,7 @@
 import { describe, it, expect } from "vitest";
 import {
   storageUsed, storageTotal, storagePercent, storageRemaining, type StorageByBucket,
-} from "@/app/storageQuotaQueries";
+} from "@/app/queries/storageQuotaQueries";
 import { quotaAtLimit, bucketAtLimit } from "@/hooks/useStorageQuota";
 import { gateFromQuota } from "@/features/shared/StorageUploadGate";
 

@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { Card, Icon, Badge, ProgressBar, Spinner } from "@/components/ui/atoms";
 import { useOrgSwitcher } from "./useOrgSwitcher";
 import { usePlanCaps } from "./usePlanCaps";
-import { usageRollup, type QuotaRollup } from "@/app/quotaQueries";
+import { usageRollup, type QuotaRollup } from "@/app/queries/quotaQueries";
 
 const PLAN_LABELS: Record<string, string> = { basic: "Basic", pro: "Pro", business: "Business", enterprise: "Enterprise", custom: "Enterprise" };
 
@@ -68,10 +68,10 @@ export function QuotaGate({ resource, children, fallback }: QuotaGateProps): JSX
     setLoading(true);
     void (async () => {
       try {
-        const mod = await import("@/lib/supabase");
+        const mod = await import("@/lib/supabase/supabase");
         const client = await (mod as any).getSupabaseClient();
         if (!client) { if (!cancelled) { setRollup(null); setLoading(false); } return; }
-        const { fetchOrgQuota } = await import("@/app/quotaQueries");
+        const { fetchOrgQuota } = await import("@/app/queries/quotaQueries");
         const res = await fetchOrgQuota(client, orgId);
         if (cancelled) return;
         if (res.ok) setRollup(usageRollup(res.data));

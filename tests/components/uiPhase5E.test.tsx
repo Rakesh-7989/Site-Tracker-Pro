@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import { ActivityFeed } from "@/features/org/OrgActivityView";
-import type { OrgActivityRow } from "@/app/orgAdminQueries";
+import type { OrgActivityRow } from "@/app/queries/orgAdminQueries";
 
 const ROW: OrgActivityRow = {
   id: "a1",

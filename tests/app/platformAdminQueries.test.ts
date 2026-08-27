@@ -1,7 +1,7 @@
 // SiteTrack Pro — platform (superadmin) query tests.
 
 import { describe, it, expect } from "vitest";
-import { createPlatformOrg, listPlatformOrgs, listPlatformUsers, getPlatformStats, setOrgPlan, planUnlocksCustomRoles, ASSIGNABLE_PLANS } from "@/app/platformAdminQueries";
+import { createPlatformOrg, listPlatformOrgs, listPlatformUsers, getPlatformStats, setOrgPlan, planUnlocksCustomRoles, ASSIGNABLE_PLANS } from "@/app/queries/platformAdminQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }, capture?: Array<{ name: string; args: unknown }>): any => ({

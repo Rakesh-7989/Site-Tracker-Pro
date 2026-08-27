@@ -4,11 +4,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import { Card, Button, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listWorklogs, createWorklog, deleteWorklog, type Worklog } from "@/app/siteOpsQueries";
-import { getClient } from "@/lib/supabase";
+import { listWorklogs, createWorklog, deleteWorklog, type Worklog } from "@/app/queries/siteOpsQueries";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 
 export function WorklogsView(): JSX.Element {

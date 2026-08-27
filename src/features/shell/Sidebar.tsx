@@ -1,5 +1,5 @@
 // SiteTrack Pro — v3 role-aware sidebar.
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 //
 // Renders the nav items the current session's capabilities unlock,
 // grouped by section. The active route is highlighted via NavLink.
@@ -8,9 +8,9 @@ import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import { useAuth, useCan } from "@/auth";
-import { buildNav, groupNav } from "@/app/nav-config";
-import { pendingSignupCount } from "@/app/signupAdminQueries";
-import { unreadCount } from "@/app/notificationQueries";
+import { buildNav, groupNav } from "@/app/config/nav-config";
+import { pendingSignupCount } from "@/app/queries/signupAdminQueries";
+import { unreadCount } from "@/app/queries/notificationQueries";
 import { Icon } from "@/components/ui/atoms";
 import { useT } from "@/i18n/I18nProvider";
 
