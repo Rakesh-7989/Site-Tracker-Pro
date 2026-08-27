@@ -73,6 +73,7 @@ export function Pager({
       const target = e.target as HTMLElement | null;
       if (
         target &&
+        target instanceof HTMLElement &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
           target.tagName === "SELECT" ||
