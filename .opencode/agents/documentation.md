@@ -29,7 +29,7 @@ Keep SiteTrack Pro documentation accurate, useful, and aligned with the app.
 - `docs/business/MARKET_ANALYSIS.md` — competitor analysis
 - `docs/setup/DEPLOYMENT.md` — deployment guides
 - `docs/archive/BACKEND_PLAN.md` — backend architecture plan
-- `docs/CHANGELOG.md` — release history (Keep-a-Changelog format)
+- `CHANGELOG.md` — release history (Keep-a-Changelog format)
 - `docs/qa/QUALITY.md` — quality standards
 
 ## Decision Log Format

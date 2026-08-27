@@ -52,7 +52,7 @@ the founder through the work between commits.
 3. `docs/business/PRICING.md` — verified Sprint 1 tiers + comparison vs
    Powerplay.
 4. `docs/business/PILOT_AGREEMENT_v1.md` — what pilots sign.
-5. `docs/sales/POWERPLAY_RECON_SCRIPT.md` + `INTERVIEW_LOG_2026-06.md`
+ 5. `docs/research/POWERPLAY_RECON_SCRIPT.md` + `INTERVIEW_LOG_2026-06.md`
    + `VERIFIED_GAPS_MATRIX.md` (in `docs/research/`).
 6. `docs/sales/LINKEDIN_TARGET_LIST.md` + `LINKEDIN_OUTREACH_SEQUENCE.md`
    + `WARM_INTRO_MAPPING.md` + `MEETING_LOG_2026-06.md`.

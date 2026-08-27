@@ -341,7 +341,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 ### Session 27 — Architecture + ER + 20 phase-2 migrations
 - **`docs/architecture/ARCHITECTURE.md` (1,100 lines)** — master technical reference (System / App / Product / Mobile / End-to-End layers).
 - **`docs/architecture/DATA_MODEL_ER.md` (1,143 lines)** — two-plane data model with `organizations.id` bridge + cross-plane audit spine.
-- **`docs/architecture/er-{overview,saas,tenant}.{mmd,png}`** — 3 Mermaid ER diagrams rendered to PNG.
+- **ER diagrams** — 3 Mermaid ER diagrams (overview / saas / tenant) rendered to PNG.
 - **20 phase-2 migrations** (`09-28`) covering hierarchy / measurement_book / material_prices / delegations / daily_snapshots / compliance / forecast / process tables / handover tables / checklists / comms / workforce / field_ops / estimate / branding / feature_flags / billing_telemetry / share_tokens + RPC / audit_anchors + view / plans + 4 seeded plans. Each idempotent, RLS-enabled, indexed, with sanity `raise notice`.
 - **`29_phase2_tests.sql`** — assertion harness for every expected table + RLS-enabled flag + immutability check on 5 append-only tables.
 - **`eslint.config.js`** extended to Node-glob `docs/**/*.mjs`.

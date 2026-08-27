@@ -214,7 +214,7 @@ Steps:
    This reads `docs/research/INTERVIEW_LOG_2026-06.md`,
    `docs/research/VERIFIED_GAPS_MATRIX.md`,
    `docs/sales/MEETING_LOG_2026-06.md`,
-   `docs/sales/PILOT_CONTRACTS/`, and `docs/business/PRICING.md`, then
+    and `docs/business/PRICING.md`, then
    scores all 5 criteria pass/fail.
 2. Paste the markdown verdict + per-criterion table verbatim into
    your reply (it's already founder-formatted).
