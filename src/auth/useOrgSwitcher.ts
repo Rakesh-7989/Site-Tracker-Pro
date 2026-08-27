@@ -23,8 +23,9 @@ export interface UseOrgSwitcherReturn {
 export function useOrgSwitcher(): UseOrgSwitcherReturn {
   const { session, setActiveOrgId } = useAuth();
 
-  const orgs = session?.orgs ?? [];
   const activeOrgId = session?.activeOrgId ?? null;
+
+  const orgs = useMemo(() => session?.orgs ?? [], [session?.orgs]);
 
   const activeOrg = useMemo(() => {
     if (!activeOrgId) return null;

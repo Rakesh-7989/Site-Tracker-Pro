@@ -42,7 +42,7 @@ export function OrgFinancialView(): JSX.Element {
     if (pRes.ok) setProjects(pRes.data); else setError(pRes.error);
     if (cRes.ok) setCashFlow(cRes.data);
     setLoading(false);
-  }, [ctx.orgId]);
+  }, [ctx.orgId, session]);
 
   useEffect(() => { if (canView) void reload(); }, [canView, reload]);
   const { busy, run } = useAction(reload, setError);

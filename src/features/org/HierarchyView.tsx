@@ -75,7 +75,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [orgId, fetchHierarchy]);
+  }, [orgId, fetchHierarchy, session]);
 
   useEffect(() => {
     if (!selProject) return;

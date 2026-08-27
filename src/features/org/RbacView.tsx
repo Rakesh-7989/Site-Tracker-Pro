@@ -125,7 +125,7 @@ function RbacViewBody(): JSX.Element {
     }
 
     setLoading(false);
-  }, [activeOrg, session]);
+  }, [activeOrg]);
 
   useEffect(() => {
     void fetchData();

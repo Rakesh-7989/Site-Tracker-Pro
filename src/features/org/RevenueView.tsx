@@ -53,7 +53,7 @@ export function RevenueView(): JSX.Element {
     setInvoices(invRes.data);
     setRetainers(retRes.data);
     setLoading(false);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, session]);
 
   useEffect(() => { void reload(); }, [reload]);
 

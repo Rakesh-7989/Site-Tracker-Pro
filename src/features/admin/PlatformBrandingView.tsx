@@ -68,7 +68,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [orgId, fetchBranding]);
+  }, [orgId, fetchBranding, session]);
 
   const branding = { org: orgBranding, project: projectBrandings };
   const effective = resolveBranding(branding, orgId, selProject);

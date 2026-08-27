@@ -54,7 +54,7 @@ export function HandoverPacketView(): JSX.Element {
     const pList = data ?? [];
     setProjects(pList);
     if (pList.length) setSelProject(pList[0].id);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, session]);
 
   useEffect(() => { void loadProjects(); }, [loadProjects]);
 

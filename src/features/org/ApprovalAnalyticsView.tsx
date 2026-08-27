@@ -62,7 +62,7 @@ function ApprovalAnalyticsInner(): JSX.Element {
       setTypeOf(() => res.data.projectType);
     } else setError(res.error);
     setLoading(false);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, session]);
 
   const [nameOf, setNameOf] = useState<(id: string) => string | null>(() => () => null);
   const [typeOf, setTypeOf] = useState<(id: string) => string | null>(() => () => null);

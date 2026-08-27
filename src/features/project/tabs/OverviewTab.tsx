@@ -47,7 +47,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
   }, [session, project.orgId, project.id]);
 
   const segment = session?.orgs.find(o => o.orgId === session.activeOrgId)?.segment ?? null;
-  const visible = (tabId: string): boolean => isTabVisible(tabId, caps, project.type, planCan, segment, undefined, moduleEnabled);
+  const visible = useCallback((tabId: string): boolean => isTabVisible(tabId, caps, project.type, planCan, segment, undefined, moduleEnabled), [caps, project.type, planCan, segment, moduleEnabled]);
 
   const [counts, setCounts] = useState<RegisterCounts>({ drawings: 0, ffe: 0, statutory: 0, po: 0 });
   const [loading, setLoading] = useState(true);
@@ -68,7 +68,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
       statutory: stat?.ok ? stat.data.length : 0,
       po: po?.ok ? po.data.length : 0 });
     setLoading(false);
-  }, [project.id, project.type, caps, planCan, segment]);
+  }, [project.id, visible]);
   useEffect(() => { void loadCounts(); }, [loadCounts]);
 
   // Members grouped by role for the summary.

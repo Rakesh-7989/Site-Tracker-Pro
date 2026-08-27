@@ -128,7 +128,7 @@ export function ProjectsListView(): JSX.Element {
       else setState({ kind: "error", message: res.error });
     })();
     return () => { cancelled = true; };
-  }, [activeOrg]);
+  }, [activeOrg, session]);
 
   async function runLifecycleAction(
     client: unknown,

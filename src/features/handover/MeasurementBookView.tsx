@@ -47,7 +47,7 @@ export function MeasurementBookView(): JSX.Element {
     const { data } = await q;
     setProjects(data ?? []);
     if (data?.length) setSelProject(data[0].id);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, session2]);
 
   useEffect(() => { void loadProjects(); }, [loadProjects]);
 

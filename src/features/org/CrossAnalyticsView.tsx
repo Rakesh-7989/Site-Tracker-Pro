@@ -42,7 +42,7 @@ export function CrossAnalyticsView(): JSX.Element {
     const res = await getExecDashboard(client, ctx.orgId ?? "", memberProjectScope(session));
     if (res.ok) setDashboard(res.data); else setError(res.error);
     setLoading(false);
-  }, [ctx.orgId]);
+  }, [ctx.orgId, session]);
 
   useEffect(() => { if (canView) void reload(); }, [canView, reload]);
 

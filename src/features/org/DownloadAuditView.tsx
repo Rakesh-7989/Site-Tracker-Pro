@@ -55,7 +55,7 @@ export function DownloadAuditView(): JSX.Element {
     const res = await listOrgDownloadEvents(client, activeOrg.orgId, 200, memberProjectScope(session));
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, session]);
 
   useEffect(() => { void reload(); }, [reload]);
 
