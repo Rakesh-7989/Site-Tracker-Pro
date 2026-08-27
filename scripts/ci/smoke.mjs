@@ -454,11 +454,11 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "docs/WORKFLOW.md",
   "docs/BACKLOG.md",
   "docs/QUALITY.md",
-  "docs/MARKET_ANALYSIS.md",
-  "docs/BUSINESS_MODEL.md",
-  "docs/PRICING.md",
+  "docs/business/MARKET_ANALYSIS.md",
+  "docs/business/BUSINESS_MODEL.md",
+  "docs/business/PRICING.md",
   "docs/DEPLOYMENT.md",
-  "docs/BACKEND_PLAN.md",
+  "docs/archive/BACKEND_PLAN.md",
   ".agents/sitetrack-pro/README.md",
   ".agents/sitetrack-pro/team-lead.md",
   ".agents/sitetrack-pro/product-manager.md",
@@ -474,12 +474,11 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   ".agents/sitetrack-pro/work-board.md",
   ".agents/sitetrack-pro/handoff-template.md",
   "vercel.json",
-  "netlify.toml",
   "docs/TESTING_STRATEGY.md",
   "docs/BUG_WORKFLOW.md",
   ".agents/sitetrack-pro/bugs.md",
   "tests/bugs/.gitkeep",
-  "scripts/test-ef-harness.mjs",
+  "scripts/tests/test-ef-harness.mjs",
   "docs/CI_WORKFLOW.yml",
   // Tech Lead review additions (2026-05-22 evening)
   "src/auth/capabilities.ts",
@@ -503,7 +502,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   ".env.example",
   // Live activation
   "docs/GOLIVE.md",
-  "scripts/provision.sh",
+  "scripts/deploy/provision.sh",
   // System design doc
   "docs/SYSTEM_DESIGN.md",
   // Tech Lead Review fixes (HIGH-1, HIGH-2, MED-3, MED-4, LOW-5)
@@ -577,22 +576,19 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "src/lib/orgFeatureFlags.ts",
   "tests/orgFeatureFlags.test.js",
   // Session 17 — Live database connection runbook + check script
-  "scripts/check-supabase-connection.mjs",
+  "scripts/ci/check-supabase-connection.mjs",
   "docs/CONNECT_SUPABASE.md",
   // Session 18 — Activation pack (onboarding + sales assets)
-  "public/landing.html",
-  "docs/DEMO_VIDEO_SCRIPT.md",
-  "docs/CASE_STUDY_TEMPLATE.md",
-  "docs/WHATSAPP_BUSINESS_API.md",
+  "archive/marketing/landing.html",
+  "docs/business/DEMO_VIDEO_SCRIPT.md",
+  "docs/business/CASE_STUDY_TEMPLATE.md",
+  "docs/archive/WHATSAPP_BUSINESS_API.md",
   "docs/pitch/build-deck.mjs",
   "docs/pitch/SiteTrack-Pitch-Deck.pptx",
   // Session 19 — HRMS deployment study + marketing/app deploy split
   "docs/HRMS_DEPLOYMENT_STUDY.md",
   "docs/DEPLOY_NOW.md",
-  "marketing/index.html",
-  "marketing/vercel.json",
-  "marketing/README.md",
-  "scripts/setup.mjs",
+  "scripts/ci/setup.mjs",
   // Session 21 — bug hunt: top-level ErrorBoundary so a single bad chunk
   // can no longer render the whole app as a white screen.
   "src/components/errorBoundary.tsx",
@@ -618,7 +614,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "src/lib/contractors.ts",
   "tests/contractors.test.js",
   // Session 24 — comparison + adversarial fixes
-  "docs/COMPETITOR_COMPARISON_V2.md",
+  "docs/business/COMPETITOR_COMPARISON_V2.md",
   // Session 25 — sales-blocking miss fixes (BOQ import + bulk member + PDF audit + archive)
   "src/lib/boqImport.ts",
   "tests/boqImport.test.js",
@@ -628,7 +624,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
   ".mcp.json",
   ".env.mcp.example",
-  "scripts/check-mcp.mjs",
+  "scripts/ci/check-mcp.mjs",
   "docs/MCP_TOOLKIT.md",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
@@ -649,13 +645,13 @@ add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint")
 ].forEach(path => add(`Cleaned up: ${path}`, !existsSync(join(root, path))));
 
 add("Build script exists", pkg.scripts?.build === "vite build");
-add("Smoke script exists", pkg.scripts?.smoke === "node scripts/smoke.mjs");
-add("test:ef script exists", pkg.scripts?.["test:ef"] === "node scripts/test-ef-harness.mjs");
-add("test:rls script exists", pkg.scripts?.["test:rls"] === "node scripts/test-self-service-rls.mjs && node scripts/test-spatial-rls.mjs && node scripts/test-rbac-v2-shadow.mjs");
-add("check:supabase script exists", pkg.scripts?.["check:supabase"] === "node scripts/check-supabase-connection.mjs");
-add("setup script exists", pkg.scripts?.setup === "node scripts/setup.mjs");
-add("check:mcp script exists", pkg.scripts?.["check:mcp"] === "node scripts/check-mcp.mjs");
-add("prod:smoke script exists", pkg.scripts?.["prod:smoke"] === "node scripts/prod-smoke.mjs");
+add("Smoke script exists", pkg.scripts?.smoke === "node scripts/ci/smoke.mjs");
+add("test:ef script exists", pkg.scripts?.["test:ef"] === "node scripts/tests/test-ef-harness.mjs");
+add("test:rls script exists", pkg.scripts?.["test:rls"] === "node scripts/tests/test-self-service-rls.mjs && node scripts/tests/test-spatial-rls.mjs && node scripts/tests/test-rbac-v2-shadow.mjs");
+add("check:supabase script exists", pkg.scripts?.["check:supabase"] === "node scripts/ci/check-supabase-connection.mjs");
+add("setup script exists", pkg.scripts?.setup === "node scripts/ci/setup.mjs");
+add("check:mcp script exists", pkg.scripts?.["check:mcp"] === "node scripts/ci/check-mcp.mjs");
+add("prod:smoke script exists", pkg.scripts?.["prod:smoke"] === "node scripts/ci/prod-smoke.mjs");
 // .mcp.json must stay secret-free — only ${VAR} references, never literal tokens.
 const mcpRaw = read(".mcp.json");
 add(".mcp.json contains no literal Supabase PAT", !/sbp_[A-Za-z0-9]/.test(mcpRaw));
@@ -708,8 +704,8 @@ add("Vite manual chunks configured", vite.includes("manualChunks") && vite.inclu
   add(
     "Sprint 1 freeze docs present",
     existsSync(join(root, "docs/FEATURE_FREEZE.md"))
-      && existsSync(join(root, "docs/POSITIONING.md"))
-      && existsSync(join(root, "docs/SITETRACK_V3_PLAN.md")),
+      && existsSync(join(root, "docs/business/POSITIONING.md"))
+      && existsSync(join(root, "docs/archive/SITETRACK_V3_PLAN.md")),
   );
 }
 

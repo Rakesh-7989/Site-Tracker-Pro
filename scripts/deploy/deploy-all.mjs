@@ -140,11 +140,11 @@ if (existsSync(join(root, ".github/workflows/ci.yml"))) {
       execSync("mkdir -p .github/workflows", { stdio: "inherit" });
       execSync("git mv docs/CI_WORKFLOW.yml .github/workflows/ci.yml", { stdio: "inherit" });
       // smoke.mjs path patch
-      const smokePath = join(root, "scripts/smoke.mjs");
+      const smokePath = join(root, "scripts/ci/smoke.mjs");
       let smoke = readFileSync(smokePath, "utf8");
       smoke = smoke.replaceAll("docs/CI_WORKFLOW.yml", ".github/workflows/ci.yml");
       writeFileSync(smokePath, smoke);
-      execSync("git add scripts/smoke.mjs", { stdio: "inherit" });
+      execSync("git add scripts/ci/smoke.mjs", { stdio: "inherit" });
       execSync(`git commit -m "ci: enable GitHub Actions (move workflow to .github/workflows/)"`, { stdio: "inherit" });
       execSync("git push origin main", { stdio: "inherit" });
       ok("Pushed — open repo Actions tab to confirm");

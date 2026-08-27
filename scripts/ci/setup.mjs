@@ -92,7 +92,7 @@ const raw = existsSync(envLocal) ? readFileSync(envLocal, "utf8") : "";
 if (/VITE_BACKEND\s*=\s*supabase/.test(raw)) {
   const doCheck = (await ask(`  Run the Supabase connection check now? [Y/n] `)).toLowerCase();
   if (doCheck === "" || doCheck === "y" || doCheck === "yes") {
-    run("node scripts/check-supabase-connection.mjs", false);
+    run("node scripts/ci/check-supabase-connection.mjs", false);
   } else {
     warn("Skipped. Run it anytime with: npm run check:supabase");
   }

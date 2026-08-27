@@ -24,7 +24,7 @@ create table if not exists plans (
 create index if not exists idx_plans_status on plans(status, display_order);
 
 -- ============================================================================
--- Seed the 4 current production plans (matches docs/PRICING.md).
+-- Seed the 4 current production plans (matches docs/business/PRICING.md).
 -- on conflict do nothing — re-running this file never overwrites prices.
 -- ============================================================================
 insert into plans (id, name, tagline, monthly_inr, yearly_inr, feature_caps, recommended, display_order)

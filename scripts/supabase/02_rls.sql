@@ -1,5 +1,5 @@
 -- SiteTrack Pro — Row Level Security policies (Phase B2)
--- Source of truth: docs/BACKEND_PLAN.md
+-- Source of truth: docs/archive/BACKEND_PLAN.md
 --
 -- Run after 01_schema.sql. Test with the matrix in scripts/supabase/04_rls_tests.sql.
 
