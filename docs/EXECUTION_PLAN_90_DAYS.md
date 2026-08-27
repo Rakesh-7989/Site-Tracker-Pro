@@ -174,7 +174,7 @@ magic link without breaking.
 - 🛠️ [2-3 PM] Verify the landing page's CTAs (`Start free trial`, `Sign in`)
   resolve to `sitetrackpro.in`. Cross-domain navigation works.
 - 🛠️ [3-5 PM] Replace placeholder phone number + email in
-  `marketing/index.html`. Replace pricing if needed. Re-deploy.
+  `archive/marketing/index.html`. Replace pricing if needed. Re-deploy.
 - 📞 [5-6 PM] Apply for Google Search Console + submit `sitetrackpro.in/sitemap.xml`
   (the landing is one page, so sitemap is trivial but submit anyway).
 - **DoD**: sitetrackpro.in landing live, all CTAs work, GSC verification submitted.
@@ -398,7 +398,7 @@ nothing in our marketing is theoretical.
   address + authorised signatory details match documents.
 - ⏳ Meta confirms verification within 24-48 hours after the call.
 - 🛠️ [Afternoon] While waiting, build the WhatsApp Business message-template
-  drafts per `docs/WHATSAPP_BUSINESS_API.md`. Submit all 6 templates × 3
+  drafts per `docs/archive/WHATSAPP_BUSINESS_API.md`. Submit all 6 templates × 3
   languages = 18 submissions for parallel review.
 - **DoD**: 18 templates queued for review.
 
@@ -445,7 +445,7 @@ nothing in our marketing is theoretical.
 - 📞 If WhatsApp templates still pending: read Meta's policy doc + adjust
   any rejected wordings.
 - 📞 If demo video editor signed: shoot the screen-recording portions per
-  `docs/DEMO_VIDEO_SCRIPT.md`. Use a clean browser session + the demo
+  `docs/business/DEMO_VIDEO_SCRIPT.md`. Use a clean browser session + the demo
   data loaded.
 - **DoD**: Screen recordings captured.
 
@@ -597,7 +597,7 @@ not from yourself.
 
 ### Day 44 (Tuesday)
 **Goal**: Case study draft.
-- 📞 30-min interview with the customer. Use `docs/CASE_STUDY_TEMPLATE.md`
+- 📞 30-min interview with the customer. Use `docs/business/CASE_STUDY_TEMPLATE.md`
   as prompts.
 - 🛠️ Draft case study by EOD. Goal: PUBLISH by Day 50.
 - **DoD**: First draft of case study written.
@@ -825,15 +825,15 @@ This plan composes all prior runbooks:
 | `docs/CONNECT_SUPABASE.md` | Day 1 |
 | `docs/DEPLOY_NOW.md` | Day 2-3 |
 | `docs/CASHFREE_ONBOARDING.md` | Day -3, 4, 8 |
-| `docs/WHATSAPP_BUSINESS_API.md` | Day 0, 17, 19 |
+| `docs/archive/WHATSAPP_BUSINESS_API.md` | Day 0, 17, 19 |
 | `docs/PLAY_STORE_PREP.md` | Day 10-12 |
 | `docs/ROLE_MODEL_V2.md` | Reference for role mapping during migrations |
-| `docs/COMPETITOR_COMPARISON_V2.md` | Days 22, 71-85 |
+| `docs/business/COMPETITOR_COMPARISON_V2.md` | Days 22, 71-85 |
 | `docs/PRODUCTION_RLS.md` | Day 1, 26 |
 | `docs/MCP_TOOLKIT.md` | Day 0 |
 | `docs/HRMS_DEPLOYMENT_STUDY.md` | Reference for "why Supabase not Express" if asked |
-| `docs/CASE_STUDY_TEMPLATE.md` | Day 44 |
-| `docs/DEMO_VIDEO_SCRIPT.md` | Day 17-20, 46 |
+| `docs/business/CASE_STUDY_TEMPLATE.md` | Day 44 |
+| `docs/business/DEMO_VIDEO_SCRIPT.md` | Day 17-20, 46 |
 
 ---
 

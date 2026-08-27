@@ -124,7 +124,7 @@ So a fresh HRMS environment = `psql -f setup.sql` → `node scripts/setup.js`
    ┌──────────────────────┐                ┌─────────────────────────────┐
    │  Marketing (static)  │                │  Supabase (managed cloud)   │
    │  sitetrackpro.in        │                │  · Postgres + RLS           │
-   │  marketing/index.html│                │  · Auth (magic link)        │
+   │  archive/marketing/index.html│                │  · Auth (magic link)        │
    └──────────────────────┘                │  · Realtime                 │
                                             │  · Storage                  │
    ┌──────────────────────┐    SDK calls   │  · Edge Functions           │
@@ -136,7 +136,7 @@ So a fresh HRMS environment = `psql -f setup.sql` → `node scripts/setup.js`
 
 **Two pieces, one of them fully managed:**
 
-1. **Marketing site** — static `marketing/index.html` → sitetrackpro.in
+1. **Marketing site** — static `archive/marketing/index.html` → sitetrackpro.in
 2. **App** — static Vite SPA → sitetrackpro.in
 3. **Backend** — there is NO custom backend to run. Supabase is the backend:
    Postgres, auth, RLS, realtime, storage, and Edge Functions (for the
@@ -186,7 +186,7 @@ topology.**
 
 | HRMS practice | Apply to SiteTrack |
 | ------------- | ------------------ |
-| `scripts/setup.js` interactive bootstrap | ✅ Build `scripts/setup.mjs` (this session) |
+| `scripts/setup.js` interactive bootstrap | ✅ Build `scripts/ci/setup.mjs` (this session) |
 | `.env.example` env-driven config | ✅ Already have it |
 | `current_setting('app.tenant_id')` RLS | ✅ Already in `03_rls_phase1.sql` |
 | `setup.sql` clean DB bootstrap | ✅ Already have `01_schema.sql` |
@@ -210,7 +210,7 @@ marketing/        ← deploys to sitetrackpro.in (static, no build)
   vercel.json     ← SPA config (already present)
 ```
 
-Plus `scripts/setup.mjs` — the HRMS-style interactive bootstrap, adapted for
+Plus `scripts/ci/setup.mjs` — the HRMS-style interactive bootstrap, adapted for
 Supabase instead of RDS.
 
 See `docs/DEPLOY_NOW.md` for the exact deploy steps.

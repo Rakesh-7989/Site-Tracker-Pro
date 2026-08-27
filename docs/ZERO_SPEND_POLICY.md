@@ -21,7 +21,7 @@ service becomes unavoidable.
 | `voiceTranscribe.js` `pickProviderOrder()` | `isProviderAllowed('aws')` | AWS Transcribe call when zero-spend |
 | `anchor-digest/index.ts` | `isProviderAllowed(networkToProvider(POLYGON_NETWORK))` | Polygon mainnet anchor when zero-spend; defaults to `polygon-amoy` testnet |
 | `whatsapp_dpr_send/index.ts` | `whatsapp_quota_increment` RPC + monthly counter | Hard-blocks at 1,000 conversations/month per WABA unless `WHATSAPP_OVERRIDE_PAID=1` |
-| `scripts/check-env-config.mjs` | Mode banner + provider classification | Surfaces budget-blocked configs to the founder at env-audit time |
+| `scripts/dev/check-env-config.mjs` | Mode banner + provider classification | Surfaces budget-blocked configs to the founder at env-audit time |
 
 ## Free-tier inventory (verified, no payment method on file)
 
@@ -72,9 +72,9 @@ When the first pilot signs (₹29,999/yr cash in hand) and the founder is
 ready to enable paid surfaces:
 
 1. Add `BUDGET_MODE=paid` to `.env.local`.
-2. Run `node scripts/sync-function-secrets.mjs` to push the new env to
+2. Run `node scripts/deploy/sync-function-secrets.mjs` to push the new env to
    Supabase function secrets.
-3. Run `node scripts/check-env-config.mjs` — banner should read
+3. Run `node scripts/dev/check-env-config.mjs` — banner should read
    `💳 Budget mode: paid`.
 4. Re-deploy the affected EFs.
 

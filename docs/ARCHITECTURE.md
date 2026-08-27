@@ -399,7 +399,7 @@ Mobile build pipeline is documented in §4.4.
       └──────────────────────────────────────┘
 ```
 
-The smoke layer is unique: `scripts/smoke.mjs` does literal-string assertions
+The smoke layer is unique: `scripts/ci/smoke.mjs` does literal-string assertions
 against built bundles (e.g. "ROLE_META contains all 19 keys") — catching
 deletions that pass unit tests but break the UI.
 
@@ -1036,7 +1036,7 @@ not production-ready**:
 | Drawing-diff | Not started | Phase 5 |
 
 This list is identical to the "honest claims" disclosure in
-[docs/COMPETITOR_COMPARISON_V2.md](docs/COMPETITOR_COMPARISON_V2.md).
+[docs/business/COMPETITOR_COMPARISON_V2.md](docs/business/COMPETITOR_COMPARISON_V2.md).
 
 ---
 
@@ -1085,11 +1085,11 @@ piece of the boring layer becomes a bottleneck, we replace it — not before.
 | How to connect to Supabase | [docs/CONNECT_SUPABASE.md](docs/CONNECT_SUPABASE.md) |
 | How to deploy to production | [docs/DEPLOY_NOW.md](docs/DEPLOY_NOW.md) |
 | Cashfree onboarding paper-trail | [docs/CASHFREE_ONBOARDING.md](docs/CASHFREE_ONBOARDING.md) |
-| WhatsApp Business API verification | [docs/WHATSAPP_BUSINESS_API.md](docs/WHATSAPP_BUSINESS_API.md) |
+| WhatsApp Business API verification | [docs/archive/WHATSAPP_BUSINESS_API.md](docs/archive/WHATSAPP_BUSINESS_API.md) |
 | Play Store submission | [docs/PLAY_STORE_PREP.md](docs/PLAY_STORE_PREP.md) |
 | Role model v2 details | [docs/ROLE_MODEL_V2.md](docs/ROLE_MODEL_V2.md) |
 | Production RLS configuration | [docs/PRODUCTION_RLS.md](docs/PRODUCTION_RLS.md) |
-| Competitor feature matrix | [docs/COMPETITOR_COMPARISON_V2.md](docs/COMPETITOR_COMPARISON_V2.md) |
+| Competitor feature matrix | [docs/business/COMPETITOR_COMPARISON_V2.md](docs/business/COMPETITOR_COMPARISON_V2.md) |
 | 90-day execution plan | [docs/EXECUTION_PLAN_90_DAYS.md](docs/EXECUTION_PLAN_90_DAYS.md) |
 | HRMS deployment-pattern study | [docs/HRMS_DEPLOYMENT_STUDY.md](docs/HRMS_DEPLOYMENT_STUDY.md) |
 | MCP toolkit overview | [docs/MCP_TOOLKIT.md](docs/MCP_TOOLKIT.md) |

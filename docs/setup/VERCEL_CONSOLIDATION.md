@@ -52,8 +52,8 @@ Once Git is reconnected, either:
 
 Run locally (or just open the site):
 ```bash
-node scripts/verify-prod-pricing.mjs   # checks sitetrack-rakesh has ₹5,999 / ₹11,999 + GST
-node scripts/uptime-check.mjs           # 🟢 frontend + backend
+node scripts/ci/verify-prod-pricing.mjs   # checks sitetrack-rakesh has ₹5,999 / ₹11,999 + GST
+node scripts/ci/uptime-check.mjs           # 🟢 frontend + backend
 ```
 Or open `https://sitetrackpro.in` (hard-refresh Ctrl+Shift+R) and
 confirm pricing shows **Basic ₹5,999 / Pro ₹11,999** + the Monthly/Annual toggle.
@@ -74,7 +74,7 @@ Supabase Auth **Site URL** + redirect allow-list already point at
 the right place automatically. No change needed.
 
 > If you ever switch the canonical URL, update it via
-> `node scripts/set-supabase-auth-url.mjs` + the Supabase Auth → URL Configuration.
+> `node scripts/deploy/set-supabase-auth-url.mjs` + the Supabase Auth → URL Configuration.
 
 ---
 

@@ -100,7 +100,7 @@ If any FAIL warning appears:
 
 ## Related docs
 
-- `docs/BACKEND_PLAN.md` — original schema design rationale.
+- `docs/archive/BACKEND_PLAN.md` — original schema design rationale.
 - `docs/CASHFREE_ONBOARDING.md` — how Cashfree integrates with subscription
   table writes (service_role).
 - `docs/GOLIVE.md` — end-to-end production go-live runbook.

@@ -205,6 +205,6 @@ is genuinely ₹0 until you have paying customers.
 - `docs/HRMS_DEPLOYMENT_STUDY.md` — why this architecture (vs HRMS's)
 - `docs/CONNECT_SUPABASE.md` — the database half, in detail
 - `docs/CASHFREE_ONBOARDING.md` — payments + Edge Functions
-- `docs/WHATSAPP_BUSINESS_API.md` — WhatsApp (start the 8-week clock now)
+- `docs/archive/WHATSAPP_BUSINESS_API.md` — WhatsApp (start the 8-week clock now)
 - `docs/GOLIVE.md` — the original go-live checklist
-- `marketing/README.md` — marketing-site-specific deploy notes
+- `archive/marketing/README.md` — marketing-site-specific deploy notes

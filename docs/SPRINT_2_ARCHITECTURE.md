@@ -3,7 +3,7 @@
 
 ## What we're building
 
-Per `docs/SITETRACK_V3_PLAN.md` Sprint 2 (Day 16–30):
+Per `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 (Day 16–30):
 
 > Ship a production-grade WhatsApp Daily Progress Report flow with
 > Telugu voice-to-text from site supervisor to builder-promoter,
@@ -32,7 +32,7 @@ shipped surface.
 | Real Mantra MFS100 biometric | **NOT Sprint 2** | Defers to Sprint 3 kiosk. |
 | Sign 2 paid pilots | **Founder field work** | Cannot be code-completed. |
 
-This split honours `docs/SITETRACK_V3_PLAN.md` Mistake #1: "build only
+This split honours `docs/archive/SITETRACK_V3_PLAN.md` Mistake #1: "build only
 after customer signal". Today's commit gives Sprint 2 a **foundation
 that's correct shape-wise** without locking in any UI / UX decisions
 that need pilot signal.
@@ -171,7 +171,7 @@ Retry policy:
 
 ## Acceptance criteria (Day 30)
 
-From `docs/SITETRACK_V3_PLAN.md` Sprint 2 success criteria:
+From `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 success criteria:
 
 - [ ] End-to-end DPR demo: supervisor speaks Telugu voice note on a
       2GB Android, message lands on promoter's WhatsApp with photo +
@@ -209,14 +209,14 @@ From `docs/SITETRACK_V3_PLAN.md` Sprint 2 success criteria:
 
 ## Sources
 
-- `docs/SITETRACK_V3_PLAN.md` Sprint 2 (Day 16–30) deliverable table.
+- `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 (Day 16–30) deliverable table.
 - `docs/FEATURE_FREEZE.md` — Sprint 2 graduates `dpr` placeholder
   → real `DPRComposerView` ships behind the same flag. `compliance`,
   `forecast`, etc. remain frozen.
 - `docs/sales/TELUGU_PHRASE_BANK_DPR.md` — i18n source.
 - `docs/sales/LOOM_STORYBOARD.md` — the user-flow we're shipping.
 - `docs/sales/PILOT_AGREEMENT_v1.md` — what pilots have agreed to.
-- `docs/PRICING.md` — pilot tier economics.
+- `docs/business/PRICING.md` — pilot tier economics.
 
 ## Edit log
 

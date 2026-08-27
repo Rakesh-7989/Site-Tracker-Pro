@@ -256,7 +256,7 @@ Cross-session memory        →  Memory MCP (already on)
 - **Cashfree / Razorpay** — no official MCP. The integration lives in
   `src/lib/cashfree.js` + `src/lib/razorpay.js`. Test against their sandbox.
 - **WhatsApp Business** — no MCP. Graph API via Edge Function (see
-  `docs/WHATSAPP_BUSINESS_API.md`).
+  `docs/archive/WHATSAPP_BUSINESS_API.md`).
 
 ---
 
@@ -264,6 +264,6 @@ Cross-session memory        →  Memory MCP (already on)
 
 - `.mcp.json` — the committed, env-var-safe server config
 - `.env.mcp.example` — token template (copy → `.env.mcp`)
-- `scripts/check-mcp.mjs` — `npm run check:mcp` readiness check
+- `scripts/ci/check-mcp.mjs` — `npm run check:mcp` readiness check
 - `docs/CONNECT_SUPABASE.md` — database connection (Supabase MCP automates much of it)
 - `docs/DEPLOY_NOW.md` — deploy runbook (Vercel MCP helps here)

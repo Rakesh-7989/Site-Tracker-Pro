@@ -1,6 +1,6 @@
 # Supabase Migration Scripts
 
-These SQL files implement the schema described in `docs/BACKEND_PLAN.md`. Tech Lead approval is required before running on any production project.
+These SQL files implement the schema described in `docs/archive/BACKEND_PLAN.md`. Tech Lead approval is required before running on any production project.
 
 ## Run order
 

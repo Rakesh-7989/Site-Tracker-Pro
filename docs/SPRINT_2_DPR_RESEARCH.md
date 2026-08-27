@@ -93,7 +93,7 @@
 | Lint error | v4-verify #1 | fix at file:line; re-run |
 | TS error | v4-verify #2 | fix types; re-run |
 | Build error | v4-verify #3 | fix import/route; ignore benign INEFFECTIVE_DYNAMIC_IMPORT |
-| Smoke fail | v4-verify #4 | update `scripts/smoke.mjs` markers |
+| Smoke fail | v4-verify #4 | update `scripts/ci/smoke.mjs` markers |
 | Test fail | v4-verify #5 | fix code or test; re-run file |
 | i18n parity | parity test | add missing hi/te keys |
 | EF runtime | manual test:ef | env var names must match `.env.example`; auth() wired |

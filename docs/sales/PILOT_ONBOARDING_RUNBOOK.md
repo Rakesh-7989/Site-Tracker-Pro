@@ -13,7 +13,7 @@ when the founder is tired.
 Pair this with:
 - `docs/PILOT_AGREEMENT_v1.md` — what the builder signed.
 - `docs/sales/DEMO_SCRIPT_DPR.md` — the 60-sec Loom they already saw.
-- `scripts/seed-first-org.mjs` — provisioning helper.
+- `scripts/seeds/seed-first-org.mjs` — provisioning helper.
 
 ## Pre-activation prep (night before)
 
@@ -24,7 +24,7 @@ Pair this with:
 | Charge laptop + phone + battery pack to 100% | Founder | [ ] |
 | Confirm WHATSAPP_PERMANENT_TOKEN env var for this org's WhatsApp Cloud API access (if applicable) | Founder | [ ] |
 | Sync `docs/sales/DPR_DEMO_SUPERVISOR_NUMBER.md` — which supervisor's phone we'll register | Founder | [ ] |
-| Pull `scripts/seed-first-org.mjs` config to point to pilot org name + slug | Founder | [ ] |
+| Pull `scripts/seeds/seed-first-org.mjs` config to point to pilot org name + slug | Founder | [ ] |
 | Bring `docs/sales/SUPERVISOR_TRAINING_TE.mp4` on phone (offline-playable) | Founder | [ ] |
 | Pack: business cards, single-page agreement summary, water, charger | Founder | [ ] |
 | WhatsApp message at 8 AM the morning of: "Coming to your office at [time]. Anything I should prep?" | Founder | [ ] |
@@ -139,18 +139,18 @@ If any of these fail: the founder visits the site personally on Day
 
 | Outcome | Founder action |
 |---------|----------------|
-| Pilot is using it daily + paying invoice | Celebrate. Move to Sprint 3 features. Start case-study draft per `docs/CASE_STUDY_TEMPLATE.md`. |
+| Pilot is using it daily + paying invoice | Celebrate. Move to Sprint 3 features. Start case-study draft per `docs/business/CASE_STUDY_TEMPLATE.md`. |
 | Pilot is using sporadically (< 5 DPRs/week) | On-site visit. Find out what's blocking. Pivot product roadmap. |
 | Pilot has stopped using | Honest conversation. Per `PILOT_AGREEMENT_v1.md` clause 8.1: 30-day no-fault. Capture the verbatim reason — it's gold for Sprint 2 v2. |
 | Pilot wants to upgrade | Move them to Pro (₹49,999/yr). Update `docs/sales/PIPELINE_TRACKER.md`. |
 
 ## Source
 
-- Sprint 2 Day 16+ deliverable per `docs/SITETRACK_V3_PLAN.md` §5.
-- Pilot tier economics per `docs/PRICING.md` + `docs/PILOT_AGREEMENT_v1.md`.
+- Sprint 2 Day 16+ deliverable per `docs/archive/SITETRACK_V3_PLAN.md` §5.
+- Pilot tier economics per `docs/business/PRICING.md` + `docs/PILOT_AGREEMENT_v1.md`.
 - Architecture per `docs/SPRINT_2_ARCHITECTURE.md`.
 - Telugu phrasing per `docs/sales/TELUGU_PHRASE_BANK_DPR.md`.
-- Supervisor + promoter persona per `docs/POSITIONING.md`.
+- Supervisor + promoter persona per `docs/business/POSITIONING.md`.
 
 ## Edit log
 

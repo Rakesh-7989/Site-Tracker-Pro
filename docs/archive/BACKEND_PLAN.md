@@ -316,7 +316,7 @@ Edge Functions reserved for:
 | Pro | $25/mo | First production customer; daily backups, PITR, 8GB DB, 100GB storage |
 | Team | $599/mo | Multi-org enterprise |
 
-Pricing in `docs/PRICING.md` (Pro plan ₹2,999/mo) covers Supabase Pro for the first 5-10 customers easily.
+Pricing in `docs/business/PRICING.md` (Pro plan ₹2,999/mo) covers Supabase Pro for the first 5-10 customers easily.
 
 ## Open Questions For Tech Lead
 

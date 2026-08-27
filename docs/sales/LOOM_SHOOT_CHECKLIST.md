@@ -264,6 +264,6 @@ Email: ____
 
 ## Source
 
-- Sprint 1 Day 2 deliverable per `docs/SITETRACK_V3_PLAN.md` Sprint 1.
+- Sprint 1 Day 2 deliverable per `docs/archive/SITETRACK_V3_PLAN.md` Sprint 1.
 - Loom beat sheet per `docs/sales/DEMO_SCRIPT_DPR.md`.
 - Telugu lines per `docs/sales/TELUGU_PHRASE_BANK_DPR.md`.

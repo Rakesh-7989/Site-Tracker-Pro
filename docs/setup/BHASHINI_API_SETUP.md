@@ -14,7 +14,7 @@ better than AWS Transcribe on Telangana Telugu + cheaper than Google STT.
   of AWS per the zero-spend policy)
 - Free tier for startups + non-profits, no credit card on file
 - Government-of-India endorsement is useful in the RERA / GSTN pilot
-  pitch (proof point #2 in `docs/POSITIONING.md`)
+  pitch (proof point #2 in `docs/business/POSITIONING.md`)
 
 ## Application — what to fill
 
@@ -54,11 +54,11 @@ Pipeline endpoints     — already wired into supabase/functions/voice_transcrib
    ```
 2. Push to Supabase:
    ```
-   node scripts/sync-function-secrets.mjs --only BHASHINI_API_KEY
+   node scripts/deploy/sync-function-secrets.mjs --only BHASHINI_API_KEY
    ```
 3. Redeploy the voice EF:
    ```
-   node scripts/deploy-edge-functions.mjs voice_transcribe
+   node scripts/deploy/deploy-edge-functions.mjs voice_transcribe
    ```
 4. Smoke test from the dashboard:
    ```bash

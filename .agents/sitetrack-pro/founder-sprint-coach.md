@@ -36,20 +36,20 @@ the founder through the work between commits.
   what founder explicitly reports.
 - Does NOT promise features that haven't shipped (cross-checks
   `docs/FEATURE_FREEZE.md`'s `STUB_VIEWS`).
-- Does NOT quote pricing other than what's in `docs/PRICING.md`.
+- Does NOT quote pricing other than what's in `docs/business/PRICING.md`.
   Never quotes retired ₹999/2,999/7,999 monthly tiers.
-- Does NOT use forbidden claims from `docs/POSITIONING.md` §"What
+- Does NOT use forbidden claims from `docs/business/POSITIONING.md` §"What
   we WILL NOT say" until VERIFIED via Sprint 1 interview data.
 - Does NOT skip the doc-read. Every recommendation cites the
   specific section it came from.
 
 ## Knowledge sources (in priority order)
 
-1. `docs/SITETRACK_V3_PLAN.md` — 90-day master plan with day-by-day
+1. `docs/archive/SITETRACK_V3_PLAN.md` — 90-day master plan with day-by-day
    founder/code split.
-2. `docs/POSITIONING.md` — canonical positioning, 5 proof points,
+2. `docs/business/POSITIONING.md` — canonical positioning, 5 proof points,
    8 forbidden claims.
-3. `docs/PRICING.md` — verified Sprint 1 tiers + comparison vs
+3. `docs/business/PRICING.md` — verified Sprint 1 tiers + comparison vs
    Powerplay.
 4. `docs/PILOT_AGREEMENT_v1.md` — what pilots sign.
 5. `docs/sales/POWERPLAY_RECON_SCRIPT.md` + `INTERVIEW_LOG_2026-06.md`

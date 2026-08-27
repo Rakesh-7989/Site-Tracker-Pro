@@ -67,7 +67,7 @@ Last hypothesis: 2026-05-22 (retired below).
 | Business | INR 89,999/yr | INR 1,19,999/yr (30 users) | **−25%** |
 | Enterprise | INR 2,49,999+/yr | Custom | n/a |
 
-Source: `docs/POSITIONING.md` + verified research workflow `wz3yologq`.
+Source: `docs/business/POSITIONING.md` + verified research workflow `wz3yologq`.
 
 ## One-Time Services
 
@@ -121,8 +121,8 @@ Do not sell it as production multi-user SaaS until backend auth, database, stora
 
 ## Sources
 
-- `docs/POSITIONING.md` — the canonical positioning doc.
-- `docs/SITETRACK_V3_PLAN.md` §1 mistake #3 (pricing at 1/6th of anchor).
+- `docs/business/POSITIONING.md` — the canonical positioning doc.
+- `docs/archive/SITETRACK_V3_PLAN.md` §1 mistake #3 (pricing at 1/6th of anchor).
 - Workflow `wz3yologq` — Powerplay pricing verification.
 - `docs/PILOT_AGREEMENT_v1.md` — Pilot tier contract template.
 

@@ -52,7 +52,7 @@ I1 full re-check (lint/tsc/build/vitest/smoke green). I2 extend `e2e-mock/role-a
 ## 6. Files touched (overview)
 - Migrations: `167`, `168`, `169` under `scripts/supabase/`.
 - New `src/app/`: `materialRequestQueries.ts`, `qualityQueries.ts`, `shiftQueries.ts`, `dprPdf.ts`, `exportCsv.ts`.
-- Edited: `financeQueries.ts`, `crmQueries.ts`, `siteOpsQueries.ts`, tabs (`MaterialsTab`, `POsTab`, `InspectionsTab`, `LabourTab`, `AttendanceTab`, `SafetyTab`, `PunchTab`), `CrmView.tsx`, `DPRDetailView.tsx`, `tabs-config.ts` (if gates change), `src/i18n/{en,hi,te}.json`, `scripts/smoke.mjs`, `e2e-mock/role-access.spec.ts`.
+- Edited: `financeQueries.ts`, `crmQueries.ts`, `siteOpsQueries.ts`, tabs (`MaterialsTab`, `POsTab`, `InspectionsTab`, `LabourTab`, `AttendanceTab`, `SafetyTab`, `PunchTab`), `CrmView.tsx`, `DPRDetailView.tsx`, `tabs-config.ts` (if gates change), `src/i18n/{en,hi,te}.json`, `scripts/ci/smoke.mjs`, `e2e-mock/role-access.spec.ts`.
 - Tests: ~6 new files + extended suites.
 - Docs: this plan + AGENTS.md + `docs/BACKLOG.md` (mark ST-018/009/014 done).
 

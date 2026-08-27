@@ -50,4 +50,4 @@
 
 ---
 
-*Full details: `docs/PRODUCT_CASE_STUDY.md` (English) · `docs/PRODUCT_CASE_STUDY_TE.md` (తెలుగు)*
+*Full details: `docs/business/PRODUCT_CASE_STUDY.md` (English) · `docs/business/PRODUCT_CASE_STUDY_TE.md` (తెలుగు)*

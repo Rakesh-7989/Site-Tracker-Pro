@@ -225,5 +225,5 @@ No RLS changes needed for the SoD fixes above — SoD is enforced at the applica
 - `src/auth/customRoles.ts` — custom role support
 - `docs/ROLE_FEATURES.md` — auto-generated role → features doc
 - `docs/ROLE_ARCHITECTURE.md` — v2 architecture doc
-- `docs/SECURITY_AUDIT_2026-06.md` — prior security audit
+- `docs/archive/SECURITY_AUDIT_2026-06.md` — prior security audit
 - `tests/auth/permissionsMatrix.test.ts` — capability matrix tests

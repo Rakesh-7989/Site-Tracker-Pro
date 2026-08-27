@@ -1296,7 +1296,7 @@ Site-Tracker-Pro/
 1. Create `src/lib/<integration>.js` with the helper functions
 2. If keys are needed in the browser: add to env + admin Settings panel
 3. If keys must stay server-side: add Edge Function `supabase/functions/<name>`
-4. Document in `docs/BACKEND_PLAN.md` integration section
+4. Document in `docs/archive/BACKEND_PLAN.md` integration section
 
 **Q: How do I migrate the schema?**
 1. Add a new file `scripts/supabase/0N_migration.sql` with ALTER TABLE statements

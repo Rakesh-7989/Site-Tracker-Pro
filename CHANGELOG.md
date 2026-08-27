@@ -52,7 +52,7 @@ Sample log update:
 day-by-day founder/code split + risks. Lays out what's buildable now vs
 what waits for customer signal.
 
-3 SQL migrations (applied to prod via scripts/apply-only.mjs):
+3 SQL migrations (applied to prod via scripts/db/apply-only.mjs):
 - `50_dpr_delivery_log.sql` — dpr_messages (client_token idempotency
   key, voice/photo/geotag/buildnow_anchor columns, 6-state lifecycle)
   + dpr_delivery_log (per-attempt audit) + dpr_delivery_slo_window
@@ -115,12 +115,12 @@ UI views intentionally NOT in this commit (DPRComposerView,
 VoiceNoteRecorder, PhotoGeotagCapture, DPRDetailView, BuildNowBadge)
 — they wait for Sprint 1 pilot interview feedback (Day 18+) so they
 get baked with real customer signal, not founder hypothesis. Per
-Mistake #1 in docs/SITETRACK_V3_PLAN.md.
+Mistake #1 in docs/archive/SITETRACK_V3_PLAN.md.
 
 ### Session 30.2 — Sprint 1 Day 1+2: Feature Freeze + Hyderabad-First wedge
 
 End of Session 30.1 we shipped polished cloud auth. Session 30.2 starts
-the 90-day v3 plan (see `docs/SITETRACK_V3_PLAN.md`). Sprint 1's bet:
+the 90-day v3 plan (see `docs/archive/SITETRACK_V3_PLAN.md`). Sprint 1's bet:
 freeze build, sell one workflow, sign 1+ Hyderabad marquee builder before
 Day 90. Day 1 = repo work. Day 2 = founder field prep docs.
 
@@ -150,11 +150,11 @@ Day 90. Day 1 = repo work. Day 2 = founder field prep docs.
 - `docs/FEATURE_FREEZE.md` — the charter. Why 16 views are gated,
   who counts as staff, un-freeze procedure (both JS and SQL flip in
   same commit), Day 90 fewer-than-3 target.
-- `docs/POSITIONING.md` — canonical positioning. One-line pitch
+- `docs/business/POSITIONING.md` — canonical positioning. One-line pitch
   ("Hyderabad-first construction record-keeper that runs over
   WhatsApp in Telugu, anchored to BuildNow Telangana"). ICP, 5 proof
   points, 8 forbidden claims (don't say until verified).
-- `docs/PRICING.md` — **REPRICED**. Old INR 999/2,999/7,999 monthly
+- `docs/business/PRICING.md` — **REPRICED**. Old INR 999/2,999/7,999 monthly
   tiers retired (anchored to falsified per-user Powerplay assumption).
   New annual per-org tiers: Pilot INR 29,999 (first 5 only) → Pro
   INR 49,999 (-30% vs Powerplay) → Business INR 89,999 (-25%) →
@@ -163,7 +163,7 @@ Day 90. Day 1 = repo work. Day 2 = founder field prep docs.
   Pilot tier INR 29,999/yr + 18% GST, 24-month lock, 3-month micro-
   segment exclusivity, 90-min founder on-site activation, data
   ownership + portability, SLOs only for production-ready features.
-- `docs/COMPETITOR_COMPARISON_V2.md` — prepended Sprint 1 freeze
+- `docs/business/COMPETITOR_COMPARISON_V2.md` — prepended Sprint 1 freeze
   notice. Every unverified BEAT verdict (RERA, GSTN, blockchain,
   kiosks, vernacular) downgraded to UNVERIFIED until interview data.
 - `docs/research/POWERPLAY_RECON_SCRIPT.md` — 10-interview script.
@@ -183,7 +183,7 @@ Day 90. Day 1 = repo work. Day 2 = founder field prep docs.
 - `docs/sales/MEETING_LOG_2026-06.md` — operational log for 5 founder
   meetings. WhatsApp templates (cold reach / pre-meeting / post / maybe
   follow-up). Aggregate stats + Sprint 1->2 gate criteria.
-- `docs/SITETRACK_V3_PLAN.md` — synthesized v3 plan (388 lines).
+- `docs/archive/SITETRACK_V3_PLAN.md` — synthesized v3 plan (388 lines).
   7 sections covering top-10 mistakes ranked critical-low, market
   reality, 3 architecture paths + chosen (Hyderabad-First), 90-day
   6-sprint plan with file-level deliverables, success metrics, open
@@ -308,7 +308,7 @@ code-buildable gap that didn't require a vendor account / dashboard click.
 
 **Stale doc updates**:
 - `docs/ROLE_MODEL_V2.md` header flipped from "specification deferred" → "✅ IMPLEMENTED".
-- `docs/COMPETITOR_COMPARISON_V2.md` flipped 8 ❌ MISSED rows to ✅ CLOSED
+- `docs/business/COMPETITOR_COMPARISON_V2.md` flipped 8 ❌ MISSED rows to ✅ CLOSED
   (BOQ import, drawing-diff, GSTN, KA/MH RERA, AI recommender, Solidity
   contract, PDF audit, bulk user CSV).
 - `docs/ARCHITECTURE.md` Sentry "Planned Phase 2" → "✅ Shipped Session 27.4".
@@ -324,7 +324,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - **4 state-machine diagrams** (`docs/architecture/state/`): RA Bill lifecycle, Drawing revision chain, Subscription transitions, Project archive→restore→purge.
 
 ### Session 27.3 — Deploy driver + expanded env scaffold
-- **`scripts/deploy-all.mjs`** — interactive 11-step driver covering every step from `.env.local` seed through final live probe. Idempotent. Auto-skips finished steps via probes.
+- **`scripts/deploy/deploy-all.mjs`** — interactive 11-step driver covering every step from `.env.local` seed through final live probe. Idempotent. Auto-skips finished steps via probes.
 - **`.env.example` expanded** 16→74 lines covering Cashfree, RERA TG, WhatsApp Cloud API, Polygon, AI providers, and `SUPABASE_DB_URL` for psql migration runner.
 - **`npm run deploy:all`** wired in package.json.
 - **gh CLI installed** via winget — enables `gh auth login --scopes workflow,repo` for future CI enablement.
@@ -385,12 +385,12 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - `docs/CONNECT_SUPABASE.md` + `npm run check:supabase` 9-step readiness check.
 - Live "DB Live / Local mode" pill in topbar with 30s re-probe.
 - Org Admin onboarding wizard (5 steps, auto-redirects first-time orgadmins).
-- Public landing page (`public/landing.html` + `marketing/index.html` self-contained deploy).
+- Public landing page (`archive/marketing/landing.html` + `archive/marketing/index.html` self-contained deploy).
 - 3-minute demo video script (Telugu narration).
 - 12-slide investor pitch deck (pptxgenjs builder).
 - Case study template + WhatsApp Business 8-week verification runbook.
 - HRMS deployment study (actual repo analysis) + DEPLOY_NOW.md unified runbook.
-- `scripts/setup.mjs` (`npm run setup`) — HRMS-style bootstrap.
+- `scripts/ci/setup.mjs` (`npm run setup`) — HRMS-style bootstrap.
 - MCP toolkit: `.mcp.json`, `.env.mcp.example`, `npm run check:mcp`, `docs/MCP_TOOLKIT.md`.
 
 ### Sessions 13-16 — Org Admin tier + Cashfree + 37-feature toggle catalog
@@ -419,7 +419,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - **`UsageAdminView`** (Admin → Usage Analytics): DAU/WAU/MAU + feature adoption bars + per-org engagement health with traffic-light dots.
 - **`SupportAdminView`** (Admin → Support Inbox): cross-tenant ticket inbox with reply UI, status (open/replied/closed). 4 seeded mock tickets from sample orgs.
 - **`docs/GOLIVE.md`**: 30-minute step-by-step runbook (Supabase provisioning → schema → env vars → Vercel deploy → smoke → first customer invite). Cost projection for first 12 months.
-- **`scripts/provision.sh`**: one-shot local bootstrap (tooling check, deps, `.env.local` wizard, optional SDK install, full test pipeline).
+- **`scripts/deploy/provision.sh`**: one-shot local bootstrap (tooling check, deps, `.env.local` wizard, optional SDK install, full test pipeline).
 - **`@supabase/supabase-js`** added as a regular dependency so the dynamic import resolves at build time (still lazy-loaded at runtime via `BACKEND_MODE` gate).
 
 ### Added — Super Admin (Operations) role for multi-tenant coordination
@@ -437,7 +437,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - `scripts/supabase/02_rls.sql`: new `is_superadmin()` helper, `user_project_ids()` unions in all projects for superadmin, new policies on `organizations`, `org_members`, `profiles` (read) for cross-tenant admin access.
 - `scripts/supabase/04_rls_tests.sql`: Scenario 6 — 6 assertions verifying super admin sees both Alpha + Beta, can read organizations table, can insert projects.
 - `docs/AGENTS.md`: ownership table now defines Super Admin role at the top of the boundaries section.
-- `docs/BACKEND_PLAN.md`: schema diagram includes `superadmin` as a role value.
+- `docs/archive/BACKEND_PLAN.md`: schema diagram includes `superadmin` as a role value.
 - 10 new vitest cases covering PERMS shape, isSuperAdmin, cross-tenant overrides, admin nav visibility, quick-capture extension.
 
 ### Added — Competitive weaknesses pack (closes 9 gaps vs Powerplay/RDash/Procore)
@@ -458,7 +458,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - BOQ tab (Bill of Quantities) with code, description, category, unit, qty, rate; category totals + grand total. Architect/PM edit, Client read-only, Contractor hidden.
 - Stock Ledger tab with inward/outward/return/wastage transactions; material-wise balance summary; balance turns red when negative. Architect/PM/Contractor edit, Client hidden.
 - Photo metadata capture (date/time + opt-in GPS) on site update photos. Geolocation behind a "Tag photos with site location" toggle — no surprise permission popups.
-- `CHANGELOG.md` (this file), `docs/BACKEND_PLAN.md`, `docs/CI_WORKFLOW.yml`, `docs/CI_SETUP.md`.
+- `CHANGELOG.md` (this file), `docs/archive/BACKEND_PLAN.md`, `docs/CI_WORKFLOW.yml`, `docs/CI_SETUP.md`.
 - GitHub Actions CI workflow as a docs/ template (manual move documented in `docs/CI_SETUP.md` once a `workflow`-scoped token is available).
 - Vitest scaffold + 24 unit tests covering PERMS shape, role boundaries, project visibility, view routing, drawing release logic.
 
@@ -470,7 +470,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - Smoke test bumped from 35 → 65+ checks; now also verifies that App.jsx imports PERMS from `./lib/permissions.js` and has no local `const PERMS` block.
 
 ### Removed
-- `_incoming_sitetrack_pro/` legacy version snapshot (Supabase setup notes preserved into `docs/BACKEND_PLAN.md`).
+- `_incoming_sitetrack_pro/` legacy version snapshot (Supabase setup notes preserved into `docs/archive/BACKEND_PLAN.md`).
 - `sitetrack (1).jsx` (940-line orphan file never imported).
 - Inlined PERMS object and helpers in `src/App.jsx` (moved to `src/lib/permissions.js`).
 

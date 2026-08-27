@@ -47,7 +47,7 @@ Run from project root; all must pass before commit/phase-close:
 1. `npx tsc --noEmit` — 0 errors
 2. `npx eslint .` — 0 errors (allow 1 pre-existing `coverage/block-navigation.js` warning)
 3. `npx vitest run` — all tests green
-4. `node scripts/smoke.mjs` — full check count green
+4. `node scripts/ci/smoke.mjs` — full check count green
 5. `npm run build` — clean build
 6. E2E mock run (when applicable) — green
 

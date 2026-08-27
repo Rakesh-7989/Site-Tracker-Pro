@@ -189,13 +189,13 @@ New keys (all three locales, keep alpha-ASCII keys for parity test):
   back-compat.
 - **`orgRegisterQueries`**: optional plan/billing/segment + `trialEndsAt`
   passthrough.
-- **Smoke** (`scripts/smoke.mjs`): markers for any new exported helpers
+- **Smoke** (`scripts/ci/smoke.mjs`): markers for any new exported helpers
   (e.g. `resendConfirmation`, `activateSubscription`).
 
 ### 3.7 Gate suite (run before commit)
 
 `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` ·
-`node scripts/smoke.mjs` · `npm run build` · `npm run test:e2e:mock`.
+`node scripts/ci/smoke.mjs` · `npm run build` · `npm run test:e2e:mock`.
 
 ---
 

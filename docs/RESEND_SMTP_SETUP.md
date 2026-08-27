@@ -158,7 +158,7 @@ locally:
 ```bash
 RESEND_API_KEY=re_xxxxx \
 RESEND_FROM=hello@sitetrackpro.in \
-  node scripts/test-resend-smtp.mjs your-personal-email@gmail.com
+  node scripts/tests/test-resend-smtp.mjs your-personal-email@gmail.com
 ```
 
 Expected output on success:
@@ -200,10 +200,10 @@ end-to-end working:
 
 ```bash
 # 1. Probe Supabase Auth + plans + trigger config
-node scripts/check-auth-config.mjs
+node scripts/dev/check-auth-config.mjs
 
 # 2. (Optional) Try a real Supabase Auth signup against your project
-node scripts/check-auth-config.mjs --signup founder-test@yourdomain.in
+node scripts/dev/check-auth-config.mjs --signup founder-test@yourdomain.in
 
 # 3. Run the Playwright E2E spec — exercises the browser flow
 npx playwright test tests/e2e/signup-flow.spec.js

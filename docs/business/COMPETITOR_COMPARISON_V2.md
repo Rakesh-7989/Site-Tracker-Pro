@@ -19,9 +19,9 @@
 > The pricing comparison row that still cites "Powerplay INR 1,500/user/mo"
 > is also retired — verified Powerplay pricing is per-org annual, as
 > noted above. Updated pricing positioning lives in
-> `docs/POSITIONING.md`.
+> `docs/business/POSITIONING.md`.
 >
-> See `docs/SITETRACK_V3_PLAN.md` §1 mistake #2 for context.
+> See `docs/archive/SITETRACK_V3_PLAN.md` §1 mistake #2 for context.
 
 Last updated Sprint 1 (Session 30.2, June 2026); previous: end-of-Session-24.
 
@@ -92,7 +92,7 @@ Verdict legend:
 | Photo + workforce + weather + issues in DPR | Yes, full template with photos | Powerplay: yes; Procore: yes | 🤝 |
 | 3-language DPR output (EN/TE/HI) | Yes via i18n helper | Powerplay: EN/HI only; Procore: EN-only | 🏆 |
 
-**Gaps:** Actual WhatsApp Business API isn't wired — `docs/WHATSAPP_BUSINESS_API.md` documents the 8-week verification but Edge Function not built. Until that ships, our "auto-send" is manual share-link.
+**Gaps:** Actual WhatsApp Business API isn't wired — `docs/archive/WHATSAPP_BUSINESS_API.md` documents the 8-week verification but Edge Function not built. Until that ships, our "auto-send" is manual share-link.
 
 ---
 

@@ -137,7 +137,7 @@ Multi-phase orchestrated workflow:
 
 **The one number that matters**: 1 marquee Hyderabad logo by Day 90. Window closing 6-12 months before Powerplay closes My Home or Aparna.
 
-**Document**: `docs/SITETRACK_V3_PLAN.md` (388 lines).
+**Document**: `docs/archive/SITETRACK_V3_PLAN.md` (388 lines).
 
 ---
 
@@ -163,10 +163,10 @@ Multi-phase orchestrated workflow:
 | File | What |
 |------|------|
 | `docs/FEATURE_FREEZE.md` | The charter — 16 frozen views with reasons + un-freeze procedure + founder rule of thumb |
-| `docs/POSITIONING.md` | Canonical positioning — 5 proof points + 8 forbidden claims + ICP + WTP rules + corrected pricing comparison vs Powerplay |
-| `docs/PRICING.md` | **REPRICED**. Pilot ₹29,999/yr (first 5) → Pro ₹49,999/yr (−30% vs Powerplay) → Business ₹89,999/yr (−25%) → Enterprise ₹2,49,999+/yr. Old monthly tiers retired |
+| `docs/business/POSITIONING.md` | Canonical positioning — 5 proof points + 8 forbidden claims + ICP + WTP rules + corrected pricing comparison vs Powerplay |
+| `docs/business/PRICING.md` | **REPRICED**. Pilot ₹29,999/yr (first 5) → Pro ₹49,999/yr (−30% vs Powerplay) → Business ₹89,999/yr (−25%) → Enterprise ₹2,49,999+/yr. Old monthly tiers retired |
 | `docs/PILOT_AGREEMENT_v1.md` | 10-section design-partner contract template, 24-mo lock, 3-mo logo exclusivity, founder co-signature ready |
-| `docs/COMPETITOR_COMPARISON_V2.md` | Prepended freeze notice — all unverified BEAT verdicts downgraded to UNVERIFIED |
+| `docs/business/COMPETITOR_COMPARISON_V2.md` | Prepended freeze notice — all unverified BEAT verdicts downgraded to UNVERIFIED |
 | `docs/research/POWERPLAY_RECON_SCRIPT.md` | 10-interview script — Group A (5 ex-Powerplay) + Group B (5 named Hyderabad targets + 8 stretch alternates) |
 | `docs/research/INTERVIEW_LOG_2026-06.md` | Log table + per-interview capture template + Sprint 1→2 unlock gate |
 | `docs/research/VERIFIED_GAPS_MATRIX.md` | 13 Powerplay-product claims (11 currently UNVERIFIED) + decision rules + sources |
@@ -203,9 +203,9 @@ Multi-phase orchestrated workflow:
 |------|------|
 | `CHANGELOG.md` | Session 30 + 30.1 + 30.2 entries appended |
 | `tests/featureFlags.test.js` | 32 unit tests across STUB_VIEWS, STUB_TABS, isStubView, isStubTab, isStaffUser (3 bypass paths), isViewStubBlocked, isTabStubBlocked + Sprint 1 never-block contract |
-| `scripts/smoke.mjs` | 4 new parity checks (count parity + JS-subset-of-SQL + SQL-subset-of-JS + Sprint 1 freeze docs present) |
-| `marketing/index.html` + `public/landing.html` | Surgical edits: meta tags, hero stats, hero lead, comparison table (8 rows rewritten — added Hyderabad-first / BuildNow / Telugu voice / per-org pricing rows), pricing cards (Pilot ₹29,999 / Pro ₹49,999 / Business ₹89,999 / Enterprise ₹2,49,999+), FAQ (6 questions rewritten with honest Sprint 2 answers), CTA strip |
-| `scripts/seed-first-org.mjs` | Idempotent seed script — upserts 4 plan rows + creates "Demo Hyderabad Builder" org + prints all 16 frozen views from DB |
+| `scripts/ci/smoke.mjs` | 4 new parity checks (count parity + JS-subset-of-SQL + SQL-subset-of-JS + Sprint 1 freeze docs present) |
+| `archive/marketing/index.html` + `archive/marketing/landing.html` | Surgical edits: meta tags, hero stats, hero lead, comparison table (8 rows rewritten — added Hyderabad-first / BuildNow / Telugu voice / per-org pricing rows), pricing cards (Pilot ₹29,999 / Pro ₹49,999 / Business ₹89,999 / Enterprise ₹2,49,999+), FAQ (6 questions rewritten with honest Sprint 2 answers), CTA strip |
+| `scripts/seeds/seed-first-org.mjs` | Idempotent seed script — upserts 4 plan rows + creates "Demo Hyderabad Builder" org + prints all 16 frozen views from DB |
 
 ### Production operations applied
 
@@ -405,7 +405,7 @@ Multi-phase orchestrated workflow:
 - **Smoke**: 324/324 PASS (includes STUB_VIEWS parity check between JS + SQL)
 - **Tests**: 660/660 PASS across 33 test files (was 556; +104 new tests across featureFlags + voiceTranscribe + offlineQueue + buildnowAnchor)
 - **Build**: ~7-12s clean
-- **Migrations applied to prod Supabase**: 49 + 50 + 51 + 52 all live via `scripts/apply-only.mjs`
+- **Migrations applied to prod Supabase**: 49 + 50 + 51 + 52 all live via `scripts/db/apply-only.mjs`
 - **Production URL**: ✅ `https://sitetrackpro.in`
 
 ---

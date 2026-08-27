@@ -24,11 +24,11 @@ Keep SiteTrack Pro documentation accurate, useful, and aligned with the app.
 - `docs/AGENTS.md` — agent operating guide
 - `docs/WORKFLOW.md` — agile workflow
 - `docs/BACKLOG.md` — feature backlog
-- `docs/BUSINESS_MODEL.md` — SaaS positioning
-- `docs/PRICING.md` — pricing tiers
-- `docs/MARKET_ANALYSIS.md` — competitor analysis
+- `docs/business/BUSINESS_MODEL.md` — SaaS positioning
+- `docs/business/PRICING.md` — pricing tiers
+- `docs/business/MARKET_ANALYSIS.md` — competitor analysis
 - `docs/DEPLOYMENT.md` — deployment guides
-- `docs/BACKEND_PLAN.md` — backend architecture plan
+- `docs/archive/BACKEND_PLAN.md` — backend architecture plan
 - `docs/CHANGELOG.md` — release history (Keep-a-Changelog format)
 - `docs/QUALITY.md` — quality standards
 

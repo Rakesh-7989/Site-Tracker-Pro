@@ -192,7 +192,7 @@ capabilities on that project but only base architect caps elsewhere.
    `profiles_role_check`; add `projects.type` column; backfill existing
    projects with `type='construction'` (matches Sprint 1 pilot focus).
 2. **`59_project_members.sql`** — new table + RLS policies + indexes.
-3. **`scripts/create-test-users.mjs`** — add 4 new test users
+3. **`scripts/dev/create-test-users.mjs`** — add 4 new test users
    (`promoter`, `pm` — already had — , `site_supervisor`, `designer`).
 
 ## References
@@ -200,7 +200,7 @@ capabilities on that project but only base architect caps elsewhere.
 - Founder's hand-drawn architecture diagram (June 3, 2026 photo)
 - `src/lib/permissions.js` — current capability matrix (to be expanded
   in Sprint 3)
-- `docs/SITETRACK_V3_PLAN.md` — 90-day v3 plan; Sprint 2 promoter digest
+- `docs/archive/SITETRACK_V3_PLAN.md` — 90-day v3 plan; Sprint 2 promoter digest
   flow depends on `site_supervisor` + `promoter` roles existing
 - `docs/SPRINT_2_ARCHITECTURE.md` — DPR voice flow originates from
   site_supervisor

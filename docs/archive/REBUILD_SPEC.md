@@ -94,7 +94,7 @@ Agent 4 found 4 EFs that currently accept any caller without authentication. The
 | Wrap 3 RERA EFs with JWT + role gate | EF updates |
 | Add CRON_SECRET validation to `promoter_digest_cron` | EF update |
 | Add JWT to `voice_transcribe` cache writes | EF update |
-| Redeploy via `scripts/deploy-edge-functions.mjs` | Live |
+| Redeploy via `scripts/deploy/deploy-edge-functions.mjs` | Live |
 
 **Gate:** Probe each EF without auth — verify 401. With valid JWT — verify 200. **Commit + push + deploy.**
 
@@ -137,7 +137,7 @@ Agent 4 found 4 EFs that currently accept any caller without authentication. The
 | `65_org_members_role_expand.sql` | If needed: add vendor_liaison etc. to org tier |
 | `66_rls_role_catalog_sync.sql` | Replace hardcoded role lists in RLS with `is_role(role_id)` SQL function (single source of truth for SQL side) |
 
-**Gate:** Apply to live DB. Verify with `node scripts/check-auth-config.mjs`. **Commit + push.**
+**Gate:** Apply to live DB. Verify with `node scripts/dev/check-auth-config.mjs`. **Commit + push.**
 
 ---
 

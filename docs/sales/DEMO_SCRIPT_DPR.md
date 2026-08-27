@@ -81,6 +81,6 @@ That's it. No dashboard. No login. No app install. Just WhatsApp.
 
 ## Source
 
-- Sprint 1 deliverable D6 per `docs/SITETRACK_V3_PLAN.md` §5 Sprint 1.
-- Positioning anchored to `docs/POSITIONING.md`.
-- Pricing anchored to `docs/PRICING.md` (Sprint 1 reprice).
+- Sprint 1 deliverable D6 per `docs/archive/SITETRACK_V3_PLAN.md` §5 Sprint 1.
+- Positioning anchored to `docs/business/POSITIONING.md`.
+- Pricing anchored to `docs/business/PRICING.md` (Sprint 1 reprice).

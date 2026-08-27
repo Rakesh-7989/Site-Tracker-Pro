@@ -261,7 +261,7 @@ sprint before unlocking Sprint 2. **Do not build on assumption.**
 ## Source citations preserved here
 
 All claims that drove this script come from:
-- `docs/SITETRACK_V3_PLAN.md` §1 (mistakes), §2 (market reality)
+- `docs/archive/SITETRACK_V3_PLAN.md` §1 (mistakes), §2 (market reality)
 - Workflow `wz3yologq` (deep research)
 - Workflow `w957hlybp` (repo audit + planning)
 - Powerplay self-disclosed: <https://www.getpowerplay.in/resources/case-studies/>

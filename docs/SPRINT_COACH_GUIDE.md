@@ -56,7 +56,7 @@ relevant docs and replies with a specific action.
 
 If you're outside Claude Code (e.g. WhatsApp), you can still simulate
 the coach behaviour by reading the docs yourself in this order:
-1. `docs/SITETRACK_V3_PLAN.md` — find your Sprint Day.
+1. `docs/archive/SITETRACK_V3_PLAN.md` — find your Sprint Day.
 2. `docs/sales/MEETING_LOG_2026-06.md` — check what's scheduled.
 3. `docs/research/VERIFIED_GAPS_MATRIX.md` — check gate progress.
 4. Open the relevant doc per the playbook table below.
@@ -232,7 +232,7 @@ The tool reads the same 5 docs the coach used to read manually:
 - `docs/research/VERIFIED_GAPS_MATRIX.md` (verdict per claim)
 - `docs/sales/MEETING_LOG_2026-06.md` (Sprint 2 meetings booked)
 - `docs/sales/PILOT_CONTRACTS/` (signed pilot agreements)
-- `docs/PRICING.md` (pricing-decision locked)
+- `docs/business/PRICING.md` (pricing-decision locked)
 
 It returns a verdict + per-criterion table + next-action list. The
 parser (`src/lib/sprint1GateScore.js`) is unit-tested so the score
@@ -362,8 +362,8 @@ of Bhashini's application process.
 - Fabricate interview / meeting outcomes.
 - Promise features that haven't shipped (cross-checks
   `docs/FEATURE_FREEZE.md`).
-- Quote pricing other than `docs/PRICING.md` verified tiers.
-- Use forbidden claims from `docs/POSITIONING.md` §"What we WILL
+- Quote pricing other than `docs/business/PRICING.md` verified tiers.
+- Use forbidden claims from `docs/business/POSITIONING.md` §"What we WILL
   NOT say".
 - Modify code, run builds, or deploy.
 
@@ -461,7 +461,7 @@ sure you're prepped, scripted, and tracking.
 - `.claude/agents/sprint-coach.md` — the agent definition.
 - `.agents/sitetrack-pro/founder-sprint-coach.md` — the team
   charter.
-- `docs/SITETRACK_V3_PLAN.md` — the 90-day plan the coach reads.
+- `docs/archive/SITETRACK_V3_PLAN.md` — the 90-day plan the coach reads.
 - `docs/SPRINT_2_ARCHITECTURE.md` — Sprint 2 specifics.
 
 ## Edit log

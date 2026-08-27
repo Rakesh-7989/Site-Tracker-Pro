@@ -1,6 +1,6 @@
 # RLS Coverage Matrix — auto-generated
 
-> Generated 2026-08-20T07:34:06.881Z by `node scripts/rls-coverage.mjs` (Phase 0 / 0.8 — SEC-02 + DB-05; Phase 1.1 — RBAC V2 shadow).
+> Generated 2026-08-20T07:34:06.881Z by `node scripts/ci/rls-coverage.mjs` (Phase 0 / 0.8 — SEC-02 + DB-05; Phase 1.1 — RBAC V2 shadow).
 > **Do not edit by hand.** Regenerate with `npm run check:rls:coverage`.
 
 ## Summary

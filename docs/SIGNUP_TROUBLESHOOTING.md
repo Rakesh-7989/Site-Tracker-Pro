@@ -38,7 +38,7 @@ Sign in tab + password method + prefills the email.
 
 **Verify via DB:**
 ```bash
-node scripts/probe-email-otp.mjs your@email.com
+node scripts/dev/probe-email-otp.mjs your@email.com
 ```
 If you see `email_confirmed_at` set and `token_len = 0`, the account is
 already active — sign in, don't sign up.
@@ -70,7 +70,7 @@ error.
 
 **Detect:**
 ```bash
-node scripts/probe-email-otp.mjs
+node scripts/dev/probe-email-otp.mjs
 ```
 The probe attempts a fresh signup with a randomized email. If it
 returns "EMAIL RATE LIMIT", you've hit it.

@@ -128,7 +128,7 @@ filter + RLS proof). Plan reference:
   `.eq("project_id", projectId)` (or `client_email` for the project list/header) and
   fails closed.
 
-## Proof (live, rolled-back tx — `scripts/test-multi-org-client-portal-rls.mjs`)
+## Proof (live, rolled-back tx — `scripts/tests/test-multi-org-client-portal-rls.mjs`)
 
 All 16 assertions green on the live DB (roles via `SET LOCAL ROLE authenticated` +
 JWT sub claim):
@@ -157,7 +157,7 @@ JWT sub claim):
 ## SEC-04 — Cross-tenant attack matrix (2026-08-19)
 
 Audit date: 2026-08-19. Scope: automated cross-tenant RLS attack matrix
-(`scripts/test-cross-tenant-rls.mjs`, `npm run test:rls:cross-tenant`) asserting
+(`scripts/tests/test-cross-tenant-rls.mjs`, `npm run test:rls:cross-tenant`) asserting
 CT-000..CT-005 per tenant table against the LIVE DB. Disposition: **fixed**.
 Plan reference: `docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` §1.5 (SEC-04).
 
@@ -230,7 +230,7 @@ One `BEFORE UPDATE OF status, archived_at` trigger
 Non-lifecycle column updates (rename, etc.) are untouched (trigger fires only on
 `status`/`archived_at`), so `recompute_project_financials` etc. are unaffected.
 
-### Proof (live, rolled-back tx — `scripts/test-project-lifecycle-rls.mjs`)
+### Proof (live, rolled-back tx — `scripts/tests/test-project-lifecycle-rls.mjs`)
 
 21/21 green: legal transitions by orgadmin + pm succeed; illegal transitions
 (paused→on_hold, paused→deactivated, completed→paused, completed→cancelled)

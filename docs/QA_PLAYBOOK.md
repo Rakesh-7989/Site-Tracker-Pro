@@ -35,7 +35,7 @@ push → Vercel.
 2. **T2 Unit** — pure helpers/mappers/labels → `tests/app/*.test.ts`;
    RBAC/nav/tabs/plans → `tests/auth/*`, `tests/app/navConfig.test.ts`,
    `tests/project/tabsConfig.test.ts`.
-3. **T1 Smoke** — add markers to `scripts/smoke.mjs` (each phase adds ~2-10).
+3. **T1 Smoke** — add markers to `scripts/ci/smoke.mjs` (each phase adds ~2-10).
 4. **T3 e2e-mock** — if the change affects nav/access, extend
    `e2e-mock/role-access.spec.ts` with the role + expectation.
 5. **T4/T7 Live** — `test:e2e` on prod + manual sign-in per affected G-Arch role.
@@ -123,7 +123,7 @@ push → Vercel.
 - [ ] Pure logic → `tests/app/<feature>.test.ts` (mirrors existing query-file test style)
 - [ ] RBAC change → `tests/auth/permissionsMatrix.test.ts` (incl. no-dead-caps) + `navConfig.test.ts`
 - [ ] Tab/nav change → `tabsConfig.test.ts` / `navConfig.test.ts` + module/segment gates
-- [ ] New query file → marker in `scripts/smoke.mjs`
+- [ ] New query file → marker in `scripts/ci/smoke.mjs`
 - [ ] New migration → `scripts/supabase/NNN_*.sql` + `npm run db:apply` verify
 - [ ] New route/role surface → `e2e-mock/role-access.spec.ts`
 - [ ] i18n keys → parity test (en/hi/te)

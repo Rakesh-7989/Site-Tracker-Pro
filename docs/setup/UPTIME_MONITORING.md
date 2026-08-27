@@ -28,7 +28,7 @@ you hear about an outage from a robot — not from an angry pilot customer.
 Verify both are healthy right now, any time:
 
 ```bash
-node scripts/uptime-check.mjs
+node scripts/ci/uptime-check.mjs
 # 🟢 Frontend ... HTTP 200
 # 🟢 Backend  ... HTTP 200 · GoTrue
 ```
@@ -93,7 +93,7 @@ for launch. Email is enough to start.
   build broke). Check Vercel **Deployments**; roll back to the last green deploy.
 - A **DOWN** alert on **Monitor 2** (and probably 1 too) → Supabase issue. Check
   the Supabase dashboard status; check <https://status.supabase.com>.
-- Either way, run `node scripts/uptime-check.mjs` locally to confirm + get timing.
+- Either way, run `node scripts/ci/uptime-check.mjs` locally to confirm + get timing.
 
 ---
 

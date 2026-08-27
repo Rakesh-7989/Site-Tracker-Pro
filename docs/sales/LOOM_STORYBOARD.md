@@ -227,9 +227,9 @@ Shot 7 to 5s. Both are recoverable without losing message.
 
 ## Sources
 
-- Sprint 1 Day 2 deliverable per `docs/SITETRACK_V3_PLAN.md`.
+- Sprint 1 Day 2 deliverable per `docs/archive/SITETRACK_V3_PLAN.md`.
 - Beats per `docs/sales/DEMO_SCRIPT_DPR.md`.
 - Telugu per `docs/sales/TELUGU_PHRASE_BANK_DPR.md`.
 - Logistics per `docs/sales/LOOM_SHOOT_CHECKLIST.md`.
-- Positioning per `docs/POSITIONING.md`.
-- Pricing per `docs/PRICING.md`.
+- Positioning per `docs/business/POSITIONING.md`.
+- Pricing per `docs/business/PRICING.md`.

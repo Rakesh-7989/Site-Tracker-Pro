@@ -3,7 +3,7 @@
 
 ## Why this exists
 
-The Sprint 1 audit (see `docs/SITETRACK_V3_PLAN.md` §1) found a brutal pattern: **12 shipped vs 21 stubs**. RERA Telangana / Karnataka / Maharashtra edge functions return SCAFFOLD or fake `KA-{ts}` acks. GSTN e-invoice defaults to mock mode and returns all-zero IRNs. Polygon anchor stops at `pending` with no signer service. Push notifications need an undeployed relay. LLM Insights needs the customer's own API key.
+The Sprint 1 audit (see `docs/archive/SITETRACK_V3_PLAN.md` §1) found a brutal pattern: **12 shipped vs 21 stubs**. RERA Telangana / Karnataka / Maharashtra edge functions return SCAFFOLD or fake `KA-{ts}` acks. GSTN e-invoice defaults to mock mode and returns all-zero IRNs. Polygon anchor stops at `pending` with no signer service. Push notifications need an undeployed relay. LLM Insights needs the customer's own API key.
 
 Yet every one of those features had a Sidebar entry, a route in App.jsx, and a slot in the pitch deck. A pilot demo could click into any of them and see a "production-ready" UI that secretly hits a stub.
 
@@ -61,7 +61,7 @@ Per-tab freezes (`STUB_TABS` in featureFlags.js):
 
 Sprint 1 surfaces **one** workflow only: the WhatsApp Daily Progress Report (`dpr` view). Sprint 2 ships the real implementation; in Sprint 1 it renders a placeholder that explains the value proposition and collects pilot interest.
 
-This is intentional. The mistake the audit caught (top of `docs/SITETRACK_V3_PLAN.md` §1) was: *"Building 21 stub features instead of shipping 1 paying customer."* The fix is to make the product surface match the depth of what actually works end-to-end.
+This is intentional. The mistake the audit caught (top of `docs/archive/SITETRACK_V3_PLAN.md` §1) was: *"Building 21 stub features instead of shipping 1 paying customer."* The fix is to make the product surface match the depth of what actually works end-to-end.
 
 ## How to un-freeze a view
 
@@ -86,7 +86,7 @@ When a stub becomes real (e.g. Sprint 4 ships real RERA-TG filing → `complianc
 
 ## Smoke parity check
 
-The smoke test (`scripts/smoke.mjs`) should assert that:
+The smoke test (`scripts/ci/smoke.mjs`) should assert that:
 - Every entry in `STUB_VIEWS` has a matching active row in `staff_only_features` (when backend is configured).
 - Every active row in `staff_only_features` has a matching entry in `STUB_VIEWS`.
 

@@ -158,9 +158,9 @@ correct Sprint 1 tiers.
 ## What's in the repo
 
 - `scripts/supabase/53_plans_anon_read.sql` — the GRANT fix
-- `scripts/debug-signup.mjs` — phase-1 diagnostic
-- `scripts/debug-signup-2.mjs` — phase-2 diagnostic
-- `scripts/debug-trigger-instrument.mjs` — trigger instrumentation
+- `scripts/dev/debug-signup.mjs` — phase-1 diagnostic
+- `scripts/dev/debug-signup-2.mjs` — phase-2 diagnostic
+- `scripts/dev/debug-trigger-instrument.mjs` — trigger instrumentation
   (replaces the trigger temporarily to capture every step's
   outcome to a log table; restored after use)
 - `docs/SIGNUP_EMAIL_RATELIMIT_RUNBOOK.md` — this doc
@@ -174,7 +174,7 @@ correct Sprint 1 tiers.
 - Existing OTP fallback code:
   `src/lib/supabase.js` `verifyEmailOtp` +
   `src/features/shell/index.jsx` `submitOtp` handler
-- Sprint 1 audit context: `docs/SITETRACK_V3_PLAN.md`
+- Sprint 1 audit context: `docs/archive/SITETRACK_V3_PLAN.md`
 
 ## Edit log
 

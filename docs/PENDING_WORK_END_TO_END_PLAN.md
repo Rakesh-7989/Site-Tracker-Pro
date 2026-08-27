@@ -57,7 +57,7 @@ build. No schema/EF change.
 |------|-------|---------|
 | C1 | Unit | `npx vitest run` |
 | C2 | Type/format | `npx tsc --noEmit` · `npx eslint .` |
-| C3 | Smoke | `node scripts/smoke.mjs` |
+| C3 | Smoke | `node scripts/ci/smoke.mjs` |
 | C4 | Build | `npm run build` |
 | C5 | E2E mock | `npm run test:e2e:mock` |
 | C6 | Manual | §8 real-email round-trip (needs Phase A) |

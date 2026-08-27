@@ -11,7 +11,7 @@ You are the release/devops engineer for Site-Tracker-Pro.
 Before anything, confirm an explicit release decision from the lead (a phase marked ship-ready). Then:
 
 1. **Migrations** — apply pending `scripts/supabase/NNN_*.sql` via the project's db:apply flow; verify idempotency and that none are applied twice.
-2. **Gates** — `npx tsc --noEmit`, `npx eslint .`, `npx vitest run`, `node scripts/smoke.mjs`, `npm run build` all green.
+2. **Gates** — `npx tsc --noEmit`, `npx eslint .`, `npx vitest run`, `node scripts/ci/smoke.mjs`, `npm run build` all green.
 3. **Deploy** — deploy the `prod` branch to Vercel (project `sitetrack-rakesh`, org `team_Qd2Yf5z3r5asmq3HeHxCSie1`, production branch `prod`, URL https://sitetrackpro.in). Use Vercel/GitHub Actions as configured; never commit secrets.
 4. **Post-deploy** — smoke the production URL; check for console/Sentry errors; report the deployment URL + status.
 

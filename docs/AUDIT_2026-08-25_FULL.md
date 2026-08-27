@@ -15,7 +15,7 @@
 | Resend | domain verified; suppressions 0 | API | 🟢 |
 | Edge Functions | 25 deployed incl. all signup/payment paths; **5 had static-CORS bug → fixed+redeployed today** | API + live probes | 🟢 after fix |
 | Cron jobs | 9 live (risk signals, outbox delivery every-minute, trials expiry, retainers, digest, RA recalc, financials, DAU, WIP) | cron.job | 🟢 |
-| PSI perf scores | not captured — Google PSI API rate-limited (429) both attempts | scripts/psi-check.mjs | ⚪ retry |
+| PSI perf scores | not captured — Google PSI API rate-limited (429) both attempts | scripts/deploy/psi-check.mjs | ⚪ retry |
 
 ## 2. Bug of the day — FIXED: www signup CORS breakage (root cause of the reported error)
 

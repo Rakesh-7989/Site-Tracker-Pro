@@ -13,7 +13,7 @@ The Loom is the warm-up you send 48h before. This is what you drive on a
 laptop/phone in the room. The runbook is what you do after they say yes.
 
 > **Why a script at all?** v3 today covers ~10-15% of the legacy surface on
-> purpose (pilot-first — see `docs/V3_CUTOVER_READINESS.md`). The covered
+> purpose (pilot-first — see `docs/archive/V3_CUTOVER_READINESS.md`). The covered
 > 10-15% IS the wedge. The risk in a live demo is fat-fingering into a
 > "coming soon" panel and spending credibility you didn't need to. This
 > script removes that risk: green routes only.
@@ -120,9 +120,9 @@ your pilot-first discipline, stated out loud.
 ## Source + linkage
 
 - Surfaces map to `src/app/router.tsx` (v3 route tree) and
-  `docs/V3_CUTOVER_READINESS.md` (Ready vs Gap matrix).
-- Personas/logins from `scripts/create-test-users.mjs` +
+  `docs/archive/V3_CUTOVER_READINESS.md` (Ready vs Gap matrix).
+- Personas/logins from `scripts/dev/create-test-users.mjs` +
   `TEST_USERS_CREDENTIALS.md`.
-- Positioning/pricing anchored to `docs/POSITIONING.md` + `docs/PRICING.md`.
+- Positioning/pricing anchored to `docs/business/POSITIONING.md` + `docs/business/PRICING.md`.
 - Pairs with `DEMO_SCRIPT_DPR.md` (pre-meeting Loom) and
   `PILOT_ONBOARDING_RUNBOOK.md` (post-yes activation).

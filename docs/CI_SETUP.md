@@ -12,7 +12,7 @@ git commit -m "ci: enable GitHub Actions workflow"
 git push
 ```
 
-Push will succeed once your token (or browser session) has the `workflow` scope. The smoke test currently looks for `docs/CI_WORKFLOW.yml`; after the move you may want to flip the check in `scripts/smoke.mjs` to look for `.github/workflows/ci.yml`.
+Push will succeed once your token (or browser session) has the `workflow` scope. The smoke test currently looks for `docs/CI_WORKFLOW.yml`; after the move you may want to flip the check in `scripts/ci/smoke.mjs` to look for `.github/workflows/ci.yml`.
 
 ## Option B — GitHub web UI
 

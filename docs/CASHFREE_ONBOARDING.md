@@ -200,5 +200,5 @@ of `src/lib/cashfree.js` (same code, both runtimes).
 ## Related docs
 
 - `docs/PRODUCTION_RLS.md` — the RLS gate this depends on.
-- `docs/BACKEND_PLAN.md` — broader Supabase rollout plan.
+- `docs/archive/BACKEND_PLAN.md` — broader Supabase rollout plan.
 - `docs/GOLIVE.md` — production go-live runbook.

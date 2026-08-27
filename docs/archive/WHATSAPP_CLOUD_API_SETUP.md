@@ -58,7 +58,7 @@ From the WhatsApp product config page:
 1. Paste all 4 into `.env.local`.
 2. Push to Supabase:
    ```
-   node scripts/sync-function-secrets.mjs --only WHATSAPP_PHONE_NUMBER_ID,WHATSAPP_BUSINESS_ACCOUNT_ID,WHATSAPP_PERMANENT_TOKEN,WHATSAPP_WEBHOOK_VERIFY_TOKEN
+   node scripts/deploy/sync-function-secrets.mjs --only WHATSAPP_PHONE_NUMBER_ID,WHATSAPP_BUSINESS_ACCOUNT_ID,WHATSAPP_PERMANENT_TOKEN,WHATSAPP_WEBHOOK_VERIFY_TOKEN
    ```
 3. Apply migration 57 (creates the quota counter table):
    ```
@@ -66,7 +66,7 @@ From the WhatsApp product config page:
    ```
 4. Redeploy the WhatsApp EFs:
    ```
-   node scripts/deploy-edge-functions.mjs whatsapp_dpr_send whatsapp-send promoter_digest_cron
+   node scripts/deploy/deploy-edge-functions.mjs whatsapp_dpr_send whatsapp-send promoter_digest_cron
    ```
 5. Dry-run smoke test — set `SITETRACK_DRY_RUN=true`, send a test
    payload via `curl`:

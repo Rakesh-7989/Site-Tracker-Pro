@@ -110,7 +110,7 @@ MVP should not claim production readiness until backend auth, real permissions, 
 - Project Map tab with site snapshot.
 - AI Insights tab with project health score, risk actions, and market-inspired roadmap cards.
 - Top-level Messages view with project chat and attachments.
-- Market analysis document: `docs/MARKET_ANALYSIS.md`.
+- Market analysis document: `docs/business/MARKET_ANALYSIS.md`.
 - Today's Entry quick drawer for PM/Architect/Contractor field capture across Updates, Issues, Worklogs, and Materials.
 - Client/project access guard for dashboard/search/detail/share links.
 - Business model, pricing hypothesis, India-local competitor set, and 50-feature traceability matrix.
@@ -119,7 +119,7 @@ MVP should not claim production readiness until backend auth, real permissions, 
 ## Completed 2026-05-22 Sweep
 
 - **Repo cleanup**: removed `_incoming_sitetrack_pro/` legacy snapshot and orphan `sitetrack (1).jsx` (940-line dead file).
-- **Backend plan** drafted: `docs/BACKEND_PLAN.md` with Supabase schema, RLS policies, file storage buckets, 7-phase migration plan, RPO/RTO targets, cost model.
+- **Backend plan** drafted: `docs/archive/BACKEND_PLAN.md` with Supabase schema, RLS policies, file storage buckets, 7-phase migration plan, RPO/RTO targets, cost model.
 - **CI workflow** added: `.github/workflows/ci.yml` runs build + smoke + unit tests on push/PR.
 - **BOQ tab** built: line items per project with code/description/category/unit/qty/rate; category totals + grand total. Architect/PM edit; Client read-only.
 - **Stock Ledger tab** built: inward/outward/return/wastage transactions with GRN/DC ref no; material-wise balance summary. Architect/PM/Contractor edit; Client hidden.

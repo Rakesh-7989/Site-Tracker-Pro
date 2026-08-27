@@ -31,7 +31,7 @@
 | Migration-from-empty replay | Ledger runner exists; old migrations rely on live-state (benign pre-existing fails) | Medium | 🟡 | Scratch-project replay test |
 | Tenant deletion / DPDP erasure | `delete_organization` RPC (92/122) + unified lifecycle | Medium | 🟢 | Drill annually |
 | Sentry error tracking | `initSentry()` wired in main.tsx; **DSN unset** | Blind spots | 🟡 | FOUNDER: create free sentry.io project, set `VITE_SENTRY_DSN` |
-| Uptime monitoring | `scripts/uptime-check.mjs` + nightly live probe + docs ready; **external monitor absent** | Detection delay | 🟡 | FOUNDER: UptimeRobot 2 monitors (10 min) |
+| Uptime monitoring | `scripts/ci/uptime-check.mjs` + nightly live probe + docs ready; **external monitor absent** | Detection delay | 🟡 | FOUNDER: UptimeRobot 2 monitors (10 min) |
 | Incident / rollback runbook | `GO_LIVE_RUNBOOK.md` + `?shell=legacy` escape hatch + PR-path rollback proven twice | Medium | 🟡 | Write 1-page incident comms template |
 | Alerting | Nightly workflow red-X only | Slow detection | 🟡 | Wire uptime/Sentry → email alert |
 | Mobile (Capacitor) | Docs+runbook exist; **no native project/deps** | Product gap | 🔴 | Foundation phase when user gives go (API-36 target day-one) |

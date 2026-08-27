@@ -14,13 +14,13 @@ Owner: **Rakesh (founder)**. Companion: `docs/PRODUCTION_GO_LIVE_CHECKLIST.md`.
    npm run typecheck && npx vitest run && npm run build && npm audit
    ```
    All must pass · 0 vulnerabilities.
-2. **Migrations applied** to prod (`node scripts/apply-only.mjs <file>.sql` for any new ones).
-3. **Edge Functions deployed** if changed (`node scripts/deploy-edge-functions.mjs <fn>`).
+2. **Migrations applied** to prod (`node scripts/db/apply-only.mjs <file>.sql` for any new ones).
+3. **Edge Functions deployed** if changed (`node scripts/deploy/deploy-edge-functions.mjs <fn>`).
 4. **Secrets present** in Vercel (VITE_*) + Supabase (EF secrets). The app also
    has a committed public fallback, so it can't go "backend-disabled".
 5. **RLS isolation still holds** (read-only, safe):
    ```
-   node scripts/prod-readiness-probe.mjs      # expect: RLS isolation N passed · 0 failed
+   node scripts/deploy/prod-readiness-probe.mjs      # expect: RLS isolation N passed · 0 failed
    ```
 6. **Announce** a short maintenance window if it's a risky change.
 
@@ -36,7 +36,7 @@ Owner: **Rakesh (founder)**. Companion: `docs/PRODUCTION_GO_LIVE_CHECKLIST.md`.
 
 1. **Automated:**
    ```
-   node scripts/prod-smoke.mjs        # expect: Smoke: 3 passed · 0 failed
+   node scripts/ci/prod-smoke.mjs        # expect: Smoke: 3 passed · 0 failed
    ```
    (landing page · Supabase + anon key · public signup EF — all live, no side effects)
 2. **Manual 2-minute pass** on the live URL:
@@ -91,6 +91,6 @@ Everything else → fix-forward, no rollback needed.
 ### One-command pre-ship gate (copy-paste)
 ```
 npm run typecheck && npx vitest run && npm run build && npm audit --omit=dev \
-  && node scripts/prod-readiness-probe.mjs
-# then: git push ; wait for Vercel Ready ; node scripts/prod-smoke.mjs
+  && node scripts/deploy/prod-readiness-probe.mjs
+# then: git push ; wait for Vercel Ready ; node scripts/ci/prod-smoke.mjs
 ```

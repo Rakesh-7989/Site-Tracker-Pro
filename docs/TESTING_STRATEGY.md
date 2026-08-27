@@ -16,7 +16,7 @@ This document captures the research into what testing tools work for each layer 
 | Static analysis | TypeScript (`tsc --noEmit`) | Type errors, missing imports, shape mismatches |
 | Code quality | ESLint 9 flat config | Anti-patterns, React hooks rules, unused vars |
 | Formatting | Prettier 3 | Consistent style |
-| Smoke | `scripts/smoke.mjs` | App structure, required files, PERMS drift, key bindings |
+| Smoke | `scripts/ci/smoke.mjs` | App structure, required files, PERMS drift, key bindings |
 
 ### Deep R&D: Vitest Patterns
 
@@ -97,7 +97,7 @@ Deno.test("myFn returns expected value", () => {
 **Option C — HTTP test harness (for EF endpoint behavior):**
 - `scripts/test-cashfree-webhook.mjs` starts a server, sends mock Cashfree events
 - Asserts HTTP status + DB side-effects (read back via RPC)
-- Pattern from `scripts/role-access-probe.mjs` and `scripts/test-self-service-rls.mjs`
+- Pattern from `scripts/ci/role-access-probe.mjs` and `scripts/tests/test-self-service-rls.mjs`
 
 ### Best Practice For SiteTrack
 
@@ -111,7 +111,7 @@ Deno.test("myFn returns expected value", () => {
 
 ### Writing An HTTP Test Harness
 
-Pattern from `scripts/role-access-probe.mjs`:
+Pattern from `scripts/ci/role-access-probe.mjs`:
 
 ```js
 // 1. Get a real JWT (sign in as test user)
@@ -137,7 +137,7 @@ if (res.status !== 200 && !acceptableErrors.includes(res.status)) {
 ### Current Approach
 
 - Manual: paste SQL into Supabase SQL Editor
-- Scripted: `scripts/test-self-service-rls.mjs` — connects to real DB, rolls back
+- Scripted: `scripts/tests/test-self-service-rls.mjs` — connects to real DB, rolls back
 - RLS tests: `scripts/supabase/04_rls_tests.sql` — DO block with ASSERT in Supabase console
 
 ### Deep R&D: Patterns
@@ -241,11 +241,11 @@ whenever a new bug entry appears in `bugs.md`.
 | `npm run build` | Bundle production | `vite build` | Every commit |
 | `npm run test:unit` | Vitest unit tests | `vitest run` | Every commit |
 | `npm run test:e2e` | Playwright browser E2E | `playwright test` | Before release |
-| `npm run smoke` | App structure check | `node scripts/smoke.mjs` | Every commit |
+| `npm run smoke` | App structure check | `node scripts/ci/smoke.mjs` | Every commit |
 | `npm test` | Full pipeline | lint + typecheck + build + smoke + unit | Every PR |
-| `node scripts/role-access-probe.mjs` | Live auth + RPC probe | Requires Supabase + test users | After RLS changes |
-| `node scripts/test-self-service-rls.mjs` | RLS rollback tests | Requires Supabase + local env | After migration changes |
-| `node scripts/verify-keys.mjs` | API key validation | Requires .env.local | After secret rotation |
+| `node scripts/ci/role-access-probe.mjs` | Live auth + RPC probe | Requires Supabase + test users | After RLS changes |
+| `node scripts/tests/test-self-service-rls.mjs` | RLS rollback tests | Requires Supabase + local env | After migration changes |
+| `node scripts/ci/verify-keys.mjs` | API key validation | Requires .env.local | After secret rotation |
 
 ### CI Pipeline
 
@@ -269,4 +269,4 @@ whenever a new bug entry appears in `bugs.md`.
 
 6. **Role matrix completeness.** Every role-impacting change must test ALL roles, not just the role you changed. A permission fix for orgadmin might break superadmin if the gate ordering is wrong.
 
-7. **Smoke contract.** If you add a new file, add its path to `scripts/smoke.mjs`. If you add a new view, add its component marker. If you remove code, remove its smoke marker. The smoke test is the deploy gate.
+7. **Smoke contract.** If you add a new file, add its path to `scripts/ci/smoke.mjs`. If you add a new view, add its component marker. If you remove code, remove its smoke marker. The smoke test is the deploy gate.

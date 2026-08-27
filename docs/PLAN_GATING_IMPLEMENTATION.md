@@ -20,7 +20,7 @@
 3. **Enterprise self-service custom roles (Phase 3) — ✅ DONE + LIVE.** mig 98:
    Enterprise/Custom org admins define their own roles + caps; RLS blocks
    `platform:*` escalation + plan-gates by `custom_roles`. `/org/roles` UI.
-   Proof: `scripts/test-self-service-rls.mjs` (7/7 RLS assertions pass).
+   Proof: `scripts/tests/test-self-service-rls.mjs` (7/7 RLS assertions pass).
 
 ### ⏸ Still deferred
 - **`vendor:select` UI wiring** — cap exists + tested, but the PO / material /
@@ -129,7 +129,7 @@ update plans set feature_caps = feature_caps || jsonb_build_object(
 ) where id = 'business';
 ```
 
-Apply with `node scripts/apply-only.mjs 95_feature_caps_v2.sql`.
+Apply with `node scripts/db/apply-only.mjs 95_feature_caps_v2.sql`.
 
 ### Step 3 — `usePlanCaps()` React hook 〔1–2 hr〕
 

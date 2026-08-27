@@ -136,9 +136,9 @@ Play Console → Create app:
 
 - **Short description** (80 chars max):
   > The editorial-grade construction record for Indian builders.
-- **Full description** (4000 chars): copy from `marketing/index.html` hero +
+- **Full description** (4000 chars): copy from `archive/marketing/index.html` hero +
   diff cards.
-- **App icon**: 512×512 PNG, cream bg, amber S mark (`marketing/index.html`
+- **App icon**: 512×512 PNG, cream bg, amber S mark (`archive/marketing/index.html`
   has the design pattern — re-export at 512).
 - **Feature graphic**: 1024×500. Suggested: dashboard mock from landing page.
 - **Phone screenshots** (min 2, recommended 4): login screen, Org Admin

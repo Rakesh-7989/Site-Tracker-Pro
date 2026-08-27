@@ -20,7 +20,7 @@ Read `docs/TESTING_STRATEGY.md` for full R&D. Here is the cheat sheet:
 | Playwright | Full browser flows: signup, role switching, auth | 3 spec files in `tests/e2e/` |
 | TypeScript | Type safety, missing imports | `tsc --noEmit` |
 | ESLint | Anti-patterns, hooks rules, unused vars | `eslint . --max-warnings=200` |
-| Smoke | App structure, file existence, PERMS drift, freeze parity | `node scripts/smoke.mjs` (324 checks) |
+| Smoke | App structure, file existence, PERMS drift, freeze parity | `node scripts/ci/smoke.mjs` (324 checks) |
 
 **Edge Functions (Deno/Supabase):**
 | What To Test | Method | Tool |
@@ -134,6 +134,6 @@ npm run test:e2e         # Playwright (needs dev server OR webServer)
 npm run smoke            # app structure + markers + drift checks
 npm run lint             # ESLint
 npm run typecheck        # TypeScript
-node scripts/role-access-probe.mjs   # live auth probe (needs Supabase)
-node scripts/test-self-service-rls.mjs   # RLS migration tests (needs Supabase)
+node scripts/ci/role-access-probe.mjs   # live auth probe (needs Supabase)
+node scripts/tests/test-self-service-rls.mjs   # RLS migration tests (needs Supabase)
 ```

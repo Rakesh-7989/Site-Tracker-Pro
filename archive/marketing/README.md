@@ -48,14 +48,14 @@ deploy. Then add the custom domain in Site Settings.
 
 ## Editing
 
-The canonical source is `marketing/index.html`. A mirror exists at
-`public/landing.html` so the page is also reachable at
+The canonical source is `archive/marketing/index.html`. A mirror exists at
+`archive/marketing/landing.html` so the page is also reachable at
 `sitetrackpro.in/landing.html` during development. When you edit one,
 copy to the other:
 
 ```bash
 # from repo root
-cp marketing/index.html public/landing.html
+cp archive/marketing/index.html archive/marketing/landing.html
 ```
 
 ## What to update before going live

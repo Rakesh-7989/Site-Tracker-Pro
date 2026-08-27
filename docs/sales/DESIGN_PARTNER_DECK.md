@@ -13,7 +13,7 @@ Three rules:
    has / doesn't have" claim must trace to
    `docs/research/VERIFIED_GAPS_MATRIX.md`.
 3. Pricing slides cite per-org annual numbers only. Per-user-per-month
-   framing is retired (see `docs/POSITIONING.md`).
+   framing is retired (see `docs/business/POSITIONING.md`).
 
 ---
 

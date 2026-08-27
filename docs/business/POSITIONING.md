@@ -2,9 +2,9 @@
 *Sprint 1, Day 1 · Session 30.2*
 
 This document supersedes pricing + positioning claims in
-`marketing/index.html`, `docs/pitch/SiteTrack-Pitch-Deck.pptx`, and
+`archive/marketing/index.html`, `docs/pitch/SiteTrack-Pitch-Deck.pptx`, and
 the falsified per-user comparison in
-`docs/COMPETITOR_COMPARISON_V2.md`. Refresh every external surface to
+`docs/business/COMPETITOR_COMPARISON_V2.md`. Refresh every external surface to
 match this doc before the first paying customer conversation.
 
 ## The one-line pitch
@@ -56,7 +56,7 @@ WhatsApp, Telugu, BuildNow, Telangana.
 
 The deep-research workflow verified Powerplay's actual pricing is
 **per-organization annual, not per-seat monthly**. The
-`marketing/index.html` claim of "Procore INR 31k/user/mo vs SiteTrack
+`archive/marketing/index.html` claim of "Procore INR 31k/user/mo vs SiteTrack
 INR 999/org/mo" was anchored to a wrong Powerplay assumption.
 Corrected anchors below.
 
@@ -71,7 +71,7 @@ Corrected anchors below.
 
 - Never quote a price under **INR 49,999/yr** to a non-pilot.
 - The INR 999/mo and INR 12,000/yr Basic tier from
-  `docs/PRICING.md` is **retired in Sprint 1**. Replaced by the
+  `docs/business/PRICING.md` is **retired in Sprint 1**. Replaced by the
   pilot tier above.
 - All per-user comparisons in marketing copy are retired. Speak in
   per-org annual numbers, because that's what Powerplay actually
@@ -155,7 +155,7 @@ comparisons. Customer interviews live in `docs/research/INTERVIEW_LOG_2026-06.md
 - Freshworks FY2025 financials (SaaS adjacency health):
   <https://ir.freshworks.com/news/news-details/2026/Freshworks-Reports-Fourth-Quarter-and-Full-Year-2025-Results/>
 - Square Yards 2025 raise: <https://inc42.com/buzz/square-yards-raises-35-mn-eyes-unicorn-tag-amid-ipo-preparations/>
-- Sprint 1 mistakes diagnosis: `docs/SITETRACK_V3_PLAN.md` §1
+- Sprint 1 mistakes diagnosis: `docs/archive/SITETRACK_V3_PLAN.md` §1
 - Verified-gaps matrix: `docs/research/VERIFIED_GAPS_MATRIX.md`
 
 ## Update cadence
@@ -163,5 +163,5 @@ comparisons. Customer interviews live in `docs/research/INTERVIEW_LOG_2026-06.md
 - Re-check this doc at the end of Day 7 and Day 14.
 - At Day 15 — if interview data invalidates a positioning claim,
   update before unlocking Sprint 2.
-- All external marketing surfaces (`marketing/index.html`,
+- All external marketing surfaces (`archive/marketing/index.html`,
   pitch deck, FAQ, landing copy) must match this doc at all times.

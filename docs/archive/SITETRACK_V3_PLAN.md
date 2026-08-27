@@ -237,12 +237,12 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 | Feature-freeze guardrail + stub-hiding flag matrix | `docs/FEATURE_FREEZE.md`, `scripts/supabase/49_feature_flags_freeze.sql`, `src/lib/featureFlags.js`, `src/features/shell/index.jsx` | 1.5 |
 | Hide all 21 stubs behind staff-only flag; surface ONE workflow (WhatsApp DPR) on home shell | `src/features/views/RERAKarnatakaView.jsx`, `src/features/views/RERAMaharashtraView.jsx`, `src/features/views/VendorPortalView.jsx`, `src/features/views/GSTNEInvoiceView.jsx`, `src/features/views/DrawingDiffView.jsx`, `src/features/views/AIRecommenderView.jsx`, `src/features/shell/Nav.jsx`, `src/App.jsx` | 2 |
 | Powerplay reconnaissance script — 10 structured customer interviews (5 ex-Powerplay + 5 Hyderabad targets: My Home, Aparna, Sumadhura, Vasavi, Lansum) | `docs/research/POWERPLAY_RECON_SCRIPT.md`, `docs/research/INTERVIEW_LOG_2026-06.md`, `docs/research/VERIFIED_GAPS_MATRIX.md` | 5 |
-| Re-cut COMPETITOR_COMPARISON_V2: flip every unverified BEAT verdict to UNVERIFIED until interview evidence lands | `docs/COMPETITOR_COMPARISON_V2.md`, `docs/POSITIONING.md` | 1 |
-| Pilot pricing & exclusivity contract (INR 29,999/yr design-partner, 24-mo lock, 3-mo logo exclusivity per micro-segment) | `docs/PILOT_AGREEMENT_v1.pdf`, `docs/PRICING.md`, `docs/sales/DESIGN_PARTNER_DECK.pdf` | 2 |
+| Re-cut COMPETITOR_COMPARISON_V2: flip every unverified BEAT verdict to UNVERIFIED until interview evidence lands | `docs/business/COMPETITOR_COMPARISON_V2.md`, `docs/business/POSITIONING.md` | 1 |
+| Pilot pricing & exclusivity contract (INR 29,999/yr design-partner, 24-mo lock, 3-mo logo exclusivity per micro-segment) | `docs/PILOT_AGREEMENT_v1.pdf`, `docs/business/PRICING.md`, `docs/sales/DESIGN_PARTNER_DECK.pdf` | 2 |
 | Daily WhatsApp-DPR demo recording (60-sec Loom) + 5 in-person founder meetings booked at Banjara Hills / Gachibowli / Kondapur builder offices | `docs/sales/DEMO_SCRIPT_DPR.md`, `docs/sales/MEETING_LOG_2026-06.md`, `public/demos/whatsapp_dpr_60s.mp4` | 3 |
 
 **Success criteria**:
-- Zero stub features visible to non-staff users (verified by `scripts/smoke.mjs` assertion + Playwright nav test)
+- Zero stub features visible to non-staff users (verified by `scripts/ci/smoke.mjs` assertion + Playwright nav test)
 - `VERIFIED_GAPS_MATRIX.md` contains signed quotes from ≥8 of 10 interviews mapping RERA/GSTN/blockchain/vernacular/WhatsApp-DPR to one of {Powerplay has it, doesn't have it, builder doesn't care}
 - 5 confirmed paid-pilot meetings on calendar for Sprint 2 (named builder + decision-maker + date)
 - All COMPETITOR_COMPARISON_V2 BEAT verdicts either backed by interview quote or downgraded to UNVERIFIED
@@ -308,7 +308,7 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 | Title | Files | Days |
 |-------|-------|------|
 | Marquee proof-of-concept — 7-day pilot for My Home / Aparna / Sumadhura on a real active project | `docs/sales/MARQUEE_POC_LOG.md`, `scripts/seed_marquee_pilot.mjs` | 5 |
-| Public website re-cut with VERIFIED moats only — drop UNVERIFIED gaps, lead with BuildNow + Telugu voice + 6 named pilot logos (with permission) | `apps/marketing/`, `public/case-studies/`, `docs/POSITIONING.md` | 3 |
+| Public website re-cut with VERIFIED moats only — drop UNVERIFIED gaps, lead with BuildNow + Telugu voice + 6 named pilot logos (with permission) | `apps/marketing/`, `public/case-studies/`, `docs/business/POSITIONING.md` | 3 |
 | First contractor hire — Telugu QA + supervisor training contractor at INR 60K/mo | `docs/HIRING_CONTRACTOR_v1.md`, `docs/team/ONBOARDING_QA.md` | 1.5 |
 | Promoter peer-benchmark engine (anonymized cost-per-sqft vs Hyderabad peer builders) — needs ≥6 builders on platform | `supabase/functions/peer_benchmark/index.ts`, `src/features/views/PeerBenchmarkView.jsx`, `scripts/supabase/57_benchmark_aggregations.sql` | 3 |
 | Sign 2 more pilots (target: 8 total) | `docs/sales/PIPELINE_TRACKER.md`, `docs/sales/PILOT_CONTRACTS/` | 2.5 |

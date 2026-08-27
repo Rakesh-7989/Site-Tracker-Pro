@@ -255,4 +255,4 @@ changes.
 - `docs/PRODUCTION_RLS.md` — RLS verification + failure response
 - `docs/CASHFREE_ONBOARDING.md` — payments wire-up after database is live
 - `docs/GOLIVE.md` — end-to-end go-live checklist
-- `docs/BACKEND_PLAN.md` — original schema design rationale
+- `docs/archive/BACKEND_PLAN.md` — original schema design rationale
