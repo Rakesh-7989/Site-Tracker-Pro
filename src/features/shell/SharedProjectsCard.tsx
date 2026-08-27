@@ -10,7 +10,6 @@ import { getTypedClient } from "@/lib/supabase/db";
 import {
   listSharedPartnerProjects,
   acceptProjectPartnerInvite,
-  PARTNER_SCOPE_LABEL,
   type SharedPartnerProject,
 } from "@/app/queries/partnerQueries";
 import { Card, Button, Badge, Alert } from "@/components/ui/atoms";
@@ -92,7 +91,7 @@ export function SharedProjectsCard(): JSX.Element | null {
                 <span className="font-medium text-fg-primary text-sm truncate block">{s.projectName}</span>
                 {s.hostOrgName && <span className="text-xs text-fg-tertiary">{t("partner.hostedBy", { name: s.hostOrgName })}</span>}
               </Link>
-              <Badge tone="info" className="shrink-0 capitalize">{PARTNER_SCOPE_LABEL[s.scope].split(" ")[0]}</Badge>
+              <Badge tone="info" className="shrink-0 capitalize">{t(`partner.scope${s.scope.charAt(0).toUpperCase() + s.scope.slice(1)}` as "partner.scopeViewer")}</Badge>
             </li>
           ))}
         </ul>
