@@ -1,7 +1,7 @@
 # VNext 1.0 — Master Blueprint (One Platform, Multiple Industry Modules)
 
 *Authoritative strategy doc. Status: baseline committed + deployed live (`91c46cd`, 2026-08-17).*
-*Companion: `AGENTIC_LOOPING_METHODOLOGY.md` (execution loop), `docs/END_TO_END_PLAN.md` (phase ledger).*
+*Companion: `AGENTIC_LOOPING_METHODOLOGY.md` (execution loop), `docs/planning/END_TO_END_PLAN.md` (phase ledger).*
 
 ## 1. Why this blueprint
 
@@ -73,7 +73,7 @@ suite (tsc, eslint, vitest, build, smoke, e2e-mock) and push live at phase close
 | P1.2 | `form_engine` — schema-driven field renderer (`src/components/ui/SchemaForm.tsx`) + validation; convert one checklist (inspection_checklists) | unit tests + tsc/build green |
 | P1.3 | `event_outbox` — migration (`outbox` table, `publish()` RPC, delivery worker EF or cron), wire to inboxes + notifications; replace ad-hoc broadcast call sites | unit tests + live-apply + probe row |
 | P1.4 | `spatial engine` wiring — make `SiteNavigator`/`useLocationContext` real consumers (field ops, DPR geotag, attendance); delete dead code | unit tests + live-apply |
-| P1.5 | `domain boundary map` — `docs/DOMAIN_BOUNDARY_MAP.md` + a `src/app/domainMap.ts` registry + catalog test locking module↔route↔engine parity | doc + test green |
+| P1.5 | `domain boundary map` — `docs/architecture/DOMAIN_BOUNDARY_MAP.md` + a `src/app/domainMap.ts` registry + catalog test locking module↔route↔engine parity | doc + test green |
 
 ### P2 — Industry engines (on the rails)
 | Sub | Scope |

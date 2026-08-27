@@ -8,7 +8,7 @@
 //
 // Provider implementations are SHELLS in this commit. Real Bhashini + AWS
 // wiring lands Sprint 2 mid-cycle once founder gets API access.
-// See docs/SPRINT_2_ARCHITECTURE.md for the contract.
+// See docs/architecture/SPRINT_2_ARCHITECTURE.md for the contract.
 
 // deno-lint-ignore-file no-explicit-any
 

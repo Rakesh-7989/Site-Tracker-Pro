@@ -4,7 +4,7 @@
 > Source share link: `https://chatgpt.com/share/6a846ba6-4110-83ee-9d4f-af533510eea2` ("SiteTrack Pro Overview", model gpt-5-6)
 > Full raw transcript (870 messages, 38,654 lines) extracted to:
 > `C:\Users\boyap\AppData\Local\Temp\opencode\conversation.txt` (re-extractable via `extract_conv4.mjs`).
-> This file is the ground truth for the Principal-SDE-driven plan (`docs/END_TO_END_PLAN_PRINCIPAL_SDE.md`).
+> This file is the ground truth for the Principal-SDE-driven plan (`docs/planning/END_TO_END_PLAN_PRINCIPAL_SDE.md`).
 > Do NOT delete or rewrite; add only "status notes" as new sections at the bottom.
 
 ---
@@ -180,4 +180,4 @@ Developer → Feature Branch → PR → Lint → Typecheck → Unit → Security
 ---
 
 ## Status Notes
-- **2026-08-18** — Research persisted to repo from extracted ChatGPT share (`conversation.txt`). Next: execute `docs/END_TO_END_PLAN_PRINCIPAL_SDE.md` Phase 0.
+- **2026-08-18** — Research persisted to repo from extracted ChatGPT share (`conversation.txt`). Next: execute `docs/planning/END_TO_END_PLAN_PRINCIPAL_SDE.md` Phase 0.

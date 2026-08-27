@@ -25,6 +25,6 @@ Guide the solo founder through Sprint 1 + Sprint 2 FIELD WORK that no code can d
 - `docs/archive/SITETRACK_V3_PLAN.md` — 90-day master plan
 - `docs/business/POSITIONING.md` — canonical positioning, proof points
 - `docs/business/PRICING.md` — verified Sprint 1 tiers
-- `docs/PILOT_AGREEMENT_v1.md` — pilot agreement template
+- `docs/business/PILOT_AGREEMENT_v1.md` — pilot agreement template
 - `docs/sales/` — outreach sequences, scripts, phrase bank
 - `docs/research/` — interview logs, verified gaps matrix

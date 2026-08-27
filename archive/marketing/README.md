@@ -4,7 +4,7 @@ The public landing page for **sitetrackpro.in**. Self-contained static site —
 no build step, no framework, no dependencies. Just `index.html` + inline CSS.
 
 Mirrors the HRMS frontend/backend separation pattern (see
-`docs/HRMS_DEPLOYMENT_STUDY.md`): the marketing site deploys independently
+`docs/setup/HRMS_DEPLOYMENT_STUDY.md`): the marketing site deploys independently
 from the app, so a copy change on the landing page never triggers an app
 rebuild and vice-versa.
 

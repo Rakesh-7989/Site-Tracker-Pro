@@ -1,6 +1,6 @@
 -- SiteTrack Pro — external inspectors (Session 30.13, Phase 2).
 --
--- Founder decision (docs/ROLE_ARCHITECTURE.md): Site Inspector is an
+-- Founder decision (docs/architecture/ROLE_ARCHITECTURE.md): Site Inspector is an
 -- EXTERNAL read-only role (RERA / govt 3rd-party audit), NOT a firm
 -- employee. R&D gap #4: there was no clean path to mark a user as an
 -- external auditor distinct from a firm member.
@@ -43,7 +43,7 @@ ALTER TABLE public.external_inspectors
   ));
 
 COMMENT ON TABLE public.external_inspectors IS
-  'External 3rd-party auditors (RERA / municipal / lender) who have read-only access to specific projects via project_members.role=site_inspector. One profile can inspect across multiple orgs. See docs/ROLE_ARCHITECTURE.md.';
+  'External 3rd-party auditors (RERA / municipal / lender) who have read-only access to specific projects via project_members.role=site_inspector. One profile can inspect across multiple orgs. See docs/architecture/ROLE_ARCHITECTURE.md.';
 
 CREATE INDEX IF NOT EXISTS external_inspectors_org_idx ON public.external_inspectors(org_id) WHERE revoked_at IS NULL;
 CREATE INDEX IF NOT EXISTS external_inspectors_profile_idx ON public.external_inspectors(profile_id) WHERE revoked_at IS NULL;

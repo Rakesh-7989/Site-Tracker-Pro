@@ -17,7 +17,7 @@
 // here ever fails, either the catalog regressed or the diagram changed —
 // both demand a conscious decision, not a silent drift.
 //
-// See docs/ROLE_DIAGRAM_RECONCILIATION.md for the full mapping table.
+// See docs/architecture/ROLE_DIAGRAM_RECONCILIATION.md for the full mapping table.
 
 import { describe, it, expect } from "vitest";
 import {

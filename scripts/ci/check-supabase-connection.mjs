@@ -30,7 +30,7 @@ if (!existsSync(ENV_PATH)) {
   console.error("  Copy the template and fill in your project URL + anon key:");
   console.error("    cp .env.example .env.local");
   console.error("");
-  console.error("  Then edit .env.local — see docs/CONNECT_SUPABASE.md for");
+  console.error("  Then edit .env.local — see docs/setup/CONNECT_SUPABASE.md for");
   console.error("  exactly where to find each value in the Supabase dashboard.");
   process.exit(1);
 }
@@ -164,7 +164,7 @@ printResults();
 
 const failed = results.filter(r => !r.pass).length;
 if (failed) {
-  console.error(`\n${failed} check(s) failed. See docs/CONNECT_SUPABASE.md for the fix.\n`);
+  console.error(`\n${failed} check(s) failed. See docs/setup/CONNECT_SUPABASE.md for the fix.\n`);
   process.exit(1);
 }
 console.log("\nAll checks passed. Backend is wired up. Start the dev server with: npm run dev\n");

@@ -148,7 +148,7 @@ if (signupIdx !== -1 && process.argv[signupIdx + 1]) {
       add(
         `live signup probe (${email})`,
         false,
-        `EMAIL RATE LIMIT hit — fix per docs/RESEND_SMTP_SETUP.md PART A (disable email confirm) or PART B (custom SMTP)`,
+        `EMAIL RATE LIMIT hit — fix per docs/setup/RESEND_SMTP_SETUP.md PART A (disable email confirm) or PART B (custom SMTP)`,
       );
     } else if (errorCode === "email_address_invalid") {
       add(`live signup probe (${email})`, false, `Supabase rejected the email format — try a real Gmail / firm address`);
@@ -156,7 +156,7 @@ if (signupIdx !== -1 && process.argv[signupIdx + 1]) {
       add(
         `live signup probe (${email})`,
         false,
-        `HTTP 500 "${parsed?.msg || "unknown"}" — most often = email rate limit masked. See docs/SIGNUP_EMAIL_RATELIMIT_RUNBOOK.md`,
+        `HTTP 500 "${parsed?.msg || "unknown"}" — most often = email rate limit masked. See docs/setup/SIGNUP_EMAIL_RATELIMIT_RUNBOOK.md`,
       );
     } else {
       add(`live signup probe (${email})`, false, `HTTP ${res.status} ${body.slice(0, 200)}`);
@@ -181,7 +181,7 @@ function emitAndExit() {
   if (failed > 0) {
     console.log("\n📖 Next steps:");
     console.log("  • If 'plans table' / 'anon GRANT' failed → re-run migrations 53, 54, 55");
-    console.log("  • If 'live signup probe' returned RATE LIMIT → docs/RESEND_SMTP_SETUP.md PART A unblocks today, PART B is the permanent fix");
+    console.log("  • If 'live signup probe' returned RATE LIMIT → docs/setup/RESEND_SMTP_SETUP.md PART A unblocks today, PART B is the permanent fix");
     console.log("  • If 'trigger missing' → re-apply scripts/supabase/34_signup_self_serve.sql");
     process.exit(1);
   }

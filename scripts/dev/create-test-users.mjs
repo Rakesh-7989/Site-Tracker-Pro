@@ -49,7 +49,7 @@ const rotate = args.includes("--rotate");
 // canonical role for app permissions. orgadmin in profiles maps to
 // 'admin' in org_members.
 // v2 role architecture — 9 test users covering every distinct UI surface.
-// See docs/ROLE_DIAGRAM_RECONCILIATION.md for the consolidated 22-role catalog.
+// See docs/architecture/ROLE_DIAGRAM_RECONCILIATION.md for the consolidated 22-role catalog.
 const ROSTER = [
   // Org / firm level
   { role: "superadmin",     orgRole: null,         name: "Test Superadmin",     isStaff: true,  joinOrg: false },

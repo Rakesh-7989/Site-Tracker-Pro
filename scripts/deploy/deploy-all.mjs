@@ -131,18 +131,18 @@ if (existsSync(join(root, ".github/workflows/ci.yml"))) {
   ok(".github/workflows/ci.yml present");
 } else if (ghAuthOk) {
   action("With workflow scope present, I'll run:");
-  cmd("git mv docs/CI_WORKFLOW.yml .github/workflows/ci.yml");
+  cmd("git mv docs/workflows/CI_WORKFLOW.yml .github/workflows/ci.yml");
   cmd("# update scripts/smoke.mjs to new path");
   cmd("git commit -m 'ci: enable GH Actions' && git push");
   const yes = await ask("Run that now? (y/N)");
   if (/^y/i.test(yes)) {
     try {
       execSync("mkdir -p .github/workflows", { stdio: "inherit" });
-      execSync("git mv docs/CI_WORKFLOW.yml .github/workflows/ci.yml", { stdio: "inherit" });
+      execSync("git mv docs/workflows/CI_WORKFLOW.yml .github/workflows/ci.yml", { stdio: "inherit" });
       // smoke.mjs path patch
       const smokePath = join(root, "scripts/ci/smoke.mjs");
       let smoke = readFileSync(smokePath, "utf8");
-      smoke = smoke.replaceAll("docs/CI_WORKFLOW.yml", ".github/workflows/ci.yml");
+      smoke = smoke.replaceAll("docs/workflows/CI_WORKFLOW.yml", ".github/workflows/ci.yml");
       writeFileSync(smokePath, smoke);
       execSync("git add scripts/ci/smoke.mjs", { stdio: "inherit" });
       execSync(`git commit -m "ci: enable GitHub Actions (move workflow to .github/workflows/)"`, { stdio: "inherit" });

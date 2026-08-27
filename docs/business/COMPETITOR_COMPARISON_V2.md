@@ -174,7 +174,7 @@ Verdict legend:
 | Aspect | Site-Tracker | Competitor reality | Verdict |
 | ------ | ------------ | ------------------ | ------- |
 | Mobile-responsive web | Yes | Procore: yes; Powerplay: yes; everyone yes | 🤝 |
-| Native Android app | Capacitor configured (`capacitor.config.json`), `docs/PLAY_STORE_PREP.md` runbook, but no actual `android/` folder or signed `.aab` built yet | Procore: native iOS + Android; Powerplay: native Android (their strength) | ⚠️ (claim > reality) |
+| Native Android app | Capacitor configured (`capacitor.config.json`), `docs/setup/PLAY_STORE_PREP.md` runbook, but no actual `android/` folder or signed `.aab` built yet | Procore: native iOS + Android; Powerplay: native Android (their strength) | ⚠️ (claim > reality) |
 | Native iOS app | Same — Capacitor config exists, not built | Procore: yes; Powerplay: yes | ❌ MISSED |
 | Offline-first IndexedDB | Yes, full sync queue (`offline.js`) | Procore: partial mobile; Powerplay: yes (their differentiator) | 🤝 |
 | Camera capture + photo geolocation | Yes, both implemented | Powerplay: yes; everyone yes | 🤝 |
@@ -350,8 +350,8 @@ schema, asking them to re-enter 200 line items is a guaranteed lost sale.
 - All claims about competitor features come from public docs + the
   reference repos in `temp_analysis/HRMS` and `temp_analysis/Tripgzio`
   (analysed in earlier sessions).
-- See `docs/HRMS_DEPLOYMENT_STUDY.md` for the HRMS deep-dive that
+- See `docs/setup/HRMS_DEPLOYMENT_STUDY.md` for the HRMS deep-dive that
   informed several rows.
-- See `docs/ROLE_MODEL_V2.md` for the role-tier comparison.
+- See `docs/architecture/ROLE_MODEL_V2.md` for the role-tier comparison.
 - See `docs/PROJECT_TYPES_ROADMAP.md` for the type-gate spec.
 - This doc must be updated whenever we ship any item from §17.

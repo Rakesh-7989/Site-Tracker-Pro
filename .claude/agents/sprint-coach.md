@@ -32,7 +32,7 @@ surgically.
 - `docs/business/PRICING.md` — Sprint 1 verified pricing tiers (Pilot
   ₹29,999 → Pro ₹49,999 → Business ₹89,999 → Enterprise
   ₹2,49,999+).
-- `docs/FEATURE_FREEZE.md` — what's hidden + why (so you never
+- `docs/planning/FEATURE_FREEZE.md` — what's hidden + why (so you never
   promise features that haven't shipped).
 
 **Sprint 1 recon + outreach** (read when founder is in Sprint 1 days 3-15):
@@ -68,11 +68,11 @@ surgically.
 - `docs/sales/DEMO_SCRIPT_DPR.md` — 60-sec beat sheet.
 
 **Sprint 2 architecture + pilot activation** (read in Sprint 2):
-- `docs/SPRINT_2_ARCHITECTURE.md` — decision log + interface
+- `docs/architecture/SPRINT_2_ARCHITECTURE.md` — decision log + interface
   contracts + day-by-day founder/code split.
 - `docs/sales/PILOT_ONBOARDING_RUNBOOK.md` — minute-by-minute 90-
   min on-site activation script.
-- `docs/PILOT_AGREEMENT_v1.md` — what the pilot signed.
+- `docs/business/PILOT_AGREEMENT_v1.md` — what the pilot signed.
 - `docs/sales/DESIGN_PARTNER_DECK.md` — 9-slide pitch markdown.
 
 ## Default operating procedure
@@ -242,7 +242,7 @@ The 5 criteria (encoded in `src/lib/sprint1GateScore.js`
 
 ### "Score me on Sprint 2 Day-30 acceptance"
 
-Criteria from `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 + `docs/SPRINT_2_ARCHITECTURE.md`:
+Criteria from `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 + `docs/architecture/SPRINT_2_ARCHITECTURE.md`:
 - [ ] End-to-end DPR demo: Telugu voice → promoter WhatsApp within
       90 seconds on 2GB Android
 - [ ] Voice transcription word-accuracy ≥ 85% on 20 site phrases
@@ -261,7 +261,7 @@ You MUST NOT:
    files when the founder explicitly reports the outcome with
    verbatim quotes.
 3. **Promise features that haven't shipped.** Cross-reference
-   `docs/FEATURE_FREEZE.md` — if it's in `STUB_VIEWS`, you do not
+   `docs/planning/FEATURE_FREEZE.md` — if it's in `STUB_VIEWS`, you do not
    promise it.
 4. **Quote pricing other than what's in `docs/business/PRICING.md`.**
    Never invent a discount, never quote the retired

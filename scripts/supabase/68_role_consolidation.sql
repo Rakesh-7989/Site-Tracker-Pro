@@ -111,7 +111,7 @@ ALTER TABLE public.profiles
   ));
 
 COMMENT ON COLUMN public.profiles.role IS
-  '22-role catalog (v2, consolidated June 4 2026). Identity role — what the user IS. site_supervisor→site_engineer, project_head→pm, interior_designer→design_architect_interior, civil_engineer dropped. See docs/ROLE_DIAGRAM_RECONCILIATION.md.';
+  '22-role catalog (v2, consolidated June 4 2026). Identity role — what the user IS. site_supervisor→site_engineer, project_head→pm, interior_designer→design_architect_interior, civil_engineer dropped. See docs/architecture/ROLE_DIAGRAM_RECONCILIATION.md.';
 
 -- ── 4. Tighten project_members_role_check (18 values) ──────────────────────
 ALTER TABLE public.project_members

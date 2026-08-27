@@ -5,7 +5,7 @@
 -- hijack. An attacker who creates objects in a schema earlier in the
 -- search_path can escalate privileges.
 --
--- See docs/REWRITE_BUILD_PLAN.md §2.3a for the full audit.
+-- See docs/planning/REWRITE_BUILD_PLAN.md §2.3a for the full audit.
 -- Run after 116_rls_policy_fixes.sql. Idempotent.
 
 -- ============================================================================

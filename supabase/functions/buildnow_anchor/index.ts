@@ -6,7 +6,7 @@
 //   3. Mock — for tests + Sprint 2 Day 16 demo until real access lands.
 //
 // Idempotent — same project_id on same day = single upserted snapshot row.
-// See docs/SPRINT_2_ARCHITECTURE.md for the contract.
+// See docs/architecture/SPRINT_2_ARCHITECTURE.md for the contract.
 
 // deno-lint-ignore-file no-explicit-any
 

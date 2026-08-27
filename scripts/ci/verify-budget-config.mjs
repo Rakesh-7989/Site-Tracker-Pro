@@ -127,7 +127,7 @@ const summary =
     : `🚨 ${issues.length} policy violation(s) + ${warnings.length} warning(s).`;
 console.log(`📊 ${summary}`);
 console.log("");
-console.log("📖 Policy: docs/ZERO_SPEND_POLICY.md");
+console.log("📖 Policy: docs/business/ZERO_SPEND_POLICY.md");
 
 if (issues.length || (strict && warnings.length)) process.exit(1);
 process.exit(0);

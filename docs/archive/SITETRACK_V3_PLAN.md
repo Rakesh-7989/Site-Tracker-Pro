@@ -234,11 +234,11 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 
 | Title | Files | Days |
 |-------|-------|------|
-| Feature-freeze guardrail + stub-hiding flag matrix | `docs/FEATURE_FREEZE.md`, `scripts/supabase/49_feature_flags_freeze.sql`, `src/lib/featureFlags.js`, `src/features/shell/index.jsx` | 1.5 |
+| Feature-freeze guardrail + stub-hiding flag matrix | `docs/planning/FEATURE_FREEZE.md`, `scripts/supabase/49_feature_flags_freeze.sql`, `src/lib/featureFlags.js`, `src/features/shell/index.jsx` | 1.5 |
 | Hide all 21 stubs behind staff-only flag; surface ONE workflow (WhatsApp DPR) on home shell | `src/features/views/RERAKarnatakaView.jsx`, `src/features/views/RERAMaharashtraView.jsx`, `src/features/views/VendorPortalView.jsx`, `src/features/views/GSTNEInvoiceView.jsx`, `src/features/views/DrawingDiffView.jsx`, `src/features/views/AIRecommenderView.jsx`, `src/features/shell/Nav.jsx`, `src/App.jsx` | 2 |
 | Powerplay reconnaissance script — 10 structured customer interviews (5 ex-Powerplay + 5 Hyderabad targets: My Home, Aparna, Sumadhura, Vasavi, Lansum) | `docs/research/POWERPLAY_RECON_SCRIPT.md`, `docs/research/INTERVIEW_LOG_2026-06.md`, `docs/research/VERIFIED_GAPS_MATRIX.md` | 5 |
 | Re-cut COMPETITOR_COMPARISON_V2: flip every unverified BEAT verdict to UNVERIFIED until interview evidence lands | `docs/business/COMPETITOR_COMPARISON_V2.md`, `docs/business/POSITIONING.md` | 1 |
-| Pilot pricing & exclusivity contract (INR 29,999/yr design-partner, 24-mo lock, 3-mo logo exclusivity per micro-segment) | `docs/PILOT_AGREEMENT_v1.pdf`, `docs/business/PRICING.md`, `docs/sales/DESIGN_PARTNER_DECK.pdf` | 2 |
+| Pilot pricing & exclusivity contract (INR 29,999/yr design-partner, 24-mo lock, 3-mo logo exclusivity per micro-segment) | `docs/business/PILOT_AGREEMENT_v1.pdf`, `docs/business/PRICING.md`, `docs/sales/DESIGN_PARTNER_DECK.pdf` | 2 |
 | Daily WhatsApp-DPR demo recording (60-sec Loom) + 5 in-person founder meetings booked at Banjara Hills / Gachibowli / Kondapur builder offices | `docs/sales/DEMO_SCRIPT_DPR.md`, `docs/sales/MEETING_LOG_2026-06.md`, `public/demos/whatsapp_dpr_60s.mp4` | 3 |
 
 **Success criteria**:

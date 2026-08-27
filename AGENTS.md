@@ -54,9 +54,9 @@ lint 0 errors / 500 documented-debt warnings (budget 520) · tsc clean · build 
 **Code**: `src/auth/orgType.ts` (`ORG_TYPES`, `resolveOrgType()` explicit-first → unambiguous single-segment fallback, `isDesignFirm/isExecutionFirm`) + `OrgMembership.orgType` hydrated in fetchAuthSession (+tests 7). Onboarding picker wiring = follow-up.
 
 **Docs shipped**:
-- `docs/CROSS_ORG_COLLABORATION_PLAN.md` — THE moat designed: `project_partner_orgs` + `project_partner_members` substrate, RLS OR-arm for can_read_project, partner capability allow-list (never money tables), UI surfaces, C1-C4 rollout, security invariants. NOT built yet — build contract ready.
-- `docs/ZOHO_STARTUP_STACK_PLAN.md` — Zoho = business ops around the product; activate Mail/CRM-free/Desk-free/Books-free first; signup→CRM lead via Flow webhook using the notify_config secret pattern; Cashfree stays payment rail; DPDP guardrail on what leaves Supabase.
-- `docs/ROLE_INTELLIGENCE_STUDY.md` — every firm-role mapped to EXISTING coverage (mostly ✅/🟡) with phase-tagged gaps; build discipline locked to GTM order (Developer → Architect → Interior → Contractor/Consultant).
+- `docs/architecture/CROSS_ORG_COLLABORATION_PLAN.md` — THE moat designed: `project_partner_orgs` + `project_partner_members` substrate, RLS OR-arm for can_read_project, partner capability allow-list (never money tables), UI surfaces, C1-C4 rollout, security invariants. NOT built yet — build contract ready.
+- `docs/integrations/ZOHO_STARTUP_STACK_PLAN.md` — Zoho = business ops around the product; activate Mail/CRM-free/Desk-free/Books-free first; signup→CRM lead via Flow webhook using the notify_config secret pattern; Cashfree stays payment rail; DPDP guardrail on what leaves Supabase.
+- `docs/architecture/ROLE_INTELLIGENCE_STUDY.md` — every firm-role mapped to EXISTING coverage (mostly ✅/🟡) with phase-tagged gaps; build discipline locked to GTM order (Developer → Architect → Interior → Contractor/Consultant).
 
 **Gates**: lint 0 · tsc 0 · vitest **2974** (+7 orgType) · smoke **462**.
 
@@ -243,7 +243,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 
 **CI**: `Security-definer gate` step added to ci.yml right after the column-drift gate (`npm run check:definer -- --strict`; SKIP-clean when the secret is absent). Script defaults to report-only exit 0; `--strict` fails on any non-allowlisted unpinned function.
 
-**Docs**: `docs/MODULE_AUDIT_2026-08.md` — the deep-dive's recommended "Part 3" module-by-module production-status table, VERIFIED against current code/live DB (supersedes its stale assumptions: audit immutability ✅ mig 100, cross-tenant ✅ 506/506, offline ✅ consolidated). Residual P0 queue split: agent-implementable (versioned concurrency for payments/tasks, financial-chain invariants, migration-from-empty replay) vs founder actions (restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡) vs blocked-on-decision (Capacitor foundation).
+**Docs**: `docs/architecture/MODULE_AUDIT_2026-08.md` — the deep-dive's recommended "Part 3" module-by-module production-status table, VERIFIED against current code/live DB (supersedes its stale assumptions: audit immutability ✅ mig 100, cross-tenant ✅ 506/506, offline ✅ consolidated). Residual P0 queue split: agent-implementable (versioned concurrency for payments/tasks, financial-chain invariants, migration-from-empty replay) vs founder actions (restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡) vs blocked-on-decision (Capacitor foundation).
 
 **Gates**: db:apply 227/0 · check:definer --strict green · eslint clean · smoke 462. No src/ changes (scripts/CI/docs/migration only).
 
@@ -444,7 +444,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 **Rescue**:
 - **Reverted to HEAD** (shipped versions restored from git): `src/app/crmQueries.ts`, `src/features/org/CrmView.tsx`, `tests/app/crmQueries.test.ts`, `scripts/supabase/161_crm_leads.sql`, `src/features/org/OnboardingView.tsx` (the WIP diff there was a non-functional `alert()` demo-project stub).
 - **Quarantined** (moved to `%TEMP%\opencode\stp-quarantine`, nothing deleted): RN UI files (`IntelligenceView/Dashboard`, `QuickUpdateScreen`), express mock server (`src/mocks/`, `src/app/api.ts`, broken `mock:api` script), 5 broken scripts (`extend-beta/feedback/incorporate-feedback/seed-demo-project/test-beta.mjs`), `crash-report.mjs` (`require()` inside `.mjs` — crashes on run; RN-centric; app already has Sentry), `.bak/.tmp` artifacts, error dumps.
-- **Salvaged & repaired** (pure-TS Pillar-1 logic from `docs/NEXT_PHASE_PLAN.md`): `riskQueries.ts` (+ pure `predictStockOut()`, `computeProductivity()` 5-arg form, `costForecast{projected,variance,confidence 0–1}` + `burnAccelerating` on `RiskResult`; fixed out-of-scope `burn` ref + backwards efficiency formula), `RiskSignalsCard.tsx` (confidence % display), new `intelligenceEngine.ts` / `siteUpdateModel.ts` / `intentParser.ts` (const-reassignment bugs, missing namespace imports, percent-scaling fixes), `tests/ai/engine.test.ts` wired to vitest (10 tests).
+- **Salvaged & repaired** (pure-TS Pillar-1 logic from `docs/planning/NEXT_PHASE_PLAN.md`): `riskQueries.ts` (+ pure `predictStockOut()`, `computeProductivity()` 5-arg form, `costForecast{projected,variance,confidence 0–1}` + `burnAccelerating` on `RiskResult`; fixed out-of-scope `burn` ref + backwards efficiency formula), `RiskSignalsCard.tsx` (confidence % display), new `intelligenceEngine.ts` / `siteUpdateModel.ts` / `intentParser.ts` (const-reassignment bugs, missing namespace imports, percent-scaling fixes), `tests/ai/engine.test.ts` wired to vitest (10 tests).
 
 **Migration 225 deep-dive → full rewrite** (user option (a)): the unreviewed `225_risk_signals_cron.sql` was non-functional — fictional `risk_result_tmp` table, nonexistent `issue_attributes`/`expenses.direction`/`rfis` references, invalid RLS cast (`::org_id` not a type → would fail at apply time), no scoring logic at all (built input jsonb then never used it). Rewritten as a correct SECURITY DEFINER plpgsql port of `computeRiskSignals`:
 - `project_risk_signals` table (score 0–100, level, delay_probability ≤0.9, delay_days, burn_accelerating); RLS read via `can_read_project()`; **cron-only writes** (no DML grants to authenticated).
@@ -1082,7 +1082,7 @@ Make the existing C1â€“D feature registers surface per-industry through the
 - Commit `664e674` (v4 Phase 3).
 
 ### Notes / Follow-ups
-- Module ownership per tab documented in `docs/MODULES.md` Â§3 table (three-place consistency rule: migration 155 CHECK â†” registry.ts â†” i18n).
+- Module ownership per tab documented in `docs/architecture/MODULES.md` Â§3 table (three-place consistency rule: migration 155 CHECK â†” registry.ts â†” i18n).
 - `/rabills` nav-gated-but-viewless gap **closed 2026-08-07** (commit `2febcbd`) â€” now an org-wide RA bills rollup route (see the v4 Phase 2 section note).
 
 ---
@@ -1090,7 +1090,7 @@ Make the existing C1â€“D feature registers surface per-industry through the
 ## Sprint 2 DPR â€” Real Submit Pipeline + Foundation (Complete, 2026-08-06)
 
 ### Goal
-Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agreed in `docs/SPRINT_2_ARCHITECTURE.md`: compose â†’ voice â†’ geotagged photo â†’ submit â†’ history â†’ detail â†’ retry, with offline queue, live BuildNow badge, and a shared real Meta Cloud API client. Real Bhashini/AWS transcription + BuildNow API access stay blocked on founder-provided API keys (provider-agnostic shells remain, mock adapter real).
+Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agreed in `docs/architecture/SPRINT_2_ARCHITECTURE.md`: compose â†’ voice â†’ geotagged photo â†’ submit â†’ history â†’ detail â†’ retry, with offline queue, live BuildNow badge, and a shared real Meta Cloud API client. Real Bhashini/AWS transcription + BuildNow API access stay blocked on founder-provided API keys (provider-agnostic shells remain, mock adapter real).
 
 ### Done (commits `124ac31`, `28cdf0e`, `c2f6949`)
 - **Real submit pipeline** (`124ac31`): `src/app/dprSubmit.ts` (379 ln â€” optimistic submit, photo/voice upload to storage, offline enqueue, delivery-log insert, BuildNow badge state); `src/app/dprQueries.ts` extended; `src/features/dpr/DPRDetailView.tsx` (208 ln new) + `PhotoGeotagCapture.tsx` (215 ln new, EXIF â†’ device GPS â†’ Hyderabad bbox); `src/lib/dprOfflineSync.ts` (drain/useOfflineSync); `DPRComposer.tsx` fully wired; route `/dpr/history` + catalog entry; migration **157** `scripts/supabase/157_dpr_media_bucket.sql` â€” private `dpr-media` bucket (15 MB, id=name) + 4 storage RLS policies (read/insert org-member minus client-ish roles, update org-member, delete managers+orgadmin incl. `has_project_role`), path `<org_id>/<date>/<sha256>.<ext>` using the validated `storage.foldername(name)[1] IN (user_org_ids()::text)` pattern from 145.
@@ -1104,7 +1104,7 @@ Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agree
 ### Notes / Follow-ups
 - **Phase B â€” DPR test coverage (done 2026-08-06, commit `96e30a2`)**: added `tests/dpr/digestPreview.test.ts` (pure previewDigest), `tests/dpr/efInternals.test.ts` (source-contract locks on Sprint 2 hardening: idempotent upserts `on_conflict=org_id,client_token` / `project_id,sync_date`, retry maxAttempts 3 + baseMs 1000, quota guard 402/budget-blocked, cache-first voice/binary, `message?.status` terminal cached path, auth gates), `tests/dpr/dprViews.test.ts` (exported `sortByStatus`/`sortByDate`/`STATUS_ORDER` from DPRHistoryView + `outcomeVisual`/`fmtDateTime` from DPRDetailView). Full gate: lint/tsc/build clean, smoke 233, vitest **121 files / 1539 tests** (+3/+37). Pushed `prod`; live 200 OK.
 - `VoiceConfidenceBar.tsx` was dead code (never imported) â€” **removed 2026-08-07** (see below).
-- Full status + execution log in `docs/SPRINT_2_DPR_RESEARCH.md`.
+- Full status + execution log in `docs/research/SPRINT_2_DPR_RESEARCH.md`.
 
 ---
 
@@ -1517,10 +1517,10 @@ Logged in as any org-leadership role, the sidebar showed **PM Dashboard** (/pm).
 ## QA/Testing Infrastructure Upgrade (2026-08-10)
 
 ### Goal
-Give every feature a repeatable, layered test story and automate the regression cadence (per the new `docs/QA_PLAYBOOK.md` + `docs/MANUAL_QA_GARCH.md`).
+Give every feature a repeatable, layered test story and automate the regression cadence (per the new `docs/qa/QA_PLAYBOOK.md` + `docs/qa/MANUAL_QA_GARCH.md`).
 
 ### Done (all verified)
-- **Docs** — `docs/QA_PLAYBOOK.md` (suites table, 5-tier recipe, per-feature test map, regression cadence, infra gap log) + `docs/MANUAL_QA_GARCH.md` (G-Arch 22-role manual sign-in checklist + workflow sweeps).
+- **Docs** — `docs/qa/QA_PLAYBOOK.md` (suites table, 5-tier recipe, per-feature test map, regression cadence, infra gap log) + `docs/qa/MANUAL_QA_GARCH.md` (G-Arch 22-role manual sign-in checklist + workflow sweeps).
 - **CI (`ci.yml`)** — now 3 parallel jobs on push/PR to main/prod:
   - `test` (unchanged: lint → typecheck → build → smoke → unit)
   - `e2e-mock` (new: playwright chromium + `test:e2e:mock` — the previously-unused CI-runnable role-access suite)
@@ -3079,8 +3079,8 @@ UtilizationView (org rollup + phase drill-down) with a real legend.
 - **Lead = main session agent.** Every user prompt is interpreted like a client story,
   routed to the right agent, executed via the loop. User delegates decisions.
 - **Loop** (per sub-task): Deep-Dive → Plan → Build → Verify → Commit; then phase
-  re-check → testing loop → release → push live. See `docs/AGENTIC_SDLC.md`.
-- **End-to-end plan**: `docs/END_TO_END_PLAN.md` (Track A = superadmin panel;
+  re-check → testing loop → release → push live. See `docs/planning/AGENTIC_SDLC.md`.
+- **End-to-end plan**: `docs/planning/END_TO_END_PLAN.md` (Track A = superadmin panel;
   Track B = research-gap roadmap).
 - **Research source**: `docs/research/01_CHAT_SOURCE.md` (canonical copy of the
   product-research chat — Client Approval & Revision System, 11 modules, multi-tenant,
@@ -3223,7 +3223,7 @@ users were told "check your inbox" but **no confirmation email was ever dispatch
 
 ---
 
-## Pending Work — End-to-End Plan (docs/PENDING_WORK_END_TO_END_PLAN.md, 2026-08-16)
+## Pending Work — End-to-End Plan (docs/planning/PENDING_WORK_END_TO_END_PLAN.md, 2026-08-16)
 
 ### Phase B — Signup-flow i18n parity (COMPLETE)
 `OrgRegisterView` (the self-service `/register` screen) now renders via `useT()`
@@ -3275,7 +3275,7 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 
 **Live verification**: prod CI success on `a8dcd0c` · `/v2/` → **200** (title ok) · `/v2/assets/index-*.js` → 200 · `/v2/sw.js` → 200 · main `/` → 200 untouched · prod-smoke 3/3.
 
-**Canonical note**: `C:\Users\boyap\site-tracker-v2` sibling is now a stale local backup — all v2 work continues in-repo under `v2/`. Plan doc: `docs/REDESIGN_V2_PLAN.md`.
+**Canonical note**: `C:\Users\boyap\site-tracker-v2` sibling is now a stale local backup — all v2 work continues in-repo under `v2/`. Plan doc: `docs/planning/REDESIGN_V2_PLAN.md`.
 
 ---
 

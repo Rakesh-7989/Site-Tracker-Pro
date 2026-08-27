@@ -77,7 +77,7 @@ function printAndExit() {
   const failed = results.filter(r => !r.pass).length;
   if (failed) {
     console.error(`\n${failed} check(s) not ready. Fill .env.mcp + source it, then re-run.`);
-    console.error("See docs/MCP_TOOLKIT.md for the full setup walkthrough.\n");
+    console.error("See docs/integrations/MCP_TOOLKIT.md for the full setup walkthrough.\n");
     process.exit(1);
   }
   console.log("\nAll MCP servers are configured + their tokens are present.");

@@ -18,7 +18,7 @@ ALTER TABLE public.org_members
   ADD COLUMN IF NOT EXISTS removed_at timestamptz;
 
 COMMENT ON COLUMN public.org_members.removed_at IS
-  'Soft-delete timestamp. NULL = active member. Set instead of DELETE so the membership history survives for audit. See docs/ROLE_ARCHITECTURE.md.';
+  'Soft-delete timestamp. NULL = active member. Set instead of DELETE so the membership history survives for audit. See docs/architecture/ROLE_ARCHITECTURE.md.';
 
 -- Partial index for the hot path: "active members of an org".
 CREATE INDEX IF NOT EXISTS org_members_active_idx

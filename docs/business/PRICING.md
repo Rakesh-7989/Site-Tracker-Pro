@@ -43,7 +43,7 @@ Last hypothesis: 2026-05-22 (retired below).
 
 | Plan | Annual price (per org) | Best for | Limits | Main features |
 | --- | --- | --- | --- | --- |
-| **Pilot (Design Partner)** | **INR 29,999/yr** | First 5 Hyderabad builders only | ≤ 25 users, ≤ 10 projects, 12-mo term, 24-mo lock | All of Pro, plus 90-min on-site founder activation, 3-month logo exclusivity in micro-segment, quarterly co-creation, direct WhatsApp to founder. See `docs/PILOT_AGREEMENT_v1.md`. |
+| **Pilot (Design Partner)** | **INR 29,999/yr** | First 5 Hyderabad builders only | ≤ 25 users, ≤ 10 projects, 12-mo term, 24-mo lock | All of Pro, plus 90-min on-site founder activation, 3-month logo exclusivity in micro-segment, quarterly co-creation, direct WhatsApp to founder. See `docs/business/PILOT_AGREEMENT_v1.md`. |
 | **Pro** | **INR 49,999/yr** | Hyderabad mid-size builder (5–15 active projects) | ≤ 25 users, ≤ 10 projects | WhatsApp DPR + Telugu voice (Sprint 2), BuildNow Telangana sync, project management, RA bills, drawings, client portal, audit log, email support. |
 | **Business** | **INR 89,999/yr** | Hyderabad large builder (10–50 active projects) | ≤ 60 users, unlimited projects | All of Pro, plus multi-state RERA (when shipped — Sprint 5), GSTN e-invoice (when shipped — Sprint 4), blockchain handover packet (Sprint 4), Hyderabad CSM, quarterly on-site review. |
 | **Enterprise** | **INR 2,49,999+/yr** | Pan-state / multi-org builders | Custom users, custom projects | All of Business, plus white-label promoter app, API access, on-prem audit log mirror, named sales engineer, SLA-backed support. |
@@ -117,14 +117,14 @@ The current app can be hosted for free as a static demo on Vercel, Netlify, or C
 
 Do not sell it as production multi-user SaaS until backend auth, database, storage, backend permission checks, and backups are implemented.
 
-**Sprint 1 status**: production backend (Supabase) is live, multi-tenant RLS is in place, magic-link + password auth shipped. But 16 stub views are gated to staff-only (see `docs/FEATURE_FREEZE.md`). Pricing tiers above apply only to features that are PRODUCTION-READY per that charter. Stub features have no SLO until Sprint 4 / 5 / 6 ships their real implementations.
+**Sprint 1 status**: production backend (Supabase) is live, multi-tenant RLS is in place, magic-link + password auth shipped. But 16 stub views are gated to staff-only (see `docs/planning/FEATURE_FREEZE.md`). Pricing tiers above apply only to features that are PRODUCTION-READY per that charter. Stub features have no SLO until Sprint 4 / 5 / 6 ships their real implementations.
 
 ## Sources
 
 - `docs/business/POSITIONING.md` — the canonical positioning doc.
 - `docs/archive/SITETRACK_V3_PLAN.md` §1 mistake #3 (pricing at 1/6th of anchor).
 - Workflow `wz3yologq` — Powerplay pricing verification.
-- `docs/PILOT_AGREEMENT_v1.md` — Pilot tier contract template.
+- `docs/business/PILOT_AGREEMENT_v1.md` — Pilot tier contract template.
 
 ## Old per-org per-month tiers (RETIRED — do NOT quote)
 

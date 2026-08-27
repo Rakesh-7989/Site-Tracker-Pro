@@ -32,7 +32,7 @@ const VALID_SEGMENTS = ["construction", "architecture", "interior", "consultancy
 const VALID_BILLING = ["monthly", "annual"] as const;
 // Self-service orgs start on the Pro plan with a 14-day free trial (Zoho-style
 // trial-first). The owner picks/keeps a paid plan in onboarding before the
-// trial ends (see docs/ZOHO_SIGNUP_REDESIGN_PHASE_C_PLAN.md).
+// trial ends (see docs/planning/ZOHO_SIGNUP_REDESIGN_PHASE_C_PLAN.md).
 const TRIAL_DAYS = 14;
 const TRIAL_PLAN = "pro";
 

@@ -28,7 +28,7 @@ Design and harden the production Supabase backend for SiteTrack Pro. Schema, RLS
 ## Key Docs
 - `AGENTS.md` — every phase (C0–C3, D0–D6, Phase 1, Phase 2) documents schema + verification. READ the most recent phase first.
 - `scripts/supabase/README.md` — run order + verification.
-- `docs/SYSTEM_DESIGN.md`, `docs/DATA_MODEL_ER.md` — entity relationships.
+- `docs/architecture/SYSTEM_DESIGN.md`, `docs/architecture/DATA_MODEL_ER.md` — entity relationships.
 
 ## Boundaries
 - Do not choose paid infrastructure without approval.

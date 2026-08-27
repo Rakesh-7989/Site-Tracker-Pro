@@ -451,13 +451,13 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
 
 [
   "docs/AGENTS.md",
-  "docs/WORKFLOW.md",
-  "docs/BACKLOG.md",
-  "docs/QUALITY.md",
+  "docs/workflows/WORKFLOW.md",
+  "docs/planning/BACKLOG.md",
+  "docs/qa/QUALITY.md",
   "docs/business/MARKET_ANALYSIS.md",
   "docs/business/BUSINESS_MODEL.md",
   "docs/business/PRICING.md",
-  "docs/DEPLOYMENT.md",
+  "docs/setup/DEPLOYMENT.md",
   "docs/archive/BACKEND_PLAN.md",
   ".agents/sitetrack-pro/README.md",
   ".agents/sitetrack-pro/team-lead.md",
@@ -474,12 +474,12 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   ".agents/sitetrack-pro/work-board.md",
   ".agents/sitetrack-pro/handoff-template.md",
   "vercel.json",
-  "docs/TESTING_STRATEGY.md",
-  "docs/BUG_WORKFLOW.md",
+  "docs/qa/TESTING_STRATEGY.md",
+  "docs/workflows/BUG_WORKFLOW.md",
   ".agents/sitetrack-pro/bugs.md",
   "tests/bugs/.gitkeep",
   "scripts/tests/test-ef-harness.mjs",
-  "docs/CI_WORKFLOW.yml",
+  "docs/workflows/CI_WORKFLOW.yml",
   // Tech Lead review additions (2026-05-22 evening)
   "src/auth/capabilities.ts",
   "vitest.config.js",
@@ -498,13 +498,13 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "src/lib/razorpay.ts",
   "src/lib/supabase.ts",
   "capacitor.config.json",
-  "docs/MOBILE_BUILD.md",
+  "docs/setup/MOBILE_BUILD.md",
   ".env.example",
   // Live activation
-  "docs/GOLIVE.md",
+  "docs/setup/GOLIVE.md",
   "scripts/deploy/provision.sh",
   // System design doc
-  "docs/SYSTEM_DESIGN.md",
+  "docs/architecture/SYSTEM_DESIGN.md",
   // Tech Lead Review fixes (HIGH-1, HIGH-2, MED-3, MED-4, LOW-5)
   "src/lib/escape.ts",
   "src/lib/notifications.ts",
@@ -569,15 +569,15 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "scripts/supabase/210_dpr_location.sql",
   "scripts/supabase/211_inventory_ledger.sql",
   "scripts/supabase/212_drawing_auto_supersede.sql",
-  "docs/DOMAIN_BOUNDARY_MAP.md",
-  "docs/PRODUCTION_RLS.md",
-  "docs/CASHFREE_ONBOARDING.md",
+  "docs/architecture/DOMAIN_BOUNDARY_MAP.md",
+  "docs/architecture/PRODUCTION_RLS.md",
+  "docs/setup/CASHFREE_ONBOARDING.md",
   // Session 16 — Feature-flag catalog system
   "src/lib/orgFeatureFlags.ts",
   "tests/orgFeatureFlags.test.js",
   // Session 17 — Live database connection runbook + check script
   "scripts/ci/check-supabase-connection.mjs",
-  "docs/CONNECT_SUPABASE.md",
+  "docs/setup/CONNECT_SUPABASE.md",
   // Session 18 — Activation pack (onboarding + sales assets)
   "archive/marketing/landing.html",
   "docs/business/DEMO_VIDEO_SCRIPT.md",
@@ -586,8 +586,8 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "docs/pitch/build-deck.mjs",
   "docs/pitch/SiteTrack-Pitch-Deck.pptx",
   // Session 19 — HRMS deployment study + marketing/app deploy split
-  "docs/HRMS_DEPLOYMENT_STUDY.md",
-  "docs/DEPLOY_NOW.md",
+  "docs/setup/HRMS_DEPLOYMENT_STUDY.md",
+  "docs/setup/DEPLOY_NOW.md",
   "scripts/ci/setup.mjs",
   // Session 21 — bug hunt: top-level ErrorBoundary so a single bad chunk
   // can no longer render the whole app as a white screen.
@@ -604,9 +604,9 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "tests/blockchainAnchor.test.js",
   "src/lib/reraTelangana.ts",
   "tests/reraTelangana.test.js",
-  "docs/PLAY_STORE_PREP.md",
+  "docs/setup/PLAY_STORE_PREP.md",
   // Session 23 — v2 role model implementation (Phases A-E)
-  "docs/ROLE_MODEL_V2.md",
+  "docs/architecture/ROLE_MODEL_V2.md",
   "scripts/supabase/06_project_types.sql",
   "scripts/supabase/07_role_expansion.sql",
   "src/lib/projectTypes.ts",
@@ -625,7 +625,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   ".mcp.json",
   ".env.mcp.example",
   "scripts/ci/check-mcp.mjs",
-  "docs/MCP_TOOLKIT.md",
+  "docs/integrations/MCP_TOOLKIT.md",
   ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
   ".brain/decisions/0002-foundation-libs-pure-functions.md",
   ".brain/decisions/0003-hierarchical-project-model.md",
@@ -635,7 +635,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder
-const ci = read("docs/CI_WORKFLOW.yml");
+const ci = read("docs/workflows/CI_WORKFLOW.yml");
 add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint") && !ci.includes("placeholder"));
 
 // Dead-code cleanup: these paths must NOT exist
@@ -703,7 +703,7 @@ add("Vite manual chunks configured", vite.includes("manualChunks") && vite.inclu
   );
   add(
     "Sprint 1 freeze docs present",
-    existsSync(join(root, "docs/FEATURE_FREEZE.md"))
+    existsSync(join(root, "docs/planning/FEATURE_FREEZE.md"))
       && existsSync(join(root, "docs/business/POSITIONING.md"))
       && existsSync(join(root, "docs/archive/SITETRACK_V3_PLAN.md")),
   );

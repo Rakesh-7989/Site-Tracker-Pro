@@ -7,7 +7,7 @@ the Sprint 2 unlock gate.
 
 See:
 - `docs/research/POWERPLAY_RECON_SCRIPT.md` — what to ask in the meeting
-- `docs/PILOT_AGREEMENT_v1.md` — contract template if Builder commits
+- `docs/business/PILOT_AGREEMENT_v1.md` — contract template if Builder commits
 - `docs/sales/DESIGN_PARTNER_DECK.md` — what to walk through
 - `docs/sales/DEMO_SCRIPT_DPR.md` — 60-sec Loom pre-warmup
 
@@ -54,7 +54,7 @@ Copy the block below into `notes/meeting_MNN.md` for each meeting.
 ## Pre-meeting (founder prep, ≤ 5 min)
 - [ ] Re-read `docs/business/POSITIONING.md` 5 proof points
 - [ ] Confirm pricing tiers verbatim — INR 29,999 / 49,999 / 89,999 / 2,49,999+
-- [ ] Carry printed `docs/PILOT_AGREEMENT_v1.md` (2 copies)
+- [ ] Carry printed `docs/business/PILOT_AGREEMENT_v1.md` (2 copies)
 - [ ] Phone fully charged + WhatsApp Business installed
 - [ ] If on-site: arrive 10 min early, do NOT be late
 

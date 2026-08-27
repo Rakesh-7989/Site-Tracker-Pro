@@ -24,7 +24,7 @@ ships a Claude Code subagent that operationalizes the field-work track.
   the existing agent-team pattern (team-lead, product-manager, etc).
   Mission, responsibilities, boundaries, knowledge sources, routing.
   Registered in `.agents/sitetrack-pro/README.md`.
-- `docs/SPRINT_COACH_GUIDE.md` — founder-facing usage guide. How to invoke,
+- `docs/planning/SPRINT_COACH_GUIDE.md` — founder-facing usage guide. How to invoke,
   8 common asks with sample outputs (Today emi cheyali / pre-meeting prep
   / post-interview capture / draft LinkedIn DM / Telugu translation / gate
   score / warm-intro step / Bhashini API application). Doc → action mapping
@@ -48,7 +48,7 @@ Sample log update:
 
 ### Session 30.3 — Sprint 2 Day 16 foundation (DPR + voice + BuildNow)
 
-`docs/SPRINT_2_ARCHITECTURE.md` — decision log + interface contracts +
+`docs/architecture/SPRINT_2_ARCHITECTURE.md` — decision log + interface contracts +
 day-by-day founder/code split + risks. Lays out what's buildable now vs
 what waits for customer signal.
 
@@ -147,7 +147,7 @@ Day 90. Day 1 = repo work. Day 2 = founder field prep docs.
   chain extended with `stubBlocked` + `UNIVERSAL_NAV` Set.
 
 **Day 1 — Repositioning + pricing fix + sales playbook (docs)**
-- `docs/FEATURE_FREEZE.md` — the charter. Why 16 views are gated,
+- `docs/planning/FEATURE_FREEZE.md` — the charter. Why 16 views are gated,
   who counts as staff, un-freeze procedure (both JS and SQL flip in
   same commit), Day 90 fewer-than-3 target.
 - `docs/business/POSITIONING.md` — canonical positioning. One-line pitch
@@ -159,7 +159,7 @@ Day 90. Day 1 = repo work. Day 2 = founder field prep docs.
   New annual per-org tiers: Pilot INR 29,999 (first 5 only) → Pro
   INR 49,999 (-30% vs Powerplay) → Business INR 89,999 (-25%) →
   Enterprise INR 2,49,999+. Old tiers preserved at bottom for audit.
-- `docs/PILOT_AGREEMENT_v1.md` — 10-section design-partner contract.
+- `docs/business/PILOT_AGREEMENT_v1.md` — 10-section design-partner contract.
   Pilot tier INR 29,999/yr + 18% GST, 24-month lock, 3-month micro-
   segment exclusivity, 90-min founder on-site activation, data
   ownership + portability, SLOs only for production-ready features.
@@ -307,11 +307,11 @@ code-buildable gap that didn't require a vendor account / dashboard click.
   `case "vendor-dashboard"` added in App.jsx.
 
 **Stale doc updates**:
-- `docs/ROLE_MODEL_V2.md` header flipped from "specification deferred" → "✅ IMPLEMENTED".
+- `docs/architecture/ROLE_MODEL_V2.md` header flipped from "specification deferred" → "✅ IMPLEMENTED".
 - `docs/business/COMPETITOR_COMPARISON_V2.md` flipped 8 ❌ MISSED rows to ✅ CLOSED
   (BOQ import, drawing-diff, GSTN, KA/MH RERA, AI recommender, Solidity
   contract, PDF audit, bulk user CSV).
-- `docs/ARCHITECTURE.md` Sentry "Planned Phase 2" → "✅ Shipped Session 27.4".
+- `docs/architecture/ARCHITECTURE.md` Sentry "Planned Phase 2" → "✅ Shipped Session 27.4".
 
 Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint errors.
 
@@ -330,7 +330,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - **gh CLI installed** via winget — enables `gh auth login --scopes workflow,repo` for future CI enablement.
 
 ### Session 27.2 — GitHub Actions CI (attempted)
-- Identified that pushing `.github/workflows/*` requires a PAT with the `workflow` OAuth scope, which the current token lacks. The CI YAML continues to live at `docs/CI_WORKFLOW.yml` until the token is upgraded OR the workflow is pasted via the GitHub web UI.
+- Identified that pushing `.github/workflows/*` requires a PAT with the `workflow` OAuth scope, which the current token lacks. The CI YAML continues to live at `docs/workflows/CI_WORKFLOW.yml` until the token is upgraded OR the workflow is pasted via the GitHub web UI.
 
 ### Session 27.1 — 4 SQL bugs in phase 2 migrations
 - **`24_feature_flags.sql:21`** — referenced non-existent `admin_users` table. Retargeted FK to `profiles(id)`.
@@ -339,15 +339,15 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - **`23_branding.sql:23`** — `UNIQUE (org_id, project_id)` with nullable column allows duplicate org-defaults. Split into 2 partial UNIQUE INDEXes.
 
 ### Session 27 — Architecture + ER + 20 phase-2 migrations
-- **`docs/ARCHITECTURE.md` (1,100 lines)** — master technical reference (System / App / Product / Mobile / End-to-End layers).
-- **`docs/DATA_MODEL_ER.md` (1,143 lines)** — two-plane data model with `organizations.id` bridge + cross-plane audit spine.
+- **`docs/architecture/ARCHITECTURE.md` (1,100 lines)** — master technical reference (System / App / Product / Mobile / End-to-End layers).
+- **`docs/architecture/DATA_MODEL_ER.md` (1,143 lines)** — two-plane data model with `organizations.id` bridge + cross-plane audit spine.
 - **`docs/architecture/er-{overview,saas,tenant}.{mmd,png}`** — 3 Mermaid ER diagrams rendered to PNG.
 - **20 phase-2 migrations** (`09-28`) covering hierarchy / measurement_book / material_prices / delegations / daily_snapshots / compliance / forecast / process tables / handover tables / checklists / comms / workforce / field_ops / estimate / branding / feature_flags / billing_telemetry / share_tokens + RPC / audit_anchors + view / plans + 4 seeded plans. Each idempotent, RLS-enabled, indexed, with sanity `raise notice`.
 - **`29_phase2_tests.sql`** — assertion harness for every expected table + RLS-enabled flag + immutability check on 5 append-only tables.
 - **`eslint.config.js`** extended to Node-glob `docs/**/*.mjs`.
 
 ### Session 26 — 90-day day-by-day execution plan
-- **`docs/EXECUTION_PLAN_90_DAYS.md` (850 lines)** — Pre-flight + 5-phase plan covering Day-3 to Day 90. Risk register, ₹85k budget, KPI checkpoints, Path A vs B decision tree.
+- **`docs/planning/EXECUTION_PLAN_90_DAYS.md` (850 lines)** — Pre-flight + 5-phase plan covering Day-3 to Day 90. Risk register, ₹85k budget, KPI checkpoints, Path A vs B decision tree.
 
 ### Session 24 — Adversarial review + 7 real bugs caught + audit gaps
 - **CRITICAL bug — wrong Polygon function selector.** `blockchainAnchor.polygonAdapter` hard-coded selector `0xf73e54d4` for `anchor(bytes32)` — verified via real `keccak256` and it was wrong. Correct value is `0xeecdf927`. Any anchoring against a deployed contract would have called a function that doesn't exist (gas wasted, no event emitted). Fixed + added `opts.selector` override for callers whose contract uses a different function name. Tests updated.
@@ -364,13 +364,13 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - **12 new roles** in PERMS (`project_admin`, `prospector`, `project_head`, `mep_consultant`, `site_engineer`, `civil_engineer`, `site_inspector`, `interior_designer`, `design_architect_interior`, `designer`, `consultant`, `sub_contractor`) + SQL migration `07_role_expansion.sql`. Role groupings exported. +9 PERMS tests (54 total).
 - **`src/lib/projectTypes.js`** — TYPE_TABS / TYPE_TEAM_TEMPLATES / TYPE_BOQ_PRESETS + 3-layer gate composer. DetailView now applies role + flag + type gates together. 29 tests.
 - **`src/lib/contractors.js`** — sub-contractor CRUD, vendor links (idempotent), past-contract archive, reputation score. 22 tests.
-- **`docs/ROLE_MODEL_V2.md`** — full spec captured from the hand-drawn architecture sheet.
+- **`docs/architecture/ROLE_MODEL_V2.md`** — full spec captured from the hand-drawn architecture sheet.
 
 ### Session 22 — Major changes pack
 - Cashfree Edge Functions (subscription + webhook) — real UPI AutoPay billing ready to deploy.
 - `src/lib/blockchainAnchor.js` (33 tests) — Polygon-ready audit anchoring; unique vs every Indian competitor.
 - AI Insights v2 — Telugu / Hindi narrative via LANG_INSTRUCTIONS table.
-- `docs/PLAY_STORE_PREP.md` — 8-phase Android submission runbook.
+- `docs/setup/PLAY_STORE_PREP.md` — 8-phase Android submission runbook.
 - `src/lib/reraTelangana.js` (26 tests) — TG RERA filing scaffold with mock + real adapters.
 
 ### Session 21 — Bug hunt before major changes
@@ -382,7 +382,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - Added top-level `ErrorBoundary` so a single broken chunk can never blank the page again.
 
 ### Sessions 17-20 — Production gate + onboarding + MCP toolkit
-- `docs/CONNECT_SUPABASE.md` + `npm run check:supabase` 9-step readiness check.
+- `docs/setup/CONNECT_SUPABASE.md` + `npm run check:supabase` 9-step readiness check.
 - Live "DB Live / Local mode" pill in topbar with 30s re-probe.
 - Org Admin onboarding wizard (5 steps, auto-redirects first-time orgadmins).
 - Public landing page (`archive/marketing/landing.html` + `archive/marketing/index.html` self-contained deploy).
@@ -391,7 +391,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - Case study template + WhatsApp Business 8-week verification runbook.
 - HRMS deployment study (actual repo analysis) + DEPLOY_NOW.md unified runbook.
 - `scripts/ci/setup.mjs` (`npm run setup`) — HRMS-style bootstrap.
-- MCP toolkit: `.mcp.json`, `.env.mcp.example`, `npm run check:mcp`, `docs/MCP_TOOLKIT.md`.
+- MCP toolkit: `.mcp.json`, `.env.mcp.example`, `npm run check:mcp`, `docs/integrations/MCP_TOOLKIT.md`.
 
 ### Sessions 13-16 — Org Admin tier + Cashfree + 37-feature toggle catalog
 - `orgadmin` role with 9 Org Admin panels.
@@ -418,7 +418,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - **Impersonation** ("View as" button in Users tab → super admin assumes target user's role and view, persistent yellow banner with "Stop & return to admin").
 - **`UsageAdminView`** (Admin → Usage Analytics): DAU/WAU/MAU + feature adoption bars + per-org engagement health with traffic-light dots.
 - **`SupportAdminView`** (Admin → Support Inbox): cross-tenant ticket inbox with reply UI, status (open/replied/closed). 4 seeded mock tickets from sample orgs.
-- **`docs/GOLIVE.md`**: 30-minute step-by-step runbook (Supabase provisioning → schema → env vars → Vercel deploy → smoke → first customer invite). Cost projection for first 12 months.
+- **`docs/setup/GOLIVE.md`**: 30-minute step-by-step runbook (Supabase provisioning → schema → env vars → Vercel deploy → smoke → first customer invite). Cost projection for first 12 months.
 - **`scripts/deploy/provision.sh`**: one-shot local bootstrap (tooling check, deps, `.env.local` wizard, optional SDK install, full test pipeline).
 - **`@supabase/supabase-js`** added as a regular dependency so the dynamic import resolves at build time (still lazy-loaded at runtime via `BACKEND_MODE` gate).
 
@@ -448,7 +448,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - **Offline-first IndexedDB layer + sync queue** (gap #4): New `src/lib/offline.js` with IDB blob store, sync queue, online/offline event listener. Top bar shows offline pill + pending-op count. Site update writes queue ops when offline. Closes Onsite/Powerplay gap (Phase 1).
 - **AI Insights LLM upgrade** (gap #10): New `src/lib/ai.js` with deterministic risk-score engine + Claude/OpenAI integration. Settings panel inside AI tab to paste API key (stays in browser). Editorial narrative summary on demand. Closes Procore Agent Builder direction.
 - **Razorpay UPI payment** (gap #6): New `src/lib/razorpay.js` with UPI deep-link builder + Payment Link request payload. Architect configures UPI ID once → every invoice gets a "Pay via UPI" button for clients. Closes Buildertrend/Houzz Pro payment loop.
-- **Capacitor native mobile scaffold** (gap #3): `capacitor.config.json` + comprehensive `docs/MOBILE_BUILD.md` with plugin list, app-store flow, known gotchas. Build to iOS/Android with one `npx cap sync`.
+- **Capacitor native mobile scaffold** (gap #3): `capacitor.config.json` + comprehensive `docs/setup/MOBILE_BUILD.md` with plugin list, app-store flow, known gotchas. Build to iOS/Android with one `npx cap sync`.
 - **Supabase persistence switch** (gap #1 prep): `src/lib/supabase.js` with `BACKEND_MODE` env flag, dynamic SDK import (no bundle bloat in demo), table mapping for all `INIT_*` keys. `.env.example` documents activation.
 - **ESLint flat config (ESLint 9)** + **Prettier** with `npm run lint`, `lint:fix`, `format`, `format:check` scripts. `npm test` now runs lint first. CI workflow upgraded from placeholder to real lint step.
 - **`scripts/supabase/04_rls_tests.sql`** — 18-assertion RLS verification matrix across 4 roles (Architect/PM/Contractor/Client) covering project visibility, drawing released_to rules, financial table isolation, PII access, and write blocking for clients. Tech Lead gate #2 closed.
@@ -458,8 +458,8 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 - BOQ tab (Bill of Quantities) with code, description, category, unit, qty, rate; category totals + grand total. Architect/PM edit, Client read-only, Contractor hidden.
 - Stock Ledger tab with inward/outward/return/wastage transactions; material-wise balance summary; balance turns red when negative. Architect/PM/Contractor edit, Client hidden.
 - Photo metadata capture (date/time + opt-in GPS) on site update photos. Geolocation behind a "Tag photos with site location" toggle — no surprise permission popups.
-- `CHANGELOG.md` (this file), `docs/archive/BACKEND_PLAN.md`, `docs/CI_WORKFLOW.yml`, `docs/CI_SETUP.md`.
-- GitHub Actions CI workflow as a docs/ template (manual move documented in `docs/CI_SETUP.md` once a `workflow`-scoped token is available).
+- `CHANGELOG.md` (this file), `docs/archive/BACKEND_PLAN.md`, `docs/workflows/CI_WORKFLOW.yml`, `docs/setup/CI_SETUP.md`.
+- GitHub Actions CI workflow as a docs/ template (manual move documented in `docs/setup/CI_SETUP.md` once a `workflow`-scoped token is available).
 - Vitest scaffold + 24 unit tests covering PERMS shape, role boundaries, project visibility, view routing, drawing release logic.
 
 ### Changed
@@ -483,7 +483,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 
 ### Known Issues
 - App.jsx remains ~2,200 lines. Refactor into `src/components/`, `src/views/`, `src/data/` queued in BACKLOG.
-- CI workflow is in `docs/CI_WORKFLOW.yml`, not yet `.github/workflows/ci.yml` (PAT scope issue documented in `docs/CI_SETUP.md`).
+- CI workflow is in `docs/workflows/CI_WORKFLOW.yml`, not yet `.github/workflows/ci.yml` (PAT scope issue documented in `docs/setup/CI_SETUP.md`).
 - Supabase migrations have not been run on any real project. `BACKEND_PLAN.md` Phase B1 starts when Tech Lead provisions a dev project.
 - No e2e/integration tests yet; Vitest only covers pure permission helpers.
 

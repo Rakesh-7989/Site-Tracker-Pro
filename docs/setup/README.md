@@ -2,7 +2,7 @@
 
 The founder runs through these walkthroughs ONCE to wire SiteTrack Pro
 to its third-party services. Every step honours the zero-spend policy
-(`docs/ZERO_SPEND_POLICY.md`) — paid surfaces are flagged + alternatives
+(`docs/business/ZERO_SPEND_POLICY.md`) — paid surfaces are flagged + alternatives
 documented.
 
 ## Order of operations
@@ -51,7 +51,7 @@ These services are intentionally skipped during the zero-spend window:
 
 ## When in doubt
 
-`docs/ZERO_SPEND_POLICY.md` is the authoritative source. If you discover
+`docs/business/ZERO_SPEND_POLICY.md` is the authoritative source. If you discover
 a new third-party dependency, add it to the provider catalog in BOTH
 `src/lib/budgetMode.js` AND `supabase/functions/_shared/budget.ts` — the
 test suite enforces parity.

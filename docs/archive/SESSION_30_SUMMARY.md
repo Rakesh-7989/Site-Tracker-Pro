@@ -20,7 +20,7 @@ sessions 30 → 30.4. Founder reference card — keep open while running Sprint
 | Marketing-site falsified claims | 11 | **0** |
 | Sprint 1 task list | 73 tasks | **88 tasks** — all completed except founder field-work in Days 3-15 |
 | Production URL | `sitetrackpro.in` | Same, with **VITE_STAFF_EMAILS configured** + freeze gate live |
-| Stub views hidden from non-staff | 0 | **16** — see `docs/FEATURE_FREEZE.md` |
+| Stub views hidden from non-staff | 0 | **16** — see `docs/planning/FEATURE_FREEZE.md` |
 | Pricing tiers | ₹999/2,999/7,999 monthly (falsified anchor) | **₹29,999/49,999/89,999/2,49,999+ annual per-org** — verified vs Powerplay |
 | Demo Hyderabad Builder org seeded in prod | No | **Yes** (`8eaaa1e7-c4e1-463c-9812-f5e48f5c1587`) |
 | Sprint Coach agent for founder field work | No | **Yes** — `.claude/agents/sprint-coach.md` |
@@ -162,10 +162,10 @@ Multi-phase orchestrated workflow:
 
 | File | What |
 |------|------|
-| `docs/FEATURE_FREEZE.md` | The charter — 16 frozen views with reasons + un-freeze procedure + founder rule of thumb |
+| `docs/planning/FEATURE_FREEZE.md` | The charter — 16 frozen views with reasons + un-freeze procedure + founder rule of thumb |
 | `docs/business/POSITIONING.md` | Canonical positioning — 5 proof points + 8 forbidden claims + ICP + WTP rules + corrected pricing comparison vs Powerplay |
 | `docs/business/PRICING.md` | **REPRICED**. Pilot ₹29,999/yr (first 5) → Pro ₹49,999/yr (−30% vs Powerplay) → Business ₹89,999/yr (−25%) → Enterprise ₹2,49,999+/yr. Old monthly tiers retired |
-| `docs/PILOT_AGREEMENT_v1.md` | 10-section design-partner contract template, 24-mo lock, 3-mo logo exclusivity, founder co-signature ready |
+| `docs/business/PILOT_AGREEMENT_v1.md` | 10-section design-partner contract template, 24-mo lock, 3-mo logo exclusivity, founder co-signature ready |
 | `docs/business/COMPETITOR_COMPARISON_V2.md` | Prepended freeze notice — all unverified BEAT verdicts downgraded to UNVERIFIED |
 | `docs/research/POWERPLAY_RECON_SCRIPT.md` | 10-interview script — Group A (5 ex-Powerplay) + Group B (5 named Hyderabad targets + 8 stretch alternates) |
 | `docs/research/INTERVIEW_LOG_2026-06.md` | Log table + per-interview capture template + Sprint 1→2 unlock gate |
@@ -228,7 +228,7 @@ Multi-phase orchestrated workflow:
 
 | File | What |
 |------|------|
-| `docs/SPRINT_2_ARCHITECTURE.md` | Decision log + interface contracts + day-by-day founder/code split + risks. Lays out what's buildable now vs what waits for customer signal |
+| `docs/architecture/SPRINT_2_ARCHITECTURE.md` | Decision log + interface contracts + day-by-day founder/code split + risks. Lays out what's buildable now vs what waits for customer signal |
 
 ### 3 SQL migrations (applied to prod)
 
@@ -294,7 +294,7 @@ Multi-phase orchestrated workflow:
 | `.claude/agents/sprint-coach.md` | Claude Code subagent definition. Frontmatter (name, description, tools, model) + system prompt + 7 pre-baked playbooks + hard boundaries |
 | `.agents/sitetrack-pro/founder-sprint-coach.md` | Team charter following existing agent-team pattern (153 lines) |
 | `.agents/sitetrack-pro/README.md` | Updated agent team table with 12th row: Founder Sprint Coach |
-| `docs/SPRINT_COACH_GUIDE.md` | Founder-facing usage guide (430 lines). How to invoke + 8 common asks with sample outputs + doc → action mapping + sample week-1 conversation flow |
+| `docs/planning/SPRINT_COACH_GUIDE.md` | Founder-facing usage guide (430 lines). How to invoke + 8 common asks with sample outputs + doc → action mapping + sample week-1 conversation flow |
 
 ### What the Sprint Coach can do (founder asks)
 
@@ -428,7 +428,7 @@ The coach reads docs + updates logs + drafts messages + scores progress. The coa
 4. Coach gives you 3 concrete actions with time budgets, citing the relevant playbook section per action.
 5. Execute. Report back to coach after each one so logs stay current.
 
-If you're not in Claude Code, open `docs/SPRINT_COACH_GUIDE.md` and follow the doc → coach action mapping table manually.
+If you're not in Claude Code, open `docs/planning/SPRINT_COACH_GUIDE.md` and follow the doc → coach action mapping table manually.
 
 ---
 

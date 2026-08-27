@@ -304,9 +304,9 @@ real for marketing-heavy senders.
 
 ## Related runbooks
 
-- `docs/CONNECT_SUPABASE.md` — database + Edge Function deployment
-- `docs/CASHFREE_ONBOARDING.md` — subscription billing (uses the same Edge Function pattern)
-- `docs/PRODUCTION_RLS.md` — RLS gate before any customer onboarding
+- `docs/setup/CONNECT_SUPABASE.md` — database + Edge Function deployment
+- `docs/setup/CASHFREE_ONBOARDING.md` — subscription billing (uses the same Edge Function pattern)
+- `docs/architecture/PRODUCTION_RLS.md` — RLS gate before any customer onboarding
 
 ---
 

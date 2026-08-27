@@ -2,7 +2,7 @@
 //
 // Pure function that takes a project + yesterday's DPR data + budget + open
 // issues and returns the payload ready for the WhatsApp Cloud API send.
-// Mirrors the 4 stat lines from docs/POSITIONING.md proof point #2:
+// Mirrors the 4 stat lines from docs/business/POSITIONING.md proof point #2:
 //
 //   • Cost-to-date vs budget
 //   • Schedule variance (planned-vs-actual milestones)

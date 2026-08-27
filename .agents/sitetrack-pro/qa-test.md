@@ -8,7 +8,7 @@ report it. Every bug goes to `bugs.md` → Team Lead → specialist → fix → 
 
 ## How SiteTrack Is Tested
 
-Read `docs/TESTING_STRATEGY.md` for full R&D. Here is the cheat sheet:
+Read `docs/qa/TESTING_STRATEGY.md` for full R&D. Here is the cheat sheet:
 
 ### Layer-Specific Testing Knowledge
 
@@ -110,7 +110,7 @@ When you detect a bug (during testing, code review, or CI failure):
 
 ## Permissions Matrix Reference
 
-Default role matrix from `docs/QUALITY.md`. Run `tests/permissions.test.js`
+Default role matrix from `docs/qa/QUALITY.md`. Run `tests/permissions.test.js`
 after every role-impacting change to verify:
 
 | Capability | Architect | PM | Contractor | Client |

@@ -1,6 +1,6 @@
 -- Sprint 2/3 foundation (Session 30.9) — promoter daily WhatsApp digest.
 --
--- Per docs/POSITIONING.md proof point #2: "BuildNow Telangana + 7am
+-- Per docs/business/POSITIONING.md proof point #2: "BuildNow Telangana + 7am
 -- WhatsApp digest. You don't log in. Ever." This table tracks which
 -- (org, project, promoter_phone) triplets are subscribed to the daily
 -- digest, what timezone they prefer, and what the last sent digest

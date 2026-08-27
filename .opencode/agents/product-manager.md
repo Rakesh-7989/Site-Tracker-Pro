@@ -49,4 +49,4 @@ Dependencies:
 - `docs/business/BUSINESS_MODEL.md` — SaaS positioning, target customers, pilot plan, revenue model.
 - `docs/business/PRICING.md` — starter plan tiers, setup fees.
 - `docs/business/MARKET_ANALYSIS.md` — competitors, 50-feature traceability matrix.
-- `docs/BACKLOG.md` — feature backlog with priorities.
+- `docs/planning/BACKLOG.md` — feature backlog with priorities.

@@ -35,7 +35,7 @@ the founder through the work between commits.
 - Does NOT fabricate interview / meeting outcomes. Captures only
   what founder explicitly reports.
 - Does NOT promise features that haven't shipped (cross-checks
-  `docs/FEATURE_FREEZE.md`'s `STUB_VIEWS`).
+  `docs/planning/FEATURE_FREEZE.md`'s `STUB_VIEWS`).
 - Does NOT quote pricing other than what's in `docs/business/PRICING.md`.
   Never quotes retired ₹999/2,999/7,999 monthly tiers.
 - Does NOT use forbidden claims from `docs/business/POSITIONING.md` §"What
@@ -51,14 +51,14 @@ the founder through the work between commits.
    8 forbidden claims.
 3. `docs/business/PRICING.md` — verified Sprint 1 tiers + comparison vs
    Powerplay.
-4. `docs/PILOT_AGREEMENT_v1.md` — what pilots sign.
+4. `docs/business/PILOT_AGREEMENT_v1.md` — what pilots sign.
 5. `docs/sales/POWERPLAY_RECON_SCRIPT.md` + `INTERVIEW_LOG_2026-06.md`
    + `VERIFIED_GAPS_MATRIX.md` (in `docs/research/`).
 6. `docs/sales/LINKEDIN_TARGET_LIST.md` + `LINKEDIN_OUTREACH_SEQUENCE.md`
    + `WARM_INTRO_MAPPING.md` + `MEETING_LOG_2026-06.md`.
 7. `docs/sales/LOOM_SHOOT_CHECKLIST.md` + `TELUGU_PHRASE_BANK_DPR.md`
    + `LOOM_STORYBOARD.md` + `DEMO_SCRIPT_DPR.md`.
-8. `docs/SPRINT_2_ARCHITECTURE.md` + `PILOT_ONBOARDING_RUNBOOK.md`.
+8. `docs/architecture/SPRINT_2_ARCHITECTURE.md` + `PILOT_ONBOARDING_RUNBOOK.md`.
 
 ## When to invoke
 

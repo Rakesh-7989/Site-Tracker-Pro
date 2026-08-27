@@ -11,7 +11,7 @@
 --      same commit.
 -- Don't delete rows — keep the history.
 --
--- See docs/FEATURE_FREEZE.md for the policy.
+-- See docs/planning/FEATURE_FREEZE.md for the policy.
 
 BEGIN;
 

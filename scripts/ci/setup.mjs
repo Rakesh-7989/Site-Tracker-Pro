@@ -2,7 +2,7 @@
 // SiteTrack Pro — interactive setup bootstrap.
 //
 // Adapted from the HRMS `backend/scripts/setup.js` pattern (see
-// docs/HRMS_DEPLOYMENT_STUDY.md), but targeted at SiteTrack's Supabase
+// docs/setup/HRMS_DEPLOYMENT_STUDY.md), but targeted at SiteTrack's Supabase
 // stack instead of a self-hosted Express + AWS RDS server.
 //
 // Run:  npm run setup
@@ -79,7 +79,7 @@ if (existsSync(envLocal)) {
   console.log(`    ${C.cyan}VITE_BACKEND=supabase${C.reset}`);
   console.log(`    ${C.cyan}VITE_SUPABASE_URL=https://<your-project>.supabase.co${C.reset}`);
   console.log(`    ${C.cyan}VITE_SUPABASE_ANON_KEY=<your anon public key>${C.reset}`);
-  console.log(`\n  ${C.dim}See docs/CONNECT_SUPABASE.md for where to find each value.${C.reset}`);
+  console.log(`\n  ${C.dim}See docs/setup/CONNECT_SUPABASE.md for where to find each value.${C.reset}`);
   console.log(`  ${C.dim}Leave it as VITE_BACKEND=local to keep the localStorage demo.${C.reset}\n`);
   await ask(`  Press ENTER when you've finished editing .env.local (or to skip)… `);
 } else {
@@ -98,7 +98,7 @@ if (/VITE_BACKEND\s*=\s*supabase/.test(raw)) {
   }
 } else {
   ok("Running in localStorage demo mode — no backend connection needed.");
-  console.log(`  ${C.dim}To connect a real database later, follow docs/CONNECT_SUPABASE.md.${C.reset}`);
+  console.log(`  ${C.dim}To connect a real database later, follow docs/setup/CONNECT_SUPABASE.md.${C.reset}`);
 }
 
 // ── 5. Next steps ─────────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ console.log(`
     npm test                 ${C.dim}# lint + build + smoke + unit tests${C.reset}
     npm run check:supabase   ${C.dim}# verify the database connection${C.reset}
 
-  ${C.bold}Deploy (see docs/DEPLOY_NOW.md)${C.reset}
+  ${C.bold}Deploy (see docs/setup/DEPLOY_NOW.md)${C.reset}
     Marketing site → sitetrackpro.in       ${C.dim}# cd marketing && vercel --prod${C.reset}
     App            → sitetrackpro.in   ${C.dim}# vercel --prod (from repo root)${C.reset}
 

@@ -45,6 +45,6 @@ node_modules. They MUST stay in sync — when one changes, change both.
 
 ## Related runbooks
 
-- `docs/CASHFREE_ONBOARDING.md` — end-to-end Cashfree setup
-- `docs/CONNECT_SUPABASE.md` — database + schema first
-- `docs/MCP_TOOLKIT.md` — Supabase MCP can deploy/inspect functions
+- `docs/setup/CASHFREE_ONBOARDING.md` — end-to-end Cashfree setup
+- `docs/setup/CONNECT_SUPABASE.md` — database + schema first
+- `docs/integrations/MCP_TOOLKIT.md` — Supabase MCP can deploy/inspect functions

@@ -18,7 +18,7 @@
 //      identifier mentioned in the map that no longer exists in the app's
 //      capability catalog is a FAIL (stale comment / renamed capability).
 //
-// The matrix is emitted to docs/RLS_COVERAGE.md (auto-generated, committed) so
+// The matrix is emitted to docs/architecture/RLS_COVERAGE.md (auto-generated, committed) so
 // PRs can see the live posture at a glance. Exit 0 on green, 1 on any fail.
 //
 // EXIT CODES

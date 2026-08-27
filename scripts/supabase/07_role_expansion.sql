@@ -3,7 +3,7 @@
 -- Idempotent — safe to re-run.
 --
 -- Extends the profiles.role check constraint to include the 12 new v2 roles
--- per docs/ROLE_MODEL_V2.md. v1 roles continue to work — strict superset.
+-- per docs/architecture/ROLE_MODEL_V2.md. v1 roles continue to work — strict superset.
 
 -- ============================================================================
 -- 1. Drop + recreate the role check constraint

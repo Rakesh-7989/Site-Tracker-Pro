@@ -95,7 +95,7 @@ try {
   if (res.status === 200) {
     out.push({ ok: true, msg: `Signup probe (${probeEmail}) — HTTP 200, signup accepted. user.id=${parsed?.user?.id}, session=${parsed?.session ? "yes" : "no (email confirm required)"}` });
   } else if (res.status === 429 || code === "over_email_send_rate_limit") {
-    out.push({ ok: false, msg: `🚨 EMAIL RATE LIMIT — Supabase shared SMTP is throttled (~3/hour, ~30/day). This is the most common cause of "no email arriving". Fix: configure Resend SMTP (docs/RESEND_SMTP_SETUP.md).` });
+    out.push({ ok: false, msg: `🚨 EMAIL RATE LIMIT — Supabase shared SMTP is throttled (~3/hour, ~30/day). This is the most common cause of "no email arriving". Fix: configure Resend SMTP (docs/setup/RESEND_SMTP_SETUP.md).` });
   } else {
     out.push({ ok: false, msg: `Signup probe HTTP ${res.status} ${code || ""} ${text.slice(0, 200)}` });
   }
@@ -121,4 +121,4 @@ console.log("  | confirmation_sent_at NULL  | Email confirm DISABLED         | R
 console.log("  | has_token = false           | Token not generated            | Check Auth → Email Templates → Confirm Signup includes {{.Token}} |");
 console.log("  | RATE LIMIT error            | Supabase shared SMTP throttled | docs/setup/ (Resend SMTP) |");
 console.log("");
-console.log("📖 Setup walkthrough: docs/RESEND_SMTP_SETUP.md");
+console.log("📖 Setup walkthrough: docs/setup/RESEND_SMTP_SETUP.md");

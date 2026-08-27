@@ -7,7 +7,7 @@
 #   3. Asks for your Supabase URL + anon key + writes .env.local.
 #   4. Optionally installs @supabase/supabase-js.
 #   5. Runs `npm test` (lint + build + smoke + vitest).
-#   6. Prints the next-step checklist from docs/GOLIVE.md.
+#   6. Prints the next-step checklist from docs/setup/GOLIVE.md.
 #
 # Usage:
 #   bash scripts/provision.sh
@@ -86,7 +86,7 @@ cat <<EOF
   $(dim "App opens at http://localhost:5173")
 
   $(dim "─── To deploy to Vercel:")
-  See docs/GOLIVE.md (30-minute checklist).
+  See docs/setup/GOLIVE.md (30-minute checklist).
 
   $(dim "─── To run Supabase schema:")
   Open https://supabase.com → SQL Editor

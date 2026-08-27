@@ -77,7 +77,7 @@ Corrected anchors below.
   per-org annual numbers, because that's what Powerplay actually
   charges.
 - The INR 29,999/yr pilot price requires 24-month commit + co-creation
-  agreement (see `docs/PILOT_AGREEMENT_v1.md`). It is not a public
+  agreement (see `docs/business/PILOT_AGREEMENT_v1.md`). It is not a public
   discount.
 
 ## The five proof points (Sprint 1 messaging)

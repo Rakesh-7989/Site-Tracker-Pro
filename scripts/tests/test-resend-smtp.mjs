@@ -17,7 +17,7 @@
 //   0 = success (you'll see message_id; check the recipient inbox)
 //   1 = misconfiguration or Resend API rejected the request
 //
-// Why this script exists: in docs/RESEND_SMTP_SETUP.md the founder pastes
+// Why this script exists: in docs/setup/RESEND_SMTP_SETUP.md the founder pastes
 // the same API key into Supabase Auth. Verifying it works here first
 // avoids the 30-minute "I configured everything but emails still don't
 // send" rabbit hole.
@@ -88,7 +88,7 @@ try {
     console.log(`   Check the ${to} inbox (also check spam).`);
     console.log(`\nNext step → paste your API key into Supabase Auth:`);
     console.log(`   https://supabase.com/dashboard/project/nntkxojdeyziemdhyjvg/auth/templates`);
-    console.log(`   See docs/RESEND_SMTP_SETUP.md Step 4 for the exact fields.`);
+    console.log(`   See docs/setup/RESEND_SMTP_SETUP.md Step 4 for the exact fields.`);
     process.exit(0);
   }
 
@@ -102,7 +102,7 @@ try {
   }
   if (res.status === 403 || /domain|sender|verify/i.test(parsed?.message || "")) {
     console.error(`  • Sender not verified → resend.com → Domains → Verify`);
-    console.error(`    (or use the verified Single Sender path in docs/RESEND_SMTP_SETUP.md Step 2a)`);
+    console.error(`    (or use the verified Single Sender path in docs/setup/RESEND_SMTP_SETUP.md Step 2a)`);
   }
   if (res.status === 422) {
     console.error(`  • Recipient invalid → make sure ${to} is a real address`);
