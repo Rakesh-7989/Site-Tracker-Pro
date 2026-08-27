@@ -83,7 +83,7 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
       const detail = p.get("detail");
       setStatus({ kind: "error", msg: detail ? `${t("auth.errSessionLoad")} (${detail})` : t("auth.errSessionLoad") });
     }
-  }, [location.search]);
+  }, [location.search, status.kind, t]);
 
   // Email-confirmation callback outcome: GoTrue redirects back with the
   // session in the URL fragment (#access_token=… — consumed by supabase-js)

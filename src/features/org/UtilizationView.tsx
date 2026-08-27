@@ -46,7 +46,7 @@ function UtilizationInner(): JSX.Element {
     const res = await getOrgUtilization(client, activeOrg.orgId, memberProjectScope(session));
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, session]);
 
   const reloadPhase = useCallback(async (projectId: string) => {
     setPhaseLoading(true);

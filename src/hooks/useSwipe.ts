@@ -42,5 +42,5 @@ export function useSwipe(ref: RefObject<HTMLElement | null>, config: SwipeConfig
       el.removeEventListener("touchstart", handleTouchStart);
       el.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [ref, config.onSwipeLeft, config.onSwipeRight, config.threshold, config.edgeSize]);
+  }, [ref, config.onSwipeLeft, config.onSwipeRight, config.threshold, config.edgeSize, config]);
 }

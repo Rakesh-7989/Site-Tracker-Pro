@@ -127,7 +127,7 @@ export function VendorPortalView(): JSX.Element {
     setProfileSaving(false);
   };
 
-  const onProfileFormLoad = () => {
+  const onProfileFormLoad = useCallback(() => {
     if (myVendor) {
       setProfileForm({
         name: myVendor.name,
@@ -137,7 +137,7 @@ export function VendorPortalView(): JSX.Element {
         gst: myVendor.gst ?? "",
       });
     }
-  };
+  }, [myVendor]);
 
   const tabs = [
     { key: "dashboard", label: t("vendor.tab.dashboard"), icon: "dashboard" as const },
@@ -147,7 +147,7 @@ export function VendorPortalView(): JSX.Element {
     { key: "profile", label: t("vendor.tab.profile"), icon: "user" as const },
   ];
 
-  useEffect(() => { onProfileFormLoad(); }, [myVendor]);
+  useEffect(() => { onProfileFormLoad(); }, [myVendor, onProfileFormLoad]);
 
   if (loading) return (
     <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">

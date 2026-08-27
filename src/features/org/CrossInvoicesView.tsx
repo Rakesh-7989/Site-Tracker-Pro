@@ -74,7 +74,7 @@ export function CrossInvoicesView(): JSX.Element {
     const res = await listOrgInvoicesWithPayments(client, activeOrg!.orgId, memberProjectScope(session));
     if (res.ok) setInvoices(res.data); else setError(res.error);
     setLoading(false);
-  }, [activeOrg]);
+  }, [activeOrg, session]);
   useEffect(() => { void reload(); }, [reload]);
 
   const filtered = useMemo(() => {

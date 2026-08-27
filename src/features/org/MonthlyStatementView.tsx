@@ -52,7 +52,7 @@ function MonthlyStatementInner(): JSX.Element {
     const res = await listOrgMonthlyStatement(client, activeOrg.orgId, monthStart, monthEnd, memberProjectScope(session));
     if (res.ok) setRows(res.data); else setError(res.error);
     setLoading(false);
-  }, [activeOrg?.orgId, month]);
+  }, [activeOrg?.orgId, month, session]);
 
   useEffect(() => { void reload(); }, [reload]);
 

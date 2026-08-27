@@ -40,7 +40,7 @@ export function WorklogsView(): JSX.Element {
     const pList = data ?? [];
     setProjects(pList);
     if (pList.length) setSelProject(pList[0].id);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, liveSession]);
 
   useEffect(() => { void loadProjects(); }, [loadProjects]);
 

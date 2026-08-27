@@ -50,6 +50,16 @@ export function ShareLinkView(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const loadPayload = useCallback(async (tok: string) => {
+    setStage("loading");
+    const client = await getClient();
+    if (!client) { setStage("invalid"); return; }
+    const res = await fetchSharePayload(client, { token: tok, password: null, otp: null });
+    if (!res.ok) { setError(res.error); setStage("invalid"); return; }
+    setPayload(res.data as unknown as SharePayload);
+    setStage("payload");
+  }, []);
+
   const loadGate = useCallback(async (tok: string) => {
     setStage("loading"); setError(null);
     const client = await getClient();
@@ -60,17 +70,7 @@ export function ShareLinkView(): JSX.Element {
     setGate(res.data);
     if (res.data.requiresPassword || res.data.requiresOtp) { setStage("gate"); return; }
     await loadPayload(tok);
-  }, []);
-
-  const loadPayload = useCallback(async (tok: string) => {
-    setStage("loading");
-    const client = await getClient();
-    if (!client) { setStage("invalid"); return; }
-    const res = await fetchSharePayload(client, { token: tok, password: null, otp: null });
-    if (!res.ok) { setError(res.error); setStage("invalid"); return; }
-    setPayload(res.data as unknown as SharePayload);
-    setStage("payload");
-  }, []);
+  }, [loadPayload]);
 
   useEffect(() => { if (token) void loadGate(token); }, [token, loadGate]);
 

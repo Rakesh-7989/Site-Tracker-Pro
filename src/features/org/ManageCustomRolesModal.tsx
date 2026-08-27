@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { getClient } from "@/lib/supabase/supabase";
 import {
   IDENTITY_ROLES, ROLE_LABEL,
@@ -60,7 +60,7 @@ export function ManageCustomRolesModal({
     if (res.ok) setAllRoles(res.data);
   }, [orgId]);
 
-  const assigned = new Set(assignedRoleLabels);
+  const assigned = useMemo(() => new Set(assignedRoleLabels), [assignedRoleLabels]);
 
   const handleToggle = useCallback(async (role: OrgCustomRole) => {
     setError(null);

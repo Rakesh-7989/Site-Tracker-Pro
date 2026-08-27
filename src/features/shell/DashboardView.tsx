@@ -41,7 +41,7 @@ export function DashboardView(): JSX.Element {
       } catch { /* stay hidden */ }
     })();
     return () => { cancelled = true; };
-  }, [activeOrg?.orgId, session?.user.identityRole]);
+  }, [activeOrg, session?.user.identityRole]);
 
   if (!session) return <></>;
 

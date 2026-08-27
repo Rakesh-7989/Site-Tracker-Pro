@@ -81,7 +81,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [orgId]);
+  }, [orgId, session]);
 
   useEffect(() => {
     if (!selProject) return;

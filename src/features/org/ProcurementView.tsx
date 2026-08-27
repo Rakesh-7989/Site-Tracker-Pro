@@ -85,7 +85,7 @@ function ProcurementInner(): JSX.Element {
     setQuotes(quoteRes.data);
     setVendors(vendorRes.data);
     setLoading(false);
-  }, [orgId]);
+  }, [orgId, session]);
 
   useEffect(() => { void reload(); }, [reload]);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PlanGate } from "@/auth";
 import { Icon, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
@@ -19,8 +19,8 @@ function MaterialPricesInner(): JSX.Element {
   const [quotes, setQuotes] = useState<QuoteResult[]>([]);
   const [loading, setLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const grades = (COMMODITIES as any)[commodity]?.grades || [];
-  useEffect(() => { setGrade(grades[0] || ""); }, [commodity]);
+  const grades = useMemo(() => (COMMODITIES as any)[commodity]?.grades || [], [commodity]);
+  useEffect(() => { setGrade(grades[0] || ""); }, [commodity, grades]);
 
   const fetch = async () => {
     setLoading(true);

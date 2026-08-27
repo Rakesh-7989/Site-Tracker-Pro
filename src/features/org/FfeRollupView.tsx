@@ -45,7 +45,7 @@ function FfeRollupInner(): JSX.Element {
     const res = await listOrgFfe(client, activeOrg.orgId, memberProjectScope(session));
     if (res.ok) setProjects(res.data); else setError(res.error);
     setLoading(false);
-  }, [activeOrg?.orgId]);
+  }, [activeOrg?.orgId, session]);
 
   useEffect(() => { void reload(); }, [reload]);
 

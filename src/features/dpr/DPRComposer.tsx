@@ -179,7 +179,7 @@ export function DPRComposer(): JSX.Element {
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, draft, session, activeOrg, promoterPhone, photo, recordedBlob, submitting, projectId, locationId, uploadGate.atQuota]);
+  }, [draft, session, activeOrg, promoterPhone, photo, recordedBlob, submitting, projectId, locationId, uploadGate.atQuota]);
 
   const resetAll = useCallback(() => {
     setSubmitting(false);

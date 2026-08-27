@@ -49,7 +49,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     setLoading(true); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setLoading(false); return; }
     const res = await getOrgRaBills(client, orgId, memberProjectScope(session)); if (res.ok) setRows(res.data); else setError(res.error); setLoading(false);
-  }, [orgId]);
+  }, [orgId, session]);
   useEffect(() => { void reload(); }, [reload]);
 
   const totals: CrossRaTotals = useMemo(() => crossRaRollup(rows), [rows]);
