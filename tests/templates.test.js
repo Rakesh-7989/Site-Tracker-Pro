@@ -1,11 +1,11 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   listTemplates, upsertTemplate, removeTemplate, getTemplate,
   templateFromProject, applyProjectTemplate, applyBoqTemplate,
   INIT_TEMPLATES, TEMPLATE_KINDS,
-} from "../src/lib/templates";
+} from "../src/lib/integrations/templates";
 
-describe("templates — CRUD", () => {
+describe("templates � CRUD", () => {
   it("listTemplates returns empty for unknown org/kind", () => {
     expect(listTemplates({}, "org1", "boq")).toEqual([]);
     expect(listTemplates(INIT_TEMPLATES, "", "boq")).toEqual([]);
@@ -47,7 +47,7 @@ describe("templates — CRUD", () => {
   });
 });
 
-describe("templates — capture from project", () => {
+describe("templates � capture from project", () => {
   it("captures milestones with start-relative day offsets", () => {
     const project = {
       id: "p1", name: "Test", start_date: "2025-01-01", expected_end_date: "2025-12-31",
@@ -59,7 +59,7 @@ describe("templates — capture from project", () => {
     ];
     const tpl = templateFromProject(project, milestones, []);
     expect(tpl.payload.milestones.length).toBe(2);
-    expect(tpl.payload.milestones[0].offset_days).toBe(59); // Jan 1 → Mar 1
+    expect(tpl.payload.milestones[0].offset_days).toBe(59); // Jan 1 ? Mar 1
     expect(tpl.payload.milestones[1].offset_days).toBe(151);
   });
   it("returns null for null project", () => {
@@ -67,7 +67,7 @@ describe("templates — capture from project", () => {
   });
 });
 
-describe("templates — apply project template", () => {
+describe("templates � apply project template", () => {
   it("creates project + milestones from a template", () => {
     const tpl = {
       kind: "project",
@@ -94,7 +94,7 @@ describe("templates — apply project template", () => {
   });
 });
 
-describe("templates — apply BOQ template", () => {
+describe("templates � apply BOQ template", () => {
   it("regenerates IDs but keeps content", () => {
     const tpl = {
       kind: "boq",
@@ -111,7 +111,7 @@ describe("templates — apply BOQ template", () => {
   });
 });
 
-describe("templates — vocab", () => {
+describe("templates � vocab", () => {
   it("TEMPLATE_KINDS lists exactly project/boq/checklist", () => {
     expect(TEMPLATE_KINDS.sort()).toEqual(["boq", "checklist", "project"].sort());
   });

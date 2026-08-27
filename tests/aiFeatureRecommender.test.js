@@ -1,7 +1,7 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   buildUsage, suggestForOrg, groupSuggestions, narrate,
-} from "../src/lib/aiFeatureRecommender";
+} from "../src/lib/ai/aiFeatureRecommender";
 
 const CATALOG = [
   { key: "tab_bo", label: "BOQ", group: "tabs" },
@@ -18,7 +18,7 @@ function mkRow(daysAgo, resource) {
   };
 }
 
-describe("aiFeatureRecommender — buildUsage", () => {
+describe("aiFeatureRecommender � buildUsage", () => {
   it("filters rows older than window", () => {
     const rows = [mkRow(5, "ra_bill"), mkRow(40, "ra_bill")];
     expect(buildUsage(rows).ra_bill).toBe(1);
@@ -46,7 +46,7 @@ describe("aiFeatureRecommender — buildUsage", () => {
   });
 });
 
-describe("aiFeatureRecommender — suggestForOrg", () => {
+describe("aiFeatureRecommender � suggestForOrg", () => {
   it("suggests disabling a flag with zero touches", () => {
     const usage = {};
     const flags = { tab_bo: true };
@@ -96,7 +96,7 @@ describe("aiFeatureRecommender — suggestForOrg", () => {
   });
 });
 
-describe("aiFeatureRecommender — groupSuggestions", () => {
+describe("aiFeatureRecommender � groupSuggestions", () => {
   it("buckets by type", () => {
     const grouped = groupSuggestions([
       { type: "upgrade", featureKey: "a", label: "A" },
@@ -110,7 +110,7 @@ describe("aiFeatureRecommender — groupSuggestions", () => {
   });
 });
 
-describe("aiFeatureRecommender — narrate", () => {
+describe("aiFeatureRecommender � narrate", () => {
   it("narrates disable in English", () => {
     const s = { type: "disable", label: "BOQ", rationale: "No activity in the last 30 days." };
     expect(narrate(s, "en")).toContain("hiding");

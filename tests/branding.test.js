@@ -1,5 +1,5 @@
-﻿import { describe, it, expect } from "vitest";
-import { resolveBranding, setOrgBrand, setProjectBrand, clearProjectBrand, brandToCssVars, accentToHex, DEFAULT_BRAND } from "../src/lib/branding";
+import { describe, it, expect } from "vitest";
+import { resolveBranding, setOrgBrand, setProjectBrand, clearProjectBrand, brandToCssVars, accentToHex, DEFAULT_BRAND } from "../src/lib/integrations/branding";
 
 describe("branding.resolveBranding", () => {
   it("returns DEFAULT_BRAND when nothing is set", () => {

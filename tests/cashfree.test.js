@@ -4,7 +4,7 @@ import {
   buildSubscriptionRequest, buildCancellationRequest, buildUpgradeOperations,
   verifyWebhookSignature, verifyWebhookSignatureSync,
   applyWebhookEvent, mapCashfreeStatus,
-} from "../src/lib/cashfree";
+} from "../src/lib/integrations/cashfree";
 
 const org = { id: "org_12345678_abcd", name: "BuildCo India", contact_email: "owner@buildco.in" };
 

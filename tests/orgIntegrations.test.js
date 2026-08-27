@@ -1,12 +1,12 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   getOrgIntegrations, getProviderForOrg, setProviderForOrg,
   clearProviderForOrg, isProviderConfigured, migrateLegacyToOrg,
   maskSecret, integrationsSummary, INIT_ORG_INTEGRATIONS,
   EMPTY_INTEGRATION, PROVIDERS,
-} from "../src/lib/orgIntegrations";
+} from "../src/lib/integrations/orgIntegrations";
 
-describe("orgIntegrations — reads", () => {
+describe("orgIntegrations � reads", () => {
   it("returns empty integration for unknown org", () => {
     const rec = getOrgIntegrations({}, "ghost");
     expect(rec.ai).toEqual(EMPTY_INTEGRATION.ai);
@@ -21,7 +21,7 @@ describe("orgIntegrations — reads", () => {
   });
 });
 
-describe("orgIntegrations — writes (immutable)", () => {
+describe("orgIntegrations � writes (immutable)", () => {
   it("setProviderForOrg returns new store, doesn't mutate", () => {
     const before = { org1: { ai: { provider: "old", key: "", model: "" } } };
     const after = setProviderForOrg(before, "org1", "ai", { provider: "new", key: "x", model: "m" });
@@ -41,7 +41,7 @@ describe("orgIntegrations — writes (immutable)", () => {
   });
 });
 
-describe("orgIntegrations — isProviderConfigured", () => {
+describe("orgIntegrations � isProviderConfigured", () => {
   it("returns false for an empty provider", () => {
     expect(isProviderConfigured({}, "org1", "ai")).toBe(false);
   });
@@ -51,7 +51,7 @@ describe("orgIntegrations — isProviderConfigured", () => {
   });
 });
 
-describe("orgIntegrations — migration", () => {
+describe("orgIntegrations � migration", () => {
   it("merges legacy localStorage shape into org record", () => {
     const next = migrateLegacyToOrg({}, "org1", {
       ai: { provider: "claude", key: "ant-1", model: "claude-3" },
@@ -63,7 +63,7 @@ describe("orgIntegrations — migration", () => {
   });
 });
 
-describe("orgIntegrations — display helpers", () => {
+describe("orgIntegrations � display helpers", () => {
   it("maskSecret hides the middle of long strings", () => {
     const masked = maskSecret("sk-ant-1234567890abcdefg");
     expect(masked.startsWith("sk-")).toBe(true);

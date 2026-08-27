@@ -1,10 +1,10 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   validateGstin, validateHsn, buildEInvoicePayload,
   mockGstnAdapter, gstnAdapter, SUPPLY_TYPES,
-} from "../src/lib/gstn";
+} from "../src/lib/integrations/gstn";
 
-describe("gstn — validateGstin", () => {
+describe("gstn � validateGstin", () => {
   it("accepts a canonical GSTIN", () => {
     const r = validateGstin("29ABCDE1234F1Z5");
     expect(r.ok).toBe(true);
@@ -25,7 +25,7 @@ describe("gstn — validateGstin", () => {
   });
 });
 
-describe("gstn — validateHsn", () => {
+describe("gstn � validateHsn", () => {
   it("accepts 2 to 8 digit HSN", () => {
     expect(validateHsn("85").ok).toBe(true);
     expect(validateHsn("85234567").ok).toBe(true);
@@ -41,7 +41,7 @@ describe("gstn — validateHsn", () => {
   });
 });
 
-describe("gstn — buildEInvoicePayload", () => {
+describe("gstn � buildEInvoicePayload", () => {
   const seller = { gstin: "29ABCDE1234F1Z5", name: "Builders Co", address: "Hyd" };
   const buyer = { gstin: "27ABCDE1234F1Z6", name: "Client Co", state_code: "27" };
   const items = [
@@ -120,7 +120,7 @@ describe("gstn — buildEInvoicePayload", () => {
   });
 });
 
-describe("gstn — mockGstnAdapter", () => {
+describe("gstn � mockGstnAdapter", () => {
   it("returns IRN on submit", async () => {
     const r = await mockGstnAdapter.submit();
     expect(r.ok).toBe(true);
@@ -129,7 +129,7 @@ describe("gstn — mockGstnAdapter", () => {
   });
 });
 
-describe("gstn — real adapter", () => {
+describe("gstn � real adapter", () => {
   it("rejects when endpoint missing", async () => {
     const r = await gstnAdapter.submit({});
     expect(r.ok).toBe(false);

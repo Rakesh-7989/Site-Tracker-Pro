@@ -12,7 +12,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const viteCli = join(root, "node_modules", "vite", "bin", "vite.js");
 const port = process.env.E2E_MOCK_PORT || "5176";
 const child = spawn(

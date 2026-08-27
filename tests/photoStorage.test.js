@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Sprint 2 (Session 30.9) photoStorage tests.
+// SiteTrack Pro � Sprint 2 (Session 30.9) photoStorage tests.
 //
 // Pure-function tests for the photo pipeline. EXIF parsing tested with a
 // crafted minimal JPEG; rest uses the mock storage adapter so no Supabase
@@ -16,7 +16,7 @@ import {
   uploadPhoto,
   makeMockStorageAdapter,
   generateThumbnail,
-} from "../src/lib/photoStorage";
+} from "../src/lib/integrations/photoStorage";
 
 describe("constants", () => {
   it("HYDERABAD_BBOX covers GHMC + outer ring", () => {
@@ -128,7 +128,7 @@ describe("extractExif()", () => {
 
 describe("generateThumbnail()", () => {
   it("returns original blob when OffscreenCanvas unavailable (Node test env)", async () => {
-    // In Node test env, OffscreenCanvas is undefined → passthrough
+    // In Node test env, OffscreenCanvas is undefined ? passthrough
     const blob = { size: 1234 };
     const result = await generateThumbnail(blob, 800);
     expect(result.blob).toBe(blob);

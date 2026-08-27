@@ -1,11 +1,11 @@
-ï»¿import { describe, it, expect } from "vitest";
-import { fmtDate, fmtTime, fmtCur, fileKind, fmtSize } from "../src/lib/format";
+import { describe, it, expect } from "vitest";
+import { fmtDate, fmtTime, fmtCur, fileKind, fmtSize } from "../src/lib/utils/format";
 
 describe("fmtDate", () => {
   it("returns em-dash for empty input", () => {
-    expect(fmtDate(null)).toBe("â€”");
-    expect(fmtDate(undefined)).toBe("â€”");
-    expect(fmtDate("")).toBe("â€”");
+    expect(fmtDate(null)).toBe("—");
+    expect(fmtDate(undefined)).toBe("—");
+    expect(fmtDate("")).toBe("—");
   });
 
   it("formats a valid ISO date", () => {
@@ -15,7 +15,7 @@ describe("fmtDate", () => {
   });
 
   it("returns em-dash on invalid input", () => {
-    expect(fmtDate("not a date")).toBe("â€”");
+    expect(fmtDate("not a date")).toBe("—");
   });
 });
 
@@ -34,25 +34,25 @@ describe("fmtTime", () => {
 
 describe("fmtCur", () => {
   it("returns em-dash for empty/null/undefined", () => {
-    expect(fmtCur(null)).toBe("â€”");
-    expect(fmtCur(undefined)).toBe("â€”");
-    expect(fmtCur("")).toBe("â€”");
+    expect(fmtCur(null)).toBe("—");
+    expect(fmtCur(undefined)).toBe("—");
+    expect(fmtCur("")).toBe("—");
   });
 
-  it("formats positive integers with â‚¹ + en-IN grouping", () => {
+  it("formats positive integers with ? + en-IN grouping", () => {
     const result = fmtCur(123456);
-    expect(result.startsWith("â‚¹")).toBe(true);
+    expect(result.startsWith("?")).toBe(true);
     expect(result).toContain("1,23,456");
   });
 
   it("formats zero correctly", () => {
-    expect(fmtCur(0)).toBe("â‚¹0");
+    expect(fmtCur(0)).toBe("?0");
   });
 
   it("returns em-dash for non-finite values", () => {
-    expect(fmtCur(NaN)).toBe("â€”");
-    expect(fmtCur(Infinity)).toBe("â€”");
-    expect(fmtCur("not a number")).toBe("â€”");
+    expect(fmtCur(NaN)).toBe("—");
+    expect(fmtCur(Infinity)).toBe("—");
+    expect(fmtCur("not a number")).toBe("—");
   });
 });
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   sha256Hex, hashAuditRow, merkleRoot, anchorDigest,
   inMemoryAdapter, polygonAdapter, polygonscanUrl, SUPPORTED_NETWORKS,
-} from "../src/lib/blockchainAnchor";
+} from "../src/lib/integrations/blockchainAnchor";
 
 describe("blockchainAnchor — pure digest helpers", () => {
   it("sha256Hex returns a 64-char hex string", async () => {

@@ -1,11 +1,11 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   SUPPORTED_STATES, STAGE_CODES,
   inferReraStage, buildFilingPayload, validateFilingPayload,
   mockAdapter, tgReraAdapter, pickAdapter,
-} from "../src/lib/reraTelangana";
+} from "../src/lib/integrations/reraTelangana";
 
-describe("reraTelangana — vocab", () => {
+describe("reraTelangana � vocab", () => {
   it("SUPPORTED_STATES has TG + KA + MH", () => {
     expect(SUPPORTED_STATES).toContain("telangana");
     expect(SUPPORTED_STATES).toContain("karnataka");
@@ -18,7 +18,7 @@ describe("reraTelangana — vocab", () => {
   });
 });
 
-describe("reraTelangana — inferReraStage", () => {
+describe("reraTelangana � inferReraStage", () => {
   it("maps very low progress to excavation", () => {
     expect(inferReraStage(0)).toBe("EXC");
     expect(inferReraStage(3)).toBe("EXC");
@@ -31,7 +31,7 @@ describe("reraTelangana — inferReraStage", () => {
     expect(inferReraStage(99)).toBe("HND");
     expect(inferReraStage(90)).toBe("FIN");
   });
-  it("monotonic increase — higher pct never returns earlier stage", () => {
+  it("monotonic increase � higher pct never returns earlier stage", () => {
     const order = ["EXC", "FOU", "PLI", "GFL", "SUP", "BWK", "PLA", "FLO", "FIN", "HND"];
     let lastIdx = -1;
     for (let p = 0; p <= 100; p += 5) {
@@ -42,7 +42,7 @@ describe("reraTelangana — inferReraStage", () => {
   });
 });
 
-describe("reraTelangana — buildFilingPayload", () => {
+describe("reraTelangana � buildFilingPayload", () => {
   const project = { id: "p1", rera_number: "TS/RERA/PROJECT/12345", budget: 50000000, progress: 45 };
   it("returns a fully-shaped filing payload", () => {
     const p = buildFilingPayload(project, { month: "2026-05", spent: 22000000, workersOnSite: 67 });
@@ -50,7 +50,7 @@ describe("reraTelangana — buildFilingPayload", () => {
     expect(p.rera_number).toBe("TS/RERA/PROJECT/12345");
     expect(p.month).toBe("2026-05");
     expect(p.physical_progress_pct).toBe(45);
-    expect(p.primary_stage).toBe("BWK"); // 45 → brickwork
+    expect(p.primary_stage).toBe("BWK"); // 45 ? brickwork
     expect(p.financial.spent_inr).toBe(22000000);
     expect(p.workforce).toBe(67);
   });
@@ -68,7 +68,7 @@ describe("reraTelangana — buildFilingPayload", () => {
   });
 });
 
-describe("reraTelangana — validateFilingPayload", () => {
+describe("reraTelangana � validateFilingPayload", () => {
   const valid = {
     project_id: "p1",
     rera_number: "TS/RERA/PROJECT/12345",
@@ -110,7 +110,7 @@ describe("reraTelangana — validateFilingPayload", () => {
   });
 });
 
-describe("reraTelangana — mockAdapter", () => {
+describe("reraTelangana � mockAdapter", () => {
   it("checkStatus returns active for valid format", async () => {
     const a = mockAdapter();
     const r = await a.checkStatus("TS/RERA/PROJECT/12345");
@@ -139,7 +139,7 @@ describe("reraTelangana — mockAdapter", () => {
   });
 });
 
-describe("reraTelangana — tgReraAdapter", () => {
+describe("reraTelangana � tgReraAdapter", () => {
   it("rejects construction without edge_function_url", () => {
     expect(() => tgReraAdapter({})).toThrow(/edge_function_url/);
   });
@@ -155,7 +155,7 @@ describe("reraTelangana — tgReraAdapter", () => {
   });
 });
 
-describe("reraTelangana — pickAdapter", () => {
+describe("reraTelangana � pickAdapter", () => {
   it("returns tgReraAdapter when TG + edge function URL set", () => {
     const a = pickAdapter("telangana", { edge_function_url: "https://x.test" });
     expect(a.state).toBe("telangana");
