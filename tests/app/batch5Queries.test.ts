@@ -1,7 +1,7 @@
 // SiteTrack Pro — Change Orders + Estimate query tests (Batch 4/5).
 
 import { describe, it, expect } from "vitest";
-import { listChangeOrders, listEstimates } from "@/app/designQueries";
+import { listChangeOrders, listEstimates } from "@/app/queries/designQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

@@ -13,7 +13,7 @@ Run the gate suite from the project root and report a pass/fail table:
 1. `npx tsc --noEmit` — 0 errors.
 2. `npx eslint .` — 0 errors (allow exactly 1 pre-existing warning on `coverage/block-navigation.js`).
 3. `npx vitest run` — all files/tests green (currently 179 files / 2127+ tests; report the current number).
-4. `node scripts/smoke.mjs` — full check count green (currently 331; report the current number).
+4. `node scripts/ci/smoke.mjs` — full check count green (currently 331; report the current number).
 5. `npm run build` — clean build.
 6. e2e-mock run — green when applicable.
 

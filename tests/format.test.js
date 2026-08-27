@@ -1,11 +1,11 @@
-﻿import { describe, it, expect } from "vitest";
-import { fmtDate, fmtTime, fmtCur, fileKind, fmtSize } from "../src/lib/format";
+import { describe, it, expect } from "vitest";
+import { fmtDate, fmtTime, fmtCur, fileKind, fmtSize } from "../src/lib/utils/format";
 
 describe("fmtDate", () => {
   it("returns em-dash for empty input", () => {
-    expect(fmtDate(null)).toBe("—");
-    expect(fmtDate(undefined)).toBe("—");
-    expect(fmtDate("")).toBe("—");
+    expect(fmtDate(null)).toBe("\u2014");
+    expect(fmtDate(undefined)).toBe("\u2014");
+    expect(fmtDate("")).toBe("\u2014");
   });
 
   it("formats a valid ISO date", () => {
@@ -15,7 +15,7 @@ describe("fmtDate", () => {
   });
 
   it("returns em-dash on invalid input", () => {
-    expect(fmtDate("not a date")).toBe("—");
+    expect(fmtDate("not a date")).toBe("\u2014");
   });
 });
 
@@ -34,25 +34,25 @@ describe("fmtTime", () => {
 
 describe("fmtCur", () => {
   it("returns em-dash for empty/null/undefined", () => {
-    expect(fmtCur(null)).toBe("—");
-    expect(fmtCur(undefined)).toBe("—");
-    expect(fmtCur("")).toBe("—");
+    expect(fmtCur(null)).toBe("\u2014");
+    expect(fmtCur(undefined)).toBe("\u2014");
+    expect(fmtCur("")).toBe("\u2014");
   });
 
-  it("formats positive integers with ₹ + en-IN grouping", () => {
+  it("formats positive integers with \u20B9 + en-IN grouping", () => {
     const result = fmtCur(123456);
-    expect(result.startsWith("₹")).toBe(true);
+    expect(result.startsWith("\u20B9")).toBe(true);
     expect(result).toContain("1,23,456");
   });
 
   it("formats zero correctly", () => {
-    expect(fmtCur(0)).toBe("₹0");
+    expect(fmtCur(0)).toBe("\u20B90");
   });
 
   it("returns em-dash for non-finite values", () => {
-    expect(fmtCur(NaN)).toBe("—");
-    expect(fmtCur(Infinity)).toBe("—");
-    expect(fmtCur("not a number")).toBe("—");
+    expect(fmtCur(NaN)).toBe("\u2014");
+    expect(fmtCur(Infinity)).toBe("\u2014");
+    expect(fmtCur("not a number")).toBe("\u2014");
   });
 });
 

@@ -21,7 +21,7 @@ import { Card, Button, Icon } from "@/components/ui/atoms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { getMfaChallenge, verifyMfa } from "@/auth/mfa";
-import { isOnboardingDone, orgHasProjects } from "@/app/onboardingQueries";
+import { isOnboardingDone, orgHasProjects } from "@/app/queries/onboardingQueries";
 
 type Method = "password" | "magic";
 type Status =
@@ -53,7 +53,7 @@ interface LoginScreenV3Props {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function authLib(): Promise<any> {
-  return await import("../../lib/supabase");
+  return await import("../../lib/supabase/supabase");
 }
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);

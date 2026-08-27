@@ -7,7 +7,7 @@ import {
   committedCost, ffeBudgetRollup, isCommittedStatus,
   FFE_CATEGORIES, FFE_STATUSES,
   type FfeStatus,
-} from "@/app/ffeQueries";
+} from "@/app/queries/ffeQueries";
 
 describe("ffeQueries committedCost", () => {
   it("is qty × unit_cost for non-cancelled entries", () => {

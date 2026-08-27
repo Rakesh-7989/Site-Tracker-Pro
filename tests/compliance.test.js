@@ -1,9 +1,9 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   validateRera, validateGstin, validatePan, validateEpfo,
   checkReraStatus, checkGstinStatus, checkEpfoStatus,
   projectComplianceStatus,
-} from "../src/lib/compliance";
+} from "../src/lib/integrations/compliance";
 
 describe("compliance.validateRera", () => {
   it("accepts well-formed RERA numbers", () => {
@@ -80,7 +80,7 @@ describe("compliance.checkGstinStatus + checkEpfoStatus", () => {
 });
 
 describe("compliance.projectComplianceStatus", () => {
-  it("all three compliant → emerald", () => {
+  it("all three compliant ? emerald", () => {
     const r = projectComplianceStatus({
       rera: { verified: true, status: "REGISTERED_ACTIVE" },
       gst:  { verified: true, status: "ACTIVE" },
@@ -88,7 +88,7 @@ describe("compliance.projectComplianceStatus", () => {
     });
     expect(r.color).toBe("emerald");
   });
-  it("partial → amber", () => {
+  it("partial ? amber", () => {
     const r = projectComplianceStatus({
       rera: { verified: true, status: "REGISTERED_ACTIVE" },
       gst:  { verified: false },
@@ -96,10 +96,10 @@ describe("compliance.projectComplianceStatus", () => {
     });
     expect(r.color).toBe("amber");
   });
-  it("none verified → red", () => {
+  it("none verified ? red", () => {
     expect(projectComplianceStatus({}).color).toBe("red");
   });
-  it("null → stone", () => {
+  it("null ? stone", () => {
     expect(projectComplianceStatus(null).color).toBe("stone");
   });
 });

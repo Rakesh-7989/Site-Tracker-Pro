@@ -1,7 +1,7 @@
 // SiteTrack Pro — cross-project PO query + totals tests.
 
 import { describe, it, expect } from "vitest";
-import { getOrgPurchaseOrders, poTotals, type CrossPO } from "@/app/crossPoQueries";
+import { getOrgPurchaseOrders, poTotals, type CrossPO } from "@/app/queries/crossPoQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({ rpc: async () => result });

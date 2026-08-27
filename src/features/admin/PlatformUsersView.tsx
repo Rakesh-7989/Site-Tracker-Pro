@@ -10,11 +10,11 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { listPlatformUsers, getPlatformStats, ADMIN_PAGE_SIZE, type PlatformUser, type PlatformStats } from "@/app/platformAdminQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { listPlatformUsers, getPlatformStats, ADMIN_PAGE_SIZE, type PlatformUser, type PlatformStats } from "@/app/queries/platformAdminQueries";
 import { tierBadge } from "@/features/admin/StaffAdminView";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 const fmtDate = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
 const roleLabel = (r: string): string => (ROLE_LABEL as Record<string, string>)[r] ?? r;

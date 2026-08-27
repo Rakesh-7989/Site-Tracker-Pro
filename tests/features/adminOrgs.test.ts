@@ -14,9 +14,9 @@ import {
   PLAN_MIX_ORDER,
   type EnrichedOrg,
 } from "@/features/admin/PlatformOrgsView";
-import { buildCsv } from "@/lib/genericCsv";
-import type { PlatformOrg } from "@/app/platformAdminQueries";
-import type { OrgBillingRow } from "@/app/platformBillingQueries";
+import { buildCsv } from "@/lib/utils/genericCsv";
+import type { PlatformOrg } from "@/app/queries/platformAdminQueries";
+import type { OrgBillingRow } from "@/app/queries/platformBillingQueries";
 
 const org = (over: Partial<PlatformOrg>): PlatformOrg => ({
   id: "o1", name: "G Architects", slug: "g-architects", plan: "pro",

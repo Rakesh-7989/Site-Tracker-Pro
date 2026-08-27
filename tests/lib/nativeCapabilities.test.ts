@@ -42,7 +42,7 @@ afterEach(() => {
 
 describe("nativeTakePhoto", () => {
   it("returns null on the web WITHOUT invoking the plugin", async () => {
-    const { nativeTakePhoto } = await import("@/lib/native-capabilities");
+    const { nativeTakePhoto } = await import("@/lib/platform/native-capabilities");
     await expect(nativeTakePhoto()).resolves.toBeNull();
     expect(state.photoCalls).toBe(0);
   });
@@ -54,7 +54,7 @@ describe("nativeTakePhoto", () => {
       // jsdom has no Response class — shape only what the wrapper consumes.
       blob: async () => new Blob(["img"], { type: "image/jpeg" }),
     })));
-    const { nativeTakePhoto } = await import("@/lib/native-capabilities");
+    const { nativeTakePhoto } = await import("@/lib/platform/native-capabilities");
     const blob = await nativeTakePhoto();
     expect(blob).toBeInstanceOf(Blob);
     expect(blob?.type).toBe("image/jpeg");
@@ -65,7 +65,7 @@ describe("nativeTakePhoto", () => {
 
 describe("nativeGetPosition", () => {
   it("returns null on the web WITHOUT invoking the plugin", async () => {
-    const { nativeGetPosition } = await import("@/lib/native-capabilities");
+    const { nativeGetPosition } = await import("@/lib/platform/native-capabilities");
     await expect(nativeGetPosition()).resolves.toBeNull();
     expect(state.geoCalls).toBe(0);
   });
@@ -73,7 +73,7 @@ describe("nativeGetPosition", () => {
   it("maps native coords", async () => {
     stubShell(true);
     state.native = true;
-    const { nativeGetPosition } = await import("@/lib/native-capabilities");
+    const { nativeGetPosition } = await import("@/lib/platform/native-capabilities");
     await expect(nativeGetPosition()).resolves.toEqual({ lat: 17.4, lon: 78.4, accuracy: 12 });
     expect(state.geoCalls).toBe(1);
   });

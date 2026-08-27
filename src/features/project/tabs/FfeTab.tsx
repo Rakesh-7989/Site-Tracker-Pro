@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
@@ -16,10 +16,10 @@ import {
   listFfeEntries, upsertFfeEntry, setFfeStatus, deleteFfeEntry,
   ffeBudgetRollup, FFE_CATEGORIES,
   type FfeEntry, type FfeCategory, type FfeStatus,
-} from "@/app/ffeQueries";
-import { listProjectQuotes, bestQuote, quoteTotal, type ProcurementQuote } from "@/app/procurementQuotes";
-import { listPOs, type PurchaseOrder } from "@/app/financeQueries";
-import { localDateISO } from "@/lib/dateLocal";
+} from "@/app/queries/ffeQueries";
+import { listProjectQuotes, bestQuote, quoteTotal, type ProcurementQuote } from "@/app/queries/procurementQuotes";
+import { listPOs, type PurchaseOrder } from "@/app/queries/financeQueries";
+import { localDateISO } from "@/lib/utils/dateLocal";
 
 const STATUS_TONE: Record<FfeStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
   specified: "neutral", selected: "info", ordered: "warning", installed: "success", cancelled: "danger",
@@ -218,7 +218,18 @@ export function FfeTab({ projectId }: { projectId: string }): JSX.Element {
       )}
 
       {loading ? (
-        <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <div className="text-sm text-fg-secondary">No FF&E entries yet.{canManage ? " Add the first one above." : ""}</div>
       ) : (

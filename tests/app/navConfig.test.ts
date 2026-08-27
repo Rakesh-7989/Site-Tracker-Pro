@@ -4,7 +4,7 @@
 // real AuthSession fixtures + the pure capability resolver.
 
 import { describe, it, expect } from "vitest";
-import { buildNav, groupNav, NAV_CATALOG } from "@/app/nav-config";
+import { buildNav, groupNav, NAV_CATALOG } from "@/app/config/nav-config";
 import type { AuthSession, CompanySegment } from "@/auth";
 import type { ModuleId } from "@/modules";
 

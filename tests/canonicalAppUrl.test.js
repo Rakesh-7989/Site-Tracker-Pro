@@ -15,7 +15,7 @@ import.meta.env.VITE_BACKEND = "supabase";
 import.meta.env.VITE_SUPABASE_URL = "https://fake.supabase.co";
 import.meta.env.VITE_SUPABASE_ANON_KEY = "fake-anon-key";
 
-const { getCanonicalAppUrl } = await import("../src/lib/supabase");
+const { getCanonicalAppUrl } = await import("../src/lib/supabase/supabase");
 
 describe("getCanonicalAppUrl()", () => {
   const originalEnv = { ...import.meta.env };

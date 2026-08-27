@@ -32,5 +32,5 @@ Implement approved SiteTrack Pro UI and client-side behavior in the React/Vite a
 - Role/Auth: capabilities in `src/auth/capabilities.ts`, plan features in `src/auth/planCaps.ts`, nav gates in `src/app/nav-config.ts`.
 - Router: `src/app/router.tsx` spreads `...createPluginRoutes()`. Non-module lazy views (org/admin/account/calendar/search/messages/pm/activity/audit/digest/delegations) stay hardcoded in router.tsx.
 - Lazy `import()` only — avoid mixing static + dynamic import of the same view (INEFFECTIVE_DYNAMIC_IMPORT).
-- Smoke markers: `scripts/smoke.mjs` scans router.tsx AND `src/plugins/catalog.ts`. When you add a route/view, update smoke markers here.
+- Smoke markers: `scripts/ci/smoke.mjs` scans router.tsx AND `src/plugins/catalog.ts`. When you add a route/view, update smoke markers here.
 - Verify before finishing: `npm run lint` clean, `npx tsc --noEmit` clean, `npm run build` clean, `npm run smoke` 233 checks, `npx vitest run` all pass.

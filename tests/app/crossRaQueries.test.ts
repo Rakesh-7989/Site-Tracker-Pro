@@ -1,7 +1,7 @@
 // SiteTrack Pro — cross-project RA bills query + rollup tests.
 
 import { describe, it, expect } from "vitest";
-import { getOrgRaBills, crossRaRollup, type CrossRaBill } from "@/app/crossRaQueries";
+import { getOrgRaBills, crossRaRollup, type CrossRaBill } from "@/app/queries/crossRaQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const clientProject = (projects: Array<Record<string, unknown>>, rabills: Array<Record<string, unknown>>): any => ({

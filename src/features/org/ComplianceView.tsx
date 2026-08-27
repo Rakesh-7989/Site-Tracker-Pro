@@ -1,13 +1,12 @@
-﻿import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { Alert, Spinner, Button } from "@/components/ui/atoms";
+import { Alert, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
-import { getClient } from "@/lib/supabase";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries/queries";
+import { getClient } from "@/lib/supabase/supabase";
 import {
-  checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus,
-} from "@/lib/compliance";
+  checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus } from "@/lib/integrations/compliance";
 
 
 export function ComplianceView(): JSX.Element {
@@ -67,7 +66,24 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     setBusy(false);
   }, [reraInput, gstInput, epfoInput, selProject]);
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (visible.length === 0) return <div className="p-10 text-center text-fg-secondary">No projects to verify. Create one first.</div>;
 
   const dotColor = { emerald: "bg-success", amber: "bg-accent", red: "bg-error", stone: "bg-secondary" }[status.color];
@@ -104,7 +120,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           </div>);
         })}
       </div>
-      <p className="text-[11px] text-fg-secondary mt-6 leading-relaxed">External checks are mocked in this build. Production wires Department of Stamps / GST portal / EPFO portal — see <span className="font-semibold">docs/GOLIVE.md</span>.</p>
+      <p className="text-[11px] text-fg-secondary mt-6 leading-relaxed">External checks are mocked in this build. Production wires Department of Stamps / GST portal / EPFO portal — see <span className="font-semibold">docs/setup/GOLIVE.md</span>.</p>
     </div>
   );
 }

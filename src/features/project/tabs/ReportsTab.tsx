@@ -3,29 +3,23 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Card, Button, Input, Textarea, Select, FormField, Badge, Alert, Spinner, AccessDenied,
-} from "@/components/ui";
+  Card, Button, Input, Textarea, Select, FormField, Badge, Alert, AccessDenied } from "@/components/ui";
 import { useT } from "@/i18n/I18nProvider";
 import { useCan } from "@/auth";
 import { useAction } from "@/hooks/useAction";
 import {
   listReports, upsertReport, setReportStatus, deleteReport,
-  type ConsultancyReport, type ReportKind, type ReportStatus,
-} from "@/app/consultancyAuditQueries";
-import { getClient } from "@/lib/supabase";
+  type ConsultancyReport, type ReportKind, type ReportStatus } from "@/app/queries/consultancyAuditQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 const STATUS_TONE: Record<ReportStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  draft: "neutral", published: "success", archived: "neutral",
-};
+  draft: "neutral", published: "success", archived: "neutral" };
 const KIND_LABEL: Record<ReportKind, string> = {
-  site_visit: "Site Visit", recommendation: "Recommendation", milestone_review: "Milestone Review",
-};
+  site_visit: "Site Visit", recommendation: "Recommendation", milestone_review: "Milestone Review" };
 
 export function ReportsTab({ projectId }: { projectId: string }) {
   const t = useT();
   const canManage = useCan("audit:manage", { projectId });
-
-  if (!canManage) return <AccessDenied />;
 
   const [rows, setRows] = useState<ConsultancyReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,8 +28,7 @@ export function ReportsTab({ projectId }: { projectId: string }) {
   const [editing, setEditing] = useState<ConsultancyReport | null>(null);
   const [form, setForm] = useState({
     kind: "site_visit" as ReportKind, title: "", summary: "", content: "", status: "draft" as ReportStatus,
-    periodFrom: "", periodTo: "",
-  });
+    periodFrom: "", periodTo: "" });
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -46,13 +39,14 @@ export function ReportsTab({ projectId }: { projectId: string }) {
 
   const { run } = useAction(reload, setError);
 
+  if (!canManage) return <AccessDenied />;
+
   const submit = async () => {
     if (!form.title.trim()) return;
     await run(editing ? "edit" : "add", (c: any) => upsertReport(c, {
       id: editing?.id ?? null, projectId, kind: form.kind, title: form.title.trim(),
       summary: form.summary.trim() || null, content: form.content.trim() || null,
-      status: form.status, periodFrom: form.periodFrom || null, periodTo: form.periodTo || null,
-    }));
+      status: form.status, periodFrom: form.periodFrom || null, periodTo: form.periodTo || null }));
     setCreating(false); setEditing(null); setForm({ kind: "site_visit", title: "", summary: "", content: "", status: "draft", periodFrom: "", periodTo: "" });
   };
 
@@ -67,7 +61,13 @@ export function ReportsTab({ projectId }: { projectId: string }) {
     await run(`d-${id}`, (c: any) => deleteReport(c, id));
   };
 
-  if (loading) return <Spinner size={22} />;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2 py-2">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="h-10 bg-elevated rounded-xl animate-pulse" />
+      ))}
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (

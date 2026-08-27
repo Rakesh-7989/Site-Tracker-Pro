@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@/components/ui/atoms";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useAuth } from "@/auth";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 
 interface SearchResult {
   type: "project" | "milestone" | "issue" | "vendor";
@@ -27,7 +27,7 @@ export function GlobalSearch(): JSX.Element {
   const doSearch = useCallback(async (query: string) => {
     if (!query.trim()) { setResults([]); return; }
     try {
-      const mod = await import("../../lib/supabase");
+      const mod = await import("../../lib/supabase/supabase");
       const client = await mod.getSupabaseClient();
       if (!client) { setResults([]); return; }
       if (!session) { setResults([]); return; }

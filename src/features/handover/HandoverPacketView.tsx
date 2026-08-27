@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { listPunch, createPunch, setPunchStatus, deletePunch, type PunchItem, type PunchSeverity, type PunchStatus } from "@/app/siteOpsQueries";
-import { listSubmittals, createSubmittal, setSubmittalStatus, deleteSubmittal, type Submittal, type SubmittalStatus, type SubmittalType } from "@/app/siteOpsQueries";
-import { listPermits, createPermit, setPermitStatus, deletePermit, type Permit, type PermitKind, type PermitStatus } from "@/app/siteOpsQueries";
+import { listPunch, createPunch, setPunchStatus, deletePunch, type PunchItem, type PunchSeverity, type PunchStatus } from "@/app/queries/siteOpsQueries";
+import { listSubmittals, createSubmittal, setSubmittalStatus, deleteSubmittal, type Submittal, type SubmittalStatus, type SubmittalType } from "@/app/queries/siteOpsQueries";
+import { listPermits, createPermit, setPermitStatus, deletePermit, type Permit, type PermitKind, type PermitStatus } from "@/app/queries/siteOpsQueries";
 import { buildHandoverManifest, serializeManifest } from "@/lib/handoverPacket";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 import { SignaturePad } from "@/components/ui/SignaturePad";
 import {
   listHandoverSignatures,
   addHandoverSignature,
   type HandoverSignature,
-} from "@/app/approvalQueries";
+} from "@/app/queries/approvalQueries";
 
 type Tab = "punch" | "submittals" | "permits" | "generate";
 

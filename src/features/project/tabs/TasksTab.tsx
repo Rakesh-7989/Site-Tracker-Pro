@@ -6,11 +6,11 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listTasks, createTask, setTaskStatus, deleteTask, nextTaskStatus,
   type Task, type TaskStatus, type TaskPriority,
-} from "@/app/taskQueries";
+} from "@/app/queries/taskQueries";
 
  
 import { useAction } from "@/hooks/useAction";
@@ -80,7 +80,18 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
         </Card>
       )}
 
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? <div className="text-sm text-fg-secondary">{t("tasksTab.noTasks")}</div>
         : <div className="space-y-2">
             {rows.map(tk => (

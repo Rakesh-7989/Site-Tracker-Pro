@@ -5,23 +5,23 @@
 // Doc types + status follow the deliverables CHECK constraints (139).
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { useStorageUploadGate, StorageQuotaWarning } from "@/features/shared/StorageUploadGate";
-import { listFeePhases, type FeePhase } from "@/app/phaseQueries";
-import { listProjectMembers, type ProjectMemberRow } from "@/app/queries";
+import { listFeePhases, type FeePhase } from "@/app/queries/phaseQueries";
+import { listProjectMembers, type ProjectMemberRow } from "@/app/queries/queries";
 import {
   listDeliverables, createDeliverable, setDeliverableStatus, updateDeliverable, deleteDeliverable,
   DOC_TYPES, type Deliverable, type DeliverableStatus, type DocType,
-} from "@/app/deliverableQueries";
+} from "@/app/queries/deliverableQueries";
 import {
   listDeliverableFiles, uploadDeliverableFile, deleteDeliverableFiles, deliverableFileUrl,
   deliverableObjectPath, formatBytes, type DeliverableFileRef,
-} from "@/app/deliverableStorageQueries";
-import { logDownloadEvent } from "@/app/downloadAuditQueries";
+} from "@/app/queries/deliverableStorageQueries";
+import { logDownloadEvent } from "@/app/queries/downloadAuditQueries";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
 import { DxfThumbnail } from "@/features/shared/DxfThumbnail";
 import { isCadFileName, isDxfFileName } from "@/lib/dxfPreview";
@@ -214,7 +214,18 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
       />
 
       {loading ? (
-        <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <div className="text-sm text-fg-secondary">No deliverables yet.{canManage ? " Add the first one above." : ""}</div>
       ) : (

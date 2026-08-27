@@ -9,12 +9,12 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { getMyProfile, completeMyProfile } from "@/app/profileQueries";
+import { getMyProfile, completeMyProfile } from "@/app/queries/profileQueries";
 import { useT } from "@/i18n/I18nProvider";
 
  
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const LANGS: Record<string, string> = { en: "English", te: "à°¤à±†à°²à±à°—à± (Telugu)", hi: "à¤¹à¤¿à¤‚à¤¦à¥€ (Hindi)" };
 
 export function ProfileView(): JSX.Element {

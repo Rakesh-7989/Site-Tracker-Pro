@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useT } from "@/i18n/I18nProvider";
 import { Button, Input, Select, FormField, Modal, Alert, Spinner } from "@/components/ui";
-import { lookupUserForInvite, inviteExistingOrgMember, inviteNewOrgMember, type InviteCandidate } from "@/app/orgMemberQueries";
-import { getClient } from "@/lib/supabase";
+import { lookupUserForInvite, inviteExistingOrgMember, inviteNewOrgMember, type InviteCandidate } from "@/app/queries/orgMemberQueries";
+import { getClient } from "@/lib/supabase/supabase";
 import type { IdentityRole } from "@/auth";
 import { QuotaGate } from "@/auth/QuotaGate";
 

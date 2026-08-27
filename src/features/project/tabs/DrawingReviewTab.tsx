@@ -11,7 +11,7 @@ import { Input, Textarea } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { SignaturePad } from "@/components/ui/SignaturePad";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 import {
   listApprovalDrawings, requestApproval, approveDrawing, rejectDrawing, lockDrawing,
@@ -20,7 +20,7 @@ import {
   commentThreads, commentReplies, openCommentCount, APPROVAL_TONE, COMMENT_TONE,
   listShareLinks, createShareLink, setShareLinkRevoked, shareUrl,
   approvalAnalytics, type ApprovalDrawing, type CommentStatus, type DrawingComment, type ShareLink,
-} from "@/app/approvalQueries";
+} from "@/app/queries/approvalQueries";
 
 const APPROVAL_LABEL: Record<string, string> = {
   not_requested: "Not requested",

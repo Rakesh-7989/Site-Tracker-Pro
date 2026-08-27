@@ -3,7 +3,7 @@
 // RFI lag, score/level/probability folding, plus riskLevel boundaries.
 
 import { describe, it, expect } from "vitest";
-import { computeRiskSignals, riskLevel } from "@/app/riskQueries";
+import { computeRiskSignals, riskLevel } from "@/app/queries/riskQueries";
 
 const TODAY = "2026-08-07";
 

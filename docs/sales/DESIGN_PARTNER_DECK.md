@@ -13,7 +13,7 @@ Three rules:
    has / doesn't have" claim must trace to
    `docs/research/VERIFIED_GAPS_MATRIX.md`.
 3. Pricing slides cite per-org annual numbers only. Per-user-per-month
-   framing is retired (see `docs/POSITIONING.md`).
+   framing is retired (see `docs/business/POSITIONING.md`).
 
 ---
 
@@ -105,7 +105,7 @@ HMDA / DTCP approvals).
 **Annotation**: "Sprint 2 ships this real. Sprint 3 adds the daily 7am
 promoter digest. Sprint 4 adds RERA-TG quarterly filing. The other 16
 features in our roadmap are HIDDEN from the UI until they actually
-work end-to-end. See `docs/FEATURE_FREEZE.md` if you want to verify."
+work end-to-end. See `docs/planning/FEATURE_FREEZE.md` if you want to verify."
 
 ---
 
@@ -144,7 +144,7 @@ charges per seat.)"
 - Published case study (you sign off before publication)
 - Data export anytime, full destruction certificate on termination
 
-**Annotation**: "See `docs/PILOT_AGREEMENT_v1.md` for the full contract.
+**Annotation**: "See `docs/business/PILOT_AGREEMENT_v1.md` for the full contract.
 9-page template. Founder co-signs within 24 hours of verbal commit."
 
 ---

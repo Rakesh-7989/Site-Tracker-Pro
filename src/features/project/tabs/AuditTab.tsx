@@ -3,8 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Card, Button, Input, FormField, Badge, Alert, Spinner, AccessDenied, SchemaForm,
-} from "@/components/ui";
+  Card, Button, Input, FormField, Badge, Alert, AccessDenied, SchemaForm } from "@/components/ui";
 import { useT } from "@/i18n/I18nProvider";
 import { useCan } from "@/auth";
 import { useAction } from "@/hooks/useAction";
@@ -15,19 +14,15 @@ import {
   checklistFormSchema,
   type InspectionChecklist, type ChecklistStatus, type ResultVerdict,
   type InspectionResult, type ChecklistKind,
-  type ChecklistFormLabels, type ChecklistFormValues,
-} from "@/app/consultancyAuditQueries";
-import { getClient } from "@/lib/supabase";
+  type ChecklistFormLabels, type ChecklistFormValues } from "@/app/queries/consultancyAuditQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 const STATUS_TONE: Record<ChecklistStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  draft: "neutral", in_progress: "info", passed: "success", failed: "danger", cancelled: "neutral",
-};
+  draft: "neutral", in_progress: "info", passed: "success", failed: "danger", cancelled: "neutral" };
 const VERDICT_TONE: Record<ResultVerdict, "neutral" | "success" | "warning" | "danger"> = {
-  pass: "success", fail: "danger", na: "neutral",
-};
+  pass: "success", fail: "danger", na: "neutral" };
 const KIND_LABEL: Record<string, string> = {
-  site_visit: "Site Visit", design_review: "Design Review", quality_audit: "Quality Audit", other: "Other",
-};
+  site_visit: "Site Visit", design_review: "Design Review", quality_audit: "Quality Audit", other: "Other" };
 
 function ResultsPanel({ checklistId, canManage }: { checklistId: string; canManage: boolean }) {
   const t = useT();
@@ -68,7 +63,13 @@ function ResultsPanel({ checklistId, canManage }: { checklistId: string; canMana
 
   const progress = useMemo(() => checklistProgress(rows), [rows]);
 
-  if (loading) return <Spinner size={18} />;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2 py-2">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="h-10 bg-elevated rounded-xl animate-pulse" />
+      ))}
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
@@ -118,8 +119,6 @@ export function AuditTab({ projectId }: { projectId: string }) {
   const t = useT();
   const canManage = useCan("audit:manage", { projectId });
 
-  if (!canManage) return <AccessDenied />;
-
   const [rows, setRows] = useState<InspectionChecklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,21 +141,21 @@ export function AuditTab({ projectId }: { projectId: string }) {
     titlePlaceholder: t("audit.titlePlaceholder"),
     titleRequired: t("audit.titleRequired"),
     kindLabel: k => KIND_LABEL[k] ?? k,
-    statusLabel: s => t(`audit.checklistStatus.${s}`),
-  }), [t]);
+    statusLabel: s => t(`audit.checklistStatus.${s}`) }), [t]);
 
   const schema = useMemo(
     () => checklistFormSchema(formLabels, editing !== null),
     [formLabels, editing],
   );
 
+  if (!canManage) return <AccessDenied />;
+
   const submit = async (values: ChecklistFormValues) => {
     await run(editing ? "edit" : "add", (c: any) => upsertChecklist(c, {
       id: editing?.id ?? null, projectId,
       kind: (values.kind as ChecklistKind) ?? "site_visit",
       title: String(values.title ?? "").trim(),
-      status: (values.status as ChecklistStatus) ?? "draft",
-    }));
+      status: (values.status as ChecklistStatus) ?? "draft" }));
     setCreating(false); setEditing(null);
   };
 
@@ -170,7 +169,13 @@ export function AuditTab({ projectId }: { projectId: string }) {
     await run(`d-${id}`, (c: any) => deleteChecklist(c, id));
   };
 
-  if (loading) return <Spinner size={22} />;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2 py-2">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="h-10 bg-elevated rounded-xl animate-pulse" />
+      ))}
+    </div>
+  );
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   const checklistTitle = editing ? t("audit.editChecklist") : t("audit.newChecklist");

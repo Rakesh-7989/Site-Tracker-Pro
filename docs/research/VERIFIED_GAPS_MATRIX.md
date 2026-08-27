@@ -52,7 +52,7 @@ verbatim attribution. Single-source claims stay UNVERIFIED.
 
 ## Sources of original verdicts
 
-- `docs/SITETRACK_V3_PLAN.md` §2 — market reality, citing research
+- `docs/archive/SITETRACK_V3_PLAN.md` §2 — market reality, citing research
   findings #1–7.
 - Workflow `wz3yologq` — deep-research output (15 confirmed claims,
   10 refuted).

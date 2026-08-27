@@ -12,7 +12,7 @@
 --   7. user_project_ids() — add pm, prospector, project_admin so they can see the
 --      projects they create (used by update_project_architect USING check).
 --
--- Audit findings docs/REWRITE_BUILD_PLAN.md §2.1
+-- Audit findings docs/planning/REWRITE_BUILD_PLAN.md §2.1
 -- Run after 115_subscription_alerts.sql. Idempotent.
 
 -- ============================================================================

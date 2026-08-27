@@ -3,10 +3,10 @@
 // aggregation, phase fee totals, and review-round numbering.
 
 import { describe, it, expect } from "vitest";
-import { computeUtilization, type ProjectBrief } from "@/app/utilizationQueries";
-import { committedFee, type FeePhase } from "@/app/phaseQueries";
-import { billableHours, totalHours, entryValue, type TimeEntry } from "@/app/timeQueries";
-import { nextRoundNo, type ReviewRound } from "@/app/deliverableQueries";
+import { computeUtilization, type ProjectBrief } from "@/app/queries/utilizationQueries";
+import { committedFee, type FeePhase } from "@/app/queries/phaseQueries";
+import { billableHours, totalHours, entryValue, type TimeEntry } from "@/app/queries/timeQueries";
+import { nextRoundNo, type ReviewRound } from "@/app/queries/deliverableQueries";
 
 function phase(over: Partial<FeePhase>): FeePhase {
   return {

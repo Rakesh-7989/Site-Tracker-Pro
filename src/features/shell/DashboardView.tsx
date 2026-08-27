@@ -11,8 +11,8 @@ import { useAuth, useOrgSwitcher, useCan, ROLE_LABEL } from "@/auth";
 import { Card, Icon, Badge } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
 import { useT } from "@/i18n/I18nProvider";
-import { getClient } from "@/lib/supabase";
-import { isOnboardingDone } from "@/app/onboardingQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { isOnboardingDone } from "@/app/queries/onboardingQueries";
 
 export function DashboardView(): JSX.Element {
   const { session } = useAuth();

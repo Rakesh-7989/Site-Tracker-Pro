@@ -14,10 +14,10 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Button, Spinner, Icon } from "@/components/ui/atoms";
-import { extractExif, validateGeotag } from "@/lib/photoStorage";
-import { HYDERABAD_BBOX } from "@/lib/photoStorage";
-import { isNativeMobile } from "@/lib/platform";
-import { nativeGetPosition, nativeTakePhoto } from "@/lib/native-capabilities";
+import { extractExif, validateGeotag } from "@/lib/integrations/photoStorage";
+import { HYDERABAD_BBOX } from "@/lib/integrations/photoStorage";
+import { isNativeMobile } from "@/lib/platform/platform";
+import { nativeGetPosition, nativeTakePhoto } from "@/lib/platform/native-capabilities";
 
 export interface PhotoGeotagResult {
   blob: Blob;

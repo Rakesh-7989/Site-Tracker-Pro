@@ -16,10 +16,10 @@ import {
   toggleReaction, markChannelRead, mentionAllIds,
   extractMentionIds, splitOnMentions,
   type ChatChannel, type ChatMessage,
-} from "@/app/chatQueries";
-import type { MentionCandidate } from "@/app/chatQueries";
-import { getClient } from "@/lib/supabase";
-import { cn } from "@/lib/cn";
+} from "@/app/queries/chatQueries";
+import type { MentionCandidate } from "@/app/queries/chatQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { cn } from "@/lib/utils/cn";
 
 const fmtTs = (iso: string): string => {
   const d = new Date(iso);

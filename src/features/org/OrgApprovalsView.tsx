@@ -6,10 +6,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { listChains, upsertChain, deleteChain, APPROVAL_RESOURCES, APPROVAL_RUNG_ROLES, type ApprovalChain, type ApprovalResource, type ApprovalRung } from "@/app/orgConfigQueries";
+import { listChains, upsertChain, deleteChain, APPROVAL_RESOURCES, APPROVAL_RUNG_ROLES, type ApprovalChain, type ApprovalResource, type ApprovalRung } from "@/app/queries/orgConfigQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const RES_LABEL: Record<ApprovalResource, string> = { expense: "Expense", po: "Purchase order", ra_bill: "RA bill", change_order: "Change order", invoice: "Invoice", drawing_release: "Drawing release" };
 const RES_OPTS = APPROVAL_RESOURCES.map(r => ({ value: r, label: RES_LABEL[r] }));
@@ -85,7 +85,18 @@ function Inner({ orgId, updatedBy }: { orgId: string; updatedBy: string }): JSX.
         <div className="flex justify-end"><Button onClick={() => void save()} disabled={busy === "save" || !name.trim() || rungs.length === 0}>{busy === "save" ? <Spinner size={14} /> : "Save chain"}</Button></div>
       </Card>
 
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? <div className="text-sm text-fg-secondary">No approval chains configured.</div>
         : <div className="space-y-2">{rows.map(ch => (
             <Card key={ch.resource} className="p-3 flex items-center justify-between gap-3">

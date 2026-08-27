@@ -4,11 +4,11 @@ import { useOrgSwitcher } from "@/auth";
 import { Card, Badge, Alert, ProgressBar } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { getOrgPurchaseOrders, poTotals, type CrossPO, type POStatus } from "@/app/crossPoQueries";
-import { listPoReceipts, deliveryProgress, type PoReceipt } from "@/app/poReceiptQueries";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { getOrgPurchaseOrders, poTotals, type CrossPO, type POStatus } from "@/app/queries/crossPoQueries";
+import { listPoReceipts, deliveryProgress, type PoReceipt } from "@/app/queries/poReceiptQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const FILTERS = [{ value: "all", label: "All" }, { value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "delivered", label: "Delivered" }, { value: "cancelled", label: "Cancelled" }];
 const tone = (s: POStatus): "neutral" | "warning" | "info" | "success" | "danger" => (s === "delivered" ? "success" : s === "approved" ? "info" : s === "cancelled" ? "danger" : "warning");
 

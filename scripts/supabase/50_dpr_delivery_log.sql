@@ -14,7 +14,7 @@
 -- - Anchor URL (BuildNow Telangana badge) lives on the message row so
 --   re-renders of the WhatsApp template don't need a join.
 --
--- See docs/SPRINT_2_ARCHITECTURE.md for the full interface contract.
+-- See docs/architecture/SPRINT_2_ARCHITECTURE.md for the full interface contract.
 
 BEGIN;
 

@@ -2,16 +2,15 @@
 // a lightweight timeline from the milestones table (no separate schedule table).
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { listMilestones, type Milestone, type MilestoneStatus } from "@/app/milestoneQueries";
+import { Card, Alert, Icon } from "@/components/ui/atoms";
+import { listMilestones, type Milestone, type MilestoneStatus } from "@/app/queries/milestoneQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const BAR: Record<MilestoneStatus, { w: string; cls: string; label: string }> = {
   completed: { w: "100%", cls: "bg-success", label: "Completed" },
   in_progress: { w: "55%", cls: "bg-accent", label: "In progress" },
-  pending: { w: "12%", cls: "bg-secondary", label: "Pending" },
-};
+  pending: { w: "12%", cls: "bg-secondary", label: "Pending" } };
 
 export function GanttTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Milestone[]>([]);
@@ -35,7 +34,18 @@ export function GanttTab({ projectId }: { projectId: string }): JSX.Element {
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-fg-primary">Schedule</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : ordered.length === 0 ? <div className="text-sm text-fg-secondary">No milestones to schedule yet. Add them in the Milestones tab.</div>
         : <Card className="p-4 space-y-3">
             {ordered.map(m => { const b = BAR[m.status]; return (

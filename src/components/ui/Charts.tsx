@@ -4,7 +4,7 @@
 // pure exported helpers so it is unit-testable without a DOM.
 
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 export interface ChartDatum {
   label: string;

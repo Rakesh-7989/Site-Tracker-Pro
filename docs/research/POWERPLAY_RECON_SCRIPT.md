@@ -240,7 +240,7 @@ response anchors our final price decision.
    > right: [3-bullet summary]. If anything is wrong, please reply.
    > I'll WhatsApp again next week with [specific commitment]."
 4. If the interview surfaced a NEW competitive insight worth
-   re-verifying, add to `docs/research/OPEN_QUESTIONS.md`.
+ re-verifying, add to .
 
 ## Day 15 gate — Sprint 2 unlock condition
 
@@ -261,7 +261,7 @@ sprint before unlocking Sprint 2. **Do not build on assumption.**
 ## Source citations preserved here
 
 All claims that drove this script come from:
-- `docs/SITETRACK_V3_PLAN.md` §1 (mistakes), §2 (market reality)
+- `docs/archive/SITETRACK_V3_PLAN.md` §1 (mistakes), §2 (market reality)
 - Workflow `wz3yologq` (deep research)
 - Workflow `w957hlybp` (repo audit + planning)
 - Powerplay self-disclosed: <https://www.getpowerplay.in/resources/case-studies/>

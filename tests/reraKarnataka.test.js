@@ -1,10 +1,10 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   KA_STAGE_CODES, inferKaReraStage, validateKaRera,
   buildKaFilingPayload, mockKaAdapter, kaReraAdapter,
-} from "../src/lib/reraKarnataka";
+} from "../src/lib/integrations/reraKarnataka";
 
-describe("reraKarnataka — stage codes", () => {
+describe("reraKarnataka � stage codes", () => {
   it("exposes 9 KA stages", () => {
     expect(Object.keys(KA_STAGE_CODES).length).toBe(9);
   });
@@ -23,7 +23,7 @@ describe("reraKarnataka — stage codes", () => {
   });
 });
 
-describe("reraKarnataka — validateKaRera", () => {
+describe("reraKarnataka � validateKaRera", () => {
   it("accepts canonical format", () => {
     const r = validateKaRera("PRM/KA/RERA/1234/5678/000001");
     expect(r.ok).toBe(true);
@@ -40,7 +40,7 @@ describe("reraKarnataka — validateKaRera", () => {
   });
 });
 
-describe("reraKarnataka — buildKaFilingPayload", () => {
+describe("reraKarnataka � buildKaFilingPayload", () => {
   const project = { rera_no: "PRM/KA/RERA/1234/5678/000001", name: "Maple Heights" };
 
   it("builds canonical payload", () => {
@@ -55,7 +55,7 @@ describe("reraKarnataka — buildKaFilingPayload", () => {
   });
 });
 
-describe("reraKarnataka — mockKaAdapter", () => {
+describe("reraKarnataka � mockKaAdapter", () => {
   it("returns ack_no on submit", async () => {
     const r = await mockKaAdapter.submit({ rera_no: "PRM/KA/RERA/1234/5678/000001" });
     expect(r.ok).toBe(true);
@@ -72,7 +72,7 @@ describe("reraKarnataka — mockKaAdapter", () => {
   });
 });
 
-describe("reraKarnataka — kaReraAdapter", () => {
+describe("reraKarnataka � kaReraAdapter", () => {
   it("returns endpoint-missing without config", async () => {
     const r = await kaReraAdapter.submit({});
     expect(r.ok).toBe(false);

@@ -8,7 +8,7 @@ import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { RequireSession, useAuth } from "@/auth";
 import { Spinner } from "@/components/ui/atoms";
-import { isNativeMobile, getPlatform } from "@/lib/platform";
+import { isNativeMobile, getPlatform } from "@/lib/platform/platform";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
@@ -69,7 +69,7 @@ function GatedShell(): JSX.Element {
     let dispose = () => {};
     let cancelled = false;
     void (async () => {
-      const { attachAndroidBackButton } = await import("@/lib/native");
+      const { attachAndroidBackButton } = await import("@/lib/platform/native");
       if (cancelled) return;
       dispose = await attachAndroidBackButton(() => {
         if (mobileOpen) { setMobileOpen(false); return true; }

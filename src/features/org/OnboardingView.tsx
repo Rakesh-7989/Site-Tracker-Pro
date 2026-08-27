@@ -3,18 +3,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Button, Spinner, Badge } from "@/components/ui/atoms";
+import { Card, Button, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/onboardingQueries";
+import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/queries/onboardingQueries";
 import { CORE_SEGMENTS, defaultProjectTypeFor, legacySegmentFor, projectTypesForSegments, type CompanySegment } from "@/auth";
 import type { ProjectType } from "@/auth";
 import { MODULES, CORE_MODULE, templateModules, templateModulesForSegments, type ModuleId } from "@/modules";
 import { useT } from "@/i18n/I18nProvider";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
-import type { SignupPlan } from "@/app/signupQueries";
+import type { SignupPlan } from "@/app/queries/signupQueries";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const STEPS = ["Org details", "Plan & billing", "Finish"]; // progressive: invites/projects/presets deferred (v5)
 const TRIAL_DAYS = 14;
 
@@ -242,7 +242,24 @@ export function OnboardingView(): JSX.Element {
     navigate("/projects"); // empty state offers Create-first / Load-demo
   };
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <div className="p-8"><div className="bg-error-tint border border-error text-error rounded-xl p-4 text-sm">{error}</div></div>;
 
   return (

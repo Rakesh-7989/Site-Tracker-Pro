@@ -9,7 +9,7 @@ import { useAuth } from "@/auth";
 import { Card, Spinner, Icon } from "@/components/ui/atoms";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 export function AcceptInviteView(): JSX.Element {
   const { session, status } = useAuth();
   const [params] = useSearchParams();

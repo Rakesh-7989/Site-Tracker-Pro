@@ -5,18 +5,18 @@
 // + signal list. Pure math (no external AI); shown on Overview for members.
 
 import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { Card, Badge, Spinner, Icon, ProgressBar } from "@/components/ui/atoms";
 import {
   computeRiskSignals, getProjectRiskSnapshot, isSnapshotFresh,
   type StoredRiskSnapshot, type RiskSignal, type RiskLevel,
-} from "@/app/riskQueries";
-import { listMilestones } from "@/app/milestoneQueries";
-import { listIssues } from "@/app/issueQueries";
-import { listExpenses } from "@/app/financeQueries";
-import { listRfis } from "@/app/designQueries";
-import { localDateISO } from "@/lib/dateLocal";
-import type { ProjectDetail } from "@/app/queries";
+} from "@/app/queries/riskQueries";
+import { listMilestones } from "@/app/queries/milestoneQueries";
+import { listIssues } from "@/app/queries/issueQueries";
+import { listExpenses } from "@/app/queries/financeQueries";
+import { listRfis } from "@/app/queries/designQueries";
+import { localDateISO } from "@/lib/utils/dateLocal";
+import type { ProjectDetail } from "@/app/queries/queries";
 
 const LEVEL_TONE: Record<RiskLevel, "neutral" | "info" | "success" | "warning" | "danger"> = {
   low: "success", medium: "warning", high: "danger", critical: "danger",

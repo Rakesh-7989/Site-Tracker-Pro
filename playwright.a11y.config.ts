@@ -19,7 +19,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "node scripts/e2e-mock-server.mjs",
+    command: "node scripts/dev/e2e-mock-server.mjs",
     url: `http://127.0.0.1:${mockPort}`,
     reuseExistingServer: false,
     timeout: 60_000,

@@ -2,9 +2,9 @@
 // project-scoped quote lister, and NOC-in-calendar bucketing.
 
 import { describe, it, expect } from "vitest";
-import { listPOs } from "@/app/financeQueries";
-import { listProjectQuotes } from "@/app/procurementQuotes";
-import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/calendarQueries";
+import { listPOs } from "@/app/queries/financeQueries";
+import { listProjectQuotes } from "@/app/queries/procurementQuotes";
+import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/queries/calendarQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

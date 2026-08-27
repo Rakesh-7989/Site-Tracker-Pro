@@ -11,13 +11,13 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
 import { BuildNowBadge } from "@/features/dpr/BuildNowBadge";
 import { useT } from "@/i18n/I18nProvider";
-import { getClient } from "@/lib/supabase";
-import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/dprQueries";
-import { loadProjectHierarchy, hierarchyPath } from "@/app/spaceQueries";
-import { invokeSendDpr } from "@/app/dprSubmit";
-import { downloadDprPdf, getDprPdfBlob, dprWhatsAppShareEnabled, waShareLink } from "@/app/dprPdf";
-import { isNativeMobile } from "@/lib/platform";
-import { nativeShareFile } from "@/lib/native-capabilities";
+import { getClient } from "@/lib/supabase/supabase";
+import { getDprMessage, listDprDeliveryLog, getBuildnowAnchor, type DprMessageRow, type DprDeliveryLogRow } from "@/app/queries/dprQueries";
+import { loadProjectHierarchy, hierarchyPath } from "@/app/queries/spaceQueries";
+import { invokeSendDpr } from "@/app/services/dprSubmit";
+import { downloadDprPdf, getDprPdfBlob, dprWhatsAppShareEnabled, waShareLink } from "@/app/services/dprPdf";
+import { isNativeMobile } from "@/lib/platform/platform";
+import { nativeShareFile } from "@/lib/platform/native-capabilities";
 
 export const fmtDateTime = (iso: string): string => {
   const d = new Date(iso);
@@ -80,7 +80,7 @@ export function DPRDetailView(): JSX.Element {
 
   useEffect(() => { void reload(); }, [reload]);
 
-const onRetry = useCallback(async () => {
+  const onRetry = useCallback(async () => {
     if (!row) return;
     const client = await getClient();
     if (!client) return;
@@ -106,7 +106,20 @@ const onRetry = useCallback(async () => {
     setRetryMsg(res.ok ? (res.error || t("dpr.detail.sendOk", { status: res.status ?? "sent" })) : res.error ?? t("dpr.detail.sendFailed"));
     setRetrying(false);
     await reload();
-}, [row, reload, t]);
+ }, [row, reload, t]);
+
+  const [sharing, setSharing] = useState(false);
+  const onNativeShare = useCallback(() => {
+    void (async () => {
+      setSharing(true);
+      try {
+        const blob = row ? getDprPdfBlob(row, activeOrg?.orgName ?? "") : null;
+        if (blob) await nativeShareFile({ fileName: `dpr-${row?.id.slice(0, 8) ?? "dpr"}.pdf`, blob, title: "SiteTrack Pro DPR" });
+      } finally {
+        setSharing(false);
+      }
+    })();
+  }, [row, activeOrg?.orgName]);
 
   if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
   if (!activeOrg) return <Alert variant="warning">{t("dpr.history.noOrg")}</Alert>;
@@ -129,20 +142,6 @@ const onRetry = useCallback(async () => {
     phone: row.promoterPhone,
     title: `DPR ${fmtDateTime(row.createdAt)} — ${row.transcript?.slice(0, 120) ?? "Site update"}`,
   };
-
-  // Native share sheet: hands the REAL PDF to WhatsApp/Drive/mail etc.
-  const [sharing, setSharing] = useState(false);
-  const onNativeShare = useCallback(() => {
-    void (async () => {
-      setSharing(true);
-      try {
-        const blob = getDprPdfBlob(row, activeOrg.orgName);
-        await nativeShareFile({ fileName: `dpr-${row.id.slice(0, 8)}.pdf`, blob, title: "SiteTrack Pro DPR" });
-      } finally {
-        setSharing(false);
-      }
-    })();
-  }, [row, activeOrg.orgName]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 p-4 md:p-6">

@@ -1,5 +1,5 @@
 ﻿// SiteTrack Pro — Role Permissions manager (superadmin, migration 69).
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 //
 // Lets the founder (superadmin) grant/revoke capabilities to any identity
 // role, scoped Global or to one org. Writes role_capability_overrides rows
@@ -19,8 +19,8 @@ import { Select } from "@/components/ui/forms";
 import {
   listOrgsForOverrides, listCapabilityOverrides,
   setCapabilityOverride, clearCapabilityOverride, type OrgOption,
-} from "@/app/capabilityOverrideQueries";
-import { planUnlocksCustomRoles, PLAN_LABEL } from "@/app/platformAdminQueries";
+} from "@/app/queries/capabilityOverrideQueries";
+import { planUnlocksCustomRoles, PLAN_LABEL } from "@/app/queries/platformAdminQueries";
 import { CustomRolesPanel } from "./CustomRolesPanel";
 
 type CellState = "inherit" | "grant" | "revoke";

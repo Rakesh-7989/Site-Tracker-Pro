@@ -5,10 +5,10 @@
 import { useEffect, useState } from "react";
 import { Card, Button } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
-import { getPaymentSettings, setPlatformSetting } from "@/app/paymentQueries";
-import { isValidVpa } from "@/lib/upi";
+import { getPaymentSettings, setPlatformSetting } from "@/app/queries/paymentQueries";
+import { isValidVpa } from "@/lib/integrations/upi";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 // ── Pure helper (exported for the phase unit tests) ──────────────────────────
 

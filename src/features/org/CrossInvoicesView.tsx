@@ -2,35 +2,30 @@
 // Mirrors CrossRaBillsView pattern for invoices with payment reconciliation.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, Spinner, Alert, Badge, DataTable } from "@/components/ui";
+import { Card, Alert, Badge, DataTable } from "@/components/ui";
 import { Input, Select, FormField } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
 import { useCan } from "@/auth";
 import { useOrgSwitcher } from "@/auth/useOrgSwitcher";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import {
   listOrgInvoicesWithPayments,
   crossInvoiceRollup,
-  type CrossInvoice,
-} from "@/app/crossInvoiceQueries";
-import { getClient } from "@/lib/supabase";
+  type CrossInvoice } from "@/app/queries/crossInvoiceQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 const STATUS_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  draft: "neutral", sent: "info", paid: "success", overdue: "danger", cancelled: "neutral",
-};
+  draft: "neutral", sent: "info", paid: "success", overdue: "danger", cancelled: "neutral" };
 
 const PAYMENT_STATUS_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  paid: "success", partial: "info", pending: "warning", overdue: "danger",
-};
+  paid: "success", partial: "info", pending: "warning", overdue: "danger" };
 
 const PAYMENT_STATUS_LABEL: Record<string, string> = {
-  paid: "Paid", partial: "Partial", pending: "Pending", overdue: "Overdue",
-};
+  paid: "Paid", partial: "Partial", pending: "Pending", overdue: "Overdue" };
 
 const STATUS_LABEL: Record<string, string> = {
-  draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue", cancelled: "Cancelled",
-};
+  draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue", cancelled: "Cancelled" };
 
 const fmtCur = (n: number) => `₹${(n ?? 0).toLocaleString("en-IN")}`;
 const fmtDate = (iso: string | null) => { if (!iso) return "—"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }); };
@@ -143,7 +138,18 @@ export function CrossInvoicesView(): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-border">
           <DataTable

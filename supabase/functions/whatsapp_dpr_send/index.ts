@@ -13,7 +13,7 @@
 // WHATSAPP_PHONE_NUMBER_ID + WHATSAPP_PERMANENT_TOKEN for the pilot orgs;
 // SITETRACK_DRY_RUN=true keeps the EF usable without Meta wiring.
 //
-// See docs/SPRINT_2_ARCHITECTURE.md for the contract.
+// See docs/architecture/SPRINT_2_ARCHITECTURE.md for the contract.
 
 // deno-lint-ignore-file no-explicit-any
 import { retry } from "../_shared/retry.ts";

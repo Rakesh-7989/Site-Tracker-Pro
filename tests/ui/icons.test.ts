@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from "vitest";
 import { ICON_NAMES, isIconName } from "@/components/ui/icons";
-import { NAV_CATALOG } from "@/app/nav-config";
+import { NAV_CATALOG } from "@/app/config/nav-config";
 
 describe("icon catalog", () => {
   it("exposes a non-trivial icon set with no duplicates", () => {

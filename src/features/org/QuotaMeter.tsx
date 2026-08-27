@@ -3,20 +3,19 @@
 // Wired into OrgDashboardView.
 
 import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
-import { storageByBucket, storagePercent, storageUsed, storageTotal, storageRemaining } from "@/app/storageQuotaQueries";
-import { Card, ProgressBar, Spinner, Alert, Badge } from "@/components/ui/atoms";
+import { getClient } from "@/lib/supabase/supabase";
+import { storageByBucket, storagePercent, storageUsed, storageTotal, storageRemaining } from "@/app/queries/storageQuotaQueries";
+import { Card, ProgressBar, Alert, Badge } from "@/components/ui/atoms";
 
 const BUCKET_LABELS: Record<string, string> = {
   deliverables: "Deliverables",
   dpr_media: "DPR-media",
-  research_docs: "Research-docs",
-};
+  research_docs: "Research-docs" };
 
 export function QuotaMeter({ orgId }: { orgId: string }): JSX.Element {
   const [state, setState] = useState<{
     loading: boolean;
-    data: import("@/app/storageQuotaQueries").StorageByBucket[] | null;
+    data: import("@/app/queries/storageQuotaQueries").StorageByBucket[] | null;
     error: string | null;
   }>({ loading: true, data: null, error: null });
 
@@ -38,7 +37,18 @@ export function QuotaMeter({ orgId }: { orgId: string }): JSX.Element {
   useEffect(() => { void load(); }, [load]);
 
   if (state.loading) {
-    return <div className="grid place-items-center py-8"><Spinner size={24} /></div>;
+    return <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>;
   }
 
   if (state.error) {
@@ -58,7 +68,7 @@ export function QuotaMeter({ orgId }: { orgId: string }): JSX.Element {
     return n + " bytes";
   };
 
-  const bucketRows = data.map((b: import("@/app/storageQuotaQueries").StorageByBucket) => (
+  const bucketRows = data.map((b: import("@/app/queries/storageQuotaQueries").StorageByBucket) => (
     <div key={b.bucket} className="space-y-2">
       <div className="flex justify-between text-sm mb-1">
         <span>{BUCKET_LABELS[b.bucket]}</span>

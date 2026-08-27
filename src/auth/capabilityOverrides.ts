@@ -22,7 +22,7 @@ import { identityCapabilities, projectTierCapabilities } from "./permissions-mat
 /**
  * The BASE (pre-override) capability set a role gets when provisioned the
  * normal way: identity caps + org tier (only when elevated: admin/pm) +
- * project-tier default. Mirrors the effective set in docs/ROLE_FEATURES.md.
+ * project-tier default. Mirrors the effective set in docs/architecture/ROLE_FEATURES.md.
  * The RoleManager UI shows this so the admin sees what an override adds/removes.
  */
 export function baseCapabilitiesFor(role: IdentityRole): Set<Capability> {

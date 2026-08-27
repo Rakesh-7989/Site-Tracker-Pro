@@ -2,15 +2,14 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth, useOrgSwitcher, PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { Spinner, Alert, Icon, Button } from "@/components/ui/atoms";
+import { Alert, Icon, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries";
-import { getClient } from "@/lib/supabase";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries/queries";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listBlocks, listFloors, listUnits,
   createBlock, createFloor, createUnit,
-  deleteBlock, deleteFloor, deleteUnit,
-} from "@/app/hierarchyQueries";
+  deleteBlock, deleteFloor, deleteUnit } from "@/app/queries/hierarchyQueries";
 import { buildProjectTree, countHierarchy, rollUpProgress, unitCode } from "@/lib/hierarchy";
 
 
@@ -140,7 +139,24 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
     else alert(res.error);
   };
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
 
   if (projects.length === 0) return (
     <div className="p-10">

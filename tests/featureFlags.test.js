@@ -16,7 +16,7 @@ import {
   isStaffUser,
   isViewStubBlocked,
   isTabStubBlocked,
-} from "../src/lib/featureFlags";
+} from "../src/lib/integrations/featureFlags";
 
 describe("STUB_VIEWS source-of-truth", () => {
   it("is a Set with exactly 16 frozen views (staff-only features that lack internal RBAC)", () => {

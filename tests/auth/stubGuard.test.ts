@@ -4,7 +4,7 @@ import {
   isStubView,
   isStaffUser,
   isViewStubBlocked,
-} from "@/lib/featureFlags";
+} from "@/lib/integrations/featureFlags";
 
 describe("STUB_VIEWS catalog", () => {
   it("contains all 16 frozen stub view IDs", () => {

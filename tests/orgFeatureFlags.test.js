@@ -1,12 +1,12 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   FEATURE_CATALOG, FEATURE_GROUPS,
   isFeatureEnabled, setOrgFeature, setPlatformFeature, resetOrgFeatures,
   featureStats, catalogByGroup, featuresForRole,
   INIT_ORG_FEATURE_FLAGS,
-} from "../src/lib/orgFeatureFlags";
+} from "../src/lib/integrations/orgFeatureFlags";
 
-describe("orgFeatureFlags — catalog integrity", () => {
+describe("orgFeatureFlags � catalog integrity", () => {
   it("every entry has id matching its key", () => {
     for (const [k, f] of Object.entries(FEATURE_CATALOG)) {
       expect(f.id).toBe(k);
@@ -34,7 +34,7 @@ describe("orgFeatureFlags — catalog integrity", () => {
   });
 });
 
-describe("orgFeatureFlags — isFeatureEnabled cascade", () => {
+describe("orgFeatureFlags � isFeatureEnabled cascade", () => {
   it("unknown features default on", () => {
     expect(isFeatureEnabled({}, {}, "org1", "no_such_feature", "basic")).toBe(true);
   });
@@ -77,7 +77,7 @@ describe("orgFeatureFlags — isFeatureEnabled cascade", () => {
   });
 });
 
-describe("orgFeatureFlags — setOrgFeature / setPlatformFeature (immutable)", () => {
+describe("orgFeatureFlags � setOrgFeature / setPlatformFeature (immutable)", () => {
   it("setOrgFeature returns new object", () => {
     const before = INIT_ORG_FEATURE_FLAGS;
     const after = setOrgFeature(before, "org1", "calendar", false);
@@ -102,7 +102,7 @@ describe("orgFeatureFlags — setOrgFeature / setPlatformFeature (immutable)", (
   });
 });
 
-describe("orgFeatureFlags — resetOrgFeatures", () => {
+describe("orgFeatureFlags � resetOrgFeatures", () => {
   it("clears an org's overrides", () => {
     const before = { org1: { calendar: false }, org2: { boq: false } };
     const after = resetOrgFeatures(before, "org1");
@@ -114,7 +114,7 @@ describe("orgFeatureFlags — resetOrgFeatures", () => {
   });
 });
 
-describe("orgFeatureFlags — featureStats", () => {
+describe("orgFeatureFlags � featureStats", () => {
   it("counts enabled vs plan-locked for basic plan", () => {
     const s = featureStats({}, {}, "org1", "basic");
     expect(s.enabled).toBeGreaterThan(0);
@@ -135,7 +135,7 @@ describe("orgFeatureFlags — featureStats", () => {
   });
 });
 
-describe("orgFeatureFlags — catalogByGroup", () => {
+describe("orgFeatureFlags � catalogByGroup", () => {
   it("groups every feature", () => {
     const g = catalogByGroup();
     const grouped = FEATURE_GROUPS.reduce((s, k) => s + g[k].length, 0);
@@ -143,7 +143,7 @@ describe("orgFeatureFlags — catalogByGroup", () => {
   });
 });
 
-describe("orgFeatureFlags — featuresForRole", () => {
+describe("orgFeatureFlags � featuresForRole", () => {
   it("superadmin + orgadmin see everything", () => {
     expect(featuresForRole("superadmin").length).toBe(Object.keys(FEATURE_CATALOG).length);
     expect(featuresForRole("orgadmin").length).toBe(Object.keys(FEATURE_CATALOG).length);

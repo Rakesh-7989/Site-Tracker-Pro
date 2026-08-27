@@ -1,12 +1,13 @@
 ﻿import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Badge, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { IconName } from "@/components/ui/icons";
-import { globalSearch, hitUrl, type SearchHit, type SearchKind } from "@/app/searchQueries";
+import { globalSearch, hitUrl, type SearchHit, type SearchKind } from "@/app/queries/searchQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const KIND_META: Record<SearchKind, { label: string; icon: IconName; tone: "info" | "neutral" | "warning" | "success" }> = {
   project: { label: "Project", icon: "folder", tone: "info" },
   vendor: { label: "Vendor", icon: "truck", tone: "neutral" },
@@ -65,7 +66,18 @@ export function GlobalSearchView(): JSX.Element {
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
       {q.trim().length < 2 ? <div className="text-sm text-fg-tertiary">Type at least 2 characters.</div>
-        : loading ? <div className="grid place-items-center py-8"><Spinner size={22} /></div>
+        : loading ? <div role="status" aria-label="Loading search results" aria-busy="true" className="space-y-2">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+                <Skeleton decorative height={32} width="w-8" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton decorative height={12} width="w-1/3" />
+                  <Skeleton decorative height={10} width="w-1/4" />
+                </div>
+                <Skeleton decorative height={20} width="w-16" />
+              </div>
+            ))}
+          </div>
         : hits.length === 0 && searched ? <div className="text-sm text-fg-tertiary text-center py-8">No matches for &ldquo;{q.trim()}&rdquo;.</div>
         : <DataTable
             dense

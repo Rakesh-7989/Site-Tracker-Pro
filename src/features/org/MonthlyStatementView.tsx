@@ -3,17 +3,17 @@
 // projects. Mirrors the RevenueView org-rollup pattern.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
-import { Card, Spinner, Alert, AccessDenied, Button } from "@/components/ui/atoms";
+import { memberProjectScope } from "@/app/queries/queries";
+import { Card, Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { listOrgMonthlyStatement, monthlyStatementTotals, type MonthlyStatementRow } from "@/app/monthlyStatementQueries";
-import { downloadMonthlyStatementPdf } from "@/app/monthlyStatementPdf";
-import { currentMonthRange } from "@/lib/dateLocal";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listOrgMonthlyStatement, monthlyStatementTotals, type MonthlyStatementRow } from "@/app/queries/monthlyStatementQueries";
+import { downloadMonthlyStatementPdf } from "@/app/services/monthlyStatementPdf";
+import { currentMonthRange } from "@/lib/utils/dateLocal";
 
 const FILTER_OPTIONS = [
   { value: "all", label: "All" },
@@ -31,7 +31,9 @@ function MonthlyStatementInner(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const session = useSession();
   const ctx = { orgId: activeOrg?.orgId };
-  const canView = useCan("budget:view", ctx) || useCan("revenue:view", ctx);
+  const canViewBudget = useCan("budget:view", ctx);
+  const canViewRevenue = useCan("revenue:view", ctx);
+  const canView = canViewBudget || canViewRevenue;
 
   const [rows, setRows] = useState<MonthlyStatementRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,8 +65,7 @@ function MonthlyStatementInner(): JSX.Element {
       orgName: activeOrg?.orgName ?? "Organization",
       month,
       rows,
-      totals,
-    });
+      totals });
   };
 
   if (!canView) return <AccessDenied message="You don't have permission to view the monthly statement." />;
@@ -77,8 +78,7 @@ function MonthlyStatementInner(): JSX.Element {
           <div className="font-display font-semibold text-fg-primary tracking-editorial text-sm">{r.name}</div>
           <div className="text-[11px] text-fg-secondary capitalize">{r.type ?? "—"}</div>
         </div>
-      ),
-    },
+      ) },
     { key: "invoicedPhase", header: "Phase Invoices", hideOnMobile: true, className: "flex-shrink-0 text-right", render: r => <span className="text-xs text-fg-secondary">{fmtRupees(r.invoicedPhase)}</span> },
     { key: "invoicedHourly", header: "Hourly Invoices", hideOnMobile: true, className: "flex-shrink-0 text-right", render: r => <span className="text-xs text-fg-secondary">{fmtRupees(r.invoicedHourly)}</span> },
     { key: "invoicedRetainer", header: "Retainer Invoices", hideOnMobile: true, className: "flex-shrink-0 text-right", render: r => <span className="text-xs text-fg-secondary">{fmtRupees(r.invoicedRetainer)}</span> },
@@ -119,7 +119,18 @@ function MonthlyStatementInner(): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : shown.length === 0 ? (
         <Card className="p-10 text-center text-sm text-fg-secondary">
           No financial data for the selected month. Add invoices, expenses, RA bills, or retainers to see them here.

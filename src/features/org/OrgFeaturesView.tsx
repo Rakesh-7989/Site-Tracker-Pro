@@ -3,9 +3,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, Spinner, Icon } from "@/components/ui/atoms";
-import { getOrgIdFromMember, listFeatureFlags, upsertFeatureFlag, type FeatureFlag } from "@/app/featureFlagQueries";
+import { getOrgIdFromMember, listFeatureFlags, upsertFeatureFlag, type FeatureFlag } from "@/app/queries/featureFlagQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const FEATURE_GROUPS: Array<{ id: string; label: string; desc: string; features: Array<{ key: string; label: string; plan: string }> }> = [
   { id: "nav", label: "Sidebar nav", desc: "Top-level views in navigation.", features: [
     { key: "hierarchy", label: "Hierarchy", plan: "basic" },
@@ -69,7 +69,24 @@ export function OrgFeaturesView(): JSX.Element {
     setSaving(null);
   };
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error && !orgId) return <div className="p-8"><div className="bg-error-tint border border-error text-error rounded-xl p-4 text-sm">{error}</div></div>;
 
   const allFeatures = FEATURE_GROUPS.flatMap(g => g.features);

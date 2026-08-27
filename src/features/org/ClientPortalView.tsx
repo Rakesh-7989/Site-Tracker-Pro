@@ -4,11 +4,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth";
-import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
-import { listClientProjects, listClientNotifications, type ProjectBrief, type NotificationBrief } from "@/app/clientPortalQueries";
+import { Card, Alert, Icon, Badge } from "@/components/ui/atoms";
+import { listClientProjects, listClientNotifications, type ProjectBrief, type NotificationBrief } from "@/app/queries/clientPortalQueries";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 function PBar({ v }: { v: number }) {
   return (
     <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
@@ -45,7 +45,24 @@ export function ClientPortalView(): JSX.Element {
   const unread = notifs.filter(n => !n.read);
   const mp = projects;
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <div className="p-8"><Alert variant="danger">{error}</Alert></div>;
 
   return (

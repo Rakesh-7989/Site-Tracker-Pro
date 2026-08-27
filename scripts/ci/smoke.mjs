@@ -1,0 +1,756 @@
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
+const root = process.cwd();
+const read = path => readFileSync(join(root, path), "utf8");
+const checks = [];
+
+const add = (name, pass, detail = "") => checks.push({ name, pass, detail });
+
+// App markers now search v3 app + feature modules + key views.
+const app = [
+  read("src/app/AppV3.tsx"),
+  read("src/app/router.tsx"),
+  read("src/app/RouteErrorBoundary.tsx"),
+  read("src/lib/supabase/db.ts"),
+  read("src/app/queries/partnerQueries.ts"),
+  read("src/features/project/tabs/PartnersTab.tsx"),
+  read("src/features/shell/SharedProjectsCard.tsx"),
+  read("src/plugins/catalog.ts"),
+  read("src/features/shell/ShellLayout.tsx"),
+  read("src/features/shell/TopBar.tsx"),
+  read("src/features/shell/Sidebar.tsx"),
+  read("src/features/shell/GlobalSearch.tsx"),
+  read("src/features/shell/TrialBanner.tsx"),
+  read("src/features/admin/ImpersonationBanner.tsx"),
+  read("src/features/admin/ImpersonationContext.tsx"),
+  read("src/lib/platform/useConnectionStatus.ts"),
+  read("src/features/project/DetailView.tsx"),
+  read("src/lib/supabase/supabase.ts"),
+  read("src/lib/integrations/notifications.ts"),
+  read("src/lib/ai/ai.ts"),
+  read("src/lib/platform/offline.ts"),
+  read("src/lib/platform/offlineQueue.ts"),
+  read("src/app/services/dprOfflineSync.ts"),
+  read("src/lib/integrations/cashfree.ts"),
+  read("src/lib/integrations/razorpay.ts"),
+  read("src/lib/integrations/orgFeatureFlags.ts"),
+  read("src/lib/integrations/audit.ts"),
+  read("src/lib/utils/escape.ts"),
+  read("src/lib/utils/genericCsv.ts"),
+  read("src/lib/contractors.ts"),
+  read("src/lib/dxfPreview.ts"),
+  read("src/features/shared/CadPreviewModal.tsx"),
+  read("src/features/shared/DxfThumbnail.tsx"),
+  read("src/features/org/TeamChatView.tsx"),
+  read("src/app/queries/chatQueries.ts"),
+  read("src/data/seed.ts"),
+  read("src/auth/PlanGate.tsx"),
+  read("src/features/auth/LoginScreenV3.tsx"),
+  read("src/features/admin/PlatformBillingView.tsx"),
+  read("src/features/admin/PlatformSettingsView.tsx"),
+  read("src/features/admin/PlatformUsageView.tsx"),
+  read("src/features/admin/PlatformAuditLogV2View.tsx"),
+  read("src/features/admin/PlatformDashboardView.tsx"),
+  read("src/features/admin/PlatformOrgsView.tsx"),
+  read("src/features/admin/PlatformUsersView.tsx"),
+  read("src/features/admin/StaffAdminView.tsx"),
+  read("src/features/admin/SignupRequestsView.tsx"),
+  read("src/features/admin/UpgradeRequestsView.tsx"),
+  read("src/features/admin/PlatformSupportView.tsx"),
+  read("src/features/admin/UpiSettingsCard.tsx"),
+  read("src/features/org/OrgFeaturesView.tsx"),
+  read("src/features/project/tabs/EstimateTab.tsx"),
+  read("src/features/dpr/DPRComposer.tsx"),
+  read("src/features/dpr/PhotoGeotagCapture.tsx"),
+  read("src/features/org/FfeRollupView.tsx"),
+  read("src/features/org/RevenueView.tsx"),
+  read("src/features/org/ForecastView.tsx"),
+  read("src/features/org/UtilizationView.tsx"),
+  read("src/features/org/ProcurementView.tsx"),
+  read("src/features/org/DownloadAuditView.tsx"),
+  read("src/features/org/MonthlyStatementView.tsx"),
+  read("src/app/queries/downloadAuditQueries.ts"),
+  read("src/features/org/VendorScorecardView.tsx"),
+  read("src/app/queries/advancedProcurementQueries.ts"),
+  read("src/features/project/tabs/ThreeWayMatchingTab.tsx"),
+  read("src/features/org/OrgFinancialView.tsx"),
+  read("src/features/project/tabs/ProjectPnLTab.tsx"),
+  read("src/features/project/tabs/ProjectWipTab.tsx"),
+  read("src/features/project/tabs/ProjectBudgetTab.tsx"),
+  read("src/app/queries/projectFinancialQueries.ts"),
+  read("src/features/org/CrossRaBillsView.tsx"),
+  read("src/app/queries/crossRaQueries.ts"),
+  read("src/features/org/CrossAnalyticsView.tsx"),
+  read("src/app/queries/crossAnalyticsQueries.ts"),
+  read("src/features/org/CrmView.tsx"),
+  read("src/app/queries/crmQueries.ts"),
+  read("src/features/org/CrossProjectPOsView.tsx"),
+  read("src/app/queries/crossPoQueries.ts"),
+  read("src/app/queries/poReceiptQueries.ts"),
+  read("src/app/queries/clientPortalQueries.ts"),
+  read("src/features/project/RiskSignalsCard.tsx"),
+  read("src/app/queries/riskQueries.ts"),
+  read("src/app/engines/designWorkflow.ts"),
+  read("src/app/queries/designWorkflowQueries.ts"),
+  read("src/app/queries/materialRequestQueries.ts"),
+  read("src/app/queries/financeQueries.ts"),
+  read("src/app/queries/designQueries.ts"),
+  read("src/app/engines/workflowEngine.ts"),
+  read("src/app/engines/workflowDefinitions.ts"),
+  read("src/app/queries/qualityQueries.ts"),
+  read("src/app/queries/statutoryQueries.ts"),
+  read("src/app/queries/shiftQueries.ts"),
+  read("src/app/services/dprPdf.ts"),
+  read("src/features/project/tabs/AuditTab.tsx"),
+  read("src/features/project/tabs/ReportsTab.tsx"),
+  read("src/app/queries/consultancyAuditQueries.ts"),
+  read("src/app/engines/formEngine.ts"),
+  read("src/components/ui/SchemaForm.tsx"),
+  read("src/app/queries/procurementQuotes.ts"),
+  read("src/app/queries/outboxQueries.ts"),
+  read("src/app/queries/spaceQueries.ts"),
+  read("src/hooks/useLocationContext.ts"),
+  read("src/app/config/domainMap.ts"),
+  read("src/features/project/tabs/AttendanceTab.tsx"),
+  read("src/features/project/tabs/LabourTab.tsx"),
+  read("src/features/pwa/PwaChrome.tsx"),
+  read("src/lib/platform/pwa.ts"),
+  read("src/features/shell/BrandingEffect.tsx"),
+  read("src/features/shell/useOrgBranding.ts"),
+  read("src/features/shell/brandingCss.ts"),
+  read("src/features/org/ResearchLibraryView.tsx"),
+  read("src/app/queries/researchQueries.ts"),
+  read("src/components/ui/Charts.tsx"),
+  read("src/app/queries/approvalQueries.ts"),
+  read("src/features/project/tabs/DrawingReviewTab.tsx"),
+  read("src/components/ui/SignaturePad.tsx"),
+  read("src/features/share/ShareLinkView.tsx"),
+  read("src/features/org/ApprovalAnalyticsView.tsx"),
+  read("src/app/queries/quotaQueries.ts"),
+  read("src/auth/QuotaGate.tsx"),
+  read("src/app/queries/storageQuotaQueries.ts"),
+  read("src/hooks/useStorageQuota.ts"),
+  read("src/features/shared/StorageUploadGate.tsx"),
+  read("scripts/supabase/186_notification_delivery.sql"),
+  read("src/features/auth/OrgRegisterView.tsx"),
+  read("src/app/queries/orgRegisterQueries.ts"),
+  read("src/app/queries/planCapsQueries.ts"),
+  read("src/app/queries/paymentQueries.ts"),
+  read("scripts/supabase/201_signup_attempts.sql"),
+].join("\n");
+const pkg = JSON.parse(read("package.json"));
+const vite = read("vite.config.js");
+
+[
+  "contractor",
+  "FieldOpsTab",
+  "ApprovalsTab",
+  "MapTab",
+  "TeamChatView",
+  "ChatStream",
+  "BoqTab",
+  "LedgerTab",
+  "EstimateTab",
+  "Bill of Quantities",
+  "Stock ledger tab",
+  "navigator.geolocation",
+  "Daily Site Report",
+  "Measurement Book",
+  "signature",
+  "Electronic signature",
+  "computeRiskScore",
+  "computeRiskSignals",
+  "RiskSignalsCard",
+  "computeDesignStage",
+  "advanceDesignWorkflow",
+  "fetchLLMInsight",
+  "buildUpiDeepLink",
+  "queueDepth",
+  "drainDprQueue",
+  "superadmin",
+  "PlatformDashboardView",
+  "PlatformOrgsView",
+  "enrichOrgs",
+  "orgSummary",
+  "orgPlanMix",
+  "filterOrgsByPlan",
+  "fmtMrr",
+  "ORG_CSV_COLUMNS",
+  "PlatformUsersView",
+  "userTierMix",
+  "filterUsersByTier",
+  "tierOf",
+  "USER_CSV_COLUMNS",
+  "StaffAdminView",
+  "staffSummary",
+  "signupSummary",
+  "SIGNUP_CSV_COLUMNS",
+  "upgradeSummary",
+  "UPGRADE_CSV_COLUMNS",
+  "ticketSummary",
+  "TICKET_CSV_COLUMNS",
+  "PlatformBillingView",
+  "billingSummary",
+  "billingByPlan",
+  "BILLING_CSV_COLUMNS",
+  "PlatformSettingsView",
+  "PLAN_META",
+  "Billing & MRR",
+  "System Settings",
+  "paymentSettingsValid",
+  "isSupabaseEnabled",
+  "signInWithMagicLink",
+  "migrateLocalToBackend",
+  "PlatformUsageView",
+  "usagePlanMix",
+  "listUsagePlanCounts",
+  "USAGE_CSV_COLUMNS",
+  "PlatformSupportView",
+  "Impersonating",
+  "Audit Log",
+  "planMixData",
+  "ticketFocus",
+  "upgradeFocus",
+  "agoLabel",
+  "Usage Analytics",
+  "notifsForUser",
+  "csvRow",
+  // Roadmap Batch 2 views
+  "HierarchyView",
+  "MaterialPricesView",
+  "ComplianceView",
+  "ForecastView",
+  "DelegationsView",
+  "PlatformBrandingView",
+  "PlatformAuditLogV2View",
+  "PlanGate",
+  // Roadmap Batch 3 — kiosks + AR + snapshot
+  "LabourKioskView",
+  "SiteWallKioskView",
+  "ARDrawingOverlayView",
+  "DailySnapshotView",
+  "recordAudit",
+  // Production Phase 1 — Org Admin tier
+  "OrgDashboardView",
+  "OrgMembersView",
+  "OrgBillingView",
+  "OrgIntegrationsView",
+  "OrgActivityView",
+  "OrgTemplatesView",
+  "OrgApprovalsView",
+  "OrgNotificationsView",
+  "orgadmin",
+  // Q6 / Q7 / Q8 toggles
+  "demoLoaderEnabled",
+  "kioskLabourEnabled",
+  "kioskSiteEnabled",
+  "kioskArEnabled",
+  "tenantOnboardingMode",
+  // Cashfree integration
+  "isCashfreeConfigured",
+  "buildSubscriptionRequest",
+  // Feature-flag catalog system
+  "OrgFeaturesView",
+  "FEATURE_CATALOG",
+  "isFeatureEnabled",
+  "Feature Toggles",
+  "FfeRollupView",
+  "ffeOrgRollup",
+  "DownloadAuditView",
+  "logDownloadEvent",
+  "DrawingReviewTab",
+  "SignaturePad",
+  "ShareLinkView",
+  "ApprovalAnalyticsView",
+  "approvalOrgRollup",
+  "listOrgApprovalDrawings",
+  "ClientPortalProjectView",
+  "clientPaymentRollup",
+  "upcomingMilestones",
+  "approvedDrawings",
+  "buildActivityFeed",
+  "listClientInvoices",
+  "listClientDrawings",
+  "fetchOrgQuota",
+  "usageRollup",
+  "QuotaGate",
+  "QuotaMeter",
+  "quotaPct",
+  "atQuota",
+  "storageByBucket",
+  "storagePercent",
+  "storageRemaining",
+  "useStorageQuota",
+  "StorageUploadGate",
+  "gateFromQuota",
+  "trigger_notify_deliver",
+  "notification_templates",
+  "notify_deliver",
+  "notification_prefs",
+  "shareUrl",
+  "validateShareLink",
+  "fetchSharePayload",
+  "MonthlyStatementView",
+  "monthlyStatementTotals",
+  "monthlyStatementPdf",
+  "downloadMonthlyStatementPdf",
+  "CrossRaBillsView",
+  "crossRaQueries",
+  "crossRaRollup",
+  "VendorScorecardView",
+  "advancedProcurementQueries",
+  "listVendorPerformance",
+  "vendorPerformanceTier",
+  "ThreeWayMatchingView",
+  "matchReceiptToInvoice",
+  "listUnmatchedReceipts",
+  "OrgFinancialView",
+  "ProjectPnLView",
+  "ProjectWipView",
+  "ProjectBudgetView",
+  "projectFinancialQueries",
+  "getProjectPnL",
+  "computeWipAgingBuckets",
+  "listBudgetChanges",
+  "CrossAnalyticsView",
+  "crossAnalyticsQueries",
+  "orgKPIRollup",
+  "getExecDashboard",
+  "getOrgCashFlowForecast",
+  "CrmView",
+  "crossPoQueries",
+  "poReceiptQueries",
+  "CrossProjectPOsView",
+  "listPoReceipts",
+  "deliveryProgress",
+  "crmQueries",
+  "crmRollup",
+  "setLeadOwner",
+  "acceptQuotationAsAgreement",
+  "getQuotation",
+  "listChecklists",
+  "checklistProgress",
+  "CHECKLIST_STATUS_NEXT",
+  "listResults",
+  "upsertResult",
+  "listReports",
+  "upsertReport",
+  "setReportStatus",
+  "consultancyAuditQueries",
+  "listMaterialRequests",
+  "requestTotals",
+  "REQUEST_NEXT",
+  "stockRows",
+  "stockLevel",
+  "applyAutoSupersede",
+  "estimateBuildUp",
+  "estimatePayload",
+  "nextEstimateVersion",
+  "listCorrectiveActions",
+  "correctiveRollup",
+  "CORRECTIVE_NEXT",
+  "STATUTORY_NEXT",
+  "listShiftRoster",
+  "wageSlip",
+  "attendanceTally",
+  "workflowNextMap",
+  "defineWorkflow",
+  "MATERIAL_REQUEST_WORKFLOW",
+  "defineFormSchema",
+  "validateForm",
+  "defaultValues",
+  "SchemaForm",
+  "checklistFormSchema",
+  "quoteFormSchema",
+  "publishEvent",
+  "publishOrgBroadcast",
+  "publishInvoiceGenerated",
+  "publishQuoteAccepted",
+  "publishCorrectiveActionOpened",
+  "outboxRollup",
+  "OutboxEventType",
+  "loadProjectHierarchy",
+  "locationOptions",
+  "hierarchyPath",
+  "locationLabel",
+  "useLocationContext",
+  "ENGINE_BOUNDARIES",
+  "MODULE_SURFACES",
+  "workflowEngineEntries",
+  "outboxEventEntries",
+  "spatialEngineEntries",
+  "DOMAIN_MAP",
+  "downloadDprPdf",
+  "dprWhatsAppShareEnabled",
+  "buildCsv",
+  "downloadCsv",
+  "PwaChrome",
+  "BrandingEffect",
+  "resolveShellBranding",
+  "registerServiceWorker",
+  "ResearchLibraryView",
+  "researchQueries",
+  "listDocuments",
+  "listCollections",
+  "addDocumentToCollection",
+  "BarChart",
+  "PieChart",
+  "LineChart",
+  "ChartLegend",
+  "BarGroup",
+  "sourceSplitData",
+  "shortCurrency",
+  "cashFlowTrend",
+  "burnUpSeries",
+  "utilizationBars",
+  "phaseBars",
+  "quotePriceData",
+  "fmtCompactRupees",
+  "dxfPreview",
+  "parseDxf",
+  "parseDxfDoc",
+  "dxfToSvg",
+  "aciColor",
+  "resolveStroke",
+  "layerCounts",
+  "CadPreviewModal",
+  "DxfThumbnail",
+  "TeamChatView",
+  "chatQueries",
+  "extractMentionIds",
+  "splitOnMentions",
+  "OrgRegisterView",
+  "registerOrg",
+  "SignupRedirect",
+  "resolveSignupAmount",
+  "signup_attempts",
+  "resolveEffectivePlan",
+  "isTrialActive",
+  "getPlanCaps",
+  "TrialBanner",
+  "trialDaysLeft",
+  "RouteErrorBoundary",
+  "guardRoutes",
+  "TypedSupabaseClient",
+  "getTypedClient",
+  "invitePartnerOrg",
+  "acceptProjectPartnerInvite",
+  "SharedProjectsCard",
+].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
+
+[
+  "AgentsView",
+  "INIT_AGENT_RUNS",
+  "agentRuns",
+  "AI Agents",
+].forEach(marker => add(`No in-app agent marker: ${marker}`, !app.includes(marker)));
+
+// PERMS is now fully replaced by the @/auth capabilities system (deleted).
+add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.includes("from \"./lib/permissions.ts\""));
+
+[
+  "docs/AGENTS.md",
+  "docs/workflows/WORKFLOW.md",
+  "docs/planning/BACKLOG.md",
+  "docs/qa/QUALITY.md",
+  "docs/business/MARKET_ANALYSIS.md",
+  "docs/business/BUSINESS_MODEL.md",
+  "docs/business/PRICING.md",
+  "docs/setup/DEPLOYMENT.md",
+  "docs/archive/BACKEND_PLAN.md",
+  ".agents/sitetrack-pro/README.md",
+  ".agents/sitetrack-pro/team-lead.md",
+  ".agents/sitetrack-pro/product-manager.md",
+  ".agents/sitetrack-pro/construction-domain-analyst.md",
+  ".agents/sitetrack-pro/ux-ui-designer.md",
+  ".agents/sitetrack-pro/frontend-engineer.md",
+  ".agents/sitetrack-pro/backend-engineer.md",
+  ".agents/sitetrack-pro/qa-test.md",
+  ".agents/sitetrack-pro/security-permissions.md",
+  ".agents/sitetrack-pro/devops-release.md",
+  ".agents/sitetrack-pro/documentation.md",
+  ".agents/sitetrack-pro/data-ai-insights.md",
+  ".agents/sitetrack-pro/work-board.md",
+  ".agents/sitetrack-pro/handoff-template.md",
+  "vercel.json",
+  "docs/qa/TESTING_STRATEGY.md",
+  "docs/workflows/BUG_WORKFLOW.md",
+  ".agents/sitetrack-pro/bugs.md",
+  "tests/bugs/.gitkeep",
+  "scripts/tests/test-ef-harness.mjs",
+  "docs/workflows/CI_WORKFLOW.yml",
+  // Tech Lead review additions (2026-05-22 evening)
+  "src/auth/capabilities.ts",
+  "vitest.config.js",
+  "scripts/supabase/01_schema.sql",
+  "scripts/supabase/02_rls.sql",
+  "scripts/supabase/04_rls_tests.sql",
+  "scripts/supabase/README.md",
+  "CHANGELOG.md",
+  // Tech Lead gate #4: ESLint + Prettier
+  "eslint.config.js",
+  ".prettierrc.json",
+  ".prettierignore",
+  // Weakness pack
+  "src/lib/platform/offline.ts",
+  "src/lib/ai/ai.ts",
+  "src/lib/integrations/razorpay.ts",
+  "src/lib/supabase/supabase.ts",
+  "capacitor.config.json",
+  "docs/setup/MOBILE_BUILD.md",
+  ".env.example",
+  // Live activation
+  "docs/setup/GOLIVE.md",
+  "scripts/deploy/provision.sh",
+  // System design doc
+  "docs/architecture/SYSTEM_DESIGN.md",
+  // Tech Lead Review fixes (HIGH-1, HIGH-2, MED-3, MED-4, LOW-5)
+  "src/lib/utils/escape.ts",
+  "src/lib/integrations/notifications.ts",
+  "src/lib/utils/format.ts",
+  "tests/escape.test.js",
+  "tests/notifications.test.js",
+  "tests/format.test.js",
+  // Deep review pack
+  "src/data/seed.ts",
+  "src/data/lookups.ts",
+  "playwright.config.js",
+  "tests/e2e/roles.spec.js",
+  // Roadmap Batch 1 — foundation libs + tests
+  "src/lib/hierarchy.ts",
+  "src/lib/integrations/audit.ts",
+  "src/lib/delegations.ts",
+  "src/lib/integrations/branding.ts",
+  "src/lib/materialPrices.ts",
+  "src/lib/integrations/compliance.ts",
+  "src/lib/ai/aiForecast.ts",
+  "tests/hierarchy.test.js",
+  "tests/audit.test.js",
+  "tests/delegations.test.js",
+  "tests/branding.test.js",
+  "tests/compliance.test.js",
+  // Roadmap Batch 3 — new lib + docs
+  "src/lib/integrations/whatsapp.ts",
+  // Roadmap Batch 4 — App.jsx split (ui atoms + features/)
+  "src/components/ui/atoms.tsx",
+  // Roadmap Batch 5 — admin cluster extracted
+  // Roadmap Batch 6 — mid-size views extracted + i18n helper module
+  "src/lib/i18n.ts",
+  "tests/whatsapp.test.js",
+  // Roadmap Batch 7 — attachment atoms + detail satellites extracted
+  // Roadmap Batch 8 — export helpers extracted
+  // Roadmap Batch 10 — shell cluster extracted
+  // Production Phase 1 — Org Admin tier
+  "src/lib/approvalChains.ts",
+  "src/lib/integrations/orgIntegrations.ts",
+  "src/lib/integrations/templates.ts",
+  "tests/approvalChains.test.js",
+  "tests/orgIntegrations.test.js",
+  "tests/templates.test.js",
+  // Session 15 — Production gate (RLS + Cashfree)
+  "src/lib/integrations/cashfree.ts",
+  "tests/cashfree.test.js",
+  "scripts/supabase/03_rls_phase1.sql",
+  "scripts/supabase/05_rls_phase1_tests.sql",
+  "scripts/supabase/167_material_requests_grn.sql",
+  "scripts/supabase/168_construction_quality.sql",
+  "scripts/supabase/169_shift_roster.sql",
+  "scripts/supabase/172_crm_agreement_from_quotation.sql",
+  "scripts/supabase/184_platform_users_active.sql",
+  "scripts/supabase/185_client_approvals.sql",
+  "scripts/supabase/193_project_lifecycle.sql",
+  "scripts/supabase/194_org_billing_period.sql",
+  "scripts/supabase/201_signup_attempts.sql",
+  "scripts/supabase/202_trial_end_cron.sql",
+  "scripts/supabase/207_workflow_engine.sql",
+  "scripts/supabase/208_event_outbox.sql",
+  "scripts/supabase/209_attendance_location.sql",
+  "scripts/supabase/210_dpr_location.sql",
+  "scripts/supabase/211_inventory_ledger.sql",
+  "scripts/supabase/212_drawing_auto_supersede.sql",
+  "docs/architecture/DOMAIN_BOUNDARY_MAP.md",
+  "docs/architecture/PRODUCTION_RLS.md",
+  "docs/setup/CASHFREE_ONBOARDING.md",
+  // Session 16 — Feature-flag catalog system
+  "src/lib/integrations/orgFeatureFlags.ts",
+  "tests/orgFeatureFlags.test.js",
+  // Session 17 — Live database connection runbook + check script
+  "scripts/ci/check-supabase-connection.mjs",
+  "docs/setup/CONNECT_SUPABASE.md",
+  // Session 18 — Activation pack (onboarding + sales assets)
+  "archive/marketing/landing.html",
+  "docs/business/DEMO_VIDEO_SCRIPT.md",
+  "docs/business/CASE_STUDY_TEMPLATE.md",
+  "docs/archive/WHATSAPP_BUSINESS_API.md",
+  "docs/pitch/build-deck.mjs",
+  "docs/pitch/SiteTrack-Pitch-Deck.pptx",
+  // Session 19 — HRMS deployment study + marketing/app deploy split
+  "docs/setup/HRMS_DEPLOYMENT_STUDY.md",
+  "docs/setup/DEPLOY_NOW.md",
+  "scripts/ci/setup.mjs",
+  // Session 21 — bug hunt: top-level ErrorBoundary so a single bad chunk
+  // can no longer render the whole app as a white screen.
+  "src/components/errorBoundary.tsx",
+  // Session 22 — major changes pack
+  "supabase/functions/_shared/cashfree.ts",
+  "supabase/functions/cashfree-subscription/index.ts",
+  "supabase/functions/cashfree-webhook/index.ts",
+  // Resend delivery/bounce webhook receiver (Svix-signed, RESEND_WEBHOOK_SECRET)
+  "supabase/functions/_shared/resendWebhook.ts",
+  "supabase/functions/resend-webhook/index.ts",
+  "supabase/functions/README.md",
+  "src/lib/integrations/blockchainAnchor.ts",
+  "tests/blockchainAnchor.test.js",
+  "src/lib/integrations/reraTelangana.ts",
+  "tests/reraTelangana.test.js",
+  "docs/setup/PLAY_STORE_PREP.md",
+  // Session 23 — v2 role model implementation (Phases A-E)
+  "docs/architecture/ROLE_MODEL_V2.md",
+  "scripts/supabase/06_project_types.sql",
+  "scripts/supabase/07_role_expansion.sql",
+  "src/lib/projectTypes.ts",
+  "tests/projectTypes.test.js",
+  "src/lib/contractors.ts",
+  "tests/contractors.test.js",
+  // Session 24 — comparison + adversarial fixes
+  "docs/business/COMPETITOR_COMPARISON_V2.md",
+  // Session 25 — sales-blocking miss fixes (BOQ import + bulk member + PDF audit + archive)
+  "src/lib/boqImport.ts",
+  "tests/boqImport.test.js",
+  "src/lib/projectArchive.ts",
+  "tests/projectArchive.test.js",
+  "scripts/supabase/08_project_archive.sql",
+  // Session 20 — MCP toolkit (Supabase + GitHub + Postgres + Playwright)
+  ".mcp.json",
+  ".env.mcp.example",
+  "scripts/ci/check-mcp.mjs",
+  "docs/integrations/MCP_TOOLKIT.md",
+  ".brain/decisions/0001-empty-default-with-opt-in-demo.md",
+  ".brain/decisions/0002-foundation-libs-pure-functions.md",
+  ".brain/decisions/0003-hierarchical-project-model.md",
+  ".brain/decisions/0004-immutable-audit-log.md",
+  ".brain/decisions/0005-kiosks-as-killer-wedge.md",
+  "docs/setup/PRODUCTION_CHECKLIST.md",
+].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
+
+// CI workflow must run real lint, not the placeholder
+const ci = read("docs/workflows/CI_WORKFLOW.yml");
+add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint") && !ci.includes("placeholder"));
+
+// Dead-code cleanup: these paths must NOT exist
+[
+  "_incoming_sitetrack_pro",
+  "sitetrack (1).jsx",
+].forEach(path => add(`Cleaned up: ${path}`, !existsSync(join(root, path))));
+
+add("Build script exists", pkg.scripts?.build === "vite build");
+add("Smoke script exists", pkg.scripts?.smoke === "node scripts/ci/smoke.mjs");
+add("test:ef script exists", pkg.scripts?.["test:ef"] === "node scripts/tests/test-ef-harness.mjs");
+add("test:rls script exists", pkg.scripts?.["test:rls"] === "node scripts/tests/test-self-service-rls.mjs && node scripts/tests/test-spatial-rls.mjs && node scripts/tests/test-rbac-v2-shadow.mjs");
+add("check:supabase script exists", pkg.scripts?.["check:supabase"] === "node scripts/ci/check-supabase-connection.mjs");
+add("setup script exists", pkg.scripts?.setup === "node scripts/ci/setup.mjs");
+add("check:mcp script exists", pkg.scripts?.["check:mcp"] === "node scripts/ci/check-mcp.mjs");
+add("prod:smoke script exists", pkg.scripts?.["prod:smoke"] === "node scripts/ci/prod-smoke.mjs");
+// .mcp.json must stay secret-free — only ${VAR} references, never literal tokens.
+const mcpRaw = read(".mcp.json");
+add(".mcp.json contains no literal Supabase PAT", !/sbp_[A-Za-z0-9]/.test(mcpRaw));
+add(".mcp.json contains no literal GitHub PAT", !/github_pat_[A-Za-z0-9]/.test(mcpRaw));
+add(".mcp.json uses env-var references", mcpRaw.includes("${SUPABASE_ACCESS_TOKEN}") && mcpRaw.includes("${GITHUB_PERSONAL_ACCESS_TOKEN}"));
+add("Vite manual chunks configured", vite.includes("manualChunks") && vite.includes("charts"));
+
+// ── Sprint 1 freeze parity (Session 30.2) ──────────────────────────────────
+// The JS source of truth (src/lib/featureFlags.js#STUB_VIEWS) and the SQL
+// audit table (scripts/supabase/49_feature_flags_freeze.sql staff_only_features
+// seed inserts) must list the same view ids. If they drift, ops would think
+// a view is frozen when the runtime still serves it (or vice versa). Lint-
+// level parity check below catches the drift before deploy.
+{
+  const flagsJs = read("src/lib/integrations/featureFlags.ts");
+  const freezeSql = read("scripts/supabase/49_feature_flags_freeze.sql");
+
+  // Extract STUB_VIEWS literal entries: matches the strings inside the Set
+  // constructor body. The literal block is delimited by `STUB_VIEWS = new Set([`
+  // and the matching `]);`.
+  const stubBlock = flagsJs.match(/STUB_VIEWS\s*=\s*new\s+Set\(\[([\s\S]*?)\]\)/);
+  const jsViews = stubBlock ? [...stubBlock[1].matchAll(/"([a-z0-9-]+)"/g)].map(m => m[1]) : [];
+
+  // Extract view_id values from the seed INSERT (each row starts with a
+  // single-quoted view_id token at the start of the row).
+  const sqlSection = freezeSql.split("insert into staff_only_features")[1] || "";
+  const insertBlock = (sqlSection.split(" values")[1] || "").split("on conflict")[0] || "";
+  const sqlViews = [...insertBlock.matchAll(/^\s*\(\s*'([a-z0-9-]+)'/gm)].map(m => m[1]);
+
+  const jsSet = new Set(jsViews);
+  const sqlSet = new Set(sqlViews);
+  const jsMinusSql = jsViews.filter(v => !sqlSet.has(v));
+  const sqlMinusJs = sqlViews.filter(v => !jsSet.has(v));
+
+  add(
+    "STUB_VIEWS parity — same count in JS and SQL",
+    jsViews.length === sqlViews.length,
+    `JS=${jsViews.length} SQL=${sqlViews.length}`,
+  );
+  add(
+    "STUB_VIEWS parity — JS subset of SQL",
+    jsMinusSql.length === 0,
+    jsMinusSql.length ? `missing from SQL: ${jsMinusSql.join(",")}` : "",
+  );
+  add(
+    "STUB_VIEWS parity — SQL subset of JS",
+    sqlMinusJs.length === 0,
+    sqlMinusJs.length ? `missing from JS: ${sqlMinusJs.join(",")}` : "",
+  );
+  add(
+    "Sprint 1 freeze docs present",
+    existsSync(join(root, "docs/planning/FEATURE_FREEZE.md"))
+      && existsSync(join(root, "docs/business/POSITIONING.md"))
+      && existsSync(join(root, "docs/archive/SITETRACK_V3_PLAN.md")),
+  );
+}
+
+// ── Migration numbering + src hygiene guards (2026-08-25) ──────────────────
+// Migration 237 was accidentally used by two different files; the ledger keys
+// on filename so both applied, but the collision makes ordering ambiguous.
+// Lock uniqueness permanently. Also lock the JS→TS migration: no .js/.jsx
+// source (or stray .txt artifacts) under src/.
+{
+  const migFiles = readdirSync(join(root, "scripts/supabase"))
+    .filter(f => /^\d+_.*\.sql$/.test(f));
+  // Legacy collisions (100/112/155/201/237) shipped before this guard: both
+  // files of each pair are already applied and ledger-immutable (the runner
+  // keys on filename, tie-break lexicographic). They are grandfathered; any
+  // NEW duplicate number fails.
+  const GRANDFATHERED = new Set(["100", "112", "155", "201", "237"]);
+  const seenNums = new Map();
+  const dupes = [];
+  for (const f of migFiles) {
+    const num = f.split("_", 1)[0];
+    if (seenNums.has(num)) {
+      if (!GRANDFATHERED.has(num)) dupes.push(`${num}: ${seenNums.get(num)} + ${f}`);
+    } else seenNums.set(num, f);
+  }
+  add("Migration numbers unique", dupes.length === 0, dupes.join("; "));
+
+  const straySrc = [];
+  const walkSrc = d => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.isDirectory()) walkSrc(join(d, e.name));
+      else if (/\.(js|jsx|txt)$/.test(e.name)) straySrc.push(join(d, e.name).replace(/\\/g, "/"));
+    }
+  };
+  walkSrc(join(root, "src"));
+  add("No .js/.jsx/.txt source files under src/", straySrc.length === 0, straySrc.slice(0, 5).join(", "));
+}
+
+const failures = checks.filter(c => !c.pass);
+for (const c of checks) {
+  console.log(`${c.pass ? "PASS" : "FAIL"} ${c.name}${c.detail ? ` - ${c.detail}` : ""}`);
+}
+
+if (failures.length) {
+  console.error(`\nSmoke failed: ${failures.length} check(s) did not pass.`);
+  process.exit(1);
+}
+
+console.log(`\nSmoke passed: ${checks.length} checks.`);

@@ -1,7 +1,7 @@
 // SiteTrack Pro — notifications inbox query tests.
 
 import { describe, it, expect } from "vitest";
-import { listNotifications, unreadCount } from "@/app/notificationQueries";
+import { listNotifications, unreadCount } from "@/app/queries/notificationQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

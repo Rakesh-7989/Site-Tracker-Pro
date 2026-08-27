@@ -4,7 +4,7 @@ import {
   listSites, listBuildings, listFloors, loadProjectHierarchy,
   locationOptions, hierarchyPath, locationLabel, spatialLevelOf, LEVEL_LABEL,
   type SpatialHierarchy,
-} from "@/app/spaceQueries";
+} from "@/app/queries/spaceQueries";
 
 function makeClient(overrides: Record<string, any> = {}): { from: (t: string) => any; __calls: Array<{ table: string; ops: string[] }> } {
   const calls: Array<{ table: string; ops: string[] }> = [];

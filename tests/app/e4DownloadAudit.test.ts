@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   downloadTotals, decorateDownloadEvents, logDownloadEvent, listOrgDownloadEvents,
   type DownloadEvent, type DecoratedDownloadEvent,
-} from "@/app/downloadAuditQueries";
+} from "@/app/queries/downloadAuditQueries";
 
 const ev = (o: Partial<DownloadEvent> & { id: string }): DownloadEvent => ({
   projectId: o.projectId ?? "p1",

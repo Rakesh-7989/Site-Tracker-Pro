@@ -1,5 +1,5 @@
-﻿import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getWhatsAppConfig, saveWhatsAppConfig, clearWhatsAppConfig, isWhatsAppApiEnabled, sendWhatsApp, sendWhatsAppBulk } from "../src/lib/whatsapp";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { getWhatsAppConfig, saveWhatsAppConfig, clearWhatsAppConfig, isWhatsAppApiEnabled, sendWhatsApp, sendWhatsAppBulk } from "../src/lib/integrations/whatsapp";
 
 // Provide a minimal localStorage shim for the JSDOM-free vitest env.
 beforeEach(() => {
@@ -46,7 +46,7 @@ describe("whatsapp.isWhatsAppApiEnabled", () => {
   });
 });
 
-describe("whatsapp.sendWhatsApp (no creds — fallback path)", () => {
+describe("whatsapp.sendWhatsApp (no creds � fallback path)", () => {
   it("returns ok=false with a wa.me fallback_url", async () => {
     const r = await sendWhatsApp({ to: "+91-98765-43210", message: "Hi" });
     expect(r.ok).toBe(false);
@@ -66,7 +66,7 @@ describe("whatsapp.sendWhatsApp (no creds — fallback path)", () => {
   });
 });
 
-describe("whatsapp.sendWhatsApp (with creds — API path mocked)", () => {
+describe("whatsapp.sendWhatsApp (with creds � API path mocked)", () => {
   it("POSTs to Meta Cloud API and returns ok+message_id on success", async () => {
     saveWhatsAppConfig({ phone_id: "phone-1", access_token: "tk" });
     globalThis.fetch = vi.fn(async () => ({

@@ -1,7 +1,7 @@
 // SiteTrack Pro — measurement-book backed RA bills tests (ST-019).
 
 import { describe, it, expect } from "vitest";
-import { mbSelectionTotal, listUnlinkedMb, listMbForRa, linkMbToRa, unlinkMb } from "@/app/mbRaQueries";
+import { mbSelectionTotal, listUnlinkedMb, listMbForRa, linkMbToRa, unlinkMb } from "@/app/queries/mbRaQueries";
 
 describe("mbSelectionTotal", () => {
   it("sums amounts, ignoring missing", () => {

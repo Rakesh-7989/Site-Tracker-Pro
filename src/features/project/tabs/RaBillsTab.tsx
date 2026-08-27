@@ -8,11 +8,11 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { listRaBills, createRaBill, setRaBillStatus, deleteRaBill, raNetPayable, fmtRupees, type RaBill, type RaBillStatus } from "@/app/financeQueries";
-import { listUnlinkedMb, listMbForRa, unlinkMb, mbSelectionTotal, sumMbForRa, listMbDriftsForRa, recalcAllRaBillsFromMb, releaseRaRetention, type RaMbEntry, type MbSum, type MbDrift } from "@/app/mbRaQueries";
+import { listRaBills, createRaBill, setRaBillStatus, deleteRaBill, raNetPayable, fmtRupees, type RaBill, type RaBillStatus } from "@/app/queries/financeQueries";
+import { listUnlinkedMb, listMbForRa, unlinkMb, mbSelectionTotal, sumMbForRa, listMbDriftsForRa, recalcAllRaBillsFromMb, releaseRaRetention, type RaMbEntry, type MbSum, type MbDrift } from "@/app/queries/mbRaQueries";
 import { ReceiptsPanel } from "./ReceiptsPanel";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "submitted", label: "Submitted" }, { value: "approved", label: "Approved" }, { value: "paid", label: "Paid" }, { value: "rejected", label: "Rejected" }];
 
@@ -188,7 +188,7 @@ function MbRows({ raBillId, canApprove, run }: { raBillId: string; canApprove: b
     setSumLoading(false);
   };
 
-  if (loading) return <div className="py-1"><Spinner size={14} /></div>;
+  if (loading) return <div role="status" aria-label="Loading MB entries" aria-busy="true" className="space-y-1 py-1"><div className="h-4 bg-elevated rounded animate-pulse w-3/4" /><div className="h-4 bg-elevated rounded animate-pulse w-1/2" /></div>;
   if (mb.length === 0) return <div className="text-[11px] text-fg-tertiary py-1">No linked MB entries.</div>;
 
   const hasDrifts = drift.length > 0;

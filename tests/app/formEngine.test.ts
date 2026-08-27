@@ -4,7 +4,7 @@ import {
   defineFormSchema, defaultValues, mergeFormValues, validateFieldValue,
   validateForm, isFormValid, isFieldVisible,
   type FormSchema, type FieldDef,
-} from "@/app/formEngine";
+} from "@/app/engines/formEngine";
 
 type F = "title" | "kind" | "qty" | "enabled" | "status" | "notes";
 

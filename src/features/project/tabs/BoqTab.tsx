@@ -3,10 +3,10 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { listBoq, createBoq, deleteBoq, type BoqItem, type BoqCategory } from "@/app/siteAdminQueries";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listBoq, createBoq, deleteBoq, type BoqItem, type BoqCategory } from "@/app/queries/siteAdminQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const CATS: BoqCategory[] = ["Civil", "MEP", "Finishing", "External", "Other"];
 const CAT_OPTS = CATS.map(c => ({ value: c, label: c }));

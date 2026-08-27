@@ -17,13 +17,13 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useOrgSwitcher, useCan, RequireCapability } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { cn } from "@/lib/cn";
-import { getClient } from "@/lib/supabase";
+import { cn } from "@/lib/utils/cn";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listProjectsForOrg, memberProjectScope, type ProjectSummary,
   setProjectStatus, archiveProject, restoreProject, deleteProject,
-} from "@/app/queries";
-import { fmtCompactRupees } from "@/app/financeQueries";
+} from "@/app/queries/queries";
+import { fmtCompactRupees } from "@/app/queries/financeQueries";
 import { Card, Button, Icon, Spinner, Badge, Alert, StatCard, ProgressBar } from "@/components/ui/atoms";
 import { DropdownMenu, DropdownItem } from "@/components/ui";
 import { Input, Select } from "@/components/ui/forms";
@@ -118,7 +118,7 @@ export function ProjectsListView(): JSX.Element {
     void (async () => {
       if (!activeOrg) { setState({ kind: "no-org" }); return; }
       setState({ kind: "loading" });
-      const mod = await import("../../lib/supabase");
+      const mod = await import("../../lib/supabase/supabase");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client = await (mod as any).getSupabaseClient();
       if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }
@@ -141,7 +141,7 @@ export function ProjectsListView(): JSX.Element {
     const res = await action(client, p.id);
     if (!res.ok) { setActionError(res.error ?? "Action failed."); setBusy(false); return; }
     // Refresh after a successful mutation (archived_at + status both change).
-    const mod = await import("../../lib/supabase");
+    const mod = await import("../../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client2 = await (mod as any).getSupabaseClient();
     if (client2 && activeOrg) {
@@ -152,7 +152,7 @@ export function ProjectsListView(): JSX.Element {
   }
 
   async function onSetStatus(p: ProjectSummary, status: ProjectLifecycleStatus): Promise<void> {
-    const mod = await import("../../lib/supabase");
+    const mod = await import("../../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = await (mod as any).getSupabaseClient();
     if (!client) return;
@@ -160,7 +160,7 @@ export function ProjectsListView(): JSX.Element {
   }
 
   async function onArchive(p: ProjectSummary): Promise<void> {
-    const mod = await import("../../lib/supabase");
+    const mod = await import("../../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = await (mod as any).getSupabaseClient();
     if (!client) return;
@@ -168,7 +168,7 @@ export function ProjectsListView(): JSX.Element {
   }
 
   async function onRestore(p: ProjectSummary): Promise<void> {
-    const mod = await import("../../lib/supabase");
+    const mod = await import("../../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = await (mod as any).getSupabaseClient();
     if (!client) return;
@@ -177,7 +177,7 @@ export function ProjectsListView(): JSX.Element {
 
   async function onDelete(p: ProjectSummary): Promise<void> {
     if (!window.confirm(`Permanently delete "${p.name}"? This cannot be undone.`)) return;
-    const mod = await import("../../lib/supabase");
+    const mod = await import("../../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = await (mod as any).getSupabaseClient();
     if (!client) return;

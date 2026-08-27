@@ -2,7 +2,7 @@
 
 > Canonical copy of the product-research conversation (exported chat, primary source).
 > File copies: `Downloads/site-tracker-pro new saas application research data.pdf` / `.docx`.
-> This file is the ground truth the End-to-End plan (`docs/END_TO_END_PLAN.md`) is mapped from.
+> This file is the ground truth the End-to-End plan (`docs/planning/END_TO_END_PLAN.md`) is mapped from.
 > Do NOT delete or rewrite it; add only "status notes" as new sections at the bottom.
 
 ---

@@ -25,14 +25,14 @@ files relevant to their question. Don't dump everything — read
 surgically.
 
 **Sprint plan + positioning** (read on every invocation):
-- `docs/SITETRACK_V3_PLAN.md` — the 90-day plan: top-10 mistakes,
+- `docs/archive/SITETRACK_V3_PLAN.md` — the 90-day plan: top-10 mistakes,
   chosen architecture, 6-sprint breakdown with day ranges.
-- `docs/POSITIONING.md` — the canonical positioning. 5 proof points
+- `docs/business/POSITIONING.md` — the canonical positioning. 5 proof points
   + 8 forbidden claims.
-- `docs/PRICING.md` — Sprint 1 verified pricing tiers (Pilot
+- `docs/business/PRICING.md` — Sprint 1 verified pricing tiers (Pilot
   ₹29,999 → Pro ₹49,999 → Business ₹89,999 → Enterprise
   ₹2,49,999+).
-- `docs/FEATURE_FREEZE.md` — what's hidden + why (so you never
+- `docs/planning/FEATURE_FREEZE.md` — what's hidden + why (so you never
   promise features that haven't shipped).
 
 **Sprint 1 recon + outreach** (read when founder is in Sprint 1 days 3-15):
@@ -68,11 +68,11 @@ surgically.
 - `docs/sales/DEMO_SCRIPT_DPR.md` — 60-sec beat sheet.
 
 **Sprint 2 architecture + pilot activation** (read in Sprint 2):
-- `docs/SPRINT_2_ARCHITECTURE.md` — decision log + interface
+- `docs/architecture/SPRINT_2_ARCHITECTURE.md` — decision log + interface
   contracts + day-by-day founder/code split.
 - `docs/sales/PILOT_ONBOARDING_RUNBOOK.md` — minute-by-minute 90-
   min on-site activation script.
-- `docs/PILOT_AGREEMENT_v1.md` — what the pilot signed.
+- `docs/business/PILOT_AGREEMENT_v1.md` — what the pilot signed.
 - `docs/sales/DESIGN_PARTNER_DECK.md` — 9-slide pitch markdown.
 
 ## Default operating procedure
@@ -214,7 +214,7 @@ Steps:
    This reads `docs/research/INTERVIEW_LOG_2026-06.md`,
    `docs/research/VERIFIED_GAPS_MATRIX.md`,
    `docs/sales/MEETING_LOG_2026-06.md`,
-   `docs/sales/PILOT_CONTRACTS/`, and `docs/PRICING.md`, then
+    and `docs/business/PRICING.md`, then
    scores all 5 criteria pass/fail.
 2. Paste the markdown verdict + per-criterion table verbatim into
    your reply (it's already founder-formatted).
@@ -238,11 +238,11 @@ The 5 criteria (encoded in `src/lib/sprint1GateScore.js`
 - ≥ 5 Sprint 2 meetings booked (SCHEDULED + PILOT-YES + MAYBE)
 - ≥ 1 PILOT-YES OR ≥ 2 MAYBE-to-follow-up
 - Pricing decision locked (Pilot ₹29,999 + Pro ₹49,999 +
-  Business ₹89,999 all present in `docs/PRICING.md`)
+  Business ₹89,999 all present in `docs/business/PRICING.md`)
 
 ### "Score me on Sprint 2 Day-30 acceptance"
 
-Criteria from `docs/SITETRACK_V3_PLAN.md` Sprint 2 + `docs/SPRINT_2_ARCHITECTURE.md`:
+Criteria from `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 + `docs/architecture/SPRINT_2_ARCHITECTURE.md`:
 - [ ] End-to-end DPR demo: Telugu voice → promoter WhatsApp within
       90 seconds on 2GB Android
 - [ ] Voice transcription word-accuracy ≥ 85% on 20 site phrases
@@ -261,12 +261,12 @@ You MUST NOT:
    files when the founder explicitly reports the outcome with
    verbatim quotes.
 3. **Promise features that haven't shipped.** Cross-reference
-   `docs/FEATURE_FREEZE.md` — if it's in `STUB_VIEWS`, you do not
+   `docs/planning/FEATURE_FREEZE.md` — if it's in `STUB_VIEWS`, you do not
    promise it.
-4. **Quote pricing other than what's in `docs/PRICING.md`.**
+4. **Quote pricing other than what's in `docs/business/PRICING.md`.**
    Never invent a discount, never quote the retired
    ₹999/2,999/7,999 monthly tiers.
-5. **Use forbidden claims from `docs/POSITIONING.md` §"What we
+5. **Use forbidden claims from `docs/business/POSITIONING.md` §"What we
    WILL NOT say".** No "Powerplay doesn't have X" until verified
    in the matrix.
 6. **Modify code, run builds, or deploy.** That's not your job.

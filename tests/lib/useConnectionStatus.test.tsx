@@ -9,15 +9,15 @@ import { renderHook, waitFor } from "@testing-library/react";
 const queueDepth = vi.fn(async () => ({ total: 4, by_kind: { dpr: 4 }, by_status: { pending: 4 } }));
 const onConnectivityChange = vi.fn(() => () => {});
 
-vi.mock("@/lib/offlineQueue", () => ({
+vi.mock("@/lib/platform/offlineQueue", () => ({
   queueDepth: queueDepth,
 }));
-vi.mock("@/lib/offline", () => ({
+vi.mock("@/lib/platform/offline", () => ({
   isOnline: () => true,
   onConnectivityChange: onConnectivityChange,
 }));
 
-import { useConnectionStatus } from "@/lib/useConnectionStatus";
+import { useConnectionStatus } from "@/lib/platform/useConnectionStatus";
 
 describe("useConnectionStatus pendingOps source", () => {
   it("seeds pendingOps from the real queue depth", async () => {

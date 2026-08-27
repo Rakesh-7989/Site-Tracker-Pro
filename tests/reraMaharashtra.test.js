@@ -1,10 +1,10 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   MH_QUARTERLY_PERIODS, MH_STAGE_KEYS, validateMaharera,
   inferMhQuarter, buildMhFilingPayload, mockMhAdapter, mhReraAdapter,
-} from "../src/lib/reraMaharashtra";
+} from "../src/lib/integrations/reraMaharashtra";
 
-describe("reraMaharashtra — constants", () => {
+describe("reraMaharashtra � constants", () => {
   it("exposes 4 quarterly periods", () => {
     expect(MH_QUARTERLY_PERIODS.length).toBe(4);
   });
@@ -14,7 +14,7 @@ describe("reraMaharashtra — constants", () => {
   });
 });
 
-describe("reraMaharashtra — validateMaharera", () => {
+describe("reraMaharashtra � validateMaharera", () => {
   it("accepts canonical Pddddddddddd format", () => {
     expect(validateMaharera("P12345678901").ok).toBe(true);
   });
@@ -29,12 +29,12 @@ describe("reraMaharashtra — validateMaharera", () => {
   });
 });
 
-describe("reraMaharashtra — inferMhQuarter", () => {
-  it("maps April → Q1", () => {
+describe("reraMaharashtra � inferMhQuarter", () => {
+  it("maps April ? Q1", () => {
     expect(inferMhQuarter(new Date("2026-04-15"))).toBe("Q1-Apr-Jun");
   });
 
-  it("maps January → Q4", () => {
+  it("maps January ? Q4", () => {
     expect(inferMhQuarter(new Date("2026-01-20"))).toBe("Q4-Jan-Mar");
   });
 
@@ -43,7 +43,7 @@ describe("reraMaharashtra — inferMhQuarter", () => {
   });
 });
 
-describe("reraMaharashtra — buildMhFilingPayload", () => {
+describe("reraMaharashtra � buildMhFilingPayload", () => {
   const project = { rera_no: "P12345678901", name: "Coastal Towers" };
 
   it("populates all 7 sections", () => {
@@ -63,7 +63,7 @@ describe("reraMaharashtra — buildMhFilingPayload", () => {
   });
 });
 
-describe("reraMaharashtra — mockMhAdapter", () => {
+describe("reraMaharashtra � mockMhAdapter", () => {
   it("returns ack on submit", async () => {
     const r = await mockMhAdapter.submit({ rera_no: "P12345678901", period: "Q1-Apr-Jun" });
     expect(r.ok).toBe(true);
@@ -76,7 +76,7 @@ describe("reraMaharashtra — mockMhAdapter", () => {
   });
 });
 
-describe("reraMaharashtra — mhReraAdapter", () => {
+describe("reraMaharashtra � mhReraAdapter", () => {
   it("returns endpoint-missing without config", async () => {
     const r = await mhReraAdapter.submit({});
     expect(r.ok).toBe(false);

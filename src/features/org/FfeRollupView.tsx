@@ -13,15 +13,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
-import { Card, Spinner, Alert, AccessDenied, ProgressBar, Button, Icon } from "@/components/ui/atoms";
+import { memberProjectScope } from "@/app/queries/queries";
+import { Card, Alert, AccessDenied, ProgressBar, Button, Icon } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { listOrgFfe, ffeOrgRollup, type FfeOrgRow, type FfeOrgProject } from "@/app/ffeQueries";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listOrgFfe, ffeOrgRollup, type FfeOrgRow, type FfeOrgProject } from "@/app/queries/ffeQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
 
 export function FfeRollupView(): JSX.Element {
   return <PlanGate feature="ffe"><FfeRollupInner /></PlanGate>;
@@ -62,8 +62,7 @@ function FfeRollupInner(): JSX.Element {
     ];
     const rows = rollup.byProject.map(p => ({
       name: p.name, type: p.type ?? "", count: p.count, committed: p.committed, procured: p.procured,
-      progress: p.committed > 0 ? Math.round((p.procured / p.committed) * 100) : 0,
-    }));
+      progress: p.committed > 0 ? Math.round((p.procured / p.committed) * 100) : 0 }));
     downloadCsv(`ffe-rollup-${csvDateStamp()}.csv`, buildCsv(rows, cols));
   };
 
@@ -77,8 +76,7 @@ function FfeRollupInner(): JSX.Element {
           <div className="font-display font-semibold text-fg-primary tracking-editorial text-sm">{r.name}</div>
           <div className="text-[11px] text-fg-secondary capitalize">{r.type ?? "—"}</div>
         </div>
-      ),
-    },
+      ) },
     { key: "count", header: "Entries", hideOnMobile: true, className: "flex-shrink-0 text-right", render: r => <span className="text-xs text-fg-secondary">{r.count}</span> },
     { key: "committed", header: "Committed", className: "flex-shrink-0 text-right", render: r => <span className="text-xs text-fg-secondary">{fmtRupees(r.committed)}</span> },
     { key: "procured", header: "Procured", className: "flex-shrink-0 text-right", render: r => <span className="text-sm font-mono">{fmtRupees(r.procured)}</span> },
@@ -92,8 +90,7 @@ function FfeRollupInner(): JSX.Element {
             <div className="text-[10px] text-fg-tertiary mt-1 text-right">{pct}%</div>
           </div>
         );
-      },
-    },
+      } },
   ];
 
   return (
@@ -155,7 +152,18 @@ function FfeRollupInner(): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : rollup.projects === 0 ? (
         <Card className="p-10 text-center text-sm text-fg-secondary">
           No design / interior projects with an FF&amp;E schedule yet. Entries added on a project's FF&amp;E tab will roll up here.

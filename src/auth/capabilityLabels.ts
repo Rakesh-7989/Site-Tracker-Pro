@@ -2,7 +2,7 @@
 //
 // Single source of truth for turning capability ids into founder-readable
 // feature names + grouping them by area. Used by the RoleManager admin UI
-// and the docs/ROLE_FEATURES.md generator so the two never disagree.
+// and the docs/architecture/ROLE_FEATURES.md generator so the two never disagree.
 
 import { CAPABILITIES, capabilityDomain, type Capability } from "./capabilities";
 

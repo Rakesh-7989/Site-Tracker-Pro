@@ -53,21 +53,21 @@ describe("migration 219 — set_tenant_context membership gate", () => {
 describe("src/lib/tenantContext.ts — fail-open client behaviour", () => {
   it("returns immediately for a null org id", async () => {
     const sb = { rpc: () => { throw new Error("must not be called"); } };
-    const { setTenantContext } = await import("@/lib/tenantContext");
+    const { setTenantContext } = await import("@/lib/supabase/tenantContext");
     await setTenantContext(sb, null);
   });
 
   it("calls rpc with the org id and swallows RPC errors", async () => {
     let called = 0;
     const sb = { rpc: (fn: string, body: { p_org_id: string }) => { called++; expect(fn).toBe("set_tenant_context"); expect(body.p_org_id).toBe("o-1"); return Promise.reject(new Error("denied")); } };
-    const { setTenantContext } = await import("@/lib/tenantContext");
+    const { setTenantContext } = await import("@/lib/supabase/tenantContext");
     await setTenantContext(sb, "o-1");
     expect(called).toBe(1);
   });
 
   it("never throws when the RPC rejects", async () => {
     const sb = { rpc: () => Promise.reject(new Error("boom")) };
-    const { setTenantContext } = await import("@/lib/tenantContext");
+    const { setTenantContext } = await import("@/lib/supabase/tenantContext");
     await expect(setTenantContext(sb, "o-1")).resolves.toBeUndefined();
   });
 });

@@ -1,7 +1,7 @@
 // SiteTrack Pro — quota queries + pure helpers tests.
 
 import { describe, it, expect } from "vitest";
-import { fetchOrgQuota, quotaPct, atQuota, usageRollup, anyAtQuota, resourceAtQuota } from "@/app/quotaQueries";
+import { fetchOrgQuota, quotaPct, atQuota, usageRollup, anyAtQuota, resourceAtQuota } from "@/app/queries/quotaQueries";
 
 describe("fetchOrgQuota mapper", () => {
   it("maps users + projects rows with camelCase", async () => {

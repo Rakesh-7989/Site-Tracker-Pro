@@ -14,7 +14,7 @@ import {
   terminalStates,
   transitionActions,
   WorkflowError,
-} from "@/app/workflowEngine";
+} from "@/app/engines/workflowEngine";
 import {
   MATERIAL_REQUEST_WORKFLOW,
   STATUTORY_WORKFLOW,
@@ -23,15 +23,15 @@ import {
   REPORT_WORKFLOW,
   WORKFLOW_REGISTRY,
   workflowById,
-} from "@/app/workflowDefinitions";
-import { REQUEST_NEXT } from "@/app/materialRequestQueries";
-import { CORRECTIVE_NEXT } from "@/app/qualityQueries";
-import { STATUTORY_NEXT } from "@/app/statutoryQueries";
-import { RETAINER_NEXT } from "@/app/retainerQueries";
-import { CHECKLIST_STATUS_NEXT, REPORT_STATUS_NEXT, CL_STATUS_NEXT } from "@/app/consultancyAuditQueries";
-import { LEAD_STAGE_NEXT } from "@/app/crmQueries";
-import { QUOTE_NEXT } from "@/app/procurementQuotes";
-import { INSTALL_NEXT, ROOM_FINISH_NEXT } from "@/app/interiorQueries";
+} from "@/app/engines/workflowDefinitions";
+import { REQUEST_NEXT } from "@/app/queries/materialRequestQueries";
+import { CORRECTIVE_NEXT } from "@/app/queries/qualityQueries";
+import { STATUTORY_NEXT } from "@/app/queries/statutoryQueries";
+import { RETAINER_NEXT } from "@/app/queries/retainerQueries";
+import { CHECKLIST_STATUS_NEXT, REPORT_STATUS_NEXT, CL_STATUS_NEXT } from "@/app/queries/consultancyAuditQueries";
+import { LEAD_STAGE_NEXT } from "@/app/queries/crmQueries";
+import { QUOTE_NEXT } from "@/app/queries/procurementQuotes";
+import { INSTALL_NEXT, ROOM_FINISH_NEXT } from "@/app/queries/interiorQueries";
 
 // ── Engine: defineWorkflow validation ───────────────────────────────────────
 describe("defineWorkflow", () => {

@@ -3,18 +3,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
-import { Card, Badge, Button, Spinner, Alert, AccessDenied, Icon } from "@/components/ui/atoms";
+import { Card, Badge, Button, Alert, AccessDenied, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { requestPlanUpgrade } from "@/app/upgradeQueries";
-import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/orgAdminQueries";
-import { fetchOrgQuota, usageRollup, type QuotaRollup } from "@/app/quotaQueries";
+import { requestPlanUpgrade } from "@/app/queries/upgradeQueries";
+import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/queries/orgAdminQueries";
+import { fetchOrgQuota, usageRollup, type QuotaRollup } from "@/app/queries/quotaQueries";
 import { QuotaMeter } from "@/auth/QuotaGate";
 import { useT } from "@/i18n/I18nProvider";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const fmtDate = (iso: string | null): string => { if (!iso) return "—"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
 const fmtMoney = (n: number, cur: string): string => `${cur === "INR" ? "₹" : ""}${(n / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const subTone = (s: string): "neutral" | "success" | "warning" | "danger" | "info" => (
@@ -80,7 +80,18 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
     <div className="max-w-3xl mx-auto space-y-5 p-4 md:p-6">
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">{t("billing.title")}</h1>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : !overview ? <div className="text-sm text-fg-secondary">{t("billing.noData")}</div> : (
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div> : !overview ? <div className="text-sm text-fg-secondary">{t("billing.noData")}</div> : (
         <>
           {/* â”€â”€ Plan card â”€â”€ */}
           <Card padding="lg" title={<div>

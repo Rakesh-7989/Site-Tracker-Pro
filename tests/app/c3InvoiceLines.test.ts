@@ -2,7 +2,7 @@
 // Pure helpers + query mapping (no real client).
 
 import { describe, it, expect } from "vitest";
-import { invoiceLinesTotal, type InvoiceLine, type Invoice } from "@/app/financeQueries";
+import { invoiceLinesTotal, type InvoiceLine, type Invoice } from "@/app/queries/financeQueries";
 
 function line(over: Partial<InvoiceLine>): InvoiceLine {
   return { id: "l", description: "Work", qty: 1, unitPrice: 0, amount: 0, ...over };

@@ -12,15 +12,15 @@
 // consultancy OR design (ANY-of in nav-config + route).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
-import { Card, Spinner, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
+import { memberProjectScope } from "@/app/queries/queries";
+import { Card, Alert, AccessDenied, Badge } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { formatBytes } from "@/app/deliverableStorageQueries";
-import { listOrgDownloadEvents, downloadTotals, type DecoratedDownloadEvent, type DownloadRegister } from "@/app/downloadAuditQueries";
+import { formatBytes } from "@/app/queries/deliverableStorageQueries";
+import { listOrgDownloadEvents, downloadTotals, type DecoratedDownloadEvent, type DownloadRegister } from "@/app/queries/downloadAuditQueries";
 
 const REGISTER_LABEL: Record<DownloadRegister, string> = { deliverable: "Deliverable", drawing: "Drawing" };
 const REGISTER_TONE: Record<DownloadRegister, "info" | "success"> = { deliverable: "info", drawing: "success" };
@@ -72,8 +72,7 @@ export function DownloadAuditView(): JSX.Element {
           <div className="font-medium text-fg-primary text-sm truncate">{r.fileName}</div>
           <div className="text-[11px] text-fg-tertiary truncate font-mono">{r.filePath}</div>
         </div>
-      ),
-    },
+      ) },
     {
       key: "projectName", header: "Project", hideOnMobile: true, className: "flex-shrink-0",
       render: r => (
@@ -81,24 +80,19 @@ export function DownloadAuditView(): JSX.Element {
           <div className="text-sm text-fg-primary">{r.projectName ?? "—"}</div>
           {r.projectType ? <div className="text-[10px] text-fg-tertiary capitalize">{r.projectType}</div> : null}
         </div>
-      ),
-    },
+      ) },
     {
       key: "register", header: "Register", className: "flex-shrink-0",
-      render: r => <Badge tone={REGISTER_TONE[r.register]}>{REGISTER_LABEL[r.register]}</Badge>,
-    },
+      render: r => <Badge tone={REGISTER_TONE[r.register]}>{REGISTER_LABEL[r.register]}</Badge> },
     {
       key: "downloadedByName", header: "Downloaded by", hideOnMobile: true, className: "flex-shrink-0",
-      render: r => <span className="text-sm text-fg-primary">{r.downloadedByName ?? "Unknown"}</span>,
-    },
+      render: r => <span className="text-sm text-fg-primary">{r.downloadedByName ?? "Unknown"}</span> },
     {
       key: "sizeBytes", header: "Size", hideOnMobile: true, className: "flex-shrink-0 text-right",
-      render: r => <span className="text-xs text-fg-tertiary">{r.sizeBytes > 0 ? formatBytes(r.sizeBytes) : "—"}</span>,
-    },
+      render: r => <span className="text-xs text-fg-tertiary">{r.sizeBytes > 0 ? formatBytes(r.sizeBytes) : "—"}</span> },
     {
       key: "downloadedAt", header: "Downloaded", className: "flex-shrink-0 text-right",
-      render: r => <span className="text-xs text-fg-secondary whitespace-nowrap">{fmtDate(r.downloadedAt)}</span>,
-    },
+      render: r => <span className="text-xs text-fg-secondary whitespace-nowrap">{fmtDate(r.downloadedAt)}</span> },
   ];
 
   return (
@@ -130,7 +124,18 @@ export function DownloadAuditView(): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : shown.length === 0 ? (
         <Card className="p-10 text-center text-sm text-fg-secondary">
           {rows.length === 0 ? "No downloads recorded yet. Downloads from the Deliverables / Drawings tabs will appear here." : `No ${filter} downloads recorded yet.`}

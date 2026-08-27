@@ -1,7 +1,7 @@
 // SiteTrack Pro — superadmin signup-queue query tests.
 
 import { describe, it, expect } from "vitest";
-import { listSignupRequests, reviewSignupRequest, pendingSignupCount } from "@/app/signupAdminQueries";
+import { listSignupRequests, reviewSignupRequest, pendingSignupCount } from "@/app/queries/signupAdminQueries";
 
 function selectChain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

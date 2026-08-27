@@ -4,7 +4,7 @@ import { PlanGate } from "@/auth/PlanGate";
 import { Alert, AccessDenied, Button } from "@/components/ui/atoms";
 import { Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listProfiles,
   cloneProfile,
@@ -53,9 +53,6 @@ export function RbacView(): JSX.Element {
 function RbacViewBody(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  if (!session) return <></>;
-  if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-
   const [mode, setMode] = useState<"matrix" | "shadow" | "enforce">("matrix");
   const [modeError, setModeError] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<RoleProfile[]>([]);
@@ -70,6 +67,10 @@ function RbacViewBody(): JSX.Element {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
+    if (!activeOrg) {
+      setLoading(false);
+      return;
+    }
     const client = await getClient();
     if (!client) {
       setLoading(false);
@@ -129,6 +130,9 @@ function RbacViewBody(): JSX.Element {
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
+
+  if (!session) return <></>;
+  if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
 
   const handleModeChange = async (newMode: "matrix" | "shadow" | "enforce") => {
     const client = await getClient();

@@ -13,7 +13,7 @@ import type { AuthSession } from "./types";
 import { fetchAuthSession, fetchCapabilityOverrides, fetchCustomRoleOverrides, type FetchOutcome } from "./fetchAuthSession";
 import { defaultStorage, readActiveOrgId, writeActiveOrgId, preferredOrgIdForHost, type StorageLike } from "./activeOrgStore";
 import { resolveSubdomain } from "../lib/subdomain";
-import { setTenantContext } from "../lib/tenantContext";
+import { setTenantContext } from "../lib/supabase/tenantContext";
 
 export type AuthStatus = "idle" | "loading" | "ready" | "signed-out" | "error";
 
@@ -113,7 +113,7 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     if (optsRef.current.getClient) return await optsRef.current.getClient();
     // Default import path — guarded so tests that pass getClient never
     // touch the lib.
-    const mod = await import("../lib/supabase");
+    const mod = await import("../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return await (mod as any).getSupabaseClient();
   }, []);

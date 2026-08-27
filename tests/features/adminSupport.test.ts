@@ -4,7 +4,7 @@ import {
   fmtTime,
   TICKET_CSV_COLUMNS,
 } from "@/features/admin/PlatformSupportView";
-import type { Ticket } from "@/app/platformSupportQueries";
+import type { Ticket } from "@/app/queries/platformSupportQueries";
 
 const ticket = (over: Partial<Ticket>): Ticket => ({
   id: "t1", subject: "Billing issue", body: "Help", from: "Rakesh", email: "r@b.co",

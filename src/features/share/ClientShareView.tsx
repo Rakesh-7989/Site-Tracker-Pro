@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Icon, Spinner, StatusBadge, ProgressBar } from "@/components/ui/atoms";
-import type { ShareProjectData, ShareMilestone, ShareUpdate, ShareDrawing } from "@/app/shareQueries";
+import type { ShareProjectData, ShareMilestone, ShareUpdate, ShareDrawing } from "@/app/queries/shareQueries";
 
 function fmtDate(d: string | null | undefined): string {
   if (!d) return "—";
@@ -30,10 +30,10 @@ export function ClientShareView(): JSX.Element {
       if (!id) { setState({ kind: "error", message: "No project specified." }); return; }
       setState({ kind: "loading" });
       try {
-        const mod = await import("../../lib/supabase");
+        const mod = await import("../../lib/supabase/supabase");
         const client = await mod.getSupabaseClient();
         if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }
-        const { getShareData } = await import("@/app/shareQueries");
+        const { getShareData } = await import("@/app/queries/shareQueries");
         const res = await getShareData(client, id);
         if (cancelled) return;
         if (!res.ok) { setState({ kind: "error", message: res.error }); return; }

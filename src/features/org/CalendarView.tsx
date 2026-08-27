@@ -4,11 +4,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useOrgSwitcher } from "@/auth";
-import { Card, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
-import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/calendarQueries";
+import { Card, Badge, Alert, Icon } from "@/components/ui/atoms";
+import { getOrgCalendar, bucketByDate, type CalItem } from "@/app/queries/calendarQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const todayISO = (): string => new Date().toISOString().slice(0, 10);
 const fmtDay = (iso: string): string => { const d = new Date(iso + "T00:00:00"); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); };
 const tabUrl = (it: CalItem): string => `/projects/${it.projectId}/${it.kind === "milestone" ? "milestones" : it.kind === "noc" ? "statutory" : "tasks"}`;
@@ -54,7 +54,18 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     <div className="max-w-2xl mx-auto space-y-5 p-4 md:p-6">
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">Calendar</h1>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? (
           <Card className="p-8 text-center text-sm text-fg-secondary"><Icon name="calendar" size={24} className="mx-auto text-fg-tertiary mb-2" />No dated milestones or tasks yet.</Card>
         ) : (

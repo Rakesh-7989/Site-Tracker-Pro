@@ -7,13 +7,13 @@ import { Link, useParams } from "react-router-dom";
 
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 import { UpiQr } from "@/components/UpiQr";
-import { buildUpiUri } from "@/lib/upi";
-import { getPaymentSettings, getSignupForPay, submitPaymentClaim, resolveSignupAmount } from "@/app/paymentQueries";
+import { buildUpiUri } from "@/lib/integrations/upi";
+import { getPaymentSettings, getSignupForPay, submitPaymentClaim, resolveSignupAmount } from "@/app/queries/paymentQueries";
 import { PLAN_TIERS, formatINR } from "./plans";
 
  
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 export function PayView(): JSX.Element {
   const { requestId = "" } = useParams();
   const [loading, setLoading] = useState(true);

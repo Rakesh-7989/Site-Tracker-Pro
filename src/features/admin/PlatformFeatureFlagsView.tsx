@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { useAuth, useCan } from "@/auth";
 import { Card, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Switch } from "@/components/ui/Switch";
-import { getClient } from "@/lib/supabase";
-import { FEATURE_CATALOG, FEATURE_GROUPS } from "@/lib/orgFeatureFlags";
-import { listPlatformFlags, upsertPlatformFlag, type PlatformFlagRow } from "@/app/platformFlagQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { FEATURE_CATALOG, FEATURE_GROUPS } from "@/lib/integrations/orgFeatureFlags";
+import { listPlatformFlags, upsertPlatformFlag, type PlatformFlagRow } from "@/app/queries/platformFlagQueries";
 
 interface FeatureMeta {
   id: string;

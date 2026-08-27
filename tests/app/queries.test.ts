@@ -1,7 +1,7 @@
 // SiteTrack Pro — queries.ts tests (Phase 3).
 
 import { describe, it, expect } from "vitest";
-import { listProjectsForOrg, createProject, memberProjectScope, type MemberProjectScope } from "@/app/queries";
+import { listProjectsForOrg, createProject, memberProjectScope, type MemberProjectScope } from "@/app/queries/queries";
 import type { AuthSession } from "@/auth";
 
 // Build a chainable mock matching the subset of the Supabase client we use.

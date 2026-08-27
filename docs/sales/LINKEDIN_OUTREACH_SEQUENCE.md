@@ -8,7 +8,7 @@ ends with a single binary ask.
 
 Pair this doc with `docs/sales/LINKEDIN_TARGET_LIST.md` (who to reach
 out to) and `docs/sales/DEMO_SCRIPT_DPR.md` (the Loom asset). Pricing
-+ positioning anchors per `docs/POSITIONING.md` + `docs/PRICING.md`.
++ positioning anchors per `docs/business/POSITIONING.md` + `docs/business/PRICING.md`.
 
 ## Three rules
 
@@ -287,7 +287,7 @@ Sure — Pro tier ₹49,999/yr per org (not per user — add as many site
 supervisors as you want), Business ₹89,999/yr. Pilot ₹29,999/yr if
 you're one of the first 5.
 
-Full breakdown: [docs/PRICING.md or pricing page on sitetrackpro.in].
+Full breakdown: [docs/business/PRICING.md or pricing page on sitetrackpro.in].
 
 Want to talk through what's right for [Firm]? 15 min next week.
 ```
@@ -347,7 +347,7 @@ sending a broken cold-DM.
 - **Don't apologize for asking.** ("Sorry to bother you" reads as
   low-status — bad signal to a builder.)
 - **Don't promise specific Sprint 2 features that aren't shipped.**
-  Honesty is the wedge per `docs/POSITIONING.md`.
+  Honesty is the wedge per `docs/business/POSITIONING.md`.
 - **Don't follow up daily.** 5-day cadence between T1 → T2, 7-day
   between T2 → T3. Builders find daily nag annoying.
 - **Don't ghost.** If a reply arrives, founder responds within 1
@@ -363,12 +363,12 @@ Append to `docs/sales/LINKEDIN_TARGET_LIST.md` Outreach Status column.
 
 ## Sources
 
-- Sprint 1 Day 4–7 deliverable per `docs/SITETRACK_V3_PLAN.md`.
+- Sprint 1 Day 4–7 deliverable per `docs/archive/SITETRACK_V3_PLAN.md`.
 - Target list per `docs/sales/LINKEDIN_TARGET_LIST.md`.
 - Loom asset per `docs/sales/DEMO_SCRIPT_DPR.md`.
-- Pricing per `docs/PRICING.md`.
-- Positioning + 5 proof points per `docs/POSITIONING.md`.
-- Sprint 1 mistakes #4 + #5 per `docs/SITETRACK_V3_PLAN.md` §1.
+- Pricing per `docs/business/PRICING.md`.
+- Positioning + 5 proof points per `docs/business/POSITIONING.md`.
+- Sprint 1 mistakes #4 + #5 per `docs/archive/SITETRACK_V3_PLAN.md` §1.
 
 ## Edit log
 

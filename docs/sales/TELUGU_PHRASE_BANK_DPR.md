@@ -136,7 +136,7 @@ Founder verifies:
 - [ ] Every caption matches the English gloss verbatim, no
       embellishment.
 - [ ] Pricing card numbers (₹29,999 / ₹49,999 / 30%) match
-      `docs/PRICING.md` exactly.
+      `docs/business/PRICING.md` exactly.
 - [ ] BuildNow voiceover matches Sprint 1 honesty rule — never
       claim integration that isn't shipped.
 - [ ] WhatsApp number in CTA is the founder's actual reachable
@@ -144,10 +144,10 @@ Founder verifies:
 
 ## Sources
 
-- Sprint 1 Day 2 deliverable per `docs/SITETRACK_V3_PLAN.md`.
+- Sprint 1 Day 2 deliverable per `docs/archive/SITETRACK_V3_PLAN.md`.
 - Loom beats per `docs/sales/DEMO_SCRIPT_DPR.md`.
-- Pricing per `docs/PRICING.md`.
-- Positioning per `docs/POSITIONING.md`.
+- Pricing per `docs/business/PRICING.md`.
+- Positioning per `docs/business/POSITIONING.md`.
 - Telugu dialect calibration — Hyderabad / Telangana construction
   vocab is informal English-Telugu mix; reflects ground reality
   per Sprint 1 architecture finding "Telugu voice DPR, not

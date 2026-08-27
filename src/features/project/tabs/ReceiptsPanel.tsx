@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { fmtRupees } from "@/app/financeQueries";
-import { listReceipts, addReceipt, deleteReceipt, listPaymentTimeline, type Receipt, type ReceiptInput, type PaymentTimelineEvent } from "@/app/receiptQueries";
-import { getClient } from "@/lib/supabase";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listReceipts, addReceipt, deleteReceipt, listPaymentTimeline, type Receipt, type ReceiptInput, type PaymentTimelineEvent } from "@/app/queries/receiptQueries";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 
 const METHODS = [{ value: "bank", label: "Bank" }, { value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "cheque", label: "Cheque" }, { value: "other", label: "Other" }];
@@ -110,7 +110,18 @@ export function ReceiptsPanel({ projectId, targetType, targetId, summary }: {
       {error && <Alert variant="danger">{error}</Alert>}
 
       {loading ? (
-        <div className="grid place-items-center py-4"><Spinner size={16} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : tab === "payments" ? (
         <>
           {canPay && (

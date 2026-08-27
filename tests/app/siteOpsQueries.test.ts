@@ -1,7 +1,7 @@
 // SiteTrack Pro — site-ops query tests (Batch 2: materials/safety/inspections/punch).
 
 import { describe, it, expect } from "vitest";
-import { listMaterials, listSafety, listInspections, listPunch, listSubmittals, listPermits } from "@/app/siteOpsQueries";
+import { listMaterials, listSafety, listInspections, listPunch, listSubmittals, listPermits } from "@/app/queries/siteOpsQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

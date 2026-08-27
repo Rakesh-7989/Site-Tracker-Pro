@@ -14,7 +14,7 @@
 New `src/app/RouteErrorBoundary.tsx` + `guardRoutes()` recursively attaches RRv7 `errorElement` to EVERY route (incl. plugin catalog): a crashed view renders the alert card INSIDE the shell outlet (chrome stays alive); layout crash degrades full-page; root ErrorBoundary remains last resort. Stale-chunk detection ("deployed a new version — reload") for hash-swap failures. Sentry captureException wired. Tests +13; smoke markers lock it (466).
 
 ### P1-C — Typed Supabase boundary (`<commit>`)
-- `scripts/generate-db-types.mjs` (`npm run db:types`) — self-hosted supabase-gen replacement (CLI 2.109 shells to podman; absent). pg + information_schema → deterministic `Database` shape (158 tables Row/Insert/Update w/ NOT NULL accuracy, function arg maps, enums). `--check` mode = CI drift gate (added to ci.yml after column-drift; env-or-.env.local contract). `src/lib/database.types.ts` committed (214 KB, types-only).
+- `scripts/db/generate-db-types.mjs` (`npm run db:types`) — self-hosted supabase-gen replacement (CLI 2.109 shells to podman; absent). pg + information_schema → deterministic `Database` shape (158 tables Row/Insert/Update w/ NOT NULL accuracy, function arg maps, enums). `--check` mode = CI drift gate (added to ci.yml after column-drift; env-or-.env.local contract). `src/lib/database.types.ts` committed (214 KB, types-only).
 - `src/lib/db.ts`: `TypedSupabaseClient` + `getTypedClient()` (single documented bridge cast over the lazy singleton) + TableRow/Insert/Update shorthands.
 - Reference conversion: `milestoneQueries.ts` fully column-checked; **useAction now serves getTypedClient to every action callback** (legacy any-param fns unaffected — the adoption lever). Tests bridged via asTyped.
 - **The boundary paid off immediately during P2**: typed embed resolution flagged `SelectQueryError<"could not find relation">` on ppo→projects (generated Relationships map empty by design) → query restructured into two checked queries instead of a silent runtime break.
@@ -27,7 +27,7 @@ The designed moat is now REAL: partner FIRMS (own orgs) join a project.
 - **Redemption RPC** `accept_project_partner_invite(text, uuid)` SECURITY DEFINER: admin-of-invited-org gate, multi-org disambiguation (choose-org error), name snapshot, auto-first-member. Three ledgered fixes captured as migrations (243 overload ambiguity from 241's text-only fn; 244 RETURNS-TABLE OUT-param shadowing → qualified predicates; 245 ON CONFLICT target collided with OUT params → EXISTS guard under the status-UPDATE row-lock serialization).
 - **Audit**: trigger on ppo writes → immutable audit_log_v2 with CHECK-legal actions (CREATE/UPDATE/DELETE; detail in message).
 - **UI**: `PartnersTab` (host: mint code w/ copy, scope Select per row, revoke confirm) at tab `partners` gated `requiresAny [project:settings:edit, team:manage]`; `SharedProjectsCard` on /projects (partner: shared list + code redemption, self-hiding when empty).
-- **Proof**: `scripts/test-partner-collab-rls.mjs` (`npm run test:rls:partners`, in CI RLS chain) **22/22 green** vs live DB — pre/post-redemption blindness, non-admin mint deny, duplicate pending scope reject, RPC bind, first-member, member-read arm, write denial (0-row gate), money hidden (invoices), audit rows for grant/update/revoke, decline-vs-scope gates, code replay reject, instant revocation blindness. Harness hit BOTH recorded lessons again: replica-mode disables ordinary triggers (reset before behavior tests); RLS UPDATE denials are silent row-filters.
+- **Proof**: `scripts/tests/test-partner-collab-rls.mjs` (`npm run test:rls:partners`, in CI RLS chain) **22/22 green** vs live DB — pre/post-redemption blindness, non-admin mint deny, duplicate pending scope reject, RPC bind, first-member, member-read arm, write denial (0-row gate), money hidden (invoices), audit rows for grant/update/revoke, decline-vs-scope gates, code replay reject, instant revocation blindness. Harness hit BOTH recorded lessons again: replica-mode disables ordinary triggers (reset before behavior tests); RLS UPDATE denials are silent row-filters.
 - partnerQueries.test.ts +12; smoke 471 (+5).
 
 ### P3 verify
@@ -54,9 +54,9 @@ lint 0 errors / 500 documented-debt warnings (budget 520) · tsc clean · build 
 **Code**: `src/auth/orgType.ts` (`ORG_TYPES`, `resolveOrgType()` explicit-first → unambiguous single-segment fallback, `isDesignFirm/isExecutionFirm`) + `OrgMembership.orgType` hydrated in fetchAuthSession (+tests 7). Onboarding picker wiring = follow-up.
 
 **Docs shipped**:
-- `docs/CROSS_ORG_COLLABORATION_PLAN.md` — THE moat designed: `project_partner_orgs` + `project_partner_members` substrate, RLS OR-arm for can_read_project, partner capability allow-list (never money tables), UI surfaces, C1-C4 rollout, security invariants. NOT built yet — build contract ready.
-- `docs/ZOHO_STARTUP_STACK_PLAN.md` — Zoho = business ops around the product; activate Mail/CRM-free/Desk-free/Books-free first; signup→CRM lead via Flow webhook using the notify_config secret pattern; Cashfree stays payment rail; DPDP guardrail on what leaves Supabase.
-- `docs/ROLE_INTELLIGENCE_STUDY.md` — every firm-role mapped to EXISTING coverage (mostly ✅/🟡) with phase-tagged gaps; build discipline locked to GTM order (Developer → Architect → Interior → Contractor/Consultant).
+- `docs/architecture/CROSS_ORG_COLLABORATION_PLAN.md` — THE moat designed: `project_partner_orgs` + `project_partner_members` substrate, RLS OR-arm for can_read_project, partner capability allow-list (never money tables), UI surfaces, C1-C4 rollout, security invariants. NOT built yet — build contract ready.
+- `docs/integrations/ZOHO_STARTUP_STACK_PLAN.md` — Zoho = business ops around the product; activate Mail/CRM-free/Desk-free/Books-free first; signup→CRM lead via Flow webhook using the notify_config secret pattern; Cashfree stays payment rail; DPDP guardrail on what leaves Supabase.
+- `docs/architecture/ROLE_INTELLIGENCE_STUDY.md` — every firm-role mapped to EXISTING coverage (mostly ✅/🟡) with phase-tagged gaps; build discipline locked to GTM order (Developer → Architect → Interior → Contractor/Consultant).
 
 **Gates**: lint 0 · tsc 0 · vitest **2974** (+7 orgType) · smoke **462**.
 
@@ -124,7 +124,7 @@ lint 0 errors / 500 documented-debt warnings (budget 520) · tsc clean · build 
 **Fix applied (live config via Management API)**:
 - GoTrue custom SMTP → **Resend**: `smtp.resend.com:465`, user `resend`, pass = RESEND_API_KEY, from/admin = **`hello@sitetrackpro.in`** (verified domain), sender "SiteTrack Pro".
 - Benefits: verified-domain sender (deliverability), full send/bounce visibility in Resend dashboard, no dependency on founder's personal Google account security.
-- Permanent ops script kept: `scripts/set-gotrue-smtp-resend.mjs` (re-runnable; reads keys from .env.local only).
+- Permanent ops script kept: `scripts/deploy/set-gotrue-smtp-resend.mjs` (re-runnable; reads keys from .env.local only).
 
 **Re-dispatched** the pending confirmation for `boyapatirakesh9@gmail.com` through the new pipeline (`resend_confirmation` EF → 200, sent_at advanced 15:55:56 IST) + a direct Resend-API heads-up email (id `2a3461a6`) so the inbox is unambiguous.
 
@@ -202,7 +202,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 - **FI-3** `chk_ra_paid_range`: `ra_bills.paid_amount ∈ [0, bill_amount]`.
 - RLS untouched (who may write stays `can_write_project`); fires BEFORE the notify AFTER-trigger so notifications only fire for valid payments.
 
-**Live proof**: new harness `scripts/test-financial-invariants.mjs` (`npm run test:rls:finance`, added to the CI RLS chain) — rolled-back-tx matrix **18/18 green**: valid/exact-cap payments accepted, overpayment rejected w/ clear error, update-past-room rejected, both cross-project directions + dangling targets rejected, delete-frees-room cycle back to exact cap, RA retention-adjusted boundary (₹190000 ok / ₹190001-class rejected), CHECK violation on paid_amount, RLS layering (client-role member denied), percentage math locked at exactly ₹116000.
+**Live proof**: new harness `scripts/tests/test-financial-invariants.mjs` (`npm run test:rls:finance`, added to the CI RLS chain) — rolled-back-tx matrix **18/18 green**: valid/exact-cap payments accepted, overpayment rejected w/ clear error, update-past-room rejected, both cross-project directions + dangling targets rejected, delete-frees-room cycle back to exact cap, RA retention-adjusted boundary (₹190000 ok / ₹190001-class rejected), CHECK violation on paid_amount, RLS layering (client-role member denied), percentage math locked at exactly ₹116000.
 
 **Harness lessons**: information_schema.triggers hides rows under authenticated → use pg_trigger; seed ALL cross-project fixtures as owner BEFORE switching to authenticated (RLS blocks mid-test seeding); org_members role CHECK admits only the 22-role set ('client', not 'member').
 
@@ -223,7 +223,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 
 **Conflict detection (query layer)**: new `src/lib/versionedUpdate.ts` — `versionedUpdateOutcome(res, expectedVersion?)`: guarded update matching 0 rows ⇒ `{ok:false, conflict:true, "record changed while you were away"}`; builder errors stay non-conflicts; unguarded calls keep legacy semantics. Wired with optional `{ expectedVersion }` into `setTaskStatus` / `setIssueResolved` / `setMilestoneStatus`; all three tabs pass the read-time version end-to-end (conflict surfaces via the standard error Alert after optimistic rollback). Lists select `version` (+ camelCase mapping, default 1).
 
-**Live proof**: new harness `scripts/test-versioned-concurrency.mjs` (`npm run test:rls:versions`, added to the CI RLS chain) — rolled-back-tx matrix **39/39 green**: structure (cols+triggers+fn posture ×6 tables), fresh insert v=1, matching guard applies→v2, stale guard matches 0 rows & record untouched, forged version overridden to monotonic, updated_at maintained (tx-clock semantics — wall-clock advance is per-request in prod), outsider blocked even WITH correct version (RLS layering), and the invoices/ra_bills split: **no direct authenticated UPDATE policy** (their writes flow through approval-guarded RPCs — correct posture discovered during the build), while owner-path updates still bump.
+**Live proof**: new harness `scripts/tests/test-versioned-concurrency.mjs` (`npm run test:rls:versions`, added to the CI RLS chain) — rolled-back-tx matrix **39/39 green**: structure (cols+triggers+fn posture ×6 tables), fresh insert v=1, matching guard applies→v2, stale guard matches 0 rows & record untouched, forged version overridden to monotonic, updated_at maintained (tx-clock semantics — wall-clock advance is per-request in prod), outsider blocked even WITH correct version (RLS layering), and the invoices/ra_bills split: **no direct authenticated UPDATE policy** (their writes flow through approval-guarded RPCs — correct posture discovered during the build), while owner-path updates still bump.
 
 **Harness lessons reinforced**: (1) `session_replication_role='replica'` kills ordinary triggers — reset to `'origin'` BEFORE behavior tests or the bump silently never fires; (2) `now()` is transaction-scoped — single-tx harnesses can't prove wall-clock advances.
 
@@ -237,13 +237,13 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 
 **Context**: Continuing the external deep-dive's P0 list after the offline consolidation (`fabdec8`). Deep-dive verified "audit immutability" already shipped (mig 100 triggers on `audit_log_v2`/`activity_log` + grant-immutable `download_events`) — so the next open item was "Verify every SECURITY DEFINER function".
 
-**Live-DB survey → real finding**: new `scripts/check-security-definer.mjs` (`npm run check:definer`, same SUPABASE_DB_URL/SKIP contract as check:columns) enumerated **157 SECURITY DEFINER functions live; 11 unpinned** — 6 of OURS (`accept_org_invitation`, `create_org_invitation`, `audit_flag_change`, `chat_channel_readable`, `record_cashfree_event`, `record_voice_cache_hit`) + 5 extension-owned (`graphql.get/increment_schema_version`, `st_estimatedextent` ×3 — allowlisted, platform replaces them on upgrade).
+**Live-DB survey → real finding**: new `scripts/ci/check-security-definer.mjs` (`npm run check:definer`, same SUPABASE_DB_URL/SKIP contract as check:columns) enumerated **157 SECURITY DEFINER functions live; 11 unpinned** — 6 of OURS (`accept_org_invitation`, `create_org_invitation`, `audit_flag_change`, `chat_channel_readable`, `record_cashfree_event`, `record_voice_cache_hit`) + 5 extension-owned (`graphql.get/increment_schema_version`, `st_estimatedextent` ×3 — allowlisted, platform replaces them on upgrade).
 
 **Migration 237** `237_definer_search_path_hardening.sql` (applied live, db:apply **227 passed / 0 failed**): `ALTER FUNCTION … SET search_path = public, extensions, pg_temp` on the 6 app functions — closes the search_path-hijack class (definer runs with owner privileges). Config-only change; RLS policies referencing `chat_channel_readable` unaffected. Post-fix strict gate: **152 pinned + 5 allowlisted = 157, 0 ours unpinned**.
 
 **CI**: `Security-definer gate` step added to ci.yml right after the column-drift gate (`npm run check:definer -- --strict`; SKIP-clean when the secret is absent). Script defaults to report-only exit 0; `--strict` fails on any non-allowlisted unpinned function.
 
-**Docs**: `docs/MODULE_AUDIT_2026-08.md` — the deep-dive's recommended "Part 3" module-by-module production-status table, VERIFIED against current code/live DB (supersedes its stale assumptions: audit immutability ✅ mig 100, cross-tenant ✅ 506/506, offline ✅ consolidated). Residual P0 queue split: agent-implementable (versioned concurrency for payments/tasks, financial-chain invariants, migration-from-empty replay) vs founder actions (restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡) vs blocked-on-decision (Capacitor foundation).
+**Docs**: `docs/architecture/MODULE_AUDIT_2026-08.md` — the deep-dive's recommended "Part 3" module-by-module production-status table, VERIFIED against current code/live DB (supersedes its stale assumptions: audit immutability ✅ mig 100, cross-tenant ✅ 506/506, offline ✅ consolidated). Residual P0 queue split: agent-implementable (versioned concurrency for payments/tasks, financial-chain invariants, migration-from-empty replay) vs founder actions (restore drill 🔴, Sentry DSN 🟡, UptimeRobot 🟡) vs blocked-on-decision (Capacitor foundation).
 
 **Gates**: db:apply 227/0 · check:definer --strict green · eslint clean · smoke 462. No src/ changes (scripts/CI/docs/migration only).
 
@@ -259,7 +259,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 **Changes**:
 - `src/lib/offline.ts` → connectivity-only module (~25 lines; dead blob store + localStorage queue deleted, doc comment points at offlineQueue). Legacy keys `sitetrack_offline_v1` / `sitetrack_sync_queue_v1` had no other references anywhere (verified) — nothing to migrate since no producer ever wrote.
 - `useConnectionStatus.ts` → `pendingOps` now polls `queueDepth().total` from offlineQueue (same 3s cadence; rejects caught → degrades to 0 in non-IDB envs like jsdom).
-- `scripts/smoke.mjs` → marker `queueOpAdd` (dead) → `queueDepth` + `drainDprQueue`; scan list += `offlineQueue.ts` + `dprOfflineSync.ts` so deleting either file now fails smoke. **462 checks**.
+- `scripts/ci/smoke.mjs` → marker `queueOpAdd` (dead) → `queueDepth` + `drainDprQueue`; scan list += `offlineQueue.ts` + `dprOfflineSync.ts` so deleting either file now fails smoke. **462 checks**.
 - **New tests** `tests/lib/offlineQueue.test.ts` (15): backoff table + exhaustion nulls; stale-failed window (7d, status-guarded); enqueue validation (key required, kind whitelist locked to dpr/voice/photo); drain: offline no-op, send-required guard, sent path clears last_error, fail→defer with backoff gate (no attempt before wait elapses), exhaustion to failed@5, recovery after failure, thrown-error capture, stale GC before drain; queueDepth by_kind/by_status buckets; clearAll count. Memory adapter only — no IndexedDB needed in Node.
 - **New tests** `tests/lib/useConnectionStatus.test.tsx` (2): pendingOps seeds from mocked queueDepth total; stays 0 when queue backend rejects.
 
@@ -358,7 +358,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 
 ## Session — 2026-08-23: LIVE authenticated responsive audit (real logins) + tablet/signout/403 fixes (complete)
 
-**Follow-up to the UX-audit session**: seeded the demo tenant (`node scripts/seed-garchitects-roles.mjs` → GARCHITECTS_CREDENTIALS.md) and built `scripts/ux-audit-live-auth.mjs` — **real password grant against live GoTrue**, session planted in localStorage (supabase-js shape), then the overflow/offender/console sweep across **13 routes × 3 viewports × 3 roles against REAL production data**, including real project-detail tabs (SRI VILLAS). `UX_AUDIT_BASE` env points it at any host (live / vite preview).
+**Follow-up to the UX-audit session**: seeded the demo tenant (`node scripts/seeds/seed-garchitects-roles.mjs` → GARCHITECTS_CREDENTIALS.md) and built `scripts/dev/ux-audit-live-auth.mjs` — **real password grant against live GoTrue**, session planted in localStorage (supabase-js shape), then the overflow/offender/console sweep across **13 routes × 3 viewports × 3 roles against REAL production data**, including real project-detail tabs (SRI VILLAS). `UX_AUDIT_BASE` env points it at any host (live / vite preview).
 
 **New issues found (live, real data)**:
 1. **Tablet-768: "Sign out" button cut on EVERY page** (`right=772` on a 768 viewport). Below lg the shell shows drawer nav + hamburger AND full search AND sign-out text simultaneously — TopBar was compact only below sm/md, not below lg.
@@ -380,7 +380,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 
 **Tooling**:
 - `e2e-mock/ux-audit.spec.ts` + `playwright.ux.config.ts` (`npm run test:ux`) — renders the REAL authenticated shell via the mocked-session infra at **3 viewports × 9 routes × 3 roles (81 page-views)** and records: horizontal overflow px, cut-off offenders (elements starting inside but ending past the viewport), sub-40px touch targets (mobile), console/page errors; screenshots + JSON report to `%TEMP%\opencode\ux-audit\`. Diagnostic only — never asserts.
-- `scripts/ux-audit-live.mjs` — same checks against the LIVE public pages (`/`, `/login`, `/register`). Browser globals inside `page.evaluate` need `/* global ... */` for eslint's node-globals scope.
+- `scripts/dev/ux-audit-live.mjs` — same checks against the LIVE public pages (`/`, `/login`, `/register`). Browser globals inside `page.evaluate` need `/* global ... */` for eslint's node-globals scope.
 
 **Issues found (first run)**:
 1. **Right-side header cluster pushed past the viewport on mobile on EVERY page** — TopBar middle GlobalSearch is `flex-1` while the right cluster (org switcher select + TrialBanner + LanguageSwitcher + avatar + sign-out) had no shrink allowance → org switcher block measured right=546 on a 360px viewport (invisible/cut).
@@ -410,7 +410,7 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 
 **i18n**: `teams.*` namespace (20 keys × en/hi/te). en.json edited in-place (BOM preserved); hi/te patched TEXTUALLY at the tail via a temp script (CRLF/no-BOM preserved) — full-file JSON rewrite would have churned the whole file. Keyset parity verified programmatically.
 
-**Live RLS harness**: `scripts/test-team-channels-rls.mjs` (`npm run test:rls:teams`, added to CI RLS step) — rolled-back-tx matrix **TC-001…010, 21/21 green** (structures+triggers+secdef; duplicate-name reject; cross-tenant blind+post-deny; spoof deny; mention fan-out exact-recipients + deep links; reply bump; flatten-to-root; cross-channel-parent reject; update/delete gates).
+**Live RLS harness**: `scripts/tests/test-team-channels-rls.mjs` (`npm run test:rls:teams`, added to CI RLS step) — rolled-back-tx matrix **TC-001…010, 21/21 green** (structures+triggers+secdef; duplicate-name reject; cross-tenant blind+post-deny; spoof deny; mention fan-out exact-recipients + deep links; reply bump; flatten-to-root; cross-channel-parent reject; update/delete gates).
 
 **Harness lessons recorded** (both bit during first run, both diagnosed via direct pg probes):
 1. `session_replication_role='replica'` (fixture seeding) **disables ordinary triggers** — must reset to `'origin'` before behavior tests or guard/bump/notify silently never fire.
@@ -444,14 +444,14 @@ Plus `brandingCss.ts` amber theme synced to the accessible pair. **Brand note**:
 **Rescue**:
 - **Reverted to HEAD** (shipped versions restored from git): `src/app/crmQueries.ts`, `src/features/org/CrmView.tsx`, `tests/app/crmQueries.test.ts`, `scripts/supabase/161_crm_leads.sql`, `src/features/org/OnboardingView.tsx` (the WIP diff there was a non-functional `alert()` demo-project stub).
 - **Quarantined** (moved to `%TEMP%\opencode\stp-quarantine`, nothing deleted): RN UI files (`IntelligenceView/Dashboard`, `QuickUpdateScreen`), express mock server (`src/mocks/`, `src/app/api.ts`, broken `mock:api` script), 5 broken scripts (`extend-beta/feedback/incorporate-feedback/seed-demo-project/test-beta.mjs`), `crash-report.mjs` (`require()` inside `.mjs` — crashes on run; RN-centric; app already has Sentry), `.bak/.tmp` artifacts, error dumps.
-- **Salvaged & repaired** (pure-TS Pillar-1 logic from `docs/NEXT_PHASE_PLAN.md`): `riskQueries.ts` (+ pure `predictStockOut()`, `computeProductivity()` 5-arg form, `costForecast{projected,variance,confidence 0–1}` + `burnAccelerating` on `RiskResult`; fixed out-of-scope `burn` ref + backwards efficiency formula), `RiskSignalsCard.tsx` (confidence % display), new `intelligenceEngine.ts` / `siteUpdateModel.ts` / `intentParser.ts` (const-reassignment bugs, missing namespace imports, percent-scaling fixes), `tests/ai/engine.test.ts` wired to vitest (10 tests).
+- **Salvaged & repaired** (pure-TS Pillar-1 logic from `docs/planning/NEXT_PHASE_PLAN.md`): `riskQueries.ts` (+ pure `predictStockOut()`, `computeProductivity()` 5-arg form, `costForecast{projected,variance,confidence 0–1}` + `burnAccelerating` on `RiskResult`; fixed out-of-scope `burn` ref + backwards efficiency formula), `RiskSignalsCard.tsx` (confidence % display), new `intelligenceEngine.ts` / `siteUpdateModel.ts` / `intentParser.ts` (const-reassignment bugs, missing namespace imports, percent-scaling fixes), `tests/ai/engine.test.ts` wired to vitest (10 tests).
 
 **Migration 225 deep-dive → full rewrite** (user option (a)): the unreviewed `225_risk_signals_cron.sql` was non-functional — fictional `risk_result_tmp` table, nonexistent `issue_attributes`/`expenses.direction`/`rfis` references, invalid RLS cast (`::org_id` not a type → would fail at apply time), no scoring logic at all (built input jsonb then never used it). Rewritten as a correct SECURITY DEFINER plpgsql port of `computeRiskSignals`:
 - `project_risk_signals` table (score 0–100, level, delay_probability ≤0.9, delay_days, burn_accelerating); RLS read via `can_read_project()`; **cron-only writes** (no DML grants to authenticated).
 - Scoring mirrors TS weights: slip ≥3d (+20, ≥14d escalates +34), burn ≥80%/≥100% (+20/+34 + accelerating flag between), open high-severity issues (>0 +20, ≥3 +34); cap 100; bands critical≥70/high≥45/medium≥25. RFI-lag signal intentionally omitted server-side (no `rfis` table exists) — documented.
 - `#variable_conflict use_column` for the RETURNS-TABLE OUT-param ambiguity; pg_cron job `compute-risk-signals` daily 02:05 UTC (07:35 IST), idempotent re-schedule. Applied live via `db:apply` (ledgered; checksum-drift recovery path used once mid-edit: ledger row delete + function drop + re-apply).
 
-**New test harness**: `scripts/test-risk-signals-cron.mjs` (`npm run test:rls:risk`) — live-DB rolled-back-tx matrix **RSK-001…009, 21/21 green** (scoring math incl. resolved-issue exclusion + cap-at-100/prob-0.9, completed projects skipped, idempotent overwrite, member/org RLS scoping both directions, superadmin bypass, authenticated INSERT denied, cron registration). Live functional run scored **15 active production projects** (all low). Harness bugs found+fixed during verify: null-status fixture silently skipped by `status='active'` filter (made two assertions vacuously green), 2-vs-3 open highs, missing resolved-issue case.
+**New test harness**: `scripts/tests/test-risk-signals-cron.mjs` (`npm run test:rls:risk`) — live-DB rolled-back-tx matrix **RSK-001…009, 21/21 green** (scoring math incl. resolved-issue exclusion + cap-at-100/prob-0.9, completed projects skipped, idempotent overwrite, member/org RLS scoping both directions, superadmin bypass, authenticated INSERT denied, cron registration). Live functional run scored **15 active production projects** (all low). Harness bugs found+fixed during verify: null-status fixture silently skipped by `status='active'` filter (made two assertions vacuously green), 2-vs-3 open highs, missing resolved-issue case.
 
 **Kept untracked docs** (secret-scanned clean, valid UTF-8): `NEXT_PHASE_PLAN.md` (roadmap driving this pillar), `PRODUCT_CASE_STUDY(.TE).md`, `INTERVIEW_CHEAT_SHEET.md`.
 
@@ -508,7 +508,7 @@ Verified via `GET /v1/projects/nntkxojdeyziemdhyjvg/config/auth`. Confirm/magic-
 - Also found + cleared a **manual Resend suppression** on `boyapatirakesh7777@gmail.com` (added 2026-08-19, `origin=manual`) via `DELETE /api.resend.com/suppressions/{email}` — it would have silently blocked all emails to the founder's inbox.
 - EF code fallbacks still read `"SiteTrack <hello@sitetrackpro.in>"` — the live secret override (`SiteTrackPro …`) wins; fallbacks only matter if the secret is ever removed.
 
-**Domain-migration session's remaining blockers are now ALL closed**: Vercel DNS (apex A 76.76.21.21 + www CNAME + Resend `send` MX restored, live 200) · Supabase Auth URL/redirects (canonical) · Resend (domain verified + real delivery). `scripts/vercel-domain-migration.mjs` retained as reusable tooling. `main`==`prod` (`c1b0970`).
+**Domain-migration session's remaining blockers are now ALL closed**: Vercel DNS (apex A 76.76.21.21 + www CNAME + Resend `send` MX restored, live 200) · Supabase Auth URL/redirects (canonical) · Resend (domain verified + real delivery). `scripts/deploy/vercel-domain-migration.mjs` retained as reusable tooling. `main`==`prod` (`c1b0970`).
 
 **Gate**: infra/docs only — no app code changed this session. Token in `.env.local` is gitignored; do not commit it.
 
@@ -518,17 +518,17 @@ Verified via `GET /v1/projects/nntkxojdeyziemdhyjvg/config/auth`. Confirm/magic-
 
 **Context**: Follow-up to the domain-migration session. The user switched the domain's **nameservers to Vercel** (`ns1/ns2.vercel-dns.com`) and directed "work on those 3 things now". I drove the remaining Vercel + DNS work autonomously via the `VERCEL_TOKEN` GitHub secret (local CLI token invalid; no local `SUPABASE_ACCESS_TOKEN`).
 
-**Vercel + DNS (DONE, live)**: one-shot infra script `scripts/vercel-domain-migration.mjs` + temporary `workflow_dispatch` job `vercel-domain-migration.yml` (now removed) ran against the Vercel API:
+**Vercel + DNS (DONE, live)**: one-shot infra script `scripts/deploy/vercel-domain-migration.mjs` + temporary `workflow_dispatch` job `vercel-domain-migration.yml` (now removed) ran against the Vercel API:
 - Domain `sitetrackpro.in` already on the team + attached to project `sitetrack-rakesh` (user had done this).
 - Zone cleanup: deleted stale `www` CNAME → `links1.resend-dns.com` (was overriding the wildcard so www went to Resend), apex inbound MX → `inbound-smtp.ap-northeast-1.amazonaws.com` (SES inbound), `send` MX → `feedback-smtp.ap-northeast-1.amazonses.com` (this was actually Resend's required record — restored it once the API's `mxPriority` field was discovered).
 - Added apex A → `76.76.21.21` + `www` CNAME → `cname.vercel-dns.com` (idempotent).
 - **Verified live**: `https://sitetrackpro.in` → 308 → `https://www.sitetrackpro.in` → **200** (Vercel), page title "SiteTrack Pro"; `send.sitetrackpro.in` MX pref 10 in place; Resend DKIM + SPF TXT intact.
-- `node scripts/prod-smoke.mjs` against `https://sitetrackpro.in` → **3/3** (landing, Supabase REST + anon key, signup EF). The deploy-workflow prod:smoke will now pass on next prod deploy.
+- `node scripts/ci/prod-smoke.mjs` against `https://sitetrackpro.in` → **3/3** (landing, Supabase REST + anon key, signup EF). The deploy-workflow prod:smoke will now pass on next prod deploy.
 - API gotchas recorded: Vercel `/v1/domains/{d}/records` rejects `priority`; MX requires separate `mxPriority` (integer) with `value` = host only.
 
 **Resend**: `sitetrackpro.in` domain **already exists + verified** (status `verified`, 0 pending records) — confirmed via `GET api.resend.com/domains` with the key in `.env.local`. All EFs already default `RESEND_FROM_EMAIL` to `SiteTrack <hello@sitetrackpro.in>` (code fallback, migrated earlier).
 
-**Supabase auth config (BLOCKED, dashboard-only)**: `auth.config` is not reachable via SQL on this project (`relation "auth.config" does not exist` even as `postgres`); `scripts/set-supabase-auth-url.mjs` needs a `SUPABASE_ACCESS_TOKEN` (none local). User action: dashboard → Authentication → URL Configuration → Site URL `https://sitetrackpro.in`, Redirect URLs add `https://sitetrackpro.in/**` + `http://localhost:5173/**`. Also check Edge Functions → Secrets: if `RESEND_FROM_EMAIL` is set to the old `onboarding@resend.dev` value it overrides the new code fallback (unset or set to `SiteTrack <hello@sitetrackpro.in>`).
+**Supabase auth config (BLOCKED, dashboard-only)**: `auth.config` is not reachable via SQL on this project (`relation "auth.config" does not exist` even as `postgres`); `scripts/deploy/set-supabase-auth-url.mjs` needs a `SUPABASE_ACCESS_TOKEN` (none local). User action: dashboard → Authentication → URL Configuration → Site URL `https://sitetrackpro.in`, Redirect URLs add `https://sitetrackpro.in/**` + `http://localhost:5173/**`. Also check Edge Functions → Secrets: if `RESEND_FROM_EMAIL` is set to the old `onboarding@resend.dev` value it overrides the new code fallback (unset or set to `SiteTrack <hello@sitetrackpro.in>`).
 
 **Gate**: tsc clean · lint 0 errors · build clean · smoke 455 · vitest 224 files/2856 tests (unchanged code, infra-only). Commit `4819f10` (migration) → prod `4b8d031` (PR #4) still the source of truth; infra commits `9b161fb`/`9146ae7`/`5568524`/`3afa5d3` on `main` only (script evolution + this session record).
 
@@ -544,7 +544,7 @@ Verified via `GET /v1/projects/nntkxojdeyziemdhyjvg/config/auth`. Confirm/magic-
 - `src/app/staffQueries.ts` default URL → sitetrackpro.in; `src/lib/handoverPacket.ts` verify links → sitetrackpro.in.
 - Edge functions — `CORS_ALLOWED_ORIGINS` / `_shared/cors.ts` defaults → `https://sitetrackpro.in,http://localhost:5173` (deduped `remove_org_member`); `PUBLIC_SITE_URL` fallbacks → sitetrackpro.in; `RESEND_FROM_EMAIL` fallback → `hello@sitetrackpro.in`.
 
-**Config/CI/scripts/tests**: `.env.example` (VITE_APP_URL / CASHFREE_RETURN_URL / CASHFREE_ALLOWED_ORIGINS), `.github/workflows/deploy.yml` prod:smoke URL, `playwright.config.ts` + `e2e/*` BASE, `scripts/{prod-smoke,uptime-check,psi-check,verify-prod-pricing,set-supabase-auth-url,seed-first-org,seed-garchitects-roles,create-test-users,deploy-all,setup}.mjs` defaults, `public/USER_GUIDE.md`, `marketing/` + `public/landing.html` CTAs → sitetrackpro.in. Tests updated: canonicalAppUrl (canonical now sitetrackpro.in; stale-placeholder test still blocks `app.sitetrack.in`), handoverPacket regex, gSubdomain uppercase + reserved-label cases, featureFlags uppercase staff email, efRegisterOrg/efResendConfirmation source-contract assertions.
+**Config/CI/scripts/tests**: `.env.example` (VITE_APP_URL / CASHFREE_RETURN_URL / CASHFREE_ALLOWED_ORIGINS), `.github/workflows/deploy.yml` prod:smoke URL, `playwright.config.ts` + `e2e/*` BASE, `scripts/ci/prod-smoke.mjs`, `scripts/ci/uptime-check.mjs`, `scripts/deploy/psi-check.mjs`, `scripts/ci/verify-prod-pricing.mjs`, `scripts/deploy/set-supabase-auth-url.mjs`, `scripts/seeds/seed-first-org.mjs`, `scripts/seeds/seed-garchitects-roles.mjs`, `scripts/dev/create-test-users.mjs`, `scripts/deploy/deploy-all.mjs`, `scripts/ci/setup.mjs` defaults, `public/USER_GUIDE.md`, `archive/marketing/` + `archive/marketing/landing.html` CTAs → sitetrackpro.in. Tests updated: canonicalAppUrl (canonical now sitetrackpro.in; stale-placeholder test still blocks `app.sitetrack.in`), handoverPacket regex, gSubdomain uppercase + reserved-label cases, featureFlags uppercase staff email, efRegisterOrg/efResendConfirmation source-contract assertions.
 
 **Docs**: AGENTS.md (live-URL refs + Phase A plan now targets `sitetrackpro.in`; old Resend domain `sitetrack.in` id `ddf2ce85…` documented as superseded), PENDING_WORK_END_TO_END_PLAN.md, ARCHITECTURE.md, DEPLOY_NOW.md, END_TO_END_PLAN.md, EXECUTION_PLAN_90_DAYS.md, RESEND_SMTP_SETUP.md, AUTH_LOGIN_ARCHITECTURE, USER_GUIDE, VERCEL_CONSOLIDATION (project-name refs kept), .opencode agent guides, and ~30 more. Vercel **project-name** references (`sitetrack-rakesh` project slug) and preview-domain patterns (`-git-staging-*.vercel.app`, `-git-feature-*.vercel.app`) intentionally kept.
 
@@ -945,7 +945,7 @@ Lift the per-project FF&E schedule register to an **org-wide budget rollup** acr
 - **`src/features/org/FfeRollupView.tsx`** (new, `/ffe`) â€” `<PlanGate feature="ffe">` + `useCan("ffe:manage")`/AccessDenied; stat cards (Projects Â· Entries, Committed, Procured, Procured %); By-status + By-category cards; per-project `DataTable` with a Progress bar (emerald at 100%) and row-click â†’ `/projects/{id}/ffe`.
 - **`src/plugins/catalog.ts`** â€” new **`design`** plugin owning the `ffe` route (route inherits module gate `design`; also makes `design` a nav-module owner, satisfying the catalogâ†”nav parity test).
 - **`src/app/nav-config.ts`** â€” nav item `/ffe` "FF&E Rollup" under **Procurement** group: `requires: "ffe:manage"`, `segments: ["architecture","interior","multiple"]`, `modules: ["design"]`.
-- **`scripts/smoke.mjs`** â€” added `FfeRollupView` to the app-source scan + `FfeRollupView`/`ffeOrgRollup` markers (235 checks).
+- **`scripts/ci/smoke.mjs`** â€” added `FfeRollupView` to the app-source scan + `FfeRollupView`/`ffeOrgRollup` markers (235 checks).
 - **Tests** â€” new `tests/app/e3FfeRollup.test.ts` (10: org rollup aggregation with cancelled excluded, status/category bucket seeding + ordering, per-project sort, empty rollup, listOrgFfe grouping/camelCase mapping, empty-entries, no-projects short-circuit, project-error + ffe-error surfacing).
 
 ### Verification
@@ -970,7 +970,7 @@ Audit which files were downloaded from the shared `deliverables` bucket by whom,
 - **`src/features/org/DownloadAuditView.tsx`** (new, `/download-audit`) â€” `<AccessDenied>` for (`deliverable:manage` OR `deliverable:approve` OR `drawings:upload`); stat cards (Downloads, Deliverables, Drawings); a filter to separate by register; per-event table (File, Project, Register, Downloaded by, Size, Time). Click-row opens the source (deliverable/drawing) tab.
 - **`src/plugins/catalog.ts`** â€” new **`design`** plugin owning the `download-audit` route (module gate `design`; also satisfies catalogâ†”nav parity).
 - **`src/app/nav-config.ts`** â€” nav item `/download-audit` "Download Audit" under Insights: `requiresAny: ["deliverable:manage", "deliverable:approve", "drawings:upload"]`, `modules: ["design"]`.
-- **`scripts/smoke.mjs`** â€” added `DownloadAuditView`, `downloadAuditQueries`, `logDownloadEvent` to the app-source scan (237 checks).
+- **`scripts/ci/smoke.mjs`** â€” added `DownloadAuditView`, `downloadAuditQueries`, `logDownloadEvent` to the app-source scan (237 checks).
 - **Tests** â€” new `tests/app/e4DownloadAudit.test.ts` (10: totals, decorator, log events, org rollup error surfaces, invalid register coercion).
 
 ### Verification
@@ -994,7 +994,7 @@ Org-wide monthly financial statement across all member projects: invoices split 
 - **`src/features/org/MonthlyStatementView.tsx`** (new, `/monthly-statement`) â€” month selector (last 12 months), project-type filter, stat cards (Projects, Invoiced, MRR, Expenses, RA Bills, PO Receipts), per-project DataTable with all 10 financial columns. Uses `<AccessDenied>` for `budget:view` OR `revenue:view`.
 - **`src/plugins/catalog.ts`** â€” route `monthly-statement` under `finance` plugin (module gate `finance`).
 - **`src/app/nav-config.ts`** â€” nav item `/monthly-statement` "Monthly Statement" under Insights: `requiresAny: ["budget:view","revenue:view"]`, `modules: ["finance"]`.
-- **`scripts/smoke.mjs`** â€” added `MonthlyStatementView`, `monthlyStatementTotals` markers (239 checks).
+- **`scripts/ci/smoke.mjs`** â€” added `MonthlyStatementView`, `monthlyStatementTotals` markers (239 checks).
 - **Tests** â€” new `tests/app/monthlyStatement.test.ts` (9: pure aggregator by source/MRR/expenses/RA/PO/time, totals, query mapper with project-list + 6-table join, error propagation, empty org short-circuit).
 
 ### Verification
@@ -1082,7 +1082,7 @@ Make the existing C1â€“D feature registers surface per-industry through the
 - Commit `664e674` (v4 Phase 3).
 
 ### Notes / Follow-ups
-- Module ownership per tab documented in `docs/MODULES.md` Â§3 table (three-place consistency rule: migration 155 CHECK â†” registry.ts â†” i18n).
+- Module ownership per tab documented in `docs/architecture/MODULES.md` Â§3 table (three-place consistency rule: migration 155 CHECK â†” registry.ts â†” i18n).
 - `/rabills` nav-gated-but-viewless gap **closed 2026-08-07** (commit `2febcbd`) â€” now an org-wide RA bills rollup route (see the v4 Phase 2 section note).
 
 ---
@@ -1090,7 +1090,7 @@ Make the existing C1â€“D feature registers surface per-industry through the
 ## Sprint 2 DPR â€” Real Submit Pipeline + Foundation (Complete, 2026-08-06)
 
 ### Goal
-Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agreed in `docs/SPRINT_2_ARCHITECTURE.md`: compose â†’ voice â†’ geotagged photo â†’ submit â†’ history â†’ detail â†’ retry, with offline queue, live BuildNow badge, and a shared real Meta Cloud API client. Real Bhashini/AWS transcription + BuildNow API access stay blocked on founder-provided API keys (provider-agnostic shells remain, mock adapter real).
+Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agreed in `docs/architecture/SPRINT_2_ARCHITECTURE.md`: compose â†’ voice â†’ geotagged photo â†’ submit â†’ history â†’ detail â†’ retry, with offline queue, live BuildNow badge, and a shared real Meta Cloud API client. Real Bhashini/AWS transcription + BuildNow API access stay blocked on founder-provided API keys (provider-agnostic shells remain, mock adapter real).
 
 ### Done (commits `124ac31`, `28cdf0e`, `c2f6949`)
 - **Real submit pipeline** (`124ac31`): `src/app/dprSubmit.ts` (379 ln â€” optimistic submit, photo/voice upload to storage, offline enqueue, delivery-log insert, BuildNow badge state); `src/app/dprQueries.ts` extended; `src/features/dpr/DPRDetailView.tsx` (208 ln new) + `PhotoGeotagCapture.tsx` (215 ln new, EXIF â†’ device GPS â†’ Hyderabad bbox); `src/lib/dprOfflineSync.ts` (drain/useOfflineSync); `DPRComposer.tsx` fully wired; route `/dpr/history` + catalog entry; migration **157** `scripts/supabase/157_dpr_media_bucket.sql` â€” private `dpr-media` bucket (15 MB, id=name) + 4 storage RLS policies (read/insert org-member minus client-ish roles, update org-member, delete managers+orgadmin incl. `has_project_role`), path `<org_id>/<date>/<sha256>.<ext>` using the validated `storage.foldername(name)[1] IN (user_org_ids()::text)` pattern from 145.
@@ -1104,7 +1104,7 @@ Ship the Sprint 2 WhatsApp DPR flow's code surface end-to-end on the shape agree
 ### Notes / Follow-ups
 - **Phase B â€” DPR test coverage (done 2026-08-06, commit `96e30a2`)**: added `tests/dpr/digestPreview.test.ts` (pure previewDigest), `tests/dpr/efInternals.test.ts` (source-contract locks on Sprint 2 hardening: idempotent upserts `on_conflict=org_id,client_token` / `project_id,sync_date`, retry maxAttempts 3 + baseMs 1000, quota guard 402/budget-blocked, cache-first voice/binary, `message?.status` terminal cached path, auth gates), `tests/dpr/dprViews.test.ts` (exported `sortByStatus`/`sortByDate`/`STATUS_ORDER` from DPRHistoryView + `outcomeVisual`/`fmtDateTime` from DPRDetailView). Full gate: lint/tsc/build clean, smoke 233, vitest **121 files / 1539 tests** (+3/+37). Pushed `prod`; live 200 OK.
 - `VoiceConfidenceBar.tsx` was dead code (never imported) â€” **removed 2026-08-07** (see below).
-- Full status + execution log in `docs/SPRINT_2_DPR_RESEARCH.md`.
+- Full status + execution log in `docs/research/SPRINT_2_DPR_RESEARCH.md`.
 
 ---
 
@@ -1137,7 +1137,7 @@ Credential-free, CI-runnable role-access coverage that renders the REAL v3 route
   - `mockSupabase()` `page.route`s `**://<ref>.supabase.co/**`, answering the REST tables `fetchAuthSession()` queries (`profiles`, `org_members`, `project_members`, `staff_area_grants`, + empty `role_capability_overrides`/`org_member_roles`/`org_role_capabilities`) with per-role canned rows. `rpc/set_tenant_context` failure is already swallowed in-app.
   - `openMockedApp()` = seed + route-mock + goto.
 - `e2e-mock/role-access.spec.ts`: 6 tests (orgadmin, pm, client, superadmin; AccessDenied on `/admin` + `/org`).
-- `scripts/e2e-mock-server.mjs`: Vite dev server on port 5176 (`E2E_MOCK_PORT`).
+- `scripts/dev/e2e-mock-server.mjs`: Vite dev server on port 5176 (`E2E_MOCK_PORT`).
 
 ### Commands
 - `npm run test:e2e:mock` - run the mocked suite (chromium only; `test:e2e` stays the live suite).
@@ -1484,12 +1484,12 @@ Seed the live "G Architects" org with **one user per identity role**, create **o
 - **superadmin** is platform-only: no org/project row (org_members CHECK has no superadmin; superadmin is cross-tenant).
 
 ### Tooling
-- **`scripts/seed-garchitects-roles.mjs`** (new, idempotent, mirrors `create-test-users.mjs`): upserts auth.users (+ identities), profiles, org_members (`status='active'`), the project (by name), and project_members. `--dry-run` prints the roster. Uses `session_replication_role='replica'` to bypass the `handle_new_signup` auto-org trigger + plan-limit triggers. Writes **`GARCHITECTS_CREDENTIALS.md`** (gitignored) with full creds.
+- **`scripts/seeds/seed-garchitects-roles.mjs`** (new, idempotent, mirrors `create-test-users.mjs`): upserts auth.users (+ identities), profiles, org_members (`status='active'`), the project (by name), and project_members. `--dry-run` prints the roster. Uses `session_replication_role='replica'` to bypass the `handle_new_signup` auto-org trigger + plan-limit triggers. Writes **`GARCHITECTS_CREDENTIALS.md`** (gitignored) with full creds.
 
 ### Verification (all pass)
 - Counts: 22 users / 22 identities / 22 profiles · 21 org members (all but superadmin) · **12 project members** on G Arch Demo Villa · G Architects org total = 24 members (21 new + pre-existing RAKESH/Rajesh/Sai Chandu).
 - **Real GoTrue password sign-in** (POST `/auth/v1/token?grant_type=password`) → **HTTP 200** for orgadmin, pm, architect, client, site_inspector, contractor, superadmin — proves bcrypt cost 10 + identity rows work.
-- `npx eslint scripts/seed-garchitects-roles.mjs` clean. No migration, no `prod` push needed.
+- `npx eslint scripts/seeds/seed-garchitects-roles.mjs` clean. No migration, no `prod` push needed.
 
 ### Notes
 - Emails use RFC 2606 reserved TLD: `garch.<role>@sitetrack.test` (e.g. `garch.architect@sitetrack.test`). Passwords in the gitignored creds doc.
@@ -1517,10 +1517,10 @@ Logged in as any org-leadership role, the sidebar showed **PM Dashboard** (/pm).
 ## QA/Testing Infrastructure Upgrade (2026-08-10)
 
 ### Goal
-Give every feature a repeatable, layered test story and automate the regression cadence (per the new `docs/QA_PLAYBOOK.md` + `docs/MANUAL_QA_GARCH.md`).
+Give every feature a repeatable, layered test story and automate the regression cadence (per the new `docs/qa/QA_PLAYBOOK.md` + `docs/qa/MANUAL_QA_GARCH.md`).
 
 ### Done (all verified)
-- **Docs** — `docs/QA_PLAYBOOK.md` (suites table, 5-tier recipe, per-feature test map, regression cadence, infra gap log) + `docs/MANUAL_QA_GARCH.md` (G-Arch 22-role manual sign-in checklist + workflow sweeps).
+- **Docs** — `docs/qa/QA_PLAYBOOK.md` (suites table, 5-tier recipe, per-feature test map, regression cadence, infra gap log) + `docs/qa/MANUAL_QA_GARCH.md` (G-Arch 22-role manual sign-in checklist + workflow sweeps).
 - **CI (`ci.yml`)** — now 3 parallel jobs on push/PR to main/prod:
   - `test` (unchanged: lint → typecheck → build → smoke → unit)
   - `e2e-mock` (new: playwright chromium + `test:e2e:mock` — the previously-unused CI-runnable role-access suite)
@@ -3079,8 +3079,8 @@ UtilizationView (org rollup + phase drill-down) with a real legend.
 - **Lead = main session agent.** Every user prompt is interpreted like a client story,
   routed to the right agent, executed via the loop. User delegates decisions.
 - **Loop** (per sub-task): Deep-Dive → Plan → Build → Verify → Commit; then phase
-  re-check → testing loop → release → push live. See `docs/AGENTIC_SDLC.md`.
-- **End-to-end plan**: `docs/END_TO_END_PLAN.md` (Track A = superadmin panel;
+  re-check → testing loop → release → push live. See `docs/planning/AGENTIC_SDLC.md`.
+- **End-to-end plan**: `docs/planning/END_TO_END_PLAN.md` (Track A = superadmin panel;
   Track B = research-gap roadmap).
 - **Research source**: `docs/research/01_CHAT_SOURCE.md` (canonical copy of the
   product-research chat — Client Approval & Revision System, 11 modules, multi-tenant,
@@ -3090,7 +3090,7 @@ UtilizationView (org rollup + phase drill-down) with a real legend.
   qa-engineer, release-devops, gate-verifier. opencode must be restarted to load new
   agents. (`.agents/sitetrack-pro/` team is the Claude-code equivalent.)
 - **Gate suite** (verify step, project root): `npx tsc --noEmit`, `npx eslint .`
-  (allow 1 pre-existing coverage warning), `npx vitest run`, `node scripts/smoke.mjs`,
+  (allow 1 pre-existing coverage warning), `npx vitest run`, `node scripts/ci/smoke.mjs`,
   `npm run build`, e2e-mock. All must pass before commit/phase-close.
 
 ### Track A — Super Admin Platform Panel
@@ -3223,7 +3223,7 @@ users were told "check your inbox" but **no confirmation email was ever dispatch
 
 ---
 
-## Pending Work — End-to-End Plan (docs/PENDING_WORK_END_TO_END_PLAN.md, 2026-08-16)
+## Pending Work — End-to-End Plan (docs/planning/PENDING_WORK_END_TO_END_PLAN.md, 2026-08-16)
 
 ### Phase B — Signup-flow i18n parity (COMPLETE)
 `OrgRegisterView` (the self-service `/register` screen) now renders via `useT()`
@@ -3275,4 +3275,14 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 
 **Live verification**: prod CI success on `a8dcd0c` · `/v2/` → **200** (title ok) · `/v2/assets/index-*.js` → 200 · `/v2/sw.js` → 200 · main `/` → 200 untouched · prod-smoke 3/3.
 
-**Canonical note**: `C:\Users\boyap\site-tracker-v2` sibling is now a stale local backup — all v2 work continues in-repo under `v2/`. Plan doc: `docs/REDESIGN_V2_PLAN.md`.
+**Canonical note**: `C:\Users\boyap\site-tracker-v2` sibling is now a stale local backup — all v2 work continues in-repo under `v2/`. Plan doc: `docs/planning/REDESIGN_V2_PLAN.md`.
+
+---
+
+## Session — 2026-08-26: V2 CLOSED — single clean sitetrackpro.in (PR #27, squash `5c14146`)
+
+**Founder decision**: "/v2/ ela rakodadu — url lo only sitetrackpro.in undali." Greenfield-v2 shell removed from production entirely: `v2/` deleted (incl. gitignored disk leftovers), build chain restored to plain `vite build`, CI "V2 app gates" step dropped, eslint/gitignore entries cleaned, smoke marker reverted. REDESIGN_V2_PLAN.md marked CLOSED (deep-dive record retained; recoverable from git range `a62b2e0..79283b9`).
+
+**Zero product loss** — every user-facing piece had already been ported INTO the main app before closure: RBAC profile clone+compare (#25), per-type industry dropdowns + richer create form (mig 248), signup-confirm recovery + onboarding persistence (mig 247, #24), trial owner-only gate, firm-type hidden.
+
+**Ship**: rebase over founder's prod→main sync (#26) → PR #27 → sync-merge origin/prod (eslint auto) → CI success → squash `5c14146` → live verified: ROOT/LOGIN 200, /v2/ now falls through to the MAIN app SPA (no separate v2 bundle exists), prod-smoke 3/3.

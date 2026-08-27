@@ -12,26 +12,26 @@
 // interior / multiple-segment orgs (segments gate in nav-config).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { SchemaForm } from "@/components/ui";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
-import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
-import { createPO } from "@/app/financeQueries";
-import { publishQuoteAccepted } from "@/app/outboxQueries";
-import { listVendors, vendorOptionGroups, type Vendor } from "@/app/vendorQueries";
-import { listFfeEntries, type FfeEntry } from "@/app/ffeQueries";
+import { fmtRupees, fmtCompactRupees } from "@/app/queries/financeQueries";
+import { createPO } from "@/app/queries/financeQueries";
+import { publishQuoteAccepted } from "@/app/queries/outboxQueries";
+import { listVendors, vendorOptionGroups, type Vendor } from "@/app/queries/vendorQueries";
+import { listFfeEntries, type FfeEntry } from "@/app/queries/ffeQueries";
 import {
   listOrgProjects, listOrgQuotes, upsertQuote, attachQuote, setQuoteStatus, deleteQuote,
   quoteTotal, QUOTE_NEXT, scoreQuote, bestScoredQuote, quoteFormSchema,
   type ProcurementQuote, type OrgProjectBrief, type QuoteStatus, type QuoteFormValues,
-} from "@/app/procurementQuotes";
+} from "@/app/queries/procurementQuotes";
 
 const STATUS_TONE: Record<QuoteStatus, "neutral" | "info" | "success" | "warning" | "danger"> = {
   requested: "neutral", received: "info", selected: "success", rejected: "danger",
@@ -103,9 +103,6 @@ function ProcurementInner(): JSX.Element {
 
   const { busy, run } = useAction(reload, setError);
 
-  if (!canView) return <AccessDenied message="You don't have permission to view procurement." />;
-
-  const unassigned = quotes.filter(q => !q.ffeEntryId && !q.projectId);
   const byFfe = useMemo(() => {
     const map = new Map<string, ProcurementQuote[]>();
     for (const q of quotes) {
@@ -116,6 +113,10 @@ function ProcurementInner(): JSX.Element {
     }
     return map;
   }, [quotes]);
+
+  if (!canView) return <AccessDenied message="You don't have permission to view procurement." />;
+
+  const unassigned = quotes.filter(q => !q.ffeEntryId && !q.projectId);
 
   const vendorName = (id: string | null) => vendors.find(v => v.id === id)?.name ?? "Unknown vendor";
   const vendorRating = (id: string | null): number | undefined => vendors.find(v => v.id === id)?.rating ?? undefined;
@@ -315,7 +316,18 @@ function ProcurementInner(): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-8">
           <div>

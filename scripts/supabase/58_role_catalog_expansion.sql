@@ -1,7 +1,7 @@
 -- SiteTrack Pro — Role catalog expansion (Session 30.12).
 --
 -- Source: founder's hand-drawn role-architecture diagram (June 3, 2026)
--- + 3 founder decisions (docs/ROLE_ARCHITECTURE.md):
+-- + 3 founder decisions (docs/architecture/ROLE_ARCHITECTURE.md):
 --   1. Promoter (paying firm owner) is a distinct role from Client (unit buyer).
 --   2. PM (execution) and Project Admin (paperwork) stay distinct.
 --   3. Site Inspector is external read-only (RERA 3rd-party audit shape).
@@ -62,7 +62,7 @@ ALTER TABLE public.profiles
   ));
 
 COMMENT ON COLUMN public.profiles.role IS
-  '25-role catalog (v2, June 2026). Identity role — what the user IS. Orthogonal to org_members.role (org tier) and project_members.role (per-project assignment). See docs/ROLE_ARCHITECTURE.md.';
+  '25-role catalog (v2, June 2026). Identity role — what the user IS. Orthogonal to org_members.role (org tier) and project_members.role (per-project assignment). See docs/architecture/ROLE_ARCHITECTURE.md.';
 
 -- ── 2. Add projects.type column ─────────────────────────────────────────────
 -- Different project types have different role compositions. Backfill

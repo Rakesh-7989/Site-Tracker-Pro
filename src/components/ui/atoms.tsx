@@ -7,7 +7,7 @@
 // new shell matches the established "Construction Native" look.
 
 import type { ReactNode, ButtonHTMLAttributes } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 import { Icon, type IconName } from "./icons";
 import { roleMeta, type AccentColor } from "./role-meta";

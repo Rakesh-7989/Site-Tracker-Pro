@@ -5,8 +5,8 @@
 //   - detect raster vs non-raster uploads (PDFs can't be pixel-diffed)
 
 import { canDiff, pixelDiffers, type Layer } from "@/lib/drawingDiff";
-import type { Drawing } from "@/app/designQueries";
-import { drawingObjectPath, type DrawingFileRef } from "@/app/drawingFileQueries";
+import type { Drawing } from "@/app/queries/designQueries";
+import { drawingObjectPath, type DrawingFileRef } from "@/app/queries/drawingFileQueries";
 
 const RASTER_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"]);
 

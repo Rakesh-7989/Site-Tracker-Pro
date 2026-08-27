@@ -1,7 +1,7 @@
 // SiteTrack Pro — pmQueries.ts tests (member-scoped project list).
 
 import { describe, it, expect } from "vitest";
-import { listPMProjects } from "@/app/pmQueries";
+import { listPMProjects } from "@/app/queries/pmQueries";
 
 function mockClient(data: { data: unknown[] | null; error: unknown | null; orderData?: unknown[] }) {
   const trace: { inCalls: Array<[string, unknown[]]> } = { inCalls: [] };

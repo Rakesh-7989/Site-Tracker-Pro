@@ -12,9 +12,9 @@ import {
   orgNameFromBrief,
   agoLabel,
 } from "@/features/admin/PlatformDashboardView";
-import { listAuditLog } from "@/app/auditLogQueries";
-import type { Ticket } from "@/app/platformSupportQueries";
-import type { UpgradeRequest } from "@/app/upgradeQueries";
+import { listAuditLog } from "@/app/queries/auditLogQueries";
+import type { Ticket } from "@/app/queries/platformSupportQueries";
+import type { UpgradeRequest } from "@/app/queries/upgradeQueries";
 
 const ticket = (over: Partial<Ticket>): Ticket => ({
   id: "t", subject: "S", body: "", from: "", email: "", status: "open",

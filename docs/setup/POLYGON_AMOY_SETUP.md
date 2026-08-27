@@ -93,8 +93,8 @@ CRON_SECRET=<random string for the cron auth header>
 Push:
 
 ```bash
-node scripts/sync-function-secrets.mjs --only POLYGON_NETWORK,POLYGON_RPC_URL,POLYGON_CONTRACT_ADDRESS,POLYGON_SIGNER_PRIVATE_KEY,CRON_SECRET
-node scripts/deploy-edge-functions.mjs anchor-digest
+node scripts/deploy/sync-function-secrets.mjs --only POLYGON_NETWORK,POLYGON_RPC_URL,POLYGON_CONTRACT_ADDRESS,POLYGON_SIGNER_PRIVATE_KEY,CRON_SECRET
+node scripts/deploy/deploy-edge-functions.mjs anchor-digest
 ```
 
 ## Step 6 — Smoke test the EF

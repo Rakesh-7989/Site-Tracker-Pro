@@ -3,12 +3,12 @@ import { Modal } from "@/components/ui/Modal";
 import { Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { ROLE_LABEL, type IdentityRole } from "@/auth";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listAvailableOrgMembers,
   addProjectMember,
   type OrgMemberOption,
-} from "@/app/projectMemberQueries";
+} from "@/app/queries/projectMemberQueries";
 
 export interface AddProjectMemberModalProps {
   open: boolean;

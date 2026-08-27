@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { notifsForUser } from "../src/lib/notifications";
+import { notifsForUser } from "../src/lib/integrations/notifications";
 
 const arch  = { id: "u1", name: "Arjun", email: "a@buildco.in", role: "architect" };
 const pm    = { id: "u2", name: "Priya", email: "p@buildco.in", role: "pm" };

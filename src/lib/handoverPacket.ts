@@ -1,7 +1,7 @@
 // SiteTrack Pro — Sprint 4 (Session 30.10) Handover packet generator.
 //
 // Builds the buyer-handover bundle when a project completes. Per the
-// architecture (docs/SPRINT_2_ARCHITECTURE.md + v3 plan Sprint 4), this
+// architecture (docs/architecture/SPRINT_2_ARCHITECTURE.md + v3 plan Sprint 4), this
 // is the BLOCKCHAIN STORY for buyers — every photo, payment, drawing,
 // RA bill bundled into a single PDF whose merkle root is anchored on
 // Polygon. The QR on the printed handover packet resolves to a verify
@@ -17,7 +17,7 @@
 //
 // Sprint 4 mid-cycle ships the PDF renderer + QR generator on top.
 
-import { merkleRoot, sha256Hex } from "./blockchainAnchor";
+import { merkleRoot, sha256Hex } from "./integrations/blockchainAnchor";
 
 export const HANDOVER_SECTIONS = ["drawings", "photos", "payments", "ra_bills", "compliance"] as const;
 type Section = typeof HANDOVER_SECTIONS[number];

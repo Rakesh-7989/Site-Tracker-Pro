@@ -1,15 +1,15 @@
-ï»¿// SiteTrack Pro â€” Sentry lib unit tests.
+// SiteTrack Pro — Sentry lib unit tests.
 //
 // We test only the pure-function PII scrubber + user redaction here. The
 // initSentry() lazy-load + Sentry SDK integration is exercised by an
 // E2E test that sets a fake DSN.
 
 import { describe, it, expect } from "vitest";
-import { _internal } from "../src/lib/sentry";
+import { _internal } from "../src/lib/integrations/sentry";
 
 const { scrubPII, redactUser } = _internal;
 
-describe("sentry â€” scrubPII", () => {
+describe("sentry — scrubPII", () => {
   it("returns primitives unchanged", () => {
     expect(scrubPII(null)).toBe(null);
     expect(scrubPII(7)).toBe(7);
@@ -61,14 +61,14 @@ describe("sentry â€” scrubPII", () => {
   });
 
   it("preserves field names that LOOK sensitive but aren't (case-insensitive but specific)", () => {
-    // 'permission' has 'mission' â€” not sensitive.
+    // 'permission' has 'mission' — not sensitive.
     const out = scrubPII({ permission: "ok", description: "ok" });
     expect(out.permission).toBe("ok");
     expect(out.description).toBe("ok");
   });
 });
 
-describe("sentry â€” redactUser", () => {
+describe("sentry — redactUser", () => {
   it("returns null for null input", () => {
     expect(redactUser(null)).toBe(null);
   });

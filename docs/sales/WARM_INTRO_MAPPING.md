@@ -316,7 +316,7 @@ B2 (Aparna) primarily.
 
 ## Sources
 
-- Sprint 1 Day 3–5 deliverable per `docs/SITETRACK_V3_PLAN.md`.
+- Sprint 1 Day 3–5 deliverable per `docs/archive/SITETRACK_V3_PLAN.md`.
 - Target profiles per `docs/sales/LINKEDIN_TARGET_LIST.md`.
 - Outreach templates per `docs/sales/LINKEDIN_OUTREACH_SEQUENCE.md`.
 - Indeed-verified company facts: My Home, Aparna, Sumadhura, Vasavi,

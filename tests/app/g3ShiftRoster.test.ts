@@ -6,7 +6,7 @@ import {
   baseWage, overtimeAmount, statutoryDeductions, wageSlip, attendanceTally,
   SHIFT_LABEL, OVER_TIME_MULTIPLIER, SHIFT_BASE_HOURS,
   listShiftRoster, createShiftRoster, deleteShiftRoster,
-} from "@/app/shiftQueries";
+} from "@/app/queries/shiftQueries";
 
 describe("shiftQueries — wage slip math", () => {
   it("baseWage = presentDays × dailyWage, clamps negatives", () => {

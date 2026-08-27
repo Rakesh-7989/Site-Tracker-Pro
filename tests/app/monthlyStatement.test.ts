@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildMonthlyStatement, monthlyStatementTotals, listOrgMonthlyStatement,
   type MonthlyStatementRow, type ProjectBrief,
-} from "@/app/monthlyStatementQueries";
+} from "@/app/queries/monthlyStatementQueries";
 
 const proj = (id: string, name: string, type: string | null = "consultant"): ProjectBrief => ({ id, name, type });
 

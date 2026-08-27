@@ -9,11 +9,11 @@ import { Spinner } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 
 
-import { getClient } from "@/lib/supabase";
-import { clockOutAttendance } from "@/app/attendanceQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { clockOutAttendance } from "@/app/queries/attendanceQueries";
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }

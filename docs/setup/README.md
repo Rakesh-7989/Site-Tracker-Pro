@@ -2,7 +2,7 @@
 
 The founder runs through these walkthroughs ONCE to wire SiteTrack Pro
 to its third-party services. Every step honours the zero-spend policy
-(`docs/ZERO_SPEND_POLICY.md`) — paid surfaces are flagged + alternatives
+(`docs/business/ZERO_SPEND_POLICY.md`) — paid surfaces are flagged + alternatives
 documented.
 
 ## Order of operations
@@ -22,20 +22,20 @@ After each step:
 
 ```bash
 # Audit which Edge Functions are now ready
-node scripts/check-env-config.mjs
+node scripts/dev/check-env-config.mjs
 
 # Confirm budget mode is correct
-node scripts/verify-budget-config.mjs
+node scripts/ci/verify-budget-config.mjs
 ```
 
 When the env audit shows all required keys present:
 
 ```bash
 # Push to Supabase
-node scripts/sync-function-secrets.mjs
+node scripts/deploy/sync-function-secrets.mjs
 
 # Bulk redeploy the affected EFs
-node scripts/deploy-edge-functions.mjs
+node scripts/deploy/deploy-edge-functions.mjs
 ```
 
 ## What NOT to wire yet
@@ -51,7 +51,7 @@ These services are intentionally skipped during the zero-spend window:
 
 ## When in doubt
 
-`docs/ZERO_SPEND_POLICY.md` is the authoritative source. If you discover
+`docs/business/ZERO_SPEND_POLICY.md` is the authoritative source. If you discover
 a new third-party dependency, add it to the provider catalog in BOTH
 `src/lib/budgetMode.js` AND `supabase/functions/_shared/budget.ts` — the
 test suite enforces parity.

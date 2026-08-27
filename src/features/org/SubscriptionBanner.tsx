@@ -5,12 +5,12 @@
 import { useEffect, useState, useRef } from "react";
 import { useOrgSwitcher } from "@/auth";
 import { Icon } from "@/components/ui/atoms";
-import { getOrgSubscriptionAlerts, type BillingAlert } from "@/app/orgAdminQueries";
+import { getOrgSubscriptionAlerts, type BillingAlert } from "@/app/queries/orgAdminQueries";
 import { Link } from "react-router-dom";
 
  
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 const bg: Record<string, string> = {
   danger: "bg-error text-white",
   warning: "bg-accent text-white",

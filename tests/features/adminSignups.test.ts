@@ -8,7 +8,7 @@ import {
   PAY_LABEL,
   SIGNUP_CSV_COLUMNS,
 } from "@/features/admin/SignupRequestsView";
-import type { SignupRequestRow } from "@/app/signupAdminQueries";
+import type { SignupRequestRow } from "@/app/queries/signupAdminQueries";
 
 const row = (over: Partial<SignupRequestRow>): SignupRequestRow => ({
   id: "r1", firmName: "Acme", contactName: "A", email: "a@b.co", phone: null,

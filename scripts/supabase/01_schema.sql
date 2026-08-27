@@ -1,5 +1,5 @@
 -- SiteTrack Pro — Supabase schema (Phase B1)
--- Source of truth: docs/BACKEND_PLAN.md
+-- Source of truth: docs/archive/BACKEND_PLAN.md
 --
 -- Run order: 01_schema.sql -> 02_rls.sql -> 03_storage.sql -> 04_triggers.sql
 --

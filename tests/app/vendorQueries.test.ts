@@ -1,7 +1,7 @@
 // SiteTrack Pro — vendor directory query tests.
 
 import { describe, it, expect } from "vitest";
-import { listVendors, createVendor, vendorOptionGroups } from "@/app/vendorQueries";
+import { listVendors, createVendor, vendorOptionGroups } from "@/app/queries/vendorQueries";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};

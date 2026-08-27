@@ -18,12 +18,12 @@ import { useEffect, useState } from "react";
 
 import { useOrgSwitcher } from "./useOrgSwitcher";
 import { hasPlanCap, type PlanFeature } from "./planCaps";
-import { fetchOrgQuota } from "@/app/quotaQueries";
-import type { QuotaRow, QuotaRollup } from "@/app/quotaQueries";
-import { atQuota as queryAtQuota, usageRollup } from "@/app/quotaQueries";
+import { fetchOrgQuota } from "@/app/queries/quotaQueries";
+import type { QuotaRow, QuotaRollup } from "@/app/queries/quotaQueries";
+import { atQuota as queryAtQuota, usageRollup } from "@/app/queries/quotaQueries";
 
 async function getClient(): Promise<any | null> {
-  const mod = await import("../lib/supabase");
+  const mod = await import("../lib/supabase/supabase");
   return await (mod as any).getSupabaseClient();
 }
 
@@ -96,7 +96,7 @@ export function useFeatureWithQuota(feature: PlanFeature, resource?: "users" | "
           return;
         }
         // 1. Load plan caps
-        const { getPlanCaps } = await import("@/app/planCapsQueries");
+        const { getPlanCaps } = await import("@/app/queries/planCapsQueries");
         const planRes = await getPlanCaps(client, orgId);
         const caps: Record<string, unknown> | null = planRes.ok ? (planRes.data?.caps ?? null) : null;
         const hasPlan = caps ? hasPlanCap(caps, feature) : false;

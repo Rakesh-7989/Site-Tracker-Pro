@@ -9,13 +9,13 @@ import { Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { PlanGate } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import { DiffView, type DiffImageSource } from "@/features/shared/DiffView";
-import { listDrawings, type Drawing } from "@/app/designQueries";
+import { listDrawings, type Drawing } from "@/app/queries/designQueries";
 import { diffPairs } from "@/lib/drawingDiffPair";
-import { resolveDiffPair } from "@/app/drawingDiffSources";
+import { resolveDiffPair } from "@/app/queries/drawingDiffSources";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 export function ARDrawingOverlayView(): JSX.Element {
   return <PlanGate feature="ar_overlay"><ARDrawingOverlayInner /></PlanGate>;

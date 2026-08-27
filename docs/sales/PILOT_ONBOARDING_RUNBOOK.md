@@ -3,7 +3,7 @@
 
 The founder activates each signed pilot in person at the builder's
 office. 90 minutes. No webinar. No Loom. The founder physically shows
-up. Per `docs/PILOT_AGREEMENT_v1.md` clause 1.2.
+up. Per `docs/business/PILOT_AGREEMENT_v1.md` clause 1.2.
 
 This runbook is what the founder reads twice — once the night before,
 once in the car en route — and ticks off in real time. It exists so
@@ -11,21 +11,21 @@ the activation lands the same way for pilot #1 as for pilot #5, even
 when the founder is tired.
 
 Pair this with:
-- `docs/PILOT_AGREEMENT_v1.md` — what the builder signed.
+- `docs/business/PILOT_AGREEMENT_v1.md` — what the builder signed.
 - `docs/sales/DEMO_SCRIPT_DPR.md` — the 60-sec Loom they already saw.
-- `scripts/seed-first-org.mjs` — provisioning helper.
+- `scripts/seeds/seed-first-org.mjs` — provisioning helper.
 
 ## Pre-activation prep (night before)
 
 | Task | Owner | Done |
 |------|-------|------|
 | Confirm meeting time + venue with the Builder's POC | Founder | [ ] |
-| Print 2 copies of `docs/PILOT_AGREEMENT_v1.md` (if not yet signed) | Founder | [ ] |
+| Print 2 copies of `docs/business/PILOT_AGREEMENT_v1.md` (if not yet signed) | Founder | [ ] |
 | Charge laptop + phone + battery pack to 100% | Founder | [ ] |
 | Confirm WHATSAPP_PERMANENT_TOKEN env var for this org's WhatsApp Cloud API access (if applicable) | Founder | [ ] |
-| Sync `docs/sales/DPR_DEMO_SUPERVISOR_NUMBER.md` — which supervisor's phone we'll register | Founder | [ ] |
-| Pull `scripts/seed-first-org.mjs` config to point to pilot org name + slug | Founder | [ ] |
-| Bring `docs/sales/SUPERVISOR_TRAINING_TE.mp4` on phone (offline-playable) | Founder | [ ] |
+| Sync — which supervisor's phone we'll register | Founder | [ ] |
+| Pull `scripts/seeds/seed-first-org.mjs` config to point to pilot org name + slug | Founder | [ ] |
+| Bring on phone (offline-playable) | Founder | [ ] |
 | Pack: business cards, single-page agreement summary, water, charger | Founder | [ ] |
 | WhatsApp message at 8 AM the morning of: "Coming to your office at [time]. Anything I should prep?" | Founder | [ ] |
 
@@ -53,7 +53,7 @@ Pair this with:
 |-----|----------|--------------|
 | 25–30 | Add the first project — name, RERA registration (if available), address. | If they don't know the RERA number on the spot, leave blank. Don't grill them. |
 | 30–35 | Add 1 milestone (e.g. "Basement excavation"), 1 BOQ row (e.g. "Cement 100 bags"), 1 drawing (any sample PDF). | Demonstrate the depth without dwelling. |
-| 35–40 | Show that all 16 stub views (`compliance`, `forecast`, kiosks, etc) are HIDDEN. "We don't show you what we haven't actually shipped. See `docs/FEATURE_FREEZE.md` on GitHub if you want to verify." | This is the trust moment. The Sprint 1 freeze is a SALES asset, not just engineering hygiene. |
+| 35–40 | Show that all 16 stub views (`compliance`, `forecast`, kiosks, etc) are HIDDEN. "We don't show you what we haven't actually shipped. See `docs/planning/FEATURE_FREEZE.md` on GitHub if you want to verify." | This is the trust moment. The Sprint 1 freeze is a SALES asset, not just engineering hygiene. |
 
 ### Minutes 40–60 — Set up the supervisor
 
@@ -69,7 +69,7 @@ Pair this with:
 |-----|----------|--------------|
 | 60–65 | Register the promoter's WhatsApp number for the daily 7 AM digest. | Confirm with the Builder that the promoter is OK receiving WhatsApp from this number daily. |
 | 65–72 | Show the promoter what a daily digest will look like (use a Loom + mock JSON from `voiceTranscribe.mockTranscribe`). | This is the value proposition the promoter pays for. |
-| 72–80 | Explain SLOs from `docs/PILOT_AGREEMENT_v1.md` clause 3: 95% DPR delivery within 60 sec, 12h founder response, 1 month free per missed SLO. | Land this slow — it's the differentiator vs every other vendor. |
+| 72–80 | Explain SLOs from `docs/business/PILOT_AGREEMENT_v1.md` clause 3: 95% DPR delivery within 60 sec, 12h founder response, 1 month free per missed SLO. | Land this slow — it's the differentiator vs every other vendor. |
 
 ### Minutes 80–90 — Commit + handoff
 
@@ -84,8 +84,8 @@ Pair this with:
 | Task | Owner | Done |
 |------|-------|------|
 | WhatsApp follow-up: "Thank you for the 90 min today. [3 things we accomplished]. Next steps: [3 things they need to do this week]." | Founder | [ ] |
-| Update `docs/sales/PIPELINE_TRACKER.md` with pilot status: ACTIVATED | Founder | [ ] |
-| Add row to `docs/sales/PILOT_CONTRACTS/<builder_name>.md` capturing: contact info, supervisor phone, promoter phone, project list, RERA #, SLO start date | Founder | [ ] |
+| Update with pilot status: ACTIVATED | Founder | [ ] |
+| Add row to <builder_name>.md` capturing: contact info, supervisor phone, promoter phone, project list, RERA #, SLO start date | Founder | [ ] |
 | Trigger seed-first-org for this Builder with their actual org name: `node scripts/seed-pilot-org.mjs --name "<Firm Name>" --slug "<firm-slug>"` (Sprint 2 deliverable) | Founder | [ ] |
 | Send Cashfree invoice via dashboard | Founder | [ ] |
 
@@ -139,18 +139,18 @@ If any of these fail: the founder visits the site personally on Day
 
 | Outcome | Founder action |
 |---------|----------------|
-| Pilot is using it daily + paying invoice | Celebrate. Move to Sprint 3 features. Start case-study draft per `docs/CASE_STUDY_TEMPLATE.md`. |
+| Pilot is using it daily + paying invoice | Celebrate. Move to Sprint 3 features. Start case-study draft per `docs/business/CASE_STUDY_TEMPLATE.md`. |
 | Pilot is using sporadically (< 5 DPRs/week) | On-site visit. Find out what's blocking. Pivot product roadmap. |
 | Pilot has stopped using | Honest conversation. Per `PILOT_AGREEMENT_v1.md` clause 8.1: 30-day no-fault. Capture the verbatim reason — it's gold for Sprint 2 v2. |
-| Pilot wants to upgrade | Move them to Pro (₹49,999/yr). Update `docs/sales/PIPELINE_TRACKER.md`. |
+| Pilot wants to upgrade | Move them to Pro (₹49,999/yr). Update . |
 
 ## Source
 
-- Sprint 2 Day 16+ deliverable per `docs/SITETRACK_V3_PLAN.md` §5.
-- Pilot tier economics per `docs/PRICING.md` + `docs/PILOT_AGREEMENT_v1.md`.
-- Architecture per `docs/SPRINT_2_ARCHITECTURE.md`.
+- Sprint 2 Day 16+ deliverable per `docs/archive/SITETRACK_V3_PLAN.md` §5.
+- Pilot tier economics per `docs/business/PRICING.md` + `docs/business/PILOT_AGREEMENT_v1.md`.
+- Architecture per `docs/architecture/SPRINT_2_ARCHITECTURE.md`.
 - Telugu phrasing per `docs/sales/TELUGU_PHRASE_BANK_DPR.md`.
-- Supervisor + promoter persona per `docs/POSITIONING.md`.
+- Supervisor + promoter persona per `docs/business/POSITIONING.md`.
 
 ## Edit log
 

@@ -6,15 +6,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOrgSwitcher, useCan, ROLE_LABEL } from "@/auth";
 import { Card, Avatar, Badge, Icon, Button, Spinner, Alert } from "@/components/ui/atoms";
-import type { ProjectMemberRow } from "@/app/queries";
+import type { ProjectMemberRow } from "@/app/queries/queries";
 import type { IdentityRole } from "@/auth";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   listPendingRequests,
   approveRequest,
   rejectRequest,
   type PendingAccessRequest,
-} from "@/app/projectMemberQueries";
+} from "@/app/queries/projectMemberQueries";
 import { AddProjectMemberModal } from "../AddProjectMemberModal";
 
 export function TeamTab({ projectId, orgId, members, onReload }: {

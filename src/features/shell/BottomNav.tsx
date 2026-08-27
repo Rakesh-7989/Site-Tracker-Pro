@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/auth";
-import { buildNav } from "@/app/nav-config";
+import { buildNav } from "@/app/config/nav-config";
 import { Icon } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
 

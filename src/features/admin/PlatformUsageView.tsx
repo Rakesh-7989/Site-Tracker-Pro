@@ -7,11 +7,11 @@ import { Button, Icon, StatCard, AccessDenied, Alert } from "@/components/ui/ato
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { getUsageStats, listUsagePlanCounts, type UsageStats, type PlanCount } from "@/app/platformUsageQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { getUsageStats, listUsagePlanCounts, type UsageStats, type PlanCount } from "@/app/queries/platformUsageQueries";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 // ── Pure helpers (exported for the phase unit tests) ──────────────────────────
 
@@ -33,9 +33,6 @@ export const USAGE_CSV_COLUMNS: ReadonlyArray<CsvColumn<keyof PlanCount>> = [
 ];
 
 export function PlatformUsageView(): JSX.Element {
-  const can = useCan("platform:usage:view");
-  if (!can) return <AccessDenied message="Platform superadmin access required." />;
-
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [counts, setCounts] = useState<PlanCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,14 +53,18 @@ export function PlatformUsageView(): JSX.Element {
 
   useEffect(() => { void load(); }, [load]);
 
-  const planData = usagePlanMix(counts);
   const onExport = useCallback(() => {
     const content = buildCsv(counts as unknown as Array<Record<string, unknown>>, USAGE_CSV_COLUMNS);
     if (!content) return;
     downloadCsv(`platform-usage-${csvDateStamp()}.csv`, content);
   }, [counts]);
 
+  const can = useCan("platform:usage:view");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+
   if (loading) return <UsageSkeleton />;
+
+  const planData = usagePlanMix(counts);
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-4">

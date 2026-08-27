@@ -1,20 +1,18 @@
 ﻿import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   useAuth,
   useCanWithPlan,
   useOrgSwitcher,
-  type OrgCustomRole,
-} from "@/auth";
-import { Button, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+  type OrgCustomRole } from "@/auth";
+import { Button, Alert, AccessDenied } from "@/components/ui/atoms";
 import type { RoleOccupant } from "./RoleCard";
 import {
   listOrgMembers,
   deactivateMember,
   reactivateMember,
-  type OrgMemberRow,
-} from "@/app/orgMemberQueries";
-import { listOrgRoles } from "@/app/customRoleQueries";
+  type OrgMemberRow } from "@/app/queries/orgMemberQueries";
+import { listOrgRoles } from "@/app/queries/customRoleQueries";
 import { RoleGrid } from "./RoleGrid";
 import { MemberTableView } from "./MemberTableView";
 import { AssignMemberModal } from "./AssignMemberModal";
@@ -28,13 +26,46 @@ export function OrgMembersView(): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const { allowed: canManage, plan, planLoading } = useCanWithPlan({
     capability: "org:members:manage",
-    context: activeOrg ? { orgId: activeOrg.orgId } : {},
-  });
+    context: activeOrg ? { orgId: activeOrg.orgId } : {} });
 
-  if (!session) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
+  if (!session) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
   // SEC-05: plan caps still resolving → hold the spinner, don't flash AccessDenied.
-  if (planLoading) return <div className="grid place-items-center py-20"><Spinner size={24} /></div>;
+  if (planLoading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (!canManage) return <AccessDenied message="Only an org admin can manage people." />;
 
   return (
@@ -51,8 +82,7 @@ function OrgMembersInner({
   orgId,
   orgName,
   createdBy,
-  plan,
-}: {
+  plan }: {
   orgId: string;
   orgName: string;
   createdBy: string;
@@ -158,8 +188,17 @@ function OrgMembersInner({
       {error && <Alert variant="danger">{error}</Alert>}
 
       {loading ? (
-        <div className="grid place-items-center py-10">
-          <Spinner size={22} />
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
         </div>
       ) : viewMode === "grid" ? (
         <RoleGrid

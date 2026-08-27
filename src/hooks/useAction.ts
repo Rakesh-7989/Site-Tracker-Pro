@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { getTypedClient, type TypedSupabaseClient } from "@/lib/db";
+import { getTypedClient, type TypedSupabaseClient } from "@/lib/supabase/db";
 
 type ActionFn = (c: TypedSupabaseClient) => Promise<{ ok: boolean; error?: string }>;
 

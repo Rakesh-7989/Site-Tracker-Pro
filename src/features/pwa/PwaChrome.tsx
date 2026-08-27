@@ -3,7 +3,7 @@
 // fires beforeinstallprompt (and it isn't already installed), and a persistent
 // "Update available" chip when a newer service worker is ready, with a Reload.
 
-import { usePwaInstall } from "@/lib/pwa";
+import { usePwaInstall } from "@/lib/platform/pwa";
 
 export function PwaChrome(): JSX.Element {
   const { canInstall, updateReady, refresh, promptInstall } = usePwaInstall();

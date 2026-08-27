@@ -164,6 +164,6 @@ Sprint 2 starts ONLY when:
 - [ ] ≥5 Sprint 2 meetings on calendar with named builder + decision-maker + date
 - [ ] Pricing decision locked or counter-anchored from WTP data
 
-Founder: do NOT skip this gate. Mistake #2 in `docs/SITETRACK_V3_PLAN.md` is
+Founder: do NOT skip this gate. Mistake #2 in `docs/archive/SITETRACK_V3_PLAN.md` is
 "treating RERA/GSTN/blockchain as moats without verifying Powerplay's gaps".
 This interview pass is the fix.

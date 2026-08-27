@@ -1,8 +1,8 @@
 // SiteTrack Pro — BOQ / Labour / Compliance / Field-Ops / Approvals query tests.
 
 import { describe, it, expect } from "vitest";
-import { listBoq, listLabour, listCompliance, listWorklogs } from "@/app/siteAdminQueries";
-import { listPendingApprovals, decideApproval } from "@/app/approvalsQueries";
+import { listBoq, listLabour, listCompliance, listWorklogs } from "@/app/queries/siteAdminQueries";
+import { listPendingApprovals, decideApproval } from "@/app/queries/approvalsQueries";
 
 // A thenable chain that ignores select/eq/order and resolves to `result`.
 function chain(result: { data?: unknown; error?: unknown }) {

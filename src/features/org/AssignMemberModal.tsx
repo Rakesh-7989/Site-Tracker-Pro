@@ -14,8 +14,8 @@ import {
   setIdentityRole,
   inviteNewOrgMember,
   type InviteCandidate,
-} from "@/app/orgMemberQueries";
-import { getClient } from "@/lib/supabase";
+} from "@/app/queries/orgMemberQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 export interface AssignMemberModalProps {
   open: boolean;

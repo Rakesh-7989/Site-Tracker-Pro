@@ -1,7 +1,7 @@
 // SiteTrack Pro — org integrations query tests.
 
 import { describe, it, expect } from "vitest";
-import { getIntegrationStatus, saveProvider, clearProvider, PROVIDERS, SECRET_FIELDS } from "@/app/orgIntegrationsQueries";
+import { getIntegrationStatus, saveProvider, clearProvider, PROVIDERS, SECRET_FIELDS } from "@/app/queries/orgIntegrationsQueries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({ rpc: async () => result });

@@ -8,12 +8,12 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { listOrgBillingRows, type OrgBillingRow } from "@/app/platformBillingQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { listOrgBillingRows, type OrgBillingRow } from "@/app/queries/platformBillingQueries";
 import { fmtMrr } from "@/features/admin/PlatformOrgsView";
 
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 // ── Pure helpers (exported for the phase unit tests) ──────────────────────────
 
@@ -55,9 +55,6 @@ export const BILLING_CSV_COLUMNS: ReadonlyArray<CsvColumn<keyof OrgBillingRow>> 
 ];
 
 export function PlatformBillingView(): JSX.Element {
-  const can = useCan("platform:billing:manage");
-  if (!can) return <AccessDenied message="Platform superadmin access required." />;
-
   const [orgs, setOrgs] = useState<OrgBillingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,13 +71,17 @@ export function PlatformBillingView(): JSX.Element {
 
   useEffect(() => { void load(); }, [load]);
 
-  const summary = billingSummary(orgs);
-  const planData = billingByPlan(orgs);
   const onExport = useCallback(() => {
     const content = buildCsv(orgs as unknown as Array<Record<string, unknown>>, BILLING_CSV_COLUMNS);
     if (!content) return;
     downloadCsv(`platform-billing-${csvDateStamp()}.csv`, content);
   }, [orgs]);
+
+  const can = useCan("platform:billing:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
+
+  const summary = billingSummary(orgs);
+  const planData = billingByPlan(orgs);
 
   const columns = [
     { key: "name", header: "Organization", render: (o: OrgBillingRow) => (

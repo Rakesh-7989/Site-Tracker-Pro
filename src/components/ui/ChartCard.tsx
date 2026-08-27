@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Card, Spinner } from "./atoms";
 import { Icon, type IconName } from "./icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 /** Right-edge "more content" hint while the legend can still scroll right (Tabs/DataTable pattern). */
 function useScrollRightHint(ref: { current: HTMLDivElement | null }): boolean {

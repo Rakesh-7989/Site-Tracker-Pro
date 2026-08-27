@@ -11,14 +11,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
-import { Card, Spinner, Badge, Alert, AccessDenied } from "@/components/ui/atoms";
+import { memberProjectScope } from "@/app/queries/queries";
+import { Card, Badge, Alert, AccessDenied } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
-import { fmtRupees } from "@/app/financeQueries";
-import { getOrgRaBills, crossRaRollup, type CrossRaBill, type CrossRaTotals } from "@/app/crossRaQueries";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { getOrgRaBills, crossRaRollup, type CrossRaBill, type CrossRaTotals } from "@/app/queries/crossRaQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -63,8 +63,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           <div className="text-sm font-semibold text-fg-primary truncate">{r.no} · {fmtRupees(r.billAmount)}</div>
           <div className="text-[11px] text-fg-tertiary truncate">{r.subcontractor ?? "—"} · net {fmtRupees(r.netPayable)} ({r.retentionPct}% ret)</div>
         </div>
-      ),
-    },
+      ) },
     {
       key: "project", header: "Project", hideOnMobile: true, className: "flex-shrink-0",
       render: (r: CrossRaBill) => (
@@ -72,16 +71,13 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           <div className="text-sm text-fg-primary truncate">{r.projectName}</div>
           {r.projectType ? <div className="text-[10px] text-fg-tertiary capitalize">{r.projectType}</div> : null}
         </div>
-      ),
-    },
+      ) },
     {
       key: "scope", header: "Scope", hideOnMobile: true, className: "flex-1 min-w-0",
-      render: (r: CrossRaBill) => <span className="text-xs text-fg-secondary truncate">{r.scope ?? "—"}</span>,
-    },
+      render: (r: CrossRaBill) => <span className="text-xs text-fg-secondary truncate">{r.scope ?? "—"}</span> },
     {
       key: "status", header: "Status", className: "flex-shrink-0",
-      render: (r: CrossRaBill) => <Badge tone={TONE[r.status]}>{r.status}</Badge>,
-    },
+      render: (r: CrossRaBill) => <Badge tone={TONE[r.status]}>{r.status}</Badge> },
   ];
 
   return (
@@ -116,7 +112,18 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="bg-panel rounded-2xl overflow-hidden shadow-editorial border-border">
           <DataTable

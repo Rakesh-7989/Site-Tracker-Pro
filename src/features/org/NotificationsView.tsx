@@ -7,11 +7,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Card, Button, Spinner, Alert, Icon,
 } from "@/components/ui/atoms";
-import { listNotifications, markRead, markAllRead, type Notification } from "@/app/notificationQueries";
+import { listNotifications, markRead, markAllRead, type Notification } from "@/app/queries/notificationQueries";
 
  
-import { getClient } from "@/lib/supabase";
-import { loadNotificationPrefs, saveNotificationPrefs, getEnabledNotificationTypes, DEFAULT_NOTIF_PREFS } from "@/lib/notificationPrefs";
+import { getClient } from "@/lib/supabase/supabase";
+import { loadNotificationPrefs, saveNotificationPrefs, getEnabledNotificationTypes, DEFAULT_NOTIF_PREFS } from "@/lib/integrations/notificationPrefs";
 
 const fmtTs = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 
@@ -77,7 +77,18 @@ export function NotificationsView(): JSX.Element {
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? (
           <Card className="p-8 text-center text-sm text-fg-secondary">
             <Icon name="bell" size={24} className="mx-auto text-fg-tertiary mb-2" />

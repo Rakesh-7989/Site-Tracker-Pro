@@ -5,10 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { listRules, createRule, setRuleEnabled, deleteRule, NOTIF_CHANNELS, NOTIF_TRIGGERS, TRIGGER_LABEL, CHANNEL_LABEL, type NotifRule, type NotifChannel } from "@/app/orgConfigQueries";
+import { listRules, createRule, setRuleEnabled, deleteRule, NOTIF_CHANNELS, NOTIF_TRIGGERS, TRIGGER_LABEL, CHANNEL_LABEL, type NotifRule, type NotifChannel } from "@/app/queries/orgConfigQueries";
 
  
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const TRIGGER_OPTS = NOTIF_TRIGGERS.map(t => ({ value: t.id, label: t.label }));
 const CHANNEL_OPTS = NOTIF_CHANNELS.map(c => ({ value: c, label: CHANNEL_LABEL[c] }));
@@ -54,7 +54,18 @@ function Inner({ orgId, createdBy }: { orgId: string; createdBy: string }): JSX.
         <div><span className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Notify via</span><Select fit className="mt-1 w-32" value={channel} onChange={e => setChannel(e.target.value as NotifChannel)} options={CHANNEL_OPTS} /></div>
         <Button onClick={() => void add()} disabled={busy === "add"}>{busy === "add" ? <Spinner size={14} /> : "Add rule"}</Button>
       </Card>
-      {loading ? <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+      {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
         : rows.length === 0 ? <div className="text-sm text-fg-secondary">No rules configured.</div>
         : <div className="space-y-2">{rows.map(r => (
             <Card key={r.id} className="p-3 flex items-center justify-between gap-3">

@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   dprDateLabel, pdfStatusLabel, statusColor, shortHash, rowPairs,
   dprWhatsAppShareEnabled, waShareLink,
-} from "@/app/dprPdf";
+} from "@/app/services/dprPdf";
 
 describe("dprDateLabel", () => {
   it("formats an ISO timestamp into en-IN style", () => {

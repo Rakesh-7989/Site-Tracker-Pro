@@ -1,5 +1,5 @@
 // SiteTrack Pro - Account / Security (/settings/security).
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 //
 // Self-service two-factor auth (TOTP). Any signed-in user can enable 2FA with
 // an authenticator app; admins are nudged to. Uses the free Supabase MFA API

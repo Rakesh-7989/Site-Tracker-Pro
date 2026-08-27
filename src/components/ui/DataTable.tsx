@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, Fragment } from "react";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 import { Skeleton } from "./Skeleton";
 import { EmptyState } from "./EmptyState";
 import { Pager, type PagerProps } from "./Pager";

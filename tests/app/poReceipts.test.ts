@@ -5,7 +5,7 @@ import {
   listPoReceipts, addPoReceipt, deletePoReceipt,
   receiptAmount, receivedTotal, openAmount, deliveryProgress, isFullyDelivered,
   type PoReceipt,
-} from "@/app/poReceiptQueries";
+} from "@/app/queries/poReceiptQueries";
 
 const rec = (amount: number, id = "x"): PoReceipt => ({ id, poId: "po", receivedDate: "2026-06-01", qty: 1, unitPrice: amount, amount, notes: null, receivedByName: null, createdAt: "" });
 

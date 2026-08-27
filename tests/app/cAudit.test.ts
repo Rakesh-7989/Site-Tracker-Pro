@@ -8,7 +8,7 @@ import {
   listChecklists, upsertChecklist, setChecklistStatus, deleteChecklist,
   listResults, upsertResult, deleteResult,
   listReports, upsertReport, setReportStatus, deleteReport,
-} from "@/app/consultancyAuditQueries";
+} from "@/app/queries/consultancyAuditQueries";
 
 describe("consultancyAuditQueries checklistVerdict", () => {
   it("rolls up pass/fail/na with passPct over decisive items", () => {

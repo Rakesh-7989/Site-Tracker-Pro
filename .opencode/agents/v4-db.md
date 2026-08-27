@@ -19,7 +19,7 @@ Apply pending Supabase migrations, verify the live results, and keep the migrati
 3. Classify every failure:
    - **Benign pre-existing (expect ~28):** "already exists" on old migrations 01–31 & 119 (plain `CREATE POLICY`/`ADD CONSTRAINT` without guards), 03/07 narrow `profiles_role_check` re-add over current rows, 120 dev seed data (FK on fake UUIDs). These are DOCUMENTED in `AGENTS.md` — not caused by new work; do NOT try to fix them.
    - **New failure introduced by a fresh migration:** treat as a real problem. Investigate, fix the SQL (add `IF NOT EXISTS` / `DROP POLICY IF EXISTS` / `ALTER ... IF EXISTS` guards to make it idempotent), and re-run `db:apply` until the new migration applies clean.
-4. **Verify live results** (especially for your migration): run a direct query against `SUPABASE_DB_URL` via `scripts/apply-migrations.mjs`-adjacent tooling OR `npx supabase`/`psql` if available. Confirm tables/columns/policies/RPCs exist as intended (e.g. new column present, `GRANT` applied, function compiled).
+4. **Verify live results** (especially for your migration): run a direct query against `SUPABASE_DB_URL` via `scripts/db/apply-migrations.mjs`-adjacent tooling OR `npx supabase`/`psql` if available. Confirm tables/columns/policies/RPCs exist as intended (e.g. new column present, `GRANT` applied, function compiled).
 5. Update `AGENTS.md`: append a "Live DB apply" note under the relevant phase — new `passed` count, migrations applied + verified, and any new benign failures classified. Keep the existing 28-failure classification intact.
 6. Report: migrations applied, verified, new failures (if any), updated `AGENTS.md` log.
 

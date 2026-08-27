@@ -19,12 +19,12 @@ import {
   ensureProjectStream, openDm,
   listDmPartnerNames, fetchUnreadCounts,
   type ChatChannel,
-} from "@/app/chatQueries";
-import type { MentionCandidate } from "@/app/chatQueries";
+} from "@/app/queries/chatQueries";
+import type { MentionCandidate } from "@/app/queries/chatQueries";
 import { ChatStream } from "@/features/shared/ChatStream";
-import { listOrgMembers } from "@/app/orgMemberQueries";
-import { getClient } from "@/lib/supabase";
-import { cn } from "@/lib/cn";
+import { listOrgMembers } from "@/app/queries/orgMemberQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { cn } from "@/lib/utils/cn";
 
 export function TeamChatView(): JSX.Element {
   const t = useT();
@@ -202,7 +202,24 @@ export function TeamChatView(): JSX.Element {
     sel ? "bg-accent-tint text-accent font-semibold" : "hover:bg-bg-secondary text-fg-secondary",
   );
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">

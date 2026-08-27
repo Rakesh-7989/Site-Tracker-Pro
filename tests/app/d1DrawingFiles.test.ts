@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import {
   DRAWING_BUCKET, drawingFolder, drawingObjectPath, projectIdFromPath,
   sanitizeFileName, formatBytes,
-} from "@/app/drawingFileQueries";
+} from "@/app/queries/drawingFileQueries";
 
 describe("drawingStorage folder/path helpers", () => {
   it("builds the folder <project>/<drawing>", () => {

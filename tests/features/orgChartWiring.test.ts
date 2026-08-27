@@ -9,10 +9,10 @@ import { cashFlowTrend } from "@/features/org/OrgFinancialView";
 import { burnUpSeries, monthLabel } from "@/features/org/ForecastView";
 import { utilizationBars, utilizationPctData, phaseBars, phasePctData } from "@/features/org/UtilizationView";
 import { quotePriceData } from "@/features/org/ProcurementView";
-import type { RaBill } from "@/app/forecastQueries";
-import type { CashFlowForecastRow } from "@/app/crossAnalyticsQueries";
-import type { UtilizationRow, UtilizationPhaseRow } from "@/app/utilizationQueries";
-import type { ProcurementQuote } from "@/app/procurementQuotes";
+import type { RaBill } from "@/app/queries/forecastQueries";
+import type { CashFlowForecastRow } from "@/app/queries/crossAnalyticsQueries";
+import type { UtilizationRow, UtilizationPhaseRow } from "@/app/queries/utilizationQueries";
+import type { ProcurementQuote } from "@/app/queries/procurementQuotes";
 
 describe("sourceSplitData", () => {
   it("keeps only positive slices in phase, hourly, retainer order", () => {

@@ -1,5 +1,5 @@
 ﻿// SiteTrack Pro — mandatory profile completion (route "/profile/complete").
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 //
 // Every user must finish their profile once after sign-in before they can use
 // the app (ShellLayout redirects here while profile_completed is false). Email
@@ -11,7 +11,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Button, Icon, Spinner } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { completeMyProfile } from "@/app/profileQueries";
+import { completeMyProfile } from "@/app/queries/profileQueries";
 
  
 

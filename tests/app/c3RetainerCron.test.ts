@@ -3,7 +3,7 @@
 // billing_day matches the daily cron job (migration 147).
 
 import { describe, it, expect } from "vitest";
-import { autoBillingHint } from "@/app/retainerQueries";
+import { autoBillingHint } from "@/app/queries/retainerQueries";
 
 describe("autoBillingHint", () => {
   it("returns a hint for a valid billing day", () => {

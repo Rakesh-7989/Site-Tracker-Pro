@@ -1,5 +1,5 @@
 -- SiteTrack Pro — RLS verification matrix (Phase B2 sign-off)
--- Source of truth: docs/BACKEND_PLAN.md + src/lib/permissions.js
+-- Source of truth: docs/archive/BACKEND_PLAN.md + src/lib/permissions.js
 --
 -- Run order: AFTER 01_schema.sql + 02_rls.sql on a Supabase DEV project.
 -- Each test:

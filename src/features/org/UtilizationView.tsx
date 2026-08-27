@@ -10,16 +10,17 @@
 // architecture / multiple-segment orgs (segments gate in nav-config).
 
 import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { PlanGate, useOrgSwitcher, useCan } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
-import { Card, Button, Spinner, Alert, AccessDenied } from "@/components/ui/atoms";
+import { memberProjectScope } from "@/app/queries/queries";
+import { Card, Button, Alert, AccessDenied } from "@/components/ui/atoms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarGroup, CHART_COLORS, type BarGroupSeries } from "@/components/ui/Charts";
-import { fmtRupees, fmtCompactRupees } from "@/app/financeQueries";
-import { getOrgUtilization, getProjectUtilizationByPhase, type UtilizationRow, type UtilizationPhaseRow } from "@/app/utilizationQueries";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { fmtRupees, fmtCompactRupees } from "@/app/queries/financeQueries";
+import { getOrgUtilization, getProjectUtilizationByPhase, type UtilizationRow, type UtilizationPhaseRow } from "@/app/queries/utilizationQueries";
 
 export function UtilizationView(): JSX.Element {
   return <PlanGate feature="utilization"><UtilizationInner /></PlanGate>;
@@ -167,7 +168,18 @@ function UtilizationInner(): JSX.Element {
       </div>
 
       {loading ? (
-        <div className="grid place-items-center py-16"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading utilization" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <Skeleton decorative height={14} width="w-1/3" />
+                <Skeleton decorative height={12} width="w-1/4" />
+              </div>
+              <Skeleton decorative height={20} width="w-16" />
+              <Skeleton decorative height={20} width="w-16" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <Card className="p-10 text-center text-sm text-fg-secondary">
           No consultancy / design projects with fee phases yet. Time + phases logged on a project will appear here.
@@ -185,7 +197,17 @@ function UtilizationInner(): JSX.Element {
                   <Button size="sm" variant="ghost" onClick={() => setSelectedProjectId(null)}>Clear Selection</Button>
                 </div>
                 {phaseLoading ? (
-                  <div className="grid place-items-center py-8"><Spinner size={20} /></div>
+                  <div role="status" aria-label="Loading phases" aria-busy="true" className="space-y-2 py-4">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+                        <div className="flex-1 space-y-2">
+                          <Skeleton decorative height={14} width="w-1/3" />
+                          <Skeleton decorative height={12} width="w-1/4" />
+                        </div>
+                        <Skeleton decorative height={20} width="w-16" />
+                      </div>
+                    ))}
+                  </div>
                 ) : phases.length === 0 ? (
                   <Card className="p-6 text-center text-sm text-fg-secondary">No phases or billable time logged for this project.</Card>
                 ) : (

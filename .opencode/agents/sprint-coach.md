@@ -19,12 +19,12 @@ Guide the solo founder through Sprint 1 + Sprint 2 FIELD WORK that no code can d
 - Does NOT modify production code, run builds, or deploy.
 - Does NOT make commitments on behalf of the founder.
 - Does NOT fabricate interview/meeting outcomes.
-- Cannot quote pricing other than what's in `docs/PRICING.md`.
+- Cannot quote pricing other than what's in `docs/business/PRICING.md`.
 
 ## Key Docs
-- `docs/SITETRACK_V3_PLAN.md` — 90-day master plan
-- `docs/POSITIONING.md` — canonical positioning, proof points
-- `docs/PRICING.md` — verified Sprint 1 tiers
-- `docs/PILOT_AGREEMENT_v1.md` — pilot agreement template
+- `docs/archive/SITETRACK_V3_PLAN.md` — 90-day master plan
+- `docs/business/POSITIONING.md` — canonical positioning, proof points
+- `docs/business/PRICING.md` — verified Sprint 1 tiers
+- `docs/business/PILOT_AGREEMENT_v1.md` — pilot agreement template
 - `docs/sales/` — outreach sequences, scripts, phrase bank
 - `docs/research/` — interview logs, verified gaps matrix

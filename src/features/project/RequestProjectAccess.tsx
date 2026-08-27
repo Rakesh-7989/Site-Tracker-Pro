@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
-import { getClient } from "@/lib/supabase";
-import { requestProjectAccess } from "@/app/projectMemberQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { requestProjectAccess } from "@/app/queries/projectMemberQueries";
 
 export interface RequestProjectAccessProps {
   projectId: string;

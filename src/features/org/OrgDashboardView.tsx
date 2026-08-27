@@ -7,12 +7,13 @@ import { Link } from "react-router-dom";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Icon, Badge, Spinner, Alert, Button, AccessDenied } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { IconName } from "@/components/ui/icons";
-import { getOrgOverview, deleteOrganization, PLAN_LABEL, type OrgOverview } from "@/app/orgAdminQueries";
+import { getOrgOverview, deleteOrganization, PLAN_LABEL, type OrgOverview } from "@/app/queries/orgAdminQueries";
 
  
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { QuotaMeter } from "@/features/org/QuotaMeter";
 const LINKS: Array<{ to: string; label: string; icon: IconName; desc: string }> = [
   { to: "/org/members", label: "People", icon: "users", desc: "Members, roles & invites" },
@@ -67,7 +68,30 @@ function OrgDashboardInner({ orgId, orgName }: { orgId: string; orgName: string 
         {data && <Badge tone="info">{PLAN_LABEL[data.plan] ?? data.plan} plan</Badge>}
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="grid place-items-center py-12"><Spinner size={24} /></div> : (
+      {loading ? <div role="status" aria-label="Loading organization overview" aria-busy="true" className="space-y-4">
+        <div className="grid sm:grid-cols-3 gap-3">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+              <Skeleton decorative height={24} width="w-16" />
+              <Skeleton decorative height={12} width="w-20" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+              <Skeleton decorative height={32} width="w-10" />
+              <Skeleton decorative height={12} width="w-20" />
+              <Skeleton decorative height={10} width="w-24" />
+            </div>
+          ))}
+        </div>
+        <div className="bg-card rounded-2xl border border-default p-4 space-y-2">
+          <Skeleton decorative height={14} width="w-32" />
+          <Skeleton decorative height={12} width="w-full" />
+          <Skeleton decorative height={36} width="w-40" />
+        </div>
+      </div> : (
         <>
           <div className="grid sm:grid-cols-3 gap-3">
             <Card className="p-4"><div className="text-3xl font-display font-bold text-fg-primary">{data?.projectCount ?? 0}</div><div className="text-xs text-fg-secondary mt-0.5">Projects</div></Card>

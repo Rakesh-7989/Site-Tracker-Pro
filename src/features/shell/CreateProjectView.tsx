@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useOrgSwitcher, useCan, PROJECT_INDUSTRIES_BY_TYPE, PROJECT_INDUSTRY_LABELS, segmentProjectTypes, defaultProjectTypeFor, type ProjectType } from "@/auth";
-import { createProject } from "@/app/queries";
+import { createProject } from "@/app/queries/queries";
 import { Card, Button, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { QuotaGate } from "@/auth/QuotaGate";
@@ -60,9 +60,17 @@ export function CreateProjectView(): JSX.Element {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeOrg) { setError("No active organization."); return; }
-    if (name.trim().length < 2) { setError("Project name is required."); return; }
+    if (name.trim().length < 2) { setError("Project name is required (at least 2 characters)."); return; }
+    if (name.trim().length > 120) { setError("Project name must be 120 characters or less."); return; }
+    if (clientEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim())) { setError("Client email is not a valid email address."); return; }
+    if (budget.trim()) {
+      const n = Number(budget);
+      if (!Number.isFinite(n) || n < 0) { setError("Budget must be a valid number ≥ 0."); return; }
+      if (n > 999999999999) { setError("Budget is too large (max ₹9,99,99,99,999)."); return; }
+    }
+    if (startDate && endDate && endDate < startDate) { setError("Expected end date cannot be before start date."); return; }
     setBusy(true); setError(null);
-    const mod = await import("../../lib/supabase");
+    const mod = await import("../../lib/supabase/supabase");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = await (mod as any).getSupabaseClient();
     if (!client) { setBusy(false); setError("Backend not configured."); return; }
@@ -74,7 +82,7 @@ export function CreateProjectView(): JSX.Element {
       ...(industrySubtype ? { industrySubtype } : {}),
       ...(clientName.trim() ? { clientName: clientName.trim() } : {}),
       ...(clientEmail.trim() ? { clientEmail: clientEmail.trim() } : {}),
-      ...(budget ? { budget: Number(budget) } : {}),
+      ...(budget.trim() ? { budget: Number(budget) } : {}),
       ...(startDate ? { startDate } : {}),
       ...(endDate ? { endDate } : {}),
       ...(description.trim() ? { description: description.trim() } : {}),

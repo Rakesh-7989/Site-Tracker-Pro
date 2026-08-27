@@ -8,7 +8,7 @@ import {
   getClientProject, listClientProjects, listClientInvoices, listClientMilestones, listClientDrawings,
   listClientUpdates, listClientActivity,
   type ClientInvoice, type ClientMilestone, type ClientDrawing, type ClientUpdate,
-} from "@/app/clientPortalQueries";
+} from "@/app/queries/clientPortalQueries";
 
 function inv(overrides: Partial<ClientInvoice> = {}): ClientInvoice {
   return {

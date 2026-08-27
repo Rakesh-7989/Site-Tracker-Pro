@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — Sprint 2 (Session 30.3): voiceTranscribe unit tests.
+// SiteTrack Pro � Sprint 2 (Session 30.3): voiceTranscribe unit tests.
 //
 // Covers pure logic: provider selection, hash computation, mock branch,
 // confidence-bar check. Real Bhashini/AWS calls are NOT tested (they're
@@ -15,9 +15,9 @@ import {
   mockTranscribe,
   transcribe,
   meetsAccuracyBar,
-} from "../src/lib/voiceTranscribe";
+} from "../src/lib/integrations/voiceTranscribe";
 
-describe("voiceTranscribe — constants", () => {
+describe("voiceTranscribe � constants", () => {
   it("exposes 3 supported languages", () => {
     expect(SUPPORTED_LANGUAGES).toEqual(["te", "hi", "en"]);
   });
@@ -26,7 +26,7 @@ describe("voiceTranscribe — constants", () => {
     expect(ALL_PROVIDERS).toEqual(["bhashini", "aws", "mock"]);
   });
 
-  it("default provider order is Bhashini → AWS", () => {
+  it("default provider order is Bhashini ? AWS", () => {
     expect(DEFAULT_PROVIDER_ORDER).toEqual(["bhashini", "aws"]);
   });
 });
@@ -65,7 +65,7 @@ describe("pickProviderOrder()", () => {
   });
 
   it("BUDGET_MODE=zero-spend (default) strips AWS even with creds set", () => {
-    // provider='aws' explicitly requested but mode blocks → []
+    // provider='aws' explicitly requested but mode blocks ? []
     expect(
       pickProviderOrder({
         lang: "hi",
@@ -84,7 +84,7 @@ describe("pickProviderOrder()", () => {
           BHASHINI_API_KEY: "x",
           AWS_ACCESS_KEY_ID: "a",
           AWS_SECRET_ACCESS_KEY: "b",
-          /* no BUDGET_MODE → defaults to zero-spend */
+          /* no BUDGET_MODE ? defaults to zero-spend */
         },
       }),
     ).toEqual(["bhashini"]);   // AWS stripped by budget guard
@@ -105,13 +105,13 @@ describe("pickProviderOrder()", () => {
     ).toEqual(["bhashini", "aws"]);
   });
 
-  it("auto + no creds + test env → ['mock']", () => {
+  it("auto + no creds + test env ? ['mock']", () => {
     expect(pickProviderOrder({ lang: "te", provider: "auto", env: { VITEST: "1" } })).toEqual([
       "mock",
     ]);
   });
 
-  it("auto + no creds + non-test env → []", () => {
+  it("auto + no creds + non-test env ? []", () => {
     expect(pickProviderOrder({ lang: "te", provider: "auto", env: {} })).toEqual([]);
   });
 });
@@ -123,7 +123,7 @@ describe("hashAudio()", () => {
     expect(h).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("is deterministic — same input = same hash", async () => {
+  it("is deterministic � same input = same hash", async () => {
     const a = new Uint8Array([1, 2, 3]);
     const b = new Uint8Array([1, 2, 3]);
     expect(await hashAudio(a)).toBe(await hashAudio(b));
@@ -180,7 +180,7 @@ describe("mockTranscribe()", () => {
   });
 });
 
-describe("transcribe() — public interface", () => {
+describe("transcribe() � public interface", () => {
   it("returns mock output when transport='mock'", async () => {
     const audio = new Uint8Array([1, 2, 3]);
     const result = await transcribe(audio, { transport: "mock", lang: "te" });

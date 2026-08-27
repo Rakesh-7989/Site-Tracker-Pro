@@ -1,7 +1,7 @@
 import { tDpr } from "../../lib/i18nDpr";
 import { Icon } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
-import type { DprStatus } from "@/app/dprQueries";
+import type { DprStatus } from "@/app/queries/dprQueries";
 
 type DprLang = "en" | "te" | "hi";
 

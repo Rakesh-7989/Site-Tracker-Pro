@@ -21,7 +21,7 @@ June 2026), `docs/research/VERIFIED_GAPS_MATRIX.md`.
 
 Goal: verify which "moats" (RERA filing, GSTN e-invoice, blockchain
 audit, kiosks, Telugu voice) are actually present in Powerplay's
-product today. (Per Mistake #2 in `docs/SITETRACK_V3_PLAN.md`.)
+product today. (Per Mistake #2 in `docs/archive/SITETRACK_V3_PLAN.md`.)
 
 ### LinkedIn search recipe
 
@@ -101,7 +101,7 @@ pain that WhatsApp DPR addresses.
 
 | Tier 1 (founder-led intro path) | Tier 2 (LinkedIn / cold) |
 |---------------------------------|--------------------------|
-| Dr. Rameswar Rao — Founder (promoter — coffee-time WhatsApp persona per `docs/POSITIONING.md`) | GM Projects (LinkedIn search: "My Home Constructions" "GM Projects") |
+| Dr. Rameswar Rao — Founder (promoter — coffee-time WhatsApp persona per `docs/business/POSITIONING.md`) | GM Projects (LinkedIn search: "My Home Constructions" "GM Projects") |
 | Head of Operations | Head of Procurement |
 | Director / VP Construction | Head of Site Engineering |
 
@@ -128,7 +128,7 @@ pain that WhatsApp DPR addresses.
 **Decision-maker targets**: Head Projects, Head Procurement, Head Quality + Compliance (ISO certs suggest dedicated role).
 
 **Warm-intro pathways**:
-1. **Compliance hook**: Their ISO + OHSAS posture matches our RERA/GSTN moat narrative. Lead with `docs/POSITIONING.md` proof point #1 (BuildNow Telangana govt validation).
+1. **Compliance hook**: Their ISO + OHSAS posture matches our RERA/GSTN moat narrative. Lead with `docs/business/POSITIONING.md` proof point #1 (BuildNow Telangana govt validation).
 2. **CREDAI Hyderabad** — Aparna leadership active.
 3. **ISO consultants** — Hyderabad ISO 9001 consultant network knows their internal audit team.
 4. **Direct cold** — LinkedIn DM to Head Quality + Compliance with the Loom + Sprint 1 freeze charter (proof of honest-product positioning).
@@ -222,7 +222,7 @@ profiles needed until/unless activated.
   ISO consultant for Aparna).
 - LinkedIn outreach to GM/Head/VP-level is acceptable IF the Loom is
   attached and the message uses the verified pricing comparison
-  (per `docs/POSITIONING.md`).
+  (per `docs/business/POSITIONING.md`).
 - Founder physically attending CREDAI Hyderabad monthly meet is the
   highest-leverage move for these targets.
 
@@ -282,11 +282,11 @@ profiles needed until/unless activated.
   - <https://in.indeed.com/cmp/Vasavi-Group>
   - <https://in.indeed.com/cmp/Lansum-Properties-LLP>
 - Sprint 1 mistakes #2 (verify Powerplay gaps), #4 (zero Hyderabad
-  pipeline) per `docs/SITETRACK_V3_PLAN.md` §1.
+  pipeline) per `docs/archive/SITETRACK_V3_PLAN.md` §1.
 - Group B target identification per `docs/research/POWERPLAY_RECON_SCRIPT.md`.
 - Outreach templates per `docs/sales/LINKEDIN_OUTREACH_SEQUENCE.md`.
-- Pricing anchors per `docs/PRICING.md`.
-- Positioning per `docs/POSITIONING.md`.
+- Pricing anchors per `docs/business/PRICING.md`.
+- Positioning per `docs/business/POSITIONING.md`.
 
 ## Edit log
 

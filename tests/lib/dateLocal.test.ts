@@ -3,7 +3,7 @@
 // previous day in IST between 00:00–05:29) that the billing/time tabs rely on.
 
 import { describe, it, expect } from "vitest";
-import { localDateISO, currentMonthRange } from "@/lib/dateLocal";
+import { localDateISO, currentMonthRange } from "@/lib/utils/dateLocal";
 
 describe("localDateISO", () => {
   it("formats a fixed local date as YYYY-MM-DD", () => {

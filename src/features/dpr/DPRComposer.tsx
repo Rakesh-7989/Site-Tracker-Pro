@@ -15,12 +15,12 @@ import { useAuth, useOrgSwitcher, useCan } from "@/auth";
 import { Card, Button, Icon, Spinner, Alert, Badge } from "@/components/ui/atoms";
 import { FormField, Select, Textarea, Input } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
-import { normalizeE164, submitDpr, makeSupabaseDprRuntime, type DprSendStatus } from "@/app/dprSubmit";
-import { listProjectsForOrg, memberProjectScope } from "@/app/queries";
-import { loadProjectHierarchy, locationOptions, type SpatialHierarchy } from "@/app/spaceQueries";
-import { getClient } from "@/lib/supabase";
-import { isOnline } from "@/lib/offline";
-import { useOfflineSync } from "@/lib/dprOfflineSync";
+import { normalizeE164, submitDpr, makeSupabaseDprRuntime, type DprSendStatus } from "@/app/services/dprSubmit";
+import { listProjectsForOrg, memberProjectScope } from "@/app/queries/queries";
+import { loadProjectHierarchy, locationOptions, type SpatialHierarchy } from "@/app/queries/spaceQueries";
+import { getClient } from "@/lib/supabase/supabase";
+import { isOnline } from "@/lib/platform/offline";
+import { useOfflineSync } from "@/app/services/dprOfflineSync";
 import {
   dprReducer, EMPTY_DRAFT, canSubmit, meetsQualityBar, draftChecklist,
   type DprLanguage,
@@ -99,35 +99,6 @@ export function DPRComposer(): JSX.Element {
     [hierarchy],
   );
 
-  // If user can only view DPRs, redirect to read-only view
-  if (canViewDpr && !canSubmitDpr) {
-    // Check if redirect=true query param is present
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('redirect') === 'true') {
-      return (
-        <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
-          <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
-          <div className="text-sm text-fg-secondary">{t("dpr.composer.accessDeniedViewOnly")}</div>
-        </Card>
-      );
-    }
-    return (
-      <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
-        <Icon name="clipboard" size={24} className="mx-auto text-fg-tertiary mb-2" />
-        <div className="text-sm text-fg-secondary mb-4">
-          {t("dpr.composer.roleViewOnly")}
-        </div>
-        <Button
-          onClick={() => window.location.assign('/dpr/history')}
-          leftIcon={<Icon name="doc" size={16} />}
-        >
-          {t("dpr.composer.viewDprTitle")}
-        </Button>
-      </Card>
-    );
-  }
-
-  // ── Voice: transcribe via the real lib (EF when backend present) ──
   const onRecorded = useCallback((result: VoiceRecordingResult) => {
     setRecordedBlob(result.blob);
   }, []);
@@ -137,7 +108,7 @@ export function DPRComposer(): JSX.Element {
     dispatch({ type: "voice-start" });
     setTranscribing(true);
     try {
-      const mod = await import("../../lib/voiceTranscribe");
+      const mod = await import("../../lib/integrations/voiceTranscribe");
       const client = await getClient();
        
       const res = client
@@ -217,7 +188,35 @@ export function DPRComposer(): JSX.Element {
     setPhoto(null);
     setRecordedBlob(null);
     dispatch({ type: "reset" });
-  }, []);
+  }, [])
+
+  // If user can only view DPRs, redirect to read-only view
+  if (canViewDpr && !canSubmitDpr) {
+    // Check if redirect=true query param is present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('redirect') === 'true') {
+      return (
+        <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
+          <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
+          <div className="text-sm text-fg-secondary">{t("dpr.composer.accessDeniedViewOnly")}</div>
+        </Card>
+      );
+    }
+    return (
+      <Card className="max-w-lg mx-auto p-4 md:p-8 text-center">
+        <Icon name="clipboard" size={24} className="mx-auto text-fg-tertiary mb-2" />
+        <div className="text-sm text-fg-secondary mb-4">
+          {t("dpr.composer.roleViewOnly")}
+        </div>
+        <Button
+          onClick={() => window.location.assign('/dpr/history')}
+          leftIcon={<Icon name="doc" size={16} />}
+        >
+          {t("dpr.composer.viewDprTitle")}
+        </Button>
+      </Card>
+    );
+  }
 
   if (!session) return <></>;
 

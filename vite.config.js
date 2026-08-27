@@ -39,7 +39,7 @@ export default defineConfig({
           // Supabase is used by both static legacy imports and dynamic v3 calls.
           // Give it a stable shared chunk so dynamic imports do not get folded
           // into whichever route references it first.
-          if (normalized.includes('/src/lib/supabase.js')) return 'supabase'
+          if (normalized.includes('/src/lib/supabase/supabase')) return 'supabase'
           // Split first-party roadmap views off the main bundle — only loaded
           // when a user navigates to a Batch 2/3 view (hierarchy / kiosks /
           // material-prices / etc.). Saves ~50 kB on the dashboard cold path.

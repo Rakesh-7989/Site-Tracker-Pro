@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
-import { getTypedClient } from "@/lib/db";
+import { getTypedClient } from "@/lib/supabase/db";
 import {
   listProjectPartners,
   invitePartnerOrg,
@@ -14,17 +14,15 @@ import {
   PARTNER_SCOPE_LABEL,
   PARTNER_STATUS_LABEL,
   type ProjectPartner,
-  type PartnerScope,
-} from "@/app/partnerQueries";
-import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
+  type PartnerScope } from "@/app/queries/partnerQueries";
+import { Card, Button, Badge, Alert } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 
 const STATUS_TONE: Record<ProjectPartner["status"], "success" | "warning" | "neutral"> = {
   active: "success",
   invited: "warning",
-  revoked: "neutral",
-};
+  revoked: "neutral" };
 
 const SCOPE_OPTIONS: { value: PartnerScope; label: string }[] = [
   { value: "viewer", label: "Viewer (read-only)" },
@@ -86,8 +84,7 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
         <span className="font-semibold text-fg-primary text-sm">
           {p.orgName ?? (p.status === "invited" ? "Awaiting redemption" : `Org ${p.orgId?.slice(0, 8) ?? "?"}…`)}
         </span>
-      ),
-    },
+      ) },
     {
       key: "scope", header: "Scope", hideOnMobile: true,
       render: p => (
@@ -104,19 +101,16 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
           }}
           options={SCOPE_OPTIONS}
         />
-      ),
-    },
+      ) },
     { key: "status", header: "Status", render: p => <Badge tone={STATUS_TONE[p.status]}>{PARTNER_STATUS_LABEL[p.status]}</Badge> },
     {
       key: "code", header: "Invite code", hideOnMobile: true,
       render: p => p.status === "invited" && p.inviteCode
         ? <code className="font-mono text-xs bg-bg-secondary px-1.5 py-0.5 rounded break-all">{p.inviteCode}</code>
-        : <span className="text-fg-tertiary text-xs">—</span>,
-    },
+        : <span className="text-fg-tertiary text-xs">—</span> },
     {
       key: "acceptedAt", header: "Accepted", hideOnMobile: true,
-      render: p => <span className="text-xs text-fg-secondary">{p.acceptedAt ? p.acceptedAt.slice(0, 10) : "—"}</span>,
-    },
+      render: p => <span className="text-xs text-fg-secondary">{p.acceptedAt ? p.acceptedAt.slice(0, 10) : "—"}</span> },
     ...(canManage
       ? [{
           key: "actions" as const, header: "",
@@ -137,8 +131,7 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
             >
               Revoke
             </Button>
-          ),
-        }]
+          ) }]
       : []),
   ];
 
@@ -184,7 +177,18 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-10"><Spinner /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : partners.length === 0 ? (
         <Card padding="md">
           <div className="flex items-center gap-3 text-fg-secondary text-sm">

@@ -16,7 +16,7 @@ import {
   queueDepth,
   SUPPORTED_KINDS,
   type QueueItem,
-} from "@/lib/offlineQueue";
+} from "@/lib/platform/offlineQueue";
 
 const DAY = 24 * 60 * 60 * 1000;
 

@@ -1,4 +1,4 @@
-﻿// SiteTrack Pro — zero-spend budget guard tests.
+// SiteTrack Pro � zero-spend budget guard tests.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -15,7 +15,7 @@ import {
   isProviderAllowed,
   filterAllowedProviders,
   blockedResponse,
-} from "../src/lib/budgetMode";
+} from "../src/lib/utils/budgetMode";
 
 describe("BUDGET_MODES + DEFAULT_BUDGET_MODE", () => {
   it("exposes both modes", () => {
@@ -149,10 +149,10 @@ describe("blockedResponse()", () => {
   });
 });
 
-// ── Cross-file parity check ─────────────────────────────────────────────────
+// -- Cross-file parity check -------------------------------------------------
 // The JS + TS guards must declare identical provider sets so the browser
 // and EF reach the same decision for any input.
-describe("JS ↔ TS parity (src/lib/budgetMode.js ↔ supabase/functions/_shared/budget.ts)", () => {
+describe("JS ? TS parity (src/lib/budgetMode.js ? supabase/functions/_shared/budget.ts)", () => {
   const tsSource = readFileSync(
     join(process.cwd(), "supabase", "functions", "_shared", "budget.ts"),
     "utf8",

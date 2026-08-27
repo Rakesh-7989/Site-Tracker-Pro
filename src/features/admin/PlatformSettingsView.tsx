@@ -5,10 +5,10 @@ import { useCan } from "@/auth";
 import { Card, AccessDenied, Alert, Spinner } from "@/components/ui/atoms";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { listOpsToggles, upsertOpsToggle } from "@/app/platformSettingsQueries";
+import { listOpsToggles, upsertOpsToggle } from "@/app/queries/platformSettingsQueries";
 import { UpiSettingsCard } from "@/features/admin/UpiSettingsCard";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 interface ToggleRow { id: string; key: string; label: string; desc: string; enabled: boolean; }
 
 
@@ -20,9 +20,6 @@ const OPS_TOGGLES: ToggleRow[] = [
 ];
 
 export function PlatformSettingsView(): JSX.Element {
-  const can = useCan("platform:settings:manage");
-  if (!can) return <AccessDenied message="Platform superadmin access required." />;
-
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,17 +39,8 @@ export function PlatformSettingsView(): JSX.Element {
 
   useEffect(() => { void load(); }, [load]);
 
-  const toggle = async (key: string) => {
-    setSaving(key); setSaveError(null);
-    const next = !toggles[key];
-    const client = await getClient();
-    if (client) {
-      const res = await upsertOpsToggle(client, key, String(next));
-      if (res.ok) setToggles(p => ({ ...p, [key]: next }));
-      else setSaveError(res.error);
-    }
-    setSaving(null);
-  };
+  const can = useCan("platform:settings:manage");
+  if (!can) return <AccessDenied message="Platform superadmin access required." />;
 
   if (loading) {
     return (
@@ -67,6 +55,18 @@ export function PlatformSettingsView(): JSX.Element {
       </div>
     );
   }
+
+  const toggle = async (key: string) => {
+    setSaving(key); setSaveError(null);
+    const next = !toggles[key];
+    const client = await getClient();
+    if (client) {
+      const res = await upsertOpsToggle(client, key, String(next));
+      if (res.ok) setToggles(p => ({ ...p, [key]: next }));
+      else setSaveError(res.error);
+    }
+    setSaving(null);
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">

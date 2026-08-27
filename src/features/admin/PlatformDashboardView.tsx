@@ -11,11 +11,11 @@ import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { IconName } from "@/components/ui/icons";
-import { getPlatformStats, PLAN_LABEL, type PlatformStats } from "@/app/platformAdminQueries";
-import { listSupportTickets, listOrgsBrief, type Ticket, type OrgBrief } from "@/app/platformSupportQueries";
-import { listUpgradeRequests, type UpgradeRequest, type UpgradeStatus } from "@/app/upgradeQueries";
-import { listAuditLog, type AuditLogRow } from "@/app/auditLogQueries";
-import { getClient } from "@/lib/supabase";
+import { getPlatformStats, PLAN_LABEL, type PlatformStats } from "@/app/queries/platformAdminQueries";
+import { listSupportTickets, listOrgsBrief, type Ticket, type OrgBrief } from "@/app/queries/platformSupportQueries";
+import { listUpgradeRequests, type UpgradeRequest, type UpgradeStatus } from "@/app/queries/upgradeQueries";
+import { listAuditLog, type AuditLogRow } from "@/app/queries/auditLogQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 const PLATFORM_CAPS = [
   "platform:users:manage",

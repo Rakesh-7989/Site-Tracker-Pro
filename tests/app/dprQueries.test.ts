@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getDprMessage, listDprDeliveryLog, listDprMessages, getBuildnowAnchor } from "@/app/dprQueries";
+import { getDprMessage, listDprDeliveryLog, listDprMessages, getBuildnowAnchor } from "@/app/queries/dprQueries";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const row = {

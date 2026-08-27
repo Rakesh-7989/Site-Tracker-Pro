@@ -1,4 +1,4 @@
-// Throwaway codegen: emits docs/ROLE_FEATURES.md from the LIVE permissions
+// Throwaway codegen: emits docs/architecture/ROLE_FEATURES.md from the LIVE permissions
 // matrix + the shared capability labels so the founder reference can never
 // drift from the code. Run explicitly:
 //   npx vitest run tests/_gen/roleFeatures.gen.test.ts
@@ -59,7 +59,7 @@ function featureLines(role: IdentityRole): string[] {
   return lines;
 }
 
-it("generates docs/ROLE_FEATURES.md from the live permissions matrix", () => {
+it("generates docs/architecture/ROLE_FEATURES.md from the live permissions matrix", () => {
   const out: string[] = [];
   out.push("# Role → Features Reference");
   out.push("");

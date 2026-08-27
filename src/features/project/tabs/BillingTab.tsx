@@ -6,26 +6,26 @@
 // tabs-config.ts). Invoice lifecycle (status changes) stays in the Invoices tab.
 
 import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { PlanGate } from "@/auth/PlanGate";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert, StatCard } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
-import { fmtRupees } from "@/app/financeQueries";
-import { listInvoices, type Invoice, type InvoiceSource } from "@/app/financeQueries";
-import { publishInvoiceGenerated } from "@/app/outboxQueries";
-import { listRateCards, upsertRateCard, deleteRateCard, type RateCard } from "@/app/rateCardQueries";
-import { listTimeEntries, type TimeEntry } from "@/app/timeQueries";
+import { fmtRupees } from "@/app/queries/financeQueries";
+import { listInvoices, type Invoice, type InvoiceSource } from "@/app/queries/financeQueries";
+import { publishInvoiceGenerated } from "@/app/queries/outboxQueries";
+import { listRateCards, upsertRateCard, deleteRateCard, type RateCard } from "@/app/queries/rateCardQueries";
+import { listTimeEntries, type TimeEntry } from "@/app/queries/timeQueries";
 import {
   listRetainers, createRetainer, deleteRetainer, setRetainerStatus, RETAINER_NEXT, autoBillingHint,
   type Retainer, type RetainerStatus,
-} from "@/app/retainerQueries";
+} from "@/app/queries/retainerQueries";
 import {
   unbilledSummary, unbilledByMember, generateHourlyInvoice, generateRetainerInvoice,
-} from "@/app/billingQueries";
-import { listProjectMembers, type ProjectMemberRow } from "@/app/queries";
-import { currentMonthRange } from "@/lib/dateLocal";
+} from "@/app/queries/billingQueries";
+import { listProjectMembers, type ProjectMemberRow } from "@/app/queries/queries";
+import { currentMonthRange } from "@/lib/utils/dateLocal";
 
 const RETAINER_TONE: Record<RetainerStatus, "success" | "neutral" | "danger"> = {
   active: "success", paused: "neutral", cancelled: "danger",
@@ -167,7 +167,18 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
       {success && <Alert variant="success">{success}</Alert>}
 
       {loading ? (
-        <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : (
         <>
           {canRates && (

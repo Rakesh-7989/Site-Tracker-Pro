@@ -3,12 +3,12 @@ import { useCan, useOrgSwitcher, useSession } from "@/auth";
 import { Card, Button, Spinner, Alert, ProgressBar } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { listPOs, createPO, setPOStatus, deletePO, fmtRupees, type PurchaseOrder, type POStatus } from "@/app/financeQueries";
-import { listVendors, vendorOptionGroups, type Vendor } from "@/app/vendorQueries";
-import { listPoReceipts, addPoReceipt, deletePoReceipt, deliveryProgress, openAmount, receiptAmount, type PoReceipt } from "@/app/poReceiptQueries";
-import { listMaterialRequests, isOpenRequest, type MaterialRequest } from "@/app/materialRequestQueries";
+import { listPOs, createPO, setPOStatus, deletePO, fmtRupees, type PurchaseOrder, type POStatus } from "@/app/queries/financeQueries";
+import { listVendors, vendorOptionGroups, type Vendor } from "@/app/queries/vendorQueries";
+import { listPoReceipts, addPoReceipt, deletePoReceipt, deliveryProgress, openAmount, receiptAmount, type PoReceipt } from "@/app/queries/poReceiptQueries";
+import { listMaterialRequests, isOpenRequest, type MaterialRequest } from "@/app/queries/materialRequestQueries";
 
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 const STT = [{ value: "pending", label: "Pending" }, { value: "approved", label: "Approved" }, { value: "delivered", label: "Delivered" }, { value: "cancelled", label: "Cancelled" }];
 

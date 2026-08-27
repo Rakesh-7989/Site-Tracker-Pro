@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider, Outlet } from "react-router-dom";
 import { guardRoutes, isStaleChunkError } from "@/app/RouteErrorBoundary";
-import { captureException } from "@/lib/sentry";
+import { captureException } from "@/lib/integrations/sentry";
 
-vi.mock("@/lib/sentry", () => ({ captureException: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/integrations/sentry", () => ({ captureException: vi.fn().mockResolvedValue(undefined) }));
 
 function Boom(): never {
   throw new Error("kaboom in view");

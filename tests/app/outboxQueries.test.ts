@@ -6,7 +6,7 @@ import {
   invoiceGeneratedPayload, quoteAcceptedPayload, correctiveActionOpenedPayload,
   OUTBOX_STATUS_LABEL, OUTBOX_STATUS_TONE, isOutboxStatus, outboxStatus,
   mapOutboxRow, outboxRollup,
-} from "@/app/outboxQueries";
+} from "@/app/queries/outboxQueries";
 function mockRpc(impl: any) {
   return { rpc: impl };
 }

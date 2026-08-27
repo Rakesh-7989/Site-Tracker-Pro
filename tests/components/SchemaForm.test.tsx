@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { SchemaForm } from "@/components/ui/SchemaForm";
-import { defineFormSchema, type FormValues } from "@/app/formEngine";
+import { defineFormSchema, type FormValues } from "@/app/engines/formEngine";
 
 afterEach(cleanup);
 

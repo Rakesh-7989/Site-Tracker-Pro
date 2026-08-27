@@ -6,9 +6,9 @@ import { useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, Icon, AccessDenied } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
-import { NOTIFICATION_TITLES, type NotificationType } from "@/app/notificationTemplates";
-import { sendOrgNotification } from "@/app/orgBroadcastQueries";
-import { getClient } from "@/lib/supabase";
+import { NOTIFICATION_TITLES, type NotificationType } from "@/app/queries/notificationTemplates";
+import { sendOrgNotification } from "@/app/queries/orgBroadcastQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 const TYPE_OPTS = (Object.keys(NOTIFICATION_TITLES) as NotificationType[]).map(t => ({ value: t, label: NOTIFICATION_TITLES[t] }));
 

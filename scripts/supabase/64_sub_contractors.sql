@@ -41,7 +41,7 @@ ALTER TABLE public.sub_contractors
   ));
 
 COMMENT ON TABLE public.sub_contractors IS
-  'Sub-contractor hierarchy: links a sub (sub_profile_id) to its prime contractor (parent_profile_id) within a project, scoped to a trade. Unlocks nested RA bills + scope tracking in Sprint 4. See docs/ROLE_ARCHITECTURE.md.';
+  'Sub-contractor hierarchy: links a sub (sub_profile_id) to its prime contractor (parent_profile_id) within a project, scoped to a trade. Unlocks nested RA bills + scope tracking in Sprint 4. See docs/architecture/ROLE_ARCHITECTURE.md.';
 
 CREATE INDEX IF NOT EXISTS sub_contractors_project_idx ON public.sub_contractors(project_id) WHERE removed_at IS NULL;
 CREATE INDEX IF NOT EXISTS sub_contractors_parent_idx ON public.sub_contractors(parent_profile_id) WHERE removed_at IS NULL;

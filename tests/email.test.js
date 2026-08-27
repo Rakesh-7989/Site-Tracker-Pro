@@ -9,8 +9,8 @@ import {
   DEFAULT_PLACEHOLDERS,
   formatEmail,
   EMAIL_COLOR_MAP,
-} from "@/app/emailTemplates";
-import { sendEmail, sendEmailWithType } from "@/lib/email";
+} from "@/app/engines/emailTemplates";
+import { sendEmail, sendEmailWithType } from "@/lib/integrations/email";
 
 describe("EmailType", () => {
   test("has correct number of types", () => {

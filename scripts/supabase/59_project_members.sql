@@ -138,7 +138,7 @@ ALTER TABLE public.project_members
   ));
 
 COMMENT ON TABLE public.project_members IS
-  'Per-project role assignment (v2). Orthogonal to org_members (org tier) and profiles.role (identity). See docs/ROLE_ARCHITECTURE.md.';
+  'Per-project role assignment (v2). Orthogonal to org_members (org tier) and profiles.role (identity). See docs/architecture/ROLE_ARCHITECTURE.md.';
 
 -- ── 6. Indexes ──────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS project_members_profile_idx ON public.project_members(profile_id);

@@ -1,4 +1,4 @@
-﻿import { getClient } from "@/lib/supabase";
+﻿import { getClient } from "@/lib/supabase/supabase";
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -7,9 +7,9 @@ import { Card, Button, Icon, Badge, StatCard } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/genericCsv";
-import { listUpgradeRequests, assignUpgradeRequest, setUpgradeStatus, type UpgradeRequest, type UpgradeStatus } from "@/app/upgradeQueries";
-import { listStaff, type StaffMember } from "@/app/staffQueries";
+import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
+import { listUpgradeRequests, assignUpgradeRequest, setUpgradeStatus, type UpgradeRequest, type UpgradeStatus } from "@/app/queries/upgradeQueries";
+import { listStaff, type StaffMember } from "@/app/queries/staffQueries";
 import { Pager } from "@/components/ui/Pager";
 
 const UPGRADE_PAGE_SIZE = 100;
@@ -105,6 +105,13 @@ export function UpgradeRequestsView(): JSX.Element {
     setBusy(null);
   };
 
+  const summary = upgradeSummary(rows);
+  const onExport = useCallback(() => {
+    const content = buildCsv(rows as unknown as Array<Record<string, unknown>>, UPGRADE_CSV_COLUMNS);
+    if (!content) return;
+    downloadCsv(`upgrade-requests-${csvDateStamp()}.csv`, content);
+  }, [rows]);
+
   if (!isStaff) {
     return (
       <div className="max-w-xl mx-auto mt-10 p-4 md:p-6">
@@ -152,13 +159,6 @@ export function UpgradeRequestsView(): JSX.Element {
       ),
     },
   ];
-
-  const summary = upgradeSummary(rows);
-  const onExport = useCallback(() => {
-    const content = buildCsv(rows as unknown as Array<Record<string, unknown>>, UPGRADE_CSV_COLUMNS);
-    if (!content) return;
-    downloadCsv(`upgrade-requests-${csvDateStamp()}.csv`, content);
-  }, [rows]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-4 p-4 md:p-6">

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
-import { memberProjectScope } from "@/app/queries";
+import { memberProjectScope } from "@/app/queries/queries";
 import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
-import { listMeasurementBook, createMbEntry, setMbStatus, type MbEntry, type MbStatus } from "@/app/siteOpsQueries";
-import { getClient } from "@/lib/supabase";
+import { listMeasurementBook, createMbEntry, setMbStatus, type MbEntry, type MbStatus } from "@/app/queries/siteOpsQueries";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
 
 const STATUS_OPTS = [{ value: "recorded", label: "Recorded" }, { value: "verified", label: "Verified" }, { value: "billed", label: "Billed" }, { value: "disputed", label: "Disputed" }, { value: "cancelled", label: "Cancelled" }];

@@ -3,7 +3,7 @@
 // projects.lat/lng is surfaced in the v3 project query.)
 
 import { Card, Icon, Button } from "@/components/ui/atoms";
-import type { ProjectDetail } from "@/app/queries";
+import type { ProjectDetail } from "@/app/queries/queries";
 
 export function MapTab({ project }: { project: ProjectDetail }): JSX.Element {
   const query = [project.name, project.location].filter(Boolean).join(", ");

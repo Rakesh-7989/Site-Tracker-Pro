@@ -8,8 +8,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth";
 import { Card, Spinner, Alert, Icon, Badge } from "@/components/ui/atoms";
-import { listClientProjects, type ProjectBrief } from "@/app/clientPortalQueries";
-import { getClient } from "@/lib/supabase";
+import { listClientProjects, type ProjectBrief } from "@/app/queries/clientPortalQueries";
+import { getClient } from "@/lib/supabase/supabase";
 
 function PBar({ v }: { v: number }) {
   return (

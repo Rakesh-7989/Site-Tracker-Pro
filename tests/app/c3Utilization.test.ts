@@ -3,7 +3,7 @@
 // billable entries with no phase, sort order, and empty inputs.
 
 import { describe, it, expect } from "vitest";
-import { buildPhaseRows, type UtilizationPhaseRow } from "@/app/utilizationQueries";
+import { buildPhaseRows, type UtilizationPhaseRow } from "@/app/queries/utilizationQueries";
 
 type PhaseRow = Record<string, unknown>;
 type EntryRow = Record<string, unknown>;

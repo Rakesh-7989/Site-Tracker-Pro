@@ -1,8 +1,8 @@
 // SiteTrack Pro — milestone queries (v3 port, Batch 1) tests.
 
 import { describe, it, expect } from "vitest";
-import { listMilestones, nextStatus, setMilestoneStatus } from "@/app/milestoneQueries";
-import type { TypedSupabaseClient } from "@/lib/db";
+import { listMilestones, nextStatus, setMilestoneStatus } from "@/app/queries/milestoneQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 // Mock query chains are structural fakes — bridge them to the typed client once.
 const asTyped = (c: unknown): TypedSupabaseClient => c as unknown as TypedSupabaseClient;

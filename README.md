@@ -148,13 +148,13 @@ The app can be deployed to any static host:
 
 All project documentation lives in `docs/`:
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Business model](docs/BUSINESS_MODEL.md)
-- [Pricing](docs/PRICING.md)
-- [Backend plan](docs/BACKEND_PLAN.md)
-- [Market analysis](docs/MARKET_ANALYSIS.md)
-- [Roadmap](docs/SITETRACK_V3_PLAN.md)
-- [Signup & login guide](docs/SIGNUP_LOGIN_GUIDE.md)
+- [Architecture](docs/architecture/ARCHITECTURE.md)
+- [Business model](docs/business/BUSINESS_MODEL.md)
+- [Pricing](docs/business/PRICING.md)
+- [Backend plan](docs/archive/BACKEND_PLAN.md)
+- [Market analysis](docs/business/MARKET_ANALYSIS.md)
+- [Roadmap](docs/archive/SITETRACK_V3_PLAN.md)
+- [Signup & login guide](docs/setup/SIGNUP_LOGIN_GUIDE.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

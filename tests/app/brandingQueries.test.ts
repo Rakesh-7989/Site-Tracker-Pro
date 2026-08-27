@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import {
   getOrgBranding, getProjectBranding, listProjectBrandings,
   upsertOrgBranding, upsertProjectBranding, deleteProjectBranding,
-} from "@/app/brandingQueries";
+} from "@/app/queries/brandingQueries";
 
 function selectChain(data: unknown, error: unknown) {
   const chain: Record<string, unknown> = {

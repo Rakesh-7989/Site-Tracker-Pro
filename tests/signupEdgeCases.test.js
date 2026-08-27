@@ -21,7 +21,7 @@ import.meta.env.VITE_SUPABASE_URL = "https://fake.supabase.co";
 import.meta.env.VITE_SUPABASE_ANON_KEY = "fake-anon-key";
 delete import.meta.env.VITE_ALLOW_SELF_SERVE_SIGNUP;
 
-const { signUp } = await import("../src/lib/supabase");
+const { signUp } = await import("../src/lib/supabase/supabase");
 
 const baseArgs = {
   email: "test@example.com",

@@ -17,7 +17,7 @@ Design and harden the production Supabase backend for SiteTrack Pro. Schema, RLS
 - Migration notes (schema ↔ `src/app/*Queries.ts` contract).
 
 ## Current State (v4 reality — DO NOT regress)
-- **Live Supabase backend** at `https://nntkxojdeyziemdhyjvg.supabase.co`; migrations applied via `npm run db:apply` (`scripts/apply-migrations.mjs`). 148 migration files in `scripts/supabase/`; latest is 155 (`155_enabled_modules.sql`).
+- **Live Supabase backend** at `https://nntkxojdeyziemdhyjvg.supabase.co`; migrations applied via `npm run db:apply` (`scripts/db/apply-migrations.mjs`). 148 migration files in `scripts/supabase/`; latest is 155 (`155_enabled_modules.sql`).
 - **Query layer**: `src/app/*Queries.ts` files with client-injected `Result<T>` pattern, camelCase mappers, join `profiles(name)` etc. Contract changes must update these + `src/auth/*` types.
 - **Auth**: Supabase Auth + `profiles`/`org_members`/`organizations` tables. `fetchAuthSession.ts` selects org membership (role, segment, enabled_modules) — new org columns must be mirrored here + `normalizeOrgMembership()`.
 - **RBAC**: capabilities in `src/auth/capabilities.ts`; plan features + feature caps in `src/auth/planCaps.ts` + `plans.feature_caps` (jsonb, merged by migration). Policy checklist in `scripts/supabase/66_rls_role_catalog_sync.sql` step 4.
@@ -28,7 +28,7 @@ Design and harden the production Supabase backend for SiteTrack Pro. Schema, RLS
 ## Key Docs
 - `AGENTS.md` — every phase (C0–C3, D0–D6, Phase 1, Phase 2) documents schema + verification. READ the most recent phase first.
 - `scripts/supabase/README.md` — run order + verification.
-- `docs/SYSTEM_DESIGN.md`, `docs/DATA_MODEL_ER.md` — entity relationships.
+- `docs/architecture/SYSTEM_DESIGN.md`, `docs/architecture/DATA_MODEL_ER.md` — entity relationships.
 
 ## Boundaries
 - Do not choose paid infrastructure without approval.

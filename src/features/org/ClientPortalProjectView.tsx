@@ -6,18 +6,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth";
-import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
+import { Card, Button, Badge, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import type { IconName } from "@/components/ui/icons";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import {
   getClientProject, listClientInvoices, listClientMilestones, listClientDrawings,
   listClientUpdates, listClientActivity, buildActivityFeed, clientPaymentRollup,
   upcomingMilestones, approvedDrawings,
   type ClientProjectHeader, type ClientInvoice, type ClientMilestone,
-  type ClientDrawing, type ClientActivityRow,
-} from "@/app/clientPortalQueries";
-import { listDrawingComments, addDrawingComment, requestApproval, type DrawingComment } from "@/app/approvalQueries";
+  type ClientDrawing, type ClientActivityRow } from "@/app/queries/clientPortalQueries";
+import { listDrawingComments, addDrawingComment, requestApproval, type DrawingComment } from "@/app/queries/approvalQueries";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -101,7 +100,24 @@ const handleRequestApproval = async (drawingId: string) => {
     void load();
   };
 
-  if (loading) return <div className="grid place-items-center p-12"><Spinner size={24} /></div>;
+  if (loading) return (
+    <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="bg-card rounded-2xl border border-default p-4 space-y-2">
+            <div className="h-6 bg-elevated rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-elevated rounded animate-pulse w-1/2" />
+          </div>
+        ))}
+      </div>
+      <div className="h-40 bg-elevated rounded-2xl animate-pulse" />
+      <div className="space-y-2">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="h-12 bg-elevated rounded-xl animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <div className="p-8 max-w-3xl mx-auto"><Alert variant="danger">{error}</Alert></div>;
   if (!project) return <div className="p-8"><Alert variant="danger">Project not found.</Alert></div>;
 

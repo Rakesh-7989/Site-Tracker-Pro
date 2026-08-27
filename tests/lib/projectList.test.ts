@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { ProjectSummary } from "@/app/queries";
+import type { ProjectSummary } from "@/app/queries/queries";
 import {
   projectRollup,
   filterProjects,

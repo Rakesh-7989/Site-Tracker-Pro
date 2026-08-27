@@ -4,7 +4,7 @@
 // new round, and close a round (review:manage). Round numbers auto-increment.
 
 import { useCallback, useEffect, useState } from "react";
-import { getClient } from "@/lib/supabase";
+import { getClient } from "@/lib/supabase/supabase";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { useAction } from "@/hooks/useAction";
 import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
@@ -12,7 +12,7 @@ import { Select, Textarea } from "@/components/ui/forms";
 import {
   listDeliverables, listReviewRounds, createReviewRound, closeReviewRound, nextRoundNo,
   type Deliverable, type ReviewRound,
-} from "@/app/deliverableQueries";
+} from "@/app/queries/deliverableQueries";
 
 export function ReviewRoundsTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
@@ -118,7 +118,18 @@ export function ReviewRoundsTab({ projectId }: { projectId: string }): JSX.Eleme
       )}
 
       {loading ? (
-        <div className="grid place-items-center py-10"><Spinner size={22} /></div>
+        <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/3" />
+                <div className="h-3 bg-elevated rounded animate-pulse w-1/4" />
+              </div>
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+              <div className="h-5 bg-elevated rounded-full animate-pulse w-16" />
+            </div>
+          ))}
+        </div>
       ) : !selectedId ? (
         <div className="text-sm text-fg-secondary">Select a deliverable to see its review rounds.</div>
       ) : rounds.length === 0 ? (

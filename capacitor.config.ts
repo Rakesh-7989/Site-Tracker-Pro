@@ -10,7 +10,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  *   cookies/localStorage/IndexedDB behave like the real site (and Supabase
  *   auth storage keys stay separate from any file:// quirks).
  *
- * Per-release flow lives in docs/MOBILE_BUILD.md.
+ * Per-release flow lives in docs/setup/MOBILE_BUILD.md.
  */
 const config: CapacitorConfig = {
   appId: "in.sitetrackpro.app",

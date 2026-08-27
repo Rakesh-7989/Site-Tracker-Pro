@@ -11,7 +11,7 @@ import {
   isApprovedSignal,
   type DesignWorkflowDrawing,
   type DesignStageId,
-} from "@/app/designWorkflow";
+} from "@/app/engines/designWorkflow";
 
 const dw = (over: Partial<DesignWorkflowDrawing>): DesignWorkflowDrawing => ({
   id: "d1", title: "Ground floor", type: "architectural", status: "current",

@@ -15,7 +15,7 @@ import {
   assignCustomRole,
   unassignCustomRole,
   type OrgMemberRow,
-} from "@/app/orgMemberQueries";
+} from "@/app/queries/orgMemberQueries";
 import type { OrgCustomRole } from "@/auth";
 
 export interface MemberTableViewProps {
@@ -56,7 +56,7 @@ export function MemberTableView({
     fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>,
   ) => {
     onError(null);
-    const { getClient } = await import("@/lib/supabase");
+    const { getClient } = await import("@/lib/supabase/supabase");
     const client = await getClient();
     if (!client) {
       onError("Backend not configured.");

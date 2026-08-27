@@ -3,7 +3,7 @@
 // legacy tier fallback → null) and the getSignupForPay row mapper.
 
 import { describe, it, expect, vi } from "vitest";
-import { resolveSignupAmount, getSignupForPay } from "@/app/paymentQueries";
+import { resolveSignupAmount, getSignupForPay } from "@/app/queries/paymentQueries";
 
 describe("resolveSignupAmount", () => {
   const tiers = [

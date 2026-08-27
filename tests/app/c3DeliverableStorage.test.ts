@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import {
   DELIVERABLE_BUCKET, deliverableFolder, deliverableObjectPath, projectIdFromPath,
   sanitizeFileName, formatBytes,
-} from "@/app/deliverableStorageQueries";
+} from "@/app/queries/deliverableStorageQueries";
 
 describe("deliverableStorage folder/path helpers", () => {
   it("builds the folder <project>/<deliverable>", () => {

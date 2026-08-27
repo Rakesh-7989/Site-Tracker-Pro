@@ -51,7 +51,7 @@ functions or read project config — so rotate it.
 Today the app uses Supabase's built-in invite email (works, rate-limited), and
 the Resend EF secret is **unset** — so branded email isn't active yet, and the
 old key is already dead. Nothing is broken; this is optional until you verify a
-sending domain (see `docs/RESEND_SMTP_SETUP.md`).
+sending domain (see `docs/setup/RESEND_SMTP_SETUP.md`).
 
 **If/when you want branded email:**
 1. Open <https://resend.com/api-keys>. Delete any old key. **Create API Key**

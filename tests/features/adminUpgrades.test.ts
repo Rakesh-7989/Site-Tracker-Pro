@@ -5,7 +5,7 @@ import {
   STATUS_LABEL,
   UPGRADE_CSV_COLUMNS,
 } from "@/features/admin/UpgradeRequestsView";
-import type { UpgradeRequest } from "@/app/upgradeQueries";
+import type { UpgradeRequest } from "@/app/queries/upgradeQueries";
 
 const row = (over: Partial<UpgradeRequest>): UpgradeRequest => ({
   id: "u1", orgId: "o1", orgName: "Acme", requesterEmail: "a@b.co", currentPlan: "basic",

@@ -7,7 +7,7 @@ import {
   listMoodBoards, upsertMoodBoard, deleteMoodBoard,
   listInteriorRooms, upsertRoom, setRoomFinishStatus, deleteRoom,
   listInstallations, addInstallation, setInstallStatus, deleteInstallation,
-} from "@/app/interiorQueries";
+} from "@/app/queries/interiorQueries";
 
 describe("interiorQueries roomProgress", () => {
   it("computes installed / in-progress / cancelled + pct", () => {

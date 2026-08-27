@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/atoms";
 import { cadKind, parseDxfDoc, dxfToSvg } from "@/lib/dxfPreview";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 type UrlResult = { ok: true; data: string } | { ok: false; error: string };
 
