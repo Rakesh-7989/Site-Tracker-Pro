@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useCan } from "@/auth";
+import { useT } from "@/i18n/I18nProvider";
 import { getTypedClient } from "@/lib/supabase/db";
 import {
   listProjectPartners,
@@ -24,14 +25,9 @@ const STATUS_TONE: Record<ProjectPartner["status"], "success" | "warning" | "neu
   invited: "warning",
   revoked: "neutral" };
 
-const SCOPE_OPTIONS: { value: PartnerScope; label: string }[] = [
-  { value: "viewer", label: "Viewer (read-only)" },
-  { value: "contributor", label: "Contributor" },
-  { value: "manager", label: "Manager" },
-];
-
 export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
   const canManage = useCan("project:settings:edit");
+  const t = useT();
   const [partners, setPartners] = useState<ProjectPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,18 +36,24 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
   const [freshCode, setFreshCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const SCOPE_OPTIONS: { value: PartnerScope; label: string }[] = [
+    { value: "viewer", label: t("partner.scopeViewer") },
+    { value: "contributor", label: t("partner.scopeContributor") },
+    { value: "manager", label: t("partner.scopeManager") },
+  ];
+
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
     try {
       const client = await getTypedClient();
-      if (!client) { setError("Backend not configured."); setPartners([]); return; }
+      if (!client) { setError(t("partner.backendError")); setPartners([]); return; }
       setPartners(await listProjectPartners(client, projectId));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, t]);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -59,7 +61,7 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
     setBusyState();
     try {
       const client = await getTypedClient();
-      if (!client) { setError("Backend not configured."); return; }
+      if (!client) { setError(t("partner.backendError")); return; }
       const res = await invitePartnerOrg(client, { projectId, scope });
       if (!res.ok) { setError(res.error); return; }
       setFreshCode(res.partner.inviteCode);
@@ -79,14 +81,14 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
 
   const columns: Column<ProjectPartner>[] = [
     {
-      key: "firm", header: "Partner firm",
+      key: "firm", header: t("partner.colFirm"),
       render: p => (
         <span className="font-semibold text-fg-primary text-sm">
-          {p.orgName ?? (p.status === "invited" ? "Awaiting redemption" : `Org ${p.orgId?.slice(0, 8) ?? "?"}…`)}
+          {p.orgName ?? (p.status === "invited" ? t("partner.awaitingRedemption") : `Org ${p.orgId?.slice(0, 8) ?? "?"}…`)}
         </span>
       ) },
     {
-      key: "scope", header: "Scope", hideOnMobile: true,
+      key: "scope", header: t("partner.colScope"), hideOnMobile: true,
       render: p => (
         <Select
           fit compact
@@ -96,7 +98,7 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
             const client = await getTypedClient();
             if (!client) return;
             const r = await setPartnerScope(client, p.id, e.target.value as PartnerScope);
-            if (!r.ok) setError(r.error ?? "Could not change scope.");
+            if (!r.ok) setError(r.error ?? t("partner.scopeChangeFailed"));
             else void reload();
           }}
           options={SCOPE_OPTIONS}
@@ -104,12 +106,12 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
       ) },
     { key: "status", header: "Status", render: p => <Badge tone={STATUS_TONE[p.status]}>{PARTNER_STATUS_LABEL[p.status]}</Badge> },
     {
-      key: "code", header: "Invite code", hideOnMobile: true,
+      key: "code", header: t("partner.colInviteCode"), hideOnMobile: true,
       render: p => p.status === "invited" && p.inviteCode
         ? <code className="font-mono text-xs bg-bg-secondary px-1.5 py-0.5 rounded break-all">{p.inviteCode}</code>
         : <span className="text-fg-tertiary text-xs">—</span> },
     {
-      key: "acceptedAt", header: "Accepted", hideOnMobile: true,
+      key: "acceptedAt", header: t("partner.colAccepted"), hideOnMobile: true,
       render: p => <span className="text-xs text-fg-secondary">{p.acceptedAt ? p.acceptedAt.slice(0, 10) : "—"}</span> },
     ...(canManage
       ? [{
@@ -121,11 +123,11 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
               aria-label={`Revoke ${p.orgName ?? "pending invite"}`}
               onClick={async () => {
                 const label = p.orgName ?? "this pending invite";
-                if (!window.confirm(`Revoke ${label}? Every member of that firm loses access immediately.`)) return;
+                if (!window.confirm(t("partner.revokeConfirm", { label }))) return;
                 const client = await getTypedClient();
                 if (!client) return;
                 const r = await revokePartnerOrg(client, p.id);
-                if (!r.ok) setError(r.error ?? "Revoke failed.");
+                if (!r.ok) setError(r.error ?? t("partner.revokeFailed"));
                 else void reload();
               }}
             >
@@ -139,9 +141,9 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="min-w-0">
-          <h2 className="font-display text-lg font-bold text-fg-primary">Partner firms</h2>
+          <h2 className="font-display text-lg font-bold text-fg-primary">{t("partner.sectionTitle")}</h2>
           <p className="text-sm text-fg-secondary">
-            Other organizations collaborating on this project — read-only in this release. Financials stay host-only.
+            {t("partner.sectionDesc")}
           </p>
         </div>
         {canManage && (
@@ -151,10 +153,10 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
               value={scope}
               onChange={e => setScope(e.target.value as PartnerScope)}
               options={SCOPE_OPTIONS}
-              aria-label="Invite scope"
+              aria-label={t("partner.inviteScopeLabel")}
             />
             <Button leftIcon="plus" loading={minting} onClick={() => void mintInvite()}>
-              New invite code
+              {t("partner.newInviteCode")}
             </Button>
           </div>
         )}
@@ -163,14 +165,14 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
       {error && <Alert variant="danger">{error}</Alert>}
 
       {freshCode && (
-        <Alert variant="success" title={`Invite code ready (${SCOPE_OPTIONS.find(s => s.value === scope)?.label})`}>
+        <Alert variant="success" title={`${t("partner.inviteCodeReady")} (${SCOPE_OPTIONS.find(s => s.value === scope)?.label})`}>
           <div className="flex items-center gap-2 flex-wrap">
             <code className="font-mono text-sm bg-bg-secondary px-2 py-1 rounded border border-default">{freshCode}</code>
             <Button size="sm" variant="ghost" onClick={() => { void navigator.clipboard?.writeText(freshCode); setCopied(true); }}>
-              {copied ? "Copied" : "Copy code"}
+              {copied ? t("partner.copied") : t("partner.copyCode")}
             </Button>
             <span className="text-xs text-fg-secondary">
-              Share it with the partner firm's admin — they redeem it under Projects → Shared with us.
+              {t("partner.shareHint")}
             </span>
           </div>
         </Alert>
@@ -192,7 +194,7 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
       ) : partners.length === 0 ? (
         <Card padding="md">
           <div className="flex items-center gap-3 text-fg-secondary text-sm">
-            No partner firms yet. Generate an invite code and share it with an architect / contractor / consultant organization.
+            {t("partner.emptyState")}
           </div>
         </Card>
       ) : (
@@ -201,8 +203,8 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
 
       <Card padding="sm">
         <div className="text-xs text-fg-tertiary leading-relaxed">
-          <b>Scopes:</b> {PARTNER_SCOPE_LABEL.viewer} · {PARTNER_SCOPE_LABEL.contributor} · {PARTNER_SCOPE_LABEL.manager}.
-          Revoking removes every member of that firm immediately and is written to the immutable audit log.
+          <b>{t("partner.scopesLabel")}</b> {PARTNER_SCOPE_LABEL.viewer} · {PARTNER_SCOPE_LABEL.contributor} · {PARTNER_SCOPE_LABEL.manager}.
+          {t("partner.revokeHint")}
         </div>
       </Card>
     </div>
