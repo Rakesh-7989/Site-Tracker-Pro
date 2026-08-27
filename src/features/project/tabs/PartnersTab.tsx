@@ -12,8 +12,6 @@ import {
   invitePartnerOrg,
   setPartnerScope,
   revokePartnerOrg,
-  PARTNER_SCOPE_LABEL,
-  PARTNER_STATUS_LABEL,
   type ProjectPartner,
   type PartnerScope } from "@/app/queries/partnerQueries";
 import { Card, Button, Badge, Alert } from "@/components/ui/atoms";
@@ -104,7 +102,7 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
           options={SCOPE_OPTIONS}
         />
       ) },
-    { key: "status", header: "Status", render: p => <Badge tone={STATUS_TONE[p.status]}>{PARTNER_STATUS_LABEL[p.status]}</Badge> },
+    { key: "status", header: "Status", render: p => <Badge tone={STATUS_TONE[p.status]}>{t(`partner.status${p.status.charAt(0).toUpperCase() + p.status.slice(1)}` as "partner.statusInvited")}</Badge> },
     {
       key: "code", header: t("partner.colInviteCode"), hideOnMobile: true,
       render: p => p.status === "invited" && p.inviteCode
@@ -203,7 +201,7 @@ export function PartnersTab({ projectId }: { projectId: string }): JSX.Element {
 
       <Card padding="sm">
         <div className="text-xs text-fg-tertiary leading-relaxed">
-          <b>{t("partner.scopesLabel")}</b> {PARTNER_SCOPE_LABEL.viewer} · {PARTNER_SCOPE_LABEL.contributor} · {PARTNER_SCOPE_LABEL.manager}.
+          <b>{t("partner.scopesLabel")}</b> {t("partner.scopeViewer")} · {t("partner.scopeContributor")} · {t("partner.scopeManager")}.
           {t("partner.revokeHint")}
         </div>
       </Card>
