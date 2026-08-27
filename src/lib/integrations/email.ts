@@ -13,21 +13,16 @@ import {
  * For now it logs and returns a success marker — ideal for CI/CD + mock e2e.
  */
 export async function sendEmail(
-  email: EmailFormatted,
-  to?: string
+  _email: EmailFormatted,
+  _to?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Mock: simulate SES send — in production replace with actual SES/nodemailer
   const mockMessageId = `msg_${Date.now()}_${Math.random()
     .toString(36)
     .substring(2, 10)}`;
 
-  // Log the send (replace with real SES call in production)
-  console.log("📧 SiteTrack Pro — Email sent:", {
-    to,
-    type: email.type,
-    messageId: mockMessageId,
-    subject: email.title,
-  });
+  // In production, replace with actual SES/nodemailer call.
+  // Logging removed — no email metadata in production console.
 
   return {
     success: true,
