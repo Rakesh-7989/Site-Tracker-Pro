@@ -35,7 +35,7 @@ describe("PWA service worker (ST-013)", () => {
 
   it("registers the SW from main.tsx (not the old unregister script)", () => {
     expect(main).toContain("registerServiceWorker()");
-    expect(main).toMatch(/from "\.\/lib\/pwa"/);
+    expect(main).toMatch(/from "\.\/lib\/platform\/pwa"/);
   });
 
   it("mounts the install/update chrome in AppV3", () => {
@@ -44,7 +44,7 @@ describe("PWA service worker (ST-013)", () => {
   });
 
   it("keeps the dev-guard so local development is unaffected", () => {
-    const pwa = read("src/lib/pwa.ts");
+    const pwa = read("src/lib/platform/pwa.ts");
     expect(pwa).toMatch(/import\.meta\.env\.DEV/);
     expect(pwa).toContain("registerServiceWorker");
     expect(pwa).toContain("usePwaInstall");

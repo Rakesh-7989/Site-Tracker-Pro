@@ -29,7 +29,7 @@ vi.mock("@/components/ui/forms", () => ({
   ),
 }));
 
-vi.mock("@/app/clientPortalQueries", () => ({
+vi.mock("@/app/queries/clientPortalQueries", () => ({
   listClientProjects: vi.fn(),
   listClientNotifications: vi.fn(),
 }));
