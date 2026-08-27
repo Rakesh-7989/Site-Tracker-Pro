@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// SiteTrack Pro — generate src/lib/database.types.ts from the LIVE database.
+// SiteTrack Pro — generate src/lib/supabase/database.types.ts from the LIVE database.
 //
 // Self-hosted alternative to `supabase gen types` (which shells out to a
 // container runtime we don't require). Reads information_schema via pg and
@@ -230,7 +230,7 @@ out.push(`}`);
 out.push(``);
 
 const content = out.join("\n");
-const target = join(root, "src/lib/database.types.ts");
+const target = join(root, "src/lib/supabase/database.types.ts");
 
 if (process.argv.includes("--check")) {
   const existing = existsSync(target) ? readFileSync(target, "utf8") : "";
@@ -242,5 +242,5 @@ if (process.argv.includes("--check")) {
   console.log(`✅ database.types.ts matches live schema (${tables.size} tables)`);
 } else {
   writeFileSync(target, content, "utf8");
-  console.log(`✅ wrote src/lib/database.types.ts (${tables.size} tables, ${seenFns.size} functions, ${(content.length / 1024).toFixed(0)} KB)`);
+  console.log(`✅ wrote src/lib/supabase/database.types.ts (${tables.size} tables, ${seenFns.size} functions, ${(content.length / 1024).toFixed(0)} KB)`);
 }
