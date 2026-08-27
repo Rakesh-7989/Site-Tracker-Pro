@@ -180,7 +180,7 @@ From `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 success criteria:
 - [ ] Voice transcription word-accuracy ≥ 85% on 20 construction-site
       phrases in Telugu (test corpus committed to repo).
 - [ ] ≥ 2 signed paid pilots from named Hyderabad builders at INR
-      29,999/yr (contracts in `docs/sales/PILOT_CONTRACTS/`).
+ 29,999/yr (contracts in ).
 - [ ] Zero P1 bugs in DPR flow over 5 consecutive days of live use
       by pilot supervisors.
 
@@ -215,7 +215,7 @@ From `docs/archive/SITETRACK_V3_PLAN.md` Sprint 2 success criteria:
   `forecast`, etc. remain frozen.
 - `docs/sales/TELUGU_PHRASE_BANK_DPR.md` — i18n source.
 - `docs/sales/LOOM_STORYBOARD.md` — the user-flow we're shipping.
-- `docs/sales/PILOT_AGREEMENT_v1.md` — what pilots have agreed to.
+- docs/business/PILOT_AGREEMENT_v1.md — what pilots have agreed to.
 - `docs/business/PRICING.md` — pilot tier economics.
 
 ## Edit log

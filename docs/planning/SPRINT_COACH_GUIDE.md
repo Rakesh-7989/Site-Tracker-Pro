@@ -231,7 +231,7 @@ The tool reads the same 5 docs the coach used to read manually:
 - `docs/research/INTERVIEW_LOG_2026-06.md` (interviews completed)
 - `docs/research/VERIFIED_GAPS_MATRIX.md` (verdict per claim)
 - `docs/sales/MEETING_LOG_2026-06.md` (Sprint 2 meetings booked)
-- `docs/sales/PILOT_CONTRACTS/` (signed pilot agreements)
+- (signed pilot agreements)
 - `docs/business/PRICING.md` (pricing-decision locked)
 
 It returns a verdict + per-criterion table + next-action list. The

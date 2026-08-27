@@ -100,7 +100,7 @@ with 7-day written notice.
    by Builder.
 2. **Builder can export everything at any time** via the audit log
    v2 API and the CSV export functions for each domain. Export
-   format documented in `docs/AUDITOR_API.md`.
+ format documented in .
 3. **Termination = full data export within 30 days.** SiteTrack Pro
    provides a single-zip dump with all data + a written destruction
    certificate for SiteTrack-Pro-side copies within 30 days after

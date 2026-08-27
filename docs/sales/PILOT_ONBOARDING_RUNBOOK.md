@@ -23,9 +23,9 @@ Pair this with:
 | Print 2 copies of `docs/business/PILOT_AGREEMENT_v1.md` (if not yet signed) | Founder | [ ] |
 | Charge laptop + phone + battery pack to 100% | Founder | [ ] |
 | Confirm WHATSAPP_PERMANENT_TOKEN env var for this org's WhatsApp Cloud API access (if applicable) | Founder | [ ] |
-| Sync `docs/sales/DPR_DEMO_SUPERVISOR_NUMBER.md` — which supervisor's phone we'll register | Founder | [ ] |
+| Sync — which supervisor's phone we'll register | Founder | [ ] |
 | Pull `scripts/seeds/seed-first-org.mjs` config to point to pilot org name + slug | Founder | [ ] |
-| Bring `docs/sales/SUPERVISOR_TRAINING_TE.mp4` on phone (offline-playable) | Founder | [ ] |
+| Bring on phone (offline-playable) | Founder | [ ] |
 | Pack: business cards, single-page agreement summary, water, charger | Founder | [ ] |
 | WhatsApp message at 8 AM the morning of: "Coming to your office at [time]. Anything I should prep?" | Founder | [ ] |
 
@@ -84,8 +84,8 @@ Pair this with:
 | Task | Owner | Done |
 |------|-------|------|
 | WhatsApp follow-up: "Thank you for the 90 min today. [3 things we accomplished]. Next steps: [3 things they need to do this week]." | Founder | [ ] |
-| Update `docs/sales/PIPELINE_TRACKER.md` with pilot status: ACTIVATED | Founder | [ ] |
-| Add row to `docs/sales/PILOT_CONTRACTS/<builder_name>.md` capturing: contact info, supervisor phone, promoter phone, project list, RERA #, SLO start date | Founder | [ ] |
+| Update with pilot status: ACTIVATED | Founder | [ ] |
+| Add row to <builder_name>.md` capturing: contact info, supervisor phone, promoter phone, project list, RERA #, SLO start date | Founder | [ ] |
 | Trigger seed-first-org for this Builder with their actual org name: `node scripts/seed-pilot-org.mjs --name "<Firm Name>" --slug "<firm-slug>"` (Sprint 2 deliverable) | Founder | [ ] |
 | Send Cashfree invoice via dashboard | Founder | [ ] |
 
@@ -142,7 +142,7 @@ If any of these fail: the founder visits the site personally on Day
 | Pilot is using it daily + paying invoice | Celebrate. Move to Sprint 3 features. Start case-study draft per `docs/business/CASE_STUDY_TEMPLATE.md`. |
 | Pilot is using sporadically (< 5 DPRs/week) | On-site visit. Find out what's blocking. Pivot product roadmap. |
 | Pilot has stopped using | Honest conversation. Per `PILOT_AGREEMENT_v1.md` clause 8.1: 30-day no-fault. Capture the verbatim reason — it's gold for Sprint 2 v2. |
-| Pilot wants to upgrade | Move them to Pro (₹49,999/yr). Update `docs/sales/PIPELINE_TRACKER.md`. |
+| Pilot wants to upgrade | Move them to Pro (₹49,999/yr). Update . |
 
 ## Source
 

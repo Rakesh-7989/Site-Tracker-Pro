@@ -238,7 +238,7 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 | Hide all 21 stubs behind staff-only flag; surface ONE workflow (WhatsApp DPR) on home shell | `src/features/views/RERAKarnatakaView.jsx`, `src/features/views/RERAMaharashtraView.jsx`, `src/features/views/VendorPortalView.jsx`, `src/features/views/GSTNEInvoiceView.jsx`, `src/features/views/DrawingDiffView.jsx`, `src/features/views/AIRecommenderView.jsx`, `src/features/shell/Nav.jsx`, `src/App.jsx` | 2 |
 | Powerplay reconnaissance script — 10 structured customer interviews (5 ex-Powerplay + 5 Hyderabad targets: My Home, Aparna, Sumadhura, Vasavi, Lansum) | `docs/research/POWERPLAY_RECON_SCRIPT.md`, `docs/research/INTERVIEW_LOG_2026-06.md`, `docs/research/VERIFIED_GAPS_MATRIX.md` | 5 |
 | Re-cut COMPETITOR_COMPARISON_V2: flip every unverified BEAT verdict to UNVERIFIED until interview evidence lands | `docs/business/COMPETITOR_COMPARISON_V2.md`, `docs/business/POSITIONING.md` | 1 |
-| Pilot pricing & exclusivity contract (INR 29,999/yr design-partner, 24-mo lock, 3-mo logo exclusivity per micro-segment) | `docs/business/PILOT_AGREEMENT_v1.pdf`, `docs/business/PRICING.md`, `docs/sales/DESIGN_PARTNER_DECK.pdf` | 2 |
+| Pilot pricing & exclusivity contract (INR 29,999/yr design-partner, 24-mo lock, 3-mo logo exclusivity per micro-segment) | `docs/business/PRICING.md` | 2 |
 | Daily WhatsApp-DPR demo recording (60-sec Loom) + 5 in-person founder meetings booked at Banjara Hills / Gachibowli / Kondapur builder offices | `docs/sales/DEMO_SCRIPT_DPR.md`, `docs/sales/MEETING_LOG_2026-06.md`, `public/demos/whatsapp_dpr_60s.mp4` | 3 |
 
 **Success criteria**:
@@ -257,8 +257,8 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 | Supervisor mobile DPR composer — Telugu/Hindi voice note + photo + geotag, offline-first, works on Rs 8,000 Android / 2GB / 2G | `src/features/views/DPRComposerView.jsx`, `src/features/dpr/VoiceNoteRecorder.jsx`, `src/features/dpr/PhotoGeotagCapture.jsx`, `src/lib/offlineQueue.js`, `src/i18n/te.json`, `src/i18n/hi.json` | 4 |
 | Telugu/Hindi voice-to-text pipeline (Bhashini API primary, AWS Transcribe fallback) with on-device caching | `supabase/functions/voice_transcribe/index.ts`, `src/lib/voiceTranscribe.js`, `scripts/supabase/51_voice_transcripts.sql`, `tests/edge/voice_transcribe.test.ts` | 2.5 |
 | BuildNow Telangana audit-trail integration — anchor each DPR submission to portal API + display state-govt verified badge | `supabase/functions/buildnow_anchor/index.ts`, `src/features/views/DPRDetailView.jsx`, `src/components/BuildNowBadge.jsx`, `scripts/supabase/52_buildnow_anchors.sql` | 2 |
-| Pilot onboarding kit — founder-led 90-min on-site activation runbook + Telugu UI screenshots + supervisor training video | `docs/sales/PILOT_ONBOARDING_RUNBOOK.md`, `docs/sales/SUPERVISOR_TRAINING_TE.mp4`, `scripts/seed_pilot_org.mjs` | 1.5 |
-| Sign 2 paid pilots — push contracts through, collect first INR 59,998 of ARR (2 × 29,999) | `docs/sales/PILOT_CONTRACTS/`, `docs/sales/PIPELINE_TRACKER.md`, `docs/CHANGELOG.md` | 2 |
+| Pilot onboarding kit — founder-led 90-min on-site activation runbook + Telugu UI screenshots + supervisor training video | `docs/sales/PILOT_ONBOARDING_RUNBOOK.md`, `scripts/seed_pilot_org.mjs` | 1.5 |
+| Sign 2 paid pilots — push contracts through, collect first INR 59,998 of ARR (2 × 29,999) | | 2 |
 
 **Success criteria**:
 - End-to-end DPR demo: supervisor speaks Telugu voice note on 2GB Android in basement parking, message lands on promoter's WhatsApp with photo + geotag + transcription within 60 sec when signal returns
@@ -273,10 +273,10 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 |-------|-------|------|
 | Daily 7am WhatsApp promoter digest cron (cost-to-date, schedule variance, top 3 risks, photo) | `supabase/functions/promoter_digest_cron/index.ts`, `supabase/functions/_shared/digest_renderer.ts`, `scripts/supabase/53_digest_subscriptions.sql` | 3 |
 | Saturday weekly branded PDF generator (builder logo, forward-to-banker ready) | `supabase/functions/weekly_pdf_render/index.ts`, `src/features/views/PromoterReportView.jsx`, `scripts/supabase/54_pdf_audit.sql` | 2 |
-| On-site founder activation visits — 2 pilots, Banjara Hills + Gachibowli | `docs/sales/ACTIVATION_LOG_PILOT_1.md`, `docs/sales/ACTIVATION_LOG_PILOT_2.md` | 3 |
+| On-site founder activation visits — 2 pilots, Banjara Hills + Gachibowli | | 3 |
 | Voice-query bot in Telugu/Hinglish — "cement stock enti?" → voice reply | `supabase/functions/voice_query/index.ts`, `src/lib/voiceQueryClient.js`, `tests/edge/voice_query.test.ts` | 2.5 |
-| Close 2 more pilots from Sprint 1 pipeline | `docs/sales/PIPELINE_TRACKER.md`, `docs/sales/PILOT_CONTRACTS/` | 2 |
-| Sprint 3 customer feedback loop — capture 20+ specific feature requests from 4 active pilots | `docs/research/PILOT_FEEDBACK_LOG_2026-07.md`, `docs/ROADMAP_v3.md` | 2 |
+| Close 2 more pilots from Sprint 1 pipeline | | 2 |
+| Sprint 3 customer feedback loop — capture 20+ specific feature requests from 4 active pilots | | 2 |
 
 **Success criteria**:
 - 4 paid pilots active (INR 1,19,996 ARR floor)
@@ -291,9 +291,9 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 |-------|-------|------|
 | Handover-packet PDF generator with merkle root + on-chain anchor + QR code | `supabase/functions/handover_packet/index.ts`, `src/features/views/HandoverPacketView.jsx`, `contracts/AuditAnchor.sol`, `scripts/supabase/55_handover_packets.sql` | 4 |
 | RERA-TG filing assistant — quarterly progress report auto-prefill + one-click submit | `supabase/functions/rera_tg_file/index.ts`, `src/features/views/RERATGFilingView.jsx`, `scripts/supabase/56_rera_tg_filings.sql`, `tests/edge/rera_tg_file.test.ts` | 4 |
-| Per-org pricing weaponization — billing UI + "punishment-free supervisor add" calculator | `src/features/views/BillingView.jsx`, `src/components/SupervisorCalculator.jsx`, `docs/sales/SUPERVISOR_CALC_DECK.pdf` | 2 |
-| Close 2 more pilots (target: 6 total) | `docs/sales/PIPELINE_TRACKER.md`, `docs/sales/PILOT_CONTRACTS/` | 2.5 |
-| Marquee pursuit — book 2 in-person meetings with My Home or Aparna or Sumadhura | `docs/sales/MARQUEE_LOG.md` | 2.5 |
+| Per-org pricing weaponization — billing UI + "punishment-free supervisor add" calculator | `src/features/views/BillingView.jsx`, `src/components/SupervisorCalculator.jsx` | 2 |
+| Close 2 more pilots (target: 6 total) | | 2.5 |
+| Marquee pursuit — book 2 in-person meetings with My Home or Aparna or Sumadhura | | 2.5 |
 
 **Success criteria**:
 - ≥1 handover packet generated for real project with on-chain merkle anchor verifiable via public block explorer
@@ -307,11 +307,11 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 
 | Title | Files | Days |
 |-------|-------|------|
-| Marquee proof-of-concept — 7-day pilot for My Home / Aparna / Sumadhura on a real active project | `docs/sales/MARQUEE_POC_LOG.md`, `scripts/seed_marquee_pilot.mjs` | 5 |
+| Marquee proof-of-concept — 7-day pilot for My Home / Aparna / Sumadhura on a real active project | `scripts/seed_marquee_pilot.mjs` | 5 |
 | Public website re-cut with VERIFIED moats only — drop UNVERIFIED gaps, lead with BuildNow + Telugu voice + 6 named pilot logos (with permission) | `apps/marketing/`, `public/case-studies/`, `docs/business/POSITIONING.md` | 3 |
-| First contractor hire — Telugu QA + supervisor training contractor at INR 60K/mo | `docs/HIRING_CONTRACTOR_v1.md`, `docs/team/ONBOARDING_QA.md` | 1.5 |
+| First contractor hire — Telugu QA + supervisor training contractor at INR 60K/mo | | 1.5 |
 | Promoter peer-benchmark engine (anonymized cost-per-sqft vs Hyderabad peer builders) — needs ≥6 builders on platform | `supabase/functions/peer_benchmark/index.ts`, `src/features/views/PeerBenchmarkView.jsx`, `scripts/supabase/57_benchmark_aggregations.sql` | 3 |
-| Sign 2 more pilots (target: 8 total) | `docs/sales/PIPELINE_TRACKER.md`, `docs/sales/PILOT_CONTRACTS/` | 2.5 |
+| Sign 2 more pilots (target: 8 total) | | 2.5 |
 
 **Success criteria**:
 - ≥1 marquee Hyderabad builder (My Home / Aparna / Sumadhura / Vasavi / Lansum tier) in 7-day POC, with one named project on platform
@@ -325,12 +325,12 @@ Aaru sprints, 15 days okkati. Founder discipline edi — every sprint has a deli
 
 | Title | Files | Days |
 |-------|-------|------|
-| Marquee POC → paid contract conversion (target: INR 49,999 Pro tier minimum) | `docs/sales/MARQUEE_CONVERSION.md`, `docs/sales/PILOT_CONTRACTS/marquee_v1.pdf` | 3 |
+| Marquee POC → paid contract conversion (target: INR 49,999 Pro tier minimum) | | 3 |
 | Pilot → Pro tier migration script with auto-billing through Cashfree | `supabase/functions/tier_migration/index.ts`, `src/features/views/UpgradeView.jsx`, `scripts/supabase/58_tier_migrations.sql` | 2.5 |
-| Co-authored case study with first marquee builder (1500-word, 4 quotes, 1 metric) | `public/case-studies/marquee_v1.html`, `docs/marketing/CASE_STUDY_TEMPLATE.md` | 2 |
-| Series A readiness pack — ARR proof, 10-builder logo wall, BuildNow moat narrative, VERIFIED_GAPS_MATRIX as appendix | `docs/investor/SERIES_A_PACK_v1.pdf`, `docs/investor/ARR_PROOF.md`, `docs/investor/MOAT_NARRATIVE.md` | 3 |
-| Sign 2 more pilots (target: 10 total) | `docs/sales/PIPELINE_TRACKER.md`, `docs/sales/PILOT_CONTRACTS/` | 2.5 |
-| Day 90 retro + v4 architecture decision doc | `docs/RETRO_DAY_90.md`, `docs/ARCHITECTURE_v4_DECISION.md` | 2 |
+| Co-authored case study with first marquee builder (1500-word, 4 quotes, 1 metric) | `public/case-studies/marquee_v1.html`, docs/business/CASE_STUDY_TEMPLATE.md | 2 |
+| Series A readiness pack — ARR proof, 10-builder logo wall, BuildNow moat narrative, VERIFIED_GAPS_MATRIX as appendix | | 3 |
+| Sign 2 more pilots (target: 10 total) | | 2.5 |
+| Day 90 retro + v4 architecture decision doc | | 2 |
 
 **Success criteria**:
 - ≥1 marquee builder on signed Pro-tier contract (INR 49,999/yr minimum)

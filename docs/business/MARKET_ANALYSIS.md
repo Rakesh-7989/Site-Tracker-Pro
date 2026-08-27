@@ -51,7 +51,7 @@ This document compares SiteTrack with major construction management products and
 | --- | --- | --- | --- |
 | Powerplay | India construction app with strong site-team workflows. | WBS-linked schedule, site updates with photos/material/labour/location, audit trail, DPR on WhatsApp, delay dashboards. | SiteTrack should stay simpler and cheaper for small builders, with Telugu/Hindi and fast field capture. |
 | RDash | India-focused AI construction OS for design, procurement, finance, and site teams. | Design version control, BOQ/change orders, DPR, vendor orders, material GRN/issuance, approvals, AI copilot, dashboards. | SiteTrack should focus on lightweight setup, local builder workflows, and lower entry price. |
-| Onsite | Mobile-first construction app with offline operation and broad modules. | Project planning, expenses, labour payroll, material request to PO/GRN, docs/photos, reports. | SiteTrack should compete on clean UX, client transparency, and India-ready billing without becoming heavy ERP. |
+| Onsite | Mobile-first construction app with offline operation and broad modules. | Project planning, expenses, labour payroll, material request to PO/GRN, , reports. | SiteTrack should compete on clean UX, client transparency, and India-ready billing without becoming heavy ERP. |
 | BuildSupply | Procurement and supply workflow adjacency. | Construction supplies, procurement teams, contractor purchasing. | SiteTrack should integrate material requests, vendors, and purchase orders before deep procurement marketplace work. |
 | Zoho Projects / Zoho Creator | Cheap/customizable generic platform used by Indian SMEs. | Low cost, custom workflows, integrations. | SiteTrack must win with construction-specific defaults and no-code-style setup help. |
 

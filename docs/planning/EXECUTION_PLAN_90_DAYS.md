@@ -352,7 +352,7 @@ nothing in our marketing is theoretical.
   if needed — confirm `polygonAdapter` works with the real address.
 - 🛠️ [4-5 PM] Write end-to-end test: anchor a fake Merkle root, verify
   the `Anchored` event on Polygonscan Amoy.
-- 🛠️ [5-6 PM] Write `docs/BLOCKCHAIN_ANCHOR_GUIDE.md` — operator runbook
+- 🛠️ [5-6 PM] Write — operator runbook
   with contract address, gas estimate, daily cron schedule.
 - **DoD**: One real on-chain anchor visible at amoy.polygonscan.com.
 
@@ -511,7 +511,7 @@ nothing in our marketing is theoretical.
 - 🛠️ [3-6 PM] Write a "what to do if X breaks" runbook for the most
   likely operational incidents: Cashfree webhook 401 / WhatsApp template
   rejection / Polygon RPC down / Supabase project paused.
-- **DoD**: `docs/INCIDENT_RUNBOOK.md` written, all gates green.
+- **DoD**: written, all gates green.
 
 ### Day 27 (Saturday)
 - 📞 Demo video — review first cut from editor. Send feedback.

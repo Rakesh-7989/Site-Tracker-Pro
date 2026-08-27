@@ -149,6 +149,6 @@ or email **hello@sitetrackpro.in** to talk to a human.
 
 ## Sample filled-in case study (for reference)
 
-See `docs/case-studies/buildco-india.md` (first design partner — fill in
+See (first design partner — fill in
 once they complete 90 days on platform). Use that as the gold-standard
 voice and structure when filling this template for new customers.

@@ -353,5 +353,5 @@ schema, asking them to re-enter 200 line items is a guaranteed lost sale.
 - See `docs/setup/HRMS_DEPLOYMENT_STUDY.md` for the HRMS deep-dive that
   informed several rows.
 - See `docs/architecture/ROLE_MODEL_V2.md` for the role-tier comparison.
-- See `docs/PROJECT_TYPES_ROADMAP.md` for the type-gate spec.
+- See for the type-gate spec.
 - This doc must be updated whenever we ship any item from §17.
