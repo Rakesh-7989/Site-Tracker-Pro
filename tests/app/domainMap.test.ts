@@ -35,7 +35,15 @@ import { SPATIAL_LEVELS } from "@/app/queries/spaceQueries";
 const APP_DIR = path.resolve(process.cwd(), "src/app");
 
 function appFileExists(base: string, where: string): void {
-  expect(existsSync(path.join(APP_DIR, `${base}.ts`)), `${where}: src/app/${base}.ts missing`).toBe(true);
+  const candidates = [
+    path.join(APP_DIR, `${base}.ts`),
+    path.join(APP_DIR, "queries", `${base}.ts`),
+    path.join(APP_DIR, "engines", `${base}.ts`),
+    path.join(APP_DIR, "services", `${base}.ts`),
+    path.join(APP_DIR, "config", `${base}.ts`),
+  ];
+  const found = candidates.some(existsSync);
+  expect(found, `${where}: src/app/${base}.ts (or queries/engines/services/config/) missing`).toBe(true);
 }
 
 function sorted<T extends string>(xs: readonly T[]): T[] {

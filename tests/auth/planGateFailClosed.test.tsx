@@ -23,7 +23,7 @@ vi.mock("@/auth/usePlanCaps", () => ({
 vi.mock("@/auth/useOrgSwitcher", () => ({
   useOrgSwitcher: vi.fn(),
 }));
-vi.mock("@/app/quotaQueries", async (importOriginal) => {
+vi.mock("@/app/queries/quotaQueries", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/app/queries/quotaQueries")>();
   return { ...actual, fetchOrgQuota: vi.fn() };
 });
