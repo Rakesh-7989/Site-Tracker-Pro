@@ -6,6 +6,7 @@ import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listMaterials, createMaterial, setMaterialStatus, deleteMaterial, type Material, type MaterialStatus } from "@/app/queries/siteOpsQueries";
 import { listMaterialRequests, createMaterialRequest, setMaterialRequestStatus, deleteMaterialRequest, requestTotals, REQUEST_NEXT, REQUEST_STATUS_LABEL, type MaterialRequest, type RequestStatus } from "@/app/queries/materialRequestQueries";
+import { useIsPartnerWriter } from "@/features/project/PartnerScopeContext";
 
  
 import { getClient } from "@/lib/supabase/supabase";
@@ -15,7 +16,9 @@ const ST = [{ value: "expected", label: "Expected" }, { value: "received", label
 export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const canEdit = useCan("material:add", { orgId: activeOrg?.orgId, projectId });
+  const canEditViaCap = useCan("material:add", { orgId: activeOrg?.orgId, projectId });
+  const isPartnerWriter = useIsPartnerWriter();
+  const canEdit = canEditViaCap || isPartnerWriter;
   const [rows, setRows] = useState<Material[]>([]);
   const [requests, setRequests] = useState<MaterialRequest[]>([]);
   const [loading, setLoading] = useState(true);

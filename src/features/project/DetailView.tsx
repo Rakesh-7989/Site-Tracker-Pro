@@ -22,7 +22,8 @@ import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
 import { useModules, ModuleGate } from "@/modules";
 import { useLocationContext } from "@/hooks/useLocationContext";
-import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS, TAB_CATALOG, PARTNER_VIEWER_ALLOWED_TABS } from "./tabs-config";
+import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS, TAB_CATALOG, PARTNER_VIEWER_ALLOWED_TABS, PARTNER_CONTRIBUTOR_ALLOWED_TABS } from "./tabs-config";
+import { PartnerScopeProvider } from "./PartnerScopeContext";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { PartnersTab } from "./tabs/PartnersTab";
@@ -130,15 +131,24 @@ export function DetailView(): JSX.Element {
     if (state.kind !== "ready") return [];
     const membership = session?.orgs.find(o => o.orgId === session.activeOrgId);
     const activeSegments = resolveOrgSegments(membership?.segments ?? null, membership?.segment ?? null);
-    const base = visibleTabs(caps, state.project.type, planCan, activeSegments, TAB_CATALOG, moduleEnabled, currentLocationId);
-    // Partner viewers — clamp to the allow-list so Tasks/Invoices/RAs/etc. never
-    // reach the partner's client even though RLS already hides the rows. The
-    // partner's design surface (drawings/review) is gated by the allow-list, not
-    // by caps, so a viewer with zero caps still sees drawings to collaborate.
+    const segs: ReadonlyArray<string> | null = Array.isArray(activeSegments) ? (activeSegments as unknown as ReadonlyArray<string>) : (activeSegments ? [activeSegments as unknown as string] : null);
+    // Partner firms — show only the allow-list so finance/admin never leak.
+    // For partners we IGNORE capability gating (requires/requiresAny) so a
+    // viewer with zero caps still sees drawings; other gates (projectTypes,
+    // plan, segments, module, location) still apply.
     if (partnerScope) {
-      return base.filter(t => PARTNER_VIEWER_ALLOWED_TABS.has(t.id));
+      const allow = partnerScope === "viewer" ? PARTNER_VIEWER_ALLOWED_TABS : PARTNER_CONTRIBUTOR_ALLOWED_TABS;
+      return TAB_CATALOG.filter(tab => {
+        if (!allow.has(tab.id)) return false;
+        if (tab.projectTypes && !tab.projectTypes.includes(state.project.type as never)) return false;
+        if (tab.planFeature && planCan && !planCan(tab.planFeature)) return false;
+        if (tab.segments && (!segs || segs.length === 0 || !tab.segments.some(s => (segs as ReadonlyArray<string>).includes(s as string)))) return false;
+        if (tab.moduleId && moduleEnabled && !moduleEnabled(tab.moduleId)) return false;
+        if (currentLocationId && tab.locationId && !tab.locationId.includes(currentLocationId)) return false;
+        return true;
+      });
     }
-    return base;
+    return visibleTabs(caps, state.project.type, planCan, activeSegments, TAB_CATALOG, moduleEnabled, currentLocationId);
   }, [caps, state, planCan, session, moduleEnabled, currentLocationId, partnerScope]);
   // -----------------------------------------------
 
@@ -178,7 +188,8 @@ export function DetailView(): JSX.Element {
   const isVisibleTab = tabs.some(tb => tb.id === requestedId);
   const activeId = isVisibleTab ? requestedId : DEFAULT_TAB;
   const activeModule = tabModuleId(activeId);
-  const isPartnerBlocked = isPartner && !PARTNER_VIEWER_ALLOWED_TABS.has(requestedId);
+  const partnerAllowForBlock = partnerScope === "viewer" ? PARTNER_VIEWER_ALLOWED_TABS : PARTNER_CONTRIBUTOR_ALLOWED_TABS;
+  const isPartnerBlocked = isPartner && !partnerAllowForBlock.has(requestedId);
 
   const tabContent = isPartnerBlocked ? (
     <Card className="max-w-lg mx-auto p-8 text-center">
@@ -297,15 +308,17 @@ export function DetailView(): JSX.Element {
       </div>
 
       {/* Tab content (module-gated at render time as defense-in-depth) */}
-      <div
-        id={tabPanelId(baseId, activeId)}
-        role="tabpanel"
-        aria-labelledby={tabButtonId(baseId, activeId)}
-        tabIndex={0}
-        className="outline-none"
-      >
-        {activeModule ? <ModuleGate module={activeModule}>{tabContent}</ModuleGate> : tabContent}
-      </div>
+      <PartnerScopeProvider value={partnerScope}>
+        <div
+          id={tabPanelId(baseId, activeId)}
+          role="tabpanel"
+          aria-labelledby={tabButtonId(baseId, activeId)}
+          tabIndex={0}
+          className="outline-none"
+        >
+          {activeModule ? <ModuleGate module={activeModule}>{tabContent}</ModuleGate> : tabContent}
+        </div>
+      </PartnerScopeProvider>
     </div>
   );
 }

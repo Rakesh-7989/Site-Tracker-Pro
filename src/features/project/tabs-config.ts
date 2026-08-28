@@ -267,3 +267,16 @@ export const PARTNER_VIEWER_ALLOWED_TABS: ReadonlySet<string> = new Set([
   "drawings",
   "drawing-review",
 ]);
+
+/**
+ * Partner contributor (C2) — viewer plus the collaboration lane where a
+ * contributor firm posts site updates / tasks / issues / drawing comments.
+ * Financial / admin tabs (budget, invoices, approvals, etc.) stay host-only.
+ */
+export const PARTNER_CONTRIBUTOR_ALLOWED_TABS: ReadonlySet<string> = new Set([
+  ...PARTNER_VIEWER_ALLOWED_TABS,
+  "updates",
+  "tasks",
+  "issues",
+  "materials",
+]);

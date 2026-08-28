@@ -6,6 +6,7 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { getClient } from "@/lib/supabase/supabase";
+import { useIsPartnerWriter } from "@/features/project/PartnerScopeContext";
 import {
   listIssues, createIssue, setIssueResolved, deleteIssue,
   type Issue, type IssueSeverity,
@@ -20,8 +21,11 @@ export function IssuesTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
   const ctx = { orgId: activeOrg?.orgId, projectId };
-  const canAdd = useCan("issue:add", ctx);
-  const canResolve = useCan("issue:resolve", ctx);
+  const canAddViaCap = useCan("issue:add", ctx);
+  const canResolveViaCap = useCan("issue:resolve", ctx);
+  const isPartnerWriter = useIsPartnerWriter();
+  const canAdd = canAddViaCap || isPartnerWriter;
+  const canResolve = canResolveViaCap || isPartnerWriter;
 
   const [rows, setRows] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
