@@ -52,7 +52,8 @@ export function nextRetryDelay(retryCount: number): number | null {
 export function isStaleFailed(item: QueueItem | null | undefined, now = Date.now()): boolean {
   if (!item) return false;
   if (item.status !== "failed") return false;
-  return (now - (item.created_at || 0)) > STALE_FAIL_AGE_MS;
+  const ref = Math.max(item.created_at || 0, item.last_attempt_at || 0);
+  return (now - ref) > STALE_FAIL_AGE_MS;
 }
 
 function makeId(): string {
@@ -177,6 +178,17 @@ export async function drain({ online, send }: { online: boolean; send: (item: Qu
   const store = adapter || makeIndexedDbAdapter();
   const all = await store.list();
   const now = Date.now();
+
+  // Recover stale "sending" rows that were orphaned by a crash / tab kill
+  // during `send` (G3). Without this they would stay invisible forever.
+  for (const item of all) {
+    if (item.status === "sending" && (now - (item.updated_at || item.created_at || 0)) > 30_000) {
+      await store.update(item.id, { status: "pending", updated_at: now });
+      // Reflect locally so the eligible scan below sees it.
+      item.status = "pending";
+      item.updated_at = now;
+    }
+  }
 
   let gc = 0;
   for (const item of all) {

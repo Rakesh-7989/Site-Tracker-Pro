@@ -130,7 +130,8 @@
     },
     "offline": {
       "queued": "{count} DPR queue lo undi — network vacchaka pamputhadi",
-      "sending": "{count} DPR queue lo undi — pampisthondi…"
+      "sending": "{count} DPR queue lo undi — pampisthondi…",
+      "offlineHint": "You are offline — reports will queue and send when you are back online"
     },
     "recorder": {
       "record": "Voice note record cheyandi",

@@ -129,7 +129,8 @@
     },
     "offline": {
       "queued": "{count} DPR{plural} queued â€” will send when you're back online",
-      "sending": "{count} DPR{plural} queued â€” sendingâ€¦"
+      "sending": "{count} DPR{plural} queued â€” sendingâ€¦",
+      "offlineHint": "You are offline — reports will queue and send when you are back online"
     },
     "recorder": {
       "record": "Record voice note",
