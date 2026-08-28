@@ -7,6 +7,7 @@ import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { useT } from "@/i18n/I18nProvider";
 import { getClient } from "@/lib/supabase/supabase";
+import { useIsPartnerWriter } from "@/features/project/PartnerScopeContext";
 import {
   listTasks, createTask, setTaskStatus, deleteTask, nextTaskStatus,
   type Task, type TaskStatus, type TaskPriority,
@@ -23,7 +24,9 @@ export function TasksTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const t = useT();
   const stLabel = (s: TaskStatus): string => t(`tasksTab.${ST_KEY[s]}`);
-  const canEdit = useCan("update:add", { orgId: activeOrg?.orgId, projectId });
+  const canEditViaCap = useCan("update:add", { orgId: activeOrg?.orgId, projectId });
+  const isPartnerWriter = useIsPartnerWriter();
+  const canEdit = canEditViaCap || isPartnerWriter;
 
   const [rows, setRows] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);

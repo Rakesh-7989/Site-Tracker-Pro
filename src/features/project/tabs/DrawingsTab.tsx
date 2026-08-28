@@ -7,6 +7,7 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Select } from "@/components/ui/forms";
+import { useIsPartnerWriter } from "@/features/project/PartnerScopeContext";
 import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/queries/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
@@ -30,7 +31,9 @@ const STT = [{ value: "current", label: "Current" }, { value: "superseded", labe
 export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const canEdit = useCan("drawings:upload", { orgId: activeOrg?.orgId, projectId });
+  const canEditViaCap = useCan("drawings:upload", { orgId: activeOrg?.orgId, projectId });
+  const isPartnerWriter = useIsPartnerWriter();
+  const canEdit = canEditViaCap || isPartnerWriter;
   const uploadGate = useStorageUploadGate(activeOrg?.orgId);
   const [rows, setRows] = useState<Drawing[]>([]);
   const [files, setFiles] = useState<Record<string, DrawingFileRef[]>>({});

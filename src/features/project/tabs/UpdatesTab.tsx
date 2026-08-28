@@ -7,15 +7,17 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Textarea } from "@/components/ui/forms";
 import { listUpdates, createUpdate, deleteUpdate, type SiteUpdate } from "@/app/queries/updateQueries";
+import { useIsPartnerWriter } from "@/features/project/PartnerScopeContext";
 
- 
 import { useAction } from "@/hooks/useAction";
 
 import { getClient } from "@/lib/supabase/supabase";
 export function UpdatesTab({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const canEdit = useCan("update:add", { orgId: activeOrg?.orgId, projectId });
+  const canEditViaCap = useCan("update:add", { orgId: activeOrg?.orgId, projectId });
+  const isPartnerWriter = useIsPartnerWriter();
+  const canEdit = canEditViaCap || isPartnerWriter;
 
   const [rows, setRows] = useState<SiteUpdate[]>([]);
   const [loading, setLoading] = useState(true);

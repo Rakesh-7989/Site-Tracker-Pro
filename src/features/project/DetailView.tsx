@@ -23,6 +23,7 @@ import { usePlanCaps } from "@/auth";
 import { useModules, ModuleGate } from "@/modules";
 import { useLocationContext } from "@/hooks/useLocationContext";
 import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS, TAB_CATALOG, PARTNER_VIEWER_ALLOWED_TABS, PARTNER_CONTRIBUTOR_ALLOWED_TABS } from "./tabs-config";
+import { PartnerScopeProvider } from "./PartnerScopeContext";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { PartnersTab } from "./tabs/PartnersTab";
@@ -307,15 +308,17 @@ export function DetailView(): JSX.Element {
       </div>
 
       {/* Tab content (module-gated at render time as defense-in-depth) */}
-      <div
-        id={tabPanelId(baseId, activeId)}
-        role="tabpanel"
-        aria-labelledby={tabButtonId(baseId, activeId)}
-        tabIndex={0}
-        className="outline-none"
-      >
-        {activeModule ? <ModuleGate module={activeModule}>{tabContent}</ModuleGate> : tabContent}
-      </div>
+      <PartnerScopeProvider value={partnerScope}>
+        <div
+          id={tabPanelId(baseId, activeId)}
+          role="tabpanel"
+          aria-labelledby={tabButtonId(baseId, activeId)}
+          tabIndex={0}
+          className="outline-none"
+        >
+          {activeModule ? <ModuleGate module={activeModule}>{tabContent}</ModuleGate> : tabContent}
+        </div>
+      </PartnerScopeProvider>
     </div>
   );
 }
