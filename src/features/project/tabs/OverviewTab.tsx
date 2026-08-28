@@ -22,12 +22,17 @@ import type { IdentityRole } from "@/auth";
 import { useT } from "@/i18n/I18nProvider";
 import { getClient } from "@/lib/supabase/supabase";
 import { listDrawings } from "@/app/queries/designQueries";
+import { listApprovalDrawings } from "@/app/queries/approvalQueries";
 import { listFfeEntries } from "@/app/queries/ffeQueries";
 import { listStatutoryApprovals, isExpiring } from "@/app/queries/statutoryQueries";
 import { listPOs } from "@/app/queries/financeQueries";
+import { listTasks } from "@/app/queries/taskQueries";
+import { listIssues } from "@/app/queries/issueQueries";
 import { isTabVisible } from "@/features/project/tabs-config";
 import { localDateISO } from "@/lib/utils/dateLocal";
 import { RiskSignalsCard } from "@/features/project/RiskSignalsCard";
+import { usePartnerScope } from "@/features/project/PartnerScopeContext";
+import { resolveOrgType } from "@/auth/orgType";
 
 type RegisterCounts = { drawings: number; ffe: number; statutory: number; po: number };
 
@@ -36,6 +41,7 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
   const { session } = useAuth();
   const { can: planCan } = usePlanCaps();
   const { isEnabled: moduleEnabled } = useModules();
+  const partnerScope = usePartnerScope();
   const t = useT();
   const typeLabel = (ty: string): string => t(`projType.${ty}`);
   const canEditSettings = useCan("project:settings:edit", {
@@ -143,6 +149,9 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
         </Card>
       )}
 
+      {/* Partner firm lane (C3) — firm-type specific pending queue */}
+      {partnerScope && <PartnerFirmCard projectId={project.id} />}
+
       {/* Statutory expiry hotspot (v4 D6) */}
       {visible("statutory") && <StatutoryExpiryAlert projectId={project.id} />}
 
@@ -197,5 +206,55 @@ function StatutoryExpiryAlert({ projectId }: { projectId: string }): JSX.Element
         <Icon name="shield" size={14} /> {expiring} NOC{expiring === 1 ? "" : "s"} expiring within 30 days — renew soon.
       </Alert>
     </Link>
+  );
+}
+
+function PartnerFirmCard({ projectId }: { projectId: string }): JSX.Element {
+  const { session } = useAuth();
+  const orgType = resolveOrgType(session?.orgs.find(o => o.orgId === session?.activeOrgId));
+  const [state, setState] = useState<{ count: number; label: string; to: string; sub: string } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const client = await getClient();
+      if (!client || !orgType) return;
+      if (orgType === "architecture_firm") {
+        const res = await listApprovalDrawings(client, projectId);
+        if (cancelled || !res.ok) return;
+        const pending = res.data.filter(d => d.approvalStatus === "pending").length;
+        if (pending > 0) setState({ count: pending, label: "Drawings pending review", to: `/projects/${projectId}/drawing-review`, sub: `${pending} revision${pending === 1 ? "" : "s"} waiting for your approval` });
+      } else if (orgType === "contractor" || orgType === "builder" || orgType === "developer") {
+        const [tRes, iRes] = await Promise.all([listTasks(client, projectId), listIssues(client, projectId)]);
+        if (cancelled) return;
+        const openTasks = tRes.ok ? tRes.data.filter(t => t.status !== "completed").length : 0;
+        const openIssues = iRes.ok ? iRes.data.filter(i => i.status === "open").length : 0;
+        const total = openTasks + openIssues;
+        if (total > 0) setState({ count: total, label: "Site work to do", to: `/projects/${projectId}/tasks`, sub: `${openTasks} open tasks · ${openIssues} open issues` });
+      } else if (orgType === "interior_firm") {
+        const res = await listFfeEntries(client, projectId);
+        if (cancelled || !res.ok) return;
+        const pending = res.data.filter(f => f.status !== "installed" && f.status !== "cancelled").length;
+        if (pending > 0) setState({ count: pending, label: "FF&E items pending", to: `/projects/${projectId}/ffe`, sub: `${pending} items not yet installed` });
+      } else if (orgType === "consultant" || orgType === "pmc" || orgType === "vendor") {
+        const [tRes, iRes] = await Promise.all([listTasks(client, projectId), listIssues(client, projectId)]);
+        if (cancelled) return;
+        const open = (tRes.ok ? tRes.data.filter(t => t.status !== "completed").length : 0) + (iRes.ok ? iRes.data.filter(i => i.status === "open").length : 0);
+        if (open > 0) setState({ count: open, label: "Reviews & actions", to: `/projects/${projectId}/tasks`, sub: `${open} items need attention` });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [projectId, orgType]);
+  if (!state) return <></>;
+  return (
+    <Card padding="md" className="border-l-4 border-l-accent">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Your queue</p>
+          <p className="text-sm font-bold text-fg-primary mt-0.5">{state.label} · <span className="text-accent">{state.count}</span></p>
+          <p className="text-[11px] text-fg-secondary mt-0.5">{state.sub}</p>
+        </div>
+        <Link to={state.to} className="inline-flex items-center gap-1 rounded-lg bg-accent text-white px-3 py-1.5 text-xs font-semibold hover:bg-accent-2">Open <Icon name="arrow" size={12} /></Link>
+      </div>
+    </Card>
   );
 }
