@@ -253,3 +253,17 @@ export function tabById(tabId: string): TabDef | undefined {
 export function tabModuleId(tabId: string): ModuleId | undefined {
   return tabById(tabId)?.moduleId;
 }
+
+/**
+ * Partner viewer (cross-org) allow-list — the minimal tabs a partner firm
+ * sees when they have read access via `project_partner_orgs` (C1). Host
+ * members keep the full capability-gated set; partners see only the
+ * design collaboration surface so finance/tasks/etc. never leak.
+ * Used by DetailView when `partnerScope != null`.
+ */
+export const PARTNER_VIEWER_ALLOWED_TABS: ReadonlySet<string> = new Set([
+  "overview",
+  "team",
+  "drawings",
+  "drawing-review",
+]);

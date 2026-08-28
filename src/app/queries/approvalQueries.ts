@@ -520,6 +520,34 @@ export async function fetchSharePayload(client: any, input: { token: string; pas
   } catch (e) { return er(e); }
 }
 
+/** Approve or reject a drawing via a public share link (anon, one-tap). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function approveViaShareLink(client: any, input: {
+  token: string;
+  password?: string | null;
+  otp?: string | null;
+  drawingId: string;
+  decision: "approved" | "rejected";
+  signature?: string | null;
+  approverName?: string | null;
+}): Promise<Result<{ drawingId: string; newStatus: string }>> {
+  try {
+    const { data, error } = await client.rpc("approve_via_share_link", {
+      p_token: input.token,
+      p_password: input.password ?? null,
+      p_otp: input.otp ?? null,
+      p_drawing_id: input.drawingId,
+      p_decision: input.decision,
+      p_signature: input.signature ?? null,
+      p_approver_name: input.approverName ?? null,
+    });
+    if (error) return dbe(error);
+    const j = data as Record<string, unknown> | null;
+    if (!j || j.ok !== true) return er(new Error(String((j as Record<string, unknown>)?.error ?? "approve-via-share-link failed")));
+    return ok({ drawingId: String((j as Record<string, unknown>).drawing_id ?? input.drawingId), newStatus: String((j as Record<string, unknown>).new_status ?? input.decision) });
+  } catch (e) { return er(e); }
+}
+
 // ── Org-wide approval rollup (v5 B1) ────────────────────────────────────────
 export interface OrgApprovalProject {
   id: string;

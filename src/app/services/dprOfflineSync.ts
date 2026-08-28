@@ -11,14 +11,20 @@
 import { useEffect, useState } from "react";
 import { drain, queueDepth, type QueueItem } from "../../lib/platform/offlineQueue";
 import { isOnline, onConnectivityChange } from "../../lib/platform/offline";
-import { invokeSendDpr } from "@/app/services/dprSubmit";
- 
+import { invokeSendDpr, isDeferredDprQueuePayload, applyMediaRefs, uploadDprMedia } from "@/app/services/dprSubmit";
+
 import { getClient } from "../../lib/supabase/supabase";
 
 /**
  * Drain the offline queue. Only kind "dpr" intents have a real send; other
  * kinds (voice/photo) have no consumer yet, so we mark them ok to clear them
  * rather than let them spam retries for 7 days.
+ *
+ * For G1 offline-deferred media (photo/voice Blob stored alongside the payload
+ * when `submitDpr` was offline), the Blobs are uploaded now that we are back
+ * online — then the enriched payload is sent to the Edge Function. The upload
+ * is idempotent (storage upsert on sha256 path), so a retry that re-uploads
+ * the same content is safe.
  */
 export async function drainDprQueue(client: any): Promise<{ sent: number; failed: number; deferred: number; gc: number }> {
   return drain({
@@ -26,7 +32,18 @@ export async function drainDprQueue(client: any): Promise<{ sent: number; failed
     send: async (item: QueueItem) => {
       if (item.kind !== "dpr") return { ok: true };
       try {
-        const res = await invokeSendDpr(client, item.payload as never);
+        const raw: unknown = item.payload;
+        if (isDeferredDprQueuePayload(raw)) {
+          const up = await uploadDprMedia(client, raw.media, {
+            orgId: raw.orgId || (raw.payload as unknown as { org_id?: string })?.org_id || "",
+            photoTakenAt: (raw.payload as unknown as { photo_taken_at?: string | null })?.photo_taken_at ?? null,
+          });
+          if (!up.ok) return { ok: false, error: up.error };
+          const enriched = applyMediaRefs(raw.payload, up.refs);
+          const res = await invokeSendDpr(client, enriched as never);
+          return { ok: res.ok, error: res.error };
+        }
+        const res = await invokeSendDpr(client, raw as never);
         return { ok: res.ok, error: res.error };
       } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : String(e) };

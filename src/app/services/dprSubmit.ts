@@ -313,6 +313,31 @@ const TERMINAL_STATUSES: DprSendStatus[] = ["sent", "delivered", "read"];
  * Returns `queued: true` whenever the intent is durably stored but not yet
  * confirmed sent — the composer shows that state + a queued indicator.
  */
+/** Envelope stored in the offline queue when media must be uploaded after reconnect. */
+export interface DeferredDprQueuePayload {
+  __deferredDpr: true;
+  payload: DprSendPayload;
+  media: DprMediaInput;
+  orgId: string;
+}
+
+export function isDeferredDprQueuePayload(v: unknown): v is DeferredDprQueuePayload {
+  return !!v && typeof v === "object" && (v as Record<string, unknown>).__deferredDpr === true
+    && (v as Record<string, unknown>).payload != null && (v as Record<string, unknown>).media != null;
+}
+
+/** Merge media refs (from a successful upload) into a DPR payload — pure. */
+export function applyMediaRefs(payload: DprSendPayload, refs: DprMediaRefs): DprSendPayload {
+  const next = { ...payload };
+  if (refs.photoUrl) next.photo_url = refs.photoUrl;
+  if (refs.voiceUrl) next.voice_audio_url = refs.voiceUrl;
+  if (refs.voiceSha256) next.voice_audio_sha256 = refs.voiceSha256;
+  if (refs.photoLat != null) next.photo_lat = refs.photoLat;
+  if (refs.photoLon != null) next.photo_lon = refs.photoLon;
+  if (refs.photoTakenAt) next.photo_taken_at = refs.photoTakenAt;
+  return next;
+}
+
 export async function submitDpr(
   input: DprSubmitInput,
   media: DprMediaInput,
@@ -325,9 +350,29 @@ export async function submitDpr(
     return { ok: false, queued: false, error: e instanceof Error ? e.message : String(e) };
   }
 
-  if (runtime.uploadMedia) {
+  const hasMedia = !!(media.photo || media.voice);
+  const online = runtime.online !== false;
+
+  // Offline with media → defer the Blob upload until drain (IDB can store Blobs).
+  // This makes Ravi's field photo truly offline — "Send" instantly queues instead
+  // of hard-failing on upload (G1).
+  if (hasMedia && !online) {
+    if (runtime.enqueue) {
+      const deferred: DeferredDprQueuePayload = { __deferredDpr: true, payload, media, orgId: input.orgId };
+      let queuedId: string | undefined;
+      try {
+        queuedId = await runtime.enqueue({ key: payload.client_token, kind: "dpr", payload: deferred });
+      } catch { queuedId = undefined; }
+      if (queuedId) return { ok: true, status: "queued", queuedId, queued: true };
+    }
+    // No queue available offline — fall through to the upload path which will
+    // hard-fail with a clear error (better than silent drop).
+  }
+
+  if (runtime.uploadMedia && hasMedia && online) {
     const up = await runtime.uploadMedia(payload, media);
     if (!up.ok) return { ok: false, queued: false, error: up.error };
+    payload = applyMediaRefs(payload, up.refs);
   }
 
   let queuedId: string | undefined;
@@ -340,7 +385,6 @@ export async function submitDpr(
     }
   }
 
-  const online = runtime.online !== false;
   if (runtime.send && online) {
     const res = await runtime.send(payload);
     if (res.ok) {

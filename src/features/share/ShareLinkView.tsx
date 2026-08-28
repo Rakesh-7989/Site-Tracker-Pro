@@ -7,8 +7,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, Button, Badge, Spinner, Alert, Icon } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
+import { Modal } from "@/components/ui/Modal";
+import { SignaturePad } from "@/components/ui/SignaturePad";
 import { getClient } from "@/lib/supabase/supabase";
-import { validateShareLink, fetchSharePayload, type ShareLinkGate } from "@/app/queries/approvalQueries";
+import { validateShareLink, fetchSharePayload, approveViaShareLink, type ShareLinkGate } from "@/app/queries/approvalQueries";
 
 interface SharePayload {
   project: {
@@ -49,6 +51,12 @@ export function ShareLinkView(): JSX.Element {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [approverName, setApproverName] = useState("");
+  const [approveOpen, setApproveOpen] = useState<string | null>(null);
+  const [approveSig, setApproveSig] = useState<string | null>(null);
+  const [approveBusy, setApproveBusy] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
+  const [approveOk, setApproveOk] = useState<string | null>(null);
 
   const loadPayload = useCallback(async (tok: string) => {
     setStage("loading");
@@ -84,6 +92,25 @@ export function ShareLinkView(): JSX.Element {
     if (!res.ok) { setError("Incorrect password or code, or this link is no longer valid."); return; }
     setPayload(res.data as unknown as SharePayload);
     setStage("payload");
+  };
+
+  const doApprove = async (drawingId: string, decision: "approved" | "rejected") => {
+    if (!token) return;
+    if (decision === "approved" && !approveSig) { setApproveError("Please sign before approving."); return; }
+    setApproveBusy(true); setApproveError(null); setApproveOk(null);
+    const client = await getClient();
+    if (!client) { setApproveBusy(false); return; }
+    const res = await approveViaShareLink(client, {
+      token, password: password || null, otp: otp || null,
+      drawingId, decision, signature: approveSig, approverName: approverName || null,
+    });
+    setApproveBusy(false);
+    if (!res.ok) { setApproveError(res.error); return; }
+    setApproveOk(res.data.newStatus);
+    setApproveOpen(null);
+    setApproveSig(null);
+    const reload = await fetchSharePayload(client, { token, password: password || null, otp: otp || null });
+    if (reload.ok) setPayload(reload.data as unknown as SharePayload);
   };
 
   const needsPassword = gate?.requiresPassword ?? false;
@@ -171,31 +198,60 @@ export function ShareLinkView(): JSX.Element {
               )}
             </Card>
 
+            {approveOk && <Alert variant="success" className="mb-2">Drawing {approveOk} successfully.</Alert>}
+            {approveError && <Alert variant="danger" className="mb-2">{approveError}</Alert>}
             {payload.drawings.length > 0 && (
-              <Card title={<h3 className="font-display text-sm font-bold text-fg-primary">Drawings</h3>} padding="md">
+              <Card title={<h3 className="font-display text-sm font-bold text-fg-primary">Drawings — tap to review</h3>} padding="md">
                 <div className="space-y-3">
-                  {payload.drawings.map(d => (
-                    <div key={d.id} className="rounded-lg border border-border bg-bg-secondary p-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-[13px] font-semibold text-fg-primary">{d.title} · {d.revision}</p>
-                          <p className="text-[11px] text-fg-tertiary">{d.type} · {fmtDate(d.date)}</p>
-                        </div>
-                        <Badge tone={STATUS_TONE[d.approval_status] ?? "neutral"}>{STATUS_LABEL[d.approval_status] ?? d.approval_status}</Badge>
-                      </div>
-                      {APPROVAL_OK.includes(d.approval_status) && d.preview_url && d.download_allowed && (
-                        <a href={d.preview_url} target="_blank" rel="noreferrer">
-                          <img src={d.preview_url} alt={d.title} className="mt-2 w-full rounded border border-border" loading="lazy" />
-                        </a>
-                      )}
-                      {APPROVAL_OK.includes(d.approval_status) && !d.download_allowed && (
-                        <p className="mt-2 text-[11px] text-fg-tertiary">Download is disabled on this link — preview only.</p>
-                      )}
+                  {payload.drawings.some(d => d.approval_status === "pending" || d.approval_status === "not_requested" || d.approval_status === "rejected") && (
+                    <div className="rounded-lg border border-warning bg-warning-tint p-3">
+                      <p className="text-xs font-semibold text-warning">Client review</p>
+                      <p className="text-[11px] text-fg-secondary mt-1">Approve or request changes — your signature will be captured for the record.</p>
+                      <Input fit value={approverName} onChange={e => setApproverName(e.target.value)} placeholder="Your name (for the approval record)" className="mt-2" />
                     </div>
-                  ))}
+                  )}
+                  {payload.drawings.map(d => {
+                    const canAct = d.approval_status === "pending" || d.approval_status === "not_requested" || d.approval_status === "rejected";
+                    return (
+                      <div key={d.id} className="rounded-lg border border-border bg-bg-secondary p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-semibold text-fg-primary">{d.title} · {d.revision}</p>
+                            <p className="text-[11px] text-fg-tertiary">{d.type} · {fmtDate(d.date)}</p>
+                          </div>
+                          <Badge tone={STATUS_TONE[d.approval_status] ?? "neutral"}>{STATUS_LABEL[d.approval_status] ?? d.approval_status}</Badge>
+                        </div>
+                        {canAct && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button size="sm" onClick={() => { setApproveOpen(d.id); setApproveError(null); setApproveSig(null); }} leftIcon={<Icon name="check" size={14} />}>Approve</Button>
+                            <Button size="sm" variant="secondary" onClick={() => void doApprove(d.id, "rejected")} disabled={approveBusy}>Reject</Button>
+                          </div>
+                        )}
+                        {APPROVAL_OK.includes(d.approval_status) && d.preview_url && d.download_allowed && (
+                          <a href={d.preview_url} target="_blank" rel="noreferrer">
+                            <img src={d.preview_url} alt={d.title} className="mt-2 w-full rounded border border-border" loading="lazy" />
+                          </a>
+                        )}
+                        {APPROVAL_OK.includes(d.approval_status) && !d.download_allowed && (
+                          <p className="mt-2 text-[11px] text-fg-tertiary">Download is disabled on this link — preview only.</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </Card>
             )}
+            <Modal open={!!approveOpen} onClose={() => { setApproveOpen(null); setApproveSig(null); setApproveError(null); }} title="Approve drawing" size="lg">
+              <div className="space-y-3">
+                <p className="text-xs text-fg-secondary">Draw your signature below or type your name. This will be stored with the approval.</p>
+                <SignaturePad value={approveSig ?? ""} onChange={setApproveSig} />
+                {approveError && <Alert variant="danger">{approveError}</Alert>}
+                <div className="flex justify-end gap-2">
+                  <Button variant="secondary" onClick={() => { setApproveOpen(null); setApproveError(null); }}>Cancel</Button>
+                  <Button onClick={() => { const id = approveOpen; if (id) void doApprove(id, "approved"); }} disabled={approveBusy || !approveSig} loading={approveBusy}>Confirm approval</Button>
+                </div>
+              </div>
+            </Modal>
 
             {payload.updates.length > 0 && (
               <Card title={<h3 className="font-display text-sm font-bold text-fg-primary">Latest updates</h3>} padding="md">

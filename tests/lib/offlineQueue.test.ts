@@ -60,6 +60,16 @@ describe("isStaleFailed", () => {
     expect(isStaleFailed(item({ status: "sent", created_at: now - 30 * DAY }), now)).toBe(false);
     expect(isStaleFailed(null, now)).toBe(false);
   });
+
+  it("uses last_attempt_at when more recent than created_at (G7 fix)", () => {
+    const now = Date.now();
+    // Created 8 days ago but retried yesterday — should NOT be stale.
+    expect(isStaleFailed(item({ status: "failed", created_at: now - 8 * DAY, last_attempt_at: now - 1 * DAY }), now)).toBe(false);
+    // Created yesterday but last attempt 8 days ago — still stale via max.
+    expect(isStaleFailed(item({ status: "failed", created_at: now - 1 * DAY, last_attempt_at: now - 8 * DAY }), now)).toBe(false);
+    // Both old → stale.
+    expect(isStaleFailed(item({ status: "failed", created_at: now - 8 * DAY, last_attempt_at: now - 8 * DAY }), now)).toBe(true);
+  });
 });
 
 describe("enqueue", () => {
@@ -168,6 +178,25 @@ describe("drain", () => {
     );
     expect(res.deferred).toBe(1);
     expect((await adapter.list())[0]).toMatchObject({ last_error: "network down" });
+  });
+
+  it("recovers stale 'sending' rows orphaned by crash (G3)", async () => {
+    const adapter = makeMemoryAdapter();
+    await enqueue({ key: "k1", payload: {}, kind: "dpr" }, adapter);
+    const id = (await adapter.list())[0].id;
+    await adapter.update(id, { status: "sending", updated_at: Date.now() - 40_000 });
+    const res = await drain({ online: true, send: async () => ({ ok: true }) }, adapter);
+    expect(res.sent).toBe(1);
+    expect((await adapter.list())[0]).toMatchObject({ status: "sent" });
+  });
+
+  it("keeps fresh 'sending' rows invisible until they age past 30s", async () => {
+    const adapter = makeMemoryAdapter();
+    await enqueue({ key: "k1", payload: {}, kind: "dpr" }, adapter);
+    const id = (await adapter.list())[0].id;
+    await adapter.update(id, { status: "sending", updated_at: Date.now() - 5_000 });
+    const res = await drain({ online: true, send: async () => ({ ok: true }) }, adapter);
+    expect(res.sent).toBe(0);
   });
 });
 

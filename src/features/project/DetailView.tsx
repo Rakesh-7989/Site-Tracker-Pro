@@ -10,7 +10,7 @@
 // when a location is selected in the spatial hierarchy navigator.
 //
 // URL: /projects/:id/:tab?  (defaults to overview)
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 import { useAuth, resolveCapabilities, resolveOrgSegments } from "@/auth";
@@ -22,7 +22,7 @@ import { useProject } from "./useProject";
 import { usePlanCaps } from "@/auth";
 import { useModules, ModuleGate } from "@/modules";
 import { useLocationContext } from "@/hooks/useLocationContext";
-import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS, TAB_CATALOG } from "./tabs-config";
+import { visibleTabs, tabModuleId, DEFAULT_TAB, REAL_TABS, TAB_CATALOG, PARTNER_VIEWER_ALLOWED_TABS } from "./tabs-config";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TeamTab } from "./tabs/TeamTab";
 import { PartnersTab } from "./tabs/PartnersTab";
@@ -97,14 +97,49 @@ export function DetailView(): JSX.Element {
     }).capabilities;
   }, [session, state]);
 
+  // Cross-org partner scope (C1): does the current user's any org hold an
+  // active partner link for this project? If yes, they are a partner viewer
+  // (viewer/contributor/manager). Partner viewers see only the design-
+  // collaboration surface (overview/team/drawings/drawing-review) so finance
+  // or site-ops tabs never leak. The fetch is best-effort and RLS-scoped —
+  // `listProjectPartners` returns only rows the caller may see.
+  const [partnerScope, setPartnerScope] = useState<string | null>(null);
+  useEffect(() => {
+    if (state.kind !== "ready" || !session) { setPartnerScope(null); return; }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { getTypedClient } = await import("@/lib/supabase/db");
+        const client = await getTypedClient();
+        if (!client || cancelled) return;
+        const { listProjectPartners } = await import("@/app/queries/partnerQueries");
+        const partners = await listProjectPartners(client, state.project.id);
+        if (cancelled) return;
+        const myOrgIds = new Set(session.orgs.map(o => o.orgId));
+        const mine = partners.find(p => p.orgId != null && myOrgIds.has(p.orgId) && p.status === "active");
+        setPartnerScope(mine ? String(mine.scope) : null);
+      } catch {
+        if (!cancelled) setPartnerScope(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [state, session]);
+
   // ---- VNEXT-005: Visible tabs filtered by currentLocationId ----
   const tabs = useMemo(() => {
     if (state.kind !== "ready") return [];
     const membership = session?.orgs.find(o => o.orgId === session.activeOrgId);
     const activeSegments = resolveOrgSegments(membership?.segments ?? null, membership?.segment ?? null);
-    // pass currentLocationId so visibleTabs can gate location-specific tabs
-    return visibleTabs(caps, state.project.type, planCan, activeSegments, TAB_CATALOG, moduleEnabled, currentLocationId);
-  }, [caps, state, planCan, session, moduleEnabled, currentLocationId]);
+    const base = visibleTabs(caps, state.project.type, planCan, activeSegments, TAB_CATALOG, moduleEnabled, currentLocationId);
+    // Partner viewers — clamp to the allow-list so Tasks/Invoices/RAs/etc. never
+    // reach the partner's client even though RLS already hides the rows. The
+    // partner's design surface (drawings/review) is gated by the allow-list, not
+    // by caps, so a viewer with zero caps still sees drawings to collaborate.
+    if (partnerScope) {
+      return base.filter(t => PARTNER_VIEWER_ALLOWED_TABS.has(t.id));
+    }
+    return base;
+  }, [caps, state, planCan, session, moduleEnabled, currentLocationId, partnerScope]);
   // -----------------------------------------------
 
   // The Tabs component's items (i18n label + icon ReactNode).
@@ -130,7 +165,8 @@ export function DetailView(): JSX.Element {
   const { project, members } = state;
   const isMember = session ? session.projectMemberships.some(pm => pm.projectId === project.id) : false;
   const isOrgAdmin = session ? session.orgs.some(o => o.orgId === project.orgId && o.isAdmin) : false;
-  const canAccess = isMember || isOrgAdmin;
+  const isPartner = !!partnerScope;
+  const canAccess = isMember || isOrgAdmin || isPartner;
 
   if (!canAccess) {
     return <RequestProjectAccess projectId={project.id} projectName={project.name} />;
@@ -142,8 +178,15 @@ export function DetailView(): JSX.Element {
   const isVisibleTab = tabs.some(tb => tb.id === requestedId);
   const activeId = isVisibleTab ? requestedId : DEFAULT_TAB;
   const activeModule = tabModuleId(activeId);
+  const isPartnerBlocked = isPartner && !PARTNER_VIEWER_ALLOWED_TABS.has(requestedId);
 
-  const tabContent = (
+  const tabContent = isPartnerBlocked ? (
+    <Card className="max-w-lg mx-auto p-8 text-center">
+      <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
+      <div className="text-sm font-semibold text-fg-primary">Access Restricted</div>
+      <div className="text-xs text-fg-secondary mt-1">This section is not shared with partner firms.</div>
+    </Card>
+  ) : (
     <div>
       {/* Render requested tab content (even if not visible in tab bar) so AccessDenied triggers */}
       {requestedId === "overview" && <OverviewTab project={project} members={members} />}

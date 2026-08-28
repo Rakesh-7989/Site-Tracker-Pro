@@ -5,6 +5,8 @@ import {
   buildDprPayload,
   submitDpr,
   voiceObjectPath,
+  applyMediaRefs,
+  isDeferredDprQueuePayload,
 } from "@/app/services/dprSubmit";
 
 describe("normalizeE164", () => {
@@ -170,6 +172,37 @@ describe("submitDpr", () => {
     expect(res).toMatchObject({ ok: true, status: "sent", dprMessageId: "m-9", queued: false });
     expect(enqueue).toHaveBeenCalled();
   });
+
+  it("defers photo Blob when offline (G1) — enqueues wrapper, no upload, returns queued", async () => {
+    const photo = new Blob(["offline-img"], { type: "image/jpeg" });
+    const uploadMedia = vi.fn(async () => ({ ok: true as const, refs: {} }));
+    const enqueue = vi.fn(async (item: { payload: unknown }) => {
+      expect(isDeferredDprQueuePayload(item.payload)).toBe(true);
+      const w = item.payload as unknown as { media: { photo: Blob }, orgId: string, payload: { org_id: string } };
+      expect(w.media.photo).toBe(photo);
+      expect(w.orgId).toBe("org-1");
+      expect(w.payload.org_id).toBe("org-1");
+      return "q-deferred-1";
+    });
+    const send = vi.fn();
+    const res = await submitDpr(input, { photo }, { uploadMedia, enqueue, send, online: false });
+    expect(res).toMatchObject({ ok: true, status: "queued", queued: true, queuedId: "q-deferred-1" });
+    expect(uploadMedia).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("merges upload refs into payload when online (photoUrl -> photo_url)", async () => {
+    const photo = new Blob(["img"], { type: "image/jpeg" });
+    const uploadMedia = vi.fn(async () => ({
+      ok: true as const,
+      refs: { photoUrl: "https://cdn/x.webp", photoLat: 17.41, photoLon: 78.45 },
+    }));
+    let sentPayload: unknown = null;
+    const send = vi.fn(async (p: unknown) => { sentPayload = p; return { ok: true, status: "sent" as const }; });
+    const res = await submitDpr(input, { photo }, { uploadMedia, send, online: true });
+    expect(res.ok).toBe(true);
+    expect(sentPayload).toMatchObject({ photo_url: "https://cdn/x.webp", photo_lat: 17.41, photo_lon: 78.45 });
+  });
 });
 
 describe("voiceObjectPath", () => {
@@ -182,5 +215,22 @@ describe("voiceObjectPath", () => {
   it("falls back to 'unknown' for a bad sha", () => {
     const path = voiceObjectPath("org-9", "nope", "mp4");
     expect(path).toMatch(/^org-9\/\d{4}-\d{2}-\d{2}\/unknown\.mp4$/);
+  });
+});
+
+describe("applyMediaRefs / isDeferredDprQueuePayload", () => {
+  it("applyMediaRefs merges refs into payload without mutating original", () => {
+    const base = buildDprPayload({ orgId: "o1", promoterPhone: "+919876543210", clientToken: "t1" });
+    const merged = applyMediaRefs(base, { photoUrl: "https://cdn/p.webp", voiceUrl: "https://cdn/v.webm", voiceSha256: "a".repeat(64) });
+    expect(merged.photo_url).toBe("https://cdn/p.webp");
+    expect(merged.voice_audio_url).toBe("https://cdn/v.webm");
+    expect(merged.voice_audio_sha256).toBe("a".repeat(64));
+    expect(base.photo_url).toBeUndefined();
+  });
+
+  it("isDeferredDprQueuePayload detects wrapper", () => {
+    const base = buildDprPayload({ orgId: "o1", promoterPhone: "+919876543210", clientToken: "t1" });
+    expect(isDeferredDprQueuePayload(base)).toBe(false);
+    expect(isDeferredDprQueuePayload({ __deferredDpr: true, payload: base, media: {}, orgId: "o1" })).toBe(true);
   });
 });

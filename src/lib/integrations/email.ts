@@ -37,10 +37,10 @@ export async function sendEmail(
 export async function sendEmailWithType(
   type: EmailType,
   overrides: Record<string, string> = {},
-  to?: string
+  _to?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string; email: EmailFormatted }> {
   const email = formatEmail(type, overrides);
-  const result = await sendEmail(email, to);
+  const result = await sendEmail(email, _to);
   return { ...result, email };
 }
 

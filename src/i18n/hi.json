@@ -130,7 +130,8 @@
     },
     "offline": {
       "queued": "{count} DPR queue mein hai — network aate hi bhej dega",
-      "sending": "{count} DPR queue mein hai — bhej raha hai…"
+      "sending": "{count} DPR queue mein hai — bhej raha hai…",
+      "offlineHint": "You are offline — reports will queue and send when you are back online"
     },
     "recorder": {
       "record": "Voice note record karo",
