@@ -28,6 +28,7 @@ import { listStatutoryApprovals, isExpiring } from "@/app/queries/statutoryQueri
 import { listPOs } from "@/app/queries/financeQueries";
 import { listTasks } from "@/app/queries/taskQueries";
 import { listIssues } from "@/app/queries/issueQueries";
+import { PartnerRiskCard } from "@/features/project/PartnerRiskCard";
 import { isTabVisible } from "@/features/project/tabs-config";
 import { localDateISO } from "@/lib/utils/dateLocal";
 import { RiskSignalsCard } from "@/features/project/RiskSignalsCard";
@@ -151,6 +152,9 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
 
       {/* Partner firm lane (C3) — firm-type specific pending queue */}
       {partnerScope && <PartnerFirmCard projectId={project.id} />}
+
+      {/* C4: cross-org coordination agent */}
+      {partnerScope && <PartnerRiskCard projectId={project.id} />}
 
       {/* Statutory expiry hotspot (v4 D6) */}
       {visible("statutory") && <StatutoryExpiryAlert projectId={project.id} />}
