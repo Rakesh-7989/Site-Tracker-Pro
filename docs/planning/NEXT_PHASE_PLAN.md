@@ -325,7 +325,7 @@ SiteTrack Pro is **feature-complete** for its core value proposition: a construc
 
 ## Immediate Next Steps (This Week)
 
-1. **Create demo project seed script** (`scripts/seed-demo-project.mjs`) — one command loads a realistic villa project with 5 DPRs, 10 tasks, materials, labour, finance.
+1. **Create demo project seed script** (`demo seed script (not present)`) — one command loads a realistic villa project with 5 DPRs, 10 tasks, materials, labour, finance.
 2. **Add "Load demo project" button** to OnboardingView Step 1.
 3. **Implement trial banner** (persistent, dismissible, shows days left).
 4. **Add pg_cron job** for `compute_risk_signals` (schema + RPC + cron.schedule).
@@ -339,13 +339,13 @@ SiteTrack Pro is **feature-complete** for its core value proposition: a construc
 
 | Area | Files |
 |---|---|
-| Intelligence RPCs | `scripts/supabase/XXX_risk_signals.sql`, `scripts/supabase/XXX_cost_forecast.sql`, `src/app/intelligenceQueries.ts` |
+| Intelligence RPCs | `risk-signals migration (not present)`, `cost-forecast migration (not present)`, `intelligence queries module (not present)` |
 | Cron EFs | `supabase/functions/risk-signals-cron/`, `supabase/functions/lifecycle-emails-cron/` |
 | UI Components | `src/features/project/tabs/OverviewTab.tsx` (RiskSignalsCard), `src/features/org/MonthlyStatementView.tsx`, `src/features/project/tabs/BudgetTab.tsx`, `src/features/project/tabs/MaterialsTab.tsx`, `src/features/org/UtilizationView.tsx` |
 | Growth | `src/features/auth/OrgRegisterView.tsx` (demo button), `src/features/shell/TrialBanner.tsx` (new), `src/features/auth/LoginScreenV3.tsx` (demo route) |
-| Lifecycle | `scripts/supabase/XXX_lifecycle_emails.sql`, `supabase/functions/lifecycle-emails-cron/` |
-| Demo Mode | `src/app/routes/DemoRoute.tsx` (new), `src/features/marketing/DemoView.tsx` (new) |
-| Referral | `scripts/supabase/XXX_referral.sql`, `src/app/referralQueries.ts` |
+| Lifecycle | `lifecycle-emails migration (not present)`, `supabase/functions/lifecycle-emails-cron/` |
+| Demo Mode | `demo route (not present)` (new), `demo view (not present)` (new) |
+| Referral | `referral migration (not present)`, `referral queries module (not present)` |
 
 ---
 

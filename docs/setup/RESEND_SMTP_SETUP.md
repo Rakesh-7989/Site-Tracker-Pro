@@ -263,7 +263,7 @@ Save. Old sent emails keep working; new ones go from the new sender.
   `docs/setup/SIGNUP_EMAIL_RATELIMIT_RUNBOOK.md`
 - Auth-related code:
   - `src/lib/supabase/supabase.ts` (signUp + signInWithMagicLink)
-  - `src/features/shell/index.jsx` (LoginScreen + friendly errors)
+  - `shell feature index (removed)` (LoginScreen + friendly errors)
 
 ## Edit log
 

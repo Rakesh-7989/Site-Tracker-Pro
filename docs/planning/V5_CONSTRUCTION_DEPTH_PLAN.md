@@ -41,7 +41,7 @@ Then: **phase done → next phase.** After all phases: full re-check → test lo
 ### G4 — DPR PDF export (90-day plan Day 19)
 ### G5 — Generic register CSV exports (ST-014)
 
-> Detailed tables for G2–G5 are captured in the chat plan (and will be expanded in AGENTS.md under Work State as each ships). G2: migration 168 construction_quality.sql (inspection kinds + `corrective_actions` table, result→action auto-open). G3: migration 169 (shift_roster + wages + EPF/ESI on labour register, overtime on attendance). G4: `src/app/services/dprPdf.ts` (jsPDF) + Download-PDF on DPRDetailView + env-gated WhatsApp attach. G5: `src/app/exportCsv.ts` (`toCsv`/`downloadCsv`) + export buttons on attendance/labour/materials/safety/inspections/punch.
+> Detailed tables for G2–G5 are captured in the chat plan (and will be expanded in AGENTS.md under Work State as each ships). G2: migration 168 construction_quality.sql (inspection kinds + `corrective_actions` table, result→action auto-open). G3: migration 169 (shift_roster + wages + EPF/ESI on labour register, overtime on attendance). G4: `src/app/services/dprPdf.ts` (jsPDF) + Download-PDF on DPRDetailView + env-gated WhatsApp attach. G5: `CSV export module (not present)` (`toCsv`/`downloadCsv`) + export buttons on attendance/labour/materials/safety/inspections/punch.
 
 ## 4. Phase H — CRM depth (Phase A follow-ups, no migration)
 H1: per-owner pipeline view (ownerId filter, `crmRollup.byOwner`, `setLeadOwner`, CrmView owner select/chips). H2: quotation→agreement auto-conversion (`agreementFromQuotation`, `acceptQuotationAsAgreement`, manager-gated "Accept & create agreement").

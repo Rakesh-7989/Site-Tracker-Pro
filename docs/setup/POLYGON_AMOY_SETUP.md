@@ -65,7 +65,7 @@ cd contracts
 npm install                          # one-time
 cp .env.example .env
 # Edit .env: paste deployer private key (no 0x prefix)
-npx hardhat run scripts/deploy.js --network amoy
+npx hardhat run hardhat deploy script (not present) --network amoy
 ```
 
 The deploy script prints:

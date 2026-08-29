@@ -3,7 +3,7 @@
 Source: hand-drawn architecture sheet dated **31/05/2026 12:07**.
 
 Status: **✅ IMPLEMENTED** in Session 23 (migrations 06-07) and extended in
-Session 28 with the vendor portal view (`src/features/vendor/index.jsx`).
+Session 28 with the vendor portal view (`vendor feature index (removed)`).
 All 19 roles live in `src/auth/permissions-matrix.ts`; the 4 project-type tab
 gates live in `src/lib/projectTypes.ts`. This doc remains the canonical
 spec for future sub-role expansions.
@@ -250,7 +250,7 @@ When implementation starts, do it in 5 phases:
 - Add ~12 new roles to `PERMS` in `src/auth/permissions-matrix.ts`
 - Add tests for each new role's nav/tabs visibility
 - Add migration to extend the `profiles.role` check constraint in
-  `scripts/supabase/04_rls_phase2.sql`
+  `phase-2 RLS migration (not present)`
 - Login screen role picker — group by tier in accordion
 
 ### Phase C — Type-gated tabs + team templates (3 days)
@@ -347,7 +347,7 @@ external customer interviews.
 
 - Source: hand-drawn sheet, 31/05/2026 12:07
 - Current model: `src/auth/permissions-matrix.ts` (6 roles)
-- Org tier: `src/features/org/index.jsx`
+- Org tier: `org feature index (removed)`
 - Project model: `src/data/seed.ts` `INIT_PROJECTS` (no `type` field today)
 - Feature flag catalog: `src/lib/integrations/orgFeatureFlags.ts` (where type-gating
   will integrate)

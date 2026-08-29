@@ -76,7 +76,7 @@ Creates the lead→meeting→quotation→agreement pipeline as a first-class mod
 | --- | --- |
 | A1 | Migration 161 `crm_leads.sql` — `leads` (company-scoped, pipeline status, source, budget, owner), `lead_meetings`, `lead_quotations`, `lead_agreements` + RLS (org member read, manager write) + grants |
 | A2 | `src/app/queries/crmQueries.ts` — `listLeads`, `createLead`, `updateLeadStage`, `addMeeting`, `listMeetings`, `addQuotation`, `listQuotations`, `addAgreement`, `listAgreements` + pure helpers (LEAD_STAGE_NEXT, stage buckets, kanban columns) |
-| A3 | `src/app/crmCaps.ts` in capabilities.ts — `crm:view`, `crm:manage` (+ labels, permission-matrix grants, plan caps feature `crm`) |
+| A3 | `CRM capabilities module (not present)` in capabilities.ts — `crm:view`, `crm:manage` (+ labels, permission-matrix grants, plan caps feature `crm`) |
 | A4 | `CrmView` at `/crm` (kanban pipeline + meetings + quotations + agreements), `nav-config.ts` item (Procurement? no — new "CRM & Sales" group), plugin catalog route (`crm` module) |
 | A5 | i18n (en/hi/te) + tests (`tests/app/crmQueries.test.ts`) + segment template additions (architecture/consultancy get `crm`) |
 | A6 | Role-access e2e case for `crm` (orgadmin sees /crm; pm does not) in the mocked suite |

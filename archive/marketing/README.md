@@ -1,4 +1,4 @@
-# SiteTrack Marketing Site
+﻿# SiteTrack Marketing Site
 
 The public landing page for **sitetrackpro.in**. Self-contained static site —
 no build step, no framework, no dependencies. Just `index.html` + inline CSS.
@@ -66,4 +66,4 @@ cp archive/marketing/index.html archive/marketing/landing.html
 - [ ] Add a real signup form action (currently CTAs link to the app)
 - [ ] Add Google Analytics / Plausible snippet before `</head>`
 - [ ] Add Open Graph image (`og:image` meta) for social sharing
-- [ ] Verify the pricing numbers match `src/data/seed.demo.js` PLAN_META
+- [ ] Verify the pricing numbers match `src/data/seed.demo.ts` PLAN_META

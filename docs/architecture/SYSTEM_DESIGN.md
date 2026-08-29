@@ -662,7 +662,7 @@ Static assets served via Vercel Edge Network (CDN)
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                  src/lib/usePersistent.js                          │
+│                  usePersistent hook (removed)                          │
 │                                                                    │
 │   - First paint: synchronous LS read (instant)                    │
 │   - Async: if backend enabled, fetch from Supabase, replace        │
@@ -724,7 +724,7 @@ useEffect(() => {
 `src/auth/permissions-matrix.ts` defines `PERMS` as a single object literal that maps `role → { capabilities, tabs, nav }`.
 
 - `App.jsx` imports from this file (after Tech Lead "kill the drift" fix)
-- Vitest `tests/permissions.test.js` asserts the matrix against this file
+- Vitest `permissions test (not present)` asserts the matrix against this file
 - Smoke test enforces `App.jsx` cannot redefine PERMS locally (regex check)
 - RLS policies in `02_rls.sql` mirror this matrix at the database level
 
@@ -1298,7 +1298,7 @@ Site-Tracker-Pro/
 4. Document in `docs/archive/BACKEND_PLAN.md` integration section
 
 **Q: How do I migrate the schema?**
-1. Add a new file `scripts/supabase/0N_migration.sql` with ALTER TABLE statements
+1. Add a new file `placeholder migration (not present)` with ALTER TABLE statements
 2. Test on dev project
 3. Add corresponding test scenario to `04_rls_tests.sql`
 4. Run on prod via SQL Editor during a low-traffic window

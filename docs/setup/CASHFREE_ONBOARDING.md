@@ -10,7 +10,7 @@ bill); Cashfree handles the recurring SaaS subscription itself.
 ```
 Org admin clicks "Upgrade plan"
         ↓
-OrgBillingView.requestUpgrade()      ← src/features/org/index.jsx
+OrgBillingView.requestUpgrade()      ← org feature index (removed)
         ↓
 buildSubscriptionRequest(org, plan)  ← src/lib/integrations/cashfree.ts
         ↓

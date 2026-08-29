@@ -22,13 +22,13 @@ HRMS/
 │   │   └── database/         ← schema.sql + migrations/ + seed/
 │   └── scripts/ci/setup.mjs      ← interactive bootstrap
 └── frontend/        ← Vite 8 + React 19 + TypeScript SPA
-    ├── src/services/api.ts   ← axios → VITE_API_URL
+    ├── API service module (not present)   ← axios → VITE_API_URL
     └── vite.config.ts        ← dev proxy /api → localhost:5000
 ```
 
 **Important finding:** the repo has **NO hosting infra files** committed —
 no `vercel.json`, no `Dockerfile`, no `.github/workflows`, no `render.yaml`.
-`scripts/setup-rds.js` exists by name but is **empty**. So HRMS's actual
+`RDS setup script (empty/removed)` exists by name but is **empty**. So HRMS's actual
 cloud hosting (which provider, which region) is not captured in source —
 it lives in someone's AWS console / deploy dashboard.
 
@@ -36,7 +36,7 @@ What the code DOES tell us about how it's meant to run:
 
 | Signal in code | What it implies |
 | -------------- | --------------- |
-| `scripts/setup-rds.js` + `ssl: { rejectUnauthorized: false }` when `NODE_ENV=production` in `db.js` | Postgres runs on **AWS RDS** in production |
+| `RDS setup script (empty/removed)` + `ssl: { rejectUnauthorized: false }` when `NODE_ENV=production` in `db.js` | Postgres runs on **AWS RDS** in production |
 | `node-cron` jobs in `src/jobs/` (auto-checkout 11:59 PM, daily reports 6 AM, subscription renewal midnight) | Backend must be an **always-on Node process** — not serverless functions |
 | `express` + `app.listen(PORT)` | A long-lived server on a Node host (EC2 / Render / Railway / Fly) |
 | `VITE_API_URL` in frontend + dev proxy | Frontend is a **separate deploy** that talks to the backend over HTTP |

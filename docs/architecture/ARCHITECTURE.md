@@ -272,7 +272,7 @@ catches load failures, so a broken chunk shows a friendly card instead of a whit
 ### 2.3 State model — `usePersistent`
 
 There is **no Redux, no Zustand, no Context-of-Contexts**. State is managed by a single
-hook, `src/lib/usePersistent.js`:
+hook, `usePersistent hook (removed)`:
 
 ```js
 const [projects, setProjects] = usePersistent("projects", INIT_PROJECTS)
@@ -502,7 +502,7 @@ The type is chosen on the CreateView 2x2 grid; defaults are in
 
 ### 3.4 The 9 Org Admin panels
 
-Behind a single gear icon (`src/features/org/index.jsx`):
+Behind a single gear icon (`org feature index (removed)`):
 
 1. **Members** — Invite, role assign, bulk CSV import.
 2. **Approval Chains** — Per-action approver lists with delegation windows.
@@ -516,7 +516,7 @@ Behind a single gear icon (`src/features/org/index.jsx`):
 
 ### 3.5 The 17 project sub-tabs
 
-(All in `src/features/detail/index.jsx`; each is a
+(All in `detail feature index (removed)`; each is a
 top-level pure function with the same `(project, setProject, audit, …)` signature.)
 
 ```
@@ -574,7 +574,7 @@ Areas where SiteTrack is deliberately deeper than Procore / Powerplay:
 | Surface | Why it matters | Where it lives |
 |---|---|---|
 | **BOQ paste-from-Excel** | Builders share BOQs as Excel, not CSV | `src/lib/boqImport.ts` |
-| **Measurement Book (MB)** | Required by PWD spec; foreign tools don't ship it | `src/features/detail/index.jsx` — MeasurementBookTab |
+| **Measurement Book (MB)** | Required by PWD spec; foreign tools don't ship it | `detail feature index (removed)` — MeasurementBookTab |
 | **RA Bill cycle** | Linked to MB + BOQ; running-account semantics | RABills tab + recordAudit on every approval |
 | **Telangana RERA filing** | Stage-coded; portal scraping required | `src/lib/integrations/reraTelangana.ts` + tg-rera-submit EF |
 | **GSTIN / EPFO check** | Vendor onboarding gate | `src/lib/integrations/compliance.ts` |
@@ -582,7 +582,7 @@ Areas where SiteTrack is deliberately deeper than Procore / Powerplay:
 | **WhatsApp daily-progress** | Site managers won't use email | `src/lib/integrations/whatsapp.ts` + Meta Cloud API runbook |
 | **Telugu / Hindi labels** | Field workers don't read English | `src/lib/i18n.ts` + `LANG_INSTRUCTIONS` in lib/ai.js |
 | **Quick-capture kiosk** | One-tap labour attendance from a tablet | DetailView LabourTab + permissions.canUseQuickCapture |
-| **Letterhead PDF audit log** | Required for legal disputes | `src/lib/exports.js` → exportAuditPdf |
+| **Letterhead PDF audit log** | Required for legal disputes | `exports module (removed)` → exportAuditPdf |
 
 ---
 
@@ -663,7 +663,7 @@ Three layers cooperate:
                                           flushQueue(op-by-op)
 ```
 
-Sources: `src/lib/platform/offline.ts`, `src/lib/usePersistent.js`.
+Sources: `src/lib/platform/offline.ts`, `usePersistent hook (removed)`.
 
 ### 4.4 Mobile build pipeline
 

@@ -15,7 +15,7 @@ Last reviewed: **2026-06-30**.
       exist, but `dbSessionContext` / `withTenantContext` style middleware not
       yet wired in app. **Without this, cross-tenant data leak is possible.**
 - [x] **Demo handler bypass removed in prod build** — `loadDemoData()` button
-      hidden when `VITE_BACKEND=supabase` (fixed `src/features/shell/index.jsx:192`).
+      hidden when `VITE_BACKEND=supabase` (fixed `shell feature index (removed):192`).
 - [ ] **No leaked credentials in repo** — `.env.example` only. Rotate any
       keys ever pasted in chat / docs.
 - [ ] **CSP + HSTS headers** verified live (vercel.json + netlify.toml ✅).

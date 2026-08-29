@@ -31,7 +31,7 @@ These need no install — they're already connected.
 
 ### Filesystem MCP
 - **Does:** read / write / search / move project files.
-- **SiteTrack use:** read big modules (`src/features/org/index.jsx`) in chunks;
+- **SiteTrack use:** read big modules (`org feature index (removed)`) in chunks;
   `read_multiple_files` to review all 22 libs at once; `search_files` to find
   where "RA bill" logic lives.
 

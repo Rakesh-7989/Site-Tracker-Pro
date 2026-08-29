@@ -86,7 +86,7 @@ Verdict legend:
 
 | Aspect | Site-Tracker | Competitor reality | Verdict |
 | ------ | ------------ | ------------------ | ------- |
-| DPR PDF generation | Yes (`buildDPR` + `exportDPR` in `src/lib/exports.js`) | Procore: daily log; Powerplay: native DPR (their hero feature); BuildSupply: no | 🤝 (vs Powerplay) |
+| DPR PDF generation | Yes (`buildDPR` + `exportDPR` in `exports module (removed)`) | Procore: daily log; Powerplay: native DPR (their hero feature); BuildSupply: no | 🤝 (vs Powerplay) |
 | WhatsApp share (wa.me deep link) | Yes, all plans | Procore: no; Powerplay: yes; Falconbrick: no | 🤝 |
 | WhatsApp Business API (auto-send at 6 PM) | Runbook only, no real API integration yet | Powerplay: partial; nobody fully automated | 🟡 (claim > reality) |
 | Photo + workforce + weather + issues in DPR | Yes, full template with photos | Powerplay: yes; Procore: yes | 🤝 |
@@ -204,7 +204,7 @@ Verdict legend:
 | Typed-name e-signature on change orders | Yes (with consent text + UA + timestamp + email captured) | Procore: integration with DocuSign ($); Powerplay: no | 🤝 |
 | Immutable audit log (append-only) | Yes (`audit_log_v2` + `record_audit_v2` SECURITY DEFINER, RLS append-only) | Procore: enterprise tier yes; Powerplay: app-layer only | 🏆 |
 | Cross-action audit coverage | ~25 action sites wired (CREATE, UPDATE, DELETE, APPROVE, REJECT, RELEASE, PAYMENT, IMPERSONATE, etc.) | Procore: comprehensive; Powerplay: partial | 🤝 |
-| PDF audit report export | ✅ Shipped Session 25 (`exportAuditPdf` in `src/lib/exports.js` + Org Activity button) | Procore: PDF formatted for auditors | ✅ CLOSED |
+| PDF audit report export | ✅ Shipped Session 25 (`exportAuditPdf` in `exports module (removed)` + Org Activity button) | Procore: PDF formatted for auditors | ✅ CLOSED |
 
 **Gaps:** No PDF audit report (only CSV). For builder firms with external auditors, a printable formatted audit PDF is table-stakes.
 

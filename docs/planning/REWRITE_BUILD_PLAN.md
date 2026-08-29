@@ -20,7 +20,7 @@ Goal: Replace manual `useState`+`useEffect` data fetching with proper caching/de
 ### Step 1.1 — Install React Query
 
 - `npm install @tanstack/react-query`
-- Create `src/app/QueryProvider.tsx` wrapping `<QueryClientProvider>`
+- Create `query provider (not present)` wrapping `<QueryClientProvider>`
 - Integrate into `AppV3.tsx` (inside `AuthProvider`)
 
 ### Step 1.2 — Create base query hooks

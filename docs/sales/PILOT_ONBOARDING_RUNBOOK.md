@@ -86,7 +86,7 @@ Pair this with:
 | WhatsApp follow-up: "Thank you for the 90 min today. [3 things we accomplished]. Next steps: [3 things they need to do this week]." | Founder | [ ] |
 | Update with pilot status: ACTIVATED | Founder | [ ] |
 | Add row to <builder_name>.md` capturing: contact info, supervisor phone, promoter phone, project list, RERA #, SLO start date | Founder | [ ] |
-| Trigger seed-first-org for this Builder with their actual org name: `node scripts/seed-pilot-org.mjs --name "<Firm Name>" --slug "<firm-slug>"` (Sprint 2 deliverable) | Founder | [ ] |
+| Trigger seed-first-org for this Builder with their actual org name: `node pilot-org seeder (not present) --name "<Firm Name>" --slug "<firm-slug>"` (Sprint 2 deliverable) | Founder | [ ] |
 | Send Cashfree invoice via dashboard | Founder | [ ] |
 
 ## Post-activation week 1 daily check-ins

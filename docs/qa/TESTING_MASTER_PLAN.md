@@ -92,7 +92,7 @@ Phase 7 (PlanGate) ──► Phase 8 (i18n/a11y) ──► Phase 9 (Perf)
 ### Sub-Task 0.4: Test Account Creation Script
 **Deep Dive**: Need automated account creation for 7 roles.
 
-**Plan**: Create `scripts/create-test-accounts.ts` using Supabase Admin API (service_role key) to create users with known credentials.
+**Plan**: Create `test-account creator (not present)` using Supabase Admin API (service_role key) to create users with known credentials.
 
 ---
 

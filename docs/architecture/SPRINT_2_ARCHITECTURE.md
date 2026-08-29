@@ -90,7 +90,7 @@ JSON catalogues.
 ### Layer 5 — UI (deferred to mid-Sprint 2)
 
 Builds AFTER Day 18 customer-feedback spike. Files reserved:
-- `src/features/views/DPRComposerView.jsx`
+- `DPR composer view (removed)`
 - `src/features/dpr/VoiceNoteRecorder.tsx`
 - `src/features/dpr/PhotoGeotagCapture.tsx`
 - `src/features/dpr/DPRDetailView.tsx`

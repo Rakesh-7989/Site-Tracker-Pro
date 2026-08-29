@@ -79,7 +79,7 @@ build. No schema/EF change.
 > 42 dxf tests; smoke 455; PR #3 squash → prod, live 200).
 
 ## Do-not-commit artifacts (updated 2026-08-20)
-`AGENTIC_LOOPING_METHODOLOGY.md`, `e2eout.txt`, `error.txt`, `tmp.txt`,
+`AGENTIC_LOOPING_METHODOLOGY.md`, `e2e output log (removed)`, `error.txt`, `tmp.txt`,
 `tsout*.txt`. All `scripts/apply-*.mjs` / `probe-*.mjs` / `verify-*.mjs`
 temp runners and `migration_status.txt` / `test-output.txt` output dumps were
 **removed from the repo 2026-08-20**; the CI `test` job's **Stray-artifact guard**

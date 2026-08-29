@@ -150,7 +150,7 @@ To prevent these symptoms reaching pilots:
       to Resend custom SMTP
 - [ ] Email template includes both `{{.ConfirmationURL}}` AND `{{.Token}}`
 - [ ] Test end-to-end with a fresh email via
-      `node scripts/auth-smtp-test.mjs`
+      `node SMTP auth tester (not present)`
 
 Once these are done, the only signup failure path the founder should
 ever see is "email already registered" — and that auto-pivots to Sign

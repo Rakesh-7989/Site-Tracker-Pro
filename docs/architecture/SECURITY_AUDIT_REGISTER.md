@@ -186,7 +186,7 @@ Plan reference: `docs/planning/END_TO_END_PLAN_PRINCIPAL_SDE.md` §1.5 (SEC-04).
   (`fetchAuthSession.ts` `fetchRbac2Context` and `rbac2/queries.ts` read with
   `.eq("org_id", activeOrgId)`; `digestQueries.ts` org-scoped), so no client
   breakage. Superadmin bypass preserved via `role = 'superadmin'` clause.
-- Gate: `scripts/verify-222.mjs` confirmed 0 leaky read policies remain on the
+- Gate: `RLS verifier script (removed)` confirmed 0 leaky read policies remain on the
   10 affected tables; `npm run db:apply` → 209 passed, only the 2 benign
   pre-existing failures (105/120); 220/221/222 ledgered as applied.
 

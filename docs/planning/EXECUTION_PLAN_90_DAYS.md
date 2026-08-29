@@ -347,7 +347,7 @@ nothing in our marketing is theoretical.
   matches our lib.
 - 🛠️ [2-3 PM] Deploy to Polygon Amoy (Mumbai retired) testnet:
   - Get test MATIC from `https://faucet.polygon.technology/`
-  - `npx hardhat run scripts/deploy.js --network amoy`
+  - `npx hardhat run hardhat deploy script (not present) --network amoy`
 - 🛠️ [3-4 PM] Save contract address. Update `src/lib/integrations/blockchainAnchor.ts`
   if needed — confirm `polygonAdapter` works with the real address.
 - 🛠️ [4-5 PM] Write end-to-end test: anchor a fake Merkle root, verify
@@ -456,7 +456,7 @@ nothing in our marketing is theoretical.
 - 🛠️ [9-12 AM] Sign up for Powerplay's free trial. Create a project, add
   a few BOQ rows, drawings, DPRs. Export the data as CSV (Powerplay has
   CSV exports for most tabs).
-- 🛠️ [12-3 PM] Write `src/lib/importPowerplay.js`:
+- 🛠️ [12-3 PM] Write `Powerplay importer (not implemented)`:
   ```js
   // Reads each Powerplay CSV (projects.csv, boq.csv, daily_reports.csv,
   // drawings.csv, issues.csv) and maps to our schema.

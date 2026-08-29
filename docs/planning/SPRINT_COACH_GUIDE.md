@@ -218,13 +218,13 @@ founder can also run directly from the shell:
 
 ```bash
 # Markdown verdict (what the coach prints back)
-node scripts/sprint-1-gate-score.mjs --format md
+node sprint gate-score script (not present) --format md
 
 # Machine-readable JSON (pipe into other tools / CI)
-node scripts/sprint-1-gate-score.mjs --format json
+node sprint gate-score script (not present) --format json
 
 # Gate-aware: exit 1 if not ready (use in pre-push hook)
-node scripts/sprint-1-gate-score.mjs --strict
+node sprint gate-score script (not present) --strict
 ```
 
 The tool reads the same 5 docs the coach used to read manually:
