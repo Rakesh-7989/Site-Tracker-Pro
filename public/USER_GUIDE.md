@@ -12,7 +12,7 @@
 2. [Core Concepts — antha first ardham chesko](#2-core-concepts)
 3. [Sign In — 3 ways](#3-sign-in--3-ways)
 4. [Choose Your Project Type](#4-choose-your-project-type)
-5. [Your First Project — Step-by-Step](#5-your-first-project)
+5. [Your First Project — Step-by-Step](#5-your-first-project-step-by-step)
 6. [Daily Workflows by Role](#6-daily-workflows-by-role)
 7. [The 17 Project Sub-tabs — Deep-dive](#7-the-17-project-sub-tabs)
 8. [9 Org Admin Panels](#8-9-org-admin-panels)
