@@ -509,7 +509,7 @@ Box for the canonical `milestones`/`tasks`:
 
 
    ┌──────────────────────────────────────┐
-   │ estimate (planned — TBD migration)   │
+    │ estimate (migrated — 22_estimate.sql)    │
    │ ─────                                │
    │ id          uuid    PK               │
    │ project_id  uuid    FK               │
@@ -539,7 +539,7 @@ Box for the canonical `milestones`/`tasks`:
                                                    └──────────────────────────┘
 
    (RA = Running Account bill. Linked to MB measurements + BOQ items in app
-    layer; FK to a measurement_book table TBD when MB migrates from seed.)
+     layer; FK to the measurement_book table (migrated — 10_measurement_book.sql).)
 ```
 
 ### 2.7 Workforce sub-graph
@@ -563,19 +563,19 @@ Box for the canonical `milestones`/`tasks`:
        │       │ joined    date                   │
        │       └──────────────────────────────────┘
        │
-       ├─► attendance (TBD — currently in seed)
+        ├─► attendance (migrated — 20_workforce.sql)
        │       per (project_id, labour_id, date) — present/absent/half-day
        │
-       ├─► worklogs (TBD — currently in seed)
+        ├─► worklogs (migrated — 20_workforce.sql)
        │       per (project_id, profile_id, date, hours, activity)
        │
-       ├─► teams (TBD — currently in seed)
+        ├─► teams (migrated — 20_workforce.sql)
        │       per-project crew rosters
        │
-       ├─► diary (TBD — currently in seed)
+        ├─► diary (migrated — 21_field_ops.sql)
        │       per (project_id, date, weather, notes)
        │
-       └─► equipment (TBD — currently in seed)
+        └─► equipment (migrated — 21_field_ops.sql)
                per (project_id, equipment_id, status, last_maintenance)
 ```
 
@@ -1104,7 +1104,7 @@ text[] Postgres text array
 CHECK  inline CHECK constraint
 EXCL.  Postgres exclusion constraint (rare but used for "one current
        drawing per (project, title, type)")
-TBD    table exists in seed but not yet migrated to a SQL file
+TBD    (historical) tables were seed-only and are now migrated to SQL files (scripts/supabase/)
 ```
 
 ---
