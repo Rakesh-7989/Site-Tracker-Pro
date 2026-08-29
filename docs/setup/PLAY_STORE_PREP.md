@@ -188,7 +188,7 @@ After internal testing passes (2-3 days of real use):
 
 ## Step 8 — App auto-update wiring
 
-In `src/App.jsx` add an in-app update banner that checks if a newer version
+In `src/main.tsx` add an in-app update banner that checks if a newer version
 is available via Play Core In-App Updates (Capacitor plugin
 `@capacitor-community/in-app-update`). This is critical: when you ship a
 production fix, users don't have to manually find the update.

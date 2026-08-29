@@ -15,7 +15,7 @@ uncertainty (`no default-true`).
 
 | # | Site | Before (fail-open) | After (fail-closed) | Files |
 |---|------|--------------------|----------------------|-------|
-| 1 | Staff-area grants (member) | `staff_area_grants` empty OR fetch error → member saw **ALL** admin areas (`useHasStaffArea` + nav `areas.length === 0 → show`) | empty/error → `[]` → member sees **NO** admin areas; `useHasStaffArea` = `areas.includes(area)`; `nav-config` drops the `areas.length === 0` escape | `src/auth/fetchAuthSession.ts`, `src/auth/guards.tsx:178`, `src/app/nav-config.ts:234` |
+| 1 | Staff-area grants (member) | `staff_area_grants` empty OR fetch error → member saw **ALL** admin areas (`useHasStaffArea` + nav `areas.length === 0 → show`) | empty/error → `[]` → member sees **NO** admin areas; `useHasStaffArea` = `areas.includes(area)`; `nav-config` drops the `areas.length === 0` escape | `src/auth/fetchAuthSession.ts`, `src/auth/guards.tsx:178`, `src/app/config/nav-config.ts:234` |
 | 2 | RBAC V2 enforce downgrade | `fetchRbac2Context` error → `undefined` → resolver fell back to the **matrix** in enforce mode; later refactor produced an EMPTY enforce context which ALSO fell back to matrix (`decideV2` final fallback is `matrixAllowed`) | enforce/shadow context carries `fetchError: true` on partial failure; resolver treats enforce+fetchError as **deny-all** (empty caps in `resolveCapabilities`, `can()` returns false) | `src/auth/rbac2/types.ts`, `src/auth/fetchAuthSession.ts`, `src/auth/RoleResolver.ts` |
 | 3 | Plan gate UI (`usePlanCaps.can`) | `loading/unknown → true` (header: "Fail-open is deliberate") | `can()` requires positively-known caps: `!!state && hasPlanCap(...)` | `src/auth/usePlanCaps.ts` |
 | 4 | `useCanWithPlan.planOk` | `planLoading → true` (transient grant) | `planLoading → false`; gate components hold a loading placeholder instead of AccessDenied-flash (`OrgRolesView`/`OrgMembersView` spinner) | `src/auth/guards.tsx:116`, `src/features/org/OrgRolesView.tsx`, `src/features/org/OrgMembersView.tsx` |
@@ -68,14 +68,14 @@ Audit date: 2026-08-19 · Scope: vendor write/read surface on `purchase_orders` 
 
 ## Frontend (approver ≠ requester enforced in UI + approval trail surfaced)
 
-- `src/app/financeQueries.ts` — `PurchaseOrder` + `listPOs` carry
+- `src/app/queries/financeQueries.ts` — `PurchaseOrder` + `listPOs` carry
   `requestedById/requestedByName/approvedById/approvedByName/approvedAt` (embeds
   `requested:requested_by(name)` / `approved:approved_by(name)`).
 - `src/features/project/tabs/POsTab.tsx` — exported `poStatusOptionsFor(po, profileId)`
   **removes the "approved" option for self-requested rows** (deny at the control
   surface; backend RLS still the gate) + `poApprovalDate(approvedAt)`; meta line
   shows `by {requester}` / `approved {approver} {date}`.
-- `src/app/crossPoQueries.ts` + `src/features/org/CrossProjectPOsView.tsx` — org
+- `src/app/queries/crossPoQueries.ts` + `src/features/org/CrossProjectPOsView.tsx` — org
   rollup now shows the approval trail per PO.
 
 ## Residual risk (accepted, tracked)

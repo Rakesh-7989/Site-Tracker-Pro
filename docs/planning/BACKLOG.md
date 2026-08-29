@@ -124,13 +124,13 @@ MVP should not claim production readiness until backend auth, real permissions, 
 - **BOQ tab** built: line items per project with code/description/category/unit/qty/rate; category totals + grand total. Architect/PM edit; Client read-only.
 - **Stock Ledger tab** built: inward/outward/return/wastage transactions with GRN/DC ref no; material-wise balance summary. Architect/PM/Contractor edit; Client hidden.
 - **Photo metadata capture**: `captured_at` ISO timestamp + `navigator.geolocation` lat/lng on site update photos; visible on hover overlay.
-- **Vitest scaffold + 12 unit tests**: extracted permission rules to `src/lib/permissions.js`; tests cover PERMS shape, `can()`, project visibility, view routing, drawing release logic.
+- **Vitest scaffold + 12 unit tests**: extracted permission rules to `src/auth/permissions-matrix.ts`; tests cover PERMS shape, `can()`, project visibility, view routing, drawing release logic.
 - **Smoke test strengthened**: 60+ markers including BOQ, Ledger, photo metadata, backend plan, CI workflow, and cleanup verification.
 - **Work-board audit trail**: logged retroactive correction of Phase 1 "agents inside app" mistake (2026-05-20).
 
 ## Completed 2026-05-22 Tech Lead Review
 
-- **CRITICAL: PERMS drift killed**. `App.jsx` now imports PERMS + helpers from `src/lib/permissions.js`. Local definitions removed. Smoke + regex check prevent regression.
+- **CRITICAL: PERMS drift killed**. `App.jsx` now imports PERMS + helpers from `src/auth/permissions-matrix.ts`. Local definitions removed. Smoke + regex check prevent regression.
 - **HIGH: BOQ + Ledger input validation**. Numeric range guards (>0, <1e9), trimmed strings, date upper bound = today, outward/wastage refused when greater than current stock balance.
 - **HIGH: Destructive delete now requires confirmation** in BOQ + Ledger (`window.confirm` with line summary).
 - **HIGH: BACKEND_PLAN.md materialized into SQL**. `scripts/supabase/01_schema.sql` + `02_rls.sql` + `README.md` are runnable by a Tech Lead on a Supabase dev project.

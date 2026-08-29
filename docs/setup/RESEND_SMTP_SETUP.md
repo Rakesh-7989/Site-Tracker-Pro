@@ -262,7 +262,7 @@ Save. Old sent emails keep working; new ones go from the new sender.
 - Sprint 1 email rate-limit diagnosis:
   `docs/setup/SIGNUP_EMAIL_RATELIMIT_RUNBOOK.md`
 - Auth-related code:
-  - `src/lib/supabase.js` (signUp + signInWithMagicLink)
+  - `src/lib/supabase/supabase.ts` (signUp + signInWithMagicLink)
   - `src/features/shell/index.jsx` (LoginScreen + friendly errors)
 
 ## Edit log

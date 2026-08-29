@@ -58,7 +58,7 @@ Go to <https://uptimerobot.com> → **Sign Up Free** → verify email.
 - **URL:** `https://nntkxojdeyziemdhyjvg.supabase.co/auth/v1/health`
 - Expand **Advanced Settings → Custom HTTP Headers**, add:
   - Header name: `apikey`
-  - Header value: *(the anon key — copy from `src/lib/supabasePublicConfig.js`,
+  - Header value: *(the anon key — copy from `src/lib/supabase/supabasePublicConfig.ts`,
     the `PUBLIC_SUPABASE_ANON_KEY` value)*
 - **Monitoring Interval:** `5 minutes`
 - **Alert Contacts To Notify:** tick your email

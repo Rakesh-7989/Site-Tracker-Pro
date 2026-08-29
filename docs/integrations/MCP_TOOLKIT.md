@@ -140,7 +140,7 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
   - Cashfree webhook → subscription state transitions
   - PDF / DPR generation errors (client-side `exports.js`)
 - **How to wire (when you launch):**
-  1. `npm i @sentry/react` and init in `src/main.jsx` with your DSN.
+  1. `npm i @sentry/react` and init in `src/main.tsx` with your DSN.
   2. Add the Sentry DSN to Vercel env + to the CSP `connect-src` in
      `vercel.json` (`https://*.ingest.sentry.io`).
   3. Connect the Sentry MCP so Claude can triage: "summarise today's errors,
@@ -254,7 +254,7 @@ Cross-session memory        →  Memory MCP (already on)
 ## Not available as MCP (use code, not a server)
 
 - **Cashfree / Razorpay** — no official MCP. The integration lives in
-  `src/lib/cashfree.js` + `src/lib/razorpay.js`. Test against their sandbox.
+  `src/lib/integrations/cashfree.ts` + `src/lib/integrations/razorpay.ts`. Test against their sandbox.
 - **WhatsApp Business** — no MCP. Graph API via Edge Function (see
   `docs/archive/WHATSAPP_BUSINESS_API.md`).
 

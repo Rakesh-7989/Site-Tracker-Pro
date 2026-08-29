@@ -348,7 +348,7 @@ nothing in our marketing is theoretical.
 - 🛠️ [2-3 PM] Deploy to Polygon Amoy (Mumbai retired) testnet:
   - Get test MATIC from `https://faucet.polygon.technology/`
   - `npx hardhat run scripts/deploy.js --network amoy`
-- 🛠️ [3-4 PM] Save contract address. Update `src/lib/blockchainAnchor.js`
+- 🛠️ [3-4 PM] Save contract address. Update `src/lib/integrations/blockchainAnchor.ts`
   if needed — confirm `polygonAdapter` works with the real address.
 - 🛠️ [4-5 PM] Write end-to-end test: anchor a fake Merkle root, verify
   the `Anchored` event on Polygonscan Amoy.
@@ -489,7 +489,7 @@ nothing in our marketing is theoretical.
 **Goal**: Sentry monitoring live.
 - 🛠️ [9-11 AM] Sign up for Sentry (free tier — 5k errors/mo). Create a
   React project. Copy the DSN.
-- 🛠️ [11-1 PM] `npm i @sentry/react`. Init in `src/main.jsx`:
+- 🛠️ [11-1 PM] `npm i @sentry/react`. Init in `src/main.tsx`:
   ```jsx
   import * as Sentry from "@sentry/react";
   Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN, tracesSampleRate: 0.1 });

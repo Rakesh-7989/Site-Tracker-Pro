@@ -102,7 +102,7 @@ Zoho is aggressively **trial-first**:
 
 Source: `src/features/auth/OrgRegisterView.tsx` (route `/register`), driven by
 the `register_org` Edge Function (`supabase/functions/register_org/index.ts`)
-via `src/app/orgRegisterQueries.ts`.
+via `src/app/queries/orgRegisterQueries.ts`.
 
 ### 2.1 Current Form Structure (single screen)
 
@@ -298,6 +298,6 @@ trial flow — but keeps SiteTrack's plan-gating/quota behavior intact.
 - In-repo reference: `docs/integrations/ZOHO_WORKPLACE_COMPARISON.md` (backend EF flow
   comparison; complements this UX-focused report).
 - Current implementation: `src/features/auth/OrgRegisterView.tsx`,
-  `src/app/orgRegisterQueries.ts`,
+  `src/app/queries/orgRegisterQueries.ts`,
   `supabase/functions/register_org/index.ts`,
-  `src/features/org/OnboardingView.tsx`, `src/app/onboardingQueries.ts`.
+  `src/features/org/OnboardingView.tsx`, `src/app/queries/onboardingQueries.ts`.

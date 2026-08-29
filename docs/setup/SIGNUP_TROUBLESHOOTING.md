@@ -24,7 +24,7 @@ OK + a fake user object with `identities = []` to prevent enumeration
 attacks. The frontend USED to show "Verification email sent" without
 checking, so users dead-ended waiting for a code that never came.
 
-**Fix landed:** `src/lib/supabase.js signUp()` now detects
+**Fix landed:** `src/lib/supabase/supabase.ts signUp()` now detects
 `user.identities.length === 0` and returns `error: "email-already-registered"`
 with a `detail` message. `LoginScreen.handleSignup` auto-pivots to the
 Sign in tab + password method + prefills the email.

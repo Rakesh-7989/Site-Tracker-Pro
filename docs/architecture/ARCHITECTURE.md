@@ -26,7 +26,7 @@ The **four architectural layers** are independent in build but composed at runti
 ```
                    ┌─────────────────────────────────────────────┐
                    │       PRODUCT  (what a user can do)         │
-                   │   4 project types × ~15 roles × 37 features │
+                    │   4 project types × ~22 roles × 37 features │
                    └────────────────────┬────────────────────────┘
                                         │ gates ▼
                    ┌─────────────────────────────────────────────┐
@@ -98,8 +98,8 @@ The five sections that follow describe each layer **and** how it composes with t
 | Browser → Supabase REST | Anon JWT or user JWT | Per-user | RLS using `current_setting('app.tenant_id')` + JWT claims |
 | Browser → Edge Function | Anon JWT | Per-user | EF reads JWT, calls `supabaseAdmin` with allow-listed ops only |
 | Edge Function → Postgres | `service_role` JWT | Server-only | EF env-var; never sent to browser |
-| Webhook (Cashfree) → EF | Cashfree HMAC sig | Cryptographic | `verifyWebhookSignature()` in `src/lib/cashfree.js` |
-| EF → Polygon | RPC URL + signer key | Server-only | Signer adapter pattern in `src/lib/blockchainAnchor.js` |
+| Webhook (Cashfree) → EF | Cashfree HMAC sig | Cryptographic | `verifyWebhookSignature()` in `src/lib/integrations/cashfree.ts` |
+| EF → Polygon | RPC URL + signer key | Server-only | Signer adapter pattern in `src/lib/integrations/blockchainAnchor.ts` |
 | EF → Meta WhatsApp | Page-token (Permanent) | Server-only | Stored in EF env, never in repo |
 
 **Two zones of trust:**
@@ -121,7 +121,7 @@ The five sections that follow describe each layer **and** how it composes with t
 9. RLS policies evaluate using app.tenant_id  ──► Rows filtered before send
 ```
 
-See `src/lib/supabase.js` for client-side helpers and
+See `src/lib/supabase/supabase.ts` for client-side helpers and
 [docs/setup/CONNECT_SUPABASE.md](../setup/CONNECT_SUPABASE.md) for the 8-step server-side bootstrap.
 
 ### 1.4 Data flow — Cashfree subscription activation
@@ -173,7 +173,7 @@ Both EFs share ../../supabase/functions/_shared/cashfree.ts.
                       ▼  INSERT audit_anchors {day, root, tx, block}
 ```
 
-Pure-function core is testable without RPC; see `src/lib/blockchainAnchor.js` and 33 tests in [src/lib/blockchainAnchor.test.js](../../tests/blockchainAnchor.test.js).
+Pure-function core is testable without RPC; see `src/lib/integrations/blockchainAnchor.ts` and 33 tests in [tests/blockchainAnchor.test.js](../../tests/blockchainAnchor.test.js).
 
 ### 1.6 Environments
 
@@ -244,7 +244,7 @@ src/
     ├── ai.js, aiForecast.js            ← LLM adapters (multi-language)
     ├── i18n.js                         ← en/te/hi label table
     ├── offline.js, usePersistent.js    ← IndexedDB + LS adapter
-    ├── supabase.js                     ← Lazy client + probeConnection
+    ├── src/lib/supabase/supabase.ts                     ← Lazy client + probeConnection
     ├── hierarchy.js, dailySnapshot.js  ← Block→Floor→Unit + snapshot math
     ├── notifications.js, materialPrices.js, branding.js
     ├── format.js, escape.js, contractors.js, demoMode.js
@@ -285,7 +285,7 @@ Behaviour:
   + on every change; subscribes via Supabase Realtime to push updates from other
   tabs/users.
 - **Offline-first** (Capacitor or browser without network) →
-  `queueOpAdd()` from `src/lib/offline.js` parks the mutation
+  `queueOpAdd()` from `src/lib/platform/offline.ts` parks the mutation
   in IndexedDB; a connectivity listener flushes the queue on reconnect.
 
 This is the single biggest architectural decision in the codebase. It means:
@@ -312,7 +312,7 @@ Why no router? Three reasons:
    navigation; deep linking is rarely used by the field-worker persona.
 2. **Save 14 kB** gzipped (react-router + history).
 3. **Share view via URL** is implemented manually: `?share=<token>` activates
-   `ClientShareView` regardless of auth state. See `src/App.jsx`.
+   `ClientShareView` regardless of auth state. See `src/main.tsx`.
 
 Trade-off accepted: no browser back-button support across views. Acceptable for
 the persona; revisit if/when we add public marketing pages inside the SPA.
@@ -445,9 +445,9 @@ deletions that pass unit tests but break the UI.
 Currently 19 distinct roles. Each role has:
 
 - A **PERMS** set: capability flags like `EDIT_PROJECT`, `APPROVE_RA_BILL`,
-  `RECORD_LABOUR`, `EXPORT_AUDIT`, etc. Source: `src/lib/permissions.js`.
+  `RECORD_LABOUR`, `EXPORT_AUDIT`, etc. Source: `src/auth/permissions-matrix.ts`.
 - A **ROLE_META** entry (label, accent colour, icon, default dashboard).
-  Source: `src/components/ui.jsx`.
+  Source: `src/components/ui/index.ts`.
 - A **MOCK_USERS** seed for demo mode.
 - An RLS policy condition in SQL — see scripts/supabase/03_rls_phase1.sql.
 
@@ -498,7 +498,7 @@ permission matrix. See [docs/architecture/ROLE_MODEL_V2.md](./ROLE_MODEL_V2.md).
 ```
 
 The type is chosen on the CreateView 2x2 grid; defaults are in
-`src/lib/projectTypes.js`.
+`src/lib/projectTypes.ts`.
 
 ### 3.4 The 9 Org Admin panels
 
@@ -565,7 +565,7 @@ Plan gate                (free / pro / business / enterprise)
 isFeatureEnabled = true | false
 ```
 
-Source: `src/lib/orgFeatureFlags.js` + 29 tests.
+Source: `src/lib/integrations/orgFeatureFlags.ts` + 29 tests.
 
 ### 3.7 The Indian-builder surfaces
 
@@ -573,14 +573,14 @@ Areas where SiteTrack is deliberately deeper than Procore / Powerplay:
 
 | Surface | Why it matters | Where it lives |
 |---|---|---|
-| **BOQ paste-from-Excel** | Builders share BOQs as Excel, not CSV | `src/lib/boqImport.js` |
+| **BOQ paste-from-Excel** | Builders share BOQs as Excel, not CSV | `src/lib/boqImport.ts` |
 | **Measurement Book (MB)** | Required by PWD spec; foreign tools don't ship it | `src/features/detail/index.jsx` — MeasurementBookTab |
 | **RA Bill cycle** | Linked to MB + BOQ; running-account semantics | RABills tab + recordAudit on every approval |
-| **Telangana RERA filing** | Stage-coded; portal scraping required | `src/lib/reraTelangana.js` + tg-rera-submit EF |
-| **GSTIN / EPFO check** | Vendor onboarding gate | `src/lib/compliance.js` |
-| **UPI AutoPay (Cashfree)** | Cards have 3% MDR; UPI has near-zero | `src/lib/cashfree.js` |
-| **WhatsApp daily-progress** | Site managers won't use email | `src/lib/whatsapp.js` + Meta Cloud API runbook |
-| **Telugu / Hindi labels** | Field workers don't read English | `src/lib/i18n.js` + `LANG_INSTRUCTIONS` in lib/ai.js |
+| **Telangana RERA filing** | Stage-coded; portal scraping required | `src/lib/integrations/reraTelangana.ts` + tg-rera-submit EF |
+| **GSTIN / EPFO check** | Vendor onboarding gate | `src/lib/integrations/compliance.ts` |
+| **UPI AutoPay (Cashfree)** | Cards have 3% MDR; UPI has near-zero | `src/lib/integrations/cashfree.ts` |
+| **WhatsApp daily-progress** | Site managers won't use email | `src/lib/integrations/whatsapp.ts` + Meta Cloud API runbook |
+| **Telugu / Hindi labels** | Field workers don't read English | `src/lib/i18n.ts` + `LANG_INSTRUCTIONS` in lib/ai.js |
 | **Quick-capture kiosk** | One-tap labour attendance from a tablet | DetailView LabourTab + permissions.canUseQuickCapture |
 | **Letterhead PDF audit log** | Required for legal disputes | `src/lib/exports.js` → exportAuditPdf |
 
@@ -663,7 +663,7 @@ Three layers cooperate:
                                           flushQueue(op-by-op)
 ```
 
-Sources: `src/lib/offline.js`, `src/lib/usePersistent.js`.
+Sources: `src/lib/platform/offline.ts`, `src/lib/usePersistent.js`.
 
 ### 4.4 Mobile build pipeline
 
@@ -842,7 +842,7 @@ Day 0  ── User pain: spreadsheets are how builders share BOQs
 Day 1  ── Design: lib API   parseBoq(text) → { rows, headers, errors }
                             applyBoqImport(project, rows, opts) → project'
 Day 1  ── Write tests       33 unit tests for parser + applier
-Day 1  ── Implement lib     src/lib/boqImport.js   pure JS, no React
+Day 1  ── Implement lib     src/lib/boqImport.ts   pure JS, no React
 Day 2  ── UI                BOQTab adds: paste-area + preview modal + Append/Replace
                             DetailView wires setProject + recordAudit
 Day 2  ── Smoke check       npm run smoke catches deletions
@@ -867,7 +867,7 @@ Example: **"Cashfree subscription onboarding"** (Session 15).
 
 ```
 Day 0  ── Design: client → EF → Cashfree → webhook → EF → DB → realtime → client
-Day 1  ── Pure lib      src/lib/cashfree.js
+Day 1  ── Pure lib      src/lib/integrations/cashfree.ts
                             buildSubscriptionRequest()
                             verifyWebhookSignature() (Web Crypto HMAC SHA-256)
                             mapCashfreeStatus()
@@ -950,7 +950,7 @@ revealing it. Critical for RERA disputes and arbitration.
 
 ### 6.3 i18n — three languages, one bundle
 
-`src/lib/i18n.js` exports `t(key, lang)`. The full UI is keyed; field workers
+`src/lib/i18n.ts` exports `t(key, lang)`. The full UI is keyed; field workers
 see Telugu or Hindi based on `user.lang`. Crucially, the **AI lib also takes
 lang**: `forecastWithLlm(…, {lang})` injects a system instruction that forces
 the LLM to respond in the requested language. This lets WhatsApp DPR
@@ -1024,8 +1024,8 @@ not production-ready**:
 
 | Item | State | Where it's stubbed |
 |---|---|---|
-| Polygon anchoring | Lib + tests live; **Solidity contract not deployed** | `src/lib/blockchainAnchor.js` — `polygonAdapter` returns mock tx |
-| WhatsApp send | Lib live, **EF not wired** | `src/lib/whatsapp.js` + runbook only |
+| Polygon anchoring | Lib + tests live; **Solidity contract not deployed** | `src/lib/integrations/blockchainAnchor.ts` — `polygonAdapter` returns mock tx |
+| WhatsApp send | Lib live, **EF not wired** | `src/lib/integrations/whatsapp.ts` + runbook only |
 | Telangana RERA submit | EF stub + adapter live; **portal scraper disabled by feature flag** | ../../supabase/functions/tg-rera-submit gated by `TG_RERA_SCRAPER_ENABLED` |
 | Cashfree EFs | Code complete + 24 tests; **not deployed to prod** | Awaiting account approval |
 | AR drawing overlay | Scaffold only | DetailView Drawings tab placeholder |

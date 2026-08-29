@@ -15,7 +15,7 @@ Two files, one set of truth:
 
 | File | Purpose |
 |---|---|
-| `src/lib/featureFlags.js` | Runtime gate. `STUB_VIEWS` set drives `isStubView()`, `isStaffUser()`, `isViewStubBlocked()`. App.jsx + Sidebar consult these before rendering anything. |
+| `src/lib/integrations/featureFlags.ts` | Runtime gate. `STUB_VIEWS` set drives `isStubView()`, `isStaffUser()`, `isViewStubBlocked()`. App.jsx + Sidebar consult these before rendering anything. |
 | `scripts/supabase/49_feature_flags_freeze.sql` | DB-side audit trail. `staff_only_features` table seeded with the same 16 view ids + the reason each was frozen. |
 
 The JS file is what the running app reads. The SQL file is the auditor's record of WHY each freeze happened and WHO can flip it back.
@@ -68,7 +68,7 @@ This is intentional. The mistake the audit caught (top of `docs/archive/SITETRAC
 When a stub becomes real (e.g. Sprint 4 ships real RERA-TG filing → `compliance` can be un-frozen), **both** changes must land in the same commit:
 
 ```diff
-- # in src/lib/featureFlags.js
+- # in src/lib/integrations/featureFlags.ts
 - export const STUB_VIEWS = new Set([
 -   "compliance",   // ← remove this line
 -   ...

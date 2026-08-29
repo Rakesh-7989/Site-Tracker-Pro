@@ -859,7 +859,7 @@ Per day (cron at 00:30 IST):
    INSERT INTO audit_anchors VALUES (yesterday, n, root, tx.hash, tx.block, 'polygon-mainnet', now())
 ```
 
-Pure-function library: `src/lib/blockchainAnchor.js` + 33 tests.
+Pure-function library: `src/lib/integrations/blockchainAnchor.ts` + 33 tests.
 
 ---
 
@@ -1073,7 +1073,7 @@ Why text not uuid: some audit targets are platform-level (e.g.
 `resource='admin_user', resource_id=<email>`). Forcing UUID would lose those.
 
 Cost: typos in `resource` strings. Mitigated by: `recordAudit()` wrapper in
-`src/lib/audit.js` using a constant set; rejected if not in
+`src/lib/integrations/audit.ts` using a constant set; rejected if not in
 the allow-list.
 
 ### 9.3 `branding` (org default vs project override)
@@ -1087,7 +1087,7 @@ the allow-list.
 
 When `project_id IS NULL`, the row is the org-level default. When set, it's a
 per-project override (e.g. white-label PDF letterheads for a high-net-worth
-client). Resolution function: `src/lib/branding.js` →
+client). Resolution function: `src/lib/integrations/branding.ts` →
 `resolveBranding(org, project)`.
 
 ---
@@ -1117,9 +1117,9 @@ TBD    table exists in seed but not yet migrated to a SQL file
    versions of the real DDL.
 3. Read [scripts/supabase/03_rls_phase1.sql](../../scripts/supabase/03_rls_phase1.sql)
    for the control-plane additions + the RLS pattern.
-4. Skim `src/data/seed.js` to see the runtime shapes — every
+4. Skim `src/data/seed.ts` to see the runtime shapes — every
    `INIT_*` constant matches a future table column-for-column.
-5. Confirm cross-references in `src/App.jsx` imports — the same
+5. Confirm cross-references in `src/main.tsx` imports — the same
    identifiers appear there.
 
 ---

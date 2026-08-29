@@ -12,7 +12,7 @@ Org admin clicks "Upgrade plan"
         ↓
 OrgBillingView.requestUpgrade()      ← src/features/org/index.jsx
         ↓
-buildSubscriptionRequest(org, plan)  ← src/lib/cashfree.js
+buildSubscriptionRequest(org, plan)  ← src/lib/integrations/cashfree.ts
         ↓
 POST /functions/v1/cashfree-subscription      (Supabase Edge Function)
         ↓
@@ -26,7 +26,7 @@ User approves AutoPay mandate
         ↓
 Cashfree fires webhook to /functions/v1/cashfree-webhook
         ↓
-verifyWebhookSignature() validates HMAC SHA-256       ← src/lib/cashfree.js
+verifyWebhookSignature() validates HMAC SHA-256       ← src/lib/integrations/cashfree.ts
         ↓
 applyWebhookEvent(currentRow, event) returns next row
         ↓
@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
 ```
 
 The shared lib `supabase/functions/_shared/cashfree.ts` is a thin re-export
-of `src/lib/cashfree.js` (same code, both runtimes).
+of `src/lib/integrations/cashfree.ts` (same code, both runtimes).
 
 ## Webhook event types we handle
 

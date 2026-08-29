@@ -73,7 +73,7 @@ Source: `docs/business/POSITIONING.md` + verified research workflow `wz3yologq`.
 
 | Service | Price range | Notes |
 | --- | --- | --- |
-| Setup and onboarding | INR 0 for Pilot / INR 25,000 for Pro / INR 75,000 for Business | Pilot tier includes 90-min founder activation. Higher tiers include data migration from Powerplay/BuildSupply/Excel via `src/lib/contractorMigration.js`. |
+| Setup and onboarding | INR 0 for Pilot / INR 25,000 for Pro / INR 75,000 for Business | Pilot tier includes 90-min founder activation. Higher tiers include data migration from Powerplay/BuildSupply/Excel via `src/lib/contractorMigration.ts`. |
 | Custom report pack | INR 25,000–75,000 | RA bill, GST/TDS, DPR, project status, client-facing handover format. Sprint 4 ships blockchain-anchored handover packet for Business tier and up. |
 | Private deployment / on-prem | INR 2,00,000+/yr add-on | Backend on Builder's AWS/Azure/GCP region, custom domain, IP allowlist, dedicated Supabase project. Enterprise tier only. |
 

@@ -26,7 +26,7 @@ Cashfree billing, plans ₹5,999 / ₹11,999 / ₹19,999 monthly. Live at sitetr
 |---|---|---|
 | Multi-tenant RLS spine | 238 migrations, 150 tables, 421 policies | battle-tested: cross-tenant harness 506 assertions, lifecycle trigger (223), quota TOCTOU locks (224), financial invariants (239) |
 | RBAC model | `src/auth/*` (capabilities 119, permissions-matrix 22 roles, RoleResolver) + rbac_* tables | most mature part of the product |
-| Typed DB boundary | `src/lib/database.types.ts` (158 tables) + `generate-db-types.mjs --check` CI gate | single source of schema truth |
+| Typed DB boundary | `src/lib/supabase/database.types.ts` (158 tables) + `generate-db-types.mjs --check` CI gate | single source of schema truth |
 | Design tokens | `--st-*` palette in `src/index.css`, AA-tuned accents (#C2410C light / #FF8A3D dark) | axe strict green across 7 surfaces |
 | Offline DPR engine | `offlineQueue.ts` (IndexedDB, backoff/GC) + `dprOfflineSync.ts` + network-first SW | signature field-capture wedge |
 | Edge functions | 24 functions (`register_org`, `cashfree-*`, `notify-deliver`, `whatsapp_dpr_send`, RERA submit, digests) | backend surface stays |

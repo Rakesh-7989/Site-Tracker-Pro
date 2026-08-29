@@ -23,7 +23,7 @@ existing approval-gated path, plan gating, quotas, or onboarding.
 
 | Concern | Where | Fact |
 |---------|-------|------|
-| Org `plan` is the gating source | `src/app/planCapsQueries.ts:15-21` | `getPlanCaps` reads `organizations.plan` → `plans.feature_caps`. **Not** the `subscriptions` table. |
+| Org `plan` is the gating source | `src/app/queries/planCapsQueries.ts:15-21` | `getPlanCaps` reads `organizations.plan` → `plans.feature_caps`. **Not** the `subscriptions` table. |
 | Auth user creation | `supabase/functions/register_org/index.ts:158-163` | `admin.auth.admin.createUser({ ..., email_confirm: true })` — currently **auto-confirmed**. |
 | Welcome email | `register_org/index.ts:54-93, 220` | Sends the user's **own chosen password** (not temp) + login CTA. |
 | Org + membership | `register_org/index.ts:177-217` | Creates org row (`plan`, `billing_period`, optional `segment`), profile (`orgadmin`), org member (`admin`). |
@@ -31,7 +31,7 @@ existing approval-gated path, plan gating, quotas, or onboarding.
 | `subscriptions` schema | `scripts/supabase/03_rls_phase1.sql:170-181` | `status` allows `'pending','active','past_due','cancelled','trial'`; has `trial_ends_at`. `org_id` PK (1:1 with org). |
 | Trial already a known state | `scripts/supabase/03_rls_phase1.sql:176`; `src/data/seed.demo.ts:68` | `'trial'` status + `trial_ends` concept already exists in seed/mock data. |
 | Onboarding wizard | `src/features/org/OnboardingView.tsx` | 5 steps: Org details (name+email+segment+modules) → Invite → First project → Presets → Integrations. **No plan/billing step.** |
-| Onboarding persist | `src/app/onboardingQueries.ts` (`updateOrg`, `getMyOrg`) | Persists name/email/segment/modules. Plan/billing not touched. |
+| Onboarding persist | `src/app/queries/onboardingQueries.ts` (`updateOrg`, `getMyOrg`) | Persists name/email/segment/modules. Plan/billing not touched. |
 | Existing session handoff | `register_org/index.ts` | EF returns `{ok, orgId, userId, emailSent}` — **no auth session** returned; the client must sign in after confirm. |
 
 **Critical implication of decision #1 (email-confirm):** currently the EF sends
@@ -114,7 +114,7 @@ paid plan (trial honored until 14 days end, then billed).
    can render the "14-day Pro trial" copy on the verify screen. Keep
    `ok/orgId/userId/emailSent` for back-compat.
 
-### 3.2 Query layer: `src/app/orgRegisterQueries.ts`
+### 3.2 Query layer: `src/app/queries/orgRegisterQueries.ts`
 
 - `RegisterPlan` type already `"basic"|"pro"|"business"` — fine.
 - `RegisterResult.ok` variant: add optional `trialEndsAt?: string | null` and
@@ -145,7 +145,7 @@ paid plan (trial honored until 14 days end, then billed).
   - "Back to sign in" link.
 - Keep the existing "already signed in → /dashboard" guard.
 
-### 3.4 Onboarding: `src/features/org/OnboardingView.tsx` + `src/app/onboardingQueries.ts`
+### 3.4 Onboarding: `src/features/org/OnboardingView.tsx` + `src/app/queries/onboardingQueries.ts`
 
 - **Add a plan/billing step.** Insert as **Step 1 (right after/with org
   details)** so the trial→paid decision happens early, or as a step before

@@ -247,7 +247,7 @@ src/
 ├── lib/
 │   ├── permissions.js            # PERMS object + role helpers (source of truth)
 │   ├── usePersistent.js          # Drop-in useLS — localStorage ⇄ Supabase auto-route
-│   ├── supabase.js               # Supabase client + auth + saveKey/loadKey adapter
+│   ├── src/lib/supabase/supabase.ts               # Supabase client + auth + saveKey/loadKey adapter
 │   ├── offline.js                # IndexedDB blob store + sync queue
 │   ├── ai.js                     # Deterministic risk engine + LLM bridge
 │   └── razorpay.js               # UPI deep-link builder + Payment Link payload
@@ -497,8 +497,8 @@ This is the database-level enforcement of the auto-supersede rule defined in fro
 
 | Integration | Code ready | Activation requires |
 | --- | --- | --- |
-| Anthropic / OpenAI | ✓ `src/lib/ai.js` | API key paste in admin UI |
-| Razorpay UPI deep link | ✓ `src/lib/razorpay.js` | UPI ID configured in InvoicesTab settings |
+| Anthropic / OpenAI | ✓ `src/lib/ai/ai.ts` | API key paste in admin UI |
+| Razorpay UPI deep link | ✓ `src/lib/integrations/razorpay.ts` | UPI ID configured in InvoicesTab settings |
 | Razorpay Payment Link | ✓ payload builder ready | Edge Function `razorpay-link` needs deploy |
 | WhatsApp wa.me deep link | ✓ DPR + share button | None — uses native browser share |
 | WhatsApp Business API (auto-send) | ☐ Edge Function design only | Meta verification + Edge Function deploy |
@@ -559,7 +559,7 @@ Static assets served via Vercel Edge Network (CDN)
 
 | Var | Set in | Used by |
 | --- | --- | --- |
-| `VITE_BACKEND` | Vercel project settings | `src/lib/supabase.js` → `isSupabaseEnabled()` |
+| `VITE_BACKEND` | Vercel project settings | `src/lib/supabase/supabase.ts` → `isSupabaseEnabled()` |
 | `VITE_SUPABASE_URL` | Vercel project settings | Supabase client init |
 | `VITE_SUPABASE_ANON_KEY` | Vercel project settings | Supabase client init |
 | `VITE_RAZORPAY_KEY_ID` (future) | Vercel project settings | Razorpay client SDK |
@@ -721,7 +721,7 @@ useEffect(() => {
 
 ### Source of truth
 
-`src/lib/permissions.js` defines `PERMS` as a single object literal that maps `role → { capabilities, tabs, nav }`.
+`src/auth/permissions-matrix.ts` defines `PERMS` as a single object literal that maps `role → { capabilities, tabs, nav }`.
 
 - `App.jsx` imports from this file (after Tech Lead "kill the drift" fix)
 - Vitest `tests/permissions.test.js` asserts the matrix against this file
@@ -837,7 +837,7 @@ isOnline()?
 
 LocalStorage caps at ~5MB per origin. A single site photo is ~2MB. After 2-3 photos LS would fail.
 
-`src/lib/offline.js` provides:
+`src/lib/platform/offline.ts` provides:
 - `putBlob(key, dataUrl)` — stores binary safely in IDB (~50MB+ quota)
 - `getBlob(key)` — retrieves
 - `delBlob(key)` — removes
@@ -1062,7 +1062,7 @@ Each ADR follows: **Context → Decision → Consequences**.
 
 ### ADR-004: PERMS object as single source of truth
 - **Context**: First attempt had PERMS duplicated in App.jsx and tests; they drifted
-- **Decision**: Extract to `src/lib/permissions.js`; App.jsx imports; smoke + regex enforces no local PERMS
+- **Decision**: Extract to `src/auth/permissions-matrix.ts`; App.jsx imports; smoke + regex enforces no local PERMS
 - **Consequences**: Critical Tech Lead fix. Will not drift again.
 
 ### ADR-005: localStorage cache + Supabase upsert pattern
@@ -1200,7 +1200,7 @@ Site-Tracker-Pro/
 │   └── lib/
 │       ├── permissions.js           [PERMS + role helpers]
 │       ├── usePersistent.js         [LS ⇄ Supabase hook]
-│       ├── supabase.js              [client + auth + adapter]
+│       ├── src/lib/supabase/supabase.ts              [client + auth + adapter]
 │       ├── offline.js               [IDB + sync queue]
 │       ├── ai.js                    [risk engine + LLM bridge]
 │       └── razorpay.js              [UPI + Payment Link]
@@ -1276,7 +1276,7 @@ Site-Tracker-Pro/
 ## Appendix C — Quick Architecture Q&A
 
 **Q: How do I add a new tab to a project?**
-1. Add tab id to `PERMS.[role].tabs` array in `src/lib/permissions.js`
+1. Add tab id to `PERMS.[role].tabs` array in `src/auth/permissions-matrix.ts`
 2. Add label to `TAB_LABELS` in App.jsx if needed
 3. Add a new component function (use existing tab as template)
 4. Wire `tab==="newtab" && <NewTab ... />` into DetailView render
@@ -1284,7 +1284,7 @@ Site-Tracker-Pro/
 6. If it touches data: add DB table to `01_schema.sql` + RLS to `02_rls.sql`
 
 **Q: How do I support a new role?**
-1. Add to PERMS in `src/lib/permissions.js`
+1. Add to PERMS in `src/auth/permissions-matrix.ts`
 2. Add to `ROLE_META` in App.jsx
 3. Add to `INIT_ADMIN_USERS` mock data
 4. Add login screen tile

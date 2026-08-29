@@ -88,7 +88,7 @@ the rest of the DPR flow can be exercised end-to-end.
 
 ## Budget note
 
-Bhashini is in `ALWAYS_FREE_PROVIDERS` (see `src/lib/budgetMode.js`).
+Bhashini is in `ALWAYS_FREE_PROVIDERS` (see `src/lib/utils/budgetMode.ts`).
 No guard prevents the call. The only spend risk is if Bhashini changes
 their tiering — we will catch that at the Sprint 2 acceptance gate when
 the founder reviews monthly usage in their Bhashini portal.

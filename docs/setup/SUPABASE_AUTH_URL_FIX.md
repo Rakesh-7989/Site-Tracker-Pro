@@ -17,7 +17,7 @@ reset email link points:
 
 1. `redirectTo` / `emailRedirectTo` - what our code passes when calling
    Supabase Auth. We centralize this through `getCanonicalAppUrl()` in
-   `src/lib/supabase.js` so it returns `https://sitetrackpro.in`
+   `src/lib/supabase/supabase.ts` so it returns `https://sitetrackpro.in`
    in production.
 2. Dashboard "Site URL" + "Redirect URLs" allow-list - Supabase's URL guard.
    If the redirect we pass is not in the allow-list, Supabase can fall back to

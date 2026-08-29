@@ -52,7 +52,7 @@ enforces today, see `FEATURE_PLAN_ROLE_MASTER.md §2 #2`.
 |---|---|---|---|---|
 | 1 | Role capability matrix (RBAC) | `src/auth/permissions-matrix.ts` + `capabilities.ts` | Per-USER action permissions | ✅ Fully (UI + RLS) |
 | 2 | DB plan quotas | `scripts/supabase/35_plan_quotas.sql` | Seat count + project count | ✅ DB trigger `trg_check_project_limit` / `trg_check_user_limit` raises `plan-limit-exceeded` |
-| 3 | Org feature flags w/ plan cascade | `src/lib/orgFeatureFlags.js` | Sidebar nav + project tabs | ⚠ Partial — reads stale `localStorage`, ignores DB `plan` column |
+| 3 | Org feature flags w/ plan cascade | `src/lib/integrations/orgFeatureFlags.ts` | Sidebar nav + project tabs | ⚠ Partial — reads stale `localStorage`, ignores DB `plan` column |
 | 4 | `planGating.js` matrix | `src/lib/planGating.js` (`canUseFeature` + `<PlanGate>`) | 12 hard-coded premium features | ❌ Only 3 are wired (`ar_overlay`, `ai_forecast`, `material_aggregator` — all stubs) |
 
 **Strategy:** keep #1 (role) + #2 (quotas) as-is — they work. Collapse #3 + #4 into ONE catalog, wire it everywhere.
@@ -312,9 +312,9 @@ These 10 decisions BLOCK steps 2–5. Don't start coding gates until they're ans
 - `scripts/supabase/35_plan_quotas.sql` — seat + project DB triggers (the ONLY enforced server-side plan gate)
 - `scripts/supabase/93_plans_pricing_2026.sql` — supersedes 28 partially
 - `scripts/supabase/94_plans_pricing_refine.sql` — current live prices
-- `src/lib/orgFeatureFlags.js` — catalog (keep this; merge planGating into it)
+- `src/lib/integrations/orgFeatureFlags.ts` — catalog (keep this; merge planGating into it)
 - `src/lib/planGating.js` — duplicate matrix (delete after merge)
-- `src/lib/featureFlags.js` — STUB_VIEWS freeze (orthogonal to plan)
+- `src/lib/integrations/featureFlags.ts` — STUB_VIEWS freeze (orthogonal to plan)
 - `src/features/shell/index.jsx` lines 600–635 — the ONLY place plan-based sidebar filter runs today
 - `src/features/roadmap/index.jsx` lines 50–61, 194, 320, 698 — the ONLY three `<PlanGate>` consumers
 - `supabase/functions/{tg,ka,mh}-rera-submit + gstn-einvoice + whatsapp_dpr_send + whatsapp-send` — Edge Functions with ZERO plan checks today (fix in step 6)

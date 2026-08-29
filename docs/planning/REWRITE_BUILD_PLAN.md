@@ -33,9 +33,9 @@ Goal: Replace manual `useState`+`useEffect` data fetching with proper caching/de
 ### Step 1.3 — Migrate 3 most-used query files
 
 Pick high-traffic queries first:
-- `src/app/queries.ts` (projects + members)
-- `src/app/milestoneQueries.ts`
-- `src/app/taskQueries.ts`
+- `src/app/queries/queries.ts` (projects + members)
+- `src/app/queries/milestoneQueries.ts`
+- `src/app/queries/taskQueries.ts`
 
 Convert to `useQuery` hooks with proper cache keys.
 
@@ -128,8 +128,8 @@ Goal: Delete legacy code, finalize.
 ### Step 4.1 — Remove legacy shell
 
 - After ALL features are ported:
-- Delete `src/App.jsx`
-- Delete `src/lib/permissions.js`
+- Delete `src/main.tsx`
+- Delete `src/auth/permissions-matrix.ts`
 - Remove `?shell=legacy` fallback from `main.jsx`
 - Remove `useLS` hooks
 

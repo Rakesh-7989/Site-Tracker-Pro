@@ -33,7 +33,7 @@ Copy this string.
    ```
    VITE_SENTRY_DSN=https://abc123xyz@o4500000000000000.ingest.sentry.io/4500000000000000
    ```
-2. The browser-side init lives in `src/lib/sentry.js` — already wired
+2. The browser-side init lives in `src/lib/integrations/sentry.ts` — already wired
    to read `VITE_SENTRY_DSN`. No code change needed.
 3. Restart Vite (`npm run dev`) — the DSN is read at startup.
 4. To verify, open the browser console and trigger an error:
@@ -49,11 +49,11 @@ Sentry is in `CAPPED_FREE_PROVIDERS`. The free tier (5k events/mo)
 should easily cover Sprint 2 — 2 pilots × ~20 supervisors × low error
 rate ≈ < 1k/mo. If you see usage trend past 4k/mo, do NOT upgrade —
 instead, tighten the `Sentry.init({ tracesSampleRate })` setting in
-`src/lib/sentry.js` to sample fewer events.
+`src/lib/integrations/sentry.ts` to sample fewer events.
 
 ## Optional — silence noisy errors
 
-To keep the budget healthy, add these filters in `src/lib/sentry.js`:
+To keep the budget healthy, add these filters in `src/lib/integrations/sentry.ts`:
 
 ```js
 Sentry.init({

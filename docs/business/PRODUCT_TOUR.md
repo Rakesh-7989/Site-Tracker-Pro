@@ -27,7 +27,7 @@ Items that are scaffolds or staff-only stubs are isolated in [§8](#8-behind-fla
 
 ## 2. App sections by nav group
 
-Source: `src/app/nav-config.ts`. Nav items appear only if the user holds the `requires` capability somewhere across their identity / org / project tiers.
+Source: `src/app/config/nav-config.ts`. Nav items appear only if the user holds the `requires` capability somewhere across their identity / org / project tiers.
 
 ### 2.1 Workspace — universal entry points
 
@@ -224,7 +224,7 @@ Shared helpers: `_shared/auth.ts` (JWT + role checks), `_shared/budget.ts` (zero
 
 ## 8. Behind-flag / stub / work-in-progress
 
-From `src/lib/featureFlags.js#STUB_VIEWS` + `scripts/supabase/49_feature_flags_freeze.sql`. Visible to staff (`is_staff = true` or `superadmin` or email in `VITE_STAFF_EMAILS`), hidden from everyone else. **Do NOT promise these at signup.**
+From `src/lib/integrations/featureFlags.ts#STUB_VIEWS` + `scripts/supabase/49_feature_flags_freeze.sql`. Visible to staff (`is_staff = true` or `superadmin` or email in `VITE_STAFF_EMAILS`), hidden from everyone else. **Do NOT promise these at signup.**
 
 | View ID | Why frozen |
 |---|---|
@@ -240,7 +240,7 @@ From `src/lib/featureFlags.js#STUB_VIEWS` + `scripts/supabase/49_feature_flags_f
 | `org-features`, `org-onboarding` | Surfaces broken cascade. Not in v3. |
 | `ai` (tab) | LLM key requirement; not safe for pilot demos. |
 
-`src/lib/orgFeatureFlags.js` has a separate v2-era catalog with PLATFORM → ORG → PLAN cascade for ~40 toggleable features (AR, kiosks, AI insights, drawing markup, e-signature, etc.). **The v3 nav / tab system does NOT consult it** — it uses capabilities. The catalog is still used by legacy `App.jsx` for the v2 surface.
+`src/lib/integrations/orgFeatureFlags.ts` has a separate v2-era catalog with PLATFORM → ORG → PLAN cascade for ~40 toggleable features (AR, kiosks, AI insights, drawing markup, e-signature, etc.). **The v3 nav / tab system does NOT consult it** — it uses capabilities. The catalog is still used by legacy `App.jsx` for the v2 surface.
 
 ---
 
@@ -254,7 +254,7 @@ From `src/lib/featureFlags.js#STUB_VIEWS` + `scripts/supabase/49_feature_flags_f
 
 2. **`/activity` and `/audit` render the same component** (`OrgActivityView`). Two URLs, one view. Probably intentional alias but worth confirming.
 
-3. **v2 and v3 coexist.** `src/App.jsx` still imports legacy `features/*/index.jsx`. The 16 STUB_VIEWS IDs map to v2 view IDs, NOT v3 routes. Confirm `App.jsx` is no longer mounted (default is v3 since 2026-06-04) before promising v3 feature surface in marketing.
+3. **v2 and v3 coexist.** `src/main.tsx` still imports legacy `features/*/index.jsx`. The 16 STUB_VIEWS IDs map to v2 view IDs, NOT v3 routes. Confirm `App.jsx` is no longer mounted (default is v3 since 2026-06-04) before promising v3 feature surface in marketing.
 
 4. **DPR composer voice provider is mock today.** `DPRComposer.tsx:58` hard-codes `provider: "mock"`. Even with Bhashini/AWS keys, the front-end won't try them until that line honours `provider_order`.
 

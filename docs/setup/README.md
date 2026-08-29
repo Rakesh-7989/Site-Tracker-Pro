@@ -53,5 +53,5 @@ These services are intentionally skipped during the zero-spend window:
 
 `docs/business/ZERO_SPEND_POLICY.md` is the authoritative source. If you discover
 a new third-party dependency, add it to the provider catalog in BOTH
-`src/lib/budgetMode.js` AND `supabase/functions/_shared/budget.ts` — the
+`src/lib/utils/budgetMode.ts` AND `supabase/functions/_shared/budget.ts` — the
 test suite enforces parity.

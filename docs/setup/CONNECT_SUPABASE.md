@@ -175,7 +175,7 @@ Open http://localhost:5173. You should now see:
    role tiles (because `isSupabaseEnabled()` returns true).
 2. The demo role-picker tiles are still there for sandbox testing.
 3. **Top bar shows a green "● Live" pill** (per the connection-status
-   indicator in `src/App.jsx`).
+   indicator in `src/main.tsx`).
 
 Test the auth flow:
 

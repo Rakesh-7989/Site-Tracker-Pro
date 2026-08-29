@@ -84,17 +84,17 @@ triggers. Naming convention follows existing `scripts/supabase/`.
 | `src/i18n/hi.json` | Hindi mirror. |
 | `src/i18n/en.json` | English source. |
 
-Lib `src/lib/i18n.js` already supports `t(key, lang)` — just add the
+Lib `src/lib/i18n.ts` already supports `t(key, lang)` — just add the
 JSON catalogues.
 
 ### Layer 5 — UI (deferred to mid-Sprint 2)
 
 Builds AFTER Day 18 customer-feedback spike. Files reserved:
 - `src/features/views/DPRComposerView.jsx`
-- `src/features/dpr/VoiceNoteRecorder.jsx`
-- `src/features/dpr/PhotoGeotagCapture.jsx`
-- `src/features/views/DPRDetailView.jsx`
-- `src/components/BuildNowBadge.jsx`
+- `src/features/dpr/VoiceNoteRecorder.tsx`
+- `src/features/dpr/PhotoGeotagCapture.tsx`
+- `src/features/dpr/DPRDetailView.tsx`
+- `src/features/dpr/BuildNowBadge.tsx`
 
 Today's commit creates the DIRECTORY + a single placeholder per
 file with a comment noting "Wait for customer-feedback Day 18".

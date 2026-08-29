@@ -235,7 +235,7 @@ The tool reads the same 5 docs the coach used to read manually:
 - `docs/business/PRICING.md` (pricing-decision locked)
 
 It returns a verdict + per-criterion table + next-action list. The
-parser (`src/lib/sprint1GateScore.js`) is unit-tested so the score
+parser (`src/lib/sprint1GateScore.ts`) is unit-tested so the score
 is stable across runs — no human eyeballing needed.
 
 **Sample (Day 1, no fieldwork yet)**:
