@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](tsconfig.json)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](package.json)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](package.json)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)](package.json)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss)](package.json)
 [![CI](https://github.com/Rakesh-7989/Site-Tracker-Pro/actions/workflows/ci.yml/badge.svg)](https://github.com/Rakesh-7989/Site-Tracker-Pro/actions/workflows/ci.yml)
@@ -39,7 +39,7 @@ Construction site management web app with role-based access (Architect / PM / Co
 - **Today's Entry** — quick field capture for updates, issues, worklogs
 - **Comments** — threaded discussion on issues and RFIs
 - **WhatsApp Share** — share project status directly via WhatsApp
-- **Analytics** — Recharts-based dashboards with project health insights
+- **Analytics** — dependency-free SVG chart dashboards with project health insights
 - **Dark mode** — full dark theme support
 - **PWA** — installable, works offline (cached shell)
 - **i18n** — Telugu, Hindi, English UI toggle
@@ -87,12 +87,12 @@ site-tracker-pro/
     app/            Query modules, router, navigation config
     auth/           Auth system (capabilities, roles, PlanGate, guards)
     components/     Shared UI components
-    features/       15 feature modules (admin, auth, project, org, dpr, vendor, ...)
+    features/       14 feature modules (admin, auth, project, org, dpr, vendor, ...)
     i18n/           Translations (en, te, hi)
     lib/            Utilities (permissions, supabase, export, format, ...)
   supabase/
-    functions/      22 Edge Functions
-  docs/             60+ documents (architecture, sales, research, setup)
+    functions/      25 Edge Functions
+  docs/             100+ documents (architecture, sales, research, setup)
   tests/            Unit tests (Vitest) + E2E (Playwright)
   contracts/        Smart contract (AuditAnchor.sol)
 ```
@@ -131,10 +131,10 @@ The app can be deployed to any static host:
 
 | Layer | Technology |
 |-------|------------|
-| Framework | React 18 |
+| Framework | React 19 |
 | Build | Vite 8 |
 | Styling | Tailwind CSS 3 |
-| Charts | Recharts |
+| Charts | Custom dependency-free SVG charts |
 | Storage | Browser localStorage (demo), Supabase (production) |
 | Mobile | Capacitor (Android/iOS wrapper) |
 | Auth | Supabase Auth + RBAC |

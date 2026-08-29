@@ -143,7 +143,7 @@ This document is the source-of-truth for engineers, investors, and pilot custome
                                    │
                                    ▼ serves: dist/ (Vite build output)
             ┌──────────────────────────────────────────────┐
-            │   React 18 SPA (single bundle, code split)   │
+            │   React 19 SPA (single bundle, code split)   │
             │                                              │
             │   - main.jsx → App.jsx (~3,800 lines)        │
             │   - src/lib/* (permissions, supabase, ai,    │
@@ -528,7 +528,7 @@ Vercel (auto-deploy)
 Static assets served via Vercel Edge Network (CDN)
    │
    ├─► dist/index.html
-   ├─► dist/assets/*.js (code-split: react, recharts, d3, app)
+    ├─► dist/assets/*.js (code-split: react, app)
    └─► dist/assets/*.css
 ```
 
@@ -895,13 +895,12 @@ Photos are stored in IDB; their `key` (something like `photo_p1_2025-04-20_001`)
 | Asset | Gzipped | Notes |
 | --- | --- | --- |
 | `react.js` chunk | 45 KB | React + ReactDOM |
-| `recharts.js` chunk | 87 KB | Charts library (largest) |
-| `d3.js` chunk | 20 KB | Used by recharts |
+| `charts` (custom SVG) | — | Dependency-free; recharts/d3 removed (was ~107 KB) |
 | `index.js` (app) | 57 KB | Our code |
-| **Total** | **~210 KB gzipped** | Good for 3G India |
+| **Total** | good for 3G India | recharts/d3 weight eliminated from the bundle |
 
 Lazy loading opportunities (queued):
-- Lazy-load Recharts only when Analytics/AI tabs open (saves 87 KB on initial paint)
+- Analytics/AI tabs render on demand with custom SVG charts (no chart library, no lazy-load weight)
 - Lazy-load PDF generators (DPR, exportPDF) — saves another ~30 KB
 
 ### Database scaling

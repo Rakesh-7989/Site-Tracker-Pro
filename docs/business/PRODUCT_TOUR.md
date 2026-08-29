@@ -57,7 +57,7 @@ Source: `src/app/nav-config.ts`. Nav items appear only if the user holds the `re
 
 | Route | What it does | Capability gate | Status |
 |---|---|---|---|
-| `/analytics` | Cross-project rollups + charts (recharts-heavy, lazy-loaded). RPC `org_analytics` (mig 86). | `budget:view` → superadmin, orgadmin, promoter, pm, project_admin, client | production |
+| `/analytics` | Cross-project rollups + charts (dependency-free SVG charts, lazy-loaded). RPC `org_analytics` (mig 86). | `budget:view` → superadmin, orgadmin, promoter, pm, project_admin, client | production |
 | `/activity` | Org activity feed scoped to active org. RPC `list_org_activity`. | `activity:view` | production |
 | `/audit` | Same component as `/activity` (audit-toned). Read-only audit trail. | `audit:read` → superadmin, orgadmin, promoter, project_admin, pm, site_inspector | production |
 

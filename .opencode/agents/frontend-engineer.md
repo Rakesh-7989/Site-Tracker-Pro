@@ -15,7 +15,7 @@ Implement approved SiteTrack Pro UI and client-side behavior in the React/Vite a
 - Build + smoke + unit verification notes (gate all work with `npm run verify` steps from AGENTS.md "Verification" blocks).
 
 ## Tech Stack (v4 reality — UPDATE your mental model)
-- React 18 + Vite (vite.config.js, React.lazy router in `src/app/router.tsx`)
+- React 19 + Vite (vite.config.js, React.lazy router in `src/app/router.tsx`)
 - Tailwind CSS 3 — use CSS-var semantic utilities ONLY (see `--color-*`, `--spacing-*`, `--radius-*` in `src/index.css`). New UI must use `.bg-card`, `.text-fg-secondary`, `.border-border`, `.bg-bg-secondary`, `.hover:bg-bg-secondary` etc. NEVER introduce raw `gray-*` / `neutral-*` / `slate-*` / `ink-*` palette classes — those are banned in the design system (Phase 1–5 audits).
 - Data layer: **Supabase** via `src/app/*Queries.ts` (`@supabase/supabase-js`) + `src/auth/*`. Frontend permission gates: `useCan` + `<AccessDenied>` (capabilities), `<PlanGate feature=...>` (plans), `<ModuleGate modules={[...]}>` (module system). No localStorage demo data.
 - i18n: Telugu/Hindi/English JSON in `src/i18n/` (en/hi/te). Alpha-only ASCII keys (`module.x`, `projTab.x`, `segment.label.x`).

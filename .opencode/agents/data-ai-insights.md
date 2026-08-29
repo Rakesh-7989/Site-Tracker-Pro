@@ -22,7 +22,7 @@ Design useful AI-style summaries and project health insights for SiteTrack Pro.
 
 ## Current App State
 - All data in localStorage (key: `sitetrack_v2`)
-- Analytics tab in app uses Recharts
+- Analytics tab in app uses dependency-free SVG charts
 - Projects, milestones, tasks, issues, materials, budget data available
 - AI Insights tab exists with project health score, risk actions, roadmap cards
 - No backend yet — predictions would need real data validation

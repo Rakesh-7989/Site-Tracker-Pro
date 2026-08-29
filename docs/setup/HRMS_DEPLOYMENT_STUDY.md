@@ -21,7 +21,7 @@ HRMS/
 │   │   ├── modules/          ← feature modules (admin, payroll, leave…)
 │   │   └── database/         ← schema.sql + migrations/ + seed/
 │   └── scripts/setup.js      ← interactive bootstrap
-└── frontend/        ← Vite 5 + React 18 + TypeScript SPA
+└── frontend/        ← Vite 8 + React 19 + TypeScript SPA
     ├── src/services/api.ts   ← axios → VITE_API_URL
     └── vite.config.ts        ← dev proxy /api → localhost:5000
 ```

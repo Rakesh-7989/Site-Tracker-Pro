@@ -80,7 +80,7 @@ them off early means they're ready when you need them.
 ### Day -2 (Saturday)
 **Goal**: Local environment ready + content drafts.
 - 🛠️ [Morning] `git pull` latest. `npm install`. `npm run setup`. `npm test`
-  (expect 438/438). `npm run check:mcp`.
+  (expect 2000+/2000+). `npm run check:mcp`.
 - 🛠️ [Afternoon] Draft a 200-word company-overview text for Meta WhatsApp
   Business application (business description). Write authorised signatory
   letter on company letterhead, sign + scan.
@@ -199,7 +199,7 @@ magic link without breaking.
   ```
   Should return `400 Cashfree not configured` — correct (we have no creds yet).
 - 🛠️ [4-6 PM] Re-run `npm test` against production env to confirm nothing
-  cross-broke. `npx vitest run` — expect 438/438.
+  cross-broke. `npx vitest run` — expect 2000+/2000+.
 - **DoD**: Both Edge Functions deployed; subscription EF responds with
   documented error; no test regressions.
 

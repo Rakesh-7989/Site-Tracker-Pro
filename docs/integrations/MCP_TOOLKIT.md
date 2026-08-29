@@ -3,7 +3,7 @@
 Which Model Context Protocol servers help build, ship, and run SiteTrack Pro —
 and exactly how each maps to a real workflow in this codebase.
 
-SiteTrack's stack: **React 18 + Vite** (frontend) · **Supabase** (Postgres +
+SiteTrack's stack: **React 19 + Vite** (frontend) · **Supabase** (Postgres +
 auth + RLS + realtime + storage + edge functions) · **Vercel** (two static
 deploys) · **Cashfree + Razorpay** (payments) · **WhatsApp Business API** ·
 **GitHub + Playwright + Vitest** (dev + test).
@@ -161,7 +161,7 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
   - **Vite 8 (rolldown)** — newer than most training data; `manualChunks`
     behaviour + config shape changes between majors
   - **Supabase JS v2** — auth + RLS + realtime APIs evolve
-  - **React 18** lazy/Suspense patterns
+  - **React 19** lazy/Suspense patterns
   - **Cashfree subscriptions API** — version `2025-01-01` headers
   - When I write Edge Functions or upgrade a dep, Context7 gives me the correct
     current signatures instead of a plausible-but-wrong guess.
