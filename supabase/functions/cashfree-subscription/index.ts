@@ -18,6 +18,7 @@
 //     -d '{"org_id":"...","plan":"pro","return_url":"https://sitetrackpro.in/"}'
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { captureEdgeException } from "../_shared/sentry.ts";
 import {
   buildSubscriptionRequest,
   cashfreeBaseUrl,
@@ -45,6 +46,7 @@ function corsHeadersFor(req: Request): Record<string, string> {
 }
 
 Deno.serve(async (req) => {
+  try {
   const CORS = corsHeadersFor(req);
   const respond = (body: unknown, status = 200) => json(body, status, CORS);
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -145,6 +147,10 @@ Deno.serve(async (req) => {
     subscription_session_id: cfJson.subscription_session_id,
     cashfree: cfJson,
   });
+  } catch (e) {
+    await captureEdgeException(e, { tags: { ef: "cashfree-subscription" }, req }).catch(() => {});
+    return new Response(JSON.stringify({ ok: false, error: "internal" }), { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": req.headers.get("origin") || "https://sitetrackpro.in" } });
+  }
 });
 
 function json(body: unknown, status = 200, cors: Record<string, string> = {}) {

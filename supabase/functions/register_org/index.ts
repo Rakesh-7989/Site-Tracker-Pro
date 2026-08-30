@@ -7,6 +7,7 @@
 // Deploy: `node scripts/deploy-edge-functions.mjs` (needs `supabase login`).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { captureEdgeException } from "../_shared/sentry.ts";
 
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
 
@@ -107,6 +108,7 @@ async function sendWelcomeEmail(to: string, firmName: string, confirmUrl?: strin
 
 Deno.serve(async (req: Request): Promise<Response> => {
   REQ = req;
+  try {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS() });
   if (req.method !== "POST") return json({ ok: false, error: "method-not-allowed" }, 405);
 
@@ -311,4 +313,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     trialEndsAt: trialEnd,
     message: "Organization created. Please confirm your email to activate your workspace.",
   }, 200);
+  } catch (e) {
+    await captureEdgeException(e, { tags: { ef: "register_org" }, req }).catch(() => {});
+    return json({ ok: false, error: "internal" }, 500);
+  }
 });

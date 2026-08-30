@@ -21,6 +21,7 @@ import { getBudgetMode } from "../_shared/budget.ts";
 import { authenticate } from "../_shared/auth.ts";
 import { requirePlanFeature } from "../_shared/planCheck.ts";
 import { sendWhatsAppMessage } from "../_shared/whatsapp_client.ts";
+import { captureEdgeException } from "../_shared/sentry.ts";
 
 /**
  * Meta Cloud API gives 1k free service conversations per WABA per UTC
@@ -209,6 +210,7 @@ async function sendViaMetaCloudApi(
 }
 
 Deno.serve(async (httpReq: Request) => {
+  try {
   if (httpReq.method !== "POST") {
     return new Response("method not allowed", { status: 405 });
   }
@@ -449,4 +451,8 @@ Deno.serve(async (httpReq: Request) => {
     } satisfies DprSendResponse,
     { status: final.ok ? 200 : 502 },
   );
+  } catch (e) {
+    await captureEdgeException(e, { tags: { ef: "whatsapp_dpr_send" }, req: httpReq }).catch(() => {});
+    return Response.json({ ok: false, error: "internal" } satisfies DprSendResponse, { status: 500 });
+  }
 });

@@ -20,6 +20,7 @@
 // - Email uses subject/body templates from notification_templates table
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { captureEdgeException } from "../_shared/sentry.ts";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -276,6 +277,7 @@ function escapeHtml(s: string): string {
 }
 
 Deno.serve(async (req) => {
+  try {
   if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405);
 
   // ── Security gate ──
@@ -365,4 +367,8 @@ Deno.serve(async (req) => {
   }
 
   return json({ ok: anyOk, channels });
+  } catch (e) {
+    await captureEdgeException(e, { tags: { ef: "notify-deliver" }, req }).catch(() => {});
+    return json({ ok: false, error: "internal" }, 500);
+  }
 });

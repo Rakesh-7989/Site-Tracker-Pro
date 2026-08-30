@@ -43,7 +43,11 @@ export function initSentry(): Promise<SentryInstance | null> {
         dsn: DSN,
         release: RELEASE,
         environment: ENVIRONMENT,
-        tracesSampleRate: ENVIRONMENT === "production" ? 0.05 : 0,
+        // 0.1 traces = ~100 traces per 1k pageloads, well within Sentry free 5k errors + traces quota
+        tracesSampleRate: ENVIRONMENT === "production" ? 0.1 : 0,
+        // Replays free tier: keep 0 to stay zero-spend (enable later via VITE_SENTRY_REPLAYS=1 if needed)
+        replaysSessionSampleRate: 0,
+        replaysOnErrorSampleRate: 0,
         integrations: (defaults: { name: string }[]) =>
           defaults.filter((i: { name: string }) => !["Breadcrumbs"].includes(i.name)),
         beforeSend(event: Record<string, unknown>) {

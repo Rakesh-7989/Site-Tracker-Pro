@@ -17,6 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // @ts-ignore — Deno URL import.
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { authenticate } from "../_shared/auth.ts";
+import { captureEdgeException } from "../_shared/sentry.ts";
 
 // @ts-ignore — Deno global.
 declare const Deno: { env: { get(n: string): string | undefined }; serve(h: (req: Request) => Promise<Response> | Response): void };
@@ -126,6 +127,7 @@ async function sendRoleWelcomeEmail(
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  try {
   if (req.method === "OPTIONS") {
     const origin = req.headers.get("origin") || "";
     const cors = { ...CORS, "Access-Control-Allow-Origin": ALLOWED.includes(origin) ? origin : ALLOWED[0] ?? "*" };
@@ -249,4 +251,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     email,
     ...(sendCredentials && tempPassword ? { tempPassword, emailSent } : { invitedViaEmail: true }),
   }, 200);
+  } catch (e) {
+    await captureEdgeException(e, { tags: { ef: "invite_org_member" }, req }).catch(() => {});
+    return json({ ok: false, error: "internal" }, 500);
+  }
 });
