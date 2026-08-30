@@ -91,7 +91,7 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
 - **SiteTrack workflow:**
   - Push the 6 commits currently ahead of origin
   - Open a PR + read review comments inline
-  - Check the `docs/workflows/CI_WORKFLOW.yml` run status
+  - Check the GitHub Actions `CI` workflow run status (`.github/workflows/ci.yml`)
   - Triage issues / maintain a project board
 
 ### 3. Postgres MCP (high value)

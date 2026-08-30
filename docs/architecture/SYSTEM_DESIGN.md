@@ -515,9 +515,9 @@ GitHub: Rakesh-7989/Site-Tracker-Pro
    │
    │ push to main
    ▼
-GitHub Actions (CI) — currently in docs/workflows/CI_WORKFLOW.yml
-   │ lint, build, smoke, vitest
-   │ (PAT needs `workflow` scope to activate)
+GitHub Actions (CI) — .github/workflows/ci.yml
+   │ lint, typecheck, build, smoke, column-drift/db-types/definer gates, RLS proofs, vitest
+   │ (runs on push + PR to main and prod)
    ▼
 Vercel (auto-deploy)
    │
@@ -1226,7 +1226,6 @@ Site-Tracker-Pro/
 │   ├── BACKEND_PLAN.md              [Supabase migration plan]
 │   ├── MOBILE_BUILD.md              [Capacitor playbook]
 │   ├── GOLIVE.md                    [30-min live runbook]
-│   ├── CI_WORKFLOW.yml              [GitHub Actions template]
 │   ├── CI_SETUP.md
 │   └── SYSTEM_DESIGN.md             [THIS DOCUMENT]
 ├── .agents/sitetrack-pro/

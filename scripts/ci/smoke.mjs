@@ -479,7 +479,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   ".agents/sitetrack-pro/bugs.md",
   "tests/bugs/.gitkeep",
   "scripts/tests/test-ef-harness.mjs",
-  "docs/workflows/CI_WORKFLOW.yml",
+  ".github/workflows/ci.yml",
   // Tech Lead review additions (2026-05-22 evening)
   "src/auth/capabilities.ts",
   "vitest.config.js",
@@ -635,7 +635,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
 ].forEach(path => add(`Required file: ${path}`, existsSync(join(root, path))));
 
 // CI workflow must run real lint, not the placeholder
-const ci = read("docs/workflows/CI_WORKFLOW.yml");
+const ci = read(".github/workflows/ci.yml");
 add("CI workflow runs real ESLint (no placeholder)", ci.includes("npm run lint") && !ci.includes("placeholder"));
 
 // Dead-code cleanup: these paths must NOT exist

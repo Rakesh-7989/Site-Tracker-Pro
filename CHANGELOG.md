@@ -483,7 +483,7 @@ Validation: 556/556 unit tests (438 → 556 = +118) · 320 smoke · 0 lint error
 
 ### Known Issues
 - App.jsx remains ~2,200 lines. Refactor into `src/components/`, `src/views/`, `src/data/` queued in BACKLOG.
-- CI workflow is in `docs/workflows/CI_WORKFLOW.yml`, not yet `.github/workflows/ci.yml` (PAT scope issue documented in `docs/setup/CI_SETUP.md`).
+- CI workflow now lives at `.github/workflows/ci.yml` (the `docs/workflows/CI_WORKFLOW.yml` template was removed once the push token had the `workflow` scope; see `docs/setup/CI_SETUP.md`).
 - Supabase migrations have not been run on any real project. `BACKEND_PLAN.md` Phase B1 starts when Tech Lead provisions a dev project.
 - No e2e/integration tests yet; Vitest only covers pure permission helpers.
 
