@@ -87,14 +87,14 @@ site-tracker-pro/
     app/            Query modules, router, navigation config
     auth/           Auth system (capabilities, roles, PlanGate, guards)
     components/     Shared UI components
-    features/       14 feature modules (admin, auth, project, org, dpr, vendor, ...)
+    features/       14 feature modules (account, admin, auth, dashboards, dpr, handover, kiosk, marketing, org, project, pwa, share, shared, shell)
     i18n/           Translations (en, te, hi)
     lib/            Utilities (permissions, supabase, export, format, ...)
   supabase/
     functions/      25 Edge Functions
   docs/             100+ documents (architecture, sales, research, setup)
   tests/            Unit tests (Vitest) + E2E (Playwright)
-  contracts/        Smart contract (AuditAnchor.sol)
+
 ```
 
 ---
@@ -121,7 +121,7 @@ The app can be deployed to any static host:
 | Platform | Config |
 |----------|--------|
 | **Vercel** | Auto-detected (`vercel.json`) |
-| **Netlify** | `netlify.toml` configured |
+
 | **Cloudflare Pages** | Build: `npm run build`, output: `dist` |
 | **GitHub Pages** | Set `base` in `vite.config.js` |
 
@@ -140,7 +140,7 @@ The app can be deployed to any static host:
 | Auth | Supabase Auth + RBAC |
 | i18n | Custom (en/te/hi) |
 | CI | GitHub Actions |
-| Monitoring | Sentry + Vercel Analytics |
+| Monitoring | Sentry |
 
 ---
 
