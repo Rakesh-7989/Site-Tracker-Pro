@@ -3,16 +3,18 @@
 // tier filter, CSV export, search + pagination. Mirrors PlatformOrgsView.
 
 import { useCallback, useEffect, useState } from "react";
-import { useCan, ROLE_LABEL } from "@/auth";
+import { useAuth, useCan, ROLE_LABEL } from "@/auth";
 import { Badge, Alert, AccessDenied, Button, Icon, StatCard } from "@/components/ui/atoms";
-import { Input, Select } from "@/components/ui/forms";
+import { Input, Select, Textarea } from "@/components/ui/forms";
 import { DataTable } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Modal } from "@/components/ui/Modal";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { BarChart, type ChartDatum } from "@/components/ui/Charts";
 import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
 import { listPlatformUsers, getPlatformStats, ADMIN_PAGE_SIZE, type PlatformUser, type PlatformStats } from "@/app/queries/platformAdminQueries";
 import { tierBadge } from "@/features/admin/StaffAdminView";
+import { buildImpersonationState, IMPERSONATION_REASON_MIN, useImpersonation } from "@/features/admin/ImpersonationContext";
 
 import { getClient } from "@/lib/supabase/supabase";
 
@@ -97,6 +99,8 @@ function UsersSkeleton(): JSX.Element {
 }
 
 function Inner(): JSX.Element {
+  const { session } = useAuth();
+  const { startImpersonating } = useImpersonation();
   const [rows, setRows] = useState<PlatformUser[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [statsFailed, setStatsFailed] = useState(false);
@@ -106,6 +110,9 @@ function Inner(): JSX.Element {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [tierFilter, setTierFilter] = useState("all");
+  const [impTarget, setImpTarget] = useState<PlatformUser | null>(null);
+  const [impReason, setImpReason] = useState("");
+  const [impError, setImpError] = useState<string | null>(null);
 
   useEffect(() => { const t = setTimeout(() => { setSearch(q.trim()); setPage(0); }, 350); return () => clearTimeout(t); }, [q]);
 
@@ -136,23 +143,32 @@ function Inner(): JSX.Element {
     downloadCsv(`users-${csvDateStamp()}.csv`, content);
   }, [filtered]);
 
+  const canImpersonate = useCan("platform:impersonate");
+
   const columns = [
     { key: "name", header: "Name", render: (u: PlatformUser) => (
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-semibold text-fg-primary">{u.name || "\u2014"}</span>
-        <Badge tone={u.role === "superadmin" ? "danger" : "neutral"}>{roleLabel(u.role)}</Badge>
-        {u.isStaff && <Badge tone={tierBadge(u.staffTier).tone}>{tierBadge(u.staffTier).label}</Badge>}
-      </div>
-    )},
+       <div className="flex items-center gap-2 flex-wrap">
+         <span className="font-semibold text-fg-primary">{u.name || "\u2014"}</span>
+         <Badge tone={u.role === "superadmin" ? "danger" : "neutral"}>{roleLabel(u.role)}</Badge>
+         {u.isStaff && <Badge tone={tierBadge(u.staffTier).tone}>{tierBadge(u.staffTier).label}</Badge>}
+       </div>
+     )},
     { key: "email", header: "Email", render: (u: PlatformUser) => (
-      <span className="text-sm text-fg-secondary">{u.email ?? "no email"}</span>
-    ), hideOnMobile: true },
+       <span className="text-sm text-fg-secondary">{u.email ?? "no email"}</span>
+     ), hideOnMobile: true },
     { key: "joined", header: "Joined", render: (u: PlatformUser) => (
-      <span className="text-xs text-fg-tertiary">{fmtDate(u.createdAt)}</span>
-    ), hideOnMobile: true },
+       <span className="text-xs text-fg-tertiary">{fmtDate(u.createdAt)}</span>
+     ), hideOnMobile: true },
     { key: "orgCount", header: "Orgs", className: "text-center", render: (u: PlatformUser) => (
-      <div className="text-center"><div className="text-lg font-bold text-fg-primary leading-none">{u.orgCount}</div><div className="text-[10px] text-fg-tertiary uppercase tracking-wide">orgs</div></div>
-    )},
+       <div className="text-center"><div className="text-lg font-bold text-fg-primary leading-none">{u.orgCount}</div><div className="text-[10px] text-fg-tertiary uppercase tracking-wide">orgs</div></div>
+     )},
+    ...(canImpersonate ? [{
+      key: "actions" as const, header: "", render: (u: PlatformUser) => (
+        <Button size="sm" variant="secondary" disabled={u.id === session?.user.id} onClick={() => { setImpTarget(u); setImpReason(""); setImpError(null); }}>
+          Impersonate
+        </Button>
+      ),
+    }] : []),
   ];
 
   return (
@@ -189,7 +205,7 @@ function Inner(): JSX.Element {
       )}
 
       <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-        <Input placeholder="Search by name or email\u2026" value={q} onChange={e => setQ(e.target.value)} className="sm:flex-1" />
+        <Input placeholder="Search by name or email…" value={q} onChange={e => setQ(e.target.value)} className="sm:flex-1" />
         <Select fit aria-label="Filter by tier" value={tierFilter} onChange={e => setTierFilter(e.target.value)}
           options={[{ value: "all", label: "All tiers" }, ...USER_TIER_ORDER.map(t => ({ value: t, label: TIER_LABEL[t] ?? t }))]} className="sm:w-44" />
         <span className="text-xs text-fg-tertiary sm:whitespace-nowrap">{search ? "filtered" : `page ${page + 1}`}</span>
@@ -205,6 +221,50 @@ function Inner(): JSX.Element {
         variant="card"
         pagination={{ page, hasNext, busy: loading, onPrev: () => setPage(p => Math.max(0, p - 1)), onNext: () => setPage(p => p + 1) }}
       />
+
+      <Modal
+        open={!!impTarget}
+        onClose={() => setImpTarget(null)}
+        title={impTarget ? `Impersonate ${impTarget.name || impTarget.email}` : "Impersonate"}
+        subtitle="Reason is required (min 10 chars) and is written to the immutable audit log. Session auto-expires in 15 minutes."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setImpTarget(null)}>Cancel</Button>
+            <Button
+              disabled={impReason.trim().length < IMPERSONATION_REASON_MIN}
+              onClick={() => {
+                if (!impTarget || !session) return;
+                if (impReason.trim().length < IMPERSONATION_REASON_MIN) {
+                  setImpError(`Reason must be at least ${IMPERSONATION_REASON_MIN} characters.`);
+                  return;
+                }
+                const st = buildImpersonationState(
+                  { id: session.user.id, name: session.user.email ?? "superadmin", email: session.user.email ?? "" },
+                  { id: impTarget.id, name: impTarget.name || impTarget.email || "user", email: impTarget.email ?? "", role: impTarget.role },
+                  impReason,
+                );
+                startImpersonating(st);
+                setImpTarget(null);
+                setImpReason("");
+              }}
+            >
+              Start impersonating
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          {impError && <Alert variant="danger">{impError}</Alert>}
+          <Textarea
+            value={impReason}
+            onChange={e => setImpReason(e.target.value)}
+            placeholder="e.g. Support ticket #1234 — client reports invoice not visible, reproducing as client@..."
+            rows={3}
+            autoFocus
+          />
+          <div className="text-xs text-fg-tertiary">{impReason.trim().length}/{IMPERSONATION_REASON_MIN} min — 15 min auto-expiry, audited as IMPERSONATE.</div>
+        </div>
+      </Modal>
     </div>
   );
 }
