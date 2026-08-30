@@ -61,12 +61,14 @@ async function createLogDrain({ url, name }) {
     `/v1/log-drains?${qTeam}`,
   ];
   const bodyVariants = [
-    // Variant A: new API shape
-    { url, deliveryFormat: "json", headers: { "x-sentry-auth": SENTRY_AUTH_HEADER }, sources: ["static", "lambda", "build", "edge", "external"], projectIds: PROJECT_IDS, environments: ["production"] },
+    // Variant A: new API shape (with name)
+    { name, url, deliveryFormat: "json", headers: { "x-sentry-auth": SENTRY_AUTH_HEADER }, sources: ["static", "lambda", "build", "edge", "external"], projectIds: PROJECT_IDS, environments: ["production"] },
     // Variant B: without projectIds, with projectId
-    { url, deliveryFormat: "json", headers: { "x-sentry-auth": SENTRY_AUTH_HEADER }, sources: ["static", "lambda", "build", "edge"], projectId: PROJECT, environments: ["production"] },
-    // Variant C: minimal
-    { url, deliveryFormat: "json", headers: { "x-sentry-auth": SENTRY_AUTH_HEADER }, sources: ["lambda", "static"] },
+    { name, url, deliveryFormat: "json", headers: { "x-sentry-auth": SENTRY_AUTH_HEADER }, sources: ["static", "lambda", "build", "edge"], projectId: PROJECT, environments: ["production"] },
+    // Variant C: minimal with name
+    { name, url, deliveryFormat: "json", headers: { "x-sentry-auth": SENTRY_AUTH_HEADER }, sources: ["lambda", "static"] },
+    // Variant D: legacy without headers wrapper
+    { name, url, deliveryFormat: "json", secret: SENTRY_AUTH_HEADER, sources: ["static", "lambda", "build"], projectIds: PROJECT_IDS },
   ];
   for (const p of candidates) {
     for (const body of bodyVariants) {
@@ -131,7 +133,15 @@ async function main() {
 
   if (!hasLog) {
     console.log("creating Sentry Log Drain...");
-    await createLogDrain({ url: SENTRY_LOG_DRAIN_URL, name: "sentry-logs" });
+    try {
+      await createLogDrain({ url: SENTRY_LOG_DRAIN_URL, name: "sentry-logs" });
+    } catch (e) {
+      if (String(e.message).includes("not available for Hobby")) {
+        console.warn("WARN: Log Drains not available for Hobby/Pro Trial — plan upgrade required for Sentry Log Drain. Skipping (frontend Sentry via @sentry/browser still works).");
+      } else {
+        console.warn("log drain create failed (non-fatal):", e.message);
+      }
+    }
   } else {
     console.log("Sentry Log Drain already exists, skip create");
   }
@@ -143,7 +153,11 @@ async function main() {
     try {
       await createLogDrain({ url: SENTRY_TRACE_DRAIN_URL, name: "sentry-traces" });
     } catch (e) {
-      console.warn("trace drain create failed, may need manual OTLP config in Vercel dashboard:", e.message);
+      if (String(e.message).includes("not available for Hobby")) {
+        console.warn("WARN: Trace Drains not available for Hobby/Pro Trial — skipping. Frontend traces via @sentry/browser still work.");
+      } else {
+        console.warn("trace drain create failed, may need manual OTLP config in Vercel dashboard:", e.message);
+      }
     }
   } else {
     console.log("Trace drain already exists");
@@ -159,7 +173,7 @@ async function main() {
 
   await ensureVercelEnv();
 
-  console.log("DONE drains + env");
+  console.log("DONE drains + env (drains may be skipped on Hobby)");
 }
 
 main().catch(e => { console.error("FATAL:", e.message); process.exit(1); });
