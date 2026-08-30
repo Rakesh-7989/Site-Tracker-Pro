@@ -3,7 +3,7 @@
 Which Model Context Protocol servers help build, ship, and run SiteTrack Pro —
 and exactly how each maps to a real workflow in this codebase.
 
-SiteTrack's stack: **React 18 + Vite** (frontend) · **Supabase** (Postgres +
+SiteTrack's stack: **React 19 + Vite** (frontend) · **Supabase** (Postgres +
 auth + RLS + realtime + storage + edge functions) · **Vercel** (two static
 deploys) · **Cashfree + Razorpay** (payments) · **WhatsApp Business API** ·
 **GitHub + Playwright + Vitest** (dev + test).
@@ -31,7 +31,7 @@ These need no install — they're already connected.
 
 ### Filesystem MCP
 - **Does:** read / write / search / move project files.
-- **SiteTrack use:** read big modules (`src/features/org/index.jsx`) in chunks;
+- **SiteTrack use:** read big modules (`org feature index (removed)`) in chunks;
   `read_multiple_files` to review all 22 libs at once; `search_files` to find
   where "RA bill" logic lives.
 
@@ -91,7 +91,7 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
 - **SiteTrack workflow:**
   - Push the 6 commits currently ahead of origin
   - Open a PR + read review comments inline
-  - Check the `docs/workflows/CI_WORKFLOW.yml` run status
+  - Check the GitHub Actions `CI` workflow run status (`.github/workflows/ci.yml`)
   - Triage issues / maintain a project board
 
 ### 3. Postgres MCP (high value)
@@ -140,7 +140,7 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
   - Cashfree webhook → subscription state transitions
   - PDF / DPR generation errors (client-side `exports.js`)
 - **How to wire (when you launch):**
-  1. `npm i @sentry/react` and init in `src/main.jsx` with your DSN.
+  1. `npm i @sentry/react` and init in `src/main.tsx` with your DSN.
   2. Add the Sentry DSN to Vercel env + to the CSP `connect-src` in
      `vercel.json` (`https://*.ingest.sentry.io`).
   3. Connect the Sentry MCP so Claude can triage: "summarise today's errors,
@@ -161,7 +161,7 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
   - **Vite 8 (rolldown)** — newer than most training data; `manualChunks`
     behaviour + config shape changes between majors
   - **Supabase JS v2** — auth + RLS + realtime APIs evolve
-  - **React 18** lazy/Suspense patterns
+  - **React 19** lazy/Suspense patterns
   - **Cashfree subscriptions API** — version `2025-01-01` headers
   - When I write Edge Functions or upgrade a dep, Context7 gives me the correct
     current signatures instead of a plausible-but-wrong guess.
@@ -254,7 +254,7 @@ Cross-session memory        →  Memory MCP (already on)
 ## Not available as MCP (use code, not a server)
 
 - **Cashfree / Razorpay** — no official MCP. The integration lives in
-  `src/lib/cashfree.js` + `src/lib/razorpay.js`. Test against their sandbox.
+  `src/lib/integrations/cashfree.ts` + `src/lib/integrations/razorpay.ts`. Test against their sandbox.
 - **WhatsApp Business** — no MCP. Graph API via Edge Function (see
   `docs/archive/WHATSAPP_BUSINESS_API.md`).
 

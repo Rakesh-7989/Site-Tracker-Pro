@@ -19,7 +19,7 @@ Total: ~2-3 hours, most of it waiting for DNS + Supabase provisioning.
 - A domain (suggested: `sitetrackpro.in` — ~₹800/year on GoDaddy / BigRock)
 - A Vercel account (free tier is enough to start)
 - A Supabase account (free tier is enough to start)
-- Node 18+ locally
+- Node 20+ locally
 
 ---
 

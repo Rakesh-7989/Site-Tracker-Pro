@@ -15,7 +15,7 @@ Last reviewed: **2026-06-30**.
       exist, but `dbSessionContext` / `withTenantContext` style middleware not
       yet wired in app. **Without this, cross-tenant data leak is possible.**
 - [x] **Demo handler bypass removed in prod build** — `loadDemoData()` button
-      hidden when `VITE_BACKEND=supabase` (fixed `src/features/shell/index.jsx:192`).
+      hidden when `VITE_BACKEND=supabase` (fixed `shell feature index (removed):192`).
 - [ ] **No leaked credentials in repo** — `.env.example` only. Rotate any
       keys ever pasted in chat / docs.
 - [ ] **CSP + HSTS headers** verified live (vercel.json + netlify.toml ✅).
@@ -41,7 +41,7 @@ Last reviewed: **2026-06-30**.
 
 ### Performance
 - [x] Main bundle is **509 kB** (gzip 107 kB). Vite warns this is over 500 kB.
-      Code-split `recharts`, `pdfkit-equivalent`, `Markup canvas` lazy-loaded.
+      Code-split heavy routes (charts, PDF generators) are lazy-loaded.
       Org chunk: 716 kB (183 kB gzip) — warning limit bumped to 750 kB; gzip is acceptable.
 - [ ] App.jsx is **5,600+ lines**. Batch 4 plan: per-feature module split.
 - [ ] First-paint < 2s on 3G — measure with Lighthouse before launch.

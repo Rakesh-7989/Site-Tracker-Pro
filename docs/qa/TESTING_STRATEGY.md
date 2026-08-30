@@ -78,7 +78,7 @@ Edge Functions are TypeScript files running on Deno. They CANNOT use Node.js API
 
 **Option A — Deno-native tests (recommended for new EFs):**
 ```
-// supabase/functions/_shared/foo.test.ts
+// example function test (not present)
 // Run: deno test --allow-net supabase/functions/_shared/
 import { assertEquals } from "https://deno.land/std/assert/mod.ts";
 import { myFn } from "./foo.ts";
@@ -95,7 +95,7 @@ Deno.test("myFn returns expected value", () => {
 - Guard: smoke test checks both files exist; manually diff before deploy
 
 **Option C — HTTP test harness (for EF endpoint behavior):**
-- `scripts/test-cashfree-webhook.mjs` starts a server, sends mock Cashfree events
+- `Cashfree webhook tester (not present)` starts a server, sends mock Cashfree events
 - Asserts HTTP status + DB side-effects (read back via RPC)
 - Pattern from `scripts/ci/role-access-probe.mjs` and `scripts/tests/test-self-service-rls.mjs`
 

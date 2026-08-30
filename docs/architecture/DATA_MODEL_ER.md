@@ -509,7 +509,7 @@ Box for the canonical `milestones`/`tasks`:
 
 
    ┌──────────────────────────────────────┐
-   │ estimate (planned — TBD migration)   │
+    │ estimate (migrated — 22_estimate.sql)    │
    │ ─────                                │
    │ id          uuid    PK               │
    │ project_id  uuid    FK               │
@@ -539,7 +539,7 @@ Box for the canonical `milestones`/`tasks`:
                                                    └──────────────────────────┘
 
    (RA = Running Account bill. Linked to MB measurements + BOQ items in app
-    layer; FK to a measurement_book table TBD when MB migrates from seed.)
+     layer; FK to the measurement_book table (migrated — 10_measurement_book.sql).)
 ```
 
 ### 2.7 Workforce sub-graph
@@ -563,19 +563,19 @@ Box for the canonical `milestones`/`tasks`:
        │       │ joined    date                   │
        │       └──────────────────────────────────┘
        │
-       ├─► attendance (TBD — currently in seed)
+        ├─► attendance (migrated — 20_workforce.sql)
        │       per (project_id, labour_id, date) — present/absent/half-day
        │
-       ├─► worklogs (TBD — currently in seed)
+        ├─► worklogs (migrated — 20_workforce.sql)
        │       per (project_id, profile_id, date, hours, activity)
        │
-       ├─► teams (TBD — currently in seed)
+        ├─► teams (migrated — 20_workforce.sql)
        │       per-project crew rosters
        │
-       ├─► diary (TBD — currently in seed)
+        ├─► diary (migrated — 21_field_ops.sql)
        │       per (project_id, date, weather, notes)
        │
-       └─► equipment (TBD — currently in seed)
+        └─► equipment (migrated — 21_field_ops.sql)
                per (project_id, equipment_id, status, last_maintenance)
 ```
 
@@ -754,7 +754,7 @@ Rows leave Postgres ONLY if the policy returns true.
 ```
 
 `user_org_id()` and `user_project_ids()` are SECURITY DEFINER helpers defined in
-[scripts/supabase/03_rls_phase1.sql](scripts/supabase/03_rls_phase1.sql:25-65).
+[scripts/supabase/03_rls_phase1.sql](../../scripts/supabase/03_rls_phase1.sql).
 They are the *single point* where tenant boundaries are computed; every policy
 references them.
 
@@ -859,7 +859,7 @@ Per day (cron at 00:30 IST):
    INSERT INTO audit_anchors VALUES (yesterday, n, root, tx.hash, tx.block, 'polygon-mainnet', now())
 ```
 
-Pure-function library: [src/lib/blockchainAnchor.js](src/lib/blockchainAnchor.js) + 33 tests.
+Pure-function library: `src/lib/integrations/blockchainAnchor.ts` + 33 tests.
 
 ---
 
@@ -908,7 +908,7 @@ language sql stable security definer as $$
 $$;
 ```
 
-See [scripts/supabase/03_rls_phase1.sql:42-65](scripts/supabase/03_rls_phase1.sql).
+See [scripts/supabase/03_rls_phase1.sql:42-65](../../scripts/supabase/03_rls_phase1.sql).
 
 ---
 
@@ -1073,7 +1073,7 @@ Why text not uuid: some audit targets are platform-level (e.g.
 `resource='admin_user', resource_id=<email>`). Forcing UUID would lose those.
 
 Cost: typos in `resource` strings. Mitigated by: `recordAudit()` wrapper in
-[src/lib/audit.js](src/lib/audit.js) using a constant set; rejected if not in
+`src/lib/integrations/audit.ts` using a constant set; rejected if not in
 the allow-list.
 
 ### 9.3 `branding` (org default vs project override)
@@ -1087,7 +1087,7 @@ the allow-list.
 
 When `project_id IS NULL`, the row is the org-level default. When set, it's a
 per-project override (e.g. white-label PDF letterheads for a high-net-worth
-client). Resolution function: [src/lib/branding.js](src/lib/branding.js) →
+client). Resolution function: `src/lib/integrations/branding.ts` →
 `resolveBranding(org, project)`.
 
 ---
@@ -1104,7 +1104,7 @@ text[] Postgres text array
 CHECK  inline CHECK constraint
 EXCL.  Postgres exclusion constraint (rare but used for "one current
        drawing per (project, title, type)")
-TBD    table exists in seed but not yet migrated to a SQL file
+TBD    (historical) tables were seed-only and are now migrated to SQL files (scripts/supabase/)
 ```
 
 ---
@@ -1112,14 +1112,14 @@ TBD    table exists in seed but not yet migrated to a SQL file
 ## 11. Reading order for engineers
 
 1. Read this doc top-to-bottom.
-2. Open [scripts/supabase/01_schema.sql](scripts/supabase/01_schema.sql) — the
+2. Open [scripts/supabase/01_schema.sql](../../scripts/supabase/01_schema.sql) — the
    tables in §2.1–§2.6 are *all* in this file. The boxes in this doc are abridged
    versions of the real DDL.
-3. Read [scripts/supabase/03_rls_phase1.sql](scripts/supabase/03_rls_phase1.sql)
+3. Read [scripts/supabase/03_rls_phase1.sql](../../scripts/supabase/03_rls_phase1.sql)
    for the control-plane additions + the RLS pattern.
-4. Skim [src/data/seed.js](src/data/seed.js) to see the runtime shapes — every
+4. Skim `src/data/seed.ts` to see the runtime shapes — every
    `INIT_*` constant matches a future table column-for-column.
-5. Confirm cross-references in [src/App.jsx](src/App.jsx) imports — the same
+5. Confirm cross-references in `src/main.tsx` imports — the same
    identifiers appear there.
 
 ---
@@ -1143,5 +1143,5 @@ TBD    table exists in seed but not yet migrated to a SQL file
 ---
 
 *Last updated: Session 26 (2026-05-31).*  
-*Source of truth: this file + the SQL scripts under [scripts/supabase/](scripts/supabase/).*  
+*Source of truth: this file + the SQL scripts under ../../scripts/supabase.*  
 *If a table is missing here, file an issue and update both in the same PR.*

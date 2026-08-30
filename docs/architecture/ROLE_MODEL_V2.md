@@ -3,9 +3,9 @@
 Source: hand-drawn architecture sheet dated **31/05/2026 12:07**.
 
 Status: **✅ IMPLEMENTED** in Session 23 (migrations 06-07) and extended in
-Session 28 with the vendor portal view (`src/features/vendor/index.jsx`).
-All 19 roles live in `src/lib/permissions.js`; the 4 project-type tab
-gates live in `src/lib/projectTypes.js`. This doc remains the canonical
+Session 28 with the vendor portal view (`vendor feature index (removed)`).
+All 19 roles live in `src/auth/permissions-matrix.ts`; the 4 project-type tab
+gates live in `src/lib/projectTypes.ts`. This doc remains the canonical
 spec for future sub-role expansions.
 
 The v1 model (today) has 6 roles: `superadmin / orgadmin / architect / pm
@@ -215,7 +215,7 @@ const tabAllowed = (tabId) =>
 ```
 
 ### PERMS table expansion
-`src/lib/permissions.js` grows from 6 keys to ~15. Each new role gets its
+`src/auth/permissions-matrix.ts` grows from 6 keys to ~15. Each new role gets its
 own `nav` + `tabs` + capability flags. Big mechanical change, low conceptual
 risk.
 
@@ -243,18 +243,18 @@ When implementation starts, do it in 5 phases:
 - Add `type` column to `projects` table (default `construction` for
   back-compat with all existing rows)
 - Migration: `alter table projects add column type text not null default 'construction' check (type in ('construction','interior','design','consultant'));`
-- Add `PROJECT_TYPES` constant in `src/data/lookups.js`
+- Add `PROJECT_TYPES` constant in `src/data/lookups.ts`
 - No UI changes yet — every project remains type='construction'
 
 ### Phase B — Role expansion (4 days, medium risk)
-- Add ~12 new roles to `PERMS` in `src/lib/permissions.js`
+- Add ~12 new roles to `PERMS` in `src/auth/permissions-matrix.ts`
 - Add tests for each new role's nav/tabs visibility
 - Add migration to extend the `profiles.role` check constraint in
-  `scripts/supabase/04_rls_phase2.sql`
+  `phase-2 RLS migration (not present)`
 - Login screen role picker — group by tier in accordion
 
 ### Phase C — Type-gated tabs + team templates (3 days)
-- Build `src/lib/projectTypes.js` with default tab + team config per type
+- Build `src/lib/projectTypes.ts` with default tab + team config per type
 - Update `DetailView` tab list to filter by project type
 - Update onboarding wizard CreateView to pick type first, auto-populate team
 
@@ -346,9 +346,9 @@ external customer interviews.
 ## Reference
 
 - Source: hand-drawn sheet, 31/05/2026 12:07
-- Current model: `src/lib/permissions.js` (6 roles)
-- Org tier: `src/features/org/index.jsx`
-- Project model: `src/data/seed.js` `INIT_PROJECTS` (no `type` field today)
-- Feature flag catalog: `src/lib/orgFeatureFlags.js` (where type-gating
+- Current model: `src/auth/permissions-matrix.ts` (6 roles)
+- Org tier: `org feature index (removed)`
+- Project model: `src/data/seed.ts` `INIT_PROJECTS` (no `type` field today)
+- Feature flag catalog: `src/lib/integrations/orgFeatureFlags.ts` (where type-gating
   will integrate)
 - RLS schema: `scripts/supabase/01_schema.sql` + `03_rls_phase1.sql`

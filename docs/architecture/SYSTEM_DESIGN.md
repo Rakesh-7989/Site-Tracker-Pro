@@ -143,7 +143,7 @@ This document is the source-of-truth for engineers, investors, and pilot custome
                                    │
                                    ▼ serves: dist/ (Vite build output)
             ┌──────────────────────────────────────────────┐
-            │   React 18 SPA (single bundle, code split)   │
+            │   React 19 SPA (single bundle, code split)   │
             │                                              │
             │   - main.jsx → App.jsx (~3,800 lines)        │
             │   - src/lib/* (permissions, supabase, ai,    │
@@ -247,7 +247,7 @@ src/
 ├── lib/
 │   ├── permissions.js            # PERMS object + role helpers (source of truth)
 │   ├── usePersistent.js          # Drop-in useLS — localStorage ⇄ Supabase auto-route
-│   ├── supabase.js               # Supabase client + auth + saveKey/loadKey adapter
+│   ├── src/lib/supabase/supabase.ts               # Supabase client + auth + saveKey/loadKey adapter
 │   ├── offline.js                # IndexedDB blob store + sync queue
 │   ├── ai.js                     # Deterministic risk engine + LLM bridge
 │   └── razorpay.js               # UPI deep-link builder + Payment Link payload
@@ -497,8 +497,8 @@ This is the database-level enforcement of the auto-supersede rule defined in fro
 
 | Integration | Code ready | Activation requires |
 | --- | --- | --- |
-| Anthropic / OpenAI | ✓ `src/lib/ai.js` | API key paste in admin UI |
-| Razorpay UPI deep link | ✓ `src/lib/razorpay.js` | UPI ID configured in InvoicesTab settings |
+| Anthropic / OpenAI | ✓ `src/lib/ai/ai.ts` | API key paste in admin UI |
+| Razorpay UPI deep link | ✓ `src/lib/integrations/razorpay.ts` | UPI ID configured in InvoicesTab settings |
 | Razorpay Payment Link | ✓ payload builder ready | Edge Function `razorpay-link` needs deploy |
 | WhatsApp wa.me deep link | ✓ DPR + share button | None — uses native browser share |
 | WhatsApp Business API (auto-send) | ☐ Edge Function design only | Meta verification + Edge Function deploy |
@@ -515,9 +515,9 @@ GitHub: Rakesh-7989/Site-Tracker-Pro
    │
    │ push to main
    ▼
-GitHub Actions (CI) — currently in docs/workflows/CI_WORKFLOW.yml
-   │ lint, build, smoke, vitest
-   │ (PAT needs `workflow` scope to activate)
+GitHub Actions (CI) — .github/workflows/ci.yml
+   │ lint, typecheck, build, smoke, column-drift/db-types/definer gates, RLS proofs, vitest
+   │ (runs on push + PR to main and prod)
    ▼
 Vercel (auto-deploy)
    │
@@ -528,7 +528,7 @@ Vercel (auto-deploy)
 Static assets served via Vercel Edge Network (CDN)
    │
    ├─► dist/index.html
-   ├─► dist/assets/*.js (code-split: react, recharts, d3, app)
+    ├─► dist/assets/*.js (code-split: react, app)
    └─► dist/assets/*.css
 ```
 
@@ -559,7 +559,7 @@ Static assets served via Vercel Edge Network (CDN)
 
 | Var | Set in | Used by |
 | --- | --- | --- |
-| `VITE_BACKEND` | Vercel project settings | `src/lib/supabase.js` → `isSupabaseEnabled()` |
+| `VITE_BACKEND` | Vercel project settings | `src/lib/supabase/supabase.ts` → `isSupabaseEnabled()` |
 | `VITE_SUPABASE_URL` | Vercel project settings | Supabase client init |
 | `VITE_SUPABASE_ANON_KEY` | Vercel project settings | Supabase client init |
 | `VITE_RAZORPAY_KEY_ID` (future) | Vercel project settings | Razorpay client SDK |
@@ -662,7 +662,7 @@ Static assets served via Vercel Edge Network (CDN)
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                  src/lib/usePersistent.js                          │
+│                  usePersistent hook (removed)                          │
 │                                                                    │
 │   - First paint: synchronous LS read (instant)                    │
 │   - Async: if backend enabled, fetch from Supabase, replace        │
@@ -721,10 +721,10 @@ useEffect(() => {
 
 ### Source of truth
 
-`src/lib/permissions.js` defines `PERMS` as a single object literal that maps `role → { capabilities, tabs, nav }`.
+`src/auth/permissions-matrix.ts` defines `PERMS` as a single object literal that maps `role → { capabilities, tabs, nav }`.
 
 - `App.jsx` imports from this file (after Tech Lead "kill the drift" fix)
-- Vitest `tests/permissions.test.js` asserts the matrix against this file
+- Vitest `permissions test (not present)` asserts the matrix against this file
 - Smoke test enforces `App.jsx` cannot redefine PERMS locally (regex check)
 - RLS policies in `02_rls.sql` mirror this matrix at the database level
 
@@ -837,7 +837,7 @@ isOnline()?
 
 LocalStorage caps at ~5MB per origin. A single site photo is ~2MB. After 2-3 photos LS would fail.
 
-`src/lib/offline.js` provides:
+`src/lib/platform/offline.ts` provides:
 - `putBlob(key, dataUrl)` — stores binary safely in IDB (~50MB+ quota)
 - `getBlob(key)` — retrieves
 - `delBlob(key)` — removes
@@ -895,13 +895,12 @@ Photos are stored in IDB; their `key` (something like `photo_p1_2025-04-20_001`)
 | Asset | Gzipped | Notes |
 | --- | --- | --- |
 | `react.js` chunk | 45 KB | React + ReactDOM |
-| `recharts.js` chunk | 87 KB | Charts library (largest) |
-| `d3.js` chunk | 20 KB | Used by recharts |
+| `charts` (custom SVG) | — | Dependency-free; recharts/d3 removed (was ~107 KB) |
 | `index.js` (app) | 57 KB | Our code |
-| **Total** | **~210 KB gzipped** | Good for 3G India |
+| **Total** | good for 3G India | recharts/d3 weight eliminated from the bundle |
 
 Lazy loading opportunities (queued):
-- Lazy-load Recharts only when Analytics/AI tabs open (saves 87 KB on initial paint)
+- Analytics/AI tabs render on demand with custom SVG charts (no chart library, no lazy-load weight)
 - Lazy-load PDF generators (DPR, exportPDF) — saves another ~30 KB
 
 ### Database scaling
@@ -1063,7 +1062,7 @@ Each ADR follows: **Context → Decision → Consequences**.
 
 ### ADR-004: PERMS object as single source of truth
 - **Context**: First attempt had PERMS duplicated in App.jsx and tests; they drifted
-- **Decision**: Extract to `src/lib/permissions.js`; App.jsx imports; smoke + regex enforces no local PERMS
+- **Decision**: Extract to `src/auth/permissions-matrix.ts`; App.jsx imports; smoke + regex enforces no local PERMS
 - **Consequences**: Critical Tech Lead fix. Will not drift again.
 
 ### ADR-005: localStorage cache + Supabase upsert pattern
@@ -1201,7 +1200,7 @@ Site-Tracker-Pro/
 │   └── lib/
 │       ├── permissions.js           [PERMS + role helpers]
 │       ├── usePersistent.js         [LS ⇄ Supabase hook]
-│       ├── supabase.js              [client + auth + adapter]
+│       ├── src/lib/supabase/supabase.ts              [client + auth + adapter]
 │       ├── offline.js               [IDB + sync queue]
 │       ├── ai.js                    [risk engine + LLM bridge]
 │       └── razorpay.js              [UPI + Payment Link]
@@ -1227,7 +1226,6 @@ Site-Tracker-Pro/
 │   ├── BACKEND_PLAN.md              [Supabase migration plan]
 │   ├── MOBILE_BUILD.md              [Capacitor playbook]
 │   ├── GOLIVE.md                    [30-min live runbook]
-│   ├── CI_WORKFLOW.yml              [GitHub Actions template]
 │   ├── CI_SETUP.md
 │   └── SYSTEM_DESIGN.md             [THIS DOCUMENT]
 ├── .agents/sitetrack-pro/
@@ -1277,7 +1275,7 @@ Site-Tracker-Pro/
 ## Appendix C — Quick Architecture Q&A
 
 **Q: How do I add a new tab to a project?**
-1. Add tab id to `PERMS.[role].tabs` array in `src/lib/permissions.js`
+1. Add tab id to `PERMS.[role].tabs` array in `src/auth/permissions-matrix.ts`
 2. Add label to `TAB_LABELS` in App.jsx if needed
 3. Add a new component function (use existing tab as template)
 4. Wire `tab==="newtab" && <NewTab ... />` into DetailView render
@@ -1285,7 +1283,7 @@ Site-Tracker-Pro/
 6. If it touches data: add DB table to `01_schema.sql` + RLS to `02_rls.sql`
 
 **Q: How do I support a new role?**
-1. Add to PERMS in `src/lib/permissions.js`
+1. Add to PERMS in `src/auth/permissions-matrix.ts`
 2. Add to `ROLE_META` in App.jsx
 3. Add to `INIT_ADMIN_USERS` mock data
 4. Add login screen tile
@@ -1299,7 +1297,7 @@ Site-Tracker-Pro/
 4. Document in `docs/archive/BACKEND_PLAN.md` integration section
 
 **Q: How do I migrate the schema?**
-1. Add a new file `scripts/supabase/0N_migration.sql` with ALTER TABLE statements
+1. Add a new file `placeholder migration (not present)` with ALTER TABLE statements
 2. Test on dev project
 3. Add corresponding test scenario to `04_rls_tests.sql`
 4. Run on prod via SQL Editor during a low-traffic window

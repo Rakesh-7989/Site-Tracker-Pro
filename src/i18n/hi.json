@@ -13,7 +13,7 @@
     "alwaysOn": "हमेशा चालू",
     "loadDemo": "डेमो प्रोजेक्ट लोड करें",
     "skipBasics": "अभी छोड़ें — कंस्ट्रक्शन बेसिक्स से शुरू करें",
-    "trialNote": "आप 14-दिन के मुफ़्त Pro ट्रायल पर हैं — अभी भुगतान आवश्यक नहीं। ट्रायल के बाद जारी रखने के लिए प्लान चुनें।",
+    "trialNote": "ट्रायल सक्रिय — एक्सप्लोर करने के लिए कोई भुगतान नहीं।",
     "loadingDemo": "डेमो लोड हो रहा है…",
     "demoHint": "माइलस्टोन, टास्क, इश्यू और फाइनेंस डेटा के साथ एक नमूना विला प्रोजेक्ट पहले से लोड करता है।",
     "cont": "आगे बढ़ें",
@@ -50,7 +50,12 @@
     "errClientName": "क्लाइंट का नाम आवश्यक है",
     "errPickSegment": "कृपया कम से कम एक उद्योग चुनें",
     "errOrgName": "संगठन का नाम आवश्यक है",
-    "selectMany": "एक या अधिक चुनें — चुने गए सेगमेंट के मॉड्यूल जुड़ते हैं।"
+    "selectMany": "एक या अधिक चुनें — चुने गए सेगमेंट के मॉड्यूल जुड़ते हैं।",
+    "finishTitle": "आपका सेटअप हो गया",
+    "finishSub": "आपका वर्कस्पेस उपयोग के लिए तैयार है।",
+    "finishProject": "अपना पहला प्रोजेक्ट बनाएं",
+    "finishInvite": "अपनी टीम को आमंत्रित करें",
+    "finishGo": "डैशबोर्ड पर जाएं"
   },
   "$meta": {
     "language": "hi",
@@ -257,7 +262,8 @@
     "searchPlaceholder": "कुछ भी खोजें…",
     "viewProfile": "अपनी प्रोफ़ाइल देखें",
     "trialBanner": "प्रो ट्रायल · {days} दिन बाकी",
-    "trialBannerDay": "प्रो ट्रायल · {days} दिन बाकी"
+    "trialBannerDay": "प्रो ट्रायल · {days} दिन बाकी",
+    "manageOrgs": "संगठन प्रबंधित करें"
   },
   "auth": {
     "alreadyAccount": "पहले से खाता है?",
@@ -731,7 +737,8 @@
     "signLabel": "हस्ताक्षरित {date}",
     "byLabel": " द्वारा {name}",
     "budgetLabel": "बजट {amount}",
-    "validTo": "{date} तक मान्य"
+    "validTo": "{date} तक मान्य",
+    "noOwner": "कोई मालिक नहीं"
   },
   "audit": {
     "backendError": "बैकएंड कॉन्फ़िगर नहीं है।",
@@ -785,7 +792,9 @@
     "emptyReportTitle": "अभी तक कोई रिपोर्ट नहीं",
     "emptyReportDesc": "साइट विज़िट, अनुशंसा, या माइलस्टोन रिव्यू रिपोर्ट बनाएँ।",
     "periodFrom": "{date} से",
-    "periodTo": "{date} तक"
+    "periodTo": "{date} तक",
+    "fieldItem": "फ़ील्ड",
+    "fieldNote": "नोट"
   },
   "overviewTab": {
     "settings": "सेटिंग्स",
@@ -837,7 +846,8 @@
     "send": "संदेश भेजें",
     "sendReply": "जवाब भेजें",
     "archive": "आर्काइव",
-    "delete": "हटाएँ"
+    "delete": "हटाएँ",
+    "dmUnnamed": "बिना नाम की चैट"
   },
   "chat": {
     "subtitle": "प्रोजेक्ट स्ट्रीम · चैनल · डायरेक्ट संदेश",
@@ -897,5 +907,25 @@
     "openProject": "प्रोजेक्ट खोलें",
     "hostedBy": "{name} द्वारा होस्टेड",
     "sharedProject": "साझा प्रोजेक्ट"
+  },
+  "invoices": {
+    "title": "चालान",
+    "subtitle": "क्रॉस-इकाई चालान अवलोकन",
+    "eyebrow": "बिलिंग",
+    "statTotal": "कुल",
+    "statAmount": "राशि",
+    "statNet": "शुद्ध",
+    "statReceived": "प्राप्त",
+    "statOutstanding": "बकाया",
+    "statPaymentSplit": "भुगतान विभाजन"
+  },
+  "vendor": {
+    "tab": {
+      "dashboard": "डैशबोर्ड",
+      "profile": "प्रोफ़ाइल",
+      "purchaseOrders": "खरीद आदेश",
+      "materialPrices": "सामग्री मूल्य",
+      "submitQuote": "कोटेशन भेजें"
+    }
   }
 }

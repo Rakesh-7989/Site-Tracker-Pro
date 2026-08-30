@@ -26,7 +26,7 @@ The user never needs to say "fix this bug" — it happens automatically.
 ### QA Agent (triggers the cycle)
 
 1. When you detect a bug during testing, code review, or CI:
-   - Create `tests/bugs/B-NNN.test.js` that reproduces it (must FAIL on current code)
+   - Create `bug test template (not present)` that reproduces it (must FAIL on current code)
    - Add entry to `.agents/sitetrack-pro/bugs.md` with severity, layer, reproduction steps
    - Set Status = `open`
 2. When a fix handoff arrives:
@@ -50,7 +50,7 @@ The user never needs to say "fix this bug" — it happens automatically.
 ### Specialist Agent (the fixer)
 
 When assigned a bug:
-1. Read the regression test at `tests/bugs/B-NNN.test.js`
+1. Read the regression test at `bug test template (not present)`
 2. Confirm it FAILS on current code (the bug exists)
 3. Fix the code
 4. Confirm the regression test PASSES
@@ -71,13 +71,13 @@ When assigned a bug:
 ## Example Bug File
 
 ```md
-| B-004 | Critical | frontend | in_fix | Frontend Engineer | BOQ total crashes on negative qty | tests/bugs/B-004.test.js |
+| B-004 | Critical | frontend | in_fix | Frontend Engineer | BOQ total crashes on negative qty | regression test (not present) |
 ```
 
 ## Example Regression Test
 
 ```js
-// tests/bugs/B-004.test.js — reproduce: BOQ total crashes on negative qty
+// regression test (not present) — reproduce: BOQ total crashes on negative qty
 import { describe, it, expect } from "vitest";
 import { computeBoqTotal } from "../../src/lib/boq.js";
 

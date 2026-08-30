@@ -80,7 +80,7 @@ them off early means they're ready when you need them.
 ### Day -2 (Saturday)
 **Goal**: Local environment ready + content drafts.
 - 🛠️ [Morning] `git pull` latest. `npm install`. `npm run setup`. `npm test`
-  (expect 438/438). `npm run check:mcp`.
+  (expect 2000+/2000+). `npm run check:mcp`.
 - 🛠️ [Afternoon] Draft a 200-word company-overview text for Meta WhatsApp
   Business application (business description). Write authorised signatory
   letter on company letterhead, sign + scan.
@@ -199,7 +199,7 @@ magic link without breaking.
   ```
   Should return `400 Cashfree not configured` — correct (we have no creds yet).
 - 🛠️ [4-6 PM] Re-run `npm test` against production env to confirm nothing
-  cross-broke. `npx vitest run` — expect 438/438.
+  cross-broke. `npx vitest run` — expect 2000+/2000+.
 - **DoD**: Both Edge Functions deployed; subscription EF responds with
   documented error; no test regressions.
 
@@ -347,8 +347,8 @@ nothing in our marketing is theoretical.
   matches our lib.
 - 🛠️ [2-3 PM] Deploy to Polygon Amoy (Mumbai retired) testnet:
   - Get test MATIC from `https://faucet.polygon.technology/`
-  - `npx hardhat run scripts/deploy.js --network amoy`
-- 🛠️ [3-4 PM] Save contract address. Update `src/lib/blockchainAnchor.js`
+  - `npx hardhat run hardhat deploy script (not present) --network amoy`
+- 🛠️ [3-4 PM] Save contract address. Update `src/lib/integrations/blockchainAnchor.ts`
   if needed — confirm `polygonAdapter` works with the real address.
 - 🛠️ [4-5 PM] Write end-to-end test: anchor a fake Merkle root, verify
   the `Anchored` event on Polygonscan Amoy.
@@ -456,7 +456,7 @@ nothing in our marketing is theoretical.
 - 🛠️ [9-12 AM] Sign up for Powerplay's free trial. Create a project, add
   a few BOQ rows, drawings, DPRs. Export the data as CSV (Powerplay has
   CSV exports for most tabs).
-- 🛠️ [12-3 PM] Write `src/lib/importPowerplay.js`:
+- 🛠️ [12-3 PM] Write `Powerplay importer (not implemented)`:
   ```js
   // Reads each Powerplay CSV (projects.csv, boq.csv, daily_reports.csv,
   // drawings.csv, issues.csv) and maps to our schema.
@@ -489,7 +489,7 @@ nothing in our marketing is theoretical.
 **Goal**: Sentry monitoring live.
 - 🛠️ [9-11 AM] Sign up for Sentry (free tier — 5k errors/mo). Create a
   React project. Copy the DSN.
-- 🛠️ [11-1 PM] `npm i @sentry/react`. Init in `src/main.jsx`:
+- 🛠️ [11-1 PM] `npm i @sentry/react`. Init in `src/main.tsx`:
   ```jsx
   import * as Sentry from "@sentry/react";
   Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN, tracesSampleRate: 0.1 });

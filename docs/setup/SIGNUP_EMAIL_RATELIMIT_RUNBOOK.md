@@ -77,8 +77,8 @@ Step-by-step:
 ### Recommended fallback: Option E (OTP-only)
 
 The code already supports 6-digit OTP fallback when the magic link
-fails — see `verifyEmailOtp()` in `src/lib/supabase.js` and the
-`#loginOtp` input in `src/features/shell/index.jsx`. The promoter /
+fails — see `verifyEmailOtp()` in `src/lib/supabase/supabase.ts` and the
+`#loginOtp` input in `shell feature index (removed)`. The promoter /
 supervisor types the 6-digit code from the confirmation email
 instead of clicking the link. **This still uses email**, but the
 rate limit applies per-email-address, not per-method.
@@ -172,8 +172,8 @@ correct Sprint 1 tiers.
 - Resend pricing + setup:
   https://resend.com/pricing
 - Existing OTP fallback code:
-  `src/lib/supabase.js` `verifyEmailOtp` +
-  `src/features/shell/index.jsx` `submitOtp` handler
+  `src/lib/supabase/supabase.ts` `verifyEmailOtp` +
+  `shell feature index (removed)` `submitOtp` handler
 - Sprint 1 audit context: `docs/archive/SITETRACK_V3_PLAN.md`
 
 ## Edit log

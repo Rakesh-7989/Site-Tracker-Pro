@@ -18,7 +18,7 @@ construction app into an industry-specific SaaS.
 | Multi-tenant company_id scoping | org-scoped RLS everywhere; `organizations` + `org_members`; `set_tenant_context` |
 | Segment = industry selection | `organizations.segment` (migration 134/135); `src/auth/segmentConfig.ts`; onboarding segment picker |
 | Module toggles (industry selection) | `organizations.enabled_modules` (migration 155); `src/modules/registry.ts` (11 modules, `INDUSTRY_TEMPLATES`); onboarding module toggle; `<ModuleGate>` |
-| Dynamic sidebar (enabled modules) | `buildNav()` module gate + segment gate in `src/app/nav-config.ts` |
+| Dynamic sidebar (enabled modules) | `buildNav()` module gate + segment gate in `src/app/config/nav-config.ts` |
 | Plugin system (core + industry plugins) | `src/plugins/catalog.ts` — 9 plugins, 24+ lazy routes; `createPluginRoutes()` + `<ModuleGuard>` |
 | Route protection per feature | `<ModuleGuard>` + `<PlanGate feature>` + `useCan` (3 orthogonal gates, `docs/architecture/MODULES.md`) |
 | Construction module surface | `site_ops` (DPR, punch, inspections, permits, measurement book), `people` (labour/attendance), `procurement` (POs, vendors, quotes), `compliance`, `kiosks` |
@@ -75,8 +75,8 @@ Creates the lead→meeting→quotation→agreement pipeline as a first-class mod
 | Sub-task | Change scope |
 | --- | --- |
 | A1 | Migration 161 `crm_leads.sql` — `leads` (company-scoped, pipeline status, source, budget, owner), `lead_meetings`, `lead_quotations`, `lead_agreements` + RLS (org member read, manager write) + grants |
-| A2 | `src/app/crmQueries.ts` — `listLeads`, `createLead`, `updateLeadStage`, `addMeeting`, `listMeetings`, `addQuotation`, `listQuotations`, `addAgreement`, `listAgreements` + pure helpers (LEAD_STAGE_NEXT, stage buckets, kanban columns) |
-| A3 | `src/app/crmCaps.ts` in capabilities.ts — `crm:view`, `crm:manage` (+ labels, permission-matrix grants, plan caps feature `crm`) |
+| A2 | `src/app/queries/crmQueries.ts` — `listLeads`, `createLead`, `updateLeadStage`, `addMeeting`, `listMeetings`, `addQuotation`, `listQuotations`, `addAgreement`, `listAgreements` + pure helpers (LEAD_STAGE_NEXT, stage buckets, kanban columns) |
+| A3 | `CRM capabilities module (not present)` in capabilities.ts — `crm:view`, `crm:manage` (+ labels, permission-matrix grants, plan caps feature `crm`) |
 | A4 | `CrmView` at `/crm` (kanban pipeline + meetings + quotations + agreements), `nav-config.ts` item (Procurement? no — new "CRM & Sales" group), plugin catalog route (`crm` module) |
 | A5 | i18n (en/hi/te) + tests (`tests/app/crmQueries.test.ts`) + segment template additions (architecture/consultancy get `crm`) |
 | A6 | Role-access e2e case for `crm` (orgadmin sees /crm; pm does not) in the mocked suite |
@@ -85,7 +85,7 @@ Creates the lead→meeting→quotation→agreement pipeline as a first-class mod
 | Sub-task | Change scope |
 | --- | --- |
 | B1 | Migration 162 `interior_boards.sql` — `mood_boards` (project-scoped, theme, media), `interior_rooms` (project, room name, area, finish status), `room_installations` (room_id, item, status, planned/done dates) + RLS + grants |
-| B2 | `src/app/interiorQueries.ts` — CRUD + pure helpers (INSTALL_NEXT, board items, room progress) |
+| B2 | `src/app/queries/interiorQueries.ts` — CRUD + pure helpers (INSTALL_NEXT, board items, room progress) |
 | B3 | `MoodBoardsTab`, `RoomsTab` in `tabs-config.ts` (projectTypes interior/design, planFeature `ffe` reuse or new `interior` feature), wired in `DetailView.tsx` |
 | B4 | i18n + tests + segment template (interior gets these automatically; keep `design` module owner) |
 
@@ -93,21 +93,21 @@ Creates the lead→meeting→quotation→agreement pipeline as a first-class mod
 | Sub-task | Change scope |
 | --- | --- |
 | C1 | Migration 163 `consultancy_audits.sql` — `inspection_checklists`, `inspection_results`, `consultancy_reports` (site visit, recommendation), audit trail + RLS + grants |
-| C2 | `src/app/consultancyAuditQueries.ts` + pure helpers |
+| C2 | `src/app/queries/consultancyAuditQueries.ts` + pure helpers |
 | C3 | `InspectionsTab` (already exists for site_ops — add consultancy variant) or `AuditTab` + `ReportsTab` for consultancy project types; plan cap `audit_reports` |
 | C4 | i18n + tests + nav/none (tab-level only) |
 
 ### Phase D — AI analytics depth (delay + risk, cost prediction)  ✅ COMPLETE (2026-08-07)
 | Sub-task | Change scope |
 | --- | --- |
-| D1 | ✅ `src/app/riskQueries.ts` — pure `computeRiskSignals(projectData)` (schedule slip vs milestone dates, budget burn vs earned value, open high-severity issues, RFI lag) → { riskScore, signals[], delayProbability } — deterministic, testable, no external AI |
+| D1 | ✅ `src/app/queries/riskQueries.ts` — pure `computeRiskSignals(projectData)` (schedule slip vs milestone dates, budget burn vs earned value, open high-severity issues, RFI lag) → { riskScore, signals[], delayProbability } — deterministic, testable, no external AI |
 | D2 | ✅ RiskSignalsCard on OverviewTab (`src/features/project/RiskSignalsCard.tsx` + tabs/OverviewTab) |
 | D3 | ✅ `tests/app/dRisk.test.ts` (14) — commit `259f1d7` |
 
 ### Phase E — Architecture design-workflow lifecycle  ✅ COMPLETE (2026-08-07)
 | Sub-task | Change scope |
 | --- | --- |
-| E1 | ✅ `src/app/designWorkflow.ts` — pure stage model (requirements → concept → floorplan → elevation → 3d → client review → approved) on top of existing `drawings` register; `nextStage`, `canAdvance`, stage gates — commit `e0baba3` |
+| E1 | ✅ `src/app/engines/designWorkflow.ts` — pure stage model (requirements → concept → floorplan → elevation → 3d → client review → approved) on top of existing `drawings` register; `nextStage`, `canAdvance`, stage gates — commit `e0baba3` |
 | E2 | ✅ DrawingsTab stage stepper + approval action; wire to existing `drawings.status` — commit `7386042` (persisted per-project, migration 165) |
 | E3 | ✅ tests + i18n — Opt3 per-drawing stage (migration 166, commit `4dfbd1b`) |
 

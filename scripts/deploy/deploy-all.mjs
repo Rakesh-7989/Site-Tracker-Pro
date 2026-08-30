@@ -130,28 +130,7 @@ step(4, "Enable GitHub Actions CI");
 if (existsSync(join(root, ".github/workflows/ci.yml"))) {
   ok(".github/workflows/ci.yml present");
 } else if (ghAuthOk) {
-  action("With workflow scope present, I'll run:");
-  cmd("git mv docs/workflows/CI_WORKFLOW.yml .github/workflows/ci.yml");
-  cmd("# update scripts/smoke.mjs to new path");
-  cmd("git commit -m 'ci: enable GH Actions' && git push");
-  const yes = await ask("Run that now? (y/N)");
-  if (/^y/i.test(yes)) {
-    try {
-      execSync("mkdir -p .github/workflows", { stdio: "inherit" });
-      execSync("git mv docs/workflows/CI_WORKFLOW.yml .github/workflows/ci.yml", { stdio: "inherit" });
-      // smoke.mjs path patch
-      const smokePath = join(root, "scripts/ci/smoke.mjs");
-      let smoke = readFileSync(smokePath, "utf8");
-      smoke = smoke.replaceAll("docs/workflows/CI_WORKFLOW.yml", ".github/workflows/ci.yml");
-      writeFileSync(smokePath, smoke);
-      execSync("git add scripts/ci/smoke.mjs", { stdio: "inherit" });
-      execSync(`git commit -m "ci: enable GitHub Actions (move workflow to .github/workflows/)"`, { stdio: "inherit" });
-      execSync("git push origin main", { stdio: "inherit" });
-      ok("Pushed — open repo Actions tab to confirm");
-    } catch {
-      fail("Push failed — check `gh auth status` and re-run");
-    }
-  }
+  warn("CI workflow is already committed at .github/workflows/ci.yml (the docs/workflows/CI_WORKFLOW.yml template was removed). No move needed.");
 } else {
   warn("Skipping — needs gh auth with workflow scope (Step 3)");
 }

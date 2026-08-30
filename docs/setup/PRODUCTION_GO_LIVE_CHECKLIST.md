@@ -76,7 +76,7 @@ to close before flipping the "open for business" switch.*
 | Check | Status | Notes |
 |-------|--------|-------|
 | Production build succeeds + reproducible | ✅ | Vite/rolldown |
-| Bundle size sane (code-split heavy routes) | ✅ | v3 entry 176→61.5 kB; recharts/legacy split to own lazy chunks |
+| Bundle size sane (code-split heavy routes) | ✅ | v3 entry 176→61.5 kB; heavy libs split to own lazy chunks |
 | Lighthouse (perf/PWA/best-practices) ≥ 80 | ⚠️ | `scripts/deploy/psi-check.mjs` ready (PageSpeed Insights); run pending |
 | Slow-3G load test (field connectivity) | ❌ | Chrome devtools throttle |
 | DB query timing on the biggest org | ⚠️ | RPCs are indexed; spot-check with EXPLAIN |

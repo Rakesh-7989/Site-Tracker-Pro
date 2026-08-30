@@ -7,7 +7,7 @@ SiteTrack ships as a PWA out of the box. To distribute on the iOS App Store and 
 - **Capacitor 8.5.0** installed (`@capacitor/core` + `@capacitor/cli` devDep + `@capacitor/android`).
 - `capacitor.config.ts` committed — appId **`in.sitetrackpro.app`**, webDir `dist`, `androidScheme: https`.
 - **`android/` project generated and committed** — `compileSdk 36 / targetSdk 36` (meets the Aug-31-2026 Play target-API requirement from day one), minSdk 24.
-- Runtime detector: `src/lib/platform.ts` (`isNativeMobile()` / `getPlatform()`) — service worker already skipped inside the shell via this gate.
+- Runtime detector: `src/lib/platform/platform.ts` (`isNativeMobile()` / `getPlatform()`) — service worker already skipped inside the shell via this gate.
 - Scripts: `npm run mobile:build` = production web build + `cap sync android`.
 
 ### Local commands (Node >=22 required by the Capacitor CLI)
@@ -81,7 +81,7 @@ Change in `capacitor.config.json` if you'd rather use your own domain.
 ## Known gotchas
 
 - Service worker (`public/sw.js`) is **disabled inside Capacitor** because the native shell loads assets via `file://` or `capacitor://`. SW caching only runs on the web PWA build.
-- localStorage works inside Capacitor but IndexedDB (`src/lib/offline.js`) is the durable option for binary attachments.
+- localStorage works inside Capacitor but IndexedDB (`src/lib/platform/offline.ts`) is the durable option for binary attachments.
 - Push notifications require Firebase Cloud Messaging (Android) and APNs (iOS) setup — separate config files needed.
 
 ## Roadmap after first native release

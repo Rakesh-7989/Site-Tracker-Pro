@@ -13,7 +13,7 @@
 
 | Doc | What's inside | Read it when |
 |---|---|---|
-| [`PRODUCT_TOUR.md`](./PRODUCT_TOUR.md) | Every route, tab, view, Edge Function, capability and what it does — written for someone explaining the product to a new hire / prospect | You are demoing, writing marketing copy, or briefing a new pilot |
+| [`PRODUCT_TOUR.md`](../business/PRODUCT_TOUR.md) | Every route, tab, view, Edge Function, capability and what it does — written for someone explaining the product to a new hire / prospect | You are demoing, writing marketing copy, or briefing a new pilot |
 | [`PLAN_FEATURE_MATRIX.md`](./PLAN_FEATURE_MATRIX.md) | Proposed Basic / Pro / Business feature split, with competitor evidence (Powerplay, Onsite, Buildertrend) — what to put in which tier and why | You are deciding what to gate, what to give away, what to charge extra for |
 | [`PLAN_GATING_IMPLEMENTATION.md`](./PLAN_GATING_IMPLEMENTATION.md) | Step-by-step code path to turn the matrix into reality — 9 ordered tasks, ~2.5–3 founder-days total | You are ready to start coding the plan gates |
 

@@ -78,7 +78,7 @@ Helpers: `templateModules(segment)`, `isRecommendedForSegment(segment, id)`,
 
 ### 1. Sidebar nav
 `NavItem.modules?: ModuleId[]` (ANY-of). `buildNav` drops items whose module is
-disabled (null config → show). Applied in `src/features/shell/nav-config.ts`:
+disabled (null config → show). Applied in `src/app/config/nav-config.ts`:
 `/client`→clients, `/procurement /vendors /pos /equipment /material-prices /vendor`
 →procurement, `/rabills /revenue`→finance, `/dpr /handover /measurement-book`→site_ops,
 `/compliance`→compliance, `/worklogs /hierarchy`→people, `/forecast /analytics`→insights,

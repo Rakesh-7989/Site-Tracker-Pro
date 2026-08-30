@@ -39,7 +39,7 @@ curl -X POST http://localhost:54321/functions/v1/cashfree-subscription \
 
 ## Shared code
 
-`_shared/cashfree.ts` mirrors `src/lib/cashfree.js` (browser ESM) for the Deno
+`_shared/cashfree.ts` mirrors `src/lib/integrations/cashfree.ts` (browser ESM) for the Deno
 runtime. Same logic, two implementations because Edge Functions can't bundle
 node_modules. They MUST stay in sync — when one changes, change both.
 

@@ -180,7 +180,7 @@ capabilities on that project but only base architect caps elsewhere.
 
 ## What this DOES NOT include (deferred to Sprint 3+)
 
-- Per-role capability matrix (`src/lib/permissions.js`) update — deferred
+- Per-role capability matrix (`src/auth/permissions-matrix.ts`) update — deferred
   until first pilot tells us what they actually do
 - UI role pickers + member-management screens — deferred
 - Notification-rule per-role routing — deferred
@@ -198,7 +198,7 @@ capabilities on that project but only base architect caps elsewhere.
 ## References
 
 - Founder's hand-drawn architecture diagram (June 3, 2026 photo)
-- `src/lib/permissions.js` — current capability matrix (to be expanded
+- `src/auth/permissions-matrix.ts` — current capability matrix (to be expanded
   in Sprint 3)
 - `docs/archive/SITETRACK_V3_PLAN.md` — 90-day v3 plan; Sprint 2 promoter digest
   flow depends on `site_supervisor` + `promoter` roles existing

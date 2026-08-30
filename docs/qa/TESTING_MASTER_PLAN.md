@@ -82,7 +82,7 @@ Phase 7 (PlanGate) ──► Phase 8 (i18n/a11y) ──► Phase 9 (Perf)
 ### Sub-Task 0.3: Test Database Seed Script
 **Deep Dive**: E2E tests need realistic data. Current E2E uses localStorage demo mode only.
 
-**Plan**: Create `scripts/seed-e2e.ts` that connects to Supabase preview branch and inserts:
+**Plan**: Create `scripts/seeds/seed-e2e.mjs` that connects to Supabase preview branch and inserts:
 - 3 organizations
 - 7 test users (all roles)
 - 5 projects (with 28+ tab entities)
@@ -92,7 +92,7 @@ Phase 7 (PlanGate) ──► Phase 8 (i18n/a11y) ──► Phase 9 (Perf)
 ### Sub-Task 0.4: Test Account Creation Script
 **Deep Dive**: Need automated account creation for 7 roles.
 
-**Plan**: Create `scripts/create-test-accounts.ts` using Supabase Admin API (service_role key) to create users with known credentials.
+**Plan**: Create `test-account creator (not present)` using Supabase Admin API (service_role key) to create users with known credentials.
 
 ---
 
@@ -101,7 +101,7 @@ Phase 7 (PlanGate) ──► Phase 8 (i18n/a11y) ──► Phase 9 (Perf)
 ### Sub-Task 1.1: Password Login
 **Deep Dive**: LoginScreenV3 uses `signInWithPassword()`. Need to test valid login, invalid password, and edge cases.
 
-**Plan**: Write `tests/e2e/auth-password.spec.ts` with:
+**Plan**: Write `tests/e2e/auth-password.spec.js` with:
 - Valid email/password → redirect to `/dashboard`
 - Invalid password → error message visible
 - Empty fields → validation errors

@@ -26,12 +26,12 @@ The **four architectural layers** are independent in build but composed at runti
 ```
                    ┌─────────────────────────────────────────────┐
                    │       PRODUCT  (what a user can do)         │
-                   │   4 project types × ~15 roles × 37 features │
+                    │   4 project types × ~22 roles × 37 features │
                    └────────────────────┬────────────────────────┘
                                         │ gates ▼
                    ┌─────────────────────────────────────────────┐
                    │     APPLICATION  (how the SPA is coded)     │
-                   │  React + Vite + 5 lazy chunks + 24 libs     │
+                   │  React + Vite + code-split chunks + the lib layer  │
                    └────────────────────┬────────────────────────┘
                                         │ runs on ▼
             ┌────────────────────────────────────────────────────────┐
@@ -98,8 +98,8 @@ The five sections that follow describe each layer **and** how it composes with t
 | Browser → Supabase REST | Anon JWT or user JWT | Per-user | RLS using `current_setting('app.tenant_id')` + JWT claims |
 | Browser → Edge Function | Anon JWT | Per-user | EF reads JWT, calls `supabaseAdmin` with allow-listed ops only |
 | Edge Function → Postgres | `service_role` JWT | Server-only | EF env-var; never sent to browser |
-| Webhook (Cashfree) → EF | Cashfree HMAC sig | Cryptographic | `verifyWebhookSignature()` in [src/lib/cashfree.js](src/lib/cashfree.js) |
-| EF → Polygon | RPC URL + signer key | Server-only | Signer adapter pattern in [src/lib/blockchainAnchor.js](src/lib/blockchainAnchor.js) |
+| Webhook (Cashfree) → EF | Cashfree HMAC sig | Cryptographic | `verifyWebhookSignature()` in `src/lib/integrations/cashfree.ts` |
+| EF → Polygon | RPC URL + signer key | Server-only | Signer adapter pattern in `src/lib/integrations/blockchainAnchor.ts` |
 | EF → Meta WhatsApp | Page-token (Permanent) | Server-only | Stored in EF env, never in repo |
 
 **Two zones of trust:**
@@ -121,8 +121,8 @@ The five sections that follow describe each layer **and** how it composes with t
 9. RLS policies evaluate using app.tenant_id  ──► Rows filtered before send
 ```
 
-See [src/lib/supabase.js](src/lib/supabase.js) for client-side helpers and
-[docs/setup/CONNECT_SUPABASE.md](docs/setup/CONNECT_SUPABASE.md) for the 8-step server-side bootstrap.
+See `src/lib/supabase/supabase.ts` for client-side helpers and
+[docs/setup/CONNECT_SUPABASE.md](../setup/CONNECT_SUPABASE.md) for the 8-step server-side bootstrap.
 
 ### 1.4 Data flow — Cashfree subscription activation
 
@@ -149,7 +149,7 @@ SPA           cashfree-subscription EF      Cashfree API         User
  │ "plan = pro" badge  │                        │                   │
 ```
 
-Both EFs share [supabase/functions/_shared/cashfree.ts](supabase/functions/_shared/cashfree.ts).
+Both EFs share ../../supabase/functions/_shared/cashfree.ts.
 
 ### 1.5 Data flow — Polygon audit anchoring (optional, daily cron)
 
@@ -173,7 +173,7 @@ Both EFs share [supabase/functions/_shared/cashfree.ts](supabase/functions/_shar
                       ▼  INSERT audit_anchors {day, root, tx, block}
 ```
 
-Pure-function core is testable without RPC; see [src/lib/blockchainAnchor.js](src/lib/blockchainAnchor.js) and 33 tests in [src/lib/blockchainAnchor.test.js](src/lib/blockchainAnchor.test.js).
+Pure-function core is testable without RPC; see `src/lib/integrations/blockchainAnchor.ts` and 33 tests in [tests/blockchainAnchor.test.js](../../tests/blockchainAnchor.test.js).
 
 ### 1.6 Environments
 
@@ -244,7 +244,7 @@ src/
     ├── ai.js, aiForecast.js            ← LLM adapters (multi-language)
     ├── i18n.js                         ← en/te/hi label table
     ├── offline.js, usePersistent.js    ← IndexedDB + LS adapter
-    ├── supabase.js                     ← Lazy client + probeConnection
+    ├── src/lib/supabase/supabase.ts                     ← Lazy client + probeConnection
     ├── hierarchy.js, dailySnapshot.js  ← Block→Floor→Unit + snapshot math
     ├── notifications.js, materialPrices.js, branding.js
     ├── format.js, escape.js, contractors.js, demoMode.js
@@ -252,27 +252,27 @@ src/
 
 The lib layer is **pure JavaScript**: no React imports, no fetches, all functions
 testable in milliseconds. Every UI component imports its math from here. This is
-why the test suite (438 tests) runs in under 4 seconds.
+why the test suite (2000+ unit tests) runs quickly in CI.
 
-### 2.2 The 5 lazy chunks (vite.config.js)
+### 2.2 The manual chunks (vite.config.js)
 
 | Chunk | First loaded when | What's in it | Why split |
 |---|---|---|---|
 | **main** | Login screen | shell + ui + ai + supabase + permissions | Cold path — must stay small |
 | **org** | Click "Org Admin" gear | features/org + cashfree + approvalChains + templates | Only seen by org admins (~3% of users) |
 | **roadmap** | Click any v2 view | features/roadmap + hierarchy/branding/forecast/etc. | Heavy and not used on dashboard |
-| **views** | Open Gantt/Analytics/Calendar/POs | features/views + recharts | Recharts is 200+ kB by itself |
+| **views** | Open Gantt/Analytics/Calendar/POs | features/views + custom SVG charts | Custom charts keep the bundle lean (no chart library) |
 | **admin** | Super admin login | features/admin | <1 user/tenant ever sees this |
 | **detail** | Open project detail | features/detail + 17 sub-tabs + ClientShareView | Big surface; only loaded on click |
 
-Chunk seam at [vite.config.js:10-31](vite.config.js).
+Chunk seam at [vite.config.js:10-31](../../vite.config.js).
 Every chunk is wrapped in `<Suspense fallback={…}>` + the top-level `ErrorBoundary`
 catches load failures, so a broken chunk shows a friendly card instead of a white screen.
 
 ### 2.3 State model — `usePersistent`
 
 There is **no Redux, no Zustand, no Context-of-Contexts**. State is managed by a single
-hook, [src/lib/usePersistent.js](src/lib/usePersistent.js):
+hook, `usePersistent hook (removed)`:
 
 ```js
 const [projects, setProjects] = usePersistent("projects", INIT_PROJECTS)
@@ -285,7 +285,7 @@ Behaviour:
   + on every change; subscribes via Supabase Realtime to push updates from other
   tabs/users.
 - **Offline-first** (Capacitor or browser without network) →
-  `queueOpAdd()` from [src/lib/offline.js](src/lib/offline.js) parks the mutation
+  `queueOpAdd()` from `src/lib/platform/offline.ts` parks the mutation
   in IndexedDB; a connectivity listener flushes the queue on reconnect.
 
 This is the single biggest architectural decision in the codebase. It means:
@@ -312,7 +312,7 @@ Why no router? Three reasons:
    navigation; deep linking is rarely used by the field-worker persona.
 2. **Save 14 kB** gzipped (react-router + history).
 3. **Share view via URL** is implemented manually: `?share=<token>` activates
-   `ClientShareView` regardless of auth state. See [App.jsx top-level effect](src/App.jsx).
+   `ClientShareView` regardless of auth state. See `src/main.tsx`.
 
 Trade-off accepted: no browser back-button support across views. Acceptable for
 the persona; revisit if/when we add public marketing pages inside the SPA.
@@ -369,7 +369,7 @@ git push ──► Vercel webhook ──► Vercel build
                                     ├─ npm run lint       (eslint 0 errors)
                                     ├─ npm run build      (Vite → dist/)
                                     ├─ npm run smoke      (320 line-level checks)
-                                    └─ npm run test:unit  (438 vitest tests)
+                                    └─ npm run test:unit  (2000+ vitest tests)
                                     │
                                     ▼
                               dist/ deployed
@@ -392,7 +392,7 @@ Mobile build pipeline is documented in §4.4.
           │  Smoke (line-level grep)   │  320 checks  (1 second)
           └────────────────────────────┘
         ┌─────────────────────────────────┐
-        │  Unit (vitest, pure-lib only)   │  438 tests  (4 seconds)
+        │  Unit (vitest, pure-lib only)   │  2000+ tests  (CI)
         └─────────────────────────────────┘
       ┌──────────────────────────────────────┐
       │  Type-shape (jsdoc + import lint)    │  enforced via ESLint
@@ -445,9 +445,9 @@ deletions that pass unit tests but break the UI.
 Currently 19 distinct roles. Each role has:
 
 - A **PERMS** set: capability flags like `EDIT_PROJECT`, `APPROVE_RA_BILL`,
-  `RECORD_LABOUR`, `EXPORT_AUDIT`, etc. Source: [src/lib/permissions.js](src/lib/permissions.js).
+  `RECORD_LABOUR`, `EXPORT_AUDIT`, etc. Source: `src/auth/permissions-matrix.ts`.
 - A **ROLE_META** entry (label, accent colour, icon, default dashboard).
-  Source: [src/components/ui.jsx](src/components/ui.jsx).
+  Source: `src/components/ui/index.ts`.
 - A **MOCK_USERS** seed for demo mode.
 - An RLS policy condition in SQL — see scripts/supabase/03_rls_phase1.sql.
 
@@ -476,7 +476,7 @@ Why three layers and not one?
   "Measurement Book"; a Construction project doesn't show "Mood Board".
 
 Composing the three gives the firm fine-grained control without exploding the
-permission matrix. See [docs/architecture/ROLE_MODEL_V2.md](docs/architecture/ROLE_MODEL_V2.md).
+permission matrix. See [docs/architecture/ROLE_MODEL_V2.md](./ROLE_MODEL_V2.md).
 
 ### 3.3 The 4 project types
 
@@ -498,11 +498,11 @@ permission matrix. See [docs/architecture/ROLE_MODEL_V2.md](docs/architecture/RO
 ```
 
 The type is chosen on the CreateView 2x2 grid; defaults are in
-[src/lib/projectTypes.js](src/lib/projectTypes.js).
+`src/lib/projectTypes.ts`.
 
 ### 3.4 The 9 Org Admin panels
 
-Behind a single gear icon ([src/features/org/index.jsx](src/features/org/index.jsx)):
+Behind a single gear icon (`org feature index (removed)`):
 
 1. **Members** — Invite, role assign, bulk CSV import.
 2. **Approval Chains** — Per-action approver lists with delegation windows.
@@ -516,7 +516,7 @@ Behind a single gear icon ([src/features/org/index.jsx](src/features/org/index.j
 
 ### 3.5 The 17 project sub-tabs
 
-(All in [src/features/detail/index.jsx](src/features/detail/index.jsx); each is a
+(All in `detail feature index (removed)`; each is a
 top-level pure function with the same `(project, setProject, audit, …)` signature.)
 
 ```
@@ -565,7 +565,7 @@ Plan gate                (free / pro / business / enterprise)
 isFeatureEnabled = true | false
 ```
 
-Source: [src/lib/orgFeatureFlags.js](src/lib/orgFeatureFlags.js) + 29 tests.
+Source: `src/lib/integrations/orgFeatureFlags.ts` + 29 tests.
 
 ### 3.7 The Indian-builder surfaces
 
@@ -573,16 +573,16 @@ Areas where SiteTrack is deliberately deeper than Procore / Powerplay:
 
 | Surface | Why it matters | Where it lives |
 |---|---|---|
-| **BOQ paste-from-Excel** | Builders share BOQs as Excel, not CSV | [src/lib/boqImport.js](src/lib/boqImport.js) |
-| **Measurement Book (MB)** | Required by PWD spec; foreign tools don't ship it | [features/detail/index.jsx](src/features/detail/index.jsx) — MeasurementBookTab |
+| **BOQ paste-from-Excel** | Builders share BOQs as Excel, not CSV | `src/lib/boqImport.ts` |
+| **Measurement Book (MB)** | Required by PWD spec; foreign tools don't ship it | `detail feature index (removed)` — MeasurementBookTab |
 | **RA Bill cycle** | Linked to MB + BOQ; running-account semantics | RABills tab + recordAudit on every approval |
-| **Telangana RERA filing** | Stage-coded; portal scraping required | [src/lib/reraTelangana.js](src/lib/reraTelangana.js) + tg-rera-submit EF |
-| **GSTIN / EPFO check** | Vendor onboarding gate | [src/lib/compliance.js](src/lib/compliance.js) |
-| **UPI AutoPay (Cashfree)** | Cards have 3% MDR; UPI has near-zero | [src/lib/cashfree.js](src/lib/cashfree.js) |
-| **WhatsApp daily-progress** | Site managers won't use email | [src/lib/whatsapp.js](src/lib/whatsapp.js) + Meta Cloud API runbook |
-| **Telugu / Hindi labels** | Field workers don't read English | [src/lib/i18n.js](src/lib/i18n.js) + `LANG_INSTRUCTIONS` in lib/ai.js |
+| **Telangana RERA filing** | Stage-coded; portal scraping required | `src/lib/integrations/reraTelangana.ts` + tg-rera-submit EF |
+| **GSTIN / EPFO check** | Vendor onboarding gate | `src/lib/integrations/compliance.ts` |
+| **UPI AutoPay (Cashfree)** | Cards have 3% MDR; UPI has near-zero | `src/lib/integrations/cashfree.ts` |
+| **WhatsApp daily-progress** | Site managers won't use email | `src/lib/integrations/whatsapp.ts` + Meta Cloud API runbook |
+| **Telugu / Hindi labels** | Field workers don't read English | `src/lib/i18n.ts` + `LANG_INSTRUCTIONS` in lib/ai.js |
 | **Quick-capture kiosk** | One-tap labour attendance from a tablet | DetailView LabourTab + permissions.canUseQuickCapture |
-| **Letterhead PDF audit log** | Required for legal disputes | [src/lib/exports.js](src/lib/exports.js) → exportAuditPdf |
+| **Letterhead PDF audit log** | Required for legal disputes | `exports module (removed)` → exportAuditPdf |
 
 ---
 
@@ -663,7 +663,7 @@ Three layers cooperate:
                                           flushQueue(op-by-op)
 ```
 
-Sources: [src/lib/offline.js](src/lib/offline.js), [src/lib/usePersistent.js](src/lib/usePersistent.js).
+Sources: `src/lib/platform/offline.ts`, `usePersistent hook (removed)`.
 
 ### 4.4 Mobile build pipeline
 
@@ -690,7 +690,7 @@ Upload to Play Console
    └── Production track         (public)
 ```
 
-See [docs/setup/PLAY_STORE_PREP.md](docs/setup/PLAY_STORE_PREP.md) for the 8-step submission runbook.
+See [docs/setup/PLAY_STORE_PREP.md](../setup/PLAY_STORE_PREP.md) for the 8-step submission runbook.
 
 ### 4.5 Mobile-specific UX variants
 
@@ -797,7 +797,7 @@ before the next layer can ship.
 ### 5.2 Why this order
 
 - **S1 before everything** — pure libs are testable in isolation; bugs caught
-  here never propagate. That's why we have 438 unit tests on 24 libs.
+  here never propagate. That's why we have 2000+ unit tests across the lib layer.
 - **S2 before UI** — the UI is "render this seed". You can build every screen
   with zero backend.
 - **S5 before S6** — the SPA must work in demo mode first. This guarantees the
@@ -815,7 +815,7 @@ before the next layer can ship.
 These are the laws that hold across all four architectural layers:
 
 1. **Pure libs first, React second.** Every feature must be expressible as a
-   pure function before it gets JSX. This is what made 438 tests possible.
+   pure function before it gets JSX. This is what made 2000+ unit tests possible.
 2. **One state hook, no providers.** `usePersistent` is the only state primitive.
    This avoids React Context performance traps.
 3. **3-layer access gate everywhere.** Role ∧ Feature flag ∧ Project type. No
@@ -842,7 +842,7 @@ Day 0  ── User pain: spreadsheets are how builders share BOQs
 Day 1  ── Design: lib API   parseBoq(text) → { rows, headers, errors }
                             applyBoqImport(project, rows, opts) → project'
 Day 1  ── Write tests       33 unit tests for parser + applier
-Day 1  ── Implement lib     src/lib/boqImport.js   pure JS, no React
+Day 1  ── Implement lib     src/lib/boqImport.ts   pure JS, no React
 Day 2  ── UI                BOQTab adds: paste-area + preview modal + Append/Replace
                             DetailView wires setProject + recordAudit
 Day 2  ── Smoke check       npm run smoke catches deletions
@@ -867,7 +867,7 @@ Example: **"Cashfree subscription onboarding"** (Session 15).
 
 ```
 Day 0  ── Design: client → EF → Cashfree → webhook → EF → DB → realtime → client
-Day 1  ── Pure lib      src/lib/cashfree.js
+Day 1  ── Pure lib      src/lib/integrations/cashfree.ts
                             buildSubscriptionRequest()
                             verifyWebhookSignature() (Web Crypto HMAC SHA-256)
                             mapCashfreeStatus()
@@ -950,7 +950,7 @@ revealing it. Critical for RERA disputes and arbitration.
 
 ### 6.3 i18n — three languages, one bundle
 
-`src/lib/i18n.js` exports `t(key, lang)`. The full UI is keyed; field workers
+`src/lib/i18n.ts` exports `t(key, lang)`. The full UI is keyed; field workers
 see Telugu or Hindi based on `user.lang`. Crucially, the **AI lib also takes
 lang**: `forecastWithLlm(…, {lang})` injects a system instruction that forces
 the LLM to respond in the requested language. This lets WhatsApp DPR
@@ -1024,9 +1024,9 @@ not production-ready**:
 
 | Item | State | Where it's stubbed |
 |---|---|---|
-| Polygon anchoring | Lib + tests live; **Solidity contract not deployed** | [src/lib/blockchainAnchor.js](src/lib/blockchainAnchor.js) — `polygonAdapter` returns mock tx |
-| WhatsApp send | Lib live, **EF not wired** | [src/lib/whatsapp.js](src/lib/whatsapp.js) + runbook only |
-| Telangana RERA submit | EF stub + adapter live; **portal scraper disabled by feature flag** | [supabase/functions/tg-rera-submit/](supabase/functions/tg-rera-submit/) gated by `TG_RERA_SCRAPER_ENABLED` |
+| Polygon anchoring | Lib + tests live; **Solidity contract not deployed** | `src/lib/integrations/blockchainAnchor.ts` — `polygonAdapter` returns mock tx |
+| WhatsApp send | Lib live, **EF not wired** | `src/lib/integrations/whatsapp.ts` + runbook only |
+| Telangana RERA submit | EF stub + adapter live; **portal scraper disabled by feature flag** | ../../supabase/functions/tg-rera-submit gated by `TG_RERA_SCRAPER_ENABLED` |
 | Cashfree EFs | Code complete + 24 tests; **not deployed to prod** | Awaiting account approval |
 | AR drawing overlay | Scaffold only | DetailView Drawings tab placeholder |
 | Sentry | Not installed | Phase 2 of execution plan |
@@ -1036,7 +1036,7 @@ not production-ready**:
 | Drawing-diff | Not started | Phase 5 |
 
 This list is identical to the "honest claims" disclosure in
-[docs/business/COMPETITOR_COMPARISON_V2.md](docs/business/COMPETITOR_COMPARISON_V2.md).
+[docs/business/COMPETITOR_COMPARISON_V2.md](../business/COMPETITOR_COMPARISON_V2.md).
 
 ---
 
@@ -1082,17 +1082,17 @@ piece of the boring layer becomes a bottleneck, we replace it — not before.
 
 | Need to know about | Read |
 |---|---|
-| How to connect to Supabase | [docs/setup/CONNECT_SUPABASE.md](docs/setup/CONNECT_SUPABASE.md) |
-| How to deploy to production | [docs/setup/DEPLOY_NOW.md](docs/setup/DEPLOY_NOW.md) |
-| Cashfree onboarding paper-trail | [docs/setup/CASHFREE_ONBOARDING.md](docs/setup/CASHFREE_ONBOARDING.md) |
-| WhatsApp Business API verification | [docs/archive/WHATSAPP_BUSINESS_API.md](docs/archive/WHATSAPP_BUSINESS_API.md) |
-| Play Store submission | [docs/setup/PLAY_STORE_PREP.md](docs/setup/PLAY_STORE_PREP.md) |
-| Role model v2 details | [docs/architecture/ROLE_MODEL_V2.md](docs/architecture/ROLE_MODEL_V2.md) |
-| Production RLS configuration | [docs/architecture/PRODUCTION_RLS.md](docs/architecture/PRODUCTION_RLS.md) |
-| Competitor feature matrix | [docs/business/COMPETITOR_COMPARISON_V2.md](docs/business/COMPETITOR_COMPARISON_V2.md) |
-| 90-day execution plan | [docs/planning/EXECUTION_PLAN_90_DAYS.md](docs/planning/EXECUTION_PLAN_90_DAYS.md) |
-| HRMS deployment-pattern study | [docs/setup/HRMS_DEPLOYMENT_STUDY.md](docs/setup/HRMS_DEPLOYMENT_STUDY.md) |
-| MCP toolkit overview | [docs/integrations/MCP_TOOLKIT.md](docs/integrations/MCP_TOOLKIT.md) |
+| How to connect to Supabase | [docs/setup/CONNECT_SUPABASE.md](../setup/CONNECT_SUPABASE.md) |
+| How to deploy to production | [docs/setup/DEPLOY_NOW.md](../setup/DEPLOY_NOW.md) |
+| Cashfree onboarding paper-trail | [docs/setup/CASHFREE_ONBOARDING.md](../setup/CASHFREE_ONBOARDING.md) |
+| WhatsApp Business API verification | [docs/archive/WHATSAPP_BUSINESS_API.md](../archive/WHATSAPP_BUSINESS_API.md) |
+| Play Store submission | [docs/setup/PLAY_STORE_PREP.md](../setup/PLAY_STORE_PREP.md) |
+| Role model v2 details | [docs/architecture/ROLE_MODEL_V2.md](./ROLE_MODEL_V2.md) |
+| Production RLS configuration | [docs/architecture/PRODUCTION_RLS.md](./PRODUCTION_RLS.md) |
+| Competitor feature matrix | [docs/business/COMPETITOR_COMPARISON_V2.md](../business/COMPETITOR_COMPARISON_V2.md) |
+| 90-day execution plan | [docs/planning/EXECUTION_PLAN_90_DAYS.md](../planning/EXECUTION_PLAN_90_DAYS.md) |
+| HRMS deployment-pattern study | [docs/setup/HRMS_DEPLOYMENT_STUDY.md](../setup/HRMS_DEPLOYMENT_STUDY.md) |
+| MCP toolkit overview | [docs/integrations/MCP_TOOLKIT.md](../integrations/MCP_TOOLKIT.md) |
 
 ---
 

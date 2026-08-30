@@ -20,15 +20,15 @@ HRMS/
 │   │   ├── middleware/        ← JWT, RLS context, rate limit, tenant
 │   │   ├── modules/          ← feature modules (admin, payroll, leave…)
 │   │   └── database/         ← schema.sql + migrations/ + seed/
-│   └── scripts/setup.js      ← interactive bootstrap
-└── frontend/        ← Vite 5 + React 18 + TypeScript SPA
-    ├── src/services/api.ts   ← axios → VITE_API_URL
+│   └── scripts/ci/setup.mjs      ← interactive bootstrap
+└── frontend/        ← Vite 8 + React 19 + TypeScript SPA
+    ├── API service module (not present)   ← axios → VITE_API_URL
     └── vite.config.ts        ← dev proxy /api → localhost:5000
 ```
 
 **Important finding:** the repo has **NO hosting infra files** committed —
 no `vercel.json`, no `Dockerfile`, no `.github/workflows`, no `render.yaml`.
-`scripts/setup-rds.js` exists by name but is **empty**. So HRMS's actual
+`RDS setup script (empty/removed)` exists by name but is **empty**. So HRMS's actual
 cloud hosting (which provider, which region) is not captured in source —
 it lives in someone's AWS console / deploy dashboard.
 
@@ -36,7 +36,7 @@ What the code DOES tell us about how it's meant to run:
 
 | Signal in code | What it implies |
 | -------------- | --------------- |
-| `scripts/setup-rds.js` + `ssl: { rejectUnauthorized: false }` when `NODE_ENV=production` in `db.js` | Postgres runs on **AWS RDS** in production |
+| `RDS setup script (empty/removed)` + `ssl: { rejectUnauthorized: false }` when `NODE_ENV=production` in `db.js` | Postgres runs on **AWS RDS** in production |
 | `node-cron` jobs in `src/jobs/` (auto-checkout 11:59 PM, daily reports 6 AM, subscription renewal midnight) | Backend must be an **always-on Node process** — not serverless functions |
 | `express` + `app.listen(PORT)` | A long-lived server on a Node host (EC2 / Render / Railway / Fly) |
 | `VITE_API_URL` in frontend + dev proxy | Frontend is a **separate deploy** that talks to the backend over HTTP |
@@ -113,7 +113,7 @@ data-isolation layer — good news.
 5. (Further down) run `setup.sql` to drop+create DB + `hrms_user` role +
    `uuid-ossp` + `pgcrypto` extensions, then apply `schema.sql` + migrations + seeds
 
-So a fresh HRMS environment = `psql -f setup.sql` → `node scripts/setup.js`
+So a fresh HRMS environment = `psql -f setup.sql` → `node scripts/ci/setup.mjs`
 → `npm start` (backend) + `npm run build` + static deploy (frontend).
 
 ---
@@ -186,7 +186,7 @@ topology.**
 
 | HRMS practice | Apply to SiteTrack |
 | ------------- | ------------------ |
-| `scripts/setup.js` interactive bootstrap | ✅ Build `scripts/ci/setup.mjs` (this session) |
+| `scripts/ci/setup.mjs` interactive bootstrap | ✅ Build `scripts/ci/setup.mjs` (this session) |
 | `.env.example` env-driven config | ✅ Already have it |
 | `current_setting('app.tenant_id')` RLS | ✅ Already in `03_rls_phase1.sql` |
 | `setup.sql` clean DB bootstrap | ✅ Already have `01_schema.sql` |

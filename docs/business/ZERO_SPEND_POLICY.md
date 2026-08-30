@@ -10,7 +10,7 @@ service becomes unavoidable.
 
 - `BUDGET_MODE=zero-spend` (default) blocks paid providers at call time.
 - Set `BUDGET_MODE=paid` in `.env.local` only after founder approval.
-- All call sites check `src/lib/budgetMode.js` (browser) or
+- All call sites check `src/lib/utils/budgetMode.ts` (browser) or
   `supabase/functions/_shared/budget.ts` (EFs) before invoking any
   third-party service. Tests pin the JS+TS catalogs in lock-step.
 
@@ -82,7 +82,7 @@ The code path doesn't change — only the guards relax.
 
 ## Catalog of provider classifications
 
-See `src/lib/budgetMode.js` (`PAID_PROVIDERS`, `CAPPED_FREE_PROVIDERS`,
+See `src/lib/utils/budgetMode.ts` (`PAID_PROVIDERS`, `CAPPED_FREE_PROVIDERS`,
 `ALWAYS_FREE_PROVIDERS`) and `supabase/functions/_shared/budget.ts`
 (same sets, TypeScript mirror). The two files are tested for parity in
 `tests/budgetMode.test.js` so they cannot drift.

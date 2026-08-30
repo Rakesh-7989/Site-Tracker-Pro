@@ -123,7 +123,7 @@ research_deliverables
 
 ## 5. Query Layer
 ```
-src/app/researchQueries.ts
+src/app/queries/researchQueries.ts
   - listDocuments, getDocument, createDocument, updateDocument, deleteDocument
   - searchDocuments(query, filters) — hybrid search
   - listCollections, createCollection, addToCollection

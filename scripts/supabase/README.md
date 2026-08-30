@@ -29,7 +29,7 @@ After `04_rls_tests.sql` runs you should see ~18 `PASS` notices in the Supabase 
 
 ## Schema matches the frontend
 
-These tables intentionally mirror the `INIT_*` mock data shapes in `src/App.jsx` so the eventual frontend migration is mostly state-management plumbing, not data remodeling:
+These tables intentionally mirror the `INIT_*` mock data shapes in `src/main.tsx` so the eventual frontend migration is mostly state-management plumbing, not data remodeling:
 
 | Frontend `INIT_*` | SQL table |
 | --- | --- |

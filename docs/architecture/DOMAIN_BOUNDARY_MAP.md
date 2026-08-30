@@ -1,6 +1,6 @@
 # SiteTrack Pro — Domain Boundary Map (VNEXT-004)
 
-*Source of truth: `src/app/domainMap.ts`. Parity lock: `tests/app/domainMap.test.ts`
+*Source of truth: `src/app/config/domainMap.ts`. Parity lock: `tests/app/domainMap.test.ts`
 (19 tests). This doc is the human-readable view — when the registry changes, update
 the tables here.*
 
@@ -111,8 +111,8 @@ fails until they line up:
    id (mirror 161/182), plus the module's tables/RLS/feature-caps seed.
 3. `src/plugins/catalog.ts` — a plugin owning the module's routes.
 4. `src/features/project/tabs-config.ts` — `TabDef.moduleId` for its tabs.
-5. `src/app/nav-config.ts` — `NavItem.modules` for its nav items.
-6. `src/app/domainMap.ts` — a `MODULE_SURFACES` row: `queryFiles` (new
+5. `src/app/config/nav-config.ts` — `NavItem.modules` for its nav items.
+6. `src/app/config/domainMap.ts` — a `MODULE_SURFACES` row: `queryFiles` (new
    `src/app/*Queries.ts`), `engines` (which rails it consumes), `tables`.
 7. `docs/architecture/DOMAIN_BOUNDARY_MAP.md` — add the module row to §2.
 8. i18n — `module.<id>.*` labels in `en/hi/te.json` (parity enforced by

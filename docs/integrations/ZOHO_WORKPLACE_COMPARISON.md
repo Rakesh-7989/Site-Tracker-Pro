@@ -276,11 +276,11 @@ The trade-off is **complexity**: two EFs, rate-limit logic, honeypot handling, s
 | `register_org` EF | `supabase/functions/register_org/index.ts` |
 | `submit_signup_request` EF | `supabase/functions/submit_signup_request/index.ts` |
 | `review_signup_request` EF | `supabase/functions/review_signup_request/index.ts` |
-| `registerOrg` query | `src/app/orgRegisterQueries.ts` |
-| `submitSignupRequest` query | `src/app/signupQueries.ts` |
+| `registerOrg` query | `src/app/queries/orgRegisterQueries.ts` |
+| `submitSignupRequest` query | `src/app/queries/signupQueries.ts` |
 | Signup schema + RLS | `scripts/supabase/01_schema.sql`, `scripts/supabase/02_rls.sql` |
 | Segment config (migration 134) | `scripts/supabase/134_org_segment.sql` |
-| Onboarding flow | `src/features/org/OnboardingView.tsx`, `src/app/onboardingQueries.ts` |
+| Onboarding flow | `src/features/org/OnboardingView.tsx`, `src/app/queries/onboardingQueries.ts` |
 | Plan config | `src/auth/planCaps.ts`, `src/auth/segmentConfig.ts` |
 | Email templates | `supabase/functions/register_org/index.ts` (welcome), `supabase/functions/review_signup_request/index.ts` (temp pw / branded invite) |
 | Rate limit logic | `submit_signup_request/index.ts` lines 76-86 |

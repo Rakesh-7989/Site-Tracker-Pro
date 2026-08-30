@@ -12,8 +12,8 @@ documented.
 | 1 | [Sentry](SENTRY_SETUP.md) | 📊 free 5k errors/mo | 5 min | Error visibility during pilots |
 | 2 | [Bhashini API](BHASHINI_API_SETUP.md) | 🆓 free for startups | 5–7 days | Telugu voice transcription |
 | 3 | [Polygon Amoy](POLYGON_AMOY_SETUP.md) | 🆓 free testnet | 30 min | Audit anchor demo |
-| 4 | [WhatsApp Cloud API](WHATSAPP_CLOUD_API_SETUP.md) | 📊 1k free/mo | 30–60 min + 1–2 day Meta review | Promoter daily digest |
-| 5 | [Resend SMTP](../RESEND_SMTP_SETUP.md) | 📊 free 3k emails/mo | 5–15 min + DNS propagation | Sign-up + transactional email |
+| 4 | [WhatsApp Cloud API](../archive/WHATSAPP_CLOUD_API_SETUP.md) | 📊 1k free/mo | 30–60 min + 1–2 day Meta review | Promoter daily digest |
+| 5 | [Resend SMTP](./RESEND_SMTP_SETUP.md) | 📊 free 3k emails/mo | 5–15 min + DNS propagation | Sign-up + transactional email |
 | 6 | Cashfree subscriptions | 📊 2% per txn | deferred | Pilot billing — wire when first pilot signs |
 
 ## Verification
@@ -53,5 +53,5 @@ These services are intentionally skipped during the zero-spend window:
 
 `docs/business/ZERO_SPEND_POLICY.md` is the authoritative source. If you discover
 a new third-party dependency, add it to the provider catalog in BOTH
-`src/lib/budgetMode.js` AND `supabase/functions/_shared/budget.ts` — the
+`src/lib/utils/budgetMode.ts` AND `supabase/functions/_shared/budget.ts` — the
 test suite enforces parity.
