@@ -49,7 +49,13 @@
     "errClientName": "Client name required",
     "errPickSegment": "Please pick at least one industry",
     "errOrgName": "Organisation name required",
-    "selectMany": "Select one or more — modules combine across picks."
+    "selectMany": "Select one or more — modules combine across picks.",
+    "finishTitle": "You're all set",
+    "finishSub": "Your workspace is ready to use.",
+    "finishProject": "Create your first project",
+    "finishInvite": "Invite your team",
+    "finishGo": "Go to dashboard",
+    "trialNote": "Trial active — no payment required to explore."
   },
   "$meta": {
     "language": "en",
@@ -256,7 +262,8 @@
     "searchPlaceholder": "Search anything…",
     "viewProfile": "View your profile",
     "trialBanner": "Pro trial · {days} days left",
-    "trialBannerDay": "Pro trial · {days} day left"
+    "trialBannerDay": "Pro trial · {days} day left",
+    "manageOrgs": "Manage organizations"
   },
   "auth": {
     "alreadyAccount": "Already have an account?",
@@ -730,7 +737,8 @@
     "signLabel": "signed {date}",
     "byLabel": " by {name}",
     "budgetLabel": "Budget {amount}",
-    "validTo": "valid to {date}"
+    "validTo": "valid to {date}",
+    "noOwner": "No owner assigned"
   },
   "audit": {
     "backendError": "Backend not configured.",
@@ -784,7 +792,9 @@
     "emptyReportTitle": "No reports yet",
     "emptyReportDesc": "Create site visit, recommendation, or milestone review reports.",
     "periodFrom": "From {date}",
-    "periodTo": "To {date}"
+    "periodTo": "To {date}",
+    "fieldItem": "Field",
+    "fieldNote": "Note"
   },
   "overviewTab": {
     "settings": "Settings",
@@ -836,7 +846,8 @@
     "send": "Send message",
     "sendReply": "Send reply",
     "archive": "Archive",
-    "delete": "Delete"
+    "delete": "Delete",
+    "dmUnnamed": "Unnamed chat"
   },
   "chat": {
     "subtitle": "Project streams · channels · direct messages",
@@ -896,5 +907,25 @@
     "openProject": "open the project",
     "hostedBy": "Hosted by {name}",
     "sharedProject": "Shared project"
+  },
+  "invoices": {
+    "title": "Invoices",
+    "subtitle": "Cross-entity invoice overview",
+    "eyebrow": "Billing",
+    "statTotal": "Total",
+    "statAmount": "Amount",
+    "statNet": "Net",
+    "statReceived": "Received",
+    "statOutstanding": "Outstanding",
+    "statPaymentSplit": "Payment split"
+  },
+  "vendor": {
+    "tab": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "purchaseOrders": "Purchase orders",
+      "materialPrices": "Material prices",
+      "submitQuote": "Submit quote"
+    }
   }
 }

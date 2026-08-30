@@ -30,7 +30,7 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
     setLoading(true);
     setError(null);
     const client = await getClient();
-    if (!client) { setError(t("invite.backendError")); setLoading(false); return; }
+    if (!client) { setError(t("auth.invite.backendError")); setLoading(false); return; }
     const res = await lookupUserForInvite(client, email.trim());
     if (res.ok) {
       if (res.data) {
@@ -55,7 +55,7 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
     }
     if (!name.trim()) return;
     const client = await getClient();
-    if (!client) { setError(t("invite.backendError")); return; }
+    if (!client) { setError(t("auth.invite.backendError")); return; }
     setLoading(true);
     setError(null);
     let res;
@@ -86,12 +86,12 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
   if (!open) return null;
 
   return (
-    <Modal open onClose={onClose} title={t("invite.title", { org: orgName })} size="md">
+    <Modal open onClose={onClose} title={t("auth.invite.title", { org: orgName })} size="md">
       {invited ? (
         <div className="text-center py-8">
           <div className="text-4xl mb-3">OK</div>
-          <h3 className="font-display text-lg font-bold text-fg-primary">{t("invite.success")}</h3>
-          <p className="text-fg-secondary text-sm mt-1">{t("invite.successDesc")}</p>
+          <h3 className="font-display text-lg font-bold text-fg-primary">{t("auth.invite.success")}</h3>
+          <p className="text-fg-secondary text-sm mt-1">{t("auth.invite.successDesc")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -99,20 +99,20 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
 
           {step === "email" && (
             <div className="space-y-3">
-              <FormField label={t("invite.fieldEmail")} htmlFor="invite-email">
+              <FormField label={t("auth.invite.fieldEmail")} htmlFor="invite-email">
                 <Input
                   id="invite-email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder={t("invite.emailPlaceholder")}
+                  placeholder={t("auth.invite.emailPlaceholder")}
                   disabled={loading}
                 />
               </FormField>
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={onClose} disabled={loading}>{t("invite.cancel")}</Button>
+                <Button variant="ghost" onClick={onClose} disabled={loading}>{t("auth.invite.cancel")}</Button>
                 <Button onClick={handleLookup} disabled={loading || !email.trim()}>
-                  {loading ? <Spinner size={14} /> : t("invite.lookup")}
+                  {loading ? <Spinner size={14} /> : t("auth.invite.lookup")}
                 </Button>
               </div>
             </div>
@@ -123,21 +123,21 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
               <div className="space-y-3">
               <p className="text-sm text-fg-secondary">
                 {candidate
-                  ? t("invite.existingUser", { name: candidate.name })
-                  : t("invite.newUser")}
+                  ? t("auth.invite.existingUser", { name: candidate.name })
+                  : t("auth.invite.newUser")}
               </p>
               {!candidate && (
-                <FormField label={t("invite.fieldName")} htmlFor="invite-name">
+                <FormField label={t("auth.invite.fieldName")} htmlFor="invite-name">
                   <Input
                     id="invite-name"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder={t("invite.namePlaceholder")}
+                    placeholder={t("auth.invite.namePlaceholder")}
                     disabled={loading}
                   />
                 </FormField>
               )}
-              <FormField label={t("invite.fieldRole")} htmlFor="invite-role">
+              <FormField label={t("auth.invite.fieldRole")} htmlFor="invite-role">
                 <Select
                   id="invite-role"
                   value={role}
@@ -147,9 +147,9 @@ export function InviteMemberModal({ open, onClose, orgId, orgName, onInvited }: 
                 />
               </FormField>
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setStep("email")} disabled={loading}>{t("invite.back")}</Button>
+                <Button variant="ghost" onClick={() => setStep("email")} disabled={loading}>{t("auth.invite.back")}</Button>
                 <Button onClick={handleInvite} disabled={loading || !name.trim()}>
-                  {loading ? <Spinner size={14} /> : t("invite.sendInvite")}
+                  {loading ? <Spinner size={14} /> : t("auth.invite.sendInvite")}
                 </Button>
               </div>
             </div>
