@@ -38,8 +38,7 @@ export function initSentry(): Promise<SentryInstance | null> {
   if (_initPromise) return _initPromise;
   _initPromise = (async () => {
     try {
-      const pkg = "@sentry/browser";
-      const Sentry: SentryInstance = await import(/* @vite-ignore */ pkg);
+      const Sentry: SentryInstance = await import("@sentry/browser");
       Sentry.init({
         dsn: DSN,
         release: RELEASE,
