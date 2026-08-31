@@ -35,7 +35,6 @@ export const TYPE_TEAM_TEMPLATES: Record<ProjectType, TeamTemplateEntry[]> = {
     { role: "pm",                 required: true,  desc: "Project lead \u2014 single accountable owner" },
     { role: "architect",      required: true,  desc: "Senior architect \u2014 design + permits" },
     { role: "mep_consultant", required: false, desc: "Mechanical / Electrical / Plumbing consultant" },
-    { role: "site_engineer",  required: true,  desc: "Daily execution + field-ops" },
     { role: "site_engineer",  required: true, desc: "Structural design verification" },
     { role: "site_inspector", required: false, desc: "Quality + statutory inspections" },
     { role: "contractor",     required: true,  desc: "Main contractor (parent of sub-contractors)" },
