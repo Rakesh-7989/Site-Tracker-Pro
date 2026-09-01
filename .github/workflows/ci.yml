@@ -22,7 +22,7 @@ jobs:
       # "Do-not-commit artifacts" list.
       - name: Stray-artifact guard
         run: |
-          stray="$(git ls-files | grep -Ei '(^|/)(migration_status\.txt|test-output\.txt|e2eout\.txt|error\.txt|tmp\.txt|tsout[^/]*\.txt)$' || true)"
+          stray="$(git ls-files | grep -Ei '(^|/)(migration_status\.txt|test-output\.txt|e2eout\.txt|error\.txt|tmp\.txt|tsout[^/]*\.txt|tsc-out[^/]*\.txt|eslint-check[^/]*\.txt|eslint-out[^/]*\.txt)$' || true)"
           stray="$stray
           $(git ls-files | grep -Ei 'scripts/(apply-(173|174|175|183|195|201)\.mjs|probe-(199|202)\.mjs|verify-(183|184|195)\.mjs|scan-card-headers\.mjs)$' || true)"
           if [ -n "$(printf '%s' "$stray" | tr -d '[:space:]')" ]; then

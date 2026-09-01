@@ -2511,6 +2511,9 @@ export interface Database {
           due_date: string | null;
           version: number;
           updated_at: string;
+          razorpay_payment_link_id: string | null;
+          razorpay_status: string | null;
+          razorpay_payment_at: string | null;
         };
         Insert: {
           id?: string | null;
@@ -2531,6 +2534,9 @@ export interface Database {
           due_date?: string | null;
           version?: number | null;
           updated_at?: string | null;
+          razorpay_payment_link_id?: string | null;
+          razorpay_status?: string | null;
+          razorpay_payment_at?: string | null;
         };
         Update: {
           id?: string | null;
@@ -2551,6 +2557,9 @@ export interface Database {
           due_date?: string | null;
           version?: number | null;
           updated_at?: string | null;
+          razorpay_payment_link_id?: string | null;
+          razorpay_status?: string | null;
+          razorpay_payment_at?: string | null;
         };
         Relationships: Relationship[];
       };

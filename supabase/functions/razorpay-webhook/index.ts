@@ -26,6 +26,7 @@
 //   https://<proj>.supabase.co/functions/v1/razorpay-webhook
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const WEBHOOK_SECRET = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
 const RAZORPAY_WEBHOOK_SECRET_FALLBACK = Deno.env.get("RAZORPAY_KEY_SECRET");
@@ -58,7 +59,7 @@ async function verifySignature(rawBody: string, signature: string): Promise<bool
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: { "Access-Control-Allow-Origin": "*" } });
+    return new Response("ok", { headers: corsHeaders(req) });
   }
   if (req.method !== "POST") {
     return new Response("POST only", { status: 405 });

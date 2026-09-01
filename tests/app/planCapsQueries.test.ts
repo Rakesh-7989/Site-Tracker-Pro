@@ -24,7 +24,9 @@ function mockClient(handlers: Record<string, Handler>) {
 }
 
 const now = new Date("2026-08-16T12:00:00Z");
-const future = "2026-08-30T12:00:00Z";
+// Far-future date: getPlanCaps uses the real clock (not the injected `now`),
+// so a near real-world date goes stale as time passes — this must stay decades out.
+const future = "2099-08-30T12:00:00Z";
 const past = "2026-08-01T12:00:00Z";
 
 describe("resolveEffectivePlan", () => {

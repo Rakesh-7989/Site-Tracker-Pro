@@ -29,6 +29,23 @@ function Logo(): JSX.Element {
 
 const TRIAL_DAYS = 14;
 
+function renderConsent(t: (key: string, vars?: Record<string, string | number>) => string): JSX.Element {
+  const parts = t("auth.consentRegister").split(/\{(terms|privacy)\}/);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part === "terms") {
+          return <Link key={i} to="/terms" target="_blank" className="text-accent font-semibold hover:underline">{t("auth.termsLabel")}</Link>;
+        }
+        if (part === "privacy") {
+          return <Link key={i} to="/privacy" target="_blank" className="text-accent font-semibold hover:underline">{t("auth.privacyLabel")}</Link>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 export function OrgRegisterView(): JSX.Element {
   const { session, status } = useAuth();
   const t = useT();
@@ -106,7 +123,7 @@ export function OrgRegisterView(): JSX.Element {
 
             <label className="flex items-start gap-2 text-[12px] text-fg-secondary cursor-pointer">
               <input type="checkbox" required />
-              <span>{t("auth.consentRegister")}</span>
+              <span>{renderConsent(t)}</span>
             </label>
 
             <Button className="w-full" onClick={() => void submit()} disabled={busy}>
