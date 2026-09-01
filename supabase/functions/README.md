@@ -4,6 +4,8 @@
 | ----------------------- | ---------------------------------------------------- | ------------------- |
 | `cashfree-subscription` | Create a Cashfree subscription intent for an org    | User JWT (orgadmin) |
 | `cashfree-webhook`      | Receive lifecycle events from Cashfree, update subs | Signature only      |
+| `razorpay-payment-link` | Create a Razorpay payment link for an invoice       | User JWT            |
+| `razorpay-webhook`      | Receive payment_link/payment events from Razorpay   | Signature only      |
 
 ## Deploy
 
@@ -13,10 +15,12 @@ supabase link --project-ref <YOUR_PROJECT_REF>
 
 supabase functions deploy cashfree-subscription
 supabase functions deploy cashfree-webhook --no-verify-jwt
+supabase functions deploy razorpay-payment-link
+supabase functions deploy razorpay-webhook --no-verify-jwt
 ```
 
-`--no-verify-jwt` on the webhook because Cashfree doesn't send a Supabase JWT
-— we verify the Cashfree HMAC signature instead.
+`--no-verify-jwt` on the webhooks because Cashfree/Razorpay don't send a
+Supabase JWT — we verify their HMAC signatures instead.
 
 ## Env vars (set in Supabase dashboard → Edge Functions → Secrets)
 
@@ -25,6 +29,9 @@ supabase functions deploy cashfree-webhook --no-verify-jwt
 | `SUPABASE_URL`               | both — auto-injected by Supabase         |
 | `SUPABASE_SERVICE_ROLE_KEY`  | both — auto-injected by Supabase         |
 | `CASHFREE_WEBHOOK_SECRET`    | webhook only — from Cashfree dashboard   |
+| `RAZORPAY_KEY_ID`            | payment-link + webhook — from Razorpay    |
+| `RAZORPAY_KEY_SECRET`        | payment-link + webhook — from Razorpay    |
+| `RAZORPAY_WEBHOOK_SECRET`    | webhook only — from Razorpay dashboard    |
 
 ## Test locally
 
