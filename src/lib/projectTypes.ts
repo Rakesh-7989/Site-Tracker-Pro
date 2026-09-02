@@ -32,11 +32,10 @@ export const TYPE_TABS: Record<ProjectType, string[]> = {
 
 export const TYPE_TEAM_TEMPLATES: Record<ProjectType, TeamTemplateEntry[]> = {
   construction: [
-    { role: "project_head",   required: true,  desc: "Project lead \u2014 single accountable owner" },
+    { role: "pm",                 required: true,  desc: "Project lead \u2014 single accountable owner" },
     { role: "architect",      required: true,  desc: "Senior architect \u2014 design + permits" },
     { role: "mep_consultant", required: false, desc: "Mechanical / Electrical / Plumbing consultant" },
-    { role: "site_engineer",  required: true,  desc: "Daily execution + field-ops" },
-    { role: "civil_engineer", required: false, desc: "Structural design verification" },
+    { role: "site_engineer",  required: true, desc: "Structural design verification" },
     { role: "site_inspector", required: false, desc: "Quality + statutory inspections" },
     { role: "contractor",     required: true,  desc: "Main contractor (parent of sub-contractors)" },
     { role: "client",         required: true,  desc: "End client \u2014 read-only view" },

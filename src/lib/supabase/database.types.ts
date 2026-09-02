@@ -10,6 +10,18 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export interface Relationship {
+  foreignKeyName: string;
+  columns: string[];
+  isOneToOne: boolean;
+  referencedRelation: string;
+  referencedColumns: string[];
+}
+
+export type Embed<T extends { columns: string[]; referencedRelation: keyof Database["public"]["Tables"] }> = {
+  [K in T["columns"][number]]: Database["public"]["Tables"][T["referencedRelation"]]["Row"];
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -47,7 +59,7 @@ export interface Database {
           by_role?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"activity_log_by_profile_id_fkey","columns":["by_profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"activity_log_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       approval_chains: {
         Row: {
@@ -74,7 +86,7 @@ export interface Database {
           updated_at?: string | null;
           updated_by?: string | null;
         };
-        Relationships: [{"foreignKeyName":"approval_chains_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"approval_chains_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       attachments: {
         Row: {
@@ -119,7 +131,7 @@ export interface Database {
           uploaded_by?: string | null;
           uploaded_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"attachments_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"attachments_uploaded_by_fkey","columns":["uploaded_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       attendance: {
         Row: {
@@ -179,7 +191,7 @@ export interface Database {
           overtime?: number | null;
           location_id?: string | null;
         };
-        Relationships: [{"foreignKeyName":"attendance_labour_id_fkey","columns":["labour_id"],"isOneToOne":false,"referencedRelation":"labour_register","referencedColumns":["id"]},{"foreignKeyName":"attendance_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"attendance_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"attendance_recorded_by_fkey","columns":["recorded_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       audit_anchors: {
         Row: {
@@ -224,7 +236,7 @@ export interface Database {
           row_id_range?: Json | null;
           metadata?: Json | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       audit_log_v2: {
         Row: {
@@ -272,7 +284,7 @@ export interface Database {
           message?: string | null;
           ts?: string | null;
         };
-        Relationships: [{"foreignKeyName":"audit_log_v2_actor_id_fkey","columns":["actor_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"audit_log_v2_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"audit_log_v2_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       authorization_audit: {
         Row: {
@@ -314,7 +326,7 @@ export interface Database {
           reason?: string | null;
           created_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       billing_history: {
         Row: {
@@ -368,7 +380,7 @@ export interface Database {
           payload?: Json | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"billing_history_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       blocks: {
         Row: {
@@ -392,7 +404,7 @@ export interface Database {
           sort_order?: number | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"blocks_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       boq_items: {
         Row: {
@@ -432,7 +444,7 @@ export interface Database {
           sort_order?: number | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"boq_items_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       branding: {
         Row: {
@@ -480,7 +492,7 @@ export interface Database {
           updated_by?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"branding_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"branding_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"branding_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       budget_changes: {
         Row: {
@@ -525,7 +537,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"budget_changes_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"budget_changes_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"budget_changes_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       buildings: {
         Row: {
@@ -570,7 +582,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"buildings_organization_id_fkey","columns":["organization_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"buildings_site_id_fkey","columns":["site_id"],"isOneToOne":false,"referencedRelation":"sites","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       buildnow_anchors: {
         Row: {
@@ -618,7 +630,7 @@ export interface Database {
           anchor_hash?: string | null;
           fetched_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"buildnow_anchors_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       cashfree_events: {
         Row: {
@@ -654,7 +666,7 @@ export interface Database {
           result?: string | null;
           failure_reason?: string | null;
         };
-        Relationships: [{"foreignKeyName":"cashfree_events_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       change_orders: {
         Row: {
@@ -705,7 +717,7 @@ export interface Database {
           approved_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"change_orders_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"change_orders_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"change_orders_raised_by_fkey","columns":["raised_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       chat_channel_members: {
         Row: {
@@ -726,7 +738,7 @@ export interface Database {
           added_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"chat_channel_members_channel_id_fkey","columns":["channel_id"],"isOneToOne":false,"referencedRelation":"chat_channels","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       chat_channel_reads: {
         Row: {
@@ -744,7 +756,7 @@ export interface Database {
           user_id?: string | null;
           last_read_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"chat_channel_reads_channel_id_fkey","columns":["channel_id"],"isOneToOne":false,"referencedRelation":"chat_channels","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       chat_channels: {
         Row: {
@@ -789,7 +801,7 @@ export interface Database {
           visibility?: string | null;
           dm_key?: string | null;
         };
-        Relationships: [{"foreignKeyName":"chat_channels_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"chat_channels_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       chat_message_reactions: {
         Row: {
@@ -810,7 +822,7 @@ export interface Database {
           emoji?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"chat_message_reactions_message_id_fkey","columns":["message_id"],"isOneToOne":false,"referencedRelation":"chat_messages","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       chat_messages: {
         Row: {
@@ -861,7 +873,7 @@ export interface Database {
           attachment_mime?: string | null;
           attachment_size?: number | null;
         };
-        Relationships: [{"foreignKeyName":"chat_messages_channel_id_fkey","columns":["channel_id"],"isOneToOne":false,"referencedRelation":"chat_channels","referencedColumns":["id"]},{"foreignKeyName":"chat_messages_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"chat_messages_parent_id_fkey","columns":["parent_id"],"isOneToOne":false,"referencedRelation":"chat_messages","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       checklist_items: {
         Row: {
@@ -924,7 +936,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"checklist_items_completed_by_fkey","columns":["completed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"checklist_items_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"checklist_items_template_id_fkey","columns":["template_id"],"isOneToOne":false,"referencedRelation":"templates","referencedColumns":["id"]},{"foreignKeyName":"checklist_items_verified_by_fkey","columns":["verified_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       client_portal_permissions: {
         Row: {
@@ -954,7 +966,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"client_portal_permissions_capability_fkey","columns":["capability"],"isOneToOne":false,"referencedRelation":"rbac_capabilities","referencedColumns":["id"]},{"foreignKeyName":"client_portal_permissions_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"client_portal_permissions_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"client_portal_permissions_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       collection_documents: {
         Row: {
@@ -981,7 +993,7 @@ export interface Database {
           notes?: string | null;
           sort_order?: number | null;
         };
-        Relationships: [{"foreignKeyName":"collection_documents_added_by_fkey","columns":["added_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"collection_documents_collection_id_fkey","columns":["collection_id"],"isOneToOne":false,"referencedRelation":"research_collections","referencedColumns":["id"]},{"foreignKeyName":"collection_documents_document_id_fkey","columns":["document_id"],"isOneToOne":false,"referencedRelation":"research_documents","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       comments: {
         Row: {
@@ -1023,7 +1035,7 @@ export interface Database {
           deleted_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"comments_author_id_fkey","columns":["author_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"comments_parent_id_fkey","columns":["parent_id"],"isOneToOne":false,"referencedRelation":"comments","referencedColumns":["id"]},{"foreignKeyName":"comments_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       compliance: {
         Row: {
@@ -1080,7 +1092,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"compliance_filed_by_fkey","columns":["filed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"compliance_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"compliance_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       consultancy_reports: {
         Row: {
@@ -1125,7 +1137,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"consultancy_reports_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       corrective_actions: {
         Row: {
@@ -1176,7 +1188,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"corrective_actions_inspection_id_fkey","columns":["inspection_id"],"isOneToOne":false,"referencedRelation":"inspections","referencedColumns":["id"]},{"foreignKeyName":"corrective_actions_opened_by_fkey","columns":["opened_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"corrective_actions_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"corrective_actions_verified_by_fkey","columns":["verified_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       cost_forecasts: {
         Row: {
@@ -1226,7 +1238,7 @@ export interface Database {
           forecast_at?: string | null;
           version?: number | null;
         };
-        Relationships: [{"foreignKeyName":"cost_forecasts_forecast_by_fkey","columns":["forecast_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"cost_forecasts_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       daily_snapshots: {
         Row: {
@@ -1277,7 +1289,7 @@ export interface Database {
           frozen_at?: string | null;
           frozen_by?: string | null;
         };
-        Relationships: [{"foreignKeyName":"daily_snapshots_frozen_by_fkey","columns":["frozen_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"daily_snapshots_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       delegations: {
         Row: {
@@ -1325,7 +1337,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"delegations_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"delegations_from_user_fkey","columns":["from_user"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"delegations_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"delegations_revoked_by_fkey","columns":["revoked_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"delegations_to_user_fkey","columns":["to_user"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       deliverables: {
         Row: {
@@ -1361,7 +1373,7 @@ export interface Database {
           owner_id?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"deliverables_owner_id_fkey","columns":["owner_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"deliverables_phase_id_fkey","columns":["phase_id"],"isOneToOne":false,"referencedRelation":"fee_phases","referencedColumns":["id"]},{"foreignKeyName":"deliverables_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       design_workflow: {
         Row: {
@@ -1400,7 +1412,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"design_workflow_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"design_workflow_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"design_workflow_reviewed_by_fkey","columns":["reviewed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       diary: {
         Row: {
@@ -1451,7 +1463,7 @@ export interface Database {
           attachments?: Json | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"diary_author_id_fkey","columns":["author_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"diary_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       digest_dispatches: {
         Row: {
@@ -1484,7 +1496,7 @@ export interface Database {
           failure_reason?: string | null;
           rendered_payload?: Json | null;
         };
-        Relationships: [{"foreignKeyName":"digest_dispatches_subscription_id_fkey","columns":["subscription_id"],"isOneToOne":false,"referencedRelation":"digest_subscriptions","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       digest_subscriptions: {
         Row: {
@@ -1532,7 +1544,7 @@ export interface Database {
           updated_at?: string | null;
           promoter_email?: string | null;
         };
-        Relationships: [{"foreignKeyName":"digest_subscriptions_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"digest_subscriptions_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       download_events: {
         Row: {
@@ -1568,7 +1580,7 @@ export interface Database {
           downloaded_by?: string | null;
           downloaded_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"download_events_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       dpr_delivery_log: {
         Row: {
@@ -1607,7 +1619,7 @@ export interface Database {
           error_detail?: string | null;
           meta_response?: Json | null;
         };
-        Relationships: [{"foreignKeyName":"dpr_delivery_log_dpr_message_id_fkey","columns":["dpr_message_id"],"isOneToOne":false,"referencedRelation":"dpr_messages","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       dpr_messages: {
         Row: {
@@ -1700,7 +1712,7 @@ export interface Database {
           sent_at?: string | null;
           location_id?: string | null;
         };
-        Relationships: [{"foreignKeyName":"dpr_messages_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"dpr_messages_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"dpr_messages_supervisor_user_id_fkey","columns":["supervisor_user_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       drawing_comments: {
         Row: {
@@ -1739,7 +1751,7 @@ export interface Database {
           resolved_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"drawing_comments_author_id_fkey","columns":["author_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"drawing_comments_drawing_id_fkey","columns":["drawing_id"],"isOneToOne":false,"referencedRelation":"drawings","referencedColumns":["id"]},{"foreignKeyName":"drawing_comments_parent_id_fkey","columns":["parent_id"],"isOneToOne":false,"referencedRelation":"drawing_comments","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       drawings: {
         Row: {
@@ -1814,7 +1826,7 @@ export interface Database {
           approved_at?: string | null;
           signature?: string | null;
         };
-        Relationships: [{"foreignKeyName":"drawings_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"drawings_author_id_fkey","columns":["author_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"drawings_parent_id_fkey","columns":["parent_id"],"isOneToOne":false,"referencedRelation":"drawings","referencedColumns":["id"]},{"foreignKeyName":"drawings_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"drawings_released_by_fkey","columns":["released_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"drawings_superseded_by_fkey","columns":["superseded_by"],"isOneToOne":false,"referencedRelation":"drawings","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       equipment: {
         Row: {
@@ -1877,7 +1889,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"equipment_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"equipment_vendor_id_fkey","columns":["vendor_id"],"isOneToOne":false,"referencedRelation":"vendors","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       estimate: {
         Row: {
@@ -1922,7 +1934,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"estimate_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"estimate_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"estimate_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"estimate_superseded_by_fkey","columns":["superseded_by"],"isOneToOne":false,"referencedRelation":"estimate","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       event_outbox: {
         Row: {
@@ -1967,7 +1979,7 @@ export interface Database {
           created_at?: string | null;
           delivered_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"event_outbox_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"event_outbox_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       expenses: {
         Row: {
@@ -2018,7 +2030,7 @@ export interface Database {
           attachments?: Json | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"expenses_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"expenses_recorded_by_fkey","columns":["recorded_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       external_inspectors: {
         Row: {
@@ -2054,7 +2066,7 @@ export interface Database {
           added_at?: string | null;
           revoked_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"external_inspectors_added_by_fkey","columns":["added_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"external_inspectors_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"external_inspectors_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       fee_phases: {
         Row: {
@@ -2093,7 +2105,7 @@ export interface Database {
           sort_order?: number | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"fee_phases_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       ffe_entries: {
         Row: {
@@ -2147,7 +2159,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"ffe_entries_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       floors: {
         Row: {
@@ -2171,7 +2183,7 @@ export interface Database {
           name?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"floors_block_id_fkey","columns":["block_id"],"isOneToOne":false,"referencedRelation":"blocks","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       forecast: {
         Row: {
@@ -2222,7 +2234,7 @@ export interface Database {
           inputs?: Json | null;
           generated_by?: string | null;
         };
-        Relationships: [{"foreignKeyName":"forecast_generated_by_fkey","columns":["generated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"forecast_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       handover_signatures: {
         Row: {
@@ -2249,7 +2261,7 @@ export interface Database {
           signature?: string | null;
           signed_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"handover_signatures_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"handover_signatures_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"handover_signatures_signed_by_fkey","columns":["signed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       inspection_checklists: {
         Row: {
@@ -2282,7 +2294,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"inspection_checklists_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       inspection_results: {
         Row: {
@@ -2312,7 +2324,7 @@ export interface Database {
           sort_order?: number | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"inspection_results_checklist_id_fkey","columns":["checklist_id"],"isOneToOne":false,"referencedRelation":"inspection_checklists","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       inspections: {
         Row: {
@@ -2360,7 +2372,7 @@ export interface Database {
           status?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"inspections_inspector_id_fkey","columns":["inspector_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"inspections_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       interior_rooms: {
         Row: {
@@ -2390,7 +2402,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"interior_rooms_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       inventory_transactions: {
         Row: {
@@ -2444,7 +2456,7 @@ export interface Database {
           created_at?: string | null;
           issued_to?: string | null;
         };
-        Relationships: [{"foreignKeyName":"fk_inventory_po","columns":["po_id"],"isOneToOne":false,"referencedRelation":"purchase_orders","referencedColumns":["id"]},{"foreignKeyName":"inventory_transactions_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"inventory_transactions_recorded_by_fkey","columns":["recorded_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       invoice_lines: {
         Row: {
@@ -2477,7 +2489,7 @@ export interface Database {
           sort_order?: number | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"invoice_lines_invoice_id_fkey","columns":["invoice_id"],"isOneToOne":false,"referencedRelation":"invoices","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       invoices: {
         Row: {
@@ -2499,6 +2511,9 @@ export interface Database {
           due_date: string | null;
           version: number;
           updated_at: string;
+          razorpay_payment_link_id: string | null;
+          razorpay_status: string | null;
+          razorpay_payment_at: string | null;
         };
         Insert: {
           id?: string | null;
@@ -2519,6 +2534,9 @@ export interface Database {
           due_date?: string | null;
           version?: number | null;
           updated_at?: string | null;
+          razorpay_payment_link_id?: string | null;
+          razorpay_status?: string | null;
+          razorpay_payment_at?: string | null;
         };
         Update: {
           id?: string | null;
@@ -2539,8 +2557,11 @@ export interface Database {
           due_date?: string | null;
           version?: number | null;
           updated_at?: string | null;
+          razorpay_payment_link_id?: string | null;
+          razorpay_status?: string | null;
+          razorpay_payment_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"invoices_milestone_id_fkey","columns":["milestone_id"],"isOneToOne":false,"referencedRelation":"milestones","referencedColumns":["id"]},{"foreignKeyName":"invoices_phase_id_fkey","columns":["phase_id"],"isOneToOne":false,"referencedRelation":"fee_phases","referencedColumns":["id"]},{"foreignKeyName":"invoices_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"invoices_retainer_id_fkey","columns":["retainer_id"],"isOneToOne":false,"referencedRelation":"retainers","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       issues: {
         Row: {
@@ -2585,7 +2606,7 @@ export interface Database {
           version?: number | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"issues_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"issues_reported_by_fkey","columns":["reported_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"issues_resolved_by_fkey","columns":["resolved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       labour_register: {
         Row: {
@@ -2621,7 +2642,7 @@ export interface Database {
           wage?: number | null;
           joined?: string | null;
         };
-        Relationships: [{"foreignKeyName":"labour_register_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       lead_agreements: {
         Row: {
@@ -2663,7 +2684,7 @@ export interface Database {
           created_at?: string | null;
           quotation_id?: string | null;
         };
-        Relationships: [{"foreignKeyName":"lead_agreements_lead_id_fkey","columns":["lead_id"],"isOneToOne":false,"referencedRelation":"leads","referencedColumns":["id"]},{"foreignKeyName":"lead_agreements_quotation_id_fkey","columns":["quotation_id"],"isOneToOne":false,"referencedRelation":"lead_quotations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       lead_meetings: {
         Row: {
@@ -2696,7 +2717,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"lead_meetings_lead_id_fkey","columns":["lead_id"],"isOneToOne":false,"referencedRelation":"leads","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       lead_quotations: {
         Row: {
@@ -2732,7 +2753,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"lead_quotations_lead_id_fkey","columns":["lead_id"],"isOneToOne":false,"referencedRelation":"leads","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       leads: {
         Row: {
@@ -2786,7 +2807,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"leads_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"leads_owner_id_fkey","columns":["owner_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       material_prices: {
         Row: {
@@ -2840,7 +2861,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"material_prices_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"material_prices_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"material_prices_vendor_id_fkey","columns":["vendor_id"],"isOneToOne":false,"referencedRelation":"vendors","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       material_requests: {
         Row: {
@@ -2891,7 +2912,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"material_requests_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"material_requests_po_id_fkey","columns":["po_id"],"isOneToOne":false,"referencedRelation":"purchase_orders","referencedColumns":["id"]},{"foreignKeyName":"material_requests_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"material_requests_requested_by_fkey","columns":["requested_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       materials: {
         Row: {
@@ -2930,7 +2951,7 @@ export interface Database {
           logged_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"materials_logged_by_fkey","columns":["logged_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"materials_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       measurement_book: {
         Row: {
@@ -3009,7 +3030,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"fk_mb_ra_bill","columns":["ra_bill_id"],"isOneToOne":false,"referencedRelation":"ra_bills","referencedColumns":["id"]},{"foreignKeyName":"measurement_book_block_id_fkey","columns":["block_id"],"isOneToOne":false,"referencedRelation":"blocks","referencedColumns":["id"]},{"foreignKeyName":"measurement_book_boq_item_id_fkey","columns":["boq_item_id"],"isOneToOne":false,"referencedRelation":"boq_items","referencedColumns":["id"]},{"foreignKeyName":"measurement_book_floor_id_fkey","columns":["floor_id"],"isOneToOne":false,"referencedRelation":"floors","referencedColumns":["id"]},{"foreignKeyName":"measurement_book_measured_by_fkey","columns":["measured_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"measurement_book_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"measurement_book_verified_by_fkey","columns":["verified_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       messages: {
         Row: {
@@ -3045,7 +3066,7 @@ export interface Database {
           read_by?: Json | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"messages_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"messages_sender_id_fkey","columns":["sender_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       milestones: {
         Row: {
@@ -3084,7 +3105,7 @@ export interface Database {
           version?: number | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"milestones_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       mood_boards: {
         Row: {
@@ -3114,7 +3135,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"mood_boards_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       notification_rules: {
         Row: {
@@ -3150,7 +3171,7 @@ export interface Database {
           created_at?: string | null;
           template_name?: string | null;
         };
-        Relationships: [{"foreignKeyName":"notification_rules_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"notification_rules_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       notification_templates: {
         Row: {
@@ -3186,7 +3207,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       notifications: {
         Row: {
@@ -3228,7 +3249,7 @@ export interface Database {
           delivered_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"notifications_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"notifications_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"notifications_user_id_fkey","columns":["user_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       notify_config: {
         Row: {
@@ -3246,7 +3267,7 @@ export interface Database {
           value?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       ops_toggles: {
         Row: {
@@ -3270,7 +3291,7 @@ export interface Database {
           updated_by?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"ops_toggles_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"ops_toggles_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_feature_flags: {
         Row: {
@@ -3294,7 +3315,7 @@ export interface Database {
           updated_by?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_feature_flags_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"org_feature_flags_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_integrations: {
         Row: {
@@ -3324,7 +3345,7 @@ export interface Database {
           updated_at?: string | null;
           updated_by?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_integrations_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"org_integrations_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_invitations: {
         Row: {
@@ -3366,7 +3387,7 @@ export interface Database {
           accepted_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_invitations_accepted_by_fkey","columns":["accepted_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"org_invitations_invited_by_fkey","columns":["invited_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"org_invitations_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_member_roles: {
         Row: {
@@ -3393,7 +3414,7 @@ export interface Database {
           assigned_at?: string | null;
           removed_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_member_roles_assigned_by_fkey","columns":["assigned_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"org_member_roles_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"org_member_roles_org_role_id_fkey","columns":["org_role_id"],"isOneToOne":false,"referencedRelation":"org_roles","referencedColumns":["id"]},{"foreignKeyName":"org_member_roles_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_members: {
         Row: {
@@ -3432,7 +3453,7 @@ export interface Database {
           invited_at?: string | null;
           accepted_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_members_invited_by_fkey","columns":["invited_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"org_members_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"org_members_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_rbac_settings: {
         Row: {
@@ -3453,7 +3474,7 @@ export interface Database {
           updated_by?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_rbac_settings_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"org_rbac_settings_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_role_capabilities: {
         Row: {
@@ -3468,7 +3489,7 @@ export interface Database {
           org_role_id?: string | null;
           capability?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_role_capabilities_org_role_id_fkey","columns":["org_role_id"],"isOneToOne":false,"referencedRelation":"org_roles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       org_roles: {
         Row: {
@@ -3501,7 +3522,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"org_roles_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"org_roles_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       organizations: {
         Row: {
@@ -3549,7 +3570,7 @@ export interface Database {
           segments?: string[] | null;
           org_type?: string | null;
         };
-        Relationships: [{"foreignKeyName":"organizations_created_by_staff_fkey","columns":["created_by_staff"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       payment_events: {
         Row: {
@@ -3597,7 +3618,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"payment_events_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"payment_events_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       payments: {
         Row: {
@@ -3645,7 +3666,7 @@ export interface Database {
           version?: number | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"payments_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"payments_received_by_fkey","columns":["received_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       permits: {
         Row: {
@@ -3696,7 +3717,7 @@ export interface Database {
           applied_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"permits_applied_by_fkey","columns":["applied_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"permits_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       plan_upgrade_requests: {
         Row: {
@@ -3738,7 +3759,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"plan_upgrade_requests_assigned_staff_id_fkey","columns":["assigned_staff_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"plan_upgrade_requests_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"plan_upgrade_requests_requested_by_fkey","columns":["requested_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       plans: {
         Row: {
@@ -3786,7 +3807,7 @@ export interface Database {
           updated_at?: string | null;
           requires_superadmin?: boolean | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       platform_feature_flags: {
         Row: {
@@ -3813,7 +3834,7 @@ export interface Database {
           updated_by?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"platform_feature_flags_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       platform_settings: {
         Row: {
@@ -3834,7 +3855,7 @@ export interface Database {
           updated_by?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"platform_settings_updated_by_fkey","columns":["updated_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       po_receipts: {
         Row: {
@@ -3885,7 +3906,7 @@ export interface Database {
           matched_at?: string | null;
           matched_by?: string | null;
         };
-        Relationships: [{"foreignKeyName":"po_receipts_invoice_id_fkey","columns":["invoice_id"],"isOneToOne":false,"referencedRelation":"invoices","referencedColumns":["id"]},{"foreignKeyName":"po_receipts_matched_by_fkey","columns":["matched_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"po_receipts_po_id_fkey","columns":["po_id"],"isOneToOne":false,"referencedRelation":"purchase_orders","referencedColumns":["id"]},{"foreignKeyName":"po_receipts_received_by_fkey","columns":["received_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       procurement_quotes: {
         Row: {
@@ -3936,7 +3957,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"procurement_quotes_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"procurement_quotes_ffe_entry_id_fkey","columns":["ffe_entry_id"],"isOneToOne":false,"referencedRelation":"ffe_entries","referencedColumns":["id"]},{"foreignKeyName":"procurement_quotes_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"procurement_quotes_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"procurement_quotes_vendor_id_fkey","columns":["vendor_id"],"isOneToOne":false,"referencedRelation":"vendors","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       profiles: {
         Row: {
@@ -3999,7 +4020,7 @@ export interface Database {
           notification_prefs?: Json | null;
           must_change_password?: boolean | null;
         };
-        Relationships: [{"foreignKeyName":"profiles_staff_manager_id_fkey","columns":["staff_manager_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       project_access_requests: {
         Row: {
@@ -4029,7 +4050,7 @@ export interface Database {
           reviewed_by?: string | null;
           reviewed_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"project_access_requests_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"project_access_requests_requester_id_fkey","columns":["requester_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"project_access_requests_reviewed_by_fkey","columns":["reviewed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       project_members: {
         Row: {
@@ -4056,7 +4077,7 @@ export interface Database {
           assigned_by?: string | null;
           removed_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"project_members_assigned_by_fkey","columns":["assigned_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"project_members_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"project_members_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       project_partner_members: {
         Row: {
@@ -4083,7 +4104,7 @@ export interface Database {
           added_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"project_partner_members_added_by_fkey","columns":["added_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"project_partner_members_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"project_partner_members_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"project_partner_members_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       project_partner_orgs: {
         Row: {
@@ -4128,7 +4149,7 @@ export interface Database {
           revoked_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"project_partner_orgs_invited_by_fkey","columns":["invited_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"project_partner_orgs_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"project_partner_orgs_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       project_risk_signals: {
         Row: {
@@ -4161,7 +4182,7 @@ export interface Database {
           updated_at?: string | null;
           signals?: Json | null;
         };
-        Relationships: [{"foreignKeyName":"project_risk_signals_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       projects: {
         Row: {
@@ -4254,7 +4275,7 @@ export interface Database {
           forecast_final_cost?: number | null;
           budget_version?: number | null;
         };
-        Relationships: [{"foreignKeyName":"projects_architect_id_fkey","columns":["architect_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"projects_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       punch: {
         Row: {
@@ -4308,7 +4329,7 @@ export interface Database {
           resolved_date?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"punch_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"punch_reported_by_fkey","columns":["reported_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"punch_resolved_by_fkey","columns":["resolved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"punch_unit_id_fkey","columns":["unit_id"],"isOneToOne":false,"referencedRelation":"units","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       purchase_orders: {
         Row: {
@@ -4371,7 +4392,7 @@ export interface Database {
           approved_by?: string | null;
           approved_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"purchase_orders_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"purchase_orders_invoice_id_fkey","columns":["invoice_id"],"isOneToOne":false,"referencedRelation":"invoices","referencedColumns":["id"]},{"foreignKeyName":"purchase_orders_material_request_id_fkey","columns":["material_request_id"],"isOneToOne":false,"referencedRelation":"material_requests","referencedColumns":["id"]},{"foreignKeyName":"purchase_orders_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"purchase_orders_quote_id_fkey","columns":["quote_id"],"isOneToOne":false,"referencedRelation":"procurement_quotes","referencedColumns":["id"]},{"foreignKeyName":"purchase_orders_requested_by_fkey","columns":["requested_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"purchase_orders_vendor_id_fkey","columns":["vendor_id"],"isOneToOne":false,"referencedRelation":"vendors","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       ra_bills: {
         Row: {
@@ -4431,7 +4452,7 @@ export interface Database {
           version?: number | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"ra_bills_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"ra_bills_retention_released_by_fkey","columns":["retention_released_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       rate_cards: {
         Row: {
@@ -4461,7 +4482,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"rate_cards_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"rate_cards_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       rbac_capabilities: {
         Row: {
@@ -4488,7 +4509,7 @@ export interface Database {
           is_active?: boolean | null;
           created_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       rbac_profile_assignments: {
         Row: {
@@ -4515,7 +4536,7 @@ export interface Database {
           assigned_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"rbac_profile_assignments_assigned_by_fkey","columns":["assigned_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"rbac_profile_assignments_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"rbac_profile_assignments_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"rbac_role_profiles","referencedColumns":["id"]},{"foreignKeyName":"rbac_profile_assignments_user_id_fkey","columns":["user_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       rbac_profile_bindings: {
         Row: {
@@ -4545,7 +4566,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"rbac_profile_bindings_capability_fkey","columns":["capability"],"isOneToOne":false,"referencedRelation":"rbac_capabilities","referencedColumns":["id"]},{"foreignKeyName":"rbac_profile_bindings_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"rbac_profile_bindings_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"rbac_role_profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       rbac_role_profiles: {
         Row: {
@@ -4587,7 +4608,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"rbac_role_profiles_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"rbac_role_profiles_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       research_collections: {
         Row: {
@@ -4623,7 +4644,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"research_collections_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"research_collections_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       research_documents: {
         Row: {
@@ -4707,7 +4728,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"research_documents_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"research_documents_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"research_documents_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       resend_delivery_events: {
         Row: {
@@ -4743,7 +4764,7 @@ export interface Database {
           payload?: Json | null;
           received_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       resource_acl_entries: {
         Row: {
@@ -4785,7 +4806,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"resource_acl_entries_capability_fkey","columns":["capability"],"isOneToOne":false,"referencedRelation":"rbac_capabilities","referencedColumns":["id"]},{"foreignKeyName":"resource_acl_entries_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"resource_acl_entries_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       retainers: {
         Row: {
@@ -4821,7 +4842,7 @@ export interface Database {
           billing_day?: number | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"retainers_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       review_rounds: {
         Row: {
@@ -4857,7 +4878,7 @@ export interface Database {
           closed_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"review_rounds_closed_by_fkey","columns":["closed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"review_rounds_deliverable_id_fkey","columns":["deliverable_id"],"isOneToOne":false,"referencedRelation":"deliverables","referencedColumns":["id"]},{"foreignKeyName":"review_rounds_requested_by_fkey","columns":["requested_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       rfi: {
         Row: {
@@ -4908,7 +4929,7 @@ export interface Database {
           responded_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"rfi_asked_by_fkey","columns":["asked_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"rfi_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"rfi_responded_by_fkey","columns":["responded_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       role_capability_overrides: {
         Row: {
@@ -4938,7 +4959,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"role_capability_overrides_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"role_capability_overrides_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       room_installations: {
         Row: {
@@ -4971,7 +4992,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"room_installations_room_id_fkey","columns":["room_id"],"isOneToOne":false,"referencedRelation":"interior_rooms","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       rooms: {
         Row: {
@@ -5013,7 +5034,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"rooms_organization_id_fkey","columns":["organization_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"rooms_zone_id_fkey","columns":["zone_id"],"isOneToOne":false,"referencedRelation":"zones","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       safety: {
         Row: {
@@ -5058,7 +5079,7 @@ export interface Database {
           status?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"safety_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"safety_reported_by_fkey","columns":["reported_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       schema_migrations: {
         Row: {
@@ -5076,7 +5097,7 @@ export interface Database {
           filename?: string | null;
           executed_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       share_links: {
         Row: {
@@ -5127,7 +5148,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"share_links_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"share_links_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       share_tokens: {
         Row: {
@@ -5181,7 +5202,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"share_tokens_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"share_tokens_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"share_tokens_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       shift_roster: {
         Row: {
@@ -5223,7 +5244,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"shift_roster_labour_id_fkey","columns":["labour_id"],"isOneToOne":false,"referencedRelation":"labour_register","referencedColumns":["id"]},{"foreignKeyName":"shift_roster_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       signup_attempts: {
         Row: {
@@ -5239,7 +5260,7 @@ export interface Database {
           ip?: string | null;
           created_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       signup_requests: {
         Row: {
@@ -5311,7 +5332,7 @@ export interface Database {
           paid_by?: string | null;
           paid_amount_paise?: number | null;
         };
-        Relationships: [{"foreignKeyName":"signup_requests_assigned_staff_id_fkey","columns":["assigned_staff_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"signup_requests_created_org_id_fkey","columns":["created_org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"signup_requests_paid_by_fkey","columns":["paid_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"signup_requests_reviewed_by_fkey","columns":["reviewed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       site_track_migrations: {
         Row: {
@@ -5332,7 +5353,7 @@ export interface Database {
           applied_at?: string | null;
           success?: boolean | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       site_updates: {
         Row: {
@@ -5365,7 +5386,7 @@ export interface Database {
           update_date?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"site_updates_author_id_fkey","columns":["author_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"site_updates_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       sites: {
         Row: {
@@ -5410,7 +5431,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"sites_organization_id_fkey","columns":["organization_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"sites_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       spatial_floors: {
         Row: {
@@ -5452,7 +5473,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"spatial_floors_building_id_fkey","columns":["building_id"],"isOneToOne":false,"referencedRelation":"buildings","referencedColumns":["id"]},{"foreignKeyName":"spatial_floors_organization_id_fkey","columns":["organization_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       spatial_ref_sys: {
         Row: {
@@ -5476,7 +5497,7 @@ export interface Database {
           srtext?: string | null;
           proj4text?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       staff_area_grants: {
         Row: {
@@ -5497,7 +5518,7 @@ export interface Database {
           granted_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"staff_area_grants_granted_by_fkey","columns":["granted_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"staff_area_grants_staff_id_fkey","columns":["staff_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       staff_invites: {
         Row: {
@@ -5536,7 +5557,7 @@ export interface Database {
           expires_at?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"staff_invites_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"staff_invites_used_by_fkey","columns":["used_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       staff_only_features: {
         Row: {
@@ -5566,7 +5587,7 @@ export interface Database {
           un_frozen_in_migration?: string | null;
           un_frozen_reason?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       statutory_approvals: {
         Row: {
@@ -5614,7 +5635,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"statutory_approvals_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       sub_contractors: {
         Row: {
@@ -5653,7 +5674,7 @@ export interface Database {
           added_at?: string | null;
           removed_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"sub_contractors_added_by_fkey","columns":["added_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"sub_contractors_parent_profile_id_fkey","columns":["parent_profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"sub_contractors_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"sub_contractors_sub_profile_id_fkey","columns":["sub_profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       submittals: {
         Row: {
@@ -5707,7 +5728,7 @@ export interface Database {
           comments?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"submittals_drawing_id_fkey","columns":["drawing_id"],"isOneToOne":false,"referencedRelation":"drawings","referencedColumns":["id"]},{"foreignKeyName":"submittals_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"submittals_reviewed_by_fkey","columns":["reviewed_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"submittals_submitted_by_fkey","columns":["submitted_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       subscriptions: {
         Row: {
@@ -5749,7 +5770,7 @@ export interface Database {
           cancelled_at?: string | null;
           grace_period_ends_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"subscriptions_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       tasks: {
         Row: {
@@ -5791,7 +5812,7 @@ export interface Database {
           version?: number | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"tasks_milestone_id_fkey","columns":["milestone_id"],"isOneToOne":false,"referencedRelation":"milestones","referencedColumns":["id"]},{"foreignKeyName":"tasks_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       teams: {
         Row: {
@@ -5824,7 +5845,7 @@ export interface Database {
           active?: boolean | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"teams_lead_id_fkey","columns":["lead_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"teams_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       templates: {
         Row: {
@@ -5860,7 +5881,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"templates_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"templates_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       time_entries: {
         Row: {
@@ -5917,7 +5938,7 @@ export interface Database {
           billed_invoice_id?: string | null;
           phase_id?: string | null;
         };
-        Relationships: [{"foreignKeyName":"time_entries_approved_by_fkey","columns":["approved_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"time_entries_billed_invoice_id_fkey","columns":["billed_invoice_id"],"isOneToOne":false,"referencedRelation":"invoices","referencedColumns":["id"]},{"foreignKeyName":"time_entries_phase_id_fkey","columns":["phase_id"],"isOneToOne":false,"referencedRelation":"fee_phases","referencedColumns":["id"]},{"foreignKeyName":"time_entries_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"time_entries_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       units: {
         Row: {
@@ -5950,7 +5971,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"units_floor_id_fkey","columns":["floor_id"],"isOneToOne":false,"referencedRelation":"floors","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       usage_metrics: {
         Row: {
@@ -5974,7 +5995,7 @@ export interface Database {
           value?: number | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"usage_metrics_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       user_project_locations: {
         Row: {
@@ -6010,7 +6031,7 @@ export interface Database {
           assigned_by?: string | null;
           removed_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"user_project_locations_organization_id_fkey","columns":["organization_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"user_project_locations_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       vendor_performance: {
         Row: {
@@ -6097,7 +6118,7 @@ export interface Database {
           period_end?: string | null;
           computed_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"vendor_performance_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"vendor_performance_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"vendor_performance_vendor_id_fkey","columns":["vendor_id"],"isOneToOne":false,"referencedRelation":"vendors","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       vendor_profiles: {
         Row: {
@@ -6115,7 +6136,7 @@ export interface Database {
           company_name?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"vendor_profiles_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       vendor_project_scopes: {
         Row: {
@@ -6145,7 +6166,7 @@ export interface Database {
           granted_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"vendor_project_scopes_granted_by_fkey","columns":["granted_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"vendor_project_scopes_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"vendor_project_scopes_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"vendor_project_scopes_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"vendor_project_scopes_vendor_id_fkey","columns":["vendor_id"],"isOneToOne":false,"referencedRelation":"vendors","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       vendors: {
         Row: {
@@ -6184,7 +6205,7 @@ export interface Database {
           created_at?: string | null;
           profile_id?: string | null;
         };
-        Relationships: [{"foreignKeyName":"vendors_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"vendors_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       voice_transcripts: {
         Row: {
@@ -6223,7 +6244,7 @@ export interface Database {
           created_at?: string | null;
           last_hit_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"voice_transcripts_org_id_first_fkey","columns":["org_id_first"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       whatsapp_log: {
         Row: {
@@ -6280,7 +6301,7 @@ export interface Database {
           raw_response?: Json | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"whatsapp_log_org_id_fkey","columns":["org_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"whatsapp_log_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       whatsapp_quota_counter: {
         Row: {
@@ -6307,7 +6328,7 @@ export interface Database {
           hard_limit?: number | null;
           last_increment?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       wip_aging: {
         Row: {
@@ -6349,7 +6370,7 @@ export interface Database {
           created_by?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"wip_aging_created_by_fkey","columns":["created_by"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"wip_aging_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       workflow_definitions: {
         Row: {
@@ -6382,7 +6403,7 @@ export interface Database {
           enabled?: boolean | null;
           created_at?: string | null;
         };
-        Relationships: [];
+        Relationships: Relationship[];
       };
       workflow_instances: {
         Row: {
@@ -6418,7 +6439,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"workflow_instances_organization_id_fkey","columns":["organization_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]},{"foreignKeyName":"workflow_instances_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"workflow_instances_workflow_id_fkey","columns":["workflow_id"],"isOneToOne":false,"referencedRelation":"workflow_definitions","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       workflow_transitions: {
         Row: {
@@ -6448,7 +6469,7 @@ export interface Database {
           note?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"workflow_transitions_instance_id_fkey","columns":["instance_id"],"isOneToOne":false,"referencedRelation":"workflow_instances","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       worklogs: {
         Row: {
@@ -6484,7 +6505,7 @@ export interface Database {
           notes?: string | null;
           created_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"worklogs_profile_id_fkey","columns":["profile_id"],"isOneToOne":false,"referencedRelation":"profiles","referencedColumns":["id"]},{"foreignKeyName":"worklogs_project_id_fkey","columns":["project_id"],"isOneToOne":false,"referencedRelation":"projects","referencedColumns":["id"]},{"foreignKeyName":"worklogs_task_id_fkey","columns":["task_id"],"isOneToOne":false,"referencedRelation":"tasks","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
       zones: {
         Row: {
@@ -6523,7 +6544,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [{"foreignKeyName":"zones_floor_id_fkey","columns":["floor_id"],"isOneToOne":false,"referencedRelation":"spatial_floors","referencedColumns":["id"]},{"foreignKeyName":"zones_organization_id_fkey","columns":["organization_id"],"isOneToOne":false,"referencedRelation":"organizations","referencedColumns":["id"]}];
+        Relationships: Relationship[];
       };
     };
     Views: {

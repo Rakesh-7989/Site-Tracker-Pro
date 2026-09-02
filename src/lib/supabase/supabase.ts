@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { TypedSupabaseClient } from "./db";
+import type { Database } from "./database.types";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "./supabasePublicConfig";
 
 const ENV: Record<string, string | undefined> = typeof import.meta !== "undefined" ? import.meta.env : {};
@@ -112,7 +114,7 @@ interface FetchOrgQuotaResult extends AuthResult {
 export async function signInWithMagicLink(email: string): Promise<AuthResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
-  const { error } = await (sb as any).auth.signInWithOtp({
+  const { error } = await (sb as TypedSupabaseClient).auth.signInWithOtp({
     email,
     options: { emailRedirectTo: getCanonicalAppUrl(), shouldCreateUser: false },
   });
@@ -122,13 +124,13 @@ export async function signInWithMagicLink(email: string): Promise<AuthResult> {
 export async function signOut(): Promise<void> {
   const sb = await getSupabaseClient();
   if (!sb) return;
-  await (sb as any).auth.signOut();
+  await (sb as TypedSupabaseClient).auth.signOut();
 }
 
 export async function verifyEmailOtp(email: string, token: string): Promise<VerifyOtpResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
-  const { error } = await (sb as any).auth.verifyOtp({
+  const { error } = await (sb as TypedSupabaseClient).auth.verifyOtp({
     email: String(email || "").trim(),
     token: String(token || "").trim(),
     type: "email",
@@ -156,7 +158,7 @@ export async function signUp({ email, password, firmName, userName, plan = "basi
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
   if (plan === "custom") return { ok: false, error: "Custom plan requires sales contact." };
-  const { data, error } = await (sb as any).auth.signUp({
+  const { data, error } = await (sb as TypedSupabaseClient).auth.signUp({
     email: String(email || "").trim(),
     password: String(password || ""),
     options: {
@@ -197,7 +199,7 @@ export async function signUp({ email, password, firmName, userName, plan = "basi
 export async function signInWithPassword(email: string, password: string): Promise<AuthResultWithUser> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
-  const { data, error } = await (sb as any).auth.signInWithPassword({
+  const { data, error } = await (sb as TypedSupabaseClient).auth.signInWithPassword({
     email: String(email || "").trim(),
     password: String(password || ""),
   });
@@ -208,7 +210,7 @@ export async function signInWithPassword(email: string, password: string): Promi
 export async function resetPassword(email: string): Promise<AuthResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
-  const { error } = await (sb as any).auth.resetPasswordForEmail(
+  const { error } = await (sb as TypedSupabaseClient).auth.resetPasswordForEmail(
     String(email || "").trim(),
     { redirectTo: `${getCanonicalAppUrl()}/auth/reset` },
   );
@@ -218,7 +220,7 @@ export async function resetPassword(email: string): Promise<AuthResult> {
 export async function updatePassword(newPassword: string): Promise<AuthResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
-  const { error } = await (sb as any).auth.updateUser({ password: String(newPassword || "") });
+  const { error } = await (sb as TypedSupabaseClient).auth.updateUser({ password: String(newPassword || "") });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
@@ -242,8 +244,8 @@ export async function redeemStaffInvite({ token, name, email, password }: Redeem
       },
       body: JSON.stringify({ token, name, email, password }),
     });
-  } catch (e: any) {
-    return { ok: false, error: e?.message || "network-error" };
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message || "network-error" };
   }
   const j = await res.json().catch(() => ({}));
   return j.ok
@@ -254,7 +256,7 @@ export async function redeemStaffInvite({ token, name, email, password }: Redeem
 export async function acceptOrgInvitation(token: string): Promise<AcceptOrgInvitationResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
-  const { data, error } = await (sb as any).rpc("accept_org_invitation", { p_token: token });
+  const { data, error } = await (sb as TypedSupabaseClient).rpc("accept_org_invitation", { p_token: token });
   if (error) return { ok: false, error: error.message };
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.ok) return { ok: false, error: row?.reason || "unknown" };
@@ -264,7 +266,7 @@ export async function acceptOrgInvitation(token: string): Promise<AcceptOrgInvit
 export async function createOrgInvitation(email: string, role: string): Promise<CreateOrgInvitationResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
-  const { data, error } = await (sb as any).rpc("create_org_invitation", {
+  const { data, error } = await (sb as TypedSupabaseClient).rpc("create_org_invitation", {
     p_email: String(email || "").trim(),
     p_role: String(role || "client"),
   });
@@ -277,7 +279,7 @@ export async function createOrgInvitation(email: string, role: string): Promise<
 export async function fetchPublicPlans(): Promise<FetchPublicPlansResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled", plans: [] };
-  const { data, error } = await (sb as any).from("plans").select("*")
+  const { data, error } = await (sb as TypedSupabaseClient).from("plans").select("*")
     .eq("status", "active").eq("requires_superadmin", false)
     .order("display_order", { ascending: true });
   if (error) return { ok: false, error: error.message, plans: [] };
@@ -287,20 +289,20 @@ export async function fetchPublicPlans(): Promise<FetchPublicPlansResult> {
 export async function fetchOrgQuotaSnapshot(orgId: string): Promise<FetchOrgQuotaResult> {
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled", quotas: [] };
-  const { data, error } = await (sb as any).rpc("org_quota_snapshot", { p_org_id: orgId });
+  const { data, error } = await (sb as TypedSupabaseClient).rpc("org_quota_snapshot", { p_org_id: orgId });
   if (error) return { ok: false, error: error.message, quotas: [] };
-  return { ok: true, quotas: data || [] };
+  return { ok: true, quotas: (data as unknown[]) || [] };
 }
 
-export async function getCurrentUser(): Promise<Record<string, any> | null> {
+export async function getCurrentUser(): Promise<Record<string, unknown> | null> {
   const sb = await getSupabaseClient();
   if (!sb) return null;
-  const { data: { user } } = await (sb as any).auth.getUser();
+  const { data: { user } } = await (sb as TypedSupabaseClient).auth.getUser();
   if (!user) return null;
-  const { data: profile } = await (sb as any).from("profiles").select("*").eq("id", user.id).maybeSingle();
-  const enriched: Record<string, any> = { ...user, ...(profile || {}) };
+  const { data: profile } = await (sb as TypedSupabaseClient).from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const enriched: Record<string, unknown> = { ...user, ...(profile || {}) };
   if (!enriched.role) enriched.role = "client";
-  if (!enriched.name) enriched.name = enriched.email?.split("@")[0] || "New user";
+  if (!enriched.name) enriched.name = (enriched.email as string | undefined)?.split("@")[0] || "New user";
   return enriched;
 }
 
@@ -337,23 +339,24 @@ export async function loadKey(key: string, defaultValue: unknown): Promise<unkno
   if (!sb) return defaultValue;
   const table = TABLE_BY_KEY[key];
   if (!table) return defaultValue;
-  const { data, error } = await (sb as any).from(table).select("*");
+  const { data, error } = await (sb as TypedSupabaseClient).from(table as keyof Database["public"]["Tables"]).select("*");
   if (error) { console.warn(`Supabase load(${table}) failed:`, error.message); return defaultValue; }
-  if (Array.isArray(data) && data.length && data[0].project_id) {
-    return data.reduce((acc: Record<string, any[]>, row: any) => {
-      (acc[row.project_id] = acc[row.project_id] || []).push(row);
+  if (Array.isArray(data) && data.length && (data[0] as Record<string, string>).project_id) {
+    return data.reduce((acc: Record<string, unknown[]>, row: unknown) => {
+      const pid = (row as Record<string, string>).project_id;
+      (acc[pid] = acc[pid] || []).push(row);
       return acc;
     }, {});
   }
   return data;
 }
 
-export async function saveKey(key: string, value: any): Promise<void> {
+export async function saveKey(key: string, value: unknown): Promise<void> {
   const sb = await getSupabaseClient();
   if (!sb) return;
   const table = TABLE_BY_KEY[key];
   if (!table) return;
-  const rows: any[] = [];
+  const rows: unknown[] = [];
   if (Array.isArray(value)) {
     rows.push(...value);
   } else if (value && typeof value === "object") {
@@ -365,7 +368,7 @@ export async function saveKey(key: string, value: any): Promise<void> {
   const BATCH = 100;
   for (let i = 0; i < rows.length; i += BATCH) {
     const batch = rows.slice(i, i + BATCH);
-    const { error } = await (sb as any).from(table).upsert(batch, { onConflict: "id" });
+    const { error } = await (sb as TypedSupabaseClient).from(table as keyof Database["public"]["Tables"]).upsert(batch, { onConflict: "id" });
     if (error) {
       console.warn(`saveKey(${table}) batch failed:`, error.message);
       throw error;
@@ -381,9 +384,9 @@ interface MigrationResult {
 export async function migrateLocalToBackend(): Promise<MigrationResult> {
   const sb = await getSupabaseClient();
   if (!sb) throw new Error("Supabase is not enabled.");
-  let all: Record<string, any> = {};
+  let all: Record<string, unknown> = {};
   try { all = JSON.parse(localStorage.getItem("sitetrack_v2") || "{}"); }
-  catch (err: any) { console.warn("localStorage corrupt — nothing to migrate:", err.message); return { keys: 0, rows: 0 }; }
+  catch (err: unknown) { console.warn("localStorage corrupt — nothing to migrate:", (err as Error).message); return { keys: 0, rows: 0 }; }
   let totalKeys = 0, totalRows = 0;
   for (const [key, value] of Object.entries(all)) {
     if (!TABLE_BY_KEY[key]) continue;
@@ -391,9 +394,9 @@ export async function migrateLocalToBackend(): Promise<MigrationResult> {
       await saveKey(key, value);
       totalKeys++;
       if (Array.isArray(value)) totalRows += value.length;
-      else if (value && typeof value === "object") totalRows += (Object.values(value) as any[]).flat().length;
-    } catch (err: any) {
-      console.warn(`Migration ${key} failed:`, err.message);
+      else if (value && typeof value === "object") totalRows += (Object.values(value) as unknown[]).flat().length;
+    } catch (err: unknown) {
+      console.warn(`Migration ${key} failed:`, (err as Error).message);
     }
   }
   return { keys: totalKeys, rows: totalRows };
@@ -411,15 +414,15 @@ export async function probeConnection(): Promise<ProbeResult> {
   try {
     const sb = await getSupabaseClient();
     if (!sb) return { state: "offline", detail: "client init failed" };
-    const { error: authErr } = await (sb as any).auth.getSession();
+    const { error: authErr } = await (sb as TypedSupabaseClient).auth.getSession();
     if (authErr) return { state: "degraded", detail: `auth: ${authErr.message}` };
-    const { error: tableErr } = await (sb as any).from("projects").select("id").limit(1);
+    const { error: tableErr } = await (sb as TypedSupabaseClient).from("projects").select("id").limit(1);
     if (tableErr) {
       const msg = (tableErr.code || "") + " " + tableErr.message;
       return { state: "degraded", detail: msg };
     }
     return { state: "live", detail: "" };
-  } catch (err: any) {
-    return { state: "offline", detail: err.message || String(err) };
+  } catch (err: unknown) {
+    return { state: "offline", detail: (err as Error).message || String(err) };
   }
 }

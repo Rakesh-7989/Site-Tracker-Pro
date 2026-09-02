@@ -6,6 +6,7 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { listInvoices, createInvoice, setInvoiceStatus, deleteInvoice, invoiceTaxBreakup, fmtRupees, type Invoice, type InvoiceStatus } from "@/app/queries/financeQueries";
 import { publishInvoiceGenerated } from "@/app/queries/outboxQueries";
 import { ReceiptsPanel } from "./ReceiptsPanel";
+import { createPaymentLink } from "@/app/razorpayQueries";
 
 import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
@@ -29,6 +30,8 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
   const [no, setNo] = useState(""); const [amount, setAmount] = useState("");
   const [gst, setGst] = useState("18"); const [tds, setTds] = useState("2");
   const [openPay, setOpenPay] = useState<string | null>(null);
+  const [razorpayLink, setRazorpayLink] = useState<Record<string, { url: string; status: string }>>({});
+  const [razorpayErr, setRazorpayErr] = useState<Record<string, string>>({});
   const draftTax = invoiceTaxBreakup(Number(amount) || 0, Number(gst) || 0, Number(tds) || 0);
 
   const [summary, setSummary] = useState({ total: 0, paid: 0, outstanding: 0, count: 0 });
@@ -71,6 +74,17 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     setNo(""); setAmount("");
   };
 
+  const genRazorpayLink = async (r: Invoice, c: unknown): Promise<{ ok: boolean; error?: string }> => {
+    const res = await createPaymentLink(c, r.id, projectId);
+    if (res.ok && res.data) {
+      setRazorpayLink(prev => ({ ...prev, [r.id]: { url: res.data!.shortUrl, status: res.data!.status } }));
+      return { ok: true };
+    }
+    const msg = res.error ?? "Failed to create payment link.";
+    setRazorpayErr(prev => ({ ...prev, [r.id]: msg }));
+    return { ok: false, error: msg };
+  };
+
   const columns: Column<Invoice>[] = [
     {
       key: "detail", header: "Invoice", className: "flex-1 min-w-0",
@@ -84,6 +98,21 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
             <button className="text-[11px] text-accent font-semibold mt-0.5 hover:opacity-70" onClick={() => setOpenPay(openPay === r.id ? null : r.id)}>
               {openPay === r.id ? "Hide payments ▾" : "Payments ▸"}
             </button>
+            {r.status !== "paid" && (
+              <div className="mt-1.5">
+                {razorpayLink[r.id] ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <a className="text-[11px] text-accent font-semibold hover:opacity-70 underline" href={razorpayLink[r.id].url} target="_blank" rel="noreferrer">Open Razorpay payment link ↗</a>
+                    <span className="text-[10px] font-mono text-fg-tertiary">({razorpayLink[r.id].status})</span>
+                  </div>
+                ) : (
+                  <button className="text-[11px] text-fg-secondary font-semibold hover:opacity-70" onClick={() => void run(`rz-${r.id}`, c => genRazorpayLink(r, c))} disabled={busy === `rz-${r.id}`}>
+                    {busy === `rz-${r.id}` ? "Creating…" : "Generate Razorpay payment link"}
+                  </button>
+                )}
+                {razorpayErr[r.id] && <div className="text-[11px] text-error mt-1">{razorpayErr[r.id]}</div>}
+              </div>
+            )}
             {r.lines.length > 0 && (
               <div className="mt-1.5 space-y-0.5">
                 {r.lines.map(l => (

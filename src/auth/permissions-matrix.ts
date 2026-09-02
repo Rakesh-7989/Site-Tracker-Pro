@@ -1,5 +1,4 @@
-// SiteTrack Pro — capability matrix for all 22 identity roles + 6 org tiers
-// + 18 project tiers.
+// SiteTrack Pro — capability matrix for all 22 identity roles
 //
 // This is the AUTHORITATIVE matrix. RoleResolver.ts composes a user's
 // capability set from 1-3 entries in this file (one per tier the user

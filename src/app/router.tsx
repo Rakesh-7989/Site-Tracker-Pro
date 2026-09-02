@@ -25,6 +25,7 @@ import { ShellLayout } from "@/features/shell/ShellLayout";
 import { StubGuard } from "@/auth/StubGuard";
 import { LandingView } from "@/features/marketing/LandingView";
 import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
+import { VerifyEmailView } from "@/features/auth/VerifyEmailView";
 import { PayView } from "@/features/marketing/PayView";
 import { PrivacyView, TermsView } from "@/features/marketing/LegalView";
 import { LoginScreenV3, StaffLoginScreen } from "@/features/auth/LoginScreenV3";
@@ -113,6 +114,7 @@ export const router = createBrowserRouter(guardRoutes([
   // Zoho-style self-service `/register`, preserving plan/billing params.
   { path: "/signup", element: <SignupRedirect /> },
   { path: "/register", element: <OrgRegisterView /> },
+  { path: "/verify-email", element: <VerifyEmailView /> },
   { path: "/accept-invite", element: <AcceptInviteView /> },
   { path: "/privacy", element: <PrivacyView /> },
   { path: "/terms", element: <TermsView /> },

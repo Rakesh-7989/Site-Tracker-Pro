@@ -24,11 +24,15 @@ const APP = (process.argv[2] || env.VITE_APP_URL || "https://sitetrackpro.in").r
 // same values every browser downloads). Prefer the explicit env var when set.
 let SUPA = env.VITE_SUPABASE_URL || "";
 let ANON = env.VITE_SUPABASE_ANON_KEY || "";
-try {
-  const cfg = readFileSync(join(root, "src/lib/supabasePublicConfig.ts"), "utf8");
-  SUPA = SUPA || (cfg.match(/PUBLIC_SUPABASE_URL[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
-  ANON = ANON || (cfg.match(/PUBLIC_SUPABASE_ANON_KEY[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
-} catch { /* fall through — env vars are authoritative when set */ }
+// The public config lived at src/lib/supabasePublicConfig.ts and moved to
+// src/lib/supabase/ — try both so the CI (no .env.local) smoke resolves it.
+for (const cfgPath of ["src/lib/supabase/supabasePublicConfig.ts", "src/lib/supabasePublicConfig.ts"]) {
+  try {
+    const cfg = readFileSync(join(root, cfgPath), "utf8");
+    SUPA = SUPA || (cfg.match(/PUBLIC_SUPABASE_URL[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+    ANON = ANON || (cfg.match(/PUBLIC_SUPABASE_ANON_KEY[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+  } catch { /* try next path — env vars are authoritative when set */ }
+}
 
 let pass = 0, fail = 0;
 const ok = (m) => { console.log(`  ✅ ${m}`); pass++; };

@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
   const isService = Boolean(expectedInternal && internal === expectedInternal);
   if (!isService) {
     const auth = await authenticate(req, {
-      requireRole: ["pm", "project_admin", "site_engineer", "site_supervisor", "promoter", "orgadmin", "superadmin", "admin"],
+      requireRole: ["pm", "project_admin", "site_engineer", "promoter", "orgadmin", "superadmin", "admin"],
       ...(body.project_id ? { requireProjectId: body.project_id } : {}),
     });
     if (!auth.ok) return auth.response;

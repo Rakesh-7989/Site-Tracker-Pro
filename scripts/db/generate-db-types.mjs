@@ -181,6 +181,18 @@ out.push(`  | null`);
 out.push(`  | { [key: string]: Json | undefined }`);
 out.push(`  | Json[];`);
 out.push(``);
+out.push(`export interface Relationship {`);
+out.push(`  foreignKeyName: string;`);
+out.push(`  columns: string[];`);
+out.push(`  isOneToOne: boolean;`);
+out.push(`  referencedRelation: string;`);
+out.push(`  referencedColumns: string[];`);
+out.push(`}`);
+out.push(``);
+out.push(`export type Embed<T extends { columns: string[]; referencedRelation: keyof Database["public"]["Tables"] }> = {`);
+out.push(`  [K in T["columns"][number]]: Database["public"]["Tables"][T["referencedRelation"]]["Row"];`);
+out.push(`};`);
+out.push(``);
 out.push(`export interface Database {`);
 out.push(`  public: {`);
 out.push(`    Tables: {`);
@@ -212,7 +224,7 @@ for (const [table, tableCols] of [...tables.entries()].sort((a, b) => a[0].local
     out.push(`          ${c.column_name}?: ${tsType(c.udt_name, c.data_type)} | null;`);
   }
   out.push(`        };`);
-  out.push(`        Relationships: ${JSON.stringify(relsByTable.get(table) ?? [])};`);
+  out.push(`        Relationships: Relationship[];`);
   out.push(`      };`);
   void T;
 }

@@ -64,7 +64,7 @@ describe("whatsapp_dpr_send — Sprint 2 hardening", () => {
 
   it("authenticates the caller with the DPR submit role set", () => {
     expect(dprSend).toMatch(/requireRole/);
-    expect(dprSend).toMatch(/site_supervisor/);
+    expect(dprSend).toMatch(/site_engineer/);
     expect(dprSend).toMatch(/requirePlanFeature/);
   });
 });

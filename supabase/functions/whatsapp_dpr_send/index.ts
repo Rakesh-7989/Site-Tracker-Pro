@@ -233,12 +233,12 @@ Deno.serve(async (httpReq: Request) => {
 
   // ── Security gate (Phase 5 hardening) ──
   // A DPR send must come from someone authorised to report on the project.
-  // Gate to site_supervisor / site_engineer / pm / project_admin (the
+  // Gate to site_engineer / pm / project_admin (the
   // roles that submit DPRs) plus org admins. When project_id is present we
   // verify project membership too. Previously this EF had NO caller check —
   // cross-org message spoofing was possible.
   const auth = await authenticate(httpReq, {
-    requireRole: ["site_supervisor", "site_engineer", "pm", "project_admin", "promoter", "orgadmin", "superadmin", "admin"],
+    requireRole: ["site_engineer", "pm", "project_admin", "promoter", "orgadmin", "superadmin", "admin"],
     ...(payload.project_id ? { requireProjectId: payload.project_id } : {}),
   });
   if (!auth.ok) return auth.response;

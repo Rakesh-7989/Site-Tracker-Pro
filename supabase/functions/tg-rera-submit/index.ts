@@ -50,8 +50,7 @@ Deno.serve(async (req) => {
 
   // ── Security gate (Phase 0.5 hardening) ──
   // RERA filings are legally binding — only compliance officers or
-  // orgadmins of the project's org may file. site_supervisor may
-  // initiate but real submission needs higher authority.
+  // orgadmins of the project's org may file.
   const auth = await authenticate(req, {
     requireRole: ["orgadmin", "project_admin", "site_inspector", "consultant", "superadmin", "admin"],
   });

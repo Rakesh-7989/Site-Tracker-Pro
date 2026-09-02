@@ -1,4 +1,4 @@
-// SiteTrack Pro — canonical 26-role catalog (v2 architecture).
+// SiteTrack Pro — canonical 22-role catalog (v2 architecture).
 //
 // Source of truth for every role in the system. Mirrors:
 //   - profiles.role CHECK constraint  (migration 58, 26 values)

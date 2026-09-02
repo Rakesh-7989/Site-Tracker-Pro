@@ -51,9 +51,9 @@ describe("projectTypes — TYPE_TEAM_TEMPLATES", () => {
       expect(clientRow?.required, t).toBe(true);
     }
   });
-  it("construction team includes project_head + site_engineer + contractor (required)", () => {
+  it("construction team includes pm + site_engineer + contractor (required)", () => {
     const required = TYPE_TEAM_TEMPLATES.construction.filter(r => r.required).map(r => r.role);
-    expect(required).toContain("project_head");
+    expect(required).toContain("pm");
     expect(required).toContain("site_engineer");
     expect(required).toContain("contractor");
   });
