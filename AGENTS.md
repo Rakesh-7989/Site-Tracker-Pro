@@ -1,3 +1,16 @@
+## Session — 2026-09-02: `gstn-einvoice` same-bug fix shipped to prod (PR #48, complete)
+
+**Context**: Follow-up caught that the `gstn-einvoice` EF had the SAME latent bug just fixed in `razorpay-payment-link`: it referenced `invoice.org_id` — but **`invoices` has NO `org_id` column** (org is reached via `projects.org_id`; confirmed via `information_schema.columns`). The `requirePlanFeature(orgId || "", "gstn_filing")` plan gate was therefore running with an empty org id before the fix.
+
+- **Fix** at `supabase/functions/gstn-einvoice/index.ts` (lines 138–151): derives org from `projects` via `invoice.project_id` before the plan gate — mirrors the razorpay pattern.
+- **Regression test** `tests/efGstn.test.ts` (+3): asserts no `invoices.org_id`/`invoice.org_id` refs, the `from("projects").select("org_id").eq("id", invoice.project_id)` pattern, and the `requirePlanFeature(orgId || "", "gstn_filing")` contract intact.
+- **Local** (`161d4f8`): efGstn/efPlanCheck/efAuthWiring/gstn 45/45; tsc clean; eslint clean (EF file excluded by config).
+- **PR #48** (main→prod, squash `99d7ae7`): required contexts test/e2e-mock/coverage ALL green on PR head (review count already 0 at API level — no temp relaxation needed, matches PR #44/#47).
+- **Post-merge verify**: `git diff origin/main origin/prod` empty (trees match); prod CI run `33644806898` branch `prod` test/coverage/e2e-mock all pass; Deploy workflow run `33645494518` Vercel prod deploy + post-deploy prod smoke both pass; **EF live & auth-guarded** — `GET /functions/v1/gstn-einvoice` → **401** UNAUTHORIZED without JWT.
+- Working tree clean; no temp probe scripts left.
+
+---
+
 ## Session — 2026-08-26: ENTERPRISE HARDENING + MOAT C1 — lint truth, route resilience, typed DB boundary, cross-org partners (complete)
 
 **User mandate**: "malli redesign — deep-dive chesi enterprise SaaS product build" (all three phases via agentic loop). Deep-dive (explore agent) found the repo far past the stale homepage notes; chose hardening → moat → polish order.
