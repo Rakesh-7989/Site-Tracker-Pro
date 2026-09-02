@@ -102,7 +102,7 @@ export async function listOrgInvoices(client: any, projectIds: readonly string[]
     if (projectIds.length === 0) return ok([]);
     const { data, error } = await client
       .from("invoices")
-      .select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id, project_id, invoice_lines(id, description, qty, unit_price, amount)")
+      .select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id, project_id, razorpay_payment_link_id, razorpay_status, invoice_lines(id, description, qty, unit_price, amount)")
       .in("project_id", projectIds)
       .order("issued_date", { ascending: false });
     if (error) return dbe(error);
@@ -117,6 +117,8 @@ export async function listOrgInvoices(client: any, projectIds: readonly string[]
       periodTo: r.period_to == null ? null : String(r.period_to),
       retainerId: r.retainer_id == null ? null : String(r.retainer_id),
       phaseId: r.phase_id == null ? null : String(r.phase_id),
+      razorpayPaymentLinkId: r.razorpay_payment_link_id == null ? null : String(r.razorpay_payment_link_id),
+      razorpayStatus: r.razorpay_status == null ? null : String(r.razorpay_status),
       projectId: String(r.project_id ?? ""),
       lines: mapOrgLines(r.invoice_lines),
     })));

@@ -42,6 +42,19 @@ describe("razorpay-payment-link — create payment link (mig 253)", () => {
   it("returns the short_url for sharing", () => {
     expect(paymentLink).toContain("short_url: razorpayResponse.short_url");
   });
+
+  it("supports mode=get to fetch an existing link (get short_url fallback)", () => {
+    expect(paymentLink).toMatch(/mode = "create"/);
+    expect(paymentLink).toContain("mode === \"get\"");
+    expect(paymentLink).toContain("method: \"GET\"");
+    expect(paymentLink).toMatch(/payment_links\/\$\{existingLinkId\}/);
+    expect(paymentLink).toContain("falling back to create:");
+  });
+
+  it("resolves Razorpay credentials from org_integrations first", () => {
+    expect(paymentLink).toContain("org_integrations");
+    expect(paymentLink).toContain("razorpay.key_secret");
+  });
 });
 
 describe("razorpay-webhook — nested payload + status mapping (mig 253)", () => {

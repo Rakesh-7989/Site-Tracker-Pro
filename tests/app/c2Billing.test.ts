@@ -34,7 +34,8 @@ function inv(over: Partial<Invoice>): Invoice {
   return {
     id: "i", no: "INV-1", amount: 1000, gst: 18, tds: 2, status: "sent",
     issuedDate: "2026-07-31", source: null, periodFrom: null, periodTo: null,
-    retainerId: null, phaseId: null, lines: [], ...over,
+    retainerId: null, phaseId: null, razorpayPaymentLinkId: null, razorpayStatus: null,
+    lines: [], ...over,
   };
 }
 
