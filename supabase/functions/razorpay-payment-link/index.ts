@@ -85,9 +85,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const supabase = createClient(url, serviceRole);
 
   // Verify the caller is a member of the invoice's org (read invoice first).
+  // NOTE: invoices has no org_id column — the org is reached via projects.org_id.
   const { data: invoice, error: invoiceErr } = await supabase
     .from("invoices")
-    .select("id, project_id, amount, status, org_id, razorpay_payment_link_id")
+    .select("id, project_id, amount, status, razorpay_payment_link_id")
     .eq("id", invoice_id)
     .single();
 
@@ -98,14 +99,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
+  // Resolve the owning org from the project (invoices carry no org_id).
+  let orgId: string | null = null;
+  if (invoice.project_id) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("org_id")
+      .eq("id", invoice.project_id)
+      .maybeSingle();
+    if (project?.org_id) orgId = String(project.org_id);
+  }
+
   // Resolve Razorpay credentials: per-org first (org_integrations), else EF secrets.
   let keyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
   let secret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
-  if (invoice.org_id) {
+  if (orgId) {
     const { data: orgCfg } = await supabase
       .from("org_integrations")
       .select("razorpay")
-      .eq("org_id", invoice.org_id)
+      .eq("org_id", orgId)
       .limit(1)
       .maybeSingle();
     const razorpay = (orgCfg?.razorpay ?? {}) as Record<string, unknown> | null;
