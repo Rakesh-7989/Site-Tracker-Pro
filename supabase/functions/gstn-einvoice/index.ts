@@ -135,8 +135,19 @@ Deno.serve(async (req) => {
     .from("invoices").select("*").eq("id", body.invoice_id).maybeSingle();
   if (ie || !invoice) return json({ error: "invoice-not-found" }, 404);
 
+  // Resolve the owning org from the project (invoices carry no org_id).
+  let orgId: string | null = null;
+  if (invoice.project_id) {
+    const { data: project } = await supa
+      .from("projects")
+      .select("org_id")
+      .eq("id", invoice.project_id)
+      .maybeSingle();
+    if (project?.org_id) orgId = String(project.org_id);
+  }
+
   // Plan gate: GSTN e-invoice filing is a Business+ feature.
-  const planChk = await requirePlanFeature(invoice.org_id, "gstn_filing");
+  const planChk = await requirePlanFeature(orgId || "", "gstn_filing");
   if (!planChk.allow) return json({ error: "plan-upgrade-required", feature: "gstn_filing", required: "business" }, 402);
 
   // Build payload from existing data (in practice we'd join seller/buyer/items
