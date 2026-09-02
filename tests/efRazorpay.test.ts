@@ -55,6 +55,12 @@ describe("razorpay-payment-link — create payment link (mig 253)", () => {
     expect(paymentLink).toContain("org_integrations");
     expect(paymentLink).toContain("razorpay.key_secret");
   });
+
+  it("derives the org from the project, not a non-existent invoices.org_id", () => {
+    expect(paymentLink).not.toContain("invoices.org_id");
+    expect(paymentLink).toMatch(/from\("invoices"\)\s*\n\s*\.select\("id, project_id, amount, status, razorpay_payment_link_id"\)/);
+    expect(paymentLink).toMatch(/\.from\("projects"\)\s*\n\s*\.select\("org_id"\)\s*\n\s*\.eq\("id", invoice\.project_id\)/);
+  });
 });
 
 describe("razorpay-webhook — nested payload + status mapping (mig 253)", () => {
