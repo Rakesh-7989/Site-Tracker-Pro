@@ -3245,21 +3245,35 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 - Gates: tsc clean · eslint 0 errors · vitest **209 files / 2577 tests** · smoke
   **398 checks** · build clean · e2e-mock **11/11**.
 
-### Phase A — Real email delivery via sitetrackpro.in (BLOCKED on user DNS)
-- **Domain migration (2026-08-20)**: the product's final domain is now
-  **`sitetrackpro.in`** (user-purchased; all code + docs migrated off
-  `sitetrack-rakesh.vercel.app` / `sitetrack.in`). The previously-created Resend
-  domain was `sitetrack.in` (id `ddf2ce85-70c8-4b59-a734-a0d58d301976`, never
-  verified) — superseded. Create a **new** Resend domain for `sitetrackpro.in`
-  and have the user add its 3 records at the DNS provider: **TXT
-  `resend._domainkey`** = the `p=...` value from the domain's `records` API,
-  **TXT `send`** = `v=spf1 include:amazonses.com ~all`, **MX `send`** (pri 10) =
-  `feedback-smtp.us-east-1.amazonses.com`. After DNS propagates, agent verifies
-  in Resend, flips `RESEND_FROM_EMAIL` → `hello@sitetrackpro.in` (env.local +
-  Supabase EF secret), live-tests delivery to `boyapatirakesh7777@gmail.com`,
-  then does the §8 manual confirm round-trip.
-- `RESEND_FROM_EMAIL` is currently `SiteTrack <onboarding@resend.dev>` (test
-  domain) — works only to the account owner email.
+### Phase A — Real email delivery via sitetrackpro.in (VERIFIED — one manual step left)
+- **Status (2026-09-02)**: DNS + Resend + GoTrue SMTP + EF secrets are all LIVE.
+  The only remaining step is the user's §8 manual round-trip (open a real
+  transactional email in `boyapatirakesh7777@gmail.com`) plus an optional
+  TrackingCAA record.
+- **Resend domain**: verified `sitetrackpro.in` = **`b035d4cd-d4c1-4de7-9066-1bb82876e59a`**
+  (ap-northeast-1, created 2026-08-19, sending+receiving enabled). DNS records
+  all **verified**: DKIM TXT `resend._domainkey`, SPF MX `send` =
+  `feedback-smtp.ap-northeast-1.amazonses.com`, SPF TXT `send` =
+  `v=spf1 include:amazonses.com ~all`, Receiving MX
+  `inbound-smtp.ap-northeast-1.amazonaws.com`, Tracking CNAME `www` →
+  `links1.resend-dns.com`. Only **TrackingCAA `www`** is `pending` (optional —
+  only needed for Resend to issue its click-tracking TLS cert; add CAA
+  `0 issue "amazon.com"` if tracking links ever break).
+- **Cleanup**: old `sitetrack.in` domain (`ddf2ce85…`, never verified) +
+  superseded **failed duplicate** `sitetrackpro.in` us-east-1 domain
+  `8b50c870-abfb-4264-a3a9-06d71c3b3bd4` (created 2026-08-30) — the duplicate
+  was **deleted** 2026-09-02 (HTTP 200).
+- **GoTrue custom SMTP** (verified via Management API): `smtp.resend.com:587`,
+  user `resend`, pass = `RESEND_API_KEY`, admin email `hello@sitetrackpro.in`,
+  sender name "SiteTrack Pro", `smtp_max_frequency: 1`, `site_url`
+  `https://sitetrackpro.in`.
+- **EFs**: `RESEND_FROM_EMAIL` secret is set (value write-only; code fallbacks
+  in `notify-deliver`, `promoter_digest_cron`, `create_org_with_admin`,
+  `review_signup_request` are already `SiteTrack <hello@sitetrackpro.in>`).
+- **Live test (2026-09-02)**: API send from `hello@sitetrackpro.in` →
+  `boyapatirakesh7777@gmail.com` accepted by Resend (id `29bbf5e8-…`).
+- ⚠️ Keep the `GMAIL_SMTP_USER`/`GMAIL_SMTP_PASS` EF secrets — still used by
+  `send-staff-invite` and `invite_org_member` SMTP fallbacks.
 
 ---
 
