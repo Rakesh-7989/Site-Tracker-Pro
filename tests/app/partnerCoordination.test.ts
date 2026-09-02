@@ -37,6 +37,18 @@ describe("computePartnerCoordination", () => {
     expect(r.signals.some(s => s.detail.includes("FF&E"))).toBe(true);
   });
 
+  it("review-lag carries the drawings variant when drawings drive it", () => {
+    const r = computePartnerCoordination({ pendingDrawings: 3, openTasks: 0, openIssues: 0 });
+    const s = r.signals.find(x => x.code === "review-lag");
+    expect(s?.variant).toBe("drawings");
+  });
+
+  it("review-lag carries the ffe variant for interior pile-ups", () => {
+    const r = computePartnerCoordination({ pendingDrawings: 0, openTasks: 0, openIssues: 0, pendingFfe: 6 });
+    const s = r.signals.find(x => x.code === "review-lag");
+    expect(s?.variant).toBe("ffe");
+  });
+
   it("caps at 100", () => {
     const r = computePartnerCoordination({ pendingDrawings: 10, openTasks: 20, openIssues: 10, pendingFfe: 20, daysSinceLastUpdate: 30 });
     expect(r.score).toBeLessThanOrEqual(100);

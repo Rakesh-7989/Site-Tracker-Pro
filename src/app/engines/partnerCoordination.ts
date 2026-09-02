@@ -10,6 +10,8 @@ export type CoordinationCode = "design-blocking" | "site-pileup" | "review-lag" 
 export interface CoordinationSignal {
   code: CoordinationCode;
   severity: "high" | "medium" | "low";
+  /** Discriminates the two review-lag variants (drawings vs FF&E) for localized rendering. */
+  variant?: "drawings" | "ffe";
   title: string;
   detail: string;
 }
@@ -49,6 +51,7 @@ export function computePartnerCoordination(input: CoordinationInput): Coordinati
   } else if (input.pendingDrawings > 2) {
     const s: CoordinationSignal = {
       code: "review-lag",
+      variant: "drawings",
       severity: input.pendingDrawings >= 4 ? "high" : "medium",
       title: "Drawings awaiting review",
       detail: `${input.pendingDrawings} revisions pending partner or client approval`,
@@ -88,6 +91,7 @@ export function computePartnerCoordination(input: CoordinationInput): Coordinati
   if ((input.pendingFfe ?? 0) > 5) {
     const s: CoordinationSignal = {
       code: "review-lag",
+      variant: "ffe",
       severity: (input.pendingFfe ?? 0) > 10 ? "high" : "low",
       title: "FF&E selections pending",
       detail: `${input.pendingFfe} FF&E items not yet installed`,

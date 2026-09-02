@@ -215,8 +215,9 @@ function StatutoryExpiryAlert({ projectId }: { projectId: string }): JSX.Element
 
 function PartnerFirmCard({ projectId }: { projectId: string }): JSX.Element {
   const { session } = useAuth();
+  const t = useT();
   const orgType = resolveOrgType(session?.orgs.find(o => o.orgId === session?.activeOrgId));
-  const [state, setState] = useState<{ count: number; label: string; to: string; sub: string } | null>(null);
+  const [state, setState] = useState<{ kind: "drawings" | "site" | "ffe" | "review"; count: number; to: string; subArgs: Record<string, number> } | null>(null);
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -226,38 +227,40 @@ function PartnerFirmCard({ projectId }: { projectId: string }): JSX.Element {
         const res = await listApprovalDrawings(client, projectId);
         if (cancelled || !res.ok) return;
         const pending = res.data.filter(d => d.approvalStatus === "pending").length;
-        if (pending > 0) setState({ count: pending, label: "Drawings pending review", to: `/projects/${projectId}/drawing-review`, sub: `${pending} revision${pending === 1 ? "" : "s"} waiting for your approval` });
+        if (pending > 0) setState({ kind: "drawings", count: pending, to: `/projects/${projectId}/drawing-review`, subArgs: { count: pending } });
       } else if (orgType === "contractor" || orgType === "builder" || orgType === "developer") {
         const [tRes, iRes] = await Promise.all([listTasks(client, projectId), listIssues(client, projectId)]);
         if (cancelled) return;
         const openTasks = tRes.ok ? tRes.data.filter(t => t.status !== "completed").length : 0;
         const openIssues = iRes.ok ? iRes.data.filter(i => i.status === "open").length : 0;
         const total = openTasks + openIssues;
-        if (total > 0) setState({ count: total, label: "Site work to do", to: `/projects/${projectId}/tasks`, sub: `${openTasks} open tasks · ${openIssues} open issues` });
+        if (total > 0) setState({ kind: "site", count: total, to: `/projects/${projectId}/tasks`, subArgs: { tasks: openTasks, issues: openIssues } });
       } else if (orgType === "interior_firm") {
         const res = await listFfeEntries(client, projectId);
         if (cancelled || !res.ok) return;
         const pending = res.data.filter(f => f.status !== "installed" && f.status !== "cancelled").length;
-        if (pending > 0) setState({ count: pending, label: "FF&E items pending", to: `/projects/${projectId}/ffe`, sub: `${pending} items not yet installed` });
+        if (pending > 0) setState({ kind: "ffe", count: pending, to: `/projects/${projectId}/ffe`, subArgs: { count: pending } });
       } else if (orgType === "consultant" || orgType === "pmc" || orgType === "vendor") {
         const [tRes, iRes] = await Promise.all([listTasks(client, projectId), listIssues(client, projectId)]);
         if (cancelled) return;
         const open = (tRes.ok ? tRes.data.filter(t => t.status !== "completed").length : 0) + (iRes.ok ? iRes.data.filter(i => i.status === "open").length : 0);
-        if (open > 0) setState({ count: open, label: "Reviews & actions", to: `/projects/${projectId}/tasks`, sub: `${open} items need attention` });
+        if (open > 0) setState({ kind: "review", count: open, to: `/projects/${projectId}/tasks`, subArgs: { count: open } });
       }
     })();
     return () => { cancelled = true; };
   }, [projectId, orgType]);
   if (!state) return <></>;
+  const queueLabel = `partner.queue${state.kind[0].toUpperCase()}${state.kind.slice(1)}Label`;
+  const queueSub = `partner.queue${state.kind[0].toUpperCase()}${state.kind.slice(1)}Sub`;
   return (
     <Card padding="md" className="border-l-4 border-l-accent">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Your queue</p>
-          <p className="text-sm font-bold text-fg-primary mt-0.5">{state.label} · <span className="text-accent">{state.count}</span></p>
-          <p className="text-[11px] text-fg-secondary mt-0.5">{state.sub}</p>
+          <p className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("partner.queueTitle")}</p>
+          <p className="text-sm font-bold text-fg-primary mt-0.5">{t(queueLabel)} · <span className="text-accent">{state.count}</span></p>
+          <p className="text-[11px] text-fg-secondary mt-0.5">{t(queueSub, state.subArgs)}</p>
         </div>
-        <Link to={state.to} className="inline-flex items-center gap-1 rounded-lg bg-accent text-white px-3 py-1.5 text-xs font-semibold hover:bg-accent-2">Open <Icon name="arrow" size={12} /></Link>
+        <Link to={state.to} className="inline-flex items-center gap-1 rounded-lg bg-accent text-white px-3 py-1.5 text-xs font-semibold hover:bg-accent-2">{t("partner.queueOpenAction")} <Icon name="arrow" size={12} /></Link>
       </div>
     </Card>
   );

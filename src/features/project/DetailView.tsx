@@ -194,8 +194,8 @@ export function DetailView(): JSX.Element {
   const tabContent = isPartnerBlocked ? (
     <Card className="max-w-lg mx-auto p-8 text-center">
       <Icon name="lock" size={24} className="mx-auto text-fg-tertiary mb-2" />
-      <div className="text-sm font-semibold text-fg-primary">Access Restricted</div>
-      <div className="text-xs text-fg-secondary mt-1">This section is not shared with partner firms.</div>
+      <div className="text-sm font-semibold text-fg-primary">{t("partner.blockedTitle")}</div>
+      <div className="text-xs text-fg-secondary mt-1">{t("partner.blockedBody")}</div>
     </Card>
   ) : (
     <div>
