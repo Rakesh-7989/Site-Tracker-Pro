@@ -19,6 +19,22 @@ const STATUS_LABEL: Record<InvoiceStatus, string> = {
   sent: "Sent", paid: "Paid", overdue: "Overdue", cancelled: "Cancelled",
 };
 
+const rzTone = (status: string): "neutral" | "success" | "info" | "danger" => {
+  if (status === "paid") return "success";
+  if (status === "failed" || status === "expired" || status === "cancelled") return "danger";
+  if (status === "partial" || status === "partially_paid") return "info";
+  return "neutral";
+};
+
+const rzLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    created: "Created", paid: "Paid", failed: "Failed", expired: "Expired",
+    cancelled: "Cancelled", partial: "Partial", partially_paid: "Partial",
+    pending: "Pending", issued: "Issued",
+  };
+  return labels[status] || status;
+};
+
 export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
   const ctx = { orgId: activeOrg?.orgId, projectId };
@@ -50,6 +66,18 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
         return acc;
       }, { total: 0, paid: 0, outstanding: 0, count: 0 });
       setSummary(totals);
+      // Re-hydrate any persisted (unpaid) Razorpay payment links so the share
+      // URL + live status survive a reload. The DB stores the link id, so we
+      // ask the EF for the current short_url via mode:"get" (no new link).
+      for (const r of res.data) {
+        if (!r.razorpayPaymentLinkId || r.razorpayStatus === "paid" || r.status === "paid") continue;
+        try {
+          const pl = await createPaymentLink(client, r.id, projectId, "get");
+          if (pl.ok && pl.data) {
+            setRazorpayLink(prev => ({ ...prev, [r.id]: { url: pl.data!.shortUrl, status: pl.data!.status } }));
+          }
+        } catch { /* best-effort: link shows on next refresh */ }
+      }
     } else setError(res.error);
     setLoading(false);
   }, [projectId]);
@@ -68,7 +96,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
       }
       return res;
     }, {
-      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: Number(gst) || 0, tds: Number(tds) || 0, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10), source: null, periodFrom: null, periodTo: null, retainerId: null, phaseId: null, lines: [] }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, no: no.trim(), amount: amt, gst: Number(gst) || 0, tds: Number(tds) || 0, status: "sent" as InvoiceStatus, issuedDate: new Date().toISOString().slice(0, 10), source: null, periodFrom: null, periodTo: null, retainerId: null, phaseId: null, razorpayPaymentLinkId: null, razorpayStatus: null, lines: [] }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setNo(""); setAmount("");
@@ -78,6 +106,7 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
     const res = await createPaymentLink(c, r.id, projectId);
     if (res.ok && res.data) {
       setRazorpayLink(prev => ({ ...prev, [r.id]: { url: res.data!.shortUrl, status: res.data!.status } }));
+      setRazorpayErr(prev => { const next = { ...prev }; delete next[r.id]; return next; });
       return { ok: true };
     }
     const msg = res.error ?? "Failed to create payment link.";
@@ -103,11 +132,16 @@ export function InvoicesTab({ projectId }: { projectId: string }): JSX.Element {
                 {razorpayLink[r.id] ? (
                   <div className="flex items-center gap-2 flex-wrap">
                     <a className="text-[11px] text-accent font-semibold hover:opacity-70 underline" href={razorpayLink[r.id].url} target="_blank" rel="noreferrer">Open Razorpay payment link ↗</a>
-                    <span className="text-[10px] font-mono text-fg-tertiary">({razorpayLink[r.id].status})</span>
+                    <Badge tone={rzTone(razorpayLink[r.id].status)}>{rzLabel(razorpayLink[r.id].status)}</Badge>
+                  </div>
+                ) : r.razorpayStatus && r.razorpayStatus !== "created" && r.razorpayStatus !== "paid" ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] text-fg-secondary font-semibold">Razorpay</span>
+                    <Badge tone={rzTone(r.razorpayStatus)}>{rzLabel(r.razorpayStatus)}</Badge>
                   </div>
                 ) : (
                   <button className="text-[11px] text-fg-secondary font-semibold hover:opacity-70" onClick={() => void run(`rz-${r.id}`, c => genRazorpayLink(r, c))} disabled={busy === `rz-${r.id}`}>
-                    {busy === `rz-${r.id}` ? "Creating…" : "Generate Razorpay payment link"}
+                    {busy === `rz-${r.id}` ? "Creating…" : (r.razorpayPaymentLinkId ? "Regenerate Razorpay payment link" : "Generate Razorpay payment link")}
                   </button>
                 )}
                 {razorpayErr[r.id] && <div className="text-[11px] text-error mt-1">{razorpayErr[r.id]}</div>}

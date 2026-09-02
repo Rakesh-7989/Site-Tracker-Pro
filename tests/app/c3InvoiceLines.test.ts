@@ -38,6 +38,8 @@ describe("Invoice mapping carries line items", () => {
       periodTo: r.period_to == null ? null : String(r.period_to),
       retainerId: r.retainer_id == null ? null : String(r.retainer_id),
       phaseId: r.phase_id == null ? null : String(r.phase_id),
+      razorpayPaymentLinkId: r.razorpay_payment_link_id == null ? null : String(r.razorpay_payment_link_id),
+      razorpayStatus: r.razorpay_status == null ? null : String(r.razorpay_status),
       lines: rawLines.map((l) => {
         const x = l as Record<string, unknown>;
         return {

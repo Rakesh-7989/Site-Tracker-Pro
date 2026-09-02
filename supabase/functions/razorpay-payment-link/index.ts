@@ -27,6 +27,7 @@ interface RazorpayPaymentLink {
 interface RequestBody {
   invoice_id: string;
   project_id?: string;
+  mode?: "create" | "get";
 }
 
 function base64Credentials(keyId: string, secret: string): string {
@@ -64,19 +65,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
-  const { invoice_id, project_id } = body;
+  const { invoice_id, project_id, mode = "create" } = body;
   if (!invoice_id) {
     return new Response(JSON.stringify({ ok: false, error: "invoice_id required" }), {
       status: 400,
-      headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-    });
-  }
-
-  const keyId = Deno.env.get("RAZORPAY_KEY_ID");
-  const secret = Deno.env.get("RAZORPAY_KEY_SECRET");
-  if (!keyId || !secret) {
-    return new Response(JSON.stringify({ ok: false, error: "razorpay-not-configured" }), {
-      status: 500,
       headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
@@ -95,7 +87,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Verify the caller is a member of the invoice's org (read invoice first).
   const { data: invoice, error: invoiceErr } = await supabase
     .from("invoices")
-    .select("id, project_id, amount, status, org_id")
+    .select("id, project_id, amount, status, org_id, razorpay_payment_link_id")
     .eq("id", invoice_id)
     .single();
 
@@ -106,6 +98,59 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
+  // Resolve Razorpay credentials: per-org first (org_integrations), else EF secrets.
+  let keyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
+  let secret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
+  if (invoice.org_id) {
+    const { data: orgCfg } = await supabase
+      .from("org_integrations")
+      .select("razorpay")
+      .eq("org_id", invoice.org_id)
+      .limit(1)
+      .maybeSingle();
+    const razorpay = (orgCfg?.razorpay ?? {}) as Record<string, unknown> | null;
+    if (razorpay && typeof razorpay.key_id === "string" && razorpay.key_id) keyId = razorpay.key_id;
+    if (razorpay && typeof razorpay.key_secret === "string" && razorpay.key_secret) secret = razorpay.key_secret;
+  }
+  if (!keyId || !secret) {
+    return new Response(JSON.stringify({ ok: false, error: "razorpay-not-configured" }), {
+      status: 500,
+      headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+    });
+  }
+
+  const auth = base64Credentials(keyId, secret);
+
+  // "get" mode: return the existing link's live short_url + status from Razorpay
+  // (no new link created). Falls back to creating one if none exists yet.
+  if (mode === "get") {
+    const existingLinkId = String(invoice.razorpay_payment_link_id || "");
+    if (existingLinkId && existingLinkId !== "null" && existingLinkId !== "undefined") {
+      try {
+        const res = await fetch(`${RAZORPAY_BASE}/payment_links/${existingLinkId}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },
+        });
+        if (res.ok) {
+          const pl = await res.json() as RazorpayPaymentLink;
+          return new Response(JSON.stringify({
+            ok: true,
+            payment_link_id: pl.id,
+            short_url: pl.short_url,
+            status: pl.status,
+            amount: pl.amount,
+          }), {
+            status: 200,
+            headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+          });
+        }
+        console.warn("razorpay get link failed, falling back to create:", res.status);
+      } catch (e) {
+        console.error("razorpay get link error, falling back to create:", e);
+      }
+    }
+  }
+
   // Don't create a link for an already-paid invoice.
   if (invoice.status === "paid") {
     return new Response(JSON.stringify({ ok: false, error: "already-paid" }), {
@@ -113,8 +158,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
-
-  const auth = base64Credentials(keyId, secret);
 
   // Build the Razorpay payment link payload.
   // Amount in paise (integer). Razorpay expects amount >= 100 for INR.

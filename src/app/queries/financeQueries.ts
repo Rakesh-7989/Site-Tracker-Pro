@@ -82,6 +82,7 @@ export interface Invoice {
   status: InvoiceStatus; issuedDate: string | null;
   source: InvoiceSource | null; periodFrom: string | null; periodTo: string | null;
   retainerId: string | null; phaseId: string | null;
+  razorpayPaymentLinkId: string | null; razorpayStatus: string | null;
   lines: InvoiceLine[];
 }
 const asInv = oneOf<InvoiceStatus>(["sent", "paid", "overdue", "cancelled"], "sent");
@@ -125,7 +126,7 @@ export function invoiceTaxBreakup(amount: number, gstPct: number, tdsPct: number
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listInvoices(client: any, projectId: string): Promise<Result<Invoice[]>> {
   try {
-    const { data, error } = await client.from("invoices").select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id, invoice_lines(id, description, qty, unit_price, amount)").eq("project_id", projectId).order("issued_date", { ascending: false });
+    const { data, error } = await client.from("invoices").select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id, razorpay_payment_link_id, razorpay_status, invoice_lines(id, description, qty, unit_price, amount)").eq("project_id", projectId).order("issued_date", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
       id: String(r.id), no: String(r.no ?? ""), amount: Number(r.amount ?? 0), gst: Number(r.gst ?? 0), tds: Number(r.tds ?? 0), status: asInv(r.status), issuedDate: r.issued_date == null ? null : String(r.issued_date),
@@ -134,6 +135,8 @@ export async function listInvoices(client: any, projectId: string): Promise<Resu
       periodTo: r.period_to == null ? null : String(r.period_to),
       retainerId: r.retainer_id == null ? null : String(r.retainer_id),
       phaseId: r.phase_id == null ? null : String(r.phase_id),
+      razorpayPaymentLinkId: r.razorpay_payment_link_id == null ? null : String(r.razorpay_payment_link_id),
+      razorpayStatus: r.razorpay_status == null ? null : String(r.razorpay_status),
       lines: mapLines(r.invoice_lines),
     })));
   } catch (e) { return er(e); }

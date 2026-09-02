@@ -37,6 +37,24 @@ describe("createPaymentLink", () => {
     expect(r.ok).toBe(true);
   });
 
+  it("passes mode=get when fetching an existing link, defaulting to create otherwise", async () => {
+    let getBody: unknown;
+    let createBody: unknown;
+    const c = client({ data: { ok: true, payment_link_id: "plink_x", short_url: "https://rzp.io/abc", status: "created", amount: 100 }, error: null });
+    c.functions.invoke = async (_fn: string, opts: { body: unknown }) => {
+      getBody = opts.body;
+      return { data: { ok: true, payment_link_id: "plink_x", short_url: "https://rzp.io/abc", status: "created", amount: 100 }, error: null };
+    };
+    await createPaymentLink(c, "inv-1", "proj-1", "get");
+    expect(getBody).toMatchObject({ invoice_id: "inv-1", project_id: "proj-1", mode: "get" });
+    c.functions.invoke = async (_fn: string, opts: { body: unknown }) => {
+      createBody = opts.body;
+      return { data: { ok: true, payment_link_id: "plink_x", short_url: "https://rzp.io/abc", status: "created", amount: 100 }, error: null };
+    };
+    await createPaymentLink(c, "inv-1", "proj-1");
+    expect(createBody).toMatchObject({ invoice_id: "inv-1", project_id: "proj-1", mode: "create" });
+  });
+
   it("surfaces an EF transport error message", async () => {
     const c = client({ data: { ok: false, error: "razorpay-error", detail: "invalid key id" }, error: null });
     const r = await createPaymentLink(c, "inv-1");

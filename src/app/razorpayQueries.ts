@@ -16,9 +16,9 @@ export interface RazorpayPaymentLinkResult {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createPaymentLink(client: any, invoiceId: string, projectId?: string): Promise<RazorpayPaymentLinkResult> {
+export async function createPaymentLink(client: any, invoiceId: string, projectId?: string, mode: "create" | "get" = "create"): Promise<RazorpayPaymentLinkResult> {
   try {
-    const body = { invoice_id: invoiceId, project_id: projectId ?? undefined };
+    const body = { invoice_id: invoiceId, project_id: projectId ?? undefined, mode };
     const { data, error } = await client.functions.invoke("razorpay-payment-link", { body });
     if (error) {
       let msg = String(error.message ?? "Payment link creation failed.");
