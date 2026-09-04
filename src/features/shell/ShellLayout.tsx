@@ -91,7 +91,7 @@ function GatedShell(): JSX.Element {
   return (
     /* Applied per-org branding (accent CSS vars + dynamic title) and once-on-subdomain
        white-label branding (subdomain→org mapping + title + accent vars). */
-      <div className="h-screen flex flex-col bg-panel overflow-hidden">
+      <div className="h-screen flex flex-col bg-bg-primary overflow-hidden">
         <BrandingEffect />
         <SubdomainBranding />
         <ImpersonationBanner />
@@ -99,10 +99,12 @@ function GatedShell(): JSX.Element {
         <SubscriptionBanner />
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <Sidebar mobileOpen={mobileOpen} onClose={closeSidebar} sidebarRef={sidebarRef} />
-          <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 pb-16 lg:pb-6 xl:mx-auto xl:w-full xl:max-w-7xl">
-            <Suspense fallback={<div className="grid place-items-center py-20 text-accent"><Spinner size={24} /></div>}>
-              <Outlet />
-            </Suspense>
+          <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto">
+            <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-5 lg:py-8 pb-20 lg:pb-8">
+              <Suspense fallback={<div className="grid place-items-center py-20 text-accent"><Spinner size={24} /></div>}>
+                <Outlet />
+              </Suspense>
+            </div>
           </main>
         </div>
         <BottomNav />

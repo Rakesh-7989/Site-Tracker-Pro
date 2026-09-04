@@ -91,13 +91,13 @@ export function GlobalSearch(): JSX.Element {
         onFocus={() => setShow(true)}
         onBlur={() => setTimeout(() => setShow(false), 200)}
         placeholder="Search projects, milestones, issues..."
-        className="w-full pl-9 pr-3 py-2 bg-secondary border border-default rounded-lg text-xs outline-none focus:border-accent focus:bg-panel text-fg-primary placeholder:text-fg-tertiary"
+        className="w-full pl-9 pr-3 py-1.5 bg-secondary border border-default rounded-xl text-xs outline-none focus:border-accent focus:bg-panel text-fg-primary placeholder:text-fg-tertiary"
       />
       {show && q && (
         <div className={`bg-panel border border-default overflow-y-auto z-50 ${
           isMobile
             ? "fixed inset-x-0 top-0 bottom-0 mt-0 rounded-none border-0 shadow-none"
-            : "absolute top-full left-0 right-0 mt-1 rounded-xl shadow-xl max-h-96"
+            : "absolute top-full left-0 right-0 mt-1.5 rounded-xl shadow-xl max-h-96"
         }`}>
           {/* Mobile close header */}
           {isMobile && (
