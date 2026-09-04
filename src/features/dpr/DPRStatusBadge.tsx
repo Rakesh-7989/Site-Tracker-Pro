@@ -34,7 +34,7 @@ const STATE_VISUALS: Record<DprStatus, StateVisual> = {
     iconColor: "text-accent",
     icon: "refresh",
     labelKey: "dpr.status.sending",
-    barColor: "#FF6B1A",
+    barColor: "#7040F0",
   },
   sent: {
     bg: "bg-info-tint",

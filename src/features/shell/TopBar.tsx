@@ -31,12 +31,12 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
   };
 
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-4 border-b border-default bg-panel z-20 safe-area-top">
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="h-12 shrink-0 flex items-center justify-between gap-2 px-3 sm:px-4 border-b border-default bg-panel z-20 safe-area-top">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button onClick={onMenuToggle} className="lg:hidden p-1.5 -ml-1 rounded-lg text-fg-secondary hover:bg-secondary transition" aria-label="Toggle navigation menu">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <div className="w-8 h-8 rounded-lg bg-accent text-white grid place-items-center font-bold text-sm overflow-hidden flex-shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-accent text-white grid place-items-center font-bold text-sm overflow-hidden flex-shrink-0">
           {brand.logoUrl ? (
             <img src={brand.logoUrl} alt={displayName} className="h-full w-full object-cover" />
           ) : (
@@ -49,7 +49,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
             <div className="text-[10px] text-fg-tertiary truncate">{brand.tagline}</div>
           )}
         </div>
-        <span className="hidden lg:inline text-[10px] font-semibold tracking-[0.18em] uppercase text-accent bg-accent-tint px-1.5 py-0.5 rounded">v3</span>
+        <span className="hidden lg:inline text-[10px] font-semibold tracking-[0.18em] uppercase text-accent bg-accent-tint px-1.5 py-0.5 rounded-md">v3</span>
 
         {/* Offline / queue pill */}
         {!online && (
@@ -58,19 +58,19 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
           </div>
         )}
         {online && pendingOps > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-secondary text-warning" title="Backend not connected; ops stay queued locally">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 bg-bg-secondary text-warning" title="Backend not connected; ops stay queued locally">
             ↻ {pendingOps} queued
           </div>
         )}
 
-        {/* Backend connection pill — secondary status, hidden on xs to save header space */}
+        {/* Backend connection pill — secondary status, hidden below lg to save header space */}
         {conn.state !== "unknown" && (
           <button
             onClick={() => alert(`Connection state: ${conn.state}\n\n${conn.detail || "No additional details."}`)}
             className={`hidden lg:flex items-center gap-1.5 text-[11px] font-semibold pl-2 pr-2.5 py-1 rounded-md flex-shrink-0 cursor-pointer ${
               conn.state === "live" ? "bg-success-tint text-success" :
-              conn.state === "off" ? "bg-secondary text-fg-primary" :
-              conn.state === "degraded" ? "bg-secondary text-warning" :
+              conn.state === "off" ? "bg-bg-secondary text-fg-primary" :
+              conn.state === "degraded" ? "bg-bg-secondary text-warning" :
               "bg-error-tint text-error"
             }`}
             title={`Backend: ${conn.state} — ${conn.detail || "OK"}`}
@@ -90,11 +90,11 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
       </div>
 
       {/* Global search — lg+ only; below lg the drawer nav + /search page serve mobile/tablet */}
-      <div className="hidden lg:flex flex-1 justify-center px-4">
+      <div className="hidden lg:flex flex-1 justify-center px-4 min-w-0">
         <GlobalSearch />
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
         {/* Org switcher — only shown when the user belongs to 2+ active orgs */}
         {orgs.length > 1 && (
           <div className="relative min-w-0">
@@ -131,7 +131,7 @@ export function TopBar({ onMenuToggle }: { onMenuToggle: () => void }): JSX.Elem
         {session && (
           <Link to="/settings/profile" title={t("shell.viewProfile")} className="flex-shrink-0 flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-secondary transition">
             <Avatar initials={session.user.name} size="sm" role={session.user.identityRole} />
-            <div className="hidden lg:block text-right leading-tight">
+            <div className="hidden xl:block text-right leading-tight">
               <div className="text-xs font-semibold text-fg-primary">{session.user.name}</div>
               <div className="text-[10px] text-fg-secondary">{ROLE_LABEL[session.user.identityRole]}</div>
             </div>

@@ -47,10 +47,10 @@ export function BottomNav(): JSX.Element {
             to={item.to}
             end={item.to === "/dashboard"}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg transition shrink-0 ${
+              `flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-lg transition shrink-0 border-t-2 ${
                 isActive
-                  ? "text-accent"
-                  : "text-fg-tertiary hover:text-fg-secondary"
+                  ? "text-accent border-accent"
+                  : "text-fg-tertiary hover:text-fg-secondary border-transparent"
               }`
             }
           >

@@ -107,7 +107,7 @@ export const ACTIVITY_ICONS: Record<string, string> = {
   drawing:"doc", expense:"wallet", team:"users", general:"bell",
 };
 
-export const CHART_COLORS: string[] = ["#f97316","#3b82f6","#10b981","#8b5cf6","#f59e0b","#ef4444"];
+export const CHART_COLORS: string[] = ["#7040F0","#3b82f6","#10b981","#0891b2","#f59e0b","#ef4444"];
 
 export const TAB_LABELS: Record<string, string> = {
   fieldops:"Field Ops", approvals:"Approvals", changeorders:"Change Orders",

@@ -8,11 +8,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth, useOrgSwitcher, useCan, ROLE_LABEL } from "@/auth";
-import { Card, Icon, Badge } from "@/components/ui/atoms";
+import { Card, Icon, Badge, StatusBadge, ProgressBar, Alert } from "@/components/ui/atoms";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { IconName } from "@/components/ui/icons";
 import { useT } from "@/i18n/I18nProvider";
 import { getClient } from "@/lib/supabase/supabase";
+import { getTypedClient } from "@/lib/supabase/db";
 import { isOnboardingDone } from "@/app/queries/onboardingQueries";
+import { listProjectsForOrg, memberProjectScope, type ProjectSummary } from "@/app/queries/queries";
 
 export function DashboardView(): JSX.Element {
   const { session } = useAuth();
@@ -42,6 +45,39 @@ export function DashboardView(): JSX.Element {
     })();
     return () => { cancelled = true; };
   }, [activeOrg, session?.user.identityRole]);
+
+  // Org-scoped "Your projects" list: the member only ever sees the projects
+  // they're assigned to (memberProjectScope enforces RLS-safe scoping).
+  const [memberProjects, setMemberProjects] = useState<ProjectSummary[]>([]);
+  const [memberLoading, setMemberLoading] = useState(true);
+  const [memberError, setMemberError] = useState<string | null>(null);
+  const [memberBackendError, setMemberBackendError] = useState(false);
+  useEffect(() => {
+    if (!session || !activeOrg) return;
+    let cancelled = false;
+    (async () => {
+      const client = await getTypedClient();
+      if (cancelled) return;
+      if (!client) {
+        setMemberBackendError(true);
+        setMemberLoading(false);
+        return;
+      }
+      try {
+        const res = await listProjectsForOrg(client, activeOrg.orgId, memberProjectScope(session));
+        if (cancelled) return;
+        if (res.ok) {
+          setMemberProjects(res.data);
+        } else {
+          setMemberError(res.error);
+        }
+      } catch {
+        if (!cancelled) setMemberError("dashError");
+      }
+      setMemberLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [activeOrg, session]);
 
   if (!session) return <></>;
 
@@ -121,6 +157,55 @@ export function DashboardView(): JSX.Element {
           </Link>
         </Card>
       </div>
+
+      {/* Member projects */}
+      {activeOrg && (
+        <div>
+          <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary mb-2">{t("dash.yourProjects")}</h2>
+          {memberLoading ? (
+            <div className="space-y-2" role="status" aria-busy="true">
+              <Skeleton decorative height={56} />
+              <Skeleton decorative height={56} />
+            </div>
+          ) : memberBackendError ? (
+            <Alert variant="danger">{t("dash.backendNotConfigured")}</Alert>
+          ) : memberError ? (
+            <Alert variant="danger">{memberError}</Alert>
+          ) : memberProjects.length === 0 ? (
+            <div className="text-sm text-fg-secondary">{t("dash.notAssignedHint")}</div>
+          ) : (
+            <div className="space-y-2">
+              {memberProjects.slice(0, 5).map(project => (
+                <Link key={project.id} to={`/projects/${project.id}`}>
+                  <Card className="p-4 hover:border-accent transition cursor-pointer">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-fg-primary truncate">{project.name}</span>
+                          <StatusBadge status={project.status ?? "active"} />
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <ProgressBar value={project.progress} ariaLabel={`${project.name} progress`} className="flex-1" />
+                          <span className="text-[11px] text-fg-tertiary shrink-0">{project.progress}%</span>
+                        </div>
+                      </div>
+                      <Icon name="chevron" size={18} className="text-fg-tertiary flex-shrink-0" />
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+              {memberProjects.length > 5 && (
+                <Link to="/projects">
+                  <Card className="p-4 flex items-center justify-between hover:border-accent transition cursor-pointer">
+                    <span className="text-sm font-semibold text-fg-primary">{t("dash.viewAllProjects")}</span>
+                    <Icon name="chevron" size={18} className="text-fg-tertiary" />
+                  </Card>
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

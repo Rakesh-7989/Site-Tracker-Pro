@@ -9,7 +9,7 @@ describe("resolveShellBranding", () => {
     expect(b.hasCustom).toBe(false);
     expect(b.logoUrl).toBeNull();
     expect(b.tagline).toBe("Construction Suite");
-    expect(b.accent).toBe("amber");
+    expect(b.accent).toBe("violet");
   });
 
   it("merges a stored row over the default", () => {
@@ -22,11 +22,11 @@ describe("resolveShellBranding", () => {
 
   it("coerces an invalid accent to the default", () => {
     const b = resolveShellBranding({ id: "r1", orgId: "o1", projectId: null, logoUrl: null, tagline: "x", accent: "neon", theme: "editorial" });
-    expect(b.accent).toBe("amber");
+    expect(b.accent).toBe("violet");
   });
 
   it("default org brand mirrors the platform", () => {
-    expect(DEFAULT_ORG_BRAND.accent).toBe("amber");
+    expect(DEFAULT_ORG_BRAND.accent).toBe("violet");
     expect(DEFAULT_ORG_BRAND.logoUrl).toBeNull();
   });
 });
@@ -37,8 +37,8 @@ describe("brandingCss accent helpers", () => {
     expect(normalizeAccent("emerald")).toBe("emerald");
     expect(normalizeAccent("violet")).toBe("violet");
     expect(normalizeAccent("rose")).toBe("rose");
-    expect(normalizeAccent(null)).toBe("amber");
-    expect(normalizeAccent("pink")).toBe("amber");
+    expect(normalizeAccent(null)).toBe("violet");
+    expect(normalizeAccent("pink")).toBe("violet");
   });
 
   it("exposes a full token family per swatch", () => {
