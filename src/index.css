@@ -14,7 +14,7 @@
   --st-bg-elevated:  #F4F2EC;   /* warm panel */
   --st-border:       #E7E4DC;   /* subtle dividers */
   --st-border-strong:#2A2520;   /* high-contrast borders */
-  --st-saffron-tint: #FFF1E6;   /* highlight tint */
+  --st-saffron-tint: #EFE9FE;   /* highlight tint (brand violet) */
 
   /* Text */
   --st-text-primary:   #0F1115;
@@ -23,13 +23,13 @@
   --st-text-inverse:   #FFFFFF;
 
   /* Accents */
-  --st-accent:        #C2410C;  /* burnt orange — primary CTA + active (WCAG AA: ≥4.5 on white/tint, white-on-it 5.18) */
-  --st-accent-rgb:    194, 65, 12;  /* RGB decomposition for opacity */
-  --st-accent-2:      #A83B08;  /* pressed */
-  --st-accent-light:  #FF8A3D;  /* hover / gradient end */
-  --st-accent-tint:   #FFF1E6;  /* saffron */
+  --st-accent:        #7040F0;  /* brand violet — primary CTA + active (WCAG AA: ≥4.5 on white/tint, white-on-it) */
+  --st-accent-rgb:    112, 64, 240;  /* RGB decomposition for opacity */
+  --st-accent-2:      #5B21B6;  /* pressed */
+  --st-accent-light:  #8B5CF6;  /* hover / gradient end */
+  --st-accent-tint:   #EFE9FE;  /* violet */
   --st-indigo:        #1E40AF;  /* info / link */
-  --st-violet:        #7C3AED;  /* purple accent */
+  --st-violet:        #7040F0;  /* purple accent (aligned to brand violet) */
   --st-success:       #047857;  /* deep green */
   --st-success-tint:  #F0FDF4;  /* success bg tint */
   --st-warning:       #B45309;  /* amber */
@@ -37,7 +37,7 @@
   --st-error-tint:  #FEF2F2;  /* error bg tint */
   --st-warning-tint:  #FFFBEB;  /* warning bg tint */
   --st-indigo-tint:   #EFF6FF;  /* info bg tint */
-  --st-violet-tint:   #F5F3FF;  /* violet bg tint */
+  --st-violet-tint:   #EFE9FE;  /* violet bg tint (aligned to accent tint) */
   --st-overlay:       rgba(15,17,21,0.6);  /* modal / dialog backdrop */
 
   /* Role chip tint colors (light mode, matches Tailwind default palettes) */
@@ -76,7 +76,7 @@
   /* Shadows */
   --st-shadow:        0 1px 3px rgba(15,17,21,.06), 0 1px 2px rgba(15,17,21,.04);
   --st-shadow-hover:  0 4px 12px rgba(15,17,21,.08);
-  --st-shadow-cta:    0 4px 14px rgba(255,107,26,.25);
+  --st-shadow-cta:    0 4px 14px rgba(112,64,240,.25);
   --st-shadow-deep:   0 8px 24px rgba(15,17,21,.10);
 
   /* Spacing tokens */
@@ -108,18 +108,18 @@
   --st-bg-elevated:  #282B30;
   --st-border:       #33363C;
   --st-border-strong:#D4D4D4;
-  --st-saffron-tint: #3A2A1A;
+  --st-saffron-tint: rgba(167,139,250,0.12);
 
   --st-text-primary:   #EDEDEF;
   --st-text-secondary: #A0A2A8;
   --st-text-tertiary:  #85888F;
   --st-text-inverse:   #FFFFFF;
 
-  --st-accent:        #FF8A3D;
-  --st-accent-rgb:    255, 138, 61;
-  --st-accent-2:      #FF6B1A;
-  --st-accent-light:  #FFAA5E;
-  --st-accent-tint:   #3A2A1A;
+  --st-accent:        #A78BFA;   /* brand violet — primary CTA + active */
+  --st-accent-rgb:    167, 139, 250;  /* RGB decomposition for opacity */
+  --st-accent-2:      #8B5CF6;   /* pressed */
+  --st-accent-light:  #C4B5FD;   /* hover / gradient end */
+  --st-accent-tint:   rgba(167,139,250,0.12);  /* violet */
   --st-indigo:        #60A5FA;
   --st-success:       #34D399;
   --st-success-tint:  rgba(52,211,153,0.12);
@@ -165,14 +165,14 @@
 
   --st-shadow:       0 1px 3px rgba(0,0,0,.30), 0 1px 2px rgba(0,0,0,.20);
   --st-shadow-hover: 0 4px 12px rgba(0,0,0,.40);
-  --st-shadow-cta:   0 4px 14px rgba(255,138,61,.25);
+--st-shadow-cta:    0 4px 14px rgba(167,139,250,.3);
   --st-shadow-deep:  0 8px 24px rgba(0,0,0,.50);
 }
 
 /* Opacity-variant overrides for dark mode — Tailwind opacity modifiers
    do not benefit from the base-class !important overrides above. */
-.dark .bg-safety-500\/10 { background-color: rgba(255,107,26,0.10) !important; }
-.dark .bg-safety-50\/30  { background-color: rgba(58,42,26,0.30) !important; }
+.dark .bg-safety-500\/10 { background-color: rgba(167,139,250,0.12) !important; }
+  .dark .bg-safety-50\/30  { background-color: rgba(167,139,250,0.15) !important; }
 .dark .bg-cream-100\/50 { background-color: rgba(40,43,48,0.50) !important; }
 .dark .bg-cream-100\/40 { background-color: rgba(40,43,48,0.40) !important; }
 .dark .hover\:bg-cream-100\/60:hover { background-color: rgba(40,43,48,0.60) !important; }
@@ -255,31 +255,31 @@ body {
 .hover\:text-stone-600:hover { color: var(--st-text-secondary) !important; }
 .divide-stone-100 > * + * { border-color: var(--st-border) !important; }
 
-/* Orange utilities → safety-orange accent */
+/* Orange utilities → brand violet accent */
 .bg-orange-500, .hover\:bg-orange-500:hover { background-color: var(--st-accent) !important; }
 .bg-orange-400, .hover\:bg-orange-400:hover { background-color: var(--st-accent-light) !important; }
 .bg-orange-600 { background-color: var(--st-accent-2) !important; }
 .text-orange-500 { color: var(--st-accent) !important; }
 .text-orange-600 { color: var(--st-accent-2) !important; }
 .text-orange-700 { color: var(--st-accent-2) !important; }
-.border-orange-200 { border-color: rgba(255,107,26,.25) !important; }
-.border-orange-300 { border-color: rgba(255,107,26,.45) !important; }
+.border-orange-200 { border-color: rgba(112,64,240,.25) !important; }
+.border-orange-300 { border-color: rgba(112,64,240,.45) !important; }
 .bg-orange-50 { background-color: var(--st-accent-tint) !important; }
-.bg-orange-100 { background-color: rgba(255,107,26,.12) !important; }
+.bg-orange-100 { background-color: rgba(112,64,240,.12) !important; }
 
-/* Amber utilities (legacy editorial) → re-mapped to safety orange so existing
+/* Amber utilities (legacy editorial) → re-mapped to brand violet so existing
    `bg-amber-*` / `text-amber-*` references inherit the new accent. */
 .bg-amber-50 { background-color: var(--st-accent-tint) !important; }
-.bg-amber-100 { background-color: rgba(255,107,26,.16) !important; }
+.bg-amber-100 { background-color: rgba(112,64,240,.16) !important; }
 .bg-amber-500, .hover\:bg-amber-500:hover { background-color: var(--st-accent) !important; }
 .bg-amber-600, .hover\:bg-amber-600:hover { background-color: var(--st-accent-2) !important; }
-.text-amber-400 { color: var(--st-accent-light) !important; }
+.text-amber-400 { color: var(--st-accent) !important; }
 .text-amber-500 { color: var(--st-accent) !important; }
 .text-amber-600 { color: var(--st-accent) !important; }
 .text-amber-700 { color: var(--st-accent-2) !important; }
 .text-amber-800 { color: var(--st-accent-2) !important; }
 .text-amber-900 { color: var(--st-accent-2) !important; }
-.border-amber-200 { border-color: rgba(255,107,26,.25) !important; }
+.border-amber-200 { border-color: rgba(112,64,240,.25) !important; }
 .border-amber-500 { border-color: var(--st-accent) !important; }
 .border-amber-600 { border-color: var(--st-accent) !important; }
 .focus\:border-amber-600:focus { border-color: var(--st-accent) !important; }
@@ -322,8 +322,8 @@ body {
 .shadow-hover { box-shadow: var(--st-shadow-hover); }
 .shadow-cta   { box-shadow: var(--st-shadow-cta); }
 
-/* Gradient-gold legacy utility — now solid safety orange with a subtle
-   light→deep ramp so existing buttons read as a single confident orange,
+/* Gradient-gold legacy utility — now solid brand violet with a subtle
+   light→deep ramp so existing buttons read as a single confident violet,
    not a fancy gold gradient. */
 .bg-gradient-gold {
   background-image: linear-gradient(180deg, var(--st-accent-light) 0%, var(--st-accent) 100%);
@@ -331,7 +331,7 @@ body {
 /* Drop the editorial letterspacing — keep typography quiet + utilitarian */
 .tracking-editorial { letter-spacing: -0.005em; }
 
-/* Construction-native CTA: safety orange with subtle inner highlight + glow */
+/* Construction-native CTA: brand violet with subtle inner highlight + glow */
 button.bg-orange-500, button.bg-orange-400 {
   background-image: linear-gradient(180deg, var(--st-accent-light), var(--st-accent));
   box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, var(--st-shadow-cta);
@@ -360,14 +360,14 @@ button.bg-orange-500, button.bg-orange-400 {
    values fail WCAG contrast on near-black backgrounds. */
 .on-ink {
   --st-text-tertiary: #85888F;   /* ≥4.9 on #0F1115 */
-  --st-accent:        #FF8A3D;   /* ≥6.7 on #0F1115 (dark-theme accent) */
+  --st-accent:        #A78BFA;   /* ≥6.7 on #0F1115 (dark-theme accent) */
 }
 .text-inverse      { color: var(--st-text-inverse); }
 .border-default    { border-color: var(--st-border); }
 .border-accent     { border-color: var(--st-accent); }
 .divide-default > * + * { border-color: var(--st-border); }
 .hover\:border-stronger:hover        { border-color: var(--st-text-secondary); }
-/* Accent (safety orange) */
+/* Accent (brand violet) */
 .bg-accent       { background-color: var(--st-accent); }
 .bg-accent-2     { background-color: var(--st-accent-2); }
 .hover\:bg-accent-2:hover  { background-color: var(--st-accent-2); }
@@ -429,7 +429,7 @@ button.bg-orange-500, button.bg-orange-400 {
 
 /* Avatar accent backgrounds (replaces raw Tailwind color classes) */
 .bg-avatar-blue     { background-color: #2563eb; }
-.bg-avatar-violet   { background-color: #7c3aed; }
+.bg-avatar-violet   { background-color: #7040f0; }
 .bg-avatar-emerald  { background-color: #059669; }
 .bg-avatar-teal     { background-color: #0d9488; }
 .bg-avatar-cyan     { background-color: #0891b2; }

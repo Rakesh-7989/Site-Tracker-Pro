@@ -4,8 +4,8 @@
   "description": "Construction site management - milestones, RFI, drawings, GST billing, labour register",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1c1917",
-  "theme_color": "#d97706",
+  "background_color": "#0f172a",
+  "theme_color": "#7040F0",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },

@@ -10,15 +10,15 @@ export const ACCENT_THEMES: Record<AccentName, { accent: string; accent2: string
   amber:    { accent: "#C2410C", accent2: "#A83B08", light: "#FF8A3D", tint: "#FFF1E6" },
   blue:     { accent: "#2563EB", accent2: "#1D4ED8", light: "#3B82F6", tint: "#EFF6FF" },
   emerald:  { accent: "#059669", accent2: "#047857", light: "#10B981", tint: "#ECFDF5" },
-  violet:   { accent: "#7C3AED", accent2: "#6D28D9", light: "#8B5CF6", tint: "#F5F3FF" },
+violet:   { accent: "#7040F0", accent2: "#5B21B6", light: "#8B5CF6", tint: "#EFE9FE" },
   rose:     { accent: "#E11D48", accent2: "#BE123C", light: "#F43F5E", tint: "#FFF1F2" },
 };
 
-/** Parse any stored accent string into a valid AccentName (unknown → amber). */
+/** Parse any stored accent string into a valid AccentName (unknown → violet). */
 export function normalizeAccent(v: unknown): AccentName {
   return v === "blue" || v === "emerald" || v === "violet" || v === "rose" || v === "amber"
     ? v
-    : "amber";
+    : "violet";
 }
 
 /** Return a CSS custom-property declaration string for a swatch (used on :root). */
