@@ -24,6 +24,16 @@ import { RequireStaffArea } from "@/auth";
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { StubGuard } from "@/auth/StubGuard";
 import { LandingView } from "@/features/marketing/LandingView";
+import { SiteShell } from "@/features/marketing/site/SiteShell";
+import { ProductPage } from "@/features/marketing/site/pages/ProductPage";
+import { FeaturesPage } from "@/features/marketing/site/pages/FeaturesPage";
+import { PricingPage } from "@/features/marketing/site/pages/PricingPage";
+import { SolutionsOverviewPage, SolutionRolePage } from "@/features/marketing/site/pages/SolutionsPage";
+import { ResourcesPage } from "@/features/marketing/site/pages/ResourcesPage";
+import { BlogPage } from "@/features/marketing/site/pages/BlogPage";
+import { AboutPage } from "@/features/marketing/site/pages/AboutPage";
+import { SecurityPage } from "@/features/marketing/site/pages/SecurityPage";
+import { ContactPage } from "@/features/marketing/site/pages/ContactPage";
 import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
 import { VerifyEmailView } from "@/features/auth/VerifyEmailView";
 import { PayView } from "@/features/marketing/PayView";
@@ -128,6 +138,23 @@ export const router = createBrowserRouter(guardRoutes([
   { path: "/pay/:requestId", element: <PayView /> },
   { path: "/share/:id", element: <ClientShareView /> },
   { path: "/share-link/:token", element: <ShareLinkView /> },
+  // ── Public marketing site (SiteShell chrome: header + footer) ──
+  {
+    element: <SiteShell />,
+    children: [
+      { path: "/product", element: <ProductPage /> },
+      { path: "/product-tour", element: <Navigate to="/product" replace /> },
+      { path: "/features", element: <FeaturesPage /> },
+      { path: "/pricing", element: <PricingPage /> },
+      { path: "/solutions", element: <SolutionsOverviewPage /> },
+      { path: "/solutions/:slug", element: <SolutionRolePage /> },
+      { path: "/resources", element: <ResourcesPage /> },
+      { path: "/blog", element: <BlogPage /> },
+      { path: "/about", element: <AboutPage /> },
+      { path: "/security", element: <SecurityPage /> },
+      { path: "/contact", element: <ContactPage /> },
+    ],
+  },
   // ── Authenticated app (pathless layout route wraps RequireSession + Suspense) ──
   {
     element: <ShellLayout />,
