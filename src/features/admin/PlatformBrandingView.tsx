@@ -9,7 +9,7 @@ import {
   getOrgBranding, listProjectBrandings,
   upsertOrgBranding, upsertProjectBranding, deleteProjectBranding,
 } from "@/app/queries/brandingQueries";
-import { resolveBranding, accentToHex } from "@/lib/integrations/branding";
+import { resolveBranding, accentToHex, type BrandingStore } from "@/lib/integrations/branding";
 
 
 export function PlatformBrandingView(): JSX.Element {
@@ -19,16 +19,18 @@ export function PlatformBrandingView(): JSX.Element {
   if (!can) return <AccessDenied message="Platform superadmin access required." />;
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-  return <Inner user={session.user} orgId={activeOrg.orgId} />;
+  return <Inner orgName={activeOrg.orgName} orgId={activeOrg.orgId} />;
 }
 
-function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
+type BrandingValues = { logoUrl: string | null; tagline: string | null; accent: string | null; theme: string | null };
+
+function Inner({ orgName, orgId }: { orgName: string; orgId: string }): JSX.Element {
   const session = useSession();
   const [level, setLevel] = useState<"org" | "project">("org");
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState("");
-  const [orgBranding, setOrgBranding] = useState<Record<string, any>>({});
-  const [projectBrandings, setProjectBrandings] = useState<Record<string, any>>({});
+  const [orgBranding, setOrgBranding] = useState<Record<string, BrandingValues>>({});
+  const [projectBrandings, setProjectBrandings] = useState<Record<string, BrandingValues>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchBranding = useCallback(async () => {
@@ -42,7 +44,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
       setOrgBranding({ [orgId]: { logoUrl: orgRes.data.logoUrl, tagline: orgRes.data.tagline, accent: orgRes.data.accent, theme: orgRes.data.theme } });
     }
     if (projRes.ok) {
-      const map: Record<string, any> = {};
+      const map: Record<string, BrandingValues> = {};
       for (const row of projRes.data) {
         if (row.projectId) map[row.projectId] = { logoUrl: row.logoUrl, tagline: row.tagline, accent: row.accent, theme: row.theme };
       }
@@ -70,13 +72,13 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
     return () => { cancelled = true; };
   }, [orgId, fetchBranding, session]);
 
-  const branding = { org: orgBranding, project: projectBrandings };
+  const branding = { org: orgBranding, project: projectBrandings } as unknown as BrandingStore;
   const effective = resolveBranding(branding, orgId, selProject);
-  const current = level === "org"
-    ? (orgBranding[orgId] || {})
-    : (projectBrandings[selProject] || {});
+  const current: BrandingValues = level === "org"
+    ? (orgBranding[orgId] ?? { logoUrl: null, tagline: null, accent: null, theme: null })
+    : (projectBrandings[selProject] ?? { logoUrl: null, tagline: null, accent: null, theme: null });
 
-  const update = async (patch: Record<string, any>) => {
+  const update = async (patch: Partial<BrandingValues>) => {
     const client = await getClient();
     if (!client) return;
     let res;
@@ -113,7 +115,7 @@ function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
             <button onClick={() => setLevel("project")} className={`px-4 py-2 text-xs font-bold tracking-wider uppercase rounded-lg ${level === "project" ? "bg-ink text-cream" : "bg-bg-secondary text-fg-primary"}`}>Project level</button>
           </div>
           {level === "org" ?
-            <div className="w-full p-2.5 border border-default rounded-xl text-sm mb-4 bg-bg-secondary text-fg-primary">{user.org_name || "My Org"}</div> :
+            <div className="w-full p-2.5 border border-default rounded-xl text-sm mb-4 bg-bg-secondary text-fg-primary">{orgName || "My Org"}</div> :
             <Select value={selProject} onChange={e => setSelProject(e.target.value)} className="mb-4" options={projects.map(p => ({ value: p.id, label: p.name }))} />
           }
           <label className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary mb-1.5 block">Logo URL</label>

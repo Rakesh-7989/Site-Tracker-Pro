@@ -26,7 +26,7 @@ import { getClient } from "../../lib/supabase/supabase";
  * is idempotent (storage upsert on sha256 path), so a retry that re-uploads
  * the same content is safe.
  */
-export async function drainDprQueue(client: any): Promise<{ sent: number; failed: number; deferred: number; gc: number }> {
+export async function drainDprQueue(client: Awaited<ReturnType<typeof getClient>>): Promise<{ sent: number; failed: number; deferred: number; gc: number }> {
   return drain({
     online: isOnline(),
     send: async (item: QueueItem) => {

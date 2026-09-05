@@ -43,7 +43,7 @@ export function ReportsTab({ projectId }: { projectId: string }) {
 
   const submit = async () => {
     if (!form.title.trim()) return;
-    await run(editing ? "edit" : "add", (c: any) => upsertReport(c, {
+    await run(editing ? "edit" : "add", (c) => upsertReport(c, {
       id: editing?.id ?? null, projectId, kind: form.kind, title: form.title.trim(),
       summary: form.summary.trim() || null, content: form.content.trim() || null,
       status: form.status, periodFrom: form.periodFrom || null, periodTo: form.periodTo || null }));
@@ -53,12 +53,12 @@ export function ReportsTab({ projectId }: { projectId: string }) {
   const toggle = async (r: ConsultancyReport) => {
     const next: ReportStatus | null = r.status === "draft" ? "published" : r.status === "published" ? "archived" : null;
     if (!next) return;
-    await run(`s-${r.id}`, (c: any) => setReportStatus(c, r.id, next));
+    await run(`s-${r.id}`, (c) => setReportStatus(c, r.id, next));
   };
 
   const remove = async (id: string) => {
     if (!confirm(t("audit.deleteReport"))) return;
-    await run(`d-${id}`, (c: any) => deleteReport(c, id));
+    await run(`d-${id}`, (c) => deleteReport(c, id));
   };
 
   if (loading) return (

@@ -33,9 +33,9 @@ interface ValidationResult {
 }
 
 interface ComplianceCheck {
-  rera?: { verified: boolean; status: string };
-  gst?: { verified: boolean; status: string };
-  epfo?: { verified: boolean; status: string };
+  rera?: { verified?: boolean; status?: string };
+  gst?: { verified?: boolean; status?: string };
+  epfo?: { verified?: boolean; status?: string };
 }
 
 interface ComplianceStatus {

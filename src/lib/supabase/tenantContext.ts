@@ -15,7 +15,7 @@
 // (< 1 ms) so it can be called before every query.
 
 export async function setTenantContext(
-  sb: any,
+  sb: { rpc(fn: string, args?: Record<string, unknown>): Promise<unknown> },
   orgId: string | null,
 ): Promise<void> {
   if (!orgId) return;

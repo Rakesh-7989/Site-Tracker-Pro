@@ -68,7 +68,7 @@ export function EquipmentView(): JSX.Element {
       projectId: selProject, name: name.trim(), assetNo: assetNo.trim() || undefined, type: eqType.trim() || undefined,
       ownership, ratePerDay: rate.trim() ? parseFloat(rate) : undefined,
     }), {
-      apply: () => setRows(prev => [{ id: tmpId, name: name.trim(), assetNo: assetNo.trim() || null, type: eqType.trim() || null, ownership, ratePerDay: rate.trim() ? parseFloat(rate) : null, onSiteFrom: null, onSiteTo: null, status: "on_site" as any, lastMaintenance: null, nextMaintenance: null, operatorName: null, notes: null }, ...prev]),
+      apply: () => setRows(prev => [{ id: tmpId, name: name.trim(), assetNo: assetNo.trim() || null, type: eqType.trim() || null, ownership, ratePerDay: rate.trim() ? parseFloat(rate) : null, onSiteFrom: null, onSiteTo: null, status: "on_site", lastMaintenance: null, nextMaintenance: null, operatorName: null, notes: null }, ...prev]),
       rollback: () => setRows(prev => prev.filter(x => x.id !== tmpId)),
     });
     setName(""); setAssetNo(""); setEqType(""); setRate("");

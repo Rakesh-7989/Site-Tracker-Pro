@@ -138,11 +138,11 @@ interface MockAdapter {
   state: string;
   checkStatus(reraNumber: string): Promise<CheckStatusResult>;
   submitFiling(payload: FilingPayload): Promise<SubmitFilingResult>;
-  _submissions: any[];
+  _submissions: Array<{ ack: string; payload: FilingPayload; submitted_at: string }>;
 }
 
 export function mockAdapter(): MockAdapter {
-  const submissions: any[] = [];
+  const submissions: Array<{ ack: string; payload: FilingPayload; submitted_at: string }> = [];
   return {
     state: "mock",
     async checkStatus(reraNumber: string) {
@@ -195,8 +195,8 @@ export function tgReraAdapter(cfg: TgReraConfig): TgReraAdapter {
         const res = await fetch(`${cfg.edge_function_url}/status?rera_number=${encodeURIComponent(reraNumber)}`);
         if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
         return await res.json();
-      } catch (err: any) {
-        return { ok: false, error: err.message || String(err) };
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : String(err) };
       }
     },
     async submitFiling(payload) {
@@ -218,8 +218,8 @@ export function tgReraAdapter(cfg: TgReraConfig): TgReraAdapter {
         });
         if (!res.ok) return { ok: false, error: `HTTP ${res.status}: ${await res.text().catch(() => "")}` };
         return await res.json();
-      } catch (err: any) {
-        return { ok: false, error: err.message || String(err) };
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : String(err) };
       }
     },
   };

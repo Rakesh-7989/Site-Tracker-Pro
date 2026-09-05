@@ -10,7 +10,7 @@ export const DEFAULT_PROVIDER_ORDER: readonly string[] = ['bhashini', 'aws'];
 /** Full fallback chain sent to the EF so it can try real providers then mock. */
 export const FULL_PROVIDER_ORDER: readonly string[] = ['bhashini', 'aws', 'mock'];
 
-export function pickProviderOrder({ lang, provider, env = {} }: { lang: Language; provider: Provider; env?: Record<string, any> }): Provider[] {
+export function pickProviderOrder({ lang, provider, env = {} }: { lang: Language; provider: Provider; env?: Record<string, string | undefined> }): Provider[] {
   const awsAllowed = isProviderAllowed('aws', env).allowed;
   if (provider === 'mock') return ['mock'];
   if (provider === 'bhashini') {
@@ -86,7 +86,7 @@ interface TranscribeResult {
 
 export async function transcribe(
   audio: Blob | ArrayBuffer | Uint8Array,
-  opts: { lang?: Language; provider?: Provider; env?: Record<string, any>; transport?: 'ef' | 'mock'; efClient?: any } = {},
+  opts: { lang?: Language; provider?: Provider; env?: Record<string, string | undefined>; transport?: 'ef' | 'mock'; efClient?: { invoke(fn: string, opts?: { body?: unknown }): Promise<{ data?: TranscribeResult | null; error?: { message?: string } | null }> } } = {},
 ): Promise<TranscribeResult> {
   const { lang = 'auto', provider = 'auto', env = {}, transport, efClient } = opts;
   if (lang !== 'auto' && !SUPPORTED_LANGUAGES.includes(lang)) {
@@ -116,8 +116,8 @@ export async function transcribe(
         return { ok: false, error: res.error.message || 'EF error', provider_tried: order };
       }
       return res?.data ?? { ok: false, error: 'EF returned no data', provider_tried: order };
-    } catch (err: any) {
-      return { ok: false, error: err?.message || String(err), provider_tried: order };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err), provider_tried: order };
     }
   }
 

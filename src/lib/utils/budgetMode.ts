@@ -24,9 +24,11 @@ export const ALWAYS_FREE_PROVIDERS: ReadonlySet<string> = new Set([
   'mock',
 ]);
 
-export function getBudgetMode(env: Record<string, any> = {}): 'zero-spend' | 'paid' {
+export function getBudgetMode(env: Record<string, string | undefined> = {}): 'zero-spend' | 'paid' {
   const raw = env.BUDGET_MODE || env.VITE_BUDGET_MODE;
-  if (raw && BUDGET_MODES.includes(raw)) return raw;
+  if (raw && BUDGET_MODES.includes(raw)) {
+    return raw === "paid" ? "paid" : "zero-spend";
+  }
   return DEFAULT_BUDGET_MODE;
 }
 
@@ -37,7 +39,7 @@ export function classifyProvider(provider: string): 'paid' | 'capped-free' | 'al
   return 'unknown';
 }
 
-export function isProviderAllowed(provider: string, env: Record<string, any> = {}): { allowed: boolean; reason: string; classification: string } {
+export function isProviderAllowed(provider: string, env: Record<string, string | undefined> = {}): { allowed: boolean; reason: string; classification: string } {
   const classification = classifyProvider(provider);
   if (classification === 'unknown') {
     return { allowed: false, reason: `unknown provider: ${provider} — add to budgetMode.js sets`, classification };
@@ -53,11 +55,11 @@ export function isProviderAllowed(provider: string, env: Record<string, any> = {
   return { allowed: true, reason: '', classification };
 }
 
-export function filterAllowedProviders(candidates: string[], env: Record<string, any> = {}): string[] {
+export function filterAllowedProviders(candidates: string[], env: Record<string, string | undefined> = {}): string[] {
   return (candidates || []).filter(p => isProviderAllowed(p, env).allowed);
 }
 
-export function blockedResponse(provider: string, env: Record<string, any> = {}): {
+export function blockedResponse(provider: string, env: Record<string, string | undefined> = {}): {
   ok: false; reason: string; provider: string; mode: string; classification: string;
 } {
   const decision = isProviderAllowed(provider, env);

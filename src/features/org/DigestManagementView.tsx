@@ -7,7 +7,7 @@ import { Card, Button, Badge, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { getClient } from "@/lib/supabase/supabase";
 import { useAction } from "@/hooks/useAction";
-import { listDigestSubscriptions, createDigestSubscription, updateDigestSubscription, listDigestDispatches, type DigestSubscription, type DigestLang, type DigestStatus } from "@/app/queries/digestQueries";
+import { listDigestSubscriptions, createDigestSubscription, updateDigestSubscription, listDigestDispatches, type DigestSubscription, type DigestLang, type DigestStatus, type DigestDispatch } from "@/app/queries/digestQueries";
 
 const LANG_OPTS = [{ value: "en", label: "English" }, { value: "te", label: "తెలుగు" }, { value: "hi", label: "हिन्दी" }];
 const statusTone = (s: DigestStatus): "success" | "warning" | "danger" => (s === "active" ? "success" : s === "paused" ? "warning" : "danger");
@@ -21,7 +21,7 @@ export function DigestManagementView(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [phone, setPhone] = useState(""); const [name, setName] = useState(""); const [lang, setLang] = useState<DigestLang>("en");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [dispatches, setDispatches] = useState<any[]>([]);
+  const [dispatches, setDispatches] = useState<DigestDispatch[]>([]);
   const [dispLoading, setDispLoading] = useState(false);
 
   const reload = useCallback(async () => {

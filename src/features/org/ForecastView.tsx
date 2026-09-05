@@ -57,7 +57,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selProject, setSelProject] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const [forecast, setForecast] = useState<Record<string, any>>({});
+  const [forecast, setForecast] = useState<Record<string, NonNullable<Awaited<ReturnType<typeof forecastWithLlm>>>>>({});
   const [loading, setLoading] = useState(true);
   const [projectDetail, setProjectDetail] = useState<ProjectForecastDetail | null>(null);
   const [boqItems, setBoqItems] = useState<BoqItem[]>([]);
@@ -119,7 +119,9 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
     const state = { project, boq: boqItems, ra: raBills, ledger: ledgerEntries, updates: siteUpdates };
     const cfg = getProviderConfig();
     const result = await forecastWithLlm(state, cfg);
-    setForecast(p => ({ ...p, [selProject]: { ...result, generated_at: new Date().toISOString() } }));
+    if (result) {
+      setForecast(p => ({ ...p, [selProject]: { ...result, generated_at: new Date().toISOString() } }));
+    }
     setBusy(false);
   }, [proj, selProject, projectDetail, boqItems, raBills, ledgerEntries, siteUpdates]);
 
@@ -193,7 +195,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
               <LineChart data={burn} color="var(--st-accent)" showPoints />
             </ChartCard>
             {cached.narrative && <div className="bg-panel rounded-2xl p-5 mb-5 shadow-editorial border-default"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-warning mb-2">— Advisor narrative ({cached.mode === "llm" ? "LLM-enriched" : "deterministic"})</div><p className="text-fg-primary text-sm leading-relaxed">{cached.narrative}</p></div>}
-            {cached.over_consumed_materials?.length > 0 && <div className="bg-panel rounded-2xl p-5 mb-5 shadow-editorial border-default"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-warning mb-3">— Materials trending over plan</div><div className="space-y-2">{cached.over_consumed_materials.map((m: any) => (<div key={m.name} className="flex items-center justify-between text-sm"><span className="font-semibold text-fg-primary capitalize">{m.name}</span><span className="text-error font-mono">{m.planned} → {m.consumed} (<strong>+{m.over_pct}%</strong>)</span></div>))}</div></div>}
+            {cached.over_consumed_materials?.length > 0 && <div className="bg-panel rounded-2xl p-5 mb-5 shadow-editorial border-default"><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-warning mb-3">— Materials trending over plan</div><div className="space-y-2">{cached.over_consumed_materials.map((m) => (<div key={m.name} className="flex items-center justify-between text-sm"><span className="font-semibold text-fg-primary capitalize">{m.name}</span><span className="text-error font-mono">{m.planned} → {m.consumed} (<strong>+{m.over_pct}%</strong>)</span></div>))}</div></div>}
             <div className="text-[11px] text-fg-secondary text-center">Schedule slip: <strong>{cached.schedule_slip_days} days</strong> · Confidence: <strong>{cached.confidence}</strong></div>
           </>) : (<div className="bg-panel rounded-2xl p-12 text-center" style={{ border: "1px dashed var(--st-line)" }}><div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-warning-tint flex items-center justify-center"><Icon name="zap" size={24} className="text-warning" /></div><div className="font-display text-lg font-semibold text-fg-primary tracking-editorial mb-2">Forecast not yet run</div><p className="text-fg-secondary text-sm max-w-md mx-auto">Click "Run forecast" to analyse BOQ + RA bills + ledger consumption + timeline. Configure an AI key in Settings for narrative enrichment.</p></div>)}
     </div>

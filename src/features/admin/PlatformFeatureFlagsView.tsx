@@ -40,8 +40,8 @@ function FeatureFlagsInner({ userId }: { userId: string }): JSX.Element {
   const featuresByGroup = FEATURE_GROUPS
     .map(g => {
       const features = Object.values(FEATURE_CATALOG)
-        .filter((f: any) => f.group === g)
-        .map((f: any): FeatureMeta => ({ id: f.id, label: f.label, plan: f.plan, default: f.default, desc: f.desc }));
+        .filter((f) => f.group === g)
+        .map((f): FeatureMeta => ({ id: f.id, label: f.label, plan: f.plan, default: f.default, desc: f.desc }));
       return { group: g, label: GROUP_LABEL[g] ?? g, features };
     })
     .filter(g => g.features.length > 0);

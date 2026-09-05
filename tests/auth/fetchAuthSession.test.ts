@@ -191,19 +191,26 @@ describe("buildAuthSession", () => {
 function makeClient(handlers: Record<string, (q: { col?: string; value?: string }) => Promise<{ data: unknown; error: unknown | null }>>) {
   return {
     from(table: string) {
-      const builder: Record<string, unknown> = {
+      const builder = {
         select() { return builder; },
-        eq(_col: string, _val: string) { return builder; },
-        is(_col: string, _val: null) { return builder; },
+        eq() { return builder; },
+        is() { return builder; },
+        in() { return builder; },
         async maybeSingle() {
           return handlers[table]?.({ }) ?? { data: null, error: null };
         },
-        then(resolve: (v: { data: unknown; error: unknown | null }) => unknown, reject?: (e: unknown) => unknown) {
+        then<TResult1 = { data: unknown; error: unknown | null }, TResult2 = never>(
+          onfulfilled?: ((v: { data: unknown; error: unknown | null }) => TResult1 | PromiseLike<TResult1>) | null | undefined,
+          onrejected?: ((e: unknown) => TResult2 | PromiseLike<TResult2>) | null | undefined,
+        ): PromiseLike<TResult1 | TResult2> {
           const p = handlers[table]?.({ }) ?? Promise.resolve({ data: [], error: null });
-          return p.then(resolve, reject);
+          return p.then(onfulfilled!, onrejected);
         },
       };
       return builder;
+    },
+    rpc() {
+      return Promise.resolve({ data: null, error: null });
     },
   };
 }

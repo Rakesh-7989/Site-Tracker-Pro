@@ -8,6 +8,8 @@ import { getClient } from "@/lib/supabase/supabase";
 import {
   checkReraStatus, checkGstinStatus, checkEpfoStatus, projectComplianceStatus } from "@/lib/integrations/compliance";
 
+type ComplianceCheckResult = Awaited<ReturnType<typeof checkGstinStatus>> & { number: string };
+type ProjectChecks = Partial<Record<"rera" | "gst" | "epfo", ComplianceCheckResult>>;
 
 export function ComplianceView(): JSX.Element {
   const { session } = useAuth();
@@ -23,7 +25,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
   const [selProject, setSelProject] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [compliance, setCompliance] = useState<Record<string, any>>({});
+  const [compliance, setCompliance] = useState<Record<string, ProjectChecks>>({});
   const [reraInput, setReraInput] = useState("");
   const [gstInput, setGstInput] = useState("");
   const [epfoInput, setEpfoInput] = useState("");
@@ -57,7 +59,7 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
 
   const runCheck = useCallback(async (type: "rera" | "gst" | "epfo") => {
     setBusy(true);
-    let res: any;
+    let res: Awaited<ReturnType<typeof checkReraStatus>>;
     let number: string;
     if (type === "rera") { number = reraInput; res = await checkReraStatus(reraInput); }
     else if (type === "gst") { number = gstInput; res = await checkGstinStatus(gstInput); }
@@ -107,8 +109,8 @@ function Inner({ orgId }: { orgId: string }): JSX.Element {
           { key: "gst" as const, label: "GSTIN (vendor / payee)", placeholder: "15-char e.g. 36AAACT2727Q1ZZ", val: gstInput, setVal: setGstInput as (v: string) => void, result: projChecks.gst, extra: projChecks.gst?.legal_name ? `${projChecks.gst.legal_name} (${projChecks.gst.state ?? ""})` : "" },
           { key: "epfo" as const, label: "EPFO (contractor)", placeholder: "e.g. TS/HYD/0123456", val: epfoInput, setVal: setEpfoInput as (v: string) => void, result: projChecks.epfo, extra: projChecks.epfo?.employer_name ?? "" },
         ].map(row => {
-          const verified = row.result?.verified;
-          const ok = verified && (row.result.status === "REGISTERED_ACTIVE" || row.result.status === "ACTIVE" || row.result.status === "COMPLIANT");
+          const verified = row.result?.verified ?? false;
+          const ok = verified && (row.result?.status === "REGISTERED_ACTIVE" || row.result?.status === "ACTIVE" || row.result?.status === "COMPLIANT");
           return (<div key={row.key} className="bg-panel rounded-2xl p-5 shadow-editorial border-default">
             <div className="flex items-end justify-between mb-3 flex-wrap gap-2">
               <div><div className="text-[10px] font-bold tracking-[0.24em] uppercase text-fg-secondary">{row.label}</div>{row.result && <div className={`mt-1 text-[11px] font-bold ${ok ? "text-success" : verified ? "text-accent-2" : "text-error"}`}>{ok ? `✓ ${row.result.status}` : verified ? `⚠  ${row.result.status}` : `✗ ${row.result.reason || "Verification failed"}`}{row.extra && ` — ${row.extra}`}</div>}</div>

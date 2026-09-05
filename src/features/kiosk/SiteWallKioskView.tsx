@@ -50,9 +50,9 @@ function SiteWallKioskInner(): JSX.Element {
     if (!selProject) return;
     getClient().then(client => {
       if (!client) return;
-      client.from("site_updates").select("id, update_date, notes").eq("project_id", selProject).order("update_date", { ascending: false }).limit(5).then((r: { data: any }) => setUpdates(r.data ?? []));
-      client.from("safety").select("id, description, status, severity").eq("project_id", selProject).order("created_at", { ascending: false }).limit(5).then((r: { data: any }) => setSafety(r.data ?? []));
-      client.from("milestones").select("id, title, status, due_date").eq("project_id", selProject).order("due_date", { ascending: true }).limit(5).then((r: { data: any }) => setMilestones(r.data ?? []));
+      client.from("site_updates").select("id, update_date, notes").eq("project_id", selProject).order("update_date", { ascending: false }).limit(5).then(r => setUpdates(r.data ?? []));
+      client.from("safety").select("id, description, status, severity").eq("project_id", selProject).order("created_at", { ascending: false }).limit(5).then(r => setSafety(r.data ?? []));
+      client.from("milestones").select("id, title, status, due_date").eq("project_id", selProject).order("due_date", { ascending: true }).limit(5).then(r => setMilestones(r.data ?? []));
     });
   }, [selProject]);
 

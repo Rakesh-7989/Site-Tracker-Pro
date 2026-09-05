@@ -9,8 +9,12 @@ import { getClient } from "@/lib/supabase/supabase";
 import {
   listBlocks, listFloors, listUnits,
   createBlock, createFloor, createUnit,
-  deleteBlock, deleteFloor, deleteUnit } from "@/app/queries/hierarchyQueries";
-import { buildProjectTree, countHierarchy, rollUpProgress, unitCode } from "@/lib/hierarchy";
+  deleteBlock, deleteFloor, deleteUnit,
+  type BlockRow, type FloorRow, type UnitRow } from "@/app/queries/hierarchyQueries";
+import {
+  buildProjectTree, countHierarchy, rollUpProgress, unitCode,
+  type Block, type BlockTree, type Floor, type FloorTree, type Unit } from "@/lib/hierarchy";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 
 
@@ -34,18 +38,18 @@ export function HierarchyView(): JSX.Element {
   return <PlanGate feature="hierarchy"><Inner orgId={activeOrg.orgId} user={session.user} nav={nav} /></PlanGate>;
 }
 
-function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: string) => void }): JSX.Element {
+function Inner({ orgId, user, nav }: { orgId: string; user: { id: string; identityRole?: string | null }; nav: (path: string) => void }): JSX.Element {
   const session = useSession();
   const canCreate = user?.identityRole !== "client";
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
-  const [blocks, setBlocks] = useState<Record<string, any[]>>({});
-  const [floors, setFloors] = useState<Record<string, any[]>>({});
-  const [units, setUnits] = useState<Record<string, any[]>>({});
+  const [blocks, setBlocks] = useState<Record<string, BlockRow[]>>({});
+  const [floors, setFloors] = useState<Record<string, FloorRow[]>>({});
+  const [units, setUnits] = useState<Record<string, UnitRow[]>>({});
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selProject, setSelProject] = useState<string>("");
 
-  const fetchHierarchy = useCallback(async (client: any, projectId: string) => {
+  const fetchHierarchy = useCallback(async (client: TypedSupabaseClient, projectId: string) => {
     const [bRes, fRes, uRes] = await Promise.all([
       listBlocks(client, projectId),
       listFloors(client, projectId),
@@ -97,9 +101,9 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
 
   const toggleNode = (key: string) => setExpanded(p => ({ ...p, [key]: !p[key] }));
   const proj = projects.find(p => p.id === selProject);
-  const tree = proj ? buildProjectTree(proj.id, blocks, floors, units) : [];
-  const counts = proj ? countHierarchy(proj.id, blocks, floors, units) : { blocks: 0, floors: 0, units: 0 };
-  const progress = proj ? rollUpProgress(proj.id, blocks, floors, units) : { project: 0, blocks: {} as Record<string, number>, floors: {} as Record<string, number> };
+  const tree = proj ? buildProjectTree(proj.id, blocks as unknown as Record<string, Block[]>, floors as unknown as Record<string, Floor[]>, units as unknown as Record<string, Unit[]>) : [];
+  const counts = proj ? countHierarchy(proj.id, blocks as unknown as Record<string, Block[]>, floors as unknown as Record<string, Floor[]>, units as unknown as Record<string, Unit[]>) : { blocks: 0, floors: 0, units: 0 };
+  const progress = proj ? rollUpProgress(proj.id, blocks as unknown as Record<string, Block[]>, floors as unknown as Record<string, Floor[]>, units as unknown as Record<string, Unit[]>) : { project: 0, blocks: {} as Record<string, number>, floors: {} as Record<string, number> };
 
   const addBlock = async () => {
     const name = window.prompt("Block name (e.g. Block A, Tower 1):"); if (!name) return;
@@ -192,7 +196,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
         </div>
         {tree.length === 0 && <div className="text-center py-10 text-fg-secondary"><Icon name="building" size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No blocks yet. Add the first one to start.</p></div>}
         <div className="space-y-2">
-          {tree.map((b: any) => {
+          {tree.map((b: BlockTree) => {
             const bExp = expanded[b.id] !== false;
             return (<div key={b.id} className="rounded-xl border-default">
               <div className="flex items-center gap-3 p-3 bg-secondary/40">
@@ -206,7 +210,7 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
                   <button onClick={() => del("block", b.id)} className="text-fg-tertiary hover:text-error"><Icon name="trash" size={14} /></button>
                 </>}
               </div>
-              {bExp && <div className="px-3 pb-3 space-y-1">{(b.floors || []).map((f: any) => {
+              {bExp && <div className="px-3 pb-3 space-y-1">{(b.floors || []).map((f: FloorTree) => {
                 const fExp = expanded[f.id] !== false;
                 return (<div key={f.id} className="ml-6 rounded-lg border-default">
                   <div className="flex items-center gap-3 p-2 bg-panel">
@@ -217,10 +221,10 @@ function Inner({ orgId, user, nav }: { orgId: string; user: any; nav: (path: str
                       <button onClick={() => del("floor", f.id)} className="text-fg-tertiary hover:text-error"><Icon name="trash" size={12} /></button>
                     </>}
                   </div>
-                  {fExp && (f.units || []).length > 0 && <div className="px-2 pb-2"><div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-1">{(f.units || []).map((u: any) => (<div key={u.id} className="rounded-md px-2 py-1.5 bg-secondary/40 flex items-center justify-between border-default">
+                  {fExp && (f.units || []).length > 0 && <div className="px-2 pb-2"><div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-1">{(f.units || []).map((u: Unit) => (<div key={u.id} className="rounded-md px-2 py-1.5 bg-secondary/40 flex items-center justify-between border-default">
                     <div className="min-w-0"><div className="text-[11px] font-bold text-fg-primary truncate">{unitCode(u, f, b)}</div><div className="text-[9px] text-fg-secondary truncate">{u.type}</div></div>
                     <div className="flex items-center gap-1">
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${u.progress >= 100 ? "bg-success-tint text-success" : u.progress >= 50 ? "bg-warning-tint text-warning" : "bg-secondary text-fg-secondary"}`}>{u.progress}%</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${(u.progress ?? 0) >= 100 ? "bg-success-tint text-success" : (u.progress ?? 0) >= 50 ? "bg-warning-tint text-warning" : "bg-secondary text-fg-secondary"}`}>{(u.progress ?? 0)}%</span>
                       {canCreate && <button onClick={() => del("unit", u.id)} className="text-fg-tertiary hover:text-error"><Icon name="x" size={11} /></button>}
                     </div>
                   </div>))}</div></div>}
