@@ -4,7 +4,8 @@
 // capability the product actually ships (see content.ts FEATURE_GROUPS and
 // plans.ts for the pricing figures) — no fabricated customers or metrics.
 
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { postLoginPathForSession, readStoredLoginLane, useAuth } from "@/auth";
 import { Icon, Badge } from "@/components/ui/atoms";
 import { PLAN_TIERS, formatINR } from "@/features/marketing/plans";
 import { FEATURE_GROUPS } from "../content";
@@ -51,6 +52,8 @@ const FAQ_ITEMS: FaqItem[] = [
 export function HomePage(): JSX.Element {
   useSiteSeo(TITLE, DESCRIPTION);
 
+  const { session, status } = useAuth();
+
   useSiteJsonLd(
     {
       "@context": "https://schema.org",
@@ -63,6 +66,10 @@ export function HomePage(): JSX.Element {
     },
     "homepage-faq"
   );
+
+  if (status === "ready" && session) {
+    return <Navigate to={postLoginPathForSession(session, readStoredLoginLane())} replace />;
+  }
 
   return (
     <>
