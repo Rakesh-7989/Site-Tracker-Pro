@@ -13,16 +13,24 @@
 //
 // Usage: node scripts/uptime-check.mjs [frontendUrl]
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const FRONTEND = process.argv[2] || "https://sitetrackpro.in";
 
 // Pull the public Supabase URL + anon key from the committed public config
-// (RLS-safe — same values every browser already downloads).
-const cfg = readFileSync(join(process.cwd(), "src/lib/supabasePublicConfig.ts"), "utf8");
-const SUPABASE_URL = (cfg.match(/PUBLIC_SUPABASE_URL[^\n=]*=\s*"([^"]+)"/) || [])[1];
-const ANON = (cfg.match(/PUBLIC_SUPABASE_ANON_KEY[^\n=]*=\s*"([^"]+)"/) || [])[1];
+// (RLS-safe — same values every browser already downloads). The config lived
+// at src/lib/supabasePublicConfig.ts and moved to src/lib/supabase/ — try both
+// so the CI (no .env.local) probe resolves it.
+let SUPABASE_URL = "";
+let ANON = "";
+for (const cfgPath of ["src/lib/supabase/supabasePublicConfig.ts", "src/lib/supabasePublicConfig.ts"]) {
+  try {
+    const cfg = readFileSync(join(process.cwd(), cfgPath), "utf8");
+    SUPABASE_URL = SUPABASE_URL || (cfg.match(/PUBLIC_SUPABASE_URL[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+    ANON = ANON || (cfg.match(/PUBLIC_SUPABASE_ANON_KEY[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+  } catch { /* try next path */ }
+}
 
 const TIMEOUT_MS = 15000;
 

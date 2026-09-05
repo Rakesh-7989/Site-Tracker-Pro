@@ -48,9 +48,17 @@ async function rpc(url, anon, token, fn, args) {
 const root = process.cwd();
 
 // ── public Supabase config (RLS-safe anon key) ──────────────────────────────
-const cfg = readFileSync(join(root, "src/lib/supabasePublicConfig.js"), "utf8");
-const SUPABASE_URL = (cfg.match(/PUBLIC_SUPABASE_URL\s*=\s*"([^"]+)"/) || [])[1];
-const ANON = (cfg.match(/PUBLIC_SUPABASE_ANON_KEY\s*=\s*"([^"]+)"/) || [])[1];
+// The config lived at src/lib/supabasePublicConfig.js and moved to
+// src/lib/supabase/supabasePublicConfig.ts — try both so the probe resolves it.
+let SUPABASE_URL = "";
+let ANON = "";
+for (const cfgPath of ["src/lib/supabase/supabasePublicConfig.ts", "src/lib/supabasePublicConfig.js"]) {
+  try {
+    const cfg = readFileSync(join(root, cfgPath), "utf8");
+    SUPABASE_URL = SUPABASE_URL || (cfg.match(/PUBLIC_SUPABASE_URL[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+    ANON = ANON || (cfg.match(/PUBLIC_SUPABASE_ANON_KEY[^\n=]*=\s*"([^"]+)"/) || [])[1] || "";
+  } catch { /* try next path */ }
+}
 
 // ── .env.local (owner conn, only to read the demo org id) ───────────────────
 const env = Object.fromEntries(
