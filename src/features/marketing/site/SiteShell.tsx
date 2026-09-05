@@ -203,6 +203,12 @@ export function SiteShell(): JSX.Element {
               SiteTrack Pro is a construction &amp; AEC project OS — field operations, finance,
               drawings, labour and collaboration for Indian sites.
             </p>
+            <p className="mt-3 text-sm text-fg-secondary">
+              Built in Hyderabad, Telangana.{" "}
+              <a href="mailto:boyapatirakesh7777@gmail.com" className="text-fg-primary hover:text-accent transition">
+                boyapatirakesh7777@gmail.com
+              </a>
+            </p>
           </div>
           <FooterColumn title="Product" links={SITE_NAV.product} />
           <FooterColumn title="Solutions" links={SITE_NAV.solutions} />

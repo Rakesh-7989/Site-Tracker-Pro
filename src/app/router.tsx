@@ -23,7 +23,7 @@ import { guardRoutes } from "@/app/RouteErrorBoundary";
 import { RequireStaffArea } from "@/auth";
 import { ShellLayout } from "@/features/shell/ShellLayout";
 import { StubGuard } from "@/auth/StubGuard";
-import { LandingView } from "@/features/marketing/LandingView";
+import { HomePage } from "@/features/marketing/site/pages/HomePage";
 import { SiteShell } from "@/features/marketing/site/SiteShell";
 import { ProductPage } from "@/features/marketing/site/pages/ProductPage";
 import { FeaturesPage } from "@/features/marketing/site/pages/FeaturesPage";
@@ -34,6 +34,7 @@ import { BlogPage } from "@/features/marketing/site/pages/BlogPage";
 import { AboutPage } from "@/features/marketing/site/pages/AboutPage";
 import { SecurityPage } from "@/features/marketing/site/pages/SecurityPage";
 import { ContactPage } from "@/features/marketing/site/pages/ContactPage";
+import { LocalHyderabadPage } from "@/features/marketing/site/pages/LocalHyderabadPage";
 import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
 import { VerifyEmailView } from "@/features/auth/VerifyEmailView";
 import { PayView } from "@/features/marketing/PayView";
@@ -119,7 +120,6 @@ function SignupRedirect(): JSX.Element {
 
 export const router = createBrowserRouter(guardRoutes([
   // ── Public routes (no auth) ──
-  { path: "/", element: <LandingView /> },
   // P-D unified signup: `/signup` (legacy approval-gated) redirects to the
   // Zoho-style self-service `/register`, preserving plan/billing params.
   { path: "/signup", element: <SignupRedirect /> },
@@ -142,6 +142,7 @@ export const router = createBrowserRouter(guardRoutes([
   {
     element: <SiteShell />,
     children: [
+      { path: "/", element: <HomePage /> },
       { path: "/product", element: <ProductPage /> },
       { path: "/product-tour", element: <Navigate to="/product" replace /> },
       { path: "/features", element: <FeaturesPage /> },
@@ -153,6 +154,7 @@ export const router = createBrowserRouter(guardRoutes([
       { path: "/about", element: <AboutPage /> },
       { path: "/security", element: <SecurityPage /> },
       { path: "/contact", element: <ContactPage /> },
+      { path: "/construction-software-hyderabad", element: <LocalHyderabadPage /> },
     ],
   },
   // ── Authenticated app (pathless layout route wraps RequireSession + Suspense) ──

@@ -1,11 +1,30 @@
 // SiteTrack Pro — /contact page.
 
 import { PageHero, Section, CtaBand, useSiteSeo } from "../ui";
-import { CONTACT_EMAIL } from "@/features/marketing/legalContent";
+import { useSiteJsonLd, SITE_BASE_URL } from "../seo";
+import { CONTACT_EMAIL, PRODUCT, COMPANY } from "@/features/marketing/legalContent";
 import { Icon } from "@/components/ui/atoms";
 
 export function ContactPage(): JSX.Element {
   useSiteSeo("Contact — SiteTrack Pro", "Reach SiteTrack Pro: product and support questions, or security reporting.");
+
+  useSiteJsonLd(
+    {
+      "@context": "https://schema.org",
+      "@type": "ContactPage",
+      name: "Contact — SiteTrack Pro",
+      url: `${SITE_BASE_URL}/contact`,
+      about: { "@type": "Organization", name: PRODUCT },
+      mainEntity: {
+        "@type": "Organization",
+        name: PRODUCT,
+        url: "https://sitetrackpro.in",
+        email: `mailto:${CONTACT_EMAIL}`,
+        founder: { "@type": "Person", name: COMPANY, email: `mailto:${CONTACT_EMAIL}` },
+      },
+    },
+    "contact-page"
+  );
 
   return (
     <>

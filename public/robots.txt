@@ -1,0 +1,28 @@
+# SiteTrack Pro — www.sitetrackpro.in
+
+User-agent: *
+Allow: /
+
+# AI / LLM crawlers are welcome — quality content only, no archives.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# Any other current or future commercial crawlers are still readable, but
+# editors' archives and source maps are intentionally excluded below.
+Disallow: /archive/
+Disallow: /assets/
+Disallow: /*.map
+
+Sitemap: https://www.sitetrackpro.in/sitemap.xml

@@ -1,0 +1,32 @@
+# SiteTrack Pro
+
+> Construction project software for Indian builders, contractors and architects — voice daily progress reports, running account bills, RERA tracking, drawings, labour and client approvals in one workspace.
+
+## SiteTrack Pro docs
+
+- [Product](https://www.sitetrackpro.in/product): What SiteTrack Pro does, module by module.
+- [Features](https://www.sitetrackpro.in/features): Field operations, construction finance, drawings, workforce, compliance and collaboration.
+- [Pricing](https://www.sitetrackpro.in/pricing): Per-organization plans from ₹5,999/month, 14-day free trial, no credit card.
+- [Solutions](https://www.sitetrackpro.in/solutions): How different roles use the product.
+- [Construction software in Hyderabad](https://www.sitetrackpro.in/construction-software-hyderabad): For builders in Hyderabad and Telangana.
+- [Security](https://www.sitetrackpro.in/security): Row-level isolation, role-based access and immutable audit.
+- [About](https://www.sitetrackpro.in/about): Built in Hyderabad, Telangana.
+- [Contact](https://www.sitetrackpro.in/contact): Support and sales enquiries.
+
+## Key facts
+
+- SiteTrack Pro is a construction project management platform for the Indian construction market.
+- Field staff dictate daily progress reports in Telugu, Hindi or English; geotagged photos are captured with the report.
+- Reports, photos and attendance queue offline and sync automatically on poor-signal sites.
+- Finance covers budgets vs actuals, purchase orders, goods receipts, invoices and Running Account (RA) bills with GST percent, TDS and net receivable.
+- RERA stage tracking and statutory approvals/NOC registers support compliance for Telangana and other Indian states.
+- DXF drawings preview inline; two revisions can be diffed as an overlay.
+- Client approvals, revision links (password/OTP-gated, expiring) and a client portal are built in.
+- Pricing is per organization, not per seat, from ₹5,999/month (exclusive of 18% GST). Annual billing saves ~17%.
+- Every organization is isolated at the database row level with role-based permissions and an immutable audit trail.
+- The product is available in English, Telugu and Hindi.
+
+## Contact
+
+Product enquiries: hello@sitetrackpro.in
+Founder (Rakesh Boyapati): boyapatirakesh7777@gmail.com

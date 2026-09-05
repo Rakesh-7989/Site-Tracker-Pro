@@ -10,9 +10,29 @@ import { cn } from "@/lib/utils/cn";
 import { Badge, Icon } from "@/components/ui/atoms";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
 import { PageHero, Section, SectionHeading, CheckItem, CtaBand, useSiteSeo } from "../ui";
+import { useSiteJsonLd, SITE_BASE_URL } from "../seo";
 
 export function PricingPage(): JSX.Element {
   useSiteSeo("Pricing — SiteTrack Pro", "Simple, per-organization pricing for SiteTrack Pro. Basic, Pro and Business plans — every plan starts with a 14-day free trial, no credit card.");
+
+  useSiteJsonLd(
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "SiteTrack Pro",
+      url: `${SITE_BASE_URL}/pricing`,
+      operatingSystem: "Web browser, Android",
+      applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Construction Project Management",
+      inLanguage: ["en", "te", "hi"],
+      offers: [
+        { "@type": "Offer", price: "5999", priceCurrency: "INR", name: "Basic", description: "Per organization, per month." },
+        { "@type": "Offer", price: "11999", priceCurrency: "INR", name: "Pro", description: "Per organization, per month." },
+        { "@type": "Offer", price: "19999", priceCurrency: "INR", name: "Business", description: "Per organization, per month." },
+      ],
+    },
+    "pricing-software-app"
+  );
 
   const [period, setPeriod] = useState<BillingPeriod>("annual");
 
