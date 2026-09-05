@@ -64,8 +64,7 @@ const FAQ: Array<{ q: string; a: string }> = [
 function Logo(): JSX.Element {
   return (
     <div className="flex items-center gap-2">
-      <div className="w-9 h-9 rounded-xl bg-accent text-white grid place-items-center font-display font-bold">S</div>
-      <span className="font-display text-lg font-bold text-fg-primary">SiteTrack Pro</span>
+      <img src="/logo-horizontal.png" alt="SiteTrack Pro" className="h-8 w-auto" />
     </div>
   );
 }

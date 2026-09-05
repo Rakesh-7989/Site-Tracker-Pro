@@ -65,9 +65,8 @@ export function StaffJoinView(): JSX.Element {
   return (
     <div className="min-h-screen bg-panel grid place-items-center p-4 md:p-8">
       <Card className="w-full max-w-md p-4 md:p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
-          <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
+        <div className="mb-1">
+          <img src="/logo-horizontal.png" alt="SiteTrack Pro" className="h-7 w-auto" />
         </div>
         <h1 className="font-display text-xl font-bold mt-3">Join the staff team</h1>
         <p className="text-[13px] text-fg-secondary mt-1 mb-4">You've been invited as a SiteTrack Pro platform staff member. Set up your account to continue.</p>
