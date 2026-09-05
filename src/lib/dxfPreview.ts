@@ -15,6 +15,14 @@
 //   - MTEXT (multi-line / formatted text) flattened to TEXT lines.
 //   - ELLIPSE entities (full + partial) rendered by parametric sampling.
 //
+// Depth (B5.2):
+//   - LWPOLYLINE / POLYLINE vertex bulges (group 42) tessellated to arc
+//     samples so filleted/rounded geometry renders correctly (and survives
+//     non-uniform block scale, where arcs become dense polylines).
+//   - Line types (group 6) + line weights (group 370) resolved entity → layer
+//     and rendered as SVG dash patterns + stroke-width buckets.
+//   - POINT entities rendered as small filled dots.
+//
 // Pure functions only (no client, no canvas, no DOM) so the parser + renderer
 // are fully unit-testable in the node vitest env.
 
@@ -48,15 +56,18 @@ export function isDxfFileName(name: string): boolean {
 
 export interface DxfPoint { x: number; y: number; }
 
-/** Every renderable entity carries its resolved ACI color (see `aciColor`). */
-interface DxfColored { layer: string; color?: number; }
+/** Every renderable entity carries its resolved ACI color (see `aciColor`),
+ *  its line type (uppercase DXF name, undefined = continuous) and its line
+ *  weight (group 370 in hundredths of a millimetre, undefined = default). */
+interface DxfColored { layer: string; color?: number; lineType?: string; lineWeight?: number; }
 
 export type DxfEntity =
   | ({ type: "LINE"; x1: number; y1: number; x2: number; y2: number } & DxfColored)
-  | ({ type: "LWPOLYLINE" | "POLYLINE"; points: DxfPoint[]; closed: boolean } & DxfColored)
+  | ({ type: "LWPOLYLINE" | "POLYLINE"; points: DxfPoint[]; closed: boolean; bulges?: number[] } & DxfColored)
   | ({ type: "CIRCLE"; cx: number; cy: number; r: number } & DxfColored)
   | ({ type: "ARC"; cx: number; cy: number; r: number; startAngle: number; endAngle: number } & DxfColored)
   | ({ type: "ELLIPSE"; cx: number; cy: number; majorDx: number; majorDy: number; ratio: number; startParam: number; endParam: number } & DxfColored)
+  | ({ type: "POINT"; x: number; y: number } & DxfColored)
   | ({ type: "TEXT"; x: number; y: number; height: number; text: string; rotation: number } & DxfColored);
 
 /** Internal (pre-expansion) INSERT reference into the BLOCK table. */
@@ -171,13 +182,22 @@ export function resolveStroke(e: { color?: number }): string {
 
 // ── Document scans (LAYER table + BLOCK definitions) ─────────────────────────
 
-/** Collect the LAYER table: layer name → ACI color. Global to the document. */
-function scanLayers(groups: Group[]): Map<string, number> {
-  const layers = new Map<string, number>();
+/** A LAYER-table entry: ACI color + optional line type / line weight. */
+interface LayerStyle {
+  color: number;
+  lineType?: string;
+  lineWeight?: number;
+}
+
+/** Collect the LAYER table: layer name → color/line-type/line-weight. Global to the document. */
+function scanLayers(groups: Group[]): Map<string, LayerStyle> {
+  const layers = new Map<string, LayerStyle>();
   for (let i = 0; i < groups.length; i++) {
     if (groups[i].code === 0 && groups[i].value.toUpperCase() === "LAYER") {
       let name = "";
       let color = 7;
+      let lineType: string | undefined;
+      let lineWeight: number | undefined;
       let j = i + 1;
       while (j < groups.length && groups[j].code !== 0) {
         if (groups[j].code === 2) name = groups[j].value;
@@ -185,9 +205,17 @@ function scanLayers(groups: Group[]): Map<string, number> {
           const c = parseInt(groups[j].value, 10);
           color = Number.isFinite(c) && c >= 0 ? c : 7;
         }
+        else if (groups[j].code === 6) {
+          const lt = groups[j].value.trim().toUpperCase();
+          if (lt && lt !== "BYLAYER" && lt !== "BYBLOCK" && lt !== "CONTINUOUS") lineType = lt;
+        }
+        else if (groups[j].code === 370) {
+          const w = Number(groups[j].value);
+          if (Number.isFinite(w) && w > 0) lineWeight = Math.round(w);
+        }
         j++;
       }
-      if (name) layers.set(name, color);
+      if (name) layers.set(name, { color, lineType, lineWeight });
       i = j - 1;
     }
   }
@@ -195,7 +223,7 @@ function scanLayers(groups: Group[]): Map<string, number> {
 }
 
 /** Collect BLOCK definitions (name → base point + raw entities in local space). */
-function scanBlocks(groups: Group[], layers: Map<string, number>): Map<string, BlockDef> {
+function scanBlocks(groups: Group[], layers: Map<string, LayerStyle>): Map<string, BlockDef> {
   const blocks = new Map<string, BlockDef>();
   let i = 0;
   while (i < groups.length) {
@@ -235,6 +263,27 @@ function resolveColor(fields: Record<number, string>, layerColor: number | undef
   return layerColor;
 }
 
+/** Resolve an entity's effective line type: explicit 6, else the layer's. BYLAYER/BYBLOCK/CONTINUOUS → inherit/continuous. */
+function resolveLineType(fields: Record<number, string>, layerLineType: string | undefined): string | undefined {
+  if (fields[6] !== undefined) {
+    const lt = fields[6].trim().toUpperCase();
+    if (lt === "BYLAYER") return layerLineType;
+    if (lt === "BYBLOCK" || lt === "CONTINUOUS" || lt === "") return undefined;
+    return lt;
+  }
+  return layerLineType;
+}
+
+/** Resolve an entity's effective line weight (group 370, hundredths of mm): explicit, else layer's. */
+function resolveLineWeight(fields: Record<number, string>, layerLineWeight: number | undefined): number | undefined {
+  if (fields[370] !== undefined) {
+    const w = Number(fields[370]);
+    if (Number.isFinite(w) && w > 0) return Math.round(w);
+    return layerLineWeight;
+  }
+  return layerLineWeight;
+}
+
 /** Read a single-value entity's fields up to the next code-0 group. */
 function readUntilZero(groups: Group[], from: number): { fields: Record<number, string>; next: number } {
   const fields: Record<number, string> = {};
@@ -247,7 +296,7 @@ function readUntilZero(groups: Group[], from: number): { fields: Record<number, 
 }
 
 /** Parse entities starting at `i` until a stop-type code-0 group (or end). */
-function parseEntityList(groups: Group[], i: number, stop: Set<string>, layers: Map<string, number>): { entities: RawEntity[]; next: number } {
+function parseEntityList(groups: Group[], i: number, stop: Set<string>, layers: Map<string, LayerStyle>): { entities: RawEntity[]; next: number } {
   const entities: RawEntity[] = [];
   while (i < groups.length) {
     const g = groups[i];
@@ -286,19 +335,21 @@ function parseSingleEntity(
   groups: Group[],
   i: number,
   type: string,
-  layers: Map<string, number>,
+  layers: Map<string, LayerStyle>,
 ): { entities: RawEntity[]; next: number } | null {
-  const layerColor = (layer: string): number | undefined => layers.get(layer);
-
+  const layerStyle = (layer: string): LayerStyle | undefined => layers.get(layer);
   if (type === "LINE") {
     const { fields, next } = readUntilZero(groups, i + 1);
     const layer = fields[8] ?? "0";
+    const style = layerStyle(layer);
     return {
       entities: [{
         type: "LINE",
         x1: num(fields[10]), y1: num(fields[20]),
         x2: num(fields[11]), y2: num(fields[21]),
-        layer, color: resolveColor(fields, layerColor(layer)),
+        layer, color: resolveColor(fields, style?.color),
+        lineType: resolveLineType(fields, style?.lineType),
+        lineWeight: resolveLineWeight(fields, style?.lineWeight),
       }],
       next,
     };
@@ -306,23 +357,32 @@ function parseSingleEntity(
 
   if (type === "LWPOLYLINE") {
     const points: DxfPoint[] = [];
+    const bulges: number[] = [];
     let layer = "0";
     let closed = false;
-    let color62: string | undefined;
+    const styleFields: Record<number, string> = {};
     let j = i + 1;
     while (j < groups.length && groups[j].code !== 0) {
       const g = groups[j];
       if (g.code === 8) layer = g.value;
-      else if (g.code === 62) color62 = g.value;
+      else if (g.code === 62) styleFields[62] = g.value;
+      else if (g.code === 6) styleFields[6] = g.value;
+      else if (g.code === 370) styleFields[370] = g.value;
       else if (g.code === 70) closed = (num(g.value) & 1) === 1;
-      else if (g.code === 10) points.push({ x: num(g.value), y: 0 });
+      else if (g.code === 10) { points.push({ x: num(g.value), y: 0 }); bulges.push(0); }
       else if (g.code === 20 && points.length > 0) points[points.length - 1].y = num(g.value);
+      else if (g.code === 42 && points.length > 0) bulges[points.length - 1] = num(g.value);
       j++;
     }
+    const style = layerStyle(layer);
+    const hasBulges = bulges.some(b => Math.abs(b) > 1e-9);
     return {
       entities: [{
         type: "LWPOLYLINE", points, closed, layer,
-        color: color62 !== undefined ? resolveColor({ 62: color62 }, layerColor(layer)) : layerColor(layer),
+        ...(hasBulges ? { bulges } : {}),
+        color: resolveColor(styleFields, style?.color),
+        lineType: resolveLineType(styleFields, style?.lineType),
+        lineWeight: resolveLineWeight(styleFields, style?.lineWeight),
       }],
       next: j,
     };
@@ -331,29 +391,35 @@ function parseSingleEntity(
   if (type === "POLYLINE") {
     let layer = "0";
     let closed = false;
-    let color62: string | undefined;
+    const styleFields: Record<number, string> = {};
     let j = i + 1;
     while (j < groups.length && groups[j].code !== 0) {
       const g = groups[j];
       if (g.code === 8) layer = g.value;
-      else if (g.code === 62) color62 = g.value;
+      else if (g.code === 62) styleFields[62] = g.value;
+      else if (g.code === 6) styleFields[6] = g.value;
+      else if (g.code === 370) styleFields[370] = g.value;
       else if (g.code === 70) closed = (num(g.value) & 1) === 1;
       j++;
     }
     const points: DxfPoint[] = [];
+    const bulges: number[] = [];
     while (j < groups.length) {
       const g = groups[j];
       if (g.code !== 0) { j++; continue; }
       const t = g.value.toUpperCase();
       if (t === "VERTEX") {
         let vx = 0, vy = 0;
+        let bulge = 0;
         let k = j + 1;
         while (k < groups.length && groups[k].code !== 0) {
           if (groups[k].code === 10) vx = num(groups[k].value);
           else if (groups[k].code === 20) vy = num(groups[k].value);
+          else if (groups[k].code === 42) bulge = num(groups[k].value);
           k++;
         }
         points.push({ x: vx, y: vy });
+        bulges.push(bulge);
         j = k;
       } else if (t === "SEQEND") {
         j++;
@@ -362,10 +428,15 @@ function parseSingleEntity(
         break;
       }
     }
+    const style = layerStyle(layer);
+    const hasBulges = bulges.some(b => Math.abs(b) > 1e-9);
     return {
       entities: [{
         type: "POLYLINE", points, closed, layer,
-        color: color62 !== undefined ? resolveColor({ 62: color62 }, layerColor(layer)) : layerColor(layer),
+        ...(hasBulges ? { bulges } : {}),
+        color: resolveColor(styleFields, style?.color),
+        lineType: resolveLineType(styleFields, style?.lineType),
+        lineWeight: resolveLineWeight(styleFields, style?.lineWeight),
       }],
       next: j,
     };
@@ -374,10 +445,13 @@ function parseSingleEntity(
   if (type === "CIRCLE") {
     const { fields, next } = readUntilZero(groups, i + 1);
     const layer = fields[8] ?? "0";
+    const style = layerStyle(layer);
     return {
       entities: [{
         type: "CIRCLE", cx: num(fields[10]), cy: num(fields[20]), r: Math.abs(num(fields[40])),
-        layer, color: resolveColor(fields, layerColor(layer)),
+        layer, color: resolveColor(fields, style?.color),
+        lineType: resolveLineType(fields, style?.lineType),
+        lineWeight: resolveLineWeight(fields, style?.lineWeight),
       }],
       next,
     };
@@ -386,11 +460,14 @@ function parseSingleEntity(
   if (type === "ARC") {
     const { fields, next } = readUntilZero(groups, i + 1);
     const layer = fields[8] ?? "0";
+    const style = layerStyle(layer);
     return {
       entities: [{
         type: "ARC", cx: num(fields[10]), cy: num(fields[20]), r: Math.abs(num(fields[40])),
         startAngle: num(fields[50]), endAngle: num(fields[51]),
-        layer, color: resolveColor(fields, layerColor(layer)),
+        layer, color: resolveColor(fields, style?.color),
+        lineType: resolveLineType(fields, style?.lineType),
+        lineWeight: resolveLineWeight(fields, style?.lineWeight),
       }],
       next,
     };
@@ -399,6 +476,7 @@ function parseSingleEntity(
   if (type === "ELLIPSE") {
     const { fields, next } = readUntilZero(groups, i + 1);
     const layer = fields[8] ?? "0";
+    const style = layerStyle(layer);
     const endParam = fields[42] !== undefined ? num(fields[42]) : Math.PI * 2;
     return {
       entities: [{
@@ -406,7 +484,9 @@ function parseSingleEntity(
         majorDx: num(fields[11]), majorDy: num(fields[21]),
         ratio: num(fields[40], 1),
         startParam: num(fields[41]), endParam,
-        layer, color: resolveColor(fields, layerColor(layer)),
+        layer, color: resolveColor(fields, style?.color),
+        lineType: resolveLineType(fields, style?.lineType),
+        lineWeight: resolveLineWeight(fields, style?.lineWeight),
       }],
       next,
     };
@@ -415,14 +495,17 @@ function parseSingleEntity(
   if (type === "TEXT") {
     const { fields, next } = readUntilZero(groups, i + 1);
     const layer = fields[8] ?? "0";
+    const style = layerStyle(layer);
     const text = fields[1] ?? "";
-    const color = resolveColor(fields, layerColor(layer));
+    const color = resolveColor(fields, style?.color);
     if (!text) return { entities: [], next };
     return {
       entities: [{
         type: "TEXT", x: num(fields[10]), y: num(fields[20]),
         height: num(fields[40], 2.5), text, rotation: num(fields[50]),
         layer, color,
+        lineType: resolveLineType(fields, style?.lineType),
+        lineWeight: resolveLineWeight(fields, style?.lineWeight),
       }],
       next,
     };
@@ -431,7 +514,8 @@ function parseSingleEntity(
   if (type === "MTEXT") {
     const { fields, next } = readUntilZero(groups, i + 1);
     const layer = fields[8] ?? "0";
-    const color = resolveColor(fields, layerColor(layer));
+    const style = layerStyle(layer);
+    const color = resolveColor(fields, style?.color);
     const text = (fields[1] ?? "") + (fields[3] ?? "");
     return {
       entities: mtextToText(text, num(fields[10]), num(fields[20]), num(fields[40], 2.5), num(fields[50]), layer, color),
@@ -442,6 +526,7 @@ function parseSingleEntity(
   if (type === "INSERT") {
     const { fields, next } = readUntilZero(groups, i + 1);
     const layer = fields[8] ?? "0";
+    const style = layerStyle(layer);
     return {
       entities: [{
         type: "INSERT",
@@ -454,7 +539,24 @@ function parseSingleEntity(
         rows: clampInt(fields[71], 1, 64, 1),
         colSpacing: num(fields[44]),
         rowSpacing: num(fields[45]),
-        layer, color: resolveColor(fields, layerColor(layer)),
+        layer, color: resolveColor(fields, style?.color),
+        lineType: resolveLineType(fields, style?.lineType),
+        lineWeight: resolveLineWeight(fields, style?.lineWeight),
+      }],
+      next,
+    };
+  }
+
+  if (type === "POINT") {
+    const { fields, next } = readUntilZero(groups, i + 1);
+    const layer = fields[8] ?? "0";
+    const style = layerStyle(layer);
+    return {
+      entities: [{
+        type: "POINT", x: num(fields[10]), y: num(fields[20]),
+        layer, color: resolveColor(fields, style?.color),
+        lineType: resolveLineType(fields, style?.lineType),
+        lineWeight: resolveLineWeight(fields, style?.lineWeight),
       }],
       next,
     };
@@ -506,6 +608,61 @@ function transformPoint(x: number, y: number, tx: number, ty: number, cos: numbe
   return { x: px * cos - py * sin + tx, y: px * sin + py * cos + ty };
 }
 
+/**
+ * Tessellate a bulged chord p0→p1 into arc samples. Bulge = tan(θ/4) where θ is
+ * the arc's included angle; positive bulge arcs counter-clockwise. n caps at 24
+ * samples so a near-2π major arc stays light.
+ */
+function bulgeArcSamples(p0: DxfPoint, p1: DxfPoint, bulge: number): DxfPoint[] {
+  const dx = p1.x - p0.x;
+  const dy = p1.y - p0.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-12) return [];
+  const b = bulge;
+  const theta = 4 * Math.atan(Math.abs(b));
+  const r = (len * (1 + b * b)) / (4 * Math.abs(b));
+  const h = (len * (1 - b * b)) / (4 * b);
+  const nx = -dy / len; // left unit normal of (p0 → p1)
+  const ny = dx / len;
+  const cx = (p0.x + p1.x) / 2 + nx * h;
+  const cy = (p0.y + p1.y) / 2 + ny * h;
+  const a0 = Math.atan2(p0.y - cy, p0.x - cx);
+  const dir = b >= 0 ? 1 : -1;
+  const n = Math.max(3, Math.min(24, Math.ceil(theta / (Math.PI / 18))));
+  const out: DxfPoint[] = [];
+  for (let k = 0; k <= n; k++) {
+    const a = a0 + dir * theta * (k / n);
+    out.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+  }
+  // Snap the final sample exactly onto p1 (numeric drift).
+  const last = out[out.length - 1];
+  if (last && Math.hypot(last.x - p1.x, last.y - p1.y) > 1e-6) {
+    out[out.length - 1] = { x: p1.x, y: p1.y };
+  }
+  return out;
+}
+
+/** Flatten a polyline's segments into samples; bulged segments are tessellated arcs. */
+function polylineSamples(e: { points: DxfPoint[]; closed: boolean; bulges?: number[] }): DxfPoint[] {
+  const pts = e.points;
+  if (pts.length === 0) return [];
+  const out: DxfPoint[] = [pts[0]];
+  const n = pts.length;
+  const segments = e.closed ? n : n - 1;
+  for (let i = 0; i < segments; i++) {
+    const p0 = pts[i];
+    const p1 = pts[(i + 1) % n];
+    const bulge = e.bulges ? e.bulges[i] ?? 0 : 0;
+    if (Math.abs(bulge) > 1e-9) {
+      const arc = bulgeArcSamples(p0, p1, bulge);
+      for (let k = 1; k < arc.length; k++) out.push(arc[k]);
+    } else {
+      out.push(p1);
+    }
+  }
+  return out;
+}
+
 /** Apply an INSERT transform (translate/rotate/scale, base-offset) to a final entity. */
 function transformEntity(e: DxfEntity, baseX: number, baseY: number, tx: number, ty: number, rotDeg: number, sx: number, sy: number): DxfEntity {
   const rot = rotDeg * D2R;
@@ -523,8 +680,19 @@ function transformEntity(e: DxfEntity, baseX: number, baseY: number, tx: number,
       return { ...e, x1: a.x, y1: a.y, x2: b.x, y2: b.y };
     }
     case "LWPOLYLINE":
-    case "POLYLINE":
-      return { ...e, points: e.points.map(p => T(p.x, p.y)) };
+    case "POLYLINE": {
+      if (uniform) {
+        // Uniform scale keeps arc segments as arcs. A reflection (negative
+        // total scale) flips the sweep, so negate every bulge.
+        const flip = sx * sy < 0 ? -1 : 1;
+        const bulges = e.bulges ? e.bulges.map((bb) => bb * flip) : undefined;
+        return { ...e, points: e.points.map((p) => T(p.x, p.y)), ...(bulges !== undefined ? { bulges } : {}) };
+      }
+      // Non-uniform scale turns each bulge segment into an ellipse — flatten it.
+      const next = { ...e, points: polylineSamples(e).map((p) => T(p.x, p.y)) } as DxfEntity;
+      delete (next as { bulges?: number[] }).bulges;
+      return next;
+    }
     case "CIRCLE": {
       const c = T(e.cx, e.cy);
       if (uniform) return { ...e, cx: c.x, cy: c.y, r: Math.abs(e.r * absSx) };
@@ -532,7 +700,7 @@ function transformEntity(e: DxfEntity, baseX: number, baseY: number, tx: number,
       return {
         type: "ELLIPSE", cx: c.x, cy: c.y, majorDx: e.r * sx, majorDy: 0,
         ratio: sx === 0 ? 1 : Math.abs(sy / sx), startParam: 0, endParam: Math.PI * 2,
-        layer: e.layer, color: e.color,
+        layer: e.layer, color: e.color, lineType: e.lineType, lineWeight: e.lineWeight,
       };
     }
     case "ARC": {
@@ -544,7 +712,7 @@ function transformEntity(e: DxfEntity, baseX: number, baseY: number, tx: number,
         type: "ELLIPSE", cx: c.x, cy: c.y, majorDx: e.r * sx, majorDy: 0,
         ratio: sx === 0 ? 1 : Math.abs(sy / sx),
         startParam: e.startAngle * D2R, endParam: e.endAngle * D2R,
-        layer: e.layer, color: e.color,
+        layer: e.layer, color: e.color, lineType: e.lineType, lineWeight: e.lineWeight,
       };
     }
     case "ELLIPSE": {
@@ -552,6 +720,10 @@ function transformEntity(e: DxfEntity, baseX: number, baseY: number, tx: number,
       const mx = e.majorDx * sx;
       const my = e.majorDy * sy;
       return { ...e, cx: c.x, cy: c.y, majorDx: mx * cos - my * sin, majorDy: mx * sin + my * cos };
+    }
+    case "POINT": {
+      const p = T(e.x, e.y);
+      return { ...e, x: p.x, y: p.y };
     }
     case "TEXT": {
       const p = T(e.x, e.y);
@@ -626,7 +798,7 @@ export function parseDxfDoc(source: string): DxfDoc {
   const raws = parseEntityList(groups, 0, new Set(), layers).entities;
   const entities = expandEntities(raws, blocks, warnings);
   const layerColors: Record<string, string> = {};
-  for (const [name, color] of layers) layerColors[name] = aciColor(color) ?? "currentColor";
+  for (const [name, style] of layers) layerColors[name] = aciColor(style.color) ?? "currentColor";
   return { entities, layerColors, warnings };
 }
 
@@ -696,7 +868,7 @@ export function dxfBounds(entities: DxfEntity[]): Bounds | null {
   const push = (x: number, y: number): void => { xs.push(x); ys.push(y); };
   for (const e of entities) {
     if (e.type === "LINE") { push(e.x1, e.y1); push(e.x2, e.y2); }
-    else if (e.type === "LWPOLYLINE" || e.type === "POLYLINE") { for (const p of e.points) push(p.x, p.y); }
+    else if (e.type === "LWPOLYLINE" || e.type === "POLYLINE") { for (const p of polylineSamples(e)) push(p.x, p.y); }
     else if (e.type === "CIRCLE") { push(e.cx - e.r, e.cy - e.r); push(e.cx + e.r, e.cy + e.r); }
     else if (e.type === "ARC") {
       const span = arcSpanDeg(e.startAngle, e.endAngle);
@@ -707,6 +879,7 @@ export function dxfBounds(entities: DxfEntity[]): Bounds | null {
     }
     else if (e.type === "ELLIPSE") { for (const p of sampleEllipse(e)) push(p.x, p.y); }
     else if (e.type === "TEXT") { push(e.x, e.y); }
+    else if (e.type === "POINT") { push(e.x, e.y); }
   }
   if (xs.length === 0) return null;
   let minX = Math.min(...xs), maxX = Math.max(...xs);
@@ -755,6 +928,42 @@ function escapeXml(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
+/** Canonical linetype dash lengths (drawing units) per DXF line type name. */
+const LINE_TYPE_DASHES: Record<string, readonly number[]> = {
+  HIDDEN: [4, 2],
+  HIDDEN2: [2, 1],
+  HIDDENX2: [6, 2],
+  DASHED: [7, 3],
+  DASHED2: [3.5, 1.5],
+  DASHEDX2: [10, 5],
+  DASHDOT: [7, 3, 0.5, 3],
+  DASHDOT2: [3.5, 1.5, 0.5, 1.5],
+  DASHDOTX2: [10, 5, 0.5, 5],
+  CENTER: [10, 3, 1, 3],
+  CENTER2: [5, 1.5, 0.5, 1.5],
+  CENTERX2: [16, 5, 1, 5],
+  PHANTOM: [15, 3, 1, 3, 1, 3],
+  PHANTOM2: [7, 1.5, 0.5, 1.5, 0.5, 1.5],
+  PHANTOMX2: [20, 5, 1, 5, 1, 5],
+};
+
+/** SVG `stroke-dasharray` for a resolved line type (null = continuous), scaled to the drawing. */
+function dashPattern(lineType: string | undefined, dim: number): string | null {
+  if (!lineType) return null;
+  const pattern = LINE_TYPE_DASHES[lineType.toUpperCase()];
+  if (!pattern) return null;
+  return pattern.map((v) => (Math.round(v * dim * 10) / 10).toString()).join(" ");
+}
+
+/** Stroke-width multiplier buckets for a resolved line weight (group 370, hundredths of a millimetre). */
+function strokeMult(weight: number | undefined): number {
+  if (weight === undefined) return 1;
+  if (weight <= 18) return 1;
+  if (weight <= 35) return 1.6;
+  if (weight <= 70) return 2.4;
+  return 3.2;
+}
+
 /**
  * Render parsed DXF entities to a self-contained SVG string that fits the
  * content in a viewBox. Entities carry their resolved ACI colors; entities
@@ -791,6 +1000,11 @@ export function dxfToSvg(entities: DxfEntity[], opts?: { maxView?: number; strok
     }
     if (e.type === "LWPOLYLINE" || e.type === "POLYLINE") {
       if (e.points.length < 2) return "";
+      if (e.bulges) {
+        // Bulged segments tessellate into an arc path.
+        const pts = polylineSamples(e).map(p => `${f(p.x)} ${f(p.y)}`).join(" L");
+        return `<path d="M${pts}${e.closed ? " Z" : ""}"/>`;
+      }
       const pts = e.points.map(p => `${f(p.x)},${f(p.y)}`).join(" ");
       let out = `<polyline points="${pts}"/>`;
       if (e.closed) {
@@ -803,22 +1017,33 @@ export function dxfToSvg(entities: DxfEntity[], opts?: { maxView?: number; strok
     if (e.type === "CIRCLE") return `<circle cx="${f(e.cx)}" cy="${f(e.cy)}" r="${f(e.r)}"/>`;
     if (e.type === "ARC") return arcPath(e.cx, e.cy, e.r, e.startAngle, e.endAngle, f);
     if (e.type === "ELLIPSE") return ellipsePath(e, f);
+    if (e.type === "POINT") {
+      const pr = Math.max(1.2, sw * 0.75);
+      return `<circle cx="${f(e.x)}" cy="${f(e.y)}" r="${f(pr)}" fill="currentColor" stroke="none"/>`;
+    }
     return "";
   };
 
-  // Group geometry by resolved stroke color.
-  const byColor = new Map<string, DxfEntity[]>();
+  // Group geometry by resolved stroke color + line type + line weight so each
+  // group carries one dash pattern and one stroke-width multiplier.
+  const dim = Math.max(width, height) / 32;
+  const byStyle = new Map<string, { color: string; dash: string | null; mult: number; items: DxfEntity[] }>();
   for (const e of entities) {
     if (e.type === "TEXT") continue;
     const color = resolveStroke(e);
-    let list = byColor.get(color);
-    if (!list) { list = []; byColor.set(color, list); }
-    list.push(e);
+    const dash = dashPattern(e.lineType, dim);
+    const mult = strokeMult(e.lineWeight);
+    const key = `${color}\u0000${dash ?? ""}\u0000${mult}`;
+    let group = byStyle.get(key);
+    if (!group) { group = { color, dash, mult, items: [] }; byStyle.set(key, group); }
+    group.items.push(e);
   }
-  for (const [color, list] of byColor) {
+  for (const group of byStyle.values()) {
+    const { color, dash, mult, items } = group;
     const stroke = color === "currentColor" ? "stroke=\"currentColor\"" : `stroke="${color}"`;
-    parts.push(`<g fill="none" ${stroke} stroke-width="${num(sw)}" stroke-linecap="round" stroke-linejoin="round">`);
-    for (const e of list) parts.push(render(e));
+    const dashAttr = dash ? ` stroke-dasharray="${dash}"` : "";
+    parts.push(`<g fill="none" ${stroke}${dashAttr} stroke-width="${num(sw * mult)}" stroke-linecap="round" stroke-linejoin="round">`);
+    for (const e of items) parts.push(render(e));
     parts.push("</g>");
   }
 

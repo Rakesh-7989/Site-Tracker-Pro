@@ -921,3 +921,506 @@ describe("parseDxfDoc", () => {
     expect(doc.warnings).toEqual([]);
   });
 });
+
+// ── B5.2 depth: polyline bulges ──────────────────────────────────────────────
+
+const BULGED_LWPOLYLINE = `0
+LWPOLYLINE
+8
+FENCE
+90
+3
+70
+1
+10
+0
+20
+0
+42
+1
+10
+10
+20
+0
+10
+10
+20
+10
+0
+EOF
+`;
+
+describe("polyline bulges", () => {
+  it("parses LWPOLYLINE vertex bulges (group 42) alongside points", () => {
+    const ents = parseDxf(BULGED_LWPOLYLINE);
+    expect(ents).toHaveLength(1);
+    expect(ents[0]).toMatchObject({ type: "LWPOLYLINE", closed: true, bulges: [1, 0, 0], layer: "FENCE" });
+    if (ents[0] && ents[0].type === "LWPOLYLINE") {
+      expect(ents[0].points).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    }
+  });
+
+  it("parses POLYLINE VERTEX bulges (group 42) until SEQEND", () => {
+    const src = `0
+POLYLINE
+8
+ROAD
+70
+1
+0
+VERTEX
+10
+0
+20
+0
+42
+1
+0
+VERTEX
+10
+10
+20
+0
+0
+SEQEND
+0
+EOF
+`;
+    const ents = parseDxf(src);
+    expect(ents).toHaveLength(1);
+    expect(ents[0]).toMatchObject({ type: "POLYLINE", closed: true, bulges: [1, 0] });
+  });
+
+  it("emits a tessellated <path> for a bulged polyline (closed Z)", () => {
+    const svg = dxfToSvg(parseDxf(BULGED_LWPOLYLINE));
+    expect(svg).toContain("<path d=");
+    expect(svg).toContain(" Z");
+    expect(svg).not.toContain("<polyline");
+  });
+
+  it("renders an open bulged polyline as a path without the closing Z", () => {
+    const src = `0
+LWPOLYLINE
+90
+2
+10
+0
+20
+0
+42
+-0.5
+10
+10
+20
+0
+0
+EOF
+`;
+    const svg = dxfToSvg(parseDxf(src));
+    expect(svg).toContain("<path d=");
+    expect(svg).not.toContain(" Z");
+  });
+
+  it("bounds a b=1 semicircle by its arc apex", () => {
+    const src = `0
+LWPOLYLINE
+90
+2
+10
+0
+20
+0
+42
+1
+10
+10
+20
+0
+0
+EOF
+`;
+    const b = dxfBounds(parseDxf(src));
+    expect(b).not.toBeNull();
+    if (b) {
+      expect(b.minX).toBeCloseTo(0, 0);
+      expect(b.maxX).toBeCloseTo(10, 0);
+      expect(b.minY).toBeCloseTo(-5, 0);
+      expect(b.maxY).toBeCloseTo(0, 0);
+    }
+  });
+
+  it("drops the bulges key when every segment is straight", () => {
+    const src = `0
+LWPOLYLINE
+90
+2
+10
+0
+20
+0
+42
+0
+10
+10
+20
+0
+0
+EOF
+`;
+    const ents = parseDxf(src);
+    expect(ents[0]).toMatchObject({ type: "LWPOLYLINE" });
+    expect("bulges" in (ents[0] as { bulges?: number[] })).toBe(false);
+  });
+});
+
+// ── B5.2 depth: linetype + lineweight carry-through ──────────────────────────
+
+describe("linetype + lineweight", () => {
+  it("resolves layer-level lineType/lineWeight and BYLAYER from the LAYER table", () => {
+    const src = `0
+SECTION
+2
+TABLES
+0
+TABLE
+2
+LAYER
+0
+LAYER
+2
+WALLS
+70
+0
+62
+1
+6
+DASHED
+370
+70
+0
+ENDTAB
+0
+ENDSEC
+0
+SECTION
+2
+ENTITIES
+0
+LINE
+8
+WALLS
+10
+0
+20
+0
+11
+10
+21
+0
+0
+LINE
+8
+WALLS
+6
+BYLAYER
+10
+0
+20
+10
+11
+10
+21
+20
+0
+0
+EOF
+`;
+    const ents = parseDxf(src);
+    expect(ents).toHaveLength(2);
+    expect(ents[0]).toMatchObject({ type: "LINE", lineType: "DASHED", lineWeight: 70 });
+    expect(ents[1]).toMatchObject({ type: "LINE", lineType: "DASHED", lineWeight: 70 });
+  });
+
+  it("lets an explicit group-6 override the layer linetype", () => {
+    const src = `0
+LINE
+8
+GRID
+6
+CENTER
+10
+0
+20
+0
+11
+10
+21
+0
+0
+EOF
+`;
+    const ents = parseDxf(src);
+    expect(ents[0]).toMatchObject({ type: "LINE", lineType: "CENTER" });
+  });
+
+  it("normalizes CONTINUOUS / BYBLOCK / unknown linetypes to continuous", () => {
+    const src = `0
+LINE
+8
+A
+6
+CONTINUOUS
+10
+0
+20
+0
+11
+5
+21
+0
+0
+LINE
+8
+B
+6
+ZOOM
+10
+0
+20
+10
+11
+5
+21
+10
+0
+LINE
+8
+C
+10
+0
+20
+20
+11
+5
+21
+20
+0
+0
+EOF
+`;
+    const ents = parseDxf(src);
+    expect(ents[0]).toMatchObject({ type: "LINE", lineType: undefined });
+    expect(ents[1]).toMatchObject({ type: "LINE", lineType: "ZOOM" });
+    expect(ents[2]).toMatchObject({ type: "LINE", lineType: undefined });
+    const svg = dxfToSvg(parseDxf(src));
+    expect(svg).not.toContain("stroke-dasharray");
+  });
+
+  it("renders a scaled stroke-dasharray and weight multiplier for known linetypes", () => {
+    const src = `0
+LINE
+8
+WALLS
+6
+DASHED
+370
+70
+10
+0
+20
+0
+11
+10
+21
+0
+0
+EOF
+`;
+    const svg = dxfToSvg(parseDxf(src));
+    // BBox width 10 → dim = max(10, 0)/32 = 0.3125…, but minY=0 maxY=0 → height
+    // is 0 until the zero-area guard bumps it ±1 → dim = max(10, 2)/32 = 0.3125.
+    expect(svg).toContain('stroke-dasharray="2.2 0.9"');
+    expect(svg).toContain('stroke-width="0.96"');
+  });
+
+  it("maps line weights to stroke-width multipliers", () => {
+    const line = (lay: string, wt: number): string => `0
+LINE
+8
+${lay}
+370
+${wt}
+10
+0
+20
+${wt}
+11
+10
+21
+${wt}
+0
+EOF
+`;
+    const svgThin = dxfToSvg(parseDxf(line("A", 18)));
+    const svgMed = dxfToSvg(parseDxf(line("B", 35)));
+    const svgThick = dxfToSvg(parseDxf(line("C", 70)));
+    const svgHeavy = dxfToSvg(parseDxf(line("D", 90)));
+    expect(svgThin).toContain('stroke-width="0.4"');
+    expect(svgMed).toContain('stroke-width="0.64"');
+    expect(svgThick).toContain('stroke-width="0.96"');
+    expect(svgHeavy).toContain('stroke-width="1.28"');
+  });
+});
+
+// ── B5.2 depth: POINT entities ───────────────────────────────────────────────
+
+describe("POINT", () => {
+  it("parses a POINT entity", () => {
+    const src = `0
+POINT
+8
+X
+10
+5
+20
+6
+0
+EOF
+`;
+    const ents = parseDxf(src);
+    expect(ents).toHaveLength(1);
+    expect(ents[0]).toMatchObject({ type: "POINT", x: 5, y: 6, layer: "X" });
+  });
+
+  it("renders a POINT as a filled dot with no stroke", () => {
+    const src = `0
+POINT
+10
+5
+20
+6
+0
+EOF
+`;
+    const svg = dxfToSvg(parseDxf(src));
+    expect(svg).toContain('<circle cx="5" cy="6" r="');
+    expect(svg).toContain('fill="currentColor" stroke="none"');
+  });
+
+  it("includes POINT coordinates in the bounds", () => {
+    const src = `0
+POINT
+10
+5
+20
+6
+0
+LINE
+10
+0
+20
+0
+11
+10
+21
+0
+0
+EOF
+`;
+    const b = dxfBounds(parseDxf(src));
+    expect(b).not.toBeNull();
+    if (b) {
+      expect(b.maxY).toBeCloseTo(6, 0);
+      expect(b.minX).toBeCloseTo(0, 0);
+      expect(b.maxX).toBeCloseTo(10, 0);
+    }
+  });
+});
+
+// ── B5.2 depth: bulges survive block INSERT transforms ───────────────────────
+
+const BULGED_BLOCK_DXF = (scale: string) => `0
+SECTION
+2
+BLOCKS
+0
+BLOCK
+8
+0
+2
+ARCWALL
+10
+0
+20
+0
+70
+0
+0
+LWPOLYLINE
+8
+FRAME
+90
+3
+70
+1
+10
+0
+20
+0
+42
+1
+10
+10
+20
+0
+10
+10
+20
+10
+0
+ENDBLK
+0
+ENDSEC
+0
+SECTION
+2
+ENTITIES
+0
+INSERT
+2
+ARCWALL
+10
+0
+20
+0
+${scale}
+50
+0
+0
+EOF
+`;
+
+describe("BLOCK / INSERT bulge transforms", () => {
+  it("keeps bulges under a uniform scale (geometric shape preserved)", () => {
+    const ents = parseDxf(BULGED_BLOCK_DXF(`41\n2\n42\n2`));
+    expect(ents).toHaveLength(1);
+    expect(ents[0]).toMatchObject({ type: "LWPOLYLINE", bulges: [1, 0, 0] });
+    if (ents[0] && ents[0].type === "LWPOLYLINE") {
+      expect(ents[0].points).toEqual([{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }]);
+    }
+    expect(dxfToSvg(ents)).toContain("<path d=");
+  });
+
+  it("flattens non-uniformly-scaled bulges into sampled straight segments", () => {
+    const ents = parseDxf(BULGED_BLOCK_DXF(`41\n2\n42\n1`));
+    expect(ents).toHaveLength(1);
+    expect(ents[0]).toMatchObject({ type: "LWPOLYLINE" });
+    expect("bulges" in (ents[0] as { bulges?: number[] })).toBe(false);
+    if (ents[0] && ents[0].type === "LWPOLYLINE") {
+      expect(ents[0].points.length).toBeGreaterThan(3);
+    }
+    const svg = dxfToSvg(ents);
+    expect(svg).toContain("<polyline ");
+    expect(svg).not.toContain("<path d=");
+  });
+});
