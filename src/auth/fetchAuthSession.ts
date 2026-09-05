@@ -20,6 +20,7 @@ import type {
   CapabilityOverride,
   OrgMembership,
   ProjectMembership,
+  RbacLayerContext,
 } from "./types";
 import {
   isIdentityRole,
@@ -33,14 +34,13 @@ import { normalizeOverride } from "./capabilityOverrides";
 import { customRoleGrants } from "./customRoles";
 import { isCapability, type Capability } from "./capabilities";
 import type { IdentityRole } from "./roles";
-import type { Rbac2Context, Rbac2Mode } from "./rbac2/types";
 import {
   normalizeAclEntry,
   normalizeClientPermission,
   normalizeProfileBinding,
   normalizeRoleProfile,
   normalizeVendorScope,
-} from "./rbac2/queries";
+} from "@/app/rbacQueries";
 
 // Narrow shape we expect from the Supabase client. Decoupled so we can
 // mock without pulling @supabase/supabase-js into Node tests. Structurally
@@ -270,73 +270,87 @@ export async function fetchCustomRoleOverrides(
 }
 
 /**
- * Fetch the RBAC V2 context (migrations 203–205) for the ACTIVE org.
- *
- * Fail-closed (SEC-05): once we KNOW the org runs 'enforce', a partial/failed
- * context fetch returns an EMPTY enforce context — `decideV2` is deny-by-
- * default, so the UI refuses rather than silently downgrading to the broader
- * matrix. `undefined` is returned ONLY for the legitimate matrix cases (no
- * active org, no settings row, or mode = 'matrix'); a failed MODE read also
- * returns undefined because we cannot know the org enforces V2 at all (the
- * org-level matrix default applies — documented residual in
- * docs/architecture/SECURITY_AUDIT_REGISTER.md).
+ * SEC-05 fail-closed empty layer context (deny-all). Returned when a
+ * context fetch fails mid-way: the resolver MUST treat a fetchError context
+ * as deny-all — never the broader matrix fallback.
  */
- 
-export async function fetchRbac2Context(
+const EMPTY_RBAC_LAYERS_FAIL: RbacLayerContext = {
+  profiles: [],
+  bindings: [],
+  acl: [],
+  clientPermissions: [],
+  vendorScopes: [],
+  fetchError: true,
+};
+
+/**
+ * Fetch the RBAC layer context (migrations 203–205) for the ACTIVE org.
+ *
+ * Always-on (RBAC V2 merged into the single integrated RBAC path): this runs
+ * for every session — there is no matrix/shadow/enforce mode read and no
+ * matrix early-return. Fail-closed (SEC-05): a partial/failed context fetch
+ * returns an EMPTY context with fetchError set, and the layered resolver
+ * denies everything rather than silently downgrading to the broader matrix.
+ * `undefined` is returned only when there is no active org (nothing to layer
+ * on — the matrix decides exactly as before).
+ */
+export async function fetchRbacLayers(
   client: FetchClient,
   authUserId: string,
   activeOrgId: string | null,
-): Promise<Rbac2Context | undefined> {
+): Promise<RbacLayerContext | undefined> {
   if (!activeOrgId) return undefined;
   try {
-    const modeRes = await client.from("org_rbac_settings").select("mode").eq("org_id", activeOrgId).maybeSingle();
-    const mode: Rbac2Mode | null = (modeRes?.data as { mode?: string } | null)?.mode as Rbac2Mode | null;
-    if (!mode || mode === "matrix") return undefined;
-
     // Assigned profiles for this user in the active org.
     const asgRes = await client
       .from("rbac_profile_assignments")
       .select("profile_id")
       .eq("org_id", activeOrgId)
       .eq("user_id", authUserId);
+    if (asgRes.error) return EMPTY_RBAC_LAYERS_FAIL;
     const profileIds = Array.isArray(asgRes?.data)
       ? (asgRes.data as Array<Record<string, unknown>>).map(r => String(r.profile_id)).filter(Boolean)
       : [];
 
-    const [profiles, bindings, acl, clientPermissions, vendorScopes] = await Promise.all([
-      profileIds.length
-        ? client.from("rbac_role_profiles").select("*").in("id", profileIds).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeRoleProfile).filter((o): o is NonNullable<typeof o> => o !== null))
-        : Promise.resolve([]),
-      profileIds.length
-        ? client.from("rbac_profile_bindings").select("*").in("profile_id", profileIds).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeProfileBinding).filter((o): o is NonNullable<typeof o> => o !== null))
-        : Promise.resolve([]),
-      client.from("resource_acl_entries").select("*").eq("org_id", activeOrgId).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeAclEntry).filter((o): o is NonNullable<typeof o> => o !== null)),
-      client.from("client_portal_permissions").select("*").eq("org_id", activeOrgId).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeClientPermission).filter((o): o is NonNullable<typeof o> => o !== null)),
-      client.from("vendor_project_scopes").select("*").eq("org_id", activeOrgId).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeVendorScope).filter((o): o is NonNullable<typeof o> => o !== null)),
-    ]);
+    const profilesRes = profileIds.length
+      ? client.from("rbac_role_profiles").select("*").in("id", profileIds)
+      : Promise.resolve({ data: [], error: null });
+    const bindingsRes = profileIds.length
+      ? client.from("rbac_profile_bindings").select("*").in("profile_id", profileIds)
+      : Promise.resolve({ data: [], error: null });
+    const aclRes = client.from("resource_acl_entries").select("*").eq("org_id", activeOrgId);
+    const clientRes = client.from("client_portal_permissions").select("*").eq("org_id", activeOrgId);
+    const vendorRes = client.from("vendor_project_scopes").select("*").eq("org_id", activeOrgId);
 
-    return { mode, profiles, bindings, acl, clientPermissions, vendorScopes };
+    const [profilesR, bindingsR, aclR, clientR, vendorR] = await Promise.all([
+      profilesRes,
+      bindingsRes,
+      aclRes,
+      clientRes,
+      vendorRes,
+    ]);
+    if (
+      (profilesR as { error?: unknown }).error ||
+      (bindingsR as { error?: unknown }).error ||
+      (aclR as { error?: unknown }).error ||
+      (clientR as { error?: unknown }).error ||
+      (vendorR as { error?: unknown }).error
+    ) {
+      return EMPTY_RBAC_LAYERS_FAIL;
+    }
+
+    const rows = (r: unknown): Array<Record<string, unknown>> =>
+      ((r as { data?: unknown }).data ?? []) as Array<Record<string, unknown>>;
+
+    return {
+      profiles: rows(profilesR).map(normalizeRoleProfile).filter((o): o is NonNullable<typeof o> => o !== null),
+      bindings: rows(bindingsR).map(normalizeProfileBinding).filter((o): o is NonNullable<typeof o> => o !== null),
+      acl: rows(aclR).map(normalizeAclEntry).filter((o): o is NonNullable<typeof o> => o !== null),
+      clientPermissions: rows(clientR).map(normalizeClientPermission).filter((o): o is NonNullable<typeof o> => o !== null),
+      vendorScopes: rows(vendorR).map(normalizeVendorScope).filter((o): o is NonNullable<typeof o> => o !== null),
+    };
   } catch {
-    // Mode known 'enforce' but the context fetch failed mid-way: fail closed
-    // with an empty enforce context so deny-by-default V2 decides (never the
-    // broader matrix). When the MODE read itself failed we fall through to
-    // undefined (cannot know the org enforces) — see the doc comment above.
-    let mode: Rbac2Mode | null = null;
-    try {
-      const modeRes = await client
-        .from("org_rbac_settings")
-        .select("mode")
-        .eq("org_id", activeOrgId)
-        .maybeSingle();
-      mode = (modeRes?.data as { mode?: string } | null)?.mode as Rbac2Mode | null;
-    } catch {
-      // Unknown mode → no V2 signal → undefined (matrix fallback elsewhere).
-      mode = null;
-    }
-    if (mode === "enforce" || mode === "shadow") {
-      return { mode, profiles: [], bindings: [], acl: [], clientPermissions: [], vendorScopes: [], fetchError: true };
-    }
-    return undefined;
+    return EMPTY_RBAC_LAYERS_FAIL;
   }
 }
 
@@ -420,8 +434,8 @@ export async function fetchAuthSession(
       ...(await fetchCustomRoleOverrides(client, input.authUserId, normalized.user.identityRole, session.activeOrgId)),
     ];
 
-    // 5. RBAC V2 context (migrations 203–205) for the active org.
-    session.rbac2 = await fetchRbac2Context(client, input.authUserId, session.activeOrgId);
+    // 5. RBAC layer context (migrations 203–205) for the active org.
+    session.rbacLayers = await fetchRbacLayers(client, input.authUserId, session.activeOrgId);
 
     return { ok: true, session };
   } catch (e) {

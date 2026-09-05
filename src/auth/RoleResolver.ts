@@ -1,4 +1,4 @@
-import type { AuthSession, ResolveContext, ResolvedCapabilities } from "./types";
+import type { AuthSession, CapabilityOverride, ResolveContext, ResolvedCapabilities } from "./types";
 import type { Capability } from "./capabilities";
 import {
   identityCapabilities,
@@ -9,7 +9,7 @@ import {
   isProjectTierRole,
 } from "./roles";
 import { applyOverrides } from "./capabilityOverrides";
-import { composeV2Caps, decideV2 } from "./rbac2/resolver";
+import { composeV2Caps, decideV2 } from "./rbacLayers";
 
 const ADMIN_EXTRA_CAPS: Capability[] = [
   "org:members:manage", "org:billing:manage", "org:integrations:manage",
@@ -43,10 +43,22 @@ function orgTierForContext(session: AuthSession, context: ResolveContext): "admi
   return null;
 }
 
-export function resolveCapabilities(
+/**
+ * Matrix-only capability base: identity + org-admin + project-tier, with
+ * superadmin overrides applied. The layered V2 resolver composes on top of
+ * this RAW matrix (never the already-composed set) so a single pass drives
+ * both resolveCapabilities() and can().
+ */
+function baseCapabilities(
   session: AuthSession,
-  context: ResolveContext = {},
-): ResolvedCapabilities {
+  context: ResolveContext,
+): {
+  capabilities: Set<Capability>;
+  fromIdentity: Capability[];
+  fromOrgAdmin?: Capability[];
+  fromProjectTier?: Capability[];
+  applied: CapabilityOverride[];
+} {
   const { user, orgs, projectMemberships } = session;
 
   const fromIdentity: Capability[] = isIdentityRole(user.identityRole)
@@ -76,38 +88,50 @@ export function resolveCapabilities(
   if (fromOrgAdmin) for (const c of fromOrgAdmin) union.add(c);
   if (fromProjectTier) for (const c of fromProjectTier) union.add(c);
 
-  const overrides = session.capabilityOverrides ?? [];
-  const all = applyOverrides(union, overrides, user.identityRole);
+  const applied = (session.capabilityOverrides ?? []).filter(o => o.role === user.identityRole);
 
-  // RBAC V2 layer: only applied when the session carries V2 context and the
-  // org mode is 'enforce'. In 'shadow' mode V2 is computed but the matrix
-  // still decides (audit-driven cutover); caller logs via writeAuditEvent().
-  const rbac2 = session.rbac2;
+  return {
+    capabilities: applyOverrides(union, session.capabilityOverrides ?? [], user.identityRole),
+    fromIdentity,
+    ...(fromOrgAdmin !== undefined ? { fromOrgAdmin } : {}),
+    ...(fromProjectTier !== undefined ? { fromProjectTier } : {}),
+    applied,
+  };
+}
+
+export function resolveCapabilities(
+  session: AuthSession,
+  context: ResolveContext = {},
+): ResolvedCapabilities {
+  const base = baseCapabilities(session, context);
+
+  // Layered V2 (RBAC V2 merged — always-on, no modes): when the session
+  // carries layer context, compose V2 over the RAW matrix. SEC-05 fail-closed:
+  // an enforce-context whose fetch failed mid-way (fetchError) denies
+  // EVERYTHING — never silently downgrade to the broader matrix. Server-side
+  // RLS (v2_policy_check) agrees: it has no data either, so it denies too.
+  const layers = session.rbacLayers;
   let v2Applied = false;
-  let capabilities = all;
+  let capabilities = base.capabilities;
   let v2Trace: { mode: string; denies: Capability[]; grants: Capability[] } | undefined;
-  if (rbac2 && rbac2.mode === "enforce") {
-    // SEC-05 fail-closed: an enforce-mode context whose fetch failed mid-way
-    // (fetchError) denies EVERYTHING — never silently downgrade to the broader
-    // matrix. Server-side RLS (v2_policy_check in enforce) agrees: it has no
-    // data either, so it denies too.
-    const composed = rbac2.fetchError
+  if (layers) {
+    v2Applied = true;
+    const composed = layers.fetchError
       ? new Set<Capability>()
       : composeV2Caps({
-          matrix: all,
-          ctx: rbac2,
-          userId: user.id,
-          identityRole: user.identityRole,
+          matrix: base.capabilities,
+          ctx: layers,
+          userId: session.user.id,
+          identityRole: session.user.identityRole,
           orgTier: orgTierForContext(session, context),
           resource: context.resource,
-          clientEmail: context.clientEmail ?? (user.identityRole === "client" ? user.email : undefined),
+          clientEmail: context.clientEmail ?? (session.user.identityRole === "client" ? session.user.email : undefined),
         });
     capabilities = composed;
-    v2Applied = true;
-    const removed = new Set<Capability>(all);
+    const removed = new Set<Capability>(base.capabilities);
     for (const c of composed) removed.delete(c);
     const added = new Set<Capability>(composed);
-    for (const c of all) added.delete(c);
+    for (const c of base.capabilities) added.delete(c);
     v2Trace = {
       mode: "enforce",
       denies: Array.from(removed),
@@ -115,13 +139,13 @@ export function resolveCapabilities(
     };
   }
 
-  const applied = overrides.filter(o => o.role === user.identityRole);
+  const applied = base.applied;
   return {
     capabilities,
     trace: {
-      fromIdentity,
-      ...(fromOrgAdmin !== undefined ? { fromOrgAdmin } : {}),
-      ...(fromProjectTier !== undefined ? { fromProjectTier } : {}),
+      fromIdentity: base.fromIdentity,
+      ...(base.fromOrgAdmin !== undefined ? { fromOrgAdmin: base.fromOrgAdmin } : {}),
+      ...(base.fromProjectTier !== undefined ? { fromProjectTier: base.fromProjectTier } : {}),
       ...(applied.length ? {
         overrideGrants: applied.filter(o => o.mode === "grant").map(o => o.capability),
         overrideRevokes: applied.filter(o => o.mode === "revoke").map(o => o.capability),
@@ -138,26 +162,25 @@ export function can(
   capability: Capability,
   context: ResolveContext = {},
 ): boolean {
-  // V2 shadow/enforce decision (ACL + bindings layered) when context present.
-  const rbac2 = session.rbac2;
-  if (rbac2 && (rbac2.mode === "shadow" || rbac2.mode === "enforce")) {
-    const matrix = resolveCapabilities(session, context).capabilities;
-    // shadow = matrix decides (V2 computed but never gates).
-    if (rbac2.mode === "shadow") return matrix.has(capability);
-    // SEC-05 fail-closed: enforce context fetch failure → deny (not matrix).
-    if (rbac2.fetchError) return false;
+  // Layered V2 (merged — always-on when the session carries layer context):
+  // decideV2 gates on the RAW matrix once (no double-pass). SEC-05 fail-closed:
+  // a fetchError layer context denies — not the matrix. Without layer context
+  // the matrix decides exactly as before.
+  const layers = session.rbacLayers;
+  if (layers) {
+    if (layers.fetchError) return false;
+    const matrix = baseCapabilities(session, context).capabilities;
     const d = decideV2({
       capability,
       matrixAllowed: matrix.has(capability),
       isSuperadmin: session.user.identityRole === "superadmin",
-      ctx: rbac2,
+      ctx: layers,
       userId: session.user.id,
       identityRole: session.user.identityRole,
       orgTier: orgTierForContext(session, context),
       resource: context.resource,
       clientEmail: context.clientEmail ?? (session.user.identityRole === "client" ? session.user.email : undefined),
     });
-    // enforce = V2 decides.
     return d.allowed;
   }
   return resolveCapabilities(session, context).capabilities.has(capability);

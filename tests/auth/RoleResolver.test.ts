@@ -174,8 +174,7 @@ describe("capabilitiesAnywhere", () => {
 });
 
 describe("RBAC V2 wiring (migrations 203–205)", () => {
-  const rbac2 = (partial: Partial<NonNullable<AuthSession["rbac2"]>>): NonNullable<AuthSession["rbac2"]> => ({
-    mode: "enforce",
+  const rbacLayers = (partial: Partial<NonNullable<AuthSession["rbacLayers"]>>): NonNullable<AuthSession["rbacLayers"]> => ({
     profiles: [],
     bindings: [],
     acl: [],
@@ -184,49 +183,51 @@ describe("RBAC V2 wiring (migrations 203–205)", () => {
     ...partial,
   });
 
-  it("matrix mode (absent rbac2) behaves exactly as before", () => {
+  it("absent rbacLayers behaves exactly as before (matrix-only)", () => {
     const s = sessionFor({ user: { id: "u", email: "a@b", name: "x", identityRole: "architect", isStaff: false } });
     expect(can(s, "drawings:upload")).toBe(true);
     expect(resolveCapabilities(s).trace.v2).toBeUndefined();
   });
 
-  it("shadow mode: matrix still decides; V2 informs but doesn't gate", () => {
+  it("layered (always-on): binding deny strips a matrix cap the matrix alone allowed", () => {
     const s = sessionFor({
       user: { id: "u-1", email: "a@b", name: "x", identityRole: "client", isStaff: false },
-      rbac2: rbac2({ mode: "shadow" }),
+      rbacLayers: rbacLayers({
+        bindings: [{ id: "b1", profileId: "p1", capability: "dpr:view", effect: "deny", note: null }],
+        profiles: [{ id: "p1", code: "no-view", name: "No view", description: null, segment: null, scope: "project", sourceRole: "client", isSystem: true, orgId: null, createdAt: "" }],
+      }),
     });
-    // matrix allows dpr:view for client → shadow keeps it (no ACL/policy)
-    expect(can(s, "dpr:view")).toBe(true);
-    // an ACL deny in shadow mode does NOT flip the decision
+    // matrix allows dpr:view for client → layering strips it via binding deny
+    expect(can(s, "dpr:view")).toBe(false);
+    // an ACL deny ALSO overrides the matrix allow
     const s2 = sessionFor({
       user: { id: "u-1", email: "a@b", name: "x", identityRole: "client", isStaff: false },
-      rbac2: rbac2({
-        mode: "shadow",
+      rbacLayers: rbacLayers({
         acl: [{ id: "a1", orgId: "o-1", resourceType: "project", resourceId: "p-1", subjectType: "user", subjectId: "u-1", capability: "dpr:view", effect: "deny", note: null, createdAt: "" }],
       }),
     });
-    expect(can(s2, "dpr:view", { orgId: "o-1", resource: { type: "project", id: "p-1" } })).toBe(true);
+    expect(can(s2, "dpr:view", { orgId: "o-1", resource: { type: "project", id: "p-1" } })).toBe(false);
   });
 
-  it("enforce mode: binding deny strips a matrix cap", () => {
+  it("layered (always-on): binding deny strips a matrix cap", () => {
     const s = sessionFor({
       user: { id: "u-1", email: "a@b", name: "x", identityRole: "pm", isStaff: false },
-      rbac2: rbac2({
+      rbacLayers: rbacLayers({
         profiles: [{ id: "prof-1", code: "custom-pm", name: "Custom PM", description: null, segment: null, scope: "project", sourceRole: null, isSystem: false, orgId: "o-1", createdAt: "" }],
         bindings: [{ id: "b1", profileId: "prof-1", capability: "milestone:add", effect: "deny", note: null }],
       }),
     });
     // pm identity matrix grants milestone:add (permissions-matrix.ts) — the
-    // binding deny strips it in enforce mode.
+    // binding deny strips it via the always-on layered resolver.
     expect(can(s, "milestone:add", { orgId: "o-1" })).toBe(false);
     const r = resolveCapabilities(s, { orgId: "o-1" });
     expect(r.trace.v2?.denies).toContain("milestone:add");
   });
 
-  it("enforce mode: ACL allow grants a cap the matrix lacks (resource-scoped)", () => {
+  it("layered (always-on): ACL allow grants a cap the matrix lacks (resource-scoped)", () => {
     const s = sessionFor({
       user: { id: "u-1", email: "client@example.com", name: "Client", identityRole: "client", isStaff: false },
-      rbac2: rbac2({
+      rbacLayers: rbacLayers({
         acl: [{ id: "a1", orgId: "o-1", resourceType: "drawing", resourceId: "d-1", subjectType: "user", subjectId: "u-1", capability: "budget:view", effect: "allow", note: null, createdAt: "" }],
       }),
     });
@@ -236,10 +237,10 @@ describe("RBAC V2 wiring (migrations 203–205)", () => {
     expect(can(s, "budget:view", { orgId: "o-1", resource: { type: "drawing", id: "d-2" } })).toBe(false);
   });
 
-  it("enforce mode: client portal permission grants share-scoped cap", () => {
+  it("layered (always-on): client portal permission grants share-scoped cap", () => {
     const s = sessionFor({
       user: { id: "u-1", email: "c@example.com", name: "C", identityRole: "client", isStaff: false },
-      rbac2: rbac2({
+      rbacLayers: rbacLayers({
         clientPermissions: [{ id: "cp1", orgId: "o-1", projectId: "p-1", clientEmail: "c@example.com", capability: "budget:edit", createdAt: "" }],
       }),
     });
@@ -247,10 +248,10 @@ describe("RBAC V2 wiring (migrations 203–205)", () => {
     expect(can(s, "budget:edit", { orgId: "o-1", resource: { type: "project", id: "p-2" }, clientEmail: "c@example.com" })).toBe(false);
   });
 
-  it("enforce mode: vendor scope grants project-scoped PO cap to vendor identity", () => {
+  it("layered (always-on): vendor scope grants project-scoped PO cap to vendor identity", () => {
     const s = sessionFor({
       user: { id: "v-1", email: "v@example.com", name: "V", identityRole: "vendor", isStaff: false },
-      rbac2: rbac2({
+      rbacLayers: rbacLayers({
         vendorScopes: [{ id: "vs1", orgId: "o-1", projectId: "p-1", vendorId: "vd-1", profileId: null, createdAt: "" }],
       }),
     });

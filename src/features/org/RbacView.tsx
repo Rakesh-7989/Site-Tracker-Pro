@@ -12,10 +12,9 @@ import {
   listBindingsForProfiles,
   listAclEntries,
   listAuditEvents,
-  getOrgRbacMode,
-  setOrgRbacMode,
-} from "@/auth/rbac2";
-import type { QueryClient, RoleProfile } from "@/auth/rbac2";
+  type QueryClient,
+} from "@/app/rbacQueries";
+import type { RoleProfile } from "@/auth/types";
 
 function getEffectClass(effect: string) {
   return effect === "allow" ? "text-fg-primary" : "text-error";
@@ -53,8 +52,6 @@ export function RbacView(): JSX.Element {
 function RbacViewBody(): JSX.Element {
   const { session } = useAuth();
   const { activeOrg } = useOrgSwitcher();
-  const [mode, setMode] = useState<"matrix" | "shadow" | "enforce">("matrix");
-  const [modeError, setModeError] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<RoleProfile[]>([]);
   const [cloningId, setCloningId] = useState<string | null>(null);
   const [cloneError, setCloneError] = useState<string | null>(null);
@@ -75,16 +72,6 @@ function RbacViewBody(): JSX.Element {
     if (!client) {
       setLoading(false);
       return;
-    }
-
-    // Fetch org RBAC mode from DB
-    const modeResult = await getOrgRbacMode(
-      client as unknown as QueryClient, 
-      activeOrg.orgId
-    );
-    if (modeResult.ok) {
-      const dbMode = modeResult.data === "shadow" || modeResult.data === "enforce" ? modeResult.data : "matrix";
-      setMode(dbMode);
     }
 
     // Fetch role profiles
@@ -133,23 +120,6 @@ function RbacViewBody(): JSX.Element {
 
   if (!session) return <></>;
   if (!activeOrg) return <Alert variant="warning">Select an organization first.</Alert>;
-
-  const handleModeChange = async (newMode: "matrix" | "shadow" | "enforce") => {
-    const client = await getClient();
-    if (!client) return;
-    try {
-      const setResult = await setOrgRbacMode(client as unknown as QueryClient, activeOrg.orgId, newMode);
-      if (setResult.ok) {
-        setMode(newMode);
-      } else {
-        setModeError(setResult.error ?? "Failed to update org RBAC mode");
-        setMode("matrix");
-      }
-    } catch (e) {
-      setModeError("Failed to update org RBAC mode");
-      setMode("matrix");
-    }
-  };
 
   const handleClone = async (profileId: string) => {
     setCloningId(profileId);
@@ -221,27 +191,11 @@ function RbacViewBody(): JSX.Element {
     <div className="p-4 md:p-10 max-w-4xl">
       <div className="flex items-end justify-between mb-8 pb-3 flex-wrap gap-3 border-b border-default">
         <div>
-          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-accent-2 mb-2">— RBAC V2 Admin</div>
-          <h1 className="font-display text-2xl md:text-4xl font-light text-fg-primary tracking-editorial leading-none">RBAC V2</h1>
-          <p className="text-fg-secondary text-sm mt-2">Organization RBAC V2 settings: mode controls how capability decisions are resolved.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-fg-secondary">Mode: </span>
-          <Select
-            value={mode}
-            onChange={e => {
-              const v = (e.target as HTMLSelectElement).value as "matrix" | "shadow" | "enforce";
-              setMode(v);
-              handleModeChange(v);
-            }}
-            options={["matrix", "shadow", "enforce"].map(val => ({ value: val, label: val }))}
-            className="p-2 border-default rounded-sm text-sm"
-          >
-            <option value="matrix">matrix</option>
-            <option value="shadow">shadow</option>
-            <option value="enforce">enforce</option>
-          </Select>
-          {modeError && <span className="text-error text-sm">{modeError}</span>}
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase text-accent-2 mb-2">— RBAC Admin</div>
+          <h1 className="font-display text-2xl md:text-4xl font-light text-fg-primary tracking-editorial leading-none">Organization Roles & Access</h1>
+          <p className="text-fg-secondary text-sm mt-2">
+            Role profiles, resource ACLs, and the layered capability resolver — enforced on every decision.
+          </p>
         </div>
       </div>
 
