@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Capability } from "@/auth/capabilities";
+import type { IdentityRole } from "@/auth/roles";
 import {
   aclDecision,
   assignedProfileCapabilities,
@@ -24,14 +25,14 @@ import type {
   RoleProfile,
 } from "@/auth/rbac2/types";
 
-const p = (id: string, code: string, sourceRole?: string, isSystem = true): RoleProfile => ({
+const p = (id: string, code: string, sourceRole?: IdentityRole, isSystem = true): RoleProfile => ({
   id,
   code,
   name: code,
   description: null,
   segment: "construction",
   scope: "project",
-  sourceRole: (sourceRole as any) ?? null,
+  sourceRole: sourceRole ?? null,
   isSystem,
   orgId: null,
   createdAt: "",

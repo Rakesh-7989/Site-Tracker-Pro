@@ -58,7 +58,7 @@ describe("query mappers", () => {
   });
   it("createCorrectiveAction inserts body defaulting priority/status", async () => {
     let inserted: Record<string, unknown> | null = null;
-    const client: any = {
+    const client = {
       from: () => {
         const chain = {
           insert: (row: unknown) => { inserted = row as Record<string, unknown>; return chain; },
@@ -72,21 +72,20 @@ describe("query mappers", () => {
     expect(inserted).toMatchObject({ project_id: "proj", description: "Re-level", priority: "high", status: "open", due_date: "2026-08-20", assigned_to: null, inspection_id: null });
   });
   it("setCorrectiveStatus stamps verified_by only on verified", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let patch: any = null;
-    const client: any = { from: () => ({ update: (p: unknown) => { patch = p; return { eq: async () => ({ data: null, error: null }) }; } }) };
+    let patch: unknown = null;
+    const client = { from: () => ({ update: (p: unknown) => { patch = p; return { eq: async () => ({ data: null, error: null }) }; } }) };
     await setCorrectiveStatus(client, "1", "in_progress");
     expect(patch).toMatchObject({ status: "in_progress" });
     await setCorrectiveStatus(client, "1", "verified", { verifiedBy: "u1" });
     expect(patch).toMatchObject({ status: "verified", verified_by: "u1" });
   });
   it("setCorrectiveStatus surfaces errors", async () => {
-    const client: any = { from: () => ({ update: () => ({ eq: async () => ({ data: null, error: { message: "denied" } }) }) }) };
+    const client = { from: () => ({ update: () => ({ eq: async () => ({ data: null, error: { message: "denied" } }) }) }) };
     const r = await setCorrectiveStatus(client, "1", "verified", { verifiedBy: "u1" });
     expect(r).toEqual({ ok: false, error: "denied" });
   });
   it("deleteCorrectiveAction surfaces errors", async () => {
-    const client: any = { from: () => ({ delete: () => ({ eq: async () => ({ data: null, error: { message: "gone" } }) }) }) };
+    const client = { from: () => ({ delete: () => ({ eq: async () => ({ data: null, error: { message: "gone" } }) }) }) };
     const r = await deleteCorrectiveAction(client, "1");
     expect(r).toEqual({ ok: false, error: "gone" });
   });

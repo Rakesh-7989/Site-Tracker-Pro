@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ClientDashboard } from "@/features/dashboards/ClientDashboard";
 import { listClientProjects } from "@/app/queries/clientPortalQueries";
@@ -20,15 +22,24 @@ vi.mock("@/auth", () => ({
   ROLE_LABEL: { client: "Client" },
 }));
 
+type MockAtomProps = {
+  children?: ReactNode;
+  className?: string;
+  status?: string;
+  value?: string | number;
+  label?: string;
+  [key: string]: unknown;
+};
+
 vi.mock("@/components/ui/atoms", () => ({
-  Card: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
+  Card: ({ children, className, ...props }: MockAtomProps) => <div className={className} {...props}>{children}</div>,
   Spinner: () => <div role="spinner">Spinner</div>,
-  Alert: ({ children }: any) => <div>{children}</div>,
+  Alert: ({ children }: MockAtomProps) => <div>{children}</div>,
   Icon: () => <span>icon</span>,
-  Badge: ({ children, ...props }: any) => <span {...props}>{children}</span>,
-  StatusBadge: ({ status }: any) => <span data-status={status}>{status}</span>,
-  ProgressBar: ({ value }: any) => <span data-progress={value}>{value}</span>,
-  StatCard: ({ label, value }: any) => (
+  Badge: ({ children, ...props }: MockAtomProps) => <span {...props}>{children}</span>,
+  StatusBadge: ({ status }: MockAtomProps) => <span data-status={status}>{status}</span>,
+  ProgressBar: ({ value }: MockAtomProps) => <span data-progress={value}>{value}</span>,
+  StatCard: ({ label, value }: MockAtomProps) => (
     <div data-stat>
       <span>{label}</span>
       <span>{value}</span>
@@ -36,11 +47,16 @@ vi.mock("@/components/ui/atoms", () => ({
   ),
 }));
 
+type MockSelectProps = {
+  options?: Array<{ value: string | number; label: string }>;
+  [key: string]: unknown;
+};
+
 vi.mock("@/components/ui/forms", () => ({
-  Input: ({ placeholder, ...props }: any) => <input placeholder={placeholder} {...props} />,
-  Textarea: ({ placeholder, ...props }: any) => <textarea placeholder={placeholder} {...props} />,
-  Select: ({ options, ...props }: any) => (
-    <select {...props}>{options.map((opt: any) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}</select>
+  Input: ({ placeholder, ...props }: InputHTMLAttributes<HTMLInputElement> & Record<string, unknown>) => <input placeholder={placeholder} {...props} />,
+  Textarea: ({ placeholder, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & Record<string, unknown>) => <textarea placeholder={placeholder} {...props} />,
+  Select: ({ options, ...props }: MockSelectProps) => (
+    <select {...props}>{options?.map((opt) => (<option key={String(opt.value)} value={String(opt.value)}>{opt.label}</option>))}</select>
   ),
 }));
 

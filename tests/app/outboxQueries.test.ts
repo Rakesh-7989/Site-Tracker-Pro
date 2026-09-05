@@ -8,14 +8,14 @@ import {
   OUTBOX_STATUS_LABEL, OUTBOX_STATUS_TONE, isOutboxStatus, outboxStatus,
   mapOutboxRow, outboxRollup,
 } from "@/app/queries/outboxQueries";
-function mockRpc(impl: any): TypedSupabaseClient {
+function mockRpc(impl: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>): TypedSupabaseClient {
   return { rpc: impl } as unknown as TypedSupabaseClient;
 }
 
 describe("publishEvent", () => {
   it("calls the publish_event RPC with typed args", async () => {
-    const calls: any[] = [];
-    const client = mockRpc(async (_fn: string, args: any) => {
+    const calls: Array<Record<string, unknown>> = [];
+    const client = mockRpc(async (_fn: string, args: Record<string, unknown>) => {
       calls.push(args);
       return { data: "evt-1", error: null };
     });
@@ -28,7 +28,7 @@ describe("publishEvent", () => {
       payload: { title: "CA opened", body: "action", link: "/x" },
     });
     expect(res.ok).toBe(true);
-    expect((res as any).data).toEqual({ eventId: "evt-1" });
+    expect((res as unknown as { data?: unknown }).data).toEqual({ eventId: "evt-1" });
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
       p_type: "corrective_action.opened",
@@ -41,8 +41,8 @@ describe("publishEvent", () => {
   });
 
   it("defaults null project/entity args", async () => {
-    const calls: any[] = [];
-    const client = mockRpc(async (_fn: string, args: any) => {
+    const calls: Array<Record<string, unknown>> = [];
+    const client = mockRpc(async (_fn: string, args: Record<string, unknown>) => {
       calls.push(args);
       return { data: "evt-2", error: null };
     });
@@ -72,8 +72,8 @@ describe("publishEvent", () => {
 
 describe("publishOrgBroadcast", () => {
   it("publishes an org.broadcast event with a link", async () => {
-    const calls: any[] = [];
-    const client = mockRpc(async (_fn: string, args: any) => {
+    const calls: Array<Record<string, unknown>> = [];
+    const client = mockRpc(async (_fn: string, args: Record<string, unknown>) => {
       calls.push(args);
       return { data: "evt-3", error: null };
     });
@@ -144,7 +144,7 @@ describe("mapOutboxRow", () => {
 });
 
 describe("outboxRollup", () => {
-  const mk = (status: any, n = 1) => Array.from({ length: n }, (_, i) =>
+  const mk = (status: string, n = 1) => Array.from({ length: n }, (_, i) =>
     mapOutboxRow({ id: `e${i}`, type: "x", org_id: "o", status }));
 
   it("counts pending/delivered/failed + delivery %", () => {
@@ -176,8 +176,8 @@ describe("P2.3 typed domain-event publishers", () => {
   });
 
   it("publishInvoiceGenerated calls publish_event with typed args", async () => {
-    const calls: any[] = [];
-    const client = mockRpc(async (_fn: string, args: any) => { calls.push(args); return { data: "evt-i1", error: null }; });
+    const calls: Array<Record<string, unknown>> = [];
+    const client = mockRpc(async (_fn: string, args: Record<string, unknown>) => { calls.push(args); return { data: "evt-i1", error: null }; });
     const res = await publishInvoiceGenerated(client, { orgId: "org-1", projectId: "proj-1", invoiceId: "inv-9", invoiceNo: "INV-9", amount: 500 });
     expect(res.ok).toBe(true);
     expect(calls[0]).toMatchObject({
@@ -206,8 +206,8 @@ describe("P2.3 typed domain-event publishers", () => {
   });
 
   it("publishQuoteAccepted calls publish_event with quote entity", async () => {
-    const calls: any[] = [];
-    const client = mockRpc(async (_fn: string, args: any) => { calls.push(args); return { data: "evt-q1", error: null }; });
+    const calls: Array<Record<string, unknown>> = [];
+    const client = mockRpc(async (_fn: string, args: Record<string, unknown>) => { calls.push(args); return { data: "evt-q1", error: null }; });
     const res = await publishQuoteAccepted(client, { orgId: "org-1", projectId: "proj-1", quoteId: "q-7", itemName: "Steel", vendorName: "MS", amount: 900 });
     expect(res.ok).toBe(true);
     expect(calls[0]).toMatchObject({
@@ -234,8 +234,8 @@ describe("P2.3 typed domain-event publishers", () => {
   });
 
   it("publishCorrectiveActionOpened calls publish_event with corrective_action entity", async () => {
-    const calls: any[] = [];
-    const client = mockRpc(async (_fn: string, args: any) => { calls.push(args); return { data: "evt-c1", error: null }; });
+    const calls: Array<Record<string, unknown>> = [];
+    const client = mockRpc(async (_fn: string, args: Record<string, unknown>) => { calls.push(args); return { data: "evt-c1", error: null }; });
     const res = await publishCorrectiveActionOpened(client, { orgId: "org-1", projectId: "proj-1", actionId: "ca-3", description: "Fix joint", priority: "critical" });
     expect(res.ok).toBe(true);
     expect(calls[0]).toMatchObject({

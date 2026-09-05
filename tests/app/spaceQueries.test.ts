@@ -10,28 +10,38 @@ import type { TypedSupabaseClient } from "@/lib/supabase/db";
 // Mock query chains are structural fakes — bridge them to the typed client once.
 const asTyped = (c: unknown): TypedSupabaseClient => c as unknown as TypedSupabaseClient;
 
-function makeClient(overrides: Record<string, any> = {}): { from: (t: string) => any; __calls: Array<{ table: string; ops: string[] }> } {
+type MockChain = {
+  calls: string[];
+  table: string;
+  select: () => MockChain;
+  order: (_c?: string) => MockChain;
+  eq: (k: string, v: unknown) => MockChain;
+  in: (k: string, v: unknown[]) => MockChain;
+  then: ((res: (v: unknown) => unknown) => Promise<unknown>) | undefined;
+};
+
+function makeClient(overrides: Record<string, unknown> = {}): { from: (t: string) => MockChain; __calls: Array<{ table: string; ops: string[] }> } {
   const calls: Array<{ table: string; ops: string[] }> = [];
   const from = (table: string) => {
-    const q: any = {
-      calls: [] as any[],
+    const q: MockChain = {
+      calls: [] as string[],
       table,
       select() { q.calls.push("select"); return q; },
       order(_c?: string) { q.calls.push("order"); return q; },
       eq(k: string, v: unknown) { q.calls.push(`eq:${k}=${v}`); return q; },
       in(k: string, v: unknown[]) { q.calls.push(`in:${k}=${JSON.stringify(v)}`); return q; },
-      then: undefined as any,
+      then: undefined,
     };
     const run = () => {
       calls.push({ table, ops: q.calls });
       const h = overrides[table];
       if (typeof h === "function") return h(q.calls);
-      if (h && typeof h.error === "object") return h;
+      if (h && typeof (h as { error?: unknown }).error === "object") return h;
       return { data: h ?? [], error: null };
     };
     // supabase chains are thenable; our mappers await them.
     Object.defineProperty(q, "then", {
-      value: (res: (v: any) => any) => Promise.resolve(run()).then(res),
+      value: (res: (v: unknown) => unknown) => Promise.resolve(run()).then(res),
     });
     return q;
   };
