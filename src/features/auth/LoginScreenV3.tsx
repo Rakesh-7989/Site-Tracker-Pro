@@ -242,12 +242,9 @@ export function LoginScreenV3({ lane = "org" }: LoginScreenV3Props = {}): JSX.El
       {/* Right auth panel */}
       <div className="flex items-center justify-center p-6 bg-panel">
         <Card className="w-full max-w-md p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
-            <div>
-              <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
-              <div className="text-[11px] text-fg-secondary">{t(meta.subKey)}</div>
-            </div>
+          <div className="mb-5">
+            <img src="/logo-horizontal.png" alt="SiteTrack Pro" className="h-7 w-auto" />
+            <div className="text-[11px] text-fg-secondary mt-1.5">{t(meta.subKey)}</div>
           </div>
 
           {mfaFactorId ? (

@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import { raNetPayable, stockBalance, listRaBills, type LedgerTxn } from "@/app/queries/financeQueries";
 import { listDrawings, listRfis, applyAutoSupersede, type Drawing } from "@/app/queries/designQueries";
 import { approvalCapabilityForKind } from "@/app/queries/approvalsQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};
@@ -11,7 +12,7 @@ function chain(result: { data?: unknown; error?: unknown }) {
   c.then = (resolve: (v: unknown) => unknown) => resolve(result);
   return c;
 }
-const mockClient = (result: { data?: unknown; error?: unknown }) => ({ from: () => chain(result) });
+const mockClient = (result: { data?: unknown; error?: unknown }): TypedSupabaseClient => ({ from: () => chain(result) } as unknown as TypedSupabaseClient);
 const drawing = (over: Partial<Drawing>): Drawing => ({
   id: "d1", projectId: "proj1", title: "GF plan", type: "architectural",
   revision: "Rev A", status: "current", releaseDate: "2026-06-01",

@@ -182,7 +182,7 @@ interface SiteUpdate {
   notes: string;
   weather: string;
   workers_count: number;
-  photos: any[];
+  photos: unknown[];
 }
 
 export const INIT_UPDATES: Record<string, SiteUpdate[]> = {
@@ -681,7 +681,7 @@ interface Equipment {
   entry_date: string;
   exit_date: string | null;
   notes: string;
-  attachments: any[];
+  attachments: unknown[];
 }
 
 export const INIT_EQUIPMENT: Record<string, Equipment[]> = {
@@ -701,7 +701,7 @@ interface DiaryEntry {
   work_done: string;
   workers_total: number;
   remarks: string;
-  attachments: any[];
+  attachments: unknown[];
 }
 
 export const INIT_DIARY: Record<string, DiaryEntry[]> = {
@@ -718,7 +718,7 @@ interface WorkLog {
   workers: number;
   hours: number;
   status: string;
-  attachments: any[];
+  attachments: unknown[];
 }
 
 export const INIT_WORKLOGS: Record<string, WorkLog[]> = {
@@ -738,7 +738,7 @@ interface Checklist {
   items: string[];
   checked_by: string;
   date: string;
-  attachments: any[];
+  attachments: unknown[];
 }
 
 export const INIT_CHECKLISTS: Record<string, Checklist[]> = {
@@ -759,7 +759,7 @@ interface Submittal {
   status: string;
   bic: string;
   notes: string;
-  attachments: any[];
+  attachments: unknown[];
 }
 
 export const INIT_SUBMITTALS: Record<string, Submittal[]> = {
@@ -778,7 +778,7 @@ interface Permit {
   due_date: string;
   expiry: string;
   notes: string;
-  attachments: any[];
+  attachments: unknown[];
 }
 
 export const INIT_PERMITS: Record<string, Permit[]> = {
@@ -795,7 +795,7 @@ interface Message {
   role: string;
   text: string;
   time: string;
-  attachments: any[];
+  attachments: unknown[];
 }
 
 export const INIT_MESSAGES: Record<string, Message[]> = {

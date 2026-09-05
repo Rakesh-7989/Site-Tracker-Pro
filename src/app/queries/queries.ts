@@ -9,6 +9,7 @@ import type { ProjectType, ProjectTierRole, ConstructionIndustry, AuthSession } 
 import { isProjectTierRole } from "@/auth";
 import type { ProjectLifecycleStatus } from "@/lib/projectLifecycle";
 import { isProjectLifecycleStatus } from "@/lib/projectLifecycle";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export interface ProjectSummary {
   id: string;
@@ -78,7 +79,7 @@ export function memberProjectScope(session: AuthSession): MemberProjectScope {
  */
  
 export async function listProjectsForOrg(
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string,
   scope: MemberProjectScope = { mode: "all" },
 ): Promise<QueryResult<ProjectSummary[]>> {
@@ -121,7 +122,7 @@ export async function listProjectsForOrg(
  */
  
 export async function createProject(
-  client: any,
+  client: TypedSupabaseClient,
   input: {
     orgId: string; name: string; type: ProjectType; location?: string;
     industrySubtype?: ConstructionIndustry | string | null;
@@ -159,8 +160,7 @@ export async function createProject(
  * org member read it. Returns ok:false with a clear error when not found
  * or not accessible.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getProject(client: any, projectId: string): Promise<QueryResult<ProjectDetail>> {
+export async function getProject(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<ProjectDetail>> {
   try {
     const { data, error } = await client
       .from("projects")
@@ -200,8 +200,7 @@ export async function getProject(client: any, projectId: string): Promise<QueryR
  * List active members of a project (joined with profile names). RLS
  * (project_members_read) lets any org member read these.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listProjectMembers(client: any, projectId: string): Promise<QueryResult<ProjectMemberRow[]>> {
+export async function listProjectMembers(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<ProjectMemberRow[]>> {
   try {
     const { data, error } = await client
       .from("project_members")
@@ -241,7 +240,7 @@ export interface ProjectLifecyclePatch {
  */
  
 export async function setProjectStatus(
-  client: any,
+  client: TypedSupabaseClient,
   projectId: string,
   status: ProjectLifecycleStatus,
 ): Promise<QueryResult<ProjectLifecyclePatch>> {
@@ -273,8 +272,7 @@ export async function setProjectStatus(
  * active list and frees its quota slot (migrations 35/97 count only
  * `archived_at IS NULL`). Gated by `project:archive`.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function archiveProject(client: any, projectId: string): Promise<QueryResult<ProjectLifecyclePatch>> {
+export async function archiveProject(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<ProjectLifecyclePatch>> {
   try {
     const { data, error } = await client
       .from("projects")
@@ -300,8 +298,7 @@ export async function archiveProject(client: any, projectId: string): Promise<Qu
  * Restore an archived project — clears `archived_at` and returns status to
  * `active`. Gated by `project:restore`.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function restoreProject(client: any, projectId: string): Promise<QueryResult<ProjectLifecyclePatch>> {
+export async function restoreProject(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<ProjectLifecyclePatch>> {
   try {
     const { data, error } = await client
       .from("projects")
@@ -327,8 +324,7 @@ export async function restoreProject(client: any, projectId: string): Promise<Qu
  * Hard-delete a project. Irreversible — superadmin only (frontend gates on
  * `project:delete`). Child rows cascade via their FKs.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteProject(client: any, projectId: string): Promise<QueryResult<null>> {
+export async function deleteProject(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<null>> {
   try {
     const { error } = await client.from("projects").delete().eq("id", projectId);
     if (error) return { ok: false, error: String(error.message ?? error) };

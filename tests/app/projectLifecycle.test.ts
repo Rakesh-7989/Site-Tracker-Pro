@@ -19,6 +19,7 @@ import {
   restoreProject,
   deleteProject,
 } from "@/app/queries/queries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 describe("projectLifecycle pure helpers", () => {
   it("recognises the full status set", () => {
@@ -106,7 +107,7 @@ describe("project lifecycle queries", () => {
           },
         };
       },
-    };
+    } as unknown as TypedSupabaseClient;
   }
 
   it("setProjectStatus validates the status before updating", async () => {

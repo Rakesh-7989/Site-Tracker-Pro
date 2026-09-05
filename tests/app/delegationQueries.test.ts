@@ -1,9 +1,12 @@
 // SiteTrack Pro — delegation queries tests (v3 shell).
 
 import { describe, it, expect } from "vitest";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import {
   listDelegations, listOrgMembers, createDelegation, revokeDelegation,
 } from "@/app/queries/delegationQueries";
+
+const asTyped = (c: unknown): TypedSupabaseClient => c as unknown as TypedSupabaseClient;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function resp(data: unknown, error: unknown): any {
@@ -29,7 +32,7 @@ describe("listDelegations", () => {
       from_profile: { name: "Alice" },
       to_profile: { name: "Bob" },
     }], null);
-    const r = await listDelegations(client, "u1");
+    const r = await listDelegations(asTyped(client), "u1");
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.data).toHaveLength(1);
@@ -41,7 +44,7 @@ describe("listDelegations", () => {
   });
 
   it("handles empty results", async () => {
-    const r = await listDelegations(clientFor([], null), "u1");
+    const r = await listDelegations(asTyped(clientFor([], null)), "u1");
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.data).toEqual([]);
   });
@@ -53,7 +56,7 @@ describe("listOrgMembers", () => {
       profile_id: "u1", role: "admin", status: "active",
       profiles: { name: "Alice" },
     }], null);
-    const r = await listOrgMembers(client, "o-1");
+    const r = await listOrgMembers(asTyped(client), "o-1");
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.data[0]!.id).toBe("u1");
@@ -66,7 +69,7 @@ describe("listOrgMembers", () => {
 describe("createDelegation", () => {
   it("returns the new id", async () => {
     const client = clientFor({ id: "d-new" }, null);
-    const r = await createDelegation(client, {
+    const r = await createDelegation(asTyped(client), {
       orgId: "o-1", fromUserId: "u1", toUserId: "u2",
       scope: "all", start: "2026-01-01", end: "2026-03-01",
       reason: "Vacation", createdBy: "u1",
@@ -77,7 +80,7 @@ describe("createDelegation", () => {
 
   it("surfaces insert errors", async () => {
     const client = clientFor(null, { message: "RLS" });
-    const r = await createDelegation(client, {
+    const r = await createDelegation(asTyped(client), {
       orgId: "o-1", fromUserId: "u1", toUserId: "u2",
       scope: "ra_bills", start: "2026-01-01", end: "2026-03-01",
       reason: "", createdBy: "u1",
@@ -89,7 +92,7 @@ describe("createDelegation", () => {
 
 describe("revokeDelegation", () => {
   it("returns ok on success", async () => {
-    const r = await revokeDelegation(clientFor(null, null), "d-1", "u1");
+    const r = await revokeDelegation(asTyped(clientFor(null, null)), "d-1", "u1");
     expect(r.ok).toBe(true);
   });
 });

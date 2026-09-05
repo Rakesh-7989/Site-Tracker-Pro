@@ -2,6 +2,7 @@
 // Schema: scripts/supabase/12_delegations.sql
 
 import type { QueryResult } from "./queries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export interface DelegationRow {
   id: string;
@@ -49,8 +50,7 @@ function toJsScope(dbResource: string): string {
   return SCOPE_UNMAP[dbResource] ?? dbResource;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listDelegations(client: any, userId: string): Promise<QueryResult<DelegationRow[]>> {
+export async function listDelegations(client: TypedSupabaseClient, userId: string): Promise<QueryResult<DelegationRow[]>> {
   try {
     const { data, error } = await client
       .from("delegations")
@@ -90,8 +90,7 @@ export async function listDelegations(client: any, userId: string): Promise<Quer
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgMembers(client: any, orgId: string): Promise<QueryResult<OrgMemberRow[]>> {
+export async function listOrgMembers(client: TypedSupabaseClient, orgId: string): Promise<QueryResult<OrgMemberRow[]>> {
   try {
     const { data, error } = await client
       .from("org_members")
@@ -119,7 +118,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<QueryR
 
  
 export async function createDelegation(
-  client: any,
+  client: TypedSupabaseClient,
   input: { orgId: string; fromUserId: string; toUserId: string; scope: string; start: string; end: string; reason: string; createdBy: string },
 ): Promise<QueryResult<{ id: string }>> {
   try {
@@ -144,8 +143,7 @@ export async function createDelegation(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function revokeDelegation(client: any, delegationId: string, revokedBy: string): Promise<QueryResult<null>> {
+export async function revokeDelegation(client: TypedSupabaseClient, delegationId: string, revokedBy: string): Promise<QueryResult<null>> {
   try {
     const { error } = await client
       .from("delegations")

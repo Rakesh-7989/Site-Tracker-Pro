@@ -5,6 +5,7 @@
 // Pure helpers for rollup + gating logic.
 
 import type { QueryResult } from "./queries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export interface QuotaRow {
   resource: "users" | "projects" | "storage" | "deliverables" | "crm_leads";
@@ -13,18 +14,18 @@ export interface QuotaRow {
   atQuota: boolean;
 }
 
-export async function fetchOrgQuota(client: any, orgId: string): Promise<QueryResult<QuotaRow[]>> {
+export async function fetchOrgQuota(client: TypedSupabaseClient, orgId: string): Promise<QueryResult<QuotaRow[]>> {
   try {
-    const { data, error } = await (client as any).rpc("org_quota_snapshot", { p_org_id: orgId });
+    const { data, error } = await client.rpc("org_quota_snapshot", { p_org_id: orgId }) as { data: Array<Record<string, unknown>> | null; error: { message: string } | null };
     if (error) return { ok: false, error: String(error.message ?? error) };
-    const rows: QuotaRow[] = (data ?? []).map((r: any) => {
+    const rows = ((data ?? []) as Array<Record<string, unknown>>).map(r => {
       const resource = String(r.resource);
       return {
-        resource,
+        resource: resource as QuotaRow["resource"],
         currentCount: Number(r.current_count ?? 0),
         maxAllowed: r.max_allowed === null ? null : Number(r.max_allowed),
         atQuota: Boolean(r.at_quota),
-      };
+      } satisfies QuotaRow;
     });
     return { ok: true, data: rows };
   } catch (e) {

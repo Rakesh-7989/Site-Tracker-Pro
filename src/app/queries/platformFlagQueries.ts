@@ -1,3 +1,5 @@
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
+
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface PlatformFlagRow {
@@ -9,7 +11,7 @@ export interface PlatformFlagRow {
   updated_at: string | null;
 }
 
-export async function listPlatformFlags(client: any): Promise<PResult<PlatformFlagRow[]>> {
+export async function listPlatformFlags(client: TypedSupabaseClient): Promise<PResult<PlatformFlagRow[]>> {
   try {
     const { data, error } = await client
       .from("platform_feature_flags")
@@ -18,7 +20,7 @@ export async function listPlatformFlags(client: any): Promise<PResult<PlatformFl
     if (error) return { ok: false, error: String(error.message ?? error) };
     return {
       ok: true,
-      data: (data ?? []).map((r: any) => ({
+      data: (data ?? []).map((r) => ({
         key: r.key,
         enabled: r.enabled ?? true,
         rollout: r.rollout ?? 100,
@@ -33,7 +35,7 @@ export async function listPlatformFlags(client: any): Promise<PResult<PlatformFl
 }
 
 export async function upsertPlatformFlag(
-  client: any,
+  client: TypedSupabaseClient,
   key: string,
   enabled: boolean,
   updatedBy: string,
@@ -41,7 +43,7 @@ export async function upsertPlatformFlag(
   note?: string | null,
 ): Promise<PResult<void>> {
   try {
-    const payload: Record<string, unknown> = { key, enabled, updated_by: updatedBy };
+    const payload: { key: string; enabled: boolean; updated_by: string; rollout?: number; note?: string | null } = { key, enabled, updated_by: updatedBy };
     if (rollout !== undefined) payload.rollout = rollout;
     if (note !== undefined) payload.note = note;
     const { error } = await client

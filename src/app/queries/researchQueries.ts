@@ -6,6 +6,8 @@ const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
 const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: String(e.message ?? e) });
 
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
+
 export type DocumentSourceType = 'is_code' | 'astm_standard' | 'research_paper' | 'material_datasheet' | 'method_statement' | 'case_study' | 'technical_note' | 'regulation' | 'other';
 export type DocumentCategory = 'concrete' | 'steel' | 'geotech' | 'structural' | 'materials' | 'sustainability' | 'bim' | 'safety' | 'cost' | 'other';
 export type DocumentStatus = 'draft' | 'reviewed' | 'approved' | 'archived';
@@ -99,8 +101,7 @@ function mapCollection(r: Record<string, unknown>): ResearchCollection {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listDocuments(client: any, orgId: string, filters?: {
+export async function listDocuments(client: TypedSupabaseClient, orgId: string, filters?: {
   projectId?: string;
   category?: string;
   sourceType?: string;
@@ -127,12 +128,11 @@ export async function listDocuments(client: any, orgId: string, filters?: {
 
     const { data, error } = await query;
     if (error) return dbe(error);
-    return ok(((data ?? []) as any[]).map(mapDocument));
+    return ok(((data ?? []) as Record<string, unknown>[]).map(mapDocument));
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getDocument(client: any, orgId: string, id: string): Promise<Result<ResearchDocument | null>> {
+export async function getDocument(client: TypedSupabaseClient, orgId: string, id: string): Promise<Result<ResearchDocument | null>> {
   try {
     const { data, error } = await client.from('research_documents')
       .select('*')
@@ -144,8 +144,7 @@ export async function getDocument(client: any, orgId: string, id: string): Promi
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createDocument(client: any, input: {
+export async function createDocument(client: TypedSupabaseClient, input: {
   orgId: string;
   projectId?: string | null;
   title: string;
@@ -189,8 +188,7 @@ export async function createDocument(client: any, input: {
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function updateDocument(client: any, orgId: string, id: string, patch: Partial<ResearchDocument>): Promise<Result<{ ok: true }>> {
+export async function updateDocument(client: TypedSupabaseClient, orgId: string, id: string, patch: Partial<ResearchDocument>): Promise<Result<{ ok: true }>> {
   try {
     const dbPatch: Record<string, unknown> = {};
     if (patch.title !== undefined) dbPatch.title = patch.title;
@@ -211,14 +209,13 @@ export async function updateDocument(client: any, orgId: string, id: string, pat
     if (patch.status !== undefined) dbPatch.status = patch.status;
     if (patch.relevanceScore !== undefined) dbPatch.relevance_score = patch.relevanceScore;
 
-    const { error } = await client.from('research_documents').update(dbPatch).eq('id', id).eq('org_id', orgId);
+    const { error } = await client.from('research_documents').update(dbPatch as never).eq('id', id).eq('org_id', orgId);
     if (error) return dbe(error);
     return ok({ ok: true });
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteDocument(client: any, orgId: string, id: string): Promise<Result<{ ok: true }>> {
+export async function deleteDocument(client: TypedSupabaseClient, orgId: string, id: string): Promise<Result<{ ok: true }>> {
   try {
     const { error } = await client.from('research_documents').delete().eq('id', id).eq('org_id', orgId);
     if (error) return dbe(error);
@@ -228,20 +225,18 @@ export async function deleteDocument(client: any, orgId: string, id: string): Pr
 
 // ── Collections ────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listCollections(client: any, orgId: string): Promise<Result<ResearchCollection[]>> {
+export async function listCollections(client: TypedSupabaseClient, orgId: string): Promise<Result<ResearchCollection[]>> {
   try {
     const { data, error } = await client.from('research_collections')
       .select('*')
       .eq('org_id', orgId)
       .order('updated_at', { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as any[]).map(mapCollection));
+    return ok(((data ?? []) as Record<string, unknown>[]).map(mapCollection));
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getCollection(client: any, orgId: string, id: string): Promise<Result<ResearchCollection | null>> {
+export async function getCollection(client: TypedSupabaseClient, orgId: string, id: string): Promise<Result<ResearchCollection | null>> {
   try {
     const { data, error } = await client.from('research_collections')
       .select('*')
@@ -253,8 +248,7 @@ export async function getCollection(client: any, orgId: string, id: string): Pro
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createCollection(client: any, input: { orgId: string; name: string; description?: string | null; isPublic?: boolean }): Promise<Result<{ id: string }>> {
+export async function createCollection(client: TypedSupabaseClient, input: { orgId: string; name: string; description?: string | null; isPublic?: boolean }): Promise<Result<{ id: string }>> {
   try {
     const { data, error } = await client.from('research_collections').insert({
       org_id: input.orgId,
@@ -267,8 +261,7 @@ export async function createCollection(client: any, input: { orgId: string; name
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function updateCollection(client: any, orgId: string, id: string, patch: Partial<ResearchCollection>): Promise<Result<{ ok: true }>> {
+export async function updateCollection(client: TypedSupabaseClient, orgId: string, id: string, patch: Partial<ResearchCollection>): Promise<Result<{ ok: true }>> {
   try {
     const dbPatch: Record<string, unknown> = {};
     if (patch.name !== undefined) dbPatch.name = patch.name;
@@ -276,14 +269,13 @@ export async function updateCollection(client: any, orgId: string, id: string, p
     if (patch.isPublic !== undefined) dbPatch.is_public = patch.isPublic;
     if (patch.coverImagePath !== undefined) dbPatch.cover_image_path = patch.coverImagePath;
 
-    const { error } = await client.from('research_collections').update(dbPatch).eq('id', id).eq('org_id', orgId);
+    const { error } = await client.from('research_collections').update(dbPatch as never).eq('id', id).eq('org_id', orgId);
     if (error) return dbe(error);
     return ok({ ok: true });
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteCollection(client: any, orgId: string, id: string): Promise<Result<{ ok: true }>> {
+export async function deleteCollection(client: TypedSupabaseClient, orgId: string, id: string): Promise<Result<{ ok: true }>> {
   try {
     const { error } = await client.from('research_collections').delete().eq('id', id).eq('org_id', orgId);
     if (error) return dbe(error);
@@ -291,8 +283,7 @@ export async function deleteCollection(client: any, orgId: string, id: string): 
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function addDocumentToCollection(client: any, collectionId: string, documentId: string, notes?: string): Promise<Result<{ ok: true }>> {
+export async function addDocumentToCollection(client: TypedSupabaseClient, collectionId: string, documentId: string, notes?: string): Promise<Result<{ ok: true }>> {
   try {
     const { error } = await client.from('collection_documents').insert({
       collection_id: collectionId,
@@ -304,8 +295,7 @@ export async function addDocumentToCollection(client: any, collectionId: string,
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function removeDocumentFromCollection(client: any, collectionId: string, documentId: string): Promise<Result<{ ok: true }>> {
+export async function removeDocumentFromCollection(client: TypedSupabaseClient, collectionId: string, documentId: string): Promise<Result<{ ok: true }>> {
   try {
     const { error } = await client.from('collection_documents').delete()
       .eq('collection_id', collectionId).eq('document_id', documentId);
@@ -314,15 +304,14 @@ export async function removeDocumentFromCollection(client: any, collectionId: st
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listCollectionDocuments(client: any, collectionId: string): Promise<Result<CollectionDocument[]>> {
+export async function listCollectionDocuments(client: TypedSupabaseClient, collectionId: string): Promise<Result<CollectionDocument[]>> {
   try {
     const { data, error } = await client.from('collection_documents')
       .select('collection_id, document_id, added_by, added_at, notes, sort_order')
       .eq('collection_id', collectionId)
       .order('sort_order', { ascending: true });
     if (error) return dbe(error);
-    return ok(((data ?? []) as any[]).map(r => ({
+    return ok(((data ?? []) as Record<string, unknown>[]).map(r => ({
       collectionId: String(r.collection_id),
       documentId: String(r.document_id),
       addedBy: r.added_by == null ? null : String(r.added_by),
@@ -345,8 +334,7 @@ export interface SearchFilters {
   dateTo?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function searchDocuments(client: any, orgId: string, query: string, filters?: SearchFilters, limit = 20): Promise<Result<ResearchDocument[]>> {
+export async function searchDocuments(client: TypedSupabaseClient, orgId: string, query: string, filters?: SearchFilters, limit = 20): Promise<Result<ResearchDocument[]>> {
   try {
     let q = client.from('research_documents')
       .select('*')
@@ -365,7 +353,7 @@ export async function searchDocuments(client: any, orgId: string, query: string,
 
     const { data, error } = await q;
     if (error) return dbe(error);
-    return ok(((data ?? []) as any[]).map(mapDocument));
+    return ok(((data ?? []) as Record<string, unknown>[]).map(mapDocument));
   } catch (e) { return er(e); }
 }
 

@@ -1,10 +1,12 @@
 // SiteTrack Pro — org feature flag queries.
 
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
+
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface FeatureFlag { key: string; enabled: boolean; }
 
-export async function getOrgIdFromMember(client: any): Promise<PResult<string>> {
+export async function getOrgIdFromMember(client: TypedSupabaseClient): Promise<PResult<string>> {
   try {
     const user = await client.auth.getUser();
     const uid = user?.data?.user?.id;
@@ -16,7 +18,7 @@ export async function getOrgIdFromMember(client: any): Promise<PResult<string>> 
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listFeatureFlags(client: any, orgId: string): Promise<PResult<FeatureFlag[]>> {
+export async function listFeatureFlags(client: TypedSupabaseClient, orgId: string): Promise<PResult<FeatureFlag[]>> {
   try {
     const { data, error } = await client.from("org_feature_flags").select("key, enabled").eq("org_id", orgId);
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -24,7 +26,7 @@ export async function listFeatureFlags(client: any, orgId: string): Promise<PRes
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function upsertFeatureFlag(client: any, orgId: string, key: string, enabled: boolean): Promise<PResult<void>> {
+export async function upsertFeatureFlag(client: TypedSupabaseClient, orgId: string, key: string, enabled: boolean): Promise<PResult<void>> {
   try {
     const { error } = await client.from("org_feature_flags").upsert(
       { org_id: orgId, key, enabled },

@@ -5,6 +5,10 @@ import {
   locationOptions, hierarchyPath, locationLabel, spatialLevelOf, LEVEL_LABEL,
   type SpatialHierarchy,
 } from "@/app/queries/spaceQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
+
+// Mock query chains are structural fakes — bridge them to the typed client once.
+const asTyped = (c: unknown): TypedSupabaseClient => c as unknown as TypedSupabaseClient;
 
 function makeClient(overrides: Record<string, any> = {}): { from: (t: string) => any; __calls: Array<{ table: string; ops: string[] }> } {
   const calls: Array<{ table: string; ops: string[] }> = [];
@@ -46,7 +50,7 @@ const HIER: SpatialHierarchy = {
 describe("query mappers", () => {
   it("listSites queries the sites table with project filter", async () => {
     const client = makeClient({ sites: [{ id: "s1", project_id: "p1", name: "G Arch", code: "GA", status: "active" }] });
-    const res = await listSites(client, "p1");
+    const res = await listSites(asTyped(client), "p1");
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.data[0]).toEqual({ id: "s1", projectId: "p1", name: "G Arch", code: "GA", status: "active" });
     expect(client.__calls[0].table).toBe("sites");
@@ -54,7 +58,7 @@ describe("query mappers", () => {
 
   it("listFloors queries the spatial_floors table (206 bug regression-lock)", async () => {
     const client = makeClient({ spatial_floors: [{ id: "f1", building_id: "b1", level: 2, name: "Level 2" }] });
-    const res = await listFloors(client, "b1");
+    const res = await listFloors(asTyped(client), "b1");
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.data[0]).toEqual({ id: "f1", buildingId: "b1", level: 2, name: "Level 2" });
     expect(client.__calls[0].table).toBe("spatial_floors");
@@ -62,14 +66,14 @@ describe("query mappers", () => {
 
   it("surfaces errors from any spatial table", async () => {
     const client = makeClient({ buildings: { error: { message: "boom" } } });
-    const res = await listBuildings(client, "s1");
+    const res = await listBuildings(asTyped(client), "s1");
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe("boom");
   });
 
   it("maps unknown status/type values defensively", async () => {
     const client = makeClient({ sites: [{ id: "s1", project_id: "p1", name: "X", code: null, status: "weird" }] });
-    const res = await listSites(client, "p1");
+    const res = await listSites(asTyped(client), "p1");
     if (res.ok) expect(res.data[0].status).toBe("active");
   });
 });
@@ -83,7 +87,7 @@ describe("loadProjectHierarchy", () => {
       zones: [{ id: "z1", floor_id: "f1", zone_name: "Zone North", zone_type: "apartment" }],
       rooms: [{ id: "r1", zone_id: "z1", room_name: "101", room_type: "bedroom" }],
     });
-    const res = await loadProjectHierarchy(client, "p1");
+    const res = await loadProjectHierarchy(asTyped(client), "p1");
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.data.sites).toHaveLength(1);
@@ -101,7 +105,7 @@ describe("loadProjectHierarchy", () => {
       sites: [{ id: "s1", project_id: "p1", name: "G Arch", code: null, status: "active" }],
       buildings: [],
     });
-    const res = await loadProjectHierarchy(client, "p1");
+    const res = await loadProjectHierarchy(asTyped(client), "p1");
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.data.sites).toHaveLength(1);
@@ -113,7 +117,7 @@ describe("loadProjectHierarchy", () => {
 
   it("returns an empty hierarchy when the project has no sites", async () => {
     const client = makeClient({ sites: [] });
-    const res = await loadProjectHierarchy(client, "p1");
+    const res = await loadProjectHierarchy(asTyped(client), "p1");
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.data.sites).toHaveLength(0);
@@ -124,7 +128,7 @@ describe("loadProjectHierarchy", () => {
 
   it("propagates a site fetch error", async () => {
     const client = makeClient({ sites: { error: { message: "denied" } } });
-    const res = await loadProjectHierarchy(client, "p1");
+    const res = await loadProjectHierarchy(asTyped(client), "p1");
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe("denied");
   });

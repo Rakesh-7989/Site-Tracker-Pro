@@ -2,6 +2,7 @@
 // Patterns: explicit columns, no wildcards, discriminated {ok} result.
 
 import type { QueryResult } from "./queries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export interface BlockRow {
   id: string;
@@ -38,8 +39,7 @@ const BLOCK_SELECT = "id, project_id, name";
 const FLOOR_SELECT = "id, block_id, level";
 const UNIT_SELECT = "id, floor_id, unit_code, unit_type, status";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listBlocks(client: any, projectId: string): Promise<QueryResult<BlockRow[]>> {
+export async function listBlocks(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<BlockRow[]>> {
   try {
     const { data, error } = await client
       .from("blocks")
@@ -49,8 +49,8 @@ export async function listBlocks(client: any, projectId: string): Promise<QueryR
     const rows = (data ?? []) as Array<Record<string, unknown>>;
     return {
       ok: true,
-      data: rows.map(r => {
-        const name = String(r.name ?? "");
+      data: rows.map((r: Record<string, unknown>) => {
+        const name = String(r.name ?? "");;
         return {
           id: String(r.id),
           projectId: String(r.project_id),
@@ -65,7 +65,7 @@ export async function listBlocks(client: any, projectId: string): Promise<QueryR
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listFloors(client: any, projectId: string): Promise<QueryResult<FloorRow[]>> {
+export async function listFloors(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<FloorRow[]>> {
   try {
     // `floors` has no `project_id` — scope via blocks of the project.
     const { data, error } = await client
@@ -76,7 +76,7 @@ export async function listFloors(client: any, projectId: string): Promise<QueryR
     const rows = (data ?? []) as Array<Record<string, unknown>>;
     return {
       ok: true,
-      data: rows.map(r => ({
+      data: rows.map((r: Record<string, unknown>) => ({
         id: String(r.id),
         blockId: String(r.block_id),
         projectId,
@@ -89,7 +89,7 @@ export async function listFloors(client: any, projectId: string): Promise<QueryR
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listUnits(client: any, projectId: string): Promise<QueryResult<UnitRow[]>> {
+export async function listUnits(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<UnitRow[]>> {
   try {
     // `units` has no `project_id` — scope via the floors of the project's blocks.
     const blockIds = await blockIdsForProject(client, projectId);
@@ -104,7 +104,7 @@ export async function listUnits(client: any, projectId: string): Promise<QueryRe
     const rows = (data ?? []) as Array<Record<string, unknown>>;
     return {
       ok: true,
-      data: rows.map(r => ({
+      data: rows.map((r: Record<string, unknown>) => ({
         id: String(r.id),
         floorId: String(r.floor_id),
         blockId: "",
@@ -121,14 +121,14 @@ export async function listUnits(client: any, projectId: string): Promise<QueryRe
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function blockIdsForProject(client: any, projectId: string): Promise<string[]> {
+async function blockIdsForProject(client: TypedSupabaseClient, projectId: string): Promise<string[]> {
   const { data, error } = await client.from("blocks").select("id").eq("project_id", projectId);
   if (error) throw new Error(String(error.message ?? error));
   return ((data ?? []) as Array<Record<string, unknown>>).map(r => String(r.id));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function floorIdsForBlocks(client: any, blockIds: string[]): Promise<string[]> {
+async function floorIdsForBlocks(client: TypedSupabaseClient, blockIds: string[]): Promise<string[]> {
   const { data, error } = await client.from("floors").select("id").in("block_id", blockIds);
   if (error) throw new Error(String(error.message ?? error));
   return ((data ?? []) as Array<Record<string, unknown>>).map(r => String(r.id));
@@ -136,7 +136,7 @@ async function floorIdsForBlocks(client: any, blockIds: string[]): Promise<strin
 
  
 export async function createBlock(
-  client: any,
+  client: TypedSupabaseClient,
   input: { projectId: string; name: string; code: string },
 ): Promise<QueryResult<{ id: string }>> {
   try {
@@ -155,7 +155,7 @@ export async function createBlock(
 
  
 export async function createFloor(
-  client: any,
+  client: TypedSupabaseClient,
   input: { blockId: string; projectId: string; number: string },
 ): Promise<QueryResult<{ id: string }>> {
   try {
@@ -175,7 +175,7 @@ export async function createFloor(
 
  
 export async function createUnit(
-  client: any,
+  client: TypedSupabaseClient,
   input: { floorId: string; blockId: string; projectId: string; name: string; type: string },
 ): Promise<QueryResult<{ id: string }>> {
   try {
@@ -197,8 +197,7 @@ export async function createUnit(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteBlock(client: any, blockId: string): Promise<QueryResult<null>> {
+export async function deleteBlock(client: TypedSupabaseClient, blockId: string): Promise<QueryResult<null>> {
   try {
     const { error } = await client.from("blocks").delete().eq("id", blockId);
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -208,8 +207,7 @@ export async function deleteBlock(client: any, blockId: string): Promise<QueryRe
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteFloor(client: any, floorId: string): Promise<QueryResult<null>> {
+export async function deleteFloor(client: TypedSupabaseClient, floorId: string): Promise<QueryResult<null>> {
   try {
     const { error } = await client.from("floors").delete().eq("id", floorId);
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -219,8 +217,7 @@ export async function deleteFloor(client: any, floorId: string): Promise<QueryRe
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteUnit(client: any, unitId: string): Promise<QueryResult<null>> {
+export async function deleteUnit(client: TypedSupabaseClient, unitId: string): Promise<QueryResult<null>> {
   try {
     const { error } = await client.from("units").delete().eq("id", unitId);
     if (error) return { ok: false, error: String(error.message ?? error) };

@@ -78,12 +78,9 @@ export function ChangePasswordView(): JSX.Element {
   return (
     <div className="min-h-screen bg-panel grid place-items-center px-5">
       <Card className="w-full max-w-md p-6">
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
-          <div>
-            <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
-            <div className="text-[11px] text-fg-secondary">Set a new password</div>
-          </div>
+        <div className="mb-5">
+          <img src="/logo-horizontal.png" alt="SiteTrack Pro" className="h-7 w-auto" />
+          <div className="text-[11px] text-fg-secondary mt-1.5">Set a new password</div>
         </div>
 
         {authStatus !== "ready" && (

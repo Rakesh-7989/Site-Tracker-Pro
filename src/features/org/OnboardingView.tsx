@@ -15,6 +15,7 @@ import type { SignupPlan } from "@/app/queries/signupQueries";
 
 
 import { getClient } from "@/lib/supabase/supabase";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 const STEPS = ["Org details", "Plan & billing", "Finish"]; // progressive: invites/projects/presets deferred (v5)
 const TRIAL_DAYS = 14;
 
@@ -128,7 +129,7 @@ export function OnboardingView(): JSX.Element {
       ? enabledModules
       : [CORE_MODULE, ...enabledModules];
     const client = await getClient();
-    const r = await updateOrg(client, orgId, orgName, contactEmail, legacySegmentFor(segments), modules, plan, billing, segments);
+    const r = await updateOrg(client as unknown as TypedSupabaseClient, orgId, orgName, contactEmail, legacySegmentFor(segments), modules, plan, billing, segments);
     if (!r.ok) { setFieldError(r.error ?? "Could not save. Please try again."); return; }
     setStep(2);
   };
@@ -141,7 +142,7 @@ export function OnboardingView(): JSX.Element {
       const client = await getClient();
       const defaults = templateModulesForSegments(["construction"]);
       const r = await updateOrg(
-        client,
+        client as unknown as TypedSupabaseClient,
         orgId,
         orgName || "My Workspace",
         contactEmail,
@@ -185,7 +186,7 @@ export function OnboardingView(): JSX.Element {
   const savePlan = async () => {
     const client = await getClient();
     const r = await updateOrg(
-      client,
+      client as unknown as TypedSupabaseClient,
       orgId,
       orgName,
       contactEmail,
@@ -209,7 +210,7 @@ export function OnboardingView(): JSX.Element {
   const commitInvites = async () => {
     if (!pending.length) { setStep(4); return; }
     const client = await getClient();
-    await insertOrgMembers(client, orgId, pending);
+    await insertOrgMembers(client as unknown as TypedSupabaseClient, orgId, pending);
     setPending([]);
     setStep(4);
   };
@@ -219,7 +220,7 @@ export function OnboardingView(): JSX.Element {
     if (!clientName.trim()) { setFieldError(t("onb.errClientName")); return; }
     setFieldError(null);
     const client = await getClient();
-    await createProject(client, orgId, projName, clientName, startDate, projType);
+    await createProject(client as unknown as TypedSupabaseClient, orgId, projName, clientName, startDate, projType);
     setStep(5);
   };
 
@@ -231,14 +232,14 @@ export function OnboardingView(): JSX.Element {
     } else if (preset === "balanced") {
       toDisable.push("arOverlay", "dprAuto", "photoGeo");
     }
-    await disableFeatureFlags(client, orgId, toDisable);
+    await disableFeatureFlags(client as unknown as TypedSupabaseClient, orgId, toDisable);
     setStep(6);
   };
 
   const finish = async () => {
     const client = await getClient();
-    await disableFeatureFlags(client, orgId, ["arOverlay", "dprAuto", "photoGeo"]); // balanced defaults
-    await completeOnboarding(client, orgId);
+    await disableFeatureFlags(client as unknown as TypedSupabaseClient, orgId, ["arOverlay", "dprAuto", "photoGeo"]); // balanced defaults
+    await completeOnboarding(client as unknown as TypedSupabaseClient, orgId);
     navigate("/projects"); // empty state offers Create-first / Load-demo
   };
 

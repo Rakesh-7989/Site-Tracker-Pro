@@ -17,6 +17,7 @@ import {
   type OrgMemberRow,
 } from "@/app/queries/orgMemberQueries";
 import type { OrgCustomRole } from "@/auth";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export interface MemberTableViewProps {
   members: OrgMemberRow[];
@@ -53,7 +54,7 @@ export function MemberTableView({
 
   const runAction = async (
     _key: string,
-    fn: (client: unknown) => Promise<{ ok: boolean; error?: string }>,
+    fn: (client: TypedSupabaseClient) => Promise<{ ok: boolean; error?: string }>,
   ) => {
     onError(null);
     const { getClient } = await import("@/lib/supabase/supabase");
@@ -62,7 +63,7 @@ export function MemberTableView({
       onError("Backend not configured.");
       return;
     }
-    const res = await fn(client);
+    const res = await fn(client as unknown as TypedSupabaseClient);
     if (!res.ok) {
       onError(res.error ?? "Action failed.");
     }

@@ -2,6 +2,7 @@
 // Schema: scripts/supabase/23_branding.sql
 
 import type { QueryResult } from "./queries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export interface BrandingRow {
   id: string;
@@ -27,8 +28,7 @@ function mapBrandingRow(r: Record<string, unknown>): BrandingRow {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getOrgBranding(client: any, orgId: string): Promise<QueryResult<BrandingRow | null>> {
+export async function getOrgBranding(client: TypedSupabaseClient, orgId: string): Promise<QueryResult<BrandingRow | null>> {
   try {
     const { data, error } = await client
       .from("branding")
@@ -44,8 +44,7 @@ export async function getOrgBranding(client: any, orgId: string): Promise<QueryR
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getProjectBranding(client: any, orgId: string, projectId: string): Promise<QueryResult<BrandingRow | null>> {
+export async function getProjectBranding(client: TypedSupabaseClient, orgId: string, projectId: string): Promise<QueryResult<BrandingRow | null>> {
   try {
     const { data, error } = await client
       .from("branding")
@@ -61,8 +60,7 @@ export async function getProjectBranding(client: any, orgId: string, projectId: 
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listProjectBrandings(client: any, orgId: string): Promise<QueryResult<BrandingRow[]>> {
+export async function listProjectBrandings(client: TypedSupabaseClient, orgId: string): Promise<QueryResult<BrandingRow[]>> {
   try {
     const { data, error } = await client
       .from("branding")
@@ -79,7 +77,7 @@ export async function listProjectBrandings(client: any, orgId: string): Promise<
 
  
 export async function upsertOrgBranding(
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string,
   patch: { logoUrl?: string | null; tagline?: string | null; accent?: string | null; theme?: string | null },
 ): Promise<QueryResult<{ id: string }>> {
@@ -91,7 +89,7 @@ export async function upsertOrgBranding(
     if ("theme" in patch) row.theme = patch.theme;
     const { data, error } = await client
       .from("branding")
-      .upsert(row, { onConflict: "org_id", ignoreDuplicates: false })
+      .upsert(row as never, { onConflict: "org_id", ignoreDuplicates: false })
       .select("id")
       .single();
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -103,7 +101,7 @@ export async function upsertOrgBranding(
 
  
 export async function upsertProjectBranding(
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string,
   projectId: string,
   patch: { logoUrl?: string | null; tagline?: string | null; accent?: string | null; theme?: string | null },
@@ -116,7 +114,7 @@ export async function upsertProjectBranding(
     if ("theme" in patch) row.theme = patch.theme;
     const { data, error } = await client
       .from("branding")
-      .upsert(row, { onConflict: "org_id, project_id", ignoreDuplicates: false })
+      .upsert(row as never, { onConflict: "org_id, project_id", ignoreDuplicates: false })
       .select("id")
       .single();
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -126,8 +124,7 @@ export async function upsertProjectBranding(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function deleteProjectBranding(client: any, orgId: string, projectId: string): Promise<QueryResult<null>> {
+export async function deleteProjectBranding(client: TypedSupabaseClient, orgId: string, projectId: string): Promise<QueryResult<null>> {
   try {
     const { error } = await client
       .from("branding")

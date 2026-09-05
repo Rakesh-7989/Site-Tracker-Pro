@@ -1,5 +1,6 @@
 // SiteTrack Pro — VNext P1.3: event outbox query-layer tests.
 import { describe, it, expect } from "vitest";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import {
   OutboxEventType, publishEvent, publishOrgBroadcast,
   publishInvoiceGenerated, publishQuoteAccepted, publishCorrectiveActionOpened,
@@ -7,8 +8,8 @@ import {
   OUTBOX_STATUS_LABEL, OUTBOX_STATUS_TONE, isOutboxStatus, outboxStatus,
   mapOutboxRow, outboxRollup,
 } from "@/app/queries/outboxQueries";
-function mockRpc(impl: any) {
-  return { rpc: impl };
+function mockRpc(impl: any): TypedSupabaseClient {
+  return { rpc: impl } as unknown as TypedSupabaseClient;
 }
 
 describe("publishEvent", () => {

@@ -65,9 +65,8 @@ export function ProfileCompleteView(): JSX.Element {
   return (
     <div className="min-h-screen bg-bg-secondary grid place-items-center px-5 py-10">
       <Card className="w-full max-w-lg p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-accent text-white grid place-items-center font-bold">S</div>
-          <div className="font-display font-bold text-fg-primary">SiteTrack Pro</div>
+        <div className="mb-1">
+          <img src="/logo-horizontal.png" alt="SiteTrack Pro" className="h-7 w-auto" />
         </div>
         <h1 className="font-display text-xl font-bold mt-3">Complete your profile</h1>
         <p className="text-[13px] text-fg-secondary mt-1 mb-4">A few details so your team and clients know who you are. You only do this once.</p>

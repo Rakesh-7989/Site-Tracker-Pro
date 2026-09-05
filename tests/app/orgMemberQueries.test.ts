@@ -1,6 +1,7 @@
 // SiteTrack Pro — org People module queries (migration 71) tests.
 
 import { describe, it, expect } from "vitest";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import {
   listOrgMembers, lookupUserForInvite, addOrgMember,
   deactivateMember, assignCustomRole, unassignCustomRole, inviteNewOrgMember,
@@ -15,12 +16,12 @@ function makeChain(result: { data?: unknown; error?: unknown }) {
   chain.then = (resolve: (v: unknown) => unknown) => resolve(result);
   return chain;
 }
-function mockClient(opts: { rpc?: Record<string, { data?: unknown; error?: unknown }>; table?: { data?: unknown; error?: unknown }; invoke?: { data?: unknown; error?: unknown } }) {
+function mockClient(opts: { rpc?: Record<string, { data?: unknown; error?: unknown }>; table?: { data?: unknown; error?: unknown }; invoke?: { data?: unknown; error?: unknown } }): TypedSupabaseClient {
   return {
     rpc: async (name: string) => opts.rpc?.[name] ?? { data: [], error: null },
     from: () => makeChain(opts.table ?? { error: null }),
     functions: { invoke: async () => opts.invoke ?? { data: { ok: true }, error: null } },
-  };
+  } as unknown as TypedSupabaseClient;
 }
 
 describe("listOrgMembers", () => {

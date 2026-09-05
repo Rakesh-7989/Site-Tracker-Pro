@@ -2,6 +2,7 @@
 
 import { describe, it, expect } from "vitest";
 import { listChangeOrders, listEstimates } from "@/app/queries/designQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 function chain(result: { data?: unknown; error?: unknown }) {
   const c: Record<string, unknown> = {};
@@ -9,7 +10,7 @@ function chain(result: { data?: unknown; error?: unknown }) {
   c.then = (resolve: (v: unknown) => unknown) => resolve(result);
   return c;
 }
-const mockClient = (result: { data?: unknown; error?: unknown }) => ({ from: () => chain(result) });
+const mockClient = (result: { data?: unknown; error?: unknown }): TypedSupabaseClient => ({ from: () => chain(result) } as unknown as TypedSupabaseClient);
 
 describe("listChangeOrders", () => {
   it("maps impacts + coerces status", async () => {

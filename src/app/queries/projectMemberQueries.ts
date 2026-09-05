@@ -3,7 +3,15 @@
 // Add/remove project members, request access, approve/reject requests.
 
 import { isIdentityRole, type IdentityRole } from "@/auth";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import type { MResult } from "./orgMemberQueries";
+
+type ProjectMemberRow = {
+  id: string;
+  requester_id: string;
+  created_at: string | null;
+  profiles: { name: string | null; role: string | null } | null;
+};
 
 export interface OrgMemberOption {
   profileId: string;
@@ -21,7 +29,7 @@ export interface PendingAccessRequest {
 }
 
 export async function listAvailableOrgMembers(
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string,
   excludeProfileIds: string[],
 ): Promise<MResult<OrgMemberOption[]>> {
@@ -42,7 +50,7 @@ export async function listAvailableOrgMembers(
 }
 
 export async function addProjectMember(
-  client: any,
+  client: TypedSupabaseClient,
   projectId: string,
   profileId: string,
   identityRole: string,
@@ -65,7 +73,7 @@ export async function addProjectMember(
 }
 
 export async function removeProjectMember(
-  client: any,
+  client: TypedSupabaseClient,
   projectId: string,
   profileId: string,
 ): Promise<MResult<{ ok: true }>> {
@@ -84,7 +92,7 @@ export async function removeProjectMember(
 }
 
 export async function requestProjectAccess(
-  client: any,
+  client: TypedSupabaseClient,
   projectId: string,
 ): Promise<MResult<{ ok: true }>> {
   try {
@@ -97,7 +105,7 @@ export async function requestProjectAccess(
 }
 
 export async function listPendingRequests(
-  client: any,
+  client: TypedSupabaseClient,
   projectId: string,
 ): Promise<MResult<PendingAccessRequest[]>> {
   try {
@@ -108,16 +116,15 @@ export async function listPendingRequests(
       .eq("status", "pending")
       .order("created_at", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
-    const rows = (data ?? []) as Array<Record<string, unknown>>;
+    const rows = (data ?? []) as unknown as ProjectMemberRow[];
     const requests: PendingAccessRequest[] = rows.map(r => {
-      const profile = r.profiles as Record<string, unknown> | undefined;
       return {
-        id: String(r.id),
+        id: r.id,
         projectId,
-        requesterId: String(r.requester_id),
-        requesterName: String(profile?.name ?? "Member"),
-        requesterRole: String(profile?.role ?? ""),
-        createdAt: String(r.created_at ?? ""),
+        requesterId: r.requester_id,
+        requesterName: r.profiles?.name ?? "Member",
+        requesterRole: r.profiles?.role ?? "",
+        createdAt: r.created_at ?? "",
       };
     });
     return { ok: true, data: requests };
@@ -127,7 +134,7 @@ export async function listPendingRequests(
 }
 
 export async function approveRequest(
-  client: any,
+  client: TypedSupabaseClient,
   requestId: string,
 ): Promise<MResult<{ ok: true }>> {
   try {
@@ -140,7 +147,7 @@ export async function approveRequest(
 }
 
 export async function rejectRequest(
-  client: any,
+  client: TypedSupabaseClient,
   requestId: string,
 ): Promise<MResult<{ ok: true }>> {
   try {

@@ -7,6 +7,7 @@ import {
   buildMonthlyStatement, monthlyStatementTotals, listOrgMonthlyStatement,
   type MonthlyStatementRow, type ProjectBrief,
 } from "@/app/queries/monthlyStatementQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 const proj = (id: string, name: string, type: string | null = "consultant"): ProjectBrief => ({ id, name, type });
 
@@ -145,7 +146,7 @@ describe("monthlyStatementQueries listOrgMonthlyStatement", () => {
       if (table === "po_receipts") return makeChain(opts.poReceipts ?? { data: [], error: null });
       return makeChain(opts.timeEntries ?? { data: [], error: null });
     },
-  });
+  }) as unknown as TypedSupabaseClient;
 
   it("maps invoices/retainers/expenses/ra/po/time into statement rows", async () => {
     const client = mockClient({

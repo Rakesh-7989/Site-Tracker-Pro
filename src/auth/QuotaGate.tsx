@@ -69,7 +69,7 @@ export function QuotaGate({ resource, children, fallback }: QuotaGateProps): JSX
     void (async () => {
       try {
         const mod = await import("@/lib/supabase/supabase");
-        const client = await (mod as any).getSupabaseClient();
+        const client = await (mod as { getSupabaseClient: () => Promise<import("@/lib/supabase/db").TypedSupabaseClient> }).getSupabaseClient();
         if (!client) { if (!cancelled) { setRollup(null); setLoading(false); } return; }
         const { fetchOrgQuota } = await import("@/app/queries/quotaQueries");
         const res = await fetchOrgQuota(client, orgId);

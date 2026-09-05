@@ -20,23 +20,14 @@ import type {
   RoleProfile,
   VendorProjectScope,
 } from "./types";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: String(e.message ?? e) });
 
-/** Supabase-js v2 client shape used by every query (avoid hard import). */
-export type QueryClient = {
-  from: (table: string) => {
-    select: (cols?: string, opts?: Record<string, unknown>) => any;
-    insert: (rows: unknown) => any;
-    update: (row: unknown) => any;
-    delete: () => any;
-    upsert: (rows: unknown, opts?: Record<string, unknown>) => any;
-    rpc: (fn: string, params?: Record<string, unknown>) => any;
-  };
-  rpc: (fn: string, params?: Record<string, unknown>) => any;
-};
+/** Supabase-js v2 typed client used by every query (kept as a type alias for readability). */
+export type QueryClient = TypedSupabaseClient;
 
 // ── Normalizers (pure) ────────────────────────────────────────────────────────
 

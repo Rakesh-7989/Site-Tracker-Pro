@@ -1,5 +1,6 @@
 
 import { orgTierForIdentityRole, type IdentityRole } from "@/auth";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export type MResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -19,7 +20,7 @@ export interface InviteCandidate {
   identityRole: string;
 }
 
-export async function listOrgMembers(client: any, orgId: string): Promise<MResult<OrgMemberRow[]>> {
+export async function listOrgMembers(client: TypedSupabaseClient, orgId: string): Promise<MResult<OrgMemberRow[]>> {
   try {
     const { data, error } = await client.rpc("list_org_members", { p_org_id: orgId });
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -39,7 +40,7 @@ export async function listOrgMembers(client: any, orgId: string): Promise<MResul
 }
 
 export async function inviteNewOrgMember(
-  client: any,
+  client: TypedSupabaseClient,
   input: { orgId: string; email: string; name?: string; sendCredentials?: boolean; identityRole?: string },
 ): Promise<MResult<{ invited: true; tempPassword?: string; emailSent?: boolean }>> {
   try {
@@ -56,7 +57,7 @@ export async function inviteNewOrgMember(
   }
 }
 
-export async function lookupUserForInvite(client: any, email: string): Promise<MResult<InviteCandidate | null>> {
+export async function lookupUserForInvite(client: TypedSupabaseClient, email: string): Promise<MResult<InviteCandidate | null>> {
   try {
     const { data, error } = await client.rpc("lookup_user_for_invite", { p_email: email });
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -69,7 +70,7 @@ export async function lookupUserForInvite(client: any, email: string): Promise<M
 }
 
 export async function addOrgMember(
-  client: any,
+  client: TypedSupabaseClient,
   input: { orgId: string; profileId: string; role: string },
 ): Promise<MResult<{ ok: true }>> {
   try {
@@ -91,7 +92,7 @@ export async function addOrgMember(
  * with status='invited'. The user must accept the invitation to become active.
  */
 export async function inviteExistingOrgMember(
-  client: any,
+  client: TypedSupabaseClient,
   input: { orgId: string; profileId: string; role: string; invitedBy: string },
 ): Promise<MResult<{ ok: true }>> {
   try {
@@ -117,7 +118,7 @@ export async function inviteExistingOrgMember(
 }
 
 export async function setIdentityRole(
-  client: any,
+  client: TypedSupabaseClient,
   profileId: string,
   identityRole: string,
 ): Promise<MResult<{ ok: true }>> {
@@ -130,7 +131,7 @@ export async function setIdentityRole(
   }
 }
 
-export async function removeMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
+export async function removeMember(client: TypedSupabaseClient, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   try {
     const { data, error } = await client.functions.invoke("remove_org_member", { body: { orgId, profileId } });
     if (error) {
@@ -145,15 +146,15 @@ export async function removeMember(client: any, orgId: string, profileId: string
   }
 }
 
-export async function deactivateMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
+export async function deactivateMember(client: TypedSupabaseClient, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   return updateMember(client, orgId, profileId, { removed_at: new Date().toISOString() });
 }
 
-export async function reactivateMember(client: any, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
+export async function reactivateMember(client: TypedSupabaseClient, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   return updateMember(client, orgId, profileId, { removed_at: null });
 }
 
-async function updateMember(client: any, orgId: string, profileId: string, patch: Record<string, unknown>): Promise<MResult<{ ok: true }>> {
+async function updateMember(client: TypedSupabaseClient, orgId: string, profileId: string, patch: { removed_at: string | null }): Promise<MResult<{ ok: true }>> {
   try {
     const { error } = await client.from("org_members").update(patch).eq("org_id", orgId).eq("profile_id", profileId);
     if (error) return { ok: false, error: String(error.message ?? error) };
@@ -164,7 +165,7 @@ async function updateMember(client: any, orgId: string, profileId: string, patch
 }
 
 export async function assignCustomRole(
-  client: any,
+  client: TypedSupabaseClient,
   input: { orgId: string; profileId: string; orgRoleId: string; assignedBy: string },
 ): Promise<MResult<{ ok: true }>> {
   try {
@@ -182,7 +183,7 @@ export async function assignCustomRole(
 }
 
 export async function unassignCustomRole(
-  client: any,
+  client: TypedSupabaseClient,
   input: { orgId: string; profileId: string; orgRoleId: string },
 ): Promise<MResult<{ ok: true }>> {
   try {

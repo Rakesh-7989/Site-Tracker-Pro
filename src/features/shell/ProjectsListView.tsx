@@ -19,6 +19,7 @@ import { useOrgSwitcher, useCan, RequireCapability } from "@/auth";
 import { useSession } from "@/auth/OrganizationContext";
 import { cn } from "@/lib/utils/cn";
 import { getClient } from "@/lib/supabase/supabase";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import {
   listProjectsForOrg, memberProjectScope, type ProjectSummary,
   setProjectStatus, archiveProject, restoreProject, deleteProject,
@@ -122,7 +123,7 @@ export function ProjectsListView(): JSX.Element {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client = await (mod as any).getSupabaseClient();
       if (!client) { setState({ kind: "error", message: "Backend not configured." }); return; }
-      const res = await listProjectsForOrg(client, activeOrg.orgId, memberProjectScope(session));
+      const res = await listProjectsForOrg(client as unknown as TypedSupabaseClient, activeOrg.orgId, memberProjectScope(session));
       if (cancelled) return;
       if (res.ok) setState({ kind: "ready", projects: res.data });
       else setState({ kind: "error", message: res.error });
@@ -131,9 +132,9 @@ export function ProjectsListView(): JSX.Element {
   }, [activeOrg, session]);
 
   async function runLifecycleAction(
-    client: unknown,
+    client: TypedSupabaseClient,
     p: ProjectSummary,
-    action: (c: unknown, id: string) => Promise<{ ok: boolean; error?: string }>,
+    action: (c: TypedSupabaseClient, id: string) => Promise<{ ok: boolean; error?: string }>,
   ): Promise<void> {
     if (state.kind !== "ready") return;
     setBusy(true);
@@ -145,7 +146,7 @@ export function ProjectsListView(): JSX.Element {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client2 = await (mod as any).getSupabaseClient();
     if (client2 && activeOrg) {
-      const refreshed = await listProjectsForOrg(client2, activeOrg.orgId, memberProjectScope(session));
+      const refreshed = await listProjectsForOrg(client2 as unknown as TypedSupabaseClient, activeOrg.orgId, memberProjectScope(session));
       if (refreshed.ok) setState({ kind: "ready", projects: refreshed.data });
     }
     setBusy(false);
