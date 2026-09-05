@@ -8,17 +8,13 @@ import {
 const fromClient = (result: { data?: unknown; error?: unknown }) => {
   // Supabase query builders are thenable: every method returns the chain and
   // awaiting the terminal call resolves to `result`. `then` makes that work.
-  const chain: any = {
+  const chain: Record<string, unknown> = {
     then: (resolve: (v: unknown) => void) => resolve(result),
-    select: () => chain,
-    insert: () => chain,
-    update: () => chain,
-    delete: () => chain,
-    single: () => chain,
-    eq: () => chain,
-    order: () => chain,
-    maybeSingle: () => chain,
   };
+  const chainMethods = ["select", "insert", "update", "delete", "single", "eq", "order", "maybeSingle"] as const;
+  for (const m of chainMethods) {
+    chain[m] = () => chain;
+  }
   return { from: () => chain };
 };
 

@@ -85,11 +85,11 @@ describe("isStaffUser", () => {
   });
 
   it("returns false for null user input", () => {
-    expect(isStaffUser(null as any)).toBe(false);
+    expect(isStaffUser(null as unknown as Parameters<typeof isStaffUser>[0])).toBe(false);
   });
 
   it("returns false for non-object user input", () => {
-    expect(isStaffUser(undefined as any)).toBe(false);
+    expect(isStaffUser(undefined as unknown as Parameters<typeof isStaffUser>[0])).toBe(false);
   });
 });
 

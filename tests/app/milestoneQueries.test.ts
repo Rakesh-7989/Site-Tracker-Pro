@@ -58,7 +58,7 @@ describe("listMilestones", () => {
 describe("setMilestoneStatus versioning (migration 238)", () => {
   function recordingChain(result: { data?: unknown; error?: unknown }) {
     const calls: Array<[string, ...unknown[]]> = [];
-    const c: Record<string, any> = {};
+    const c: Record<string, unknown> = {};
     for (const m of ["update", "eq", "select"]) {
       c[m] = (...args: unknown[]) => { calls.push([m, ...args]); return c; };
     }
@@ -68,8 +68,7 @@ describe("setMilestoneStatus versioning (migration 238)", () => {
 
   it("guarded write adds .eq('version', v) + .select and succeeds on a match", async () => {
     const { chain, calls } = recordingChain({ data: [{ id: "m1" }], error: null });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = { from: () => chain as any };
+    const client = { from: () => chain };
     const r = await setMilestoneStatus(asTyped(client), "m1", "completed", { expectedVersion: 2 });
     expect(r).toEqual({ ok: true, data: { ok: true } });
     expect(calls).toContainEqual(["eq", "version", 2]);
@@ -79,8 +78,7 @@ describe("setMilestoneStatus versioning (migration 238)", () => {
 
   it("guarded write reports a conflict on zero matched rows", async () => {
     const { chain } = recordingChain({ data: [], error: null });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = { from: () => chain as any };
+    const client = { from: () => chain };
     const r = await setMilestoneStatus(asTyped(client), "m1", "completed", { expectedVersion: 2 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.conflict).toBe(true);
@@ -88,8 +86,7 @@ describe("setMilestoneStatus versioning (migration 238)", () => {
 
   it("unguarded write keeps legacy semantics (no select)", async () => {
     const { chain, calls } = recordingChain({ data: null, error: null });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = { from: () => chain as any };
+    const client = { from: () => chain };
     const r = await setMilestoneStatus(asTyped(client), "m1", "in_progress");
     expect(r).toEqual({ ok: true, data: { ok: true } });
     expect(calls.some(x => x[0] === "select")).toBe(false);
@@ -98,8 +95,7 @@ describe("setMilestoneStatus versioning (migration 238)", () => {
 
   it("surfaces builder errors without marking them conflicts", async () => {
     const { chain } = recordingChain({ data: null, error: { message: "42501 approval required" } });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = { from: () => chain as any };
+    const client = { from: () => chain };
     const r = await setMilestoneStatus(asTyped(client), "m1", "completed", { expectedVersion: 1 });
     expect(r).toEqual({ ok: false, error: "42501 approval required", conflict: false });
   });

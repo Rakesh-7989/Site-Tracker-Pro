@@ -21,12 +21,20 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // ── Mock the Supabase SDK BEFORE importing auth.ts ────────────────────────
-let mockGetUser: ReturnType<typeof vi.fn>;
-let mockFrom: ReturnType<typeof vi.fn>;
+let mockGetUser: (token: string) => unknown;
+let mockFrom: (table: string) => unknown;
+
+interface FluentChain {
+  select(args?: unknown): FluentChain;
+  eq(a: unknown, b?: unknown): FluentChain;
+  is(a: unknown, b?: unknown): FluentChain;
+  maybeSingle(): Promise<{ data: unknown; error?: unknown }>;
+  then?(resolve: (value: { data: unknown; error?: unknown }) => void): void;
+}
 
 // Helper to build a fluent select-eq-maybeSingle chain that resolves to a value.
-function fluent(returnValue: { data: any; error?: any }) {
-  const chain: any = {
+function fluent(returnValue: { data: unknown; error?: unknown }) {
+  const chain: FluentChain = {
     select: vi.fn(() => chain),
     eq: vi.fn(() => chain),
     is: vi.fn(() => chain),
@@ -34,19 +42,19 @@ function fluent(returnValue: { data: any; error?: any }) {
     then: undefined,
   };
   // Some callers await the chain directly (returns array via select).
-  chain.then = (resolve: any) => resolve(returnValue);
+  chain.then = (resolve) => resolve(returnValue);
   return chain;
 }
 
 vi.mock("https://esm.sh/@supabase/supabase-js@2", () => ({
   createClient: () => ({
-    auth: { getUser: (...args: any[]) => (mockGetUser as any)(...args) },
-    from: (table: string) => (mockFrom as any)(table),
+    auth: { getUser: (token: string) => mockGetUser(token) },
+    from: (table: string) => mockFrom(table),
   }),
 }));
 
 // Shim the Deno global so the helper can read env vars under vitest.
-(globalThis as any).Deno = {
+const denoShim: { env: { get(name: string): string | undefined } } = {
   env: {
     get(name: string): string | undefined {
       const map: Record<string, string> = {
@@ -58,6 +66,7 @@ vi.mock("https://esm.sh/@supabase/supabase-js@2", () => ({
     },
   },
 };
+(globalThis as { Deno?: typeof denoShim }).Deno = denoShim;
 
 // Now dynamically import. The .ts is implicit (allowJs + bundler resolution).
 const { authenticate, authenticateCron } = await import(
@@ -69,6 +78,10 @@ function reqWithAuth(token: string | null): Request {
   const headers = new Headers();
   if (token) headers.set("Authorization", `Bearer ${token}`);
   return new Request("https://ef/fake", { method: "POST", headers });
+}
+
+function responseStatus(res: unknown): unknown {
+  return (res as { response?: { status?: unknown } }).response?.status;
 }
 
 function setupHappyUser(opts: {
@@ -99,7 +112,7 @@ describe("authenticate() — token handling", () => {
   it("returns 401 when Bearer header missing", async () => {
     const res = await authenticate(reqWithAuth(null), {});
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(401);
+    expect(responseStatus(res)).toBe(401);
   });
 
   it("returns 401 when Supabase rejects the token", async () => {
@@ -107,7 +120,7 @@ describe("authenticate() — token handling", () => {
     mockFrom = vi.fn(() => fluent({ data: null }));
     const res = await authenticate(reqWithAuth("bad-token"), {});
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(401);
+    expect(responseStatus(res)).toBe(401);
   });
 
   it("returns 403 when profile row is missing", async () => {
@@ -115,7 +128,7 @@ describe("authenticate() — token handling", () => {
     mockFrom = vi.fn(() => fluent({ data: null }));
     const res = await authenticate(reqWithAuth("ok"), {});
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(403);
+    expect(responseStatus(res)).toBe(403);
   });
 });
 
@@ -138,7 +151,7 @@ describe("authenticate() — role gate", () => {
     setupHappyUser({ role: "contractor", orgs: [{ org_id: "o-1", role: "contractor" }] });
     const res = await authenticate(reqWithAuth("ok"), { requireRole: ["orgadmin"] });
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(403);
+    expect(responseStatus(res)).toBe(403);
   });
 
   it("superadmin bypasses any role gate", async () => {
@@ -157,7 +170,7 @@ describe("authenticate() — role gate", () => {
     setupHappyUser({ role: "client", isStaff: true, staffTier: null });
     const res = await authenticate(reqWithAuth("ok"), { requireRole: ["superadmin"] });
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(403);
+    expect(responseStatus(res)).toBe(403);
   });
 });
 
@@ -182,7 +195,7 @@ describe("authenticate() — project gate", () => {
     });
     const res = await authenticate(reqWithAuth("ok"), { requireProjectId: "p-1" });
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(403);
+    expect(responseStatus(res)).toBe(403);
   });
 
   it("superadmin bypasses project_members check", async () => {
@@ -203,9 +216,9 @@ describe("authenticate() — org membership filter (SEC-03, phase 1.4)", () => {
       if (table === "org_members") {
         const chain = fluent({ data: [{ org_id: "o-1", role: "admin" }] });
         const rawEq = chain.eq;
-        chain.eq = vi.fn((k: string, v: any) => { captured.push(`eq:${k}:${String(v)}`); return rawEq(k, v); });
+        chain.eq = vi.fn((k: unknown, v?: unknown) => { captured.push(`eq:${String(k)}:${String(v)}`); return rawEq(k, v); });
         const rawIs = chain.is;
-        chain.is = vi.fn((k: string, v: any) => { captured.push(`is:${k}:${String(v)}`); return rawIs(k, v); });
+        chain.is = vi.fn((k: unknown, v?: unknown) => { captured.push(`is:${String(k)}:${String(v)}`); return rawIs(k, v); });
         return chain;
       }
       return fluent({ data: null });
@@ -229,20 +242,20 @@ describe("authenticateCron()", () => {
     const req = reqWithAuth("wrong");
     const res = authenticateCron(req, "CRON_SECRET");
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(401);
+    expect(responseStatus(res)).toBe(401);
   });
 
   it("fails 401 when Bearer missing", () => {
     const req = reqWithAuth(null);
     const res = authenticateCron(req, "CRON_SECRET");
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(401);
+    expect(responseStatus(res)).toBe(401);
   });
 
   it("fails 500 when env var not configured", () => {
     const req = reqWithAuth("anything");
     const res = authenticateCron(req, "NOT_CONFIGURED_VAR");
     expect(res.ok).toBe(false);
-    expect((res as any).response.status).toBe(500);
+    expect(responseStatus(res)).toBe(500);
   });
 });

@@ -21,6 +21,16 @@ import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 type Raw = { data: unknown; error: unknown };
 
+type MockChain = {
+  select: () => MockChain;
+  eq: () => MockChain;
+  order: () => MockChain;
+  limit: () => MockChain;
+  lt: () => MockChain;
+  in: (col: string) => MockChain;
+  then: (onFul: (v: Raw) => void) => void;
+};
+
 const MEMBER_EMPTY: MemberProjectScope = { mode: "member", projectIds: [] };
 const MEMBER_TWO: MemberProjectScope = { mode: "member", projectIds: ["p1", "p2"] };
 
@@ -29,9 +39,9 @@ const MEMBER_TWO: MemberProjectScope = { mode: "member", projectIds: ["p1", "p2"
 // chained; `await q` resolves via `then` to the configured raw result.
 function mockClient(rtByTable: Record<string, Raw>): { client: TypedSupabaseClient; log: string[] } {
   const log: string[] = [];
-  const from = (t: string): any => {
+  const from = (t: string): MockChain => {
     log.push(`from:${t}`);
-    const b: any = {};
+    const b = {} as MockChain;
     b.select = () => b;
     b.eq = () => b;
     b.order = () => b;

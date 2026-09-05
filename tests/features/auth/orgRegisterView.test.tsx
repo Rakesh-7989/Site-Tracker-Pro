@@ -5,6 +5,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
+import type { InputHTMLAttributes, ReactNode } from "react";
 
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
@@ -21,16 +22,25 @@ vi.mock("@/auth", () => ({
   useAuth: () => ({ session: null, status: "unauthenticated", error: null, refresh: vi.fn(), setActiveOrgId: vi.fn() }),
 }));
 
+type MockAtomProps = {
+  children?: ReactNode;
+  className?: string;
+  variant?: string;
+  [key: string]: unknown;
+};
+
 vi.mock("@/components/ui/atoms", () => ({
-  Card: ({ children, className }: any) => <div className={className}>{children}</div>,
-  Button: ({ children, className }: any) => <button className={className}>{children}</button>,
-  Icon: ({ name }: any) => <span data-icon={name}>icon</span>,
+  Card: ({ children, className }: MockAtomProps) => <div className={className}>{children}</div>,
+  Button: ({ children, className }: MockAtomProps) => <button className={className}>{children}</button>,
+  Icon: ({ name }: { name?: string; [key: string]: unknown }) => <span data-icon={name}>icon</span>,
   Spinner: () => <span>spinner</span>,
-  Alert: ({ children, variant }: any) => <div data-variant={variant}>{children}</div>,
+  Alert: ({ children, variant }: MockAtomProps) => <div data-variant={variant}>{children}</div>,
 }));
 
 vi.mock("@/components/ui/forms", () => ({
-  Input: (props: any) => <input {...props} />,
+  Input: ({ ...props }: InputHTMLAttributes<HTMLInputElement> & Record<string, unknown>) => (
+    <input {...props} />
+  ),
 }));
 
 vi.mock("@/components/ui/LanguageSwitcher", () => ({

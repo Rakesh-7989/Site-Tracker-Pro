@@ -460,12 +460,12 @@ describe("role category grouping", () => {
 describe("edge cases", () => {
   it("should handle undefined role gracefully", () => {
     // These should not throw, just return false/default
-    expect(canViewBudget(undefined as any)).toBe(false);
-    expect(canViewFinancialRollup(undefined as any)).toBe(false);
+    expect(canViewBudget(undefined as unknown as string)).toBe(false);
+    expect(canViewFinancialRollup(undefined as unknown as string)).toBe(false);
   });
 
   it("should handle null role gracefully", () => {
-    expect(canViewBudget(null as any)).toBe(false);
+    expect(canViewBudget(null as unknown as string)).toBe(false);
   });
 
   it("should handle empty string role gracefully", () => {

@@ -64,7 +64,7 @@ describe("query mappers", () => {
   });
   it("createMaterialRequest inserts body with requested default", async () => {
     let inserted: Record<string, unknown> | null = null;
-    const client: any = {
+    const client = {
       from: () => {
         const chain = {
           insert: (row: unknown) => { inserted = row as Record<string, unknown>; return chain; },
@@ -78,22 +78,21 @@ describe("query mappers", () => {
     expect(inserted).toMatchObject({ project_id: "proj", item: "Cement", unit: "bag", qty: 50, status: "requested", need_date: "2026-08-20", reason: "slab" });
   });
   it("setMaterialRequestStatus updates status + stamps approved_by only on approve", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let patch: any = null;
-    const client: any = { from: () => ({ update: (p: unknown) => { patch = p as Record<string, unknown>; return { eq: async () => ({ data: null, error: null }) }; } }) };
+    const patches: Array<Record<string, unknown>> = [];
+    const client = { from: () => ({ update: (p: unknown) => { patches.push(p as Record<string, unknown>); return { eq: async () => ({ data: null, error: null }) }; } }) };
     await setMaterialRequestStatus(client, "1", "approved", "u1");
-    expect(patch).toMatchObject({ status: "approved", approved_by: "u1" });
+    expect(patches[0]).toMatchObject({ status: "approved", approved_by: "u1" });
     await setMaterialRequestStatus(client, "1", "ordered", "u1");
-    expect(patch).toMatchObject({ status: "ordered" });
-    expect(patch?.approved_by).toBeUndefined();
+    expect(patches[1]).toMatchObject({ status: "ordered" });
+    expect(patches[1]?.approved_by).toBeUndefined();
   });
   it("setMaterialRequestStatus surfaces errors", async () => {
-    const client: any = { from: () => ({ update: () => ({ eq: async () => ({ data: null, error: { message: "denied" } }) }) }) };
+    const client = { from: () => ({ update: () => ({ eq: async () => ({ data: null, error: { message: "denied" } }) }) }) };
     const r = await setMaterialRequestStatus(client, "1", "approved", "u1");
     expect(r).toEqual({ ok: false, error: "denied" });
   });
   it("deleteMaterialRequest surfaces errors", async () => {
-    const client: any = { from: () => ({ delete: () => ({ eq: async () => ({ data: null, error: { message: "gone" } }) }) }) };
+    const client = { from: () => ({ delete: () => ({ eq: async () => ({ data: null, error: { message: "gone" } }) }) }) };
     const r = await deleteMaterialRequest(client, "1");
     expect(r).toEqual({ ok: false, error: "gone" });
   });

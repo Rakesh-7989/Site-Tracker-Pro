@@ -29,6 +29,11 @@ type Violation = {
   samples?: Array<{ target: string; msg: string | null }>;
 };
 
+type AxeNode = {
+  target?: string | string[];
+  any?: Array<{ message: string }>;
+};
+
 async function scan(page: import("@playwright/test").Page, _label: string): Promise<Violation[]> {
   await page.addScriptTag({ path: AXE_PATH });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,9 +47,9 @@ async function scan(page: import("@playwright/test").Page, _label: string): Prom
     help: v.help,
     nodes: v.nodes?.length ?? 0,
     // First few selectors + a contrast-pair summary for triage.
-    samples: (v.nodes ?? []).slice(0, 5).map((n: any) => ({
+    samples: (v.nodes ?? []).slice(0, 5).map((n: AxeNode) => ({
       target: Array.isArray(n.target) ? n.target.join(" ") : String(n.target),
-      msg: n.any?.map((x: any) => x.message).find((m: string) => /contrast|Foreground/.test(m)) ?? null,
+      msg: n.any?.map((x) => x.message).find((m: string) => /contrast|Foreground/.test(m)) ?? null,
     })),
   }));
   return violations as Violation[];

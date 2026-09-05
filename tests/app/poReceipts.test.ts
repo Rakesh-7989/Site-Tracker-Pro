@@ -66,7 +66,7 @@ describe("query mappers", () => {
   });
   it("addPoReceipt computes amount = qty × unit_price", async () => {
     let inserted: Record<string, unknown> | null = null;
-    const client: any = {
+    const client = {
       from: () => {
         const chain = {
           insert: (row: unknown) => { inserted = row as Record<string, unknown>; return chain; },
@@ -83,7 +83,7 @@ describe("query mappers", () => {
     expect(inserted).toMatchObject({ po_id: "po", qty: 4, unit_price: 250, amount: 1000, notes: "ok" });
   });
   it("deletePoReceipt surfaces errors", async () => {
-    const client: any = { from: () => ({ delete: () => ({ eq: async () => ({ data: null, error: { message: "denied" } }) }) }) };
+    const client = { from: () => ({ delete: () => ({ eq: async () => ({ data: null, error: { message: "denied" } }) }) }) };
     const r = await deletePoReceipt(client, "1");
     expect(r).toEqual({ ok: false, error: "denied" });
   });
