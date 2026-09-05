@@ -304,14 +304,14 @@ export async function fetchRbac2Context(
 
     const [profiles, bindings, acl, clientPermissions, vendorScopes] = await Promise.all([
       profileIds.length
-        ? client.from("rbac_role_profiles").select("*").in("id", profileIds).then((r: any) => (r.data ?? []).map(normalizeRoleProfile).filter(Boolean))
+        ? client.from("rbac_role_profiles").select("*").in("id", profileIds).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeRoleProfile).filter(Boolean))
         : Promise.resolve([]),
       profileIds.length
-        ? client.from("rbac_profile_bindings").select("*").in("profile_id", profileIds).then((r: any) => (r.data ?? []).map(normalizeProfileBinding).filter(Boolean))
+        ? client.from("rbac_profile_bindings").select("*").in("profile_id", profileIds).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeProfileBinding).filter(Boolean))
         : Promise.resolve([]),
-      client.from("resource_acl_entries").select("*").eq("org_id", activeOrgId).then((r: any) => (r.data ?? []).map(normalizeAclEntry).filter(Boolean)),
-      client.from("client_portal_permissions").select("*").eq("org_id", activeOrgId).then((r: any) => (r.data ?? []).map(normalizeClientPermission).filter(Boolean)),
-      client.from("vendor_project_scopes").select("*").eq("org_id", activeOrgId).then((r: any) => (r.data ?? []).map(normalizeVendorScope).filter(Boolean)),
+      client.from("resource_acl_entries").select("*").eq("org_id", activeOrgId).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeAclEntry).filter(Boolean)),
+      client.from("client_portal_permissions").select("*").eq("org_id", activeOrgId).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeClientPermission).filter(Boolean)),
+      client.from("vendor_project_scopes").select("*").eq("org_id", activeOrgId).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeVendorScope).filter(Boolean)),
     ]);
 
     return { mode, profiles, bindings, acl, clientPermissions, vendorScopes };

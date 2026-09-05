@@ -11,6 +11,7 @@
 import type { QueryResult } from "./queries";
 import { generateBody, generateTitle, type NotificationType } from "./notificationTemplates";
 import { fmtRupees } from "./financeQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 /** Outbox event type constants — mirror the SQL `type` values (migration 208). */
 export const OutboxEventType = {
@@ -54,17 +55,17 @@ export interface PublishedEvent {
 
 /** Publish a durable outbox event (transactional insert via the RPC). */
 export async function publishEvent(
-  client: any,
+  client: TypedSupabaseClient,
   input: PublishEventInput,
 ): Promise<QueryResult<PublishedEvent>> {
   try {
-    const { data, error } = await (client as any).rpc("publish_event", {
+    const { data, error } = await client.rpc("publish_event", {
       p_type: input.type,
       p_org_id: input.orgId,
-      p_payload: input.payload ?? {},
-      p_project_id: input.projectId ?? null,
-      p_entity_type: input.entityType ?? null,
-      p_entity_id: input.entityId ?? null,
+      p_payload: (input.payload ?? {}) as never,
+      p_project_id: (input.projectId ?? null) as never,
+      p_entity_type: (input.entityType ?? null) as never,
+      p_entity_id: (input.entityId ?? null) as never,
     });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: { eventId: String(data) } };
@@ -75,7 +76,7 @@ export async function publishEvent(
 
 /** Publish an org-wide broadcast as a durable outbox event. */
 export async function publishOrgBroadcast(
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string,
   type: NotificationType,
   placeholders?: Record<string, string>,
@@ -124,7 +125,7 @@ export function invoiceGeneratedPayload(input: {
 
 /** Publish `invoice.generated` to project members (best-effort). */
 export function publishInvoiceGenerated(
-  client: any,
+  client: TypedSupabaseClient,
   input: PublishInvoiceGeneratedInput,
 ): Promise<QueryResult<PublishedEvent>> {
   return publishEvent(client, {
@@ -163,7 +164,7 @@ export function quoteAcceptedPayload(input: {
 
 /** Publish `quote.accepted` to project members (best-effort). */
 export function publishQuoteAccepted(
-  client: any,
+  client: TypedSupabaseClient,
   input: PublishQuoteAcceptedInput,
 ): Promise<QueryResult<PublishedEvent>> {
   return publishEvent(client, {
@@ -201,7 +202,7 @@ export function correctiveActionOpenedPayload(input: {
 
 /** Publish `corrective_action.opened` to project members (best-effort). */
 export function publishCorrectiveActionOpened(
-  client: any,
+  client: TypedSupabaseClient,
   input: PublishCorrectiveActionOpenedInput,
 ): Promise<QueryResult<PublishedEvent>> {
   return publishEvent(client, {
@@ -254,7 +255,7 @@ export interface OutboxRow {
 }
 
 /** Map a raw Postgres row into the typed shape (unknowns coerced safely). */
-export function mapOutboxRow(r: any): OutboxRow {
+export function mapOutboxRow(r: Record<string, unknown>): OutboxRow {
   return {
     id: String(r.id),
     type: String(r.type),

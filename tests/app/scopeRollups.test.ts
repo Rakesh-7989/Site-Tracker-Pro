@@ -17,6 +17,8 @@ import {
 import { listOrgProjects } from "@/app/queries/procurementQuotes";
 import type { MemberProjectScope } from "@/app/queries/queries";
 
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
+
 type Raw = { data: unknown; error: unknown };
 
 const MEMBER_EMPTY: MemberProjectScope = { mode: "member", projectIds: [] };
@@ -25,7 +27,7 @@ const MEMBER_TWO: MemberProjectScope = { mode: "member", projectIds: ["p1", "p2"
 // Chainable + awaitable filter builder. `.in/.eq/.order/.limit` return the
 // same object so both `.in("id", ids)` + a trailing `.in("type", …)` can be
 // chained; `await q` resolves via `then` to the configured raw result.
-function mockClient(rtByTable: Record<string, Raw>) {
+function mockClient(rtByTable: Record<string, Raw>): { client: TypedSupabaseClient; log: string[] } {
   const log: string[] = [];
   const from = (t: string): any => {
     log.push(`from:${t}`);
@@ -39,7 +41,7 @@ function mockClient(rtByTable: Record<string, Raw>) {
     b.then = (onFul: (v: Raw) => void): void => { onFul(rtByTable[t] ?? { data: [], error: null }); };
     return b;
   };
-  return { client: { from }, log };
+  return { client: { from } as unknown as TypedSupabaseClient, log };
 }
 
 describe("scope — empty member assignments short-circuit", () => {

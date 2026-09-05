@@ -1,3 +1,5 @@
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
+
 // SiteTrack Pro — Spatial query layer (VNEXT-005 / P1.4).
 // CRUD + normalizers for the spatial hierarchy tables (migration 206):
 //   sites, buildings, spatial_floors, zones, rooms.
@@ -110,7 +112,7 @@ const asRoom = (r: Record<string, unknown>): SpatialRoom => ({
 
 /** List sites for a project (or an org when projectId omitted). */
 export async function listSites(
-  client: any,
+  client: TypedSupabaseClient,
   projectId?: string,
 ): Promise<Result<SpatialSite[]>> {
   try {
@@ -126,7 +128,7 @@ export async function listSites(
 }
 
 /** List buildings for a site. */
-export async function listBuildings(client: any, siteId: string): Promise<Result<SpatialBuilding[]>> {
+export async function listBuildings(client: TypedSupabaseClient, siteId: string): Promise<Result<SpatialBuilding[]>> {
   try {
     const { data, error } = await client
       .from("buildings")
@@ -141,7 +143,7 @@ export async function listBuildings(client: any, siteId: string): Promise<Result
 }
 
 /** List floors for a building. NOTE: the 206 table is `spatial_floors`. */
-export async function listFloors(client: any, buildingId: string): Promise<Result<SpatialFloor[]>> {
+export async function listFloors(client: TypedSupabaseClient, buildingId: string): Promise<Result<SpatialFloor[]>> {
   try {
     const { data, error } = await client
       .from("spatial_floors")
@@ -156,7 +158,7 @@ export async function listFloors(client: any, buildingId: string): Promise<Resul
 }
 
 /** List zones for a floor. */
-export async function listZones(client: any, floorId: string): Promise<Result<SpatialZone[]>> {
+export async function listZones(client: TypedSupabaseClient, floorId: string): Promise<Result<SpatialZone[]>> {
   try {
     const { data, error } = await client
       .from("zones")
@@ -171,7 +173,7 @@ export async function listZones(client: any, floorId: string): Promise<Result<Sp
 }
 
 /** List rooms for a zone. */
-export async function listRooms(client: any, zoneId: string): Promise<Result<SpatialRoom[]>> {
+export async function listRooms(client: TypedSupabaseClient, zoneId: string): Promise<Result<SpatialRoom[]>> {
   try {
     const { data, error } = await client
       .from("rooms")
@@ -192,7 +194,7 @@ export async function listRooms(client: any, zoneId: string): Promise<Result<Spa
  * always returned in canonical order even when empty (stable rendering).
  */
 export async function loadProjectHierarchy(
-  client: any,
+  client: TypedSupabaseClient,
   projectId: string,
 ): Promise<Result<SpatialHierarchy>> {
   try {

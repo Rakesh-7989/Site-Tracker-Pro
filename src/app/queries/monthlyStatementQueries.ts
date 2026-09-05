@@ -4,6 +4,7 @@
 // (consultancy), and PO receipts (procurement). Mirrors the RevenueView +
 // UtilizationView org-rollup pattern (project list once, then .in fetches).
 
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import { listProjectsByType } from "./utilizationQueries";
 import type { MemberProjectScope } from "./queries";
 
@@ -158,7 +159,7 @@ export function monthlyStatementTotals(rows: MonthlyStatementRow[]): MonthlyStat
 
  
 export async function listOrgMonthlyStatement(
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string,
   monthStart: string, // YYYY-MM-DD
   monthEnd: string,   // YYYY-MM-DD

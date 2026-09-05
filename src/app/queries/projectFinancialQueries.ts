@@ -1,6 +1,8 @@
 // SiteTrack Pro — Project Financial Depth queries (v6 Phase 6).
 // Earned value, P&L, WIP aging, cost-to-complete, budget reallocation.
 
+import type { TableUpdate, TypedSupabaseClient } from "@/lib/supabase/db";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -23,12 +25,11 @@ export interface EarnedValue {
   vac: number;               // Variance at Completion
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function calculateEarnedValue(client: any, projectId: string): Promise<Result<EarnedValue>> {
+export async function calculateEarnedValue(client: TypedSupabaseClient, projectId: string): Promise<Result<EarnedValue>> {
   try {
     const { data, error } = await client.rpc("calculate_earned_value", { p_project_id: projectId });
     if (error) return dbe(error);
-    const row = (data ?? [])[0] as EarnedValue | undefined;
+    const row = ((data ?? []) as Record<string, unknown>[])[0] as unknown as EarnedValue | undefined;
     return row ? ok(row) : er("No data returned");
   } catch (e) { return er(e); }
 }
@@ -67,8 +68,7 @@ export interface ProjectPnL {
   vac: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getProjectPnL(client: any, projectId: string): Promise<Result<ProjectPnL>> {
+export async function getProjectPnL(client: TypedSupabaseClient, projectId: string): Promise<Result<ProjectPnL>> {
   try {
     const [evRes, invRes, expRes, poRes, raRes, laborRes] = await Promise.all([
       client.rpc("calculate_earned_value", { p_project_id: projectId }),
@@ -80,30 +80,30 @@ export async function getProjectPnL(client: any, projectId: string): Promise<Res
     ]);
 
     if (evRes.error) return dbe(evRes.error);
-    const ev = (evRes.data ?? [])[0] as EarnedValue | undefined;
+    const ev = ((evRes.data ?? []) as Record<string, unknown>[])[0] as unknown as EarnedValue | undefined;
 
-    const billedRevenue = ((invRes.data ?? []) as any[]).reduce((s, r) => {
+    const billedRevenue = ((invRes.data ?? []) as Record<string, unknown>[]).reduce((s, r) => {
       const amount = Number(r.amount ?? 0);
       const gstPct = Number(r.gst ?? 0);
       const tdsPct = Number(r.tds ?? 0);
       return s + Math.round(amount * (1 + gstPct / 100 - tdsPct / 100));
     }, 0);
 
-    const expensesByCat = ((expRes.data ?? []) as any[]).reduce((acc, r) => {
+    const expensesByCat = ((expRes.data ?? []) as Record<string, unknown>[]).reduce<Record<string, number>>((acc, r) => {
       const cat = String(r.category ?? "other");
       acc[cat] = (acc[cat] ?? 0) + Number(r.amount ?? 0);
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
-    const poTotal = ((poRes.data ?? []) as any[]).reduce((s, r) => s + Number(r.amount ?? 0), 0);
-    const poApproved = ((poRes.data ?? []) as any[]).filter(r => r.status === "approved").reduce((s, r) => s + Number(r.amount ?? 0), 0);
+    const poTotal = ((poRes.data ?? []) as Record<string, unknown>[]).reduce((s, r) => s + Number(r.amount ?? 0), 0);
+    const poApproved = ((poRes.data ?? []) as Record<string, unknown>[]).filter(r => r.status === "approved").reduce((s, r) => s + Number(r.amount ?? 0), 0);
 
-const raBilled = ((raRes.data ?? []) as any[]).reduce((s, r) => {
+const raBilled = ((raRes.data ?? []) as Record<string, unknown>[]).reduce((s, r) => {
       const net = Number(r.bill_amount ?? 0) * (1 - (Number(r.retention_pct ?? 0) / 100));
       return s + net;
     }, 0);
 
-    const laborCost = ((laborRes.data ?? []) as any[]).reduce((s, r) => s + (Number(r.hours ?? 0) * Number(r.rate ?? 0)), 0);
+    const laborCost = ((laborRes.data ?? []) as Record<string, unknown>[]).reduce((s, r) => s + (Number(r.hours ?? 0) * Number(r.rate ?? 0)), 0);
 
     const contractValue = ev?.contractValue ?? 0;
     const actualCost = (ev?.actualCost ?? 0) + poTotal;
@@ -179,20 +179,18 @@ function mapWip(r: Record<string, unknown>): WipAgingEntry {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listWipAging(client: any, projectId: string): Promise<Result<WipAgingEntry[]>> {
+export async function listWipAging(client: TypedSupabaseClient, projectId: string): Promise<Result<WipAgingEntry[]>> {
   try {
     const { data, error } = await client.from("wip_aging")
       .select("id, project_id, category, description, amount, aging_days, incurred_date, billed_amount, status, created_at")
       .eq("project_id", projectId)
       .order("aging_days", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as any[]).map(mapWip));
+    return ok(((data ?? []) as Record<string, unknown>[]).map(mapWip));
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createWipEntry(client: any, input: { projectId: string; category: WipCategory; description?: string; amount: number; incurredDate?: string }): Promise<Result<{ id: string }>> {
+export async function createWipEntry(client: TypedSupabaseClient, input: { projectId: string; category: WipCategory; description?: string; amount: number; incurredDate?: string }): Promise<Result<{ id: string }>> {
   try {
     const { data, error } = await client.from("wip_aging").insert({
       project_id: input.projectId,
@@ -206,10 +204,9 @@ export async function createWipEntry(client: any, input: { projectId: string; ca
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function updateWipEntry(client: any, id: string, patch: Partial<WipAgingEntry>): Promise<Result<{ ok: true }>> {
+export async function updateWipEntry(client: TypedSupabaseClient, id: string, patch: Partial<WipAgingEntry>): Promise<Result<{ ok: true }>> {
   try {
-    const dbPatch: Record<string, unknown> = {};
+    const dbPatch: TableUpdate<"wip_aging"> = {};
     if (patch.category) dbPatch.category = patch.category;
     if (patch.description !== undefined) dbPatch.description = patch.description;
     if (patch.amount) dbPatch.amount = patch.amount;
@@ -290,20 +287,18 @@ function mapForecast(r: Record<string, unknown>): CostForecast {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listCostForecasts(client: any, projectId: string): Promise<Result<CostForecast[]>> {
+export async function listCostForecasts(client: TypedSupabaseClient, projectId: string): Promise<Result<CostForecast[]>> {
   try {
     const { data, error } = await client.from("cost_forecasts")
       .select("id, project_id, category, original_budget, revised_budget, actual_to_date, committed, estimated_to_complete, forecast_final, variance, variance_pct, notes, forecast_by, forecast_at, version")
       .eq("project_id", projectId)
       .order("forecast_at", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as any[]).map(mapForecast));
+    return ok(((data ?? []) as Record<string, unknown>[]).map(mapForecast));
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function upsertCostForecast(client: any, input: { projectId: string; category: ForecastCategory; originalBudget?: number; revisedBudget?: number; actualToDate?: number; committed?: number; estimatedToComplete?: number; notes?: string }): Promise<Result<{ id: string }>> {
+export async function upsertCostForecast(client: TypedSupabaseClient, input: { projectId: string; category: ForecastCategory; originalBudget?: number; revisedBudget?: number; actualToDate?: number; committed?: number; estimatedToComplete?: number; notes?: string }): Promise<Result<{ id: string }>> {
   try {
     const { data, error } = await client.from("cost_forecasts").upsert({
       project_id: input.projectId,
@@ -407,20 +402,18 @@ function mapBudgetChange(r: Record<string, unknown>): BudgetChange {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listBudgetChanges(client: any, projectId: string): Promise<Result<BudgetChange[]>> {
+export async function listBudgetChanges(client: TypedSupabaseClient, projectId: string): Promise<Result<BudgetChange[]>> {
   try {
     const { data, error } = await client.from("budget_changes")
       .select("id, project_id, change_type, category, amount, from_category, reason, approved_by, approved_at, status, created_by, created_at")
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as any[]).map(mapBudgetChange));
+    return ok(((data ?? []) as Record<string, unknown>[]).map(mapBudgetChange));
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createBudgetChange(client: any, input: { projectId: string; changeType: BudgetChangeType; category: BudgetCategory; amount: number; fromCategory?: string; reason: string }): Promise<Result<{ id: string }>> {
+export async function createBudgetChange(client: TypedSupabaseClient, input: { projectId: string; changeType: BudgetChangeType; category: BudgetCategory; amount: number; fromCategory?: string; reason: string }): Promise<Result<{ id: string }>> {
   try {
     const { data, error } = await client.from("budget_changes").insert({
       project_id: input.projectId,
@@ -435,8 +428,7 @@ export async function createBudgetChange(client: any, input: { projectId: string
   } catch (e) { return er(e); }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function approveBudgetChange(client: any, id: string, approved: boolean): Promise<Result<{ ok: true }>> {
+export async function approveBudgetChange(client: TypedSupabaseClient, id: string, approved: boolean): Promise<Result<{ ok: true }>> {
   try {
     const { error } = await client.from("budget_changes").update({
       status: approved ? "approved" : "rejected",
@@ -474,8 +466,7 @@ export function computeBudgetImpact(changes: BudgetChange[]): BudgetImpact[] {
 
 // ── RPC Wrappers ──────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function recomputeProjectFinancials(client: any, projectId: string): Promise<Result<{ ok: true }>> {
+export async function recomputeProjectFinancials(client: TypedSupabaseClient, projectId: string): Promise<Result<{ ok: true }>> {
   try {
     const { error } = await client.rpc("recompute_project_financials", { p_project_id: projectId });
     if (error) return dbe(error);

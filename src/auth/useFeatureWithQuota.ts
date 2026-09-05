@@ -21,10 +21,11 @@ import { hasPlanCap, type PlanFeature } from "./planCaps";
 import { fetchOrgQuota } from "@/app/queries/quotaQueries";
 import type { QuotaRow, QuotaRollup } from "@/app/queries/quotaQueries";
 import { atQuota as queryAtQuota, usageRollup } from "@/app/queries/quotaQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
-async function getClient(): Promise<any | null> {
+async function getClient(): Promise<TypedSupabaseClient | null> {
   const mod = await import("../lib/supabase/supabase");
-  return await (mod as any).getSupabaseClient();
+  return (await mod as { getSupabaseClient: () => Promise<TypedSupabaseClient> }).getSupabaseClient();
 }
 
 interface UseFeatureWithQuotaReturn {

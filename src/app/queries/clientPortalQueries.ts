@@ -7,6 +7,7 @@
 // the drawing/comment surface rides the B1 released-current rule.
 
 import { netReceivable, outstanding, paymentStatusFrom } from "./crossInvoiceQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import type { ApprovalStatus } from "./approvalQueries";
 
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -14,25 +15,79 @@ export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 export interface ProjectBrief { id: string; name: string; location: string | null; status: string; progress: number; client_email: string | null; type: string; }
 export interface NotificationBrief { id: string; title: string; body: string; read: boolean; }
 
-export async function listClientProjects(client: any, email: string): Promise<PResult<ProjectBrief[]>> {
+type ProjectRow = {
+  id: string;
+  name: string;
+  location: string | null;
+  status: string;
+  progress: number | null;
+  client_email: string | null;
+  type: string | null;
+};
+
+type NotificationRow = {
+  id: string;
+  title: string | null;
+  body: string | null;
+  read_at: string | null;
+};
+
+type MilestoneRow = {
+  id: string;
+  title: string | null;
+  status: string | null;
+  due_date: string | null;
+  completed_date: string | null;
+};
+
+type DrawingRow = {
+  id: string;
+  title: string | null;
+  type: string | null;
+  revision: string | null;
+  notes: string | null;
+  release_date: string | null;
+  approval_status: string | null;
+  preview_url: string | null;
+};
+
+type SiteUpdateRow = {
+  id: string;
+  notes: string | null;
+  weather: string | null;
+  workers_count: number | null;
+  update_date: string | null;
+  created_at: string | null;
+  author: { name: string | null } | null;
+};
+
+type ActivityRow = {
+  id: string;
+  action: string | null;
+  detail: string | null;
+  by_name: string | null;
+  created_at: string | null;
+};
+
+export async function listClientProjects(client: TypedSupabaseClient, email: string): Promise<PResult<ProjectBrief[]>> {
   try {
     const { data, error } = await client.from("projects")
       .select("id, name, location, status, progress, client_email, type")
       .eq("client_email", email)
       .order("name");
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: (data ?? []).map((r: any) => ({ id: r.id, name: r.name, location: r.location, status: r.status, progress: r.progress ?? 0, client_email: r.client_email, type: r.type ?? "construction" })) };
+    return { ok: true, data: ((data ?? []) as ProjectRow[]).map(r => ({ id: r.id, name: r.name, location: r.location, status: r.status, progress: r.progress ?? 0, client_email: r.client_email, type: r.type ?? "construction" })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listClientNotifications(client: any): Promise<PResult<NotificationBrief[]>> {
+export async function listClientNotifications(client: TypedSupabaseClient): Promise<PResult<NotificationBrief[]>> {
   try {
     const { data, error } = await client.from("notifications")
       .select("id, title, body, read_at")
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: (data ?? []).map((r: any) => ({ id: r.id, title: r.title ?? "", body: r.body ?? "", read: r.read_at != null })) };
+    return { ok: true, data: ((data ?? []) as NotificationRow[]).map(r => ({ id: r.id, title: r.title ?? "", body: r.body ?? "", read: r.read_at != null })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
@@ -181,7 +236,7 @@ export function buildActivityFeed(updates: ClientUpdate[], activity: Array<{ id:
 
 // ── B2 query mappers ─────────────────────────────────────────────────────────
 
-export async function getClientProject(client: any, projectId: string, email: string): Promise<PResult<ClientProjectHeader>> {
+export async function getClientProject(client: TypedSupabaseClient, projectId: string, email: string): Promise<PResult<ClientProjectHeader>> {
   try {
     const { data, error } = await client.from("projects")
       .select("id, name, type, status, location, progress, client_name, description, expected_end_date")
@@ -205,7 +260,7 @@ export async function getClientProject(client: any, projectId: string, email: st
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listClientInvoices(client: any, projectId: string): Promise<PResult<ClientInvoice[]>> {
+export async function listClientInvoices(client: TypedSupabaseClient, projectId: string): Promise<PResult<ClientInvoice[]>> {
   try {
     // `invoices` has no `created_at` — order by `issued_date`. `payments` is
     // polymorphic (target_type/target_id, no invoice_id FK) so payments are
@@ -217,9 +272,9 @@ export async function listClientInvoices(client: any, projectId: string): Promis
       .order("issued_date", { ascending: false, nullsFirst: false });
     if (error) return { ok: false, error: String(error.message ?? error) };
 
-    const invoices = ((data ?? []) as any[]);
+    const invoices = ((data ?? []) as Array<{ id: string; no: string | null; amount: number | null; gst: number | null; tds: number | null; status: string | null; issued_date: string | null }>);
     const invoiceIds = invoices.map(r => String(r.id));
-    let paymentsByInvoice: Record<string, any[]> = {};
+    let paymentsByInvoice: Record<string, Array<{ id: string; target_id: string | null; amount: number | null; method: string | null; received_on: string | null; reference: string | null }>> = {};
     if (invoiceIds.length > 0) {
       const { data: pData, error: pErr } = await client
         .from("payments")
@@ -227,7 +282,7 @@ export async function listClientInvoices(client: any, projectId: string): Promis
         .eq("target_type", "invoice")
         .in("target_id", invoiceIds);
       if (pErr) return { ok: false, error: String(pErr.message ?? pErr) };
-      paymentsByInvoice = ((pData ?? []) as any[]).reduce<Record<string, any[]>>((acc, p) => {
+      paymentsByInvoice = ((pData ?? []) as Array<{ id: string; target_id: string | null; amount: number | null; method: string | null; received_on: string | null; reference: string | null }>).reduce<Record<string, Array<{ id: string; target_id: string | null; amount: number | null; method: string | null; received_on: string | null; reference: string | null }>>>((acc, p) => {
         const tid = String(p.target_id ?? "");
         (acc[tid] ||= []).push(p);
         return acc;
@@ -239,7 +294,7 @@ export async function listClientInvoices(client: any, projectId: string): Promis
       const gst = Number(r.gst ?? 0);
       const tds = Number(r.tds ?? 0);
       const net = netReceivable(amount, gst, tds);
-      const payments = (paymentsByInvoice[String(r.id)] ?? []).map((p: any) => ({
+      const payments = (paymentsByInvoice[String(r.id)] ?? []).map(p => ({
         id: String(p.id),
         amount: Number(p.amount ?? 0),
         method: String(p.method ?? "bank"),
@@ -265,14 +320,14 @@ export async function listClientInvoices(client: any, projectId: string): Promis
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listClientMilestones(client: any, projectId: string): Promise<PResult<ClientMilestone[]>> {
+export async function listClientMilestones(client: TypedSupabaseClient, projectId: string): Promise<PResult<ClientMilestone[]>> {
   try {
     const { data, error } = await client.from("milestones")
       .select("id, title, status, due_date, completed_date")
       .eq("project_id", projectId)
       .order("due_date", { ascending: true, nullsFirst: false });
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: ((data ?? []) as any[]).map(r => ({
+    return { ok: true, data: ((data ?? []) as MilestoneRow[]).map(r => ({
       id: String(r.id),
       title: String(r.title ?? ""),
       status: r.status as "pending" | "in_progress" | "completed",
@@ -282,7 +337,7 @@ export async function listClientMilestones(client: any, projectId: string): Prom
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listClientDrawings(client: any, projectId: string): Promise<PResult<ClientDrawing[]>> {
+export async function listClientDrawings(client: TypedSupabaseClient, projectId: string): Promise<PResult<ClientDrawing[]>> {
   try {
     const { data, error } = await client.from("drawings")
       .select("id, title, type, revision, notes, release_date, approval_status, preview_url")
@@ -291,7 +346,7 @@ export async function listClientDrawings(client: any, projectId: string): Promis
       .contains("released_to", ["client"])
       .order("release_date", { ascending: false, nullsFirst: false });
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: ((data ?? []) as any[]).map(r => ({
+    return { ok: true, data: ((data ?? []) as DrawingRow[]).map(r => ({
       id: String(r.id),
       title: String(r.title ?? ""),
       type: String(r.type ?? "drawing"),
@@ -304,7 +359,7 @@ export async function listClientDrawings(client: any, projectId: string): Promis
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listClientUpdates(client: any, projectId: string): Promise<PResult<ClientUpdate[]>> {
+export async function listClientUpdates(client: TypedSupabaseClient, projectId: string): Promise<PResult<ClientUpdate[]>> {
   try {
     const { data, error } = await client.from("site_updates")
       .select("id, notes, weather, workers_count, update_date, created_at, author:author_id(name)")
@@ -312,19 +367,19 @@ export async function listClientUpdates(client: any, projectId: string): Promise
       .order("created_at", { ascending: false })
       .limit(15);
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: ((data ?? []) as any[]).map(r => ({
+    return { ok: true, data: ((data ?? []) as unknown as SiteUpdateRow[]).map(r => ({
       id: String(r.id),
       updateDate: r.update_date == null ? null : String(r.update_date),
       notes: String(r.notes ?? ""),
       weather: r.weather == null ? null : String(r.weather),
       workersCount: r.workers_count == null ? null : Number(r.workers_count),
-      authorName: (r.author as { name?: unknown } | null)?.name == null ? null : String((r.author as { name?: unknown }).name),
+      authorName: r.author?.name == null ? null : String(r.author.name),
       createdAt: String(r.created_at ?? ""),
     })) };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function listClientActivity(client: any, projectId: string): Promise<PResult<Array<{ id: string; action: string; detail: string | null; byName: string | null; createdAt: string }>>> {
+export async function listClientActivity(client: TypedSupabaseClient, projectId: string): Promise<PResult<Array<{ id: string; action: string; detail: string | null; byName: string | null; createdAt: string }>>> {
   try {
     const { data, error } = await client.from("activity_log")
       .select("id, action, detail, by_name, created_at")
@@ -332,7 +387,7 @@ export async function listClientActivity(client: any, projectId: string): Promis
       .order("created_at", { ascending: false })
       .limit(30);
     if (error) return { ok: false, error: String(error.message ?? error) };
-    return { ok: true, data: ((data ?? []) as any[]).map(r => ({
+    return { ok: true, data: ((data ?? []) as ActivityRow[]).map(r => ({
       id: String(r.id),
       action: String(r.action ?? ""),
       detail: r.detail == null ? null : String(r.detail),

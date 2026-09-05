@@ -1,10 +1,13 @@
 // SiteTrack Pro — branding queries tests (v3 shell).
 
 import { describe, it, expect } from "vitest";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import {
   getOrgBranding, getProjectBranding, listProjectBrandings,
   upsertOrgBranding, upsertProjectBranding, deleteProjectBranding,
 } from "@/app/queries/brandingQueries";
+
+const asTyped = (c: unknown): TypedSupabaseClient => c as unknown as TypedSupabaseClient;
 
 function selectChain(data: unknown, error: unknown) {
   const chain: Record<string, unknown> = {
@@ -44,7 +47,7 @@ describe("getOrgBranding", () => {
       { id: "b-1", org_id: "o-1", project_id: null, logo_url: "https://ex.com/logo.png", tagline: "Build Better", accent: "amber", theme: "light" },
       null,
     ) }) };
-    const r = await getOrgBranding(client, "o-1");
+    const r = await getOrgBranding(asTyped(client), "o-1");
     expect(r.ok).toBe(true);
     if (r.ok && r.data) {
       expect(r.data.id).toBe("b-1");
@@ -59,14 +62,14 @@ describe("getOrgBranding", () => {
 
   it("returns null when no branding row exists", async () => {
     const client = { from: () => ({ select: () => selectChain(null, null) }) };
-    const r = await getOrgBranding(client, "o-1");
+    const r = await getOrgBranding(asTyped(client), "o-1");
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.data).toBeNull();
   });
 
   it("surfaces query errors", async () => {
     const client = { from: () => ({ select: () => selectChain(null, { message: "denied" }) }) };
-    const r = await getOrgBranding(client, "o-1");
+    const r = await getOrgBranding(asTyped(client), "o-1");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/denied/);
   });
@@ -78,7 +81,7 @@ describe("getProjectBranding", () => {
       { id: "b-2", org_id: "o-1", project_id: "p-1", logo_url: null, tagline: null, accent: "blue", theme: "dark" },
       null,
     ) }) };
-    const r = await getProjectBranding(client, "o-1", "p-1");
+    const r = await getProjectBranding(asTyped(client), "o-1", "p-1");
     expect(r.ok).toBe(true);
     if (r.ok && r.data) {
       expect(r.data.projectId).toBe("p-1");
@@ -95,7 +98,7 @@ describe("listProjectBrandings", () => {
     ], error: null }) };
     const chain = new Proxy({}, { get: () => () => chain });
     const client = { from: () => ({ select: () => ({ eq: () => ({ not: () => thenable }) }) }) };
-    const r = await listProjectBrandings(client, "o-1");
+    const r = await listProjectBrandings(asTyped(client), "o-1");
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.data).toHaveLength(1);
@@ -107,14 +110,14 @@ describe("listProjectBrandings", () => {
 describe("upsertOrgBranding", () => {
   it("returns the new id on upsert", async () => {
     const client = mockUpsert({ id: "b-new" }, null);
-    const r = await upsertOrgBranding(client, "o-1", { accent: "emerald" });
+    const r = await upsertOrgBranding(asTyped(client), "o-1", { accent: "emerald" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.data.id).toBe("b-new");
   });
 
   it("surfaces upsert errors", async () => {
     const client = mockUpsert(null, { message: "conflict" });
-    const r = await upsertOrgBranding(client, "o-1", { tagline: "Hi" });
+    const r = await upsertOrgBranding(asTyped(client), "o-1", { tagline: "Hi" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/conflict/);
   });
@@ -123,7 +126,7 @@ describe("upsertOrgBranding", () => {
 describe("upsertProjectBranding", () => {
   it("uses composite onConflict key", async () => {
     const client = mockUpsert({ id: "b-p" }, null);
-    const r = await upsertProjectBranding(client, "o-1", "p-1", { theme: "dark" });
+    const r = await upsertProjectBranding(asTyped(client), "o-1", "p-1", { theme: "dark" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.data.id).toBe("b-p");
   });
@@ -132,13 +135,13 @@ describe("upsertProjectBranding", () => {
 describe("deleteProjectBranding", () => {
   it("returns ok on success", async () => {
     const client = mockUpsert(null, null);
-    const r = await deleteProjectBranding(client, "o-1", "p-1");
+    const r = await deleteProjectBranding(asTyped(client), "o-1", "p-1");
     expect(r.ok).toBe(true);
   });
 
   it("surfaces delete errors", async () => {
     const client = mockUpsert(null, { message: "not found" });
-    const r = await deleteProjectBranding(client, "o-1", "p-nonexistent");
+    const r = await deleteProjectBranding(asTyped(client), "o-1", "p-nonexistent");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/not found/);
   });

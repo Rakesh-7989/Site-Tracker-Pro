@@ -1,6 +1,7 @@
 // SiteTrack Pro — Org-wide invoice rollup with payment reconciliation.
 // Mirrors CrossRaBillsView + crossRaQueries pattern for invoices.
 
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import type { MemberProjectScope } from "./queries";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -84,8 +85,7 @@ export function crossInvoiceRollup(invoices: CrossInvoice[]): CrossInvoiceRollup
 
 // ── Query mappers ─────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgInvoices(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CrossInvoice[]>> {
+export async function listOrgInvoices(client: TypedSupabaseClient, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CrossInvoice[]>> {
   try {
     // Fetch projects in org first
     let projQ = client.from("projects").select("id").eq("org_id", orgId);
@@ -96,7 +96,7 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
     }
     const projRes = await projQ;
     if (projRes.error) return dbe(projRes.error);
-    const projectIds = (projRes.data ?? []).map((p: any) => p.id);
+    const projectIds = (projRes.data ?? []).map((p) => String(p.id));
     if (projectIds.length === 0) return ok([]);
 
     // Fetch invoices for these projects; payments are polymorphic
@@ -113,9 +113,9 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
       .order("issued_date", { ascending: false, nullsFirst: false });
     if (error) return dbe(error);
 
-    const raw = ((data ?? []) as any[]);
+    const raw = ((data ?? []) as unknown as Record<string, unknown>[]);
     const invoiceIds = raw.map(r => String(r.id));
-    let paymentsByInvoice: Record<string, any[]> = {};
+    let paymentsByInvoice: Record<string, Record<string, unknown>[]> = {};
     if (invoiceIds.length > 0) {
       const { data: pData, error: pErr } = await client
         .from("payments")
@@ -123,7 +123,7 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
         .eq("target_type", "invoice")
         .in("target_id", invoiceIds);
       if (pErr) return dbe(pErr);
-      paymentsByInvoice = ((pData ?? []) as any[]).reduce<Record<string, any[]>>((acc, p) => {
+      paymentsByInvoice = ((pData ?? []) as unknown as Record<string, unknown>[]).reduce<Record<string, Record<string, unknown>[]>>((acc, p) => {
         const tid = String(p.target_id ?? "");
         (acc[tid] ||= []).push(p);
         return acc;
@@ -135,9 +135,11 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
       const gst = Number(r.gst ?? 0);
       const tds = Number(r.tds ?? 0);
       const net = netReceivable(amount, gst, tds);
-      const received = (paymentsByInvoice[String(r.id)] ?? []).reduce((sum: number, p: any) => sum + Number(p.amount ?? 0), 0);
+      const received = (paymentsByInvoice[String(r.id)] ?? []).reduce((sum: number, p: Record<string, unknown>) => sum + Number(p.amount ?? 0), 0);
       const outstanding = Math.max(0, net - received);
       const project = r.project as { id?: string; name?: string; type?: string } | null;
+      const issuedDate = r.issued_date ? String(r.issued_date) : null;
+      const dueDate = r.due_date ? String(r.due_date) : null;
       return {
         id: String(r.id),
         no: String(r.no ?? ""),
@@ -145,14 +147,14 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
         gst,
         tds,
         status: r.status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
-        issuedDate: r.issued_date ?? null,
+        issuedDate,
         projectId: String(r.project_id ?? ""),
         projectName: project?.name ?? "",
         projectType: project?.type ?? null,
         netReceivable: net,
         received,
         outstanding,
-        paymentStatus: paymentStatusFrom(received, net, r.due_date ?? r.issued_date ?? null),
+        paymentStatus: paymentStatusFrom(received, net, dueDate ?? issuedDate),
       };
     });
     return ok(invoices);
@@ -161,8 +163,7 @@ export async function listOrgInvoices(client: any, orgId: string, scope: MemberP
 
 // ── Org-wide rollup ──────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function listOrgInvoicesWithPayments(client: any, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CrossInvoice[]>> {
+export async function listOrgInvoicesWithPayments(client: TypedSupabaseClient, orgId: string, scope: MemberProjectScope = { mode: "all" }): Promise<Result<CrossInvoice[]>> {
   // Reuse listOrgInvoices - it already includes payment aggregation
   return listOrgInvoices(client, orgId, scope);
 }

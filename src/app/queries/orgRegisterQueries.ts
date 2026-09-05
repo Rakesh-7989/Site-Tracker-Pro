@@ -2,6 +2,7 @@
 
 import type { CompanySegment } from "@/auth";
 import type { BillingPeriod } from "@/features/marketing/plans";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export type RegisterPlan = "basic" | "pro" | "business";
 export interface RegisterInput {
@@ -24,15 +25,14 @@ export type RegisterResult =
   | { ok: true; orgId: string; emailSent: boolean; plan?: RegisterPlan; trialEndsAt?: string }
   | { ok: false; error: string };
 
-async function getClient(): Promise<any | null> {
+async function getClient(): Promise<TypedSupabaseClient | null> {
   const mod = await import("../../lib/supabase/supabase");
-  return await (mod as any).getSupabaseClient();
+  return await (mod as { getSupabaseClient(): Promise<TypedSupabaseClient | null> }).getSupabaseClient();
 }
 
 export async function registerOrg(
   input: RegisterInput,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  injectedClient?: any,
+  injectedClient?: TypedSupabaseClient,
 ): Promise<RegisterResult> {
   try {
      
@@ -41,7 +41,10 @@ export async function registerOrg(
     const { data, error } = await client.functions.invoke("register_org", { body: input });
     if (error) {
       try {
-        const body = await (error as any).context?.json?.();
+        const ctx = (error as unknown as Record<string, unknown>).context as
+          | { json?: () => Promise<Record<string, unknown>> }
+          | undefined;
+        const body = await ctx?.json?.();
         if (body?.message || body?.error) return { ok: false, error: String(body.message ?? body.error) };
       } catch { }
       return { ok: false, error: error.message || "Could not create your organization." };
@@ -57,8 +60,7 @@ export type ResendResult = { ok: true; emailSent: boolean } | { ok: false; error
 
 export async function resendConfirmation(
   email: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  injectedClient?: any,
+  injectedClient?: TypedSupabaseClient,
 ): Promise<ResendResult> {
   try {
      
@@ -67,7 +69,10 @@ export async function resendConfirmation(
     const { data, error } = await client.functions.invoke("resend_confirmation", { body: { email } });
     if (error) {
       try {
-        const body = await (error as any).context?.json?.();
+        const ctx = (error as unknown as Record<string, unknown>).context as
+          | { json?: () => Promise<Record<string, unknown>> }
+          | undefined;
+        const body = await ctx?.json?.();
         if (body?.message || body?.error) return { ok: false, error: String(body.message ?? body.error) };
       } catch { }
       return { ok: false, error: error.message || "Could not resend the confirmation email." };

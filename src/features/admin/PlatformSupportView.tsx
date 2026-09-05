@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/forms";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
 import { listSupportTickets, listOrgsBrief, updateSupportTicket, type Ticket } from "@/app/queries/platformSupportQueries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 
 import { getClient } from "@/lib/supabase/supabase";
@@ -114,7 +115,7 @@ export function PlatformSupportView(): JSX.Element {
     const msg = { id: `msg_${Date.now()}`, by: "admin", text: reply.trim(), time: new Date().toISOString() };
     const ticket = tickets.find(t => t.id === active);
     const msgs = [...(ticket?.messages ?? []), msg];
-    const res = await updateSupportTicket(client, active, { messages: msgs, status: "replied", replied_at: new Date().toISOString() });
+    const res = await updateSupportTicket(client as unknown as TypedSupabaseClient, active, { messages: msgs, status: "replied", replied_at: new Date().toISOString() });
     if (res.ok) {
       setTickets(p => p.map(t => t.id === active ? { ...t, messages: msgs, status: "replied" } : t));
       setReply("");
@@ -124,7 +125,7 @@ export function PlatformSupportView(): JSX.Element {
   const close = async () => {
     if (!active) return;
     const client = await getClient();
-    const res = await updateSupportTicket(client, active, { status: "closed", closed_at: new Date().toISOString() });
+    const res = await updateSupportTicket(client as unknown as TypedSupabaseClient, active, { status: "closed", closed_at: new Date().toISOString() });
     if (res.ok) setTickets(p => p.map(t => t.id === active ? { ...t, status: "closed" } : t));
     else setError(res.error);
   };

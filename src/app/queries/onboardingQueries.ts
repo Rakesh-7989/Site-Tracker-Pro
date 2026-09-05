@@ -5,6 +5,7 @@ import { type OrgType } from "@/auth/orgType";
 import type { EnabledModules } from "@/modules";
 import type { SignupPlan } from "./signupQueries";
 import type { BillingPeriod } from "@/features/marketing/plans";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -27,7 +28,7 @@ export interface OrgDetails {
 }
 
 /** Gets the current user's org id and details. */
-export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; org: OrgDetails | null }>> {
+export async function getMyOrg(client: TypedSupabaseClient): Promise<PResult<{ orgId: string; org: OrgDetails | null }>> {
   try {
     const uid = (await client.auth.getUser())?.data?.user?.id;
     if (!uid) return { ok: false, error: "Not authenticated." };
@@ -37,12 +38,12 @@ export async function getMyOrg(client: any): Promise<PResult<{ orgId: string; or
     if (!om?.org_id) return { ok: false, error: "No org membership." };
     const { data: org } = await client.from("organizations")
       .select("id, name, contact_email, segment, segments, org_type, enabled_modules, plan, billing_period").eq("id", om.org_id).maybeSingle();
-    return { ok: true, data: { orgId: om.org_id, org: org ?? null } };
+    return { ok: true, data: { orgId: om.org_id, org: (org as unknown as OrgDetails) ?? null } };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
 export async function updateOrg(
-  client: any, orgId: string, name: string, contactEmail: string, segment?: CompanySegment | null,
+  client: TypedSupabaseClient, orgId: string, name: string, contactEmail: string, segment?: CompanySegment | null,
   enabledModules?: EnabledModules,
   plan?: SignupPlan | null,
   billingPeriod?: BillingPeriod | null,
@@ -58,17 +59,17 @@ export async function updateOrg(
     if (billingPeriod !== undefined && billingPeriod !== null) patch.billing_period = billingPeriod;
     if (orgType !== undefined) patch.org_type = orgType; // null clears back to segment-derived
     const { error } = await client.from("organizations")
-      .update(patch).eq("id", orgId);
+      .update(patch as never).eq("id", orgId);
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: undefined };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
 export async function insertOrgMembers(
-  client: any, orgId: string, members: Array<{ name: string; email: string }>,
+  client: TypedSupabaseClient, orgId: string, members: Array<{ name: string; email: string }>,
 ): Promise<PResult<void>> {
   try {
-    const rows = members.map(m => ({ org_id: orgId, name: m.name, email: m.email }));
+    const rows = members.map(m => ({ org_id: orgId, name: m.name, email: m.email })) as never[];
     const { error } = await client.from("org_members").insert(rows);
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: undefined };
@@ -76,7 +77,7 @@ export async function insertOrgMembers(
 }
 
 export async function createProject(
-  client: any, orgId: string, name: string, clientName: string, startDate: string, type: ProjectType = "construction",
+  client: TypedSupabaseClient, orgId: string, name: string, clientName: string, startDate: string, type: ProjectType = "construction",
 ): Promise<PResult<void>> {
   try {
     const { error } = await client.from("projects").insert({
@@ -89,7 +90,7 @@ export async function createProject(
 }
 
 export async function disableFeatureFlags(
-  client: any, orgId: string, keys: string[],
+  client: TypedSupabaseClient, orgId: string, keys: string[],
 ): Promise<PResult<void>> {
   try {
     for (const key of keys) {
@@ -101,7 +102,7 @@ export async function disableFeatureFlags(
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
-export async function completeOnboarding(client: any, orgId: string): Promise<PResult<void>> {
+export async function completeOnboarding(client: TypedSupabaseClient, orgId: string): Promise<PResult<void>> {
   try {
     const { error } = await client.from("ops_toggles")
       .upsert({ org_id: orgId, key: "onboarding_done", value: "true" }, { onConflict: "org_id, key" });
@@ -116,7 +117,7 @@ export async function completeOnboarding(client: any, orgId: string): Promise<PR
  * Fail-open: any read error or missing access returns TRUE so a user is never
  * trapped in a redirect loop; only a fresh org's absent row returns FALSE.
  */
-export async function isOnboardingDone(client: any, orgId: string): Promise<boolean> {
+export async function isOnboardingDone(client: TypedSupabaseClient, orgId: string): Promise<boolean> {
   try {
     const { data } = await client.from("ops_toggles")
       .select("value")
@@ -134,7 +135,7 @@ export async function isOnboardingDone(client: any, orgId: string): Promise<bool
  * so pre-existing orgs (created before the wizard shipped, no flag recorded)
  * are never force-routed into onboarding.
  */
-export async function orgHasProjects(client: any, orgId: string): Promise<boolean> {
+export async function orgHasProjects(client: TypedSupabaseClient, orgId: string): Promise<boolean> {
   try {
     const { data } = await client.from("projects")
       .select("id")

@@ -3,12 +3,13 @@
 import { describe, it, expect } from "vitest";
 import { listProjectsForOrg, createProject, memberProjectScope, type MemberProjectScope } from "@/app/queries/queries";
 import type { AuthSession } from "@/auth";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 // Build a chainable mock matching the subset of the Supabase client we use.
 function mockClient(opts: {
   select?: { data: unknown[] | null; error: unknown | null };
   insert?: { data: unknown; error: unknown | null };
-}) {
+}): TypedSupabaseClient & { trace: { inCalls: Array<[string, unknown[]]> } } {
   const trace: { inCalls: Array<[string, unknown[]]> } = { inCalls: [] };
   const client = {
     trace,
@@ -39,7 +40,7 @@ function mockClient(opts: {
       };
     },
   };
-  return client;
+  return client as unknown as TypedSupabaseClient & { trace: typeof trace };
 }
 
 /** Minimal AuthSession shape for scope-derivation tests. */

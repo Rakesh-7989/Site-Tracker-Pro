@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase/supabase";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import { useCan, useOrgSwitcher } from "@/auth";
 import { PlanGate } from "@/auth/PlanGate";
 import { useAction } from "@/hooks/useAction";
@@ -35,7 +36,7 @@ const SOURCE_TONE: Record<InvoiceSource, "info" | "success" | "neutral"> = {
   phase: "neutral", hourly: "info", retainer: "success",
 };
 
-type GenFn = (c: unknown) => Promise<{ ok: boolean; error?: string }>;
+type GenFn = (c: TypedSupabaseClient) => Promise<{ ok: boolean; error?: string }>;
 
 export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
   const { activeOrg } = useOrgSwitcher();
@@ -115,7 +116,7 @@ export function BillingTab({ projectId }: { projectId: string }): JSX.Element {
     setGenBusy(key); setError(null); setSuccess(null);
     const client = await getClient();
     if (!client) { setError("Backend not configured."); setGenBusy(null); return; }
-    const res = await fn(client);
+    const res = await fn(client as unknown as TypedSupabaseClient);
     if (!res.ok) { setError(res.error ?? "Generation failed."); setGenBusy(null); return; }
     await reload();
     setSuccess(msg);

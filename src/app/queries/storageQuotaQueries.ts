@@ -2,6 +2,8 @@
 // Pure helpers: used_bytes / total_bytes / used_pct across 3 private buckets.
 // All read-only; no DB writes. Exported for use in UI components.
 
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
+
 /** Per-bucket usage snapshot. */
 export interface StorageByBucket {
   bucket: 'deliverables' | 'dpr-media' | 'research-docs';
@@ -12,7 +14,7 @@ export interface StorageByBucket {
 
 /** Async: read the org's quota snapshot for all three private buckets via the RPC. */
 export async function storageByBucket(
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string
 ): Promise<{ ok: boolean; data: StorageByBucket[] | null; error: string | null }> {
   const { data, error } = await client.rpc('storage_usage_by_org', {
@@ -20,7 +22,7 @@ export async function storageByBucket(
   });
   if (error) return { ok: false, data: null, error: String(error.message ?? error) };
   const rows = Array.isArray(data) ? data : (data ? [data] : []);
-  return { ok: true, data: rows as StorageByBucket[], error: null };
+  return { ok: true, data: rows as unknown as StorageByBucket[], error: null };
 }
 
 /** Sum of used_bytes across all buckets. */

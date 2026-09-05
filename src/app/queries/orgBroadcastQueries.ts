@@ -6,6 +6,7 @@
 
 import type { QueryResult } from "./queries";
 import type { NotificationType } from "./notificationTemplates";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import { publishOrgBroadcast } from "./outboxQueries";
 
 export type OrgNotificationResult = {
@@ -15,7 +16,7 @@ export type OrgNotificationResult = {
 };
 
 export const sendOrgNotification = async (
-  client: any,
+  client: TypedSupabaseClient,
   orgId: string,
   type: NotificationType,
   placeholders?: Record<string, string>,

@@ -8,6 +8,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { fmtRupees } from "@/app/queries/financeQueries";
 import { getProjectPnL, recomputeProjectFinancials, computeWipAgingBuckets, listWipAging, type ProjectPnL, type WipAgingEntry, type WipAgingBuckets } from "@/app/queries/projectFinancialQueries";
 import { getClient } from "@/lib/supabase/supabase";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import { useAction } from "@/hooks/useAction";
 
 export function ProjectPnLView({ projectId }: { projectId: string }): JSX.Element {
@@ -109,7 +110,7 @@ export function ProjectPnLView({ projectId }: { projectId: string }): JSX.Elemen
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h2 className="font-display text-lg font-bold text-fg-primary">Project P&L & Earned Value</h2>
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => void run("recompute", async () => { await recomputeProjectFinancials(await getClient(), projectId); await reload(); return { ok: true }; })} disabled={busy === "recompute"}>
+          <Button size="sm" onClick={() => void run("recompute", async () => { await recomputeProjectFinancials(await getClient() as unknown as TypedSupabaseClient, projectId); await reload(); return { ok: true }; })} disabled={busy === "recompute"}>
             {busy === "recompute" ? <Spinner size={14} /> : <><Icon name="refresh" size={14} className="mr-1" /> Recompute</>}
           </Button>
           <Button size="sm" onClick={() => void reload()}>

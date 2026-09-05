@@ -1,19 +1,22 @@
 // SiteTrack Pro — quota queries + pure helpers tests.
 
 import { describe, it, expect } from "vitest";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import { fetchOrgQuota, quotaPct, atQuota, usageRollup, anyAtQuota, resourceAtQuota } from "@/app/queries/quotaQueries";
+
+function mockClient(rpc: () => Promise<{ data: unknown; error: unknown }>) {
+  return { rpc } as unknown as TypedSupabaseClient;
+}
 
 describe("fetchOrgQuota mapper", () => {
   it("maps users + projects rows with camelCase", async () => {
-    const client = {
-      rpc: () => Promise.resolve({
-        error: null,
-        data: [
-          { resource: "users", current_count: 7, max_allowed: 5, at_quota: true },
-          { resource: "projects", current_count: 3, max_allowed: 10, at_quota: false },
-        ],
-      }),
-    };
+    const client = mockClient(() => Promise.resolve({
+      error: null,
+      data: [
+        { resource: "users", current_count: 7, max_allowed: 5, at_quota: true },
+        { resource: "projects", current_count: 3, max_allowed: 10, at_quota: false },
+      ],
+    }));
     const res = await fetchOrgQuota(client, "org1");
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -24,19 +27,17 @@ describe("fetchOrgQuota mapper", () => {
   });
 
   it("surfaces RPC errors", async () => {
-    const client = { rpc: () => Promise.resolve({ error: { message: "denied" }, data: null }) };
+    const client = mockClient(() => Promise.resolve({ error: { message: "denied" }, data: null }));
     const res = await fetchOrgQuota(client, "org1");
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe("denied");
   });
 
   it("handles missing max_allowed (unlimited)", async () => {
-    const client = {
-      rpc: () => Promise.resolve({
-        error: null,
-        data: [{ resource: "projects", current_count: 99, max_allowed: null, at_quota: false }],
-      }),
-    };
+    const client = mockClient(() => Promise.resolve({
+      error: null,
+      data: [{ resource: "projects", current_count: 99, max_allowed: null, at_quota: false }],
+    }));
     const res = await fetchOrgQuota(client, "org1");
     expect(res.ok).toBe(true);
     if (!res.ok) return;

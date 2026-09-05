@@ -2,11 +2,12 @@
 
 import { describe, it, expect } from "vitest";
 import { getProject, listProjectMembers } from "@/app/queries/queries";
+import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 function mockClient(opts: {
   single?: { data: unknown; error: unknown | null };
   list?: { data: unknown[] | null; error: unknown | null };
-}) {
+}): TypedSupabaseClient {
   return {
     from() {
       return {
@@ -22,7 +23,7 @@ function mockClient(opts: {
         },
       };
     },
-  };
+  } as unknown as TypedSupabaseClient;
 }
 
 describe("getProject", () => {
