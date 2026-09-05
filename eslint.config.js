@@ -117,10 +117,10 @@ export default [
   {
     files: ["**/*.{ts,tsx}"],
     rules: {
-      // Documented debt (707 `any`s): paid down by the typed Supabase boundary
-      // phase — kept visible as warnings so new `any`s still count against the
-      // --max-warnings budget.
-      "@typescript-eslint/no-explicit-any": "warn",
+      // Debt (707 `any`s) fully paid down across src/tests/e2e-mock (survey: 0
+      // sites). Enforced as an error so new `any`s fail lint instead of just
+      // counting against the --max-warnings budget.
+      "@typescript-eslint/no-explicit-any": "error",
     },
   },
 ];
