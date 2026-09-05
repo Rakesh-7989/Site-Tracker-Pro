@@ -13,7 +13,7 @@
 //
 // Usage: node scripts/uptime-check.mjs [frontendUrl]
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const FRONTEND = process.argv[2] || "https://sitetrackpro.in";
