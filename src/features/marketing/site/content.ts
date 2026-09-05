@@ -42,6 +42,7 @@ export const SITE_NAV: SiteNav = {
     { label: "Contact", to: "/contact" },
     { label: "Privacy policy", to: "/privacy" },
     { label: "Terms of service", to: "/terms" },
+    { label: "Construction software in Hyderabad", to: "/construction-software-hyderabad" },
   ],
 };
 

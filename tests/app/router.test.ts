@@ -77,10 +77,10 @@ describe("eager imports", () => {
     expect(missing).toEqual([]);
   });
 
-  it("includes ShellLayout, LandingView, and PlaceholderView modules", () => {
+  it("includes ShellLayout, HomePage, and PlaceholderView modules", () => {
     const src = eagerImports.join(" ");
     expect(src).toContain("ShellLayout");
-    expect(src).toContain("LandingView");
+    expect(src).toContain("HomePage");
     expect(src).toContain("PlaceholderView");
   });
 });

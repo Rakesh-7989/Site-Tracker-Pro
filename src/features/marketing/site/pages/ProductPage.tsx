@@ -1,12 +1,35 @@
 // SiteTrack Pro — /product overview page.
 
 import { PageHero, Section, SectionHeading, FeatureTile, CtaBand, useSiteSeo } from "../ui";
+import { useSiteJsonLd, SITE_BASE_URL } from "../seo";
 import { FEATURE_GROUPS, WHY_ME } from "../content";
 import { CheckItem } from "../ui";
 import { Icon } from "@/components/ui/atoms";
 
 export function ProductPage(): JSX.Element {
   useSiteSeo("Product — SiteTrack Pro", "SiteTrack Pro is a construction & AEC project operating system for Indian teams — field ops, finance, drawings, people and compliance in one workspace.");
+
+  useSiteJsonLd(
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "SiteTrack Pro",
+      url: `${SITE_BASE_URL}/product`,
+      operatingSystem: "Web browser, Android",
+      applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Construction Project Management",
+      inLanguage: ["en", "te", "hi"],
+      description:
+        "Construction project software for Indian builders, contractors and architects — voice daily progress reports, RA bills with GST/TDS, RERA stage tracking, drawings, labour and client approvals in one workspace.",
+      offers: {
+        "@type": "Offer",
+        price: "5999",
+        priceCurrency: "INR",
+        description: "Per organization, not per seat. 14-day free trial.",
+      },
+    },
+    "product-software-app"
+  );
 
   return (
     <>

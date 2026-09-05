@@ -8,26 +8,13 @@ import { Link } from "react-router-dom";
 import { Icon } from "@/components/ui/atoms";
 import type { IconName } from "@/components/ui/icons";
 import { cn } from "@/lib/utils/cn";
+import { applySiteSeo } from "./seo";
 
-/** Per-page SEO: document title + meta description (best-effort). */
+/** Per-page SEO: title + description + canonical + Open Graph / Twitter tags. */
 export function useSiteSeo(title: string, description?: string): void {
   useEffect(() => {
-    const prev = document.title;
     document.title = title;
-    if (description) {
-      const meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-      if (meta) {
-        const prevDesc = meta.getAttribute("content") ?? "";
-        meta.setAttribute("content", description);
-        return () => {
-          document.title = prev;
-          if (prevDesc) meta.setAttribute("content", prevDesc);
-        };
-      }
-    }
-    return () => {
-      document.title = prev;
-    };
+    applySiteSeo(title, description ?? "");
   }, [title, description]);
 }
 
