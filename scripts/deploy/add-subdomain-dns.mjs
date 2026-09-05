@@ -67,8 +67,12 @@ async function ensureRecord(type, name, value, extra = {}) {
 }
 
 async function main() {
-  const me = await api("GET", "/v2/user");
-  console.log("authenticated as:", me.username, me.email);
+  try {
+    const me = await api("GET", "/v2/user");
+    console.log("authenticated as:", me.username, me.email);
+  } catch (e) {
+    console.warn("v2/user probe skipped (deploy-token or read-scoped):", e.message);
+  }
 
   console.log("\n== records before ==");
   const before = await listRecords();
