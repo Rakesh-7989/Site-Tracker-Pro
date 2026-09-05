@@ -43,20 +43,21 @@ import {
 } from "./rbac2/queries";
 
 // Narrow shape we expect from the Supabase client. Decoupled so we can
-// mock without pulling @supabase/supabase-js into Node tests.
+// mock without pulling @supabase/supabase-js into Node tests. Structurally
+// satisfied by supabase-js v2 builders (select/eq/is/in/maybeSingle are
+// thenables) and the client's rpc().
+export interface FetchQueryBuilder extends PromiseLike<{ data: unknown; error: unknown | null }> {
+  eq(col: string, value: unknown): FetchQueryBuilder;
+  is(col: string, value: null): FetchQueryBuilder;
+  in(col: string, values: unknown[]): FetchQueryBuilder;
+  maybeSingle(): PromiseLike<{ data: unknown; error: unknown | null }>;
+}
+
 export interface FetchClient {
   from(table: string): {
-    select(cols: string): {
-      eq(col: string, value: string): {
-        maybeSingle(): Promise<{ data: unknown; error: unknown | null }>;
-        is(col: string, value: null): {
-          order?: (...args: unknown[]) => Promise<{ data: unknown[] | null; error: unknown | null }>;
-        };
-      };
-      // For the org/project membership lookups
-      then?: never;
-    } & PromiseLike<{ data: unknown[] | null; error: unknown | null }>;
+    select(cols: string): FetchQueryBuilder;
   };
+  rpc(fn: string, args?: Record<string, unknown>): PromiseLike<{ data: unknown; error: unknown | null }>;
 }
 
 export interface FetchInput {
@@ -105,7 +106,7 @@ export function normalizeProfile(
 
 /**
  * Normalize a raw org_members row joined with organizations(name, slug).
- * Returns null on shape mismatch (caller filters .filter(Boolean)).
+ * Returns null on shape mismatch (caller filters .filter((o): o is NonNullable<typeof o> => o !== null)).
  */
 export function normalizeOrgMembership(row: Record<string, unknown> | null): OrgMembership | null {
   if (!row) return null;
@@ -208,7 +209,7 @@ export function buildAuthSession(
  */
  
 export async function fetchCapabilityOverrides(
-  client: any,
+  client: FetchClient,
   identityRole: IdentityRole,
   activeOrgId: string | null,
 ): Promise<CapabilityOverride[]> {
@@ -235,7 +236,7 @@ export async function fetchCapabilityOverrides(
  */
  
 export async function fetchCustomRoleOverrides(
-  client: any,
+  client: FetchClient,
   authUserId: string,
   identityRole: IdentityRole,
   activeOrgId: string | null,
@@ -282,7 +283,7 @@ export async function fetchCustomRoleOverrides(
  */
  
 export async function fetchRbac2Context(
-  client: any,
+  client: FetchClient,
   authUserId: string,
   activeOrgId: string | null,
 ): Promise<Rbac2Context | undefined> {
@@ -304,14 +305,14 @@ export async function fetchRbac2Context(
 
     const [profiles, bindings, acl, clientPermissions, vendorScopes] = await Promise.all([
       profileIds.length
-        ? client.from("rbac_role_profiles").select("*").in("id", profileIds).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeRoleProfile).filter(Boolean))
+        ? client.from("rbac_role_profiles").select("*").in("id", profileIds).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeRoleProfile).filter((o): o is NonNullable<typeof o> => o !== null))
         : Promise.resolve([]),
       profileIds.length
-        ? client.from("rbac_profile_bindings").select("*").in("profile_id", profileIds).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeProfileBinding).filter(Boolean))
+        ? client.from("rbac_profile_bindings").select("*").in("profile_id", profileIds).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeProfileBinding).filter((o): o is NonNullable<typeof o> => o !== null))
         : Promise.resolve([]),
-      client.from("resource_acl_entries").select("*").eq("org_id", activeOrgId).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeAclEntry).filter(Boolean)),
-      client.from("client_portal_permissions").select("*").eq("org_id", activeOrgId).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeClientPermission).filter(Boolean)),
-      client.from("vendor_project_scopes").select("*").eq("org_id", activeOrgId).then((r: { data?: unknown[] | null }) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeVendorScope).filter(Boolean)),
+      client.from("resource_acl_entries").select("*").eq("org_id", activeOrgId).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeAclEntry).filter((o): o is NonNullable<typeof o> => o !== null)),
+      client.from("client_portal_permissions").select("*").eq("org_id", activeOrgId).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeClientPermission).filter((o): o is NonNullable<typeof o> => o !== null)),
+      client.from("vendor_project_scopes").select("*").eq("org_id", activeOrgId).then((r) => ((r.data ?? []) as Array<Record<string, unknown>>).map(normalizeVendorScope).filter((o): o is NonNullable<typeof o> => o !== null)),
     ]);
 
     return { mode, profiles, bindings, acl, clientPermissions, vendorScopes };
@@ -320,13 +321,18 @@ export async function fetchRbac2Context(
     // with an empty enforce context so deny-by-default V2 decides (never the
     // broader matrix). When the MODE read itself failed we fall through to
     // undefined (cannot know the org enforces) — see the doc comment above.
-    const modeRes = await client
-      .from("org_rbac_settings")
-      .select("mode")
-      .eq("org_id", activeOrgId)
-      .maybeSingle()
-      .catch(() => ({ data: null }));
-    const mode = (modeRes?.data as { mode?: string } | null)?.mode as Rbac2Mode | null;
+    let mode: Rbac2Mode | null = null;
+    try {
+      const modeRes = await client
+        .from("org_rbac_settings")
+        .select("mode")
+        .eq("org_id", activeOrgId)
+        .maybeSingle();
+      mode = (modeRes?.data as { mode?: string } | null)?.mode as Rbac2Mode | null;
+    } catch {
+      // Unknown mode → no V2 signal → undefined (matrix fallback elsewhere).
+      mode = null;
+    }
     if (mode === "enforce" || mode === "shadow") {
       return { mode, profiles: [], bindings: [], acl: [], clientPermissions: [], vendorScopes: [], fetchError: true };
     }
@@ -338,12 +344,13 @@ export async function fetchRbac2Context(
  * Top-level fetcher. The React hook calls this; tests can pass a mock
  * client that satisfies FetchClient.
  *
- * NOTE: We use `any` for the client type to avoid coupling to the full
- * Supabase SDK typings. Real callers pass an actual SupabaseClient.
+ * FetchClient is the structural subset of supabase-js we need (eq/is/in/
+ * maybeSingle thenables + rpc); real callers pass an actual SupabaseClient
+ * and tests pass a mock that satisfies the same shape.
  */
  
 export async function fetchAuthSession(
-  client: any,
+  client: FetchClient,
   input: FetchInput,
   preferredOrgId: string | null,
 ): Promise<FetchOutcome> {

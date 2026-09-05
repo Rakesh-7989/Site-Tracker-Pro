@@ -235,7 +235,7 @@ export function applyBoqImport(state: BoqState | undefined, projectId: string, p
   const mode = opts.mode || "append";
   const next: BoqState = { ...(state || {}) };
   const existing = mode === "replace" ? [] : [...(next[projectId] || [])];
-  const startSort = existing.reduce((max: number, r: any) => Math.max(max, r.sort || 0), 0);
+  const startSort = existing.reduce((max: number, r) => Math.max(max, r.sort || 0), 0);
   const fresh = parsedRows.map((r, i) => ({
     id: `bq_${Date.now()}_${Math.random().toString(36).slice(2, 6)}_${i}`,
     code: r.code || "",

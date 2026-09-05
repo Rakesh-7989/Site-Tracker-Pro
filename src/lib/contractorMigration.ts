@@ -171,11 +171,51 @@ function validateRow(target: string | null, row: Record<string, string>): string
   }
 }
 
+export interface BoqImportBatch {
+  project_id: string | null;
+  code: string | null;
+  description: string;
+  unit: string | null;
+  qty: number | null;
+  rate: number | null;
+  category: string;
+}
+
+export interface ProjectImportBatch {
+  org_id: string | null;
+  name: string;
+  location: string | null;
+  budget: number | null;
+  start_date: string | null;
+  expected_end_date: string | null;
+  client_name: string | null;
+  status: string;
+  type: string;
+}
+
+export interface VendorImportBatch {
+  org_id: string | null;
+  name: string;
+  category: string | null;
+  phone: string | null;
+  gst: string | null;
+  rating: number | null;
+}
+
+export interface LabourImportBatch {
+  project_id: string | null;
+  name: string;
+  aadhaar: string | null;
+  trade: string | null;
+  wage: number | null;
+  joined: string | null;
+}
+
 interface ToCanonicalBatchesResult {
-  boq: any[];
-  projects: any[];
-  vendors: any[];
-  labour: any[];
+  boq: BoqImportBatch[];
+  projects: ProjectImportBatch[];
+  vendors: VendorImportBatch[];
+  labour: LabourImportBatch[];
 }
 
 interface ToCanonicalCtx {

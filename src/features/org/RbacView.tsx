@@ -21,19 +21,19 @@ function getEffectClass(effect: string) {
   return effect === "allow" ? "text-fg-primary" : "text-error";
 }
 
-function getAllowCount(auditEvents: any[]) {
+function getAllowCount(auditEvents: Array<{ effect: string }>) {
   return auditEvents.filter((e) => e.effect === "allow").length;
 }
 
-function getDenyCount(auditEvents: any[]) {
+function getDenyCount(auditEvents: Array<{ effect: string }>) {
   return auditEvents.filter((e) => e.effect === "deny").length;
 }
 
-function getAllowCountClass(auditEvents: any[]) {
+function getAllowCountClass(auditEvents: Array<{ effect: string }>) {
   return auditEvents.some((e) => e.effect === "allow") ? "text-fg-primary" : "text-fg-tertiary";
 }
 
-function getDenyCountClass(auditEvents: any[]) {
+function getDenyCountClass(auditEvents: Array<{ effect: string }>) {
   return auditEvents.some((e) => e.effect === "deny") ? "text-error" : "text-fg-tertiary";
 }
 

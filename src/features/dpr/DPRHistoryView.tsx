@@ -84,7 +84,7 @@ function DPRHistoryInner({ orgId }: { orgId: string }): JSX.Element {
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <DPRStatusBadge status={r.status} lang={(r.language as any) ?? "en"} size="sm" attempts={r.attempts} />
+                    <DPRStatusBadge status={r.status} lang={(r.language ?? "en") as "en" | "te" | "hi"} size="sm" attempts={r.attempts} />
                     {r.language && <Badge tone="neutral">{r.language.toUpperCase()}</Badge>}
                   </div>
                   {r.transcript && (

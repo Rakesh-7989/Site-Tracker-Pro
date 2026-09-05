@@ -21,7 +21,7 @@ export function DelegationsView(): JSX.Element {
   return <Inner user={session.user} orgId={activeOrg.orgId} />;
 }
 
-function Inner({ user, orgId }: { user: any; orgId: string }): JSX.Element {
+function Inner({ user, orgId }: { user: { id: string }; orgId: string }): JSX.Element {
   const [show, setShow] = useState(false);
   const [delegations, setDelegations] = useState<DelegationRow[]>([]);
   const [members, setMembers] = useState<OrgMemberRow[]>([]);

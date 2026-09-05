@@ -63,7 +63,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
     if (!client) { setActionBusy(false); return setActionResult({ ok: false, message: t("billing.backendError") }); }
      
     const reason = kind === "cancel" ? "Cancelled by org admin" : "Reactivated by org admin";
-    const res = await (client.rpc as any)("admin_set_subscription_status", { p_org: orgId, p_status: kind, p_reason: reason });
+    const res = await client.rpc("admin_set_subscription_status", { p_org: orgId, p_status: kind, p_reason: reason });
     const ok = !res.error;
     setActionBusy(false);
     if (ok) {

@@ -64,7 +64,6 @@ export async function listBlocks(client: TypedSupabaseClient, projectId: string)
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listFloors(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<FloorRow[]>> {
   try {
     // `floors` has no `project_id` — scope via blocks of the project.
@@ -88,7 +87,6 @@ export async function listFloors(client: TypedSupabaseClient, projectId: string)
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listUnits(client: TypedSupabaseClient, projectId: string): Promise<QueryResult<UnitRow[]>> {
   try {
     // `units` has no `project_id` — scope via the floors of the project's blocks.
@@ -120,14 +118,12 @@ export async function listUnits(client: TypedSupabaseClient, projectId: string):
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function blockIdsForProject(client: TypedSupabaseClient, projectId: string): Promise<string[]> {
   const { data, error } = await client.from("blocks").select("id").eq("project_id", projectId);
   if (error) throw new Error(String(error.message ?? error));
   return ((data ?? []) as Array<Record<string, unknown>>).map(r => String(r.id));
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function floorIdsForBlocks(client: TypedSupabaseClient, blockIds: string[]): Promise<string[]> {
   const { data, error } = await client.from("floors").select("id").in("block_id", blockIds);
   if (error) throw new Error(String(error.message ?? error));

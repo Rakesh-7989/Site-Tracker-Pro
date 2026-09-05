@@ -112,10 +112,10 @@ export function DPRComposer(): JSX.Element {
       const client = await getClient();
        
       const res = client
-        ? await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "auto", transport: "ef", efClient: client })
-        : await (mod as any).transcribe(recordedBlob, { lang: draft.language, provider: "mock", transport: "mock" });
+        ? await mod.transcribe(recordedBlob, { lang: draft.language, provider: "auto", transport: "ef", efClient: client.functions })
+        : await mod.transcribe(recordedBlob, { lang: draft.language, provider: "mock", transport: "mock" });
       if (res?.ok) {
-        dispatch({ type: "voice-done", transcript: res.text, confidence: res.confidence ?? 0, provider: res.provider ?? "mock" });
+        dispatch({ type: "voice-done", transcript: res.text ?? "", confidence: res.confidence ?? 0, provider: res.provider ?? "mock" });
       } else {
         dispatch({ type: "voice-error", error: res?.error ?? "Transcription failed." });
       }

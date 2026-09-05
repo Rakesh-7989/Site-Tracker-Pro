@@ -151,7 +151,7 @@ export function AuditTab({ projectId }: { projectId: string }) {
   if (!canManage) return <AccessDenied />;
 
   const submit = async (values: ChecklistFormValues) => {
-    await run(editing ? "edit" : "add", (c: any) => upsertChecklist(c, {
+    await run(editing ? "edit" : "add", (c) => upsertChecklist(c, {
       id: editing?.id ?? null, projectId,
       kind: (values.kind as ChecklistKind) ?? "site_visit",
       title: String(values.title ?? "").trim(),
@@ -161,12 +161,12 @@ export function AuditTab({ projectId }: { projectId: string }) {
 
   const toggle = async (c: InspectionChecklist) => {
     const next = CHECKLIST_STATUS_NEXT[c.status]; if (!next) return;
-    await run(`s-${c.id}`, (c2: any) => setChecklistStatus(c2, c.id, next));
+    await run(`s-${c.id}`, (c2) => setChecklistStatus(c2, c.id, next));
   };
 
   const remove = async (id: string) => {
     if (!confirm(t("audit.deleteChecklist"))) return;
-    await run(`d-${id}`, (c: any) => deleteChecklist(c, id));
+    await run(`d-${id}`, (c) => deleteChecklist(c, id));
   };
 
   if (loading) return (
