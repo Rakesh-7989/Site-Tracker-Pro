@@ -64,6 +64,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!reqRow) return json({ ok: false, error: "request-not-found" }, 404);
   if ((reqRow as { payment_status?: string }).payment_status === "paid") return json({ ok: false, error: "already-paid" }, 409);
 
+  // Throttle: max 5 payment-link mints per IP per hour (public endpoint —
+  // mirrors submit_signup_request; without this anyone can burn the
+  // Cashfree API quota / farm links against arbitrary request ids).
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+  if (ip) {
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await admin
+      .from("signup_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .gt("created_at", since);
+    if ((count ?? 0) >= 5) {
+      return json({ ok: false, error: "rate-limited", message: "Too many requests from your network. Please try again later." }, 429);
+    }
+  }
+
   const plan = String((reqRow as { plan?: string }).plan ?? "basic");
   const { data: planRow } = await admin.from("plans").select("monthly_inr, yearly_inr").eq("id", plan).maybeSingle();
   const paise = period === "annual" ? Number((planRow as { yearly_inr?: number })?.yearly_inr ?? 0) : Number((planRow as { monthly_inr?: number })?.monthly_inr ?? 0);

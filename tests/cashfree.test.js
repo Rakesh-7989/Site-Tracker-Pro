@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   cashfreeBaseUrl, isCashfreeConfigured,
   buildSubscriptionRequest, buildCancellationRequest, buildUpgradeOperations,
@@ -175,5 +177,15 @@ describe("cashfree — applyWebhookEvent", () => {
   it("returns the row untouched for null events", () => {
     const row = { status: "active" };
     expect(applyWebhookEvent(row, null)).toEqual({ status: "active" });
+  });
+});
+
+describe("cashfree-checkout EF throttling (source contract)", () => {
+  const src = readFileSync(join(process.cwd(), "supabase", "functions", "cashfree-checkout", "index.ts"), "utf8");
+  it("rate-limits public payment-link mints per IP (5/hr, 429)", () => {
+    expect(src).toContain("x-forwarded-for");
+    expect(src).toContain("rate-limited");
+    expect(src).toContain("429");
+    expect(src).toMatch(/from\("signup_requests"\)/);
   });
 });

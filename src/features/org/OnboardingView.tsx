@@ -1,17 +1,17 @@
-// SiteTrack Pro � Org Onboarding wizard (/org/onboarding).
-// 5-step first-time setup for new orgs. Persists to Supabase.
+// SiteTrack Pro — Org Onboarding wizard (/org/onboarding).
+// 3-step progressive first-time setup for new orgs. Persists to Supabase.
+// (Invites / first project / presets are intentionally deferred — the
+// finish screen points at them; the org is fully usable after step 3.)
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button, Badge } from "@/components/ui/atoms";
-import { Select } from "@/components/ui/forms";
-import { getMyOrg, updateOrg, insertOrgMembers, createProject, disableFeatureFlags, completeOnboarding } from "@/app/queries/onboardingQueries";
-import { CORE_SEGMENTS, defaultProjectTypeFor, legacySegmentFor, projectTypesForSegments, type CompanySegment } from "@/auth";
-import type { ProjectType } from "@/auth";
+import { getMyOrg, updateOrg, disableFeatureFlags, completeOnboarding } from "@/app/queries/onboardingQueries";
+import { CORE_SEGMENTS, legacySegmentFor, type CompanySegment } from "@/auth";
+import type { SignupPlan } from "@/app/queries/signupQueries";
 import { MODULES, CORE_MODULE, templateModules, templateModulesForSegments, type ModuleId } from "@/modules";
 import { useT } from "@/i18n/I18nProvider";
 import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
-import type { SignupPlan } from "@/app/queries/signupQueries";
 
 
 import { getClient } from "@/lib/supabase/supabase";
@@ -32,35 +32,17 @@ export function OnboardingView(): JSX.Element {
   // Step 1
   const [orgName, setOrgName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [segment, setSegment] = useState<CompanySegment | null>(null);
-  // Multi-segment picks (migration 228) � the source of truth for Step 1;
-  // `segment` above stays as the derived legacy value for back-compat readers.
+  // Multi-segment picks (migration 228) — the source of truth for Step 1;
+  // the legacy single value is derived via legacySegmentFor() at save time.
   const [segments, setSegments] = useState<CompanySegment[]>([]);
   // Firm-type picker (mig 240) hidden � org_type is never set from this UI;
   // null derives from segments (resolveOrgType) when needed downstream.
   const [enabledModules, setEnabledModules] = useState<ModuleId[]>([]);
 
-  // Step 2 � plan & billing. Defaults to the Pro trial so the owner keeps
+  // Step 2 — plan & billing. Defaults to the Pro trial so the owner keeps
   // Pro unless they change it; billing defaults monthly.
   const [plan, setPlan] = useState<SignupPlan>("pro");
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
-
-  // Step 2
-  const [inviteName, setInviteName] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [pending, setPending] = useState<Array<{ name: string; email: string; role: string }>>([]);
-
-  // Step 3
-  const [projName, setProjName] = useState("");
-  const [clientName, setClientName] = useState("");
-  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [projType, setProjType] = useState<ProjectType>("construction");
-
-  // Step 4
-  const [preset, setPreset] = useState<"minimal" | "balanced" | "full">("balanced");
-
-  // Step 5
-  const [aiKey, setAiKey] = useState("");
 
   const load = useCallback(async () => {
     const client = await getClient();
@@ -76,10 +58,6 @@ export function OnboardingView(): JSX.Element {
       const initSegs = res.data.org.segments ?? (res.data.org.segment && res.data.org.segment !== "multiple" ? [res.data.org.segment] : res.data.org.segment === "multiple" ? [...CORE_SEGMENTS] : []);
       if (initSegs.length) {
         setSegments(initSegs);
-        setProjType(defaultProjectTypeFor(legacySegmentFor(initSegs) ?? undefined));
-      } else if (res.data.org.segment) {
-        setSegment(res.data.org.segment);
-        setProjType(defaultProjectTypeFor(res.data.org.segment));
       }
       if (res.data.org.enabled_modules) {
         setEnabledModules(res.data.org.enabled_modules);
@@ -102,13 +80,6 @@ export function OnboardingView(): JSX.Element {
       const next = prev.includes(s)
         ? prev.filter(x => x !== s)
         : [...prev, s];
-      const legacy = legacySegmentFor(next);
-      if (legacy) {
-        setSegment(legacy);
-        setProjType(defaultProjectTypeFor(legacy));
-      } else {
-        setSegment(null);
-      }
       setEnabledModules([...templateModulesForSegments(next)]);
       return next;
     });
@@ -134,8 +105,9 @@ export function OnboardingView(): JSX.Element {
     setStep(2);
   };
 
-  // Skip with sane defaults: never leave segment/enabled_modules NULL � the
+  // Skip with sane defaults: never leave segment/enabled_modules NULL — the
   // four segment-gated nav surfaces stay dark otherwise. Construction basics.
+  // Marks onboarding complete so the org is never half-onboarded.
   const skipWithDefaults = async () => {
     setFieldError(null);
     try {
@@ -153,6 +125,7 @@ export function OnboardingView(): JSX.Element {
         ["construction"],
       );
       if (!r.ok) { setFieldError(r.error ?? "Could not save. Please try again."); return; }
+      await completeOnboarding(client as unknown as TypedSupabaseClient, orgId);
       setSegments(["construction"]);
       setEnabledModules([CORE_MODULE, ...defaults.filter(m => m !== CORE_MODULE)]);
       navigate("/projects");
@@ -200,48 +173,15 @@ export function OnboardingView(): JSX.Element {
     setStep(6); // progressive: skip invites/project/presets � finish screen applies balanced defaults
   };
 
-  const addPending = () => {
-    if (!inviteName.trim() || !inviteEmail.trim()) { setFieldError(t("onb.errNameEmail")); return; }
-    setFieldError(null);
-    setPending(p => [...p, { name: inviteName.trim(), email: inviteEmail.trim(), role: "pm" }]);
-    setInviteName(""); setInviteEmail("");
-  };
-
-  const commitInvites = async () => {
-    if (!pending.length) { setStep(4); return; }
-    const client = await getClient();
-    await insertOrgMembers(client as unknown as TypedSupabaseClient, orgId, pending);
-    setPending([]);
-    setStep(4);
-  };
-
-  const saveProject = async () => {
-    if (!projName.trim()) { setFieldError(t("onb.errProjectName")); return; }
-    if (!clientName.trim()) { setFieldError(t("onb.errClientName")); return; }
-    setFieldError(null);
-    const client = await getClient();
-    await createProject(client as unknown as TypedSupabaseClient, orgId, projName, clientName, startDate, projType);
-    setStep(5);
-  };
-
-  const applyPreset = async () => {
-    const client = await getClient();
-    const toDisable: string[] = [];
-    if (preset === "minimal") {
-      toDisable.push("tasks", "punchlist", "ledger", "boq", "estimate", "rfi", "changeorders", "approvals", "inspections", "safety", "rabills", "labour", "gantt", "forecast", "compliance", "delegations", "snapshot", "materialPrices", "hierarchy", "vendors", "po");
-    } else if (preset === "balanced") {
-      toDisable.push("arOverlay", "dprAuto", "photoGeo");
-    }
-    await disableFeatureFlags(client as unknown as TypedSupabaseClient, orgId, toDisable);
-    setStep(6);
-  };
-
   const finish = async () => {
     const client = await getClient();
     await disableFeatureFlags(client as unknown as TypedSupabaseClient, orgId, ["arOverlay", "dprAuto", "photoGeo"]); // balanced defaults
     await completeOnboarding(client as unknown as TypedSupabaseClient, orgId);
     navigate("/projects"); // empty state offers Create-first / Load-demo
   };
+
+  // Progress maps the real 3-screen path (1 → 2 → 6 finish) onto STEPS.
+  const progressStep = step >= 6 ? STEPS.length : Math.min(step, STEPS.length);
 
   if (loading) return (
     <div role="status" aria-label="Loading" aria-busy="true" className="space-y-4 p-4">
@@ -271,12 +211,12 @@ export function OnboardingView(): JSX.Element {
             <h1 className="text-3xl font-black text-fg-primary tracking-tight">{t("onb.title")}</h1>
             <p className="text-fg-tertiary text-sm mt-1">{t("onb.subtitle")}</p>
           </div>
-          <div className="text-xs font-bold text-fg-tertiary">{step} / 6</div>
+          <div className="text-xs font-bold text-fg-tertiary">{progressStep} / {STEPS.length}</div>
         </div>
 
         <div className="flex gap-1 mb-6">
           {STEPS.map((_, i) => (
-            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i < step ? "bg-accent" : "bg-secondary"}`} />
+            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i < progressStep ? "bg-accent" : "bg-secondary"}`} />
           ))}
         </div>
 
@@ -417,82 +357,8 @@ export function OnboardingView(): JSX.Element {
             </div>
           )}
 
-          {/* Step 3: Invite team */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <h2 className="font-bold text-lg">{t("onb.inviteTitle")}</h2>
-              <p className="text-xs text-fg-secondary">{t("onb.inviteSub")}</p>
-              <div className="flex gap-2">
-                <input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder={t("onb.namePh")} className="flex-1 rounded-lg border border-default px-3 py-2 text-sm" />
-                <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={t("onb.emailPh")} className="flex-1 rounded-lg border border-default px-3 py-2 text-sm" />
-                <Button variant="secondary" onClick={addPending}>{t("onb.add")}</Button>
-              </div>
-              {(fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError}</div>}
-              {pending.length > 0 && (
-                <div className="space-y-1">
-                  {pending.map((m, i) => (
-                    <div key={i} className="flex items-center justify-between bg-secondary rounded-lg p-2 text-sm">
-                      <span>{m.name} ({m.email})</span>
-                      <button onClick={() => setPending(p => p.filter((_, j) => j !== i))} className="text-error text-xs">&times;</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setStep(4)}>{t("onb.skip")}</Button>
-                <Button onClick={commitInvites}>{t("onb.cont")}</Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: First project */}
-          {step === 4 && (
-            <div className="space-y-4">
-              <h2 className="font-bold text-lg">{t("onb.projectTitle")}</h2>
-              <p className="text-xs text-fg-secondary">{t("onb.projectSub")}</p>
-              <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.projectName")}</label>
-                <input value={projName} onChange={e => setProjName(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.clientName")}</label>
-                <input value={clientName} onChange={e => setClientName(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
-              </div>
-              {(fieldError) && <div className="text-xs text-error bg-error-tint rounded-lg px-3 py-2">{fieldError}</div>}
-              <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.projectType")}</label>
-                <Select value={projType} onChange={e => setProjType(e.target.value as ProjectType)} options={projectTypesForSegments(segments.length ? segments : segment ? [segment] : []).map(pt => ({ value: pt, label: t(`projType.${pt}`) }))} />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-fg-primary block mb-1">{t("onb.startDate")}</label>
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full rounded-lg border border-default px-3 py-2 text-sm" />
-              </div>
-              <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setStep(5)}>{t("onb.skip")}</Button>
-                <Button onClick={saveProject}>{t("onb.cont")}</Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Feature presets */}
-          {step === 5 && (
-            <div className="space-y-4">
-              <h2 className="font-bold text-lg">{t("onb.presetTitle")}</h2>
-              <p className="text-xs text-fg-secondary">{t("onb.presetSub")}</p>
-              {(["minimal", "balanced", "full"] as const).map(p => (
-                <label key={p} className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer border transition-all ${preset === p ? "border-accent bg-accent-tint" : "border-default"}`}>
-                  <input type="radio" name="preset" checked={preset === p} onChange={() => setPreset(p)} className="accent-[var(--st-accent)]" />
-                  <div>
-                    <div className="font-semibold text-sm capitalize">{p}</div>
-                    <div className="text-xs text-fg-tertiary">{p === "minimal" ? t("onb.presetMinimalHint") : p === "balanced" ? t("onb.presetBalancedHint") : t("onb.presetFullHint")}</div>
-                  </div>
-                </label>
-              ))}
-              <div className="flex justify-end pt-2"><Button onClick={applyPreset}>{t("onb.cont")}</Button></div>
-            </div>
-          )}
-
-          {/* Step 6: Integrations */}
+          {/* Step 3: Finish — workspace is live. Invites / first project /
+              presets happen from their own surfaces (Members, Projects). */}
           {step === 6 && (
             <div className="space-y-4">
               <h2 className="font-bold text-lg">{t("onb.finishTitle")}</h2>
@@ -501,9 +367,7 @@ export function OnboardingView(): JSX.Element {
                 <li>{t("onb.finishInvite")}</li>
                 <li>{t("onb.finishProject")}</li>
               </ul>
-              <div className="text-[11px] text-fg-tertiary">{t("onb.aiKeyLabel")}: {aiKey ? "?" : "�"}</div>
               <div className="flex justify-end pt-2 gap-2">
-                <Button variant="secondary" onClick={() => setAiKey("")}>{t("onb.skip")}</Button>
                 <Button onClick={finish}>{t("onb.finishGo")}</Button>
               </div>
             </div>

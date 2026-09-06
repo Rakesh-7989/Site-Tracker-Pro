@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/forms";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useT } from "@/i18n/I18nProvider";
 import { registerOrg, type RegisterResult } from "@/app/queries/orgRegisterQueries";
+import { CONSENT_VERSION } from "@/features/marketing/legalContent";
 
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
@@ -53,6 +54,7 @@ export function OrgRegisterView(): JSX.Element {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [consent, setConsent] = useState(false);
   const [redirect, setRedirect] = useState<string | null>(null);
 
   const submit = async () => {
@@ -60,16 +62,21 @@ export function OrgRegisterView(): JSX.Element {
     if (!validEmail(email)) return setError(t("auth.errValidWorkEmail"));
     if (password.length < 8) return setError(t("auth.errPasswordMin"));
     if (password !== confirmPassword) return setError(t("auth.errPasswordMismatch"));
+    // DPDP: the checkbox is the consent record — gate the submit on it and
+    // send CONSENT_VERSION so register_org stamps profiles.consent_version.
+    if (!consent) return setError(t("auth.errConsentRequired"));
     setBusy(true);
     const res: RegisterResult = await registerOrg({
       email: email.trim().toLowerCase(),
       password,
       firmName: email.split("@")[0],
       contactName: email.split("@")[0],
+      consentVersion: CONSENT_VERSION,
     });
     setBusy(false);
     if (res.ok) {
-      setRedirect("/verify-email");
+      // Carry the pending address — /verify-email has no session to read yet.
+      setRedirect(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
     } else {
       setError(res.error || "Registration failed");
     }
@@ -101,12 +108,11 @@ export function OrgRegisterView(): JSX.Element {
         <div className="text-center mb-8">
           <h1 className="font-display text-3xl font-bold">{t("auth.registerTitle")}</h1>
           <p className="text-sm text-fg-secondary mb-4">{t("auth.registerSub", { days: TRIAL_DAYS })}</p>
-          <p className="text-sm text-fg-tertiary">Start your 14-day Pro trial. No credit card required.</p>
         </div>
 
         <Card className="p-6 space-y-4">
           {error && <Alert variant="danger">{error}</Alert>}
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={e => { e.preventDefault(); void submit(); }}>
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-wider text-fg-tertiary">{t("auth.workEmail")}</span>
               <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@firm.com" autoComplete="email" />
@@ -121,11 +127,11 @@ export function OrgRegisterView(): JSX.Element {
             </label>
 
             <label className="flex items-start gap-2 text-[12px] text-fg-secondary cursor-pointer">
-              <input type="checkbox" required />
+              <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
               <span>{renderConsent(t)}</span>
             </label>
 
-            <Button className="w-full" onClick={() => void submit()} disabled={busy}>
+            <Button className="w-full" type="submit" disabled={busy}>
               {busy ? <Spinner size={16} /> : <>{t("auth.registerCta")}</>}
             </Button>
             <p className="text-[11px] text-fg-tertiary text-center">{t("auth.alreadyAccount")} <Link to="/login" className="text-accent font-semibold">{t("auth.signIn")}</Link></p>
