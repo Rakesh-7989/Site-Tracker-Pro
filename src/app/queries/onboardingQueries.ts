@@ -55,6 +55,11 @@ export async function updateOrg(
     if (segment) patch.segment = segment;
     if (segments !== undefined) patch.segments = segments;
     if (enabledModules !== undefined) patch.enabled_modules = enabledModules;
+    // NOTE (SEC-P0-2, migration 254): plan/billing_period changes are
+    // superadmin-gated server-side. Echoing the CURRENT values is a no-op
+    // the trigger allows; a real change from a non-superadmin fails here
+    // with 'organization_plan: ... require superadmin'. Plan upgrades must
+    // flow through the subscription lifecycle (Cashfree / superadmin).
     if (plan) patch.plan = plan;
     if (billingPeriod !== undefined && billingPeriod !== null) patch.billing_period = billingPeriod;
     if (orgType !== undefined) patch.org_type = orgType; // null clears back to segment-derived

@@ -13,6 +13,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { authenticate } from "../_shared/auth.ts";
 
 const RAZORPAY_BASE = "https://api.razorpay.com/v1";
 
@@ -45,15 +46,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
-  // Auth: require a valid user JWT.
-  const authHeader = req.headers.get("Authorization");
-  const token = authHeader?.replace("Bearer ", "") ?? "";
-  if (!token) {
-    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-    });
-  }
+  // Auth: verify the caller's JWT against Supabase Auth (P0 fix — a
+  // presence-check here let anyone mint payment links for any invoice).
+  const auth = await authenticate(req);
+  if (!auth.ok) return auth.response;
 
   let body: RequestBody;
   try {
@@ -108,6 +104,35 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq("id", invoice.project_id)
       .maybeSingle();
     if (project?.org_id) orgId = String(project.org_id);
+  }
+
+  // Authz: the verified caller must belong to the invoice's org (or be
+  // platform staff). This closes the cross-tenant IDOR — knowing an
+  // invoice_id is no longer enough to mint a link against it.
+  const isPlatformStaff = auth.user.identityRole === "superadmin" || auth.user.isStaff;
+  if (orgId) {
+    const inOrg = auth.orgMemberships.some((m) => m.org_id === orgId);
+    if (!inOrg && !isPlatformStaff) {
+      return new Response(JSON.stringify({ ok: false, error: "not-org-member" }), {
+        status: 403,
+        headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+  } else if (!isPlatformStaff) {
+    // Invoices without a resolvable org are staff-only (fail closed).
+    return new Response(JSON.stringify({ ok: false, error: "not-org-member" }), {
+      status: 403,
+      headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+    });
+  }
+
+  // The optional project_id is only a notes hint — it must match the
+  // invoice's real project so one project's context can't mint for another.
+  if (project_id && invoice.project_id && project_id !== invoice.project_id) {
+    return new Response(JSON.stringify({ ok: false, error: "project-mismatch" }), {
+      status: 400,
+      headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+    });
   }
 
   // Resolve Razorpay credentials: per-org first (org_integrations), else EF secrets.

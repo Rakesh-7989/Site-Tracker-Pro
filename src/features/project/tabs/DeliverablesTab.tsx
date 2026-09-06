@@ -19,7 +19,8 @@ import {
 } from "@/app/queries/deliverableQueries";
 import {
   listDeliverableFiles, uploadDeliverableFile, deleteDeliverableFiles, deliverableFileUrl,
-  deliverableObjectPath, formatBytes, type DeliverableFileRef,
+  deliverableObjectPath, formatBytes, validateDeliverableFile, DELIVERABLE_ACCEPT,
+  type DeliverableFileRef,
 } from "@/app/queries/deliverableStorageQueries";
 import { logDownloadEvent } from "@/app/queries/downloadAuditQueries";
 import { CadPreviewModal } from "@/features/shared/CadPreviewModal";
@@ -129,6 +130,9 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
     if (!file || !targetDeliverable) return;
     const deliverableId = targetDeliverable;
     setTargetDeliverable(null);
+    // Instant client check (SEC-P1-6) — uploadDeliverableFile re-validates too.
+    const rejected = validateDeliverableFile(file.name, file.size);
+    if (rejected) { setFileError(rejected); return; }
     setUploading(deliverableId); setFileError(null);
     const client = await getClient();
     if (!client) { setFileError("Backend not configured."); setUploading(null); return; }
@@ -209,7 +213,7 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
       )}
 
       <input
-        ref={inputRef} type="file" className="hidden"
+        ref={inputRef} type="file" className="hidden" accept={DELIVERABLE_ACCEPT}
         onChange={(e) => void onPickFile(e)}
       />
 

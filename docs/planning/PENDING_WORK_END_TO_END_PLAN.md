@@ -18,8 +18,9 @@
 | `resend_confirmation` EF | ✅ shipped + live | exists |
 | Resend API key + webhook secret wired | ✅ live | `RESEND_API_KEY`/`RESEND_WEBHOOK_SECRET` set |
 | resend-webhook receiver + `resend_delivery_events` (migration 201) | ✅ shipped + live | `ff5adef` |
-| `sitetrackpro.in` Resend domain | 🟡 **create for the new domain (2026-08-20)** | old Resend domain was `sitetrack.in` (id `ddf2ce85…`, unverified) — superseded |
-| `RESEND_FROM_EMAIL` | 🟡 test domain `onboarding@resend.dev` | only reaches account-owner inbox |
+| `sitetrackpro.in` Resend domain | ✅ **verified** | id `b035d4cd-d4c1-4de7-9066-1bb82876e59a` (ap-northeast-1, created 2026-08-19, sending+receiving); old `sitetrack.in` (id `ddf2ce85…`) superseded |
+| `RESEND_FROM_EMAIL` | ✅ `SiteTrack <hello@sitetrackpro.in>` | EF secret set live; code fallbacks match |
+| inbound forwarder (`email.received` → `EMAIL_FORWARD_TO`) | ✅ **wired + verified live** | migration **255** (CHECK admits `received`) + unpadded-secret fix (`_shared/resendWebhook.ts`) — signed replay → **200** `{ok:true}`, row in `resend_delivery_events`, forward attempt reached `received-fetch-422` (fake Resend id) |
 | `OrgRegisterView` i18n | 🟡 **hardcoded strings, no `useT`** | LoginScreenV3 is i18n'd — register screen is the outlier |
 
 ## Phase A — Real email delivery (primary blocker)
@@ -29,13 +30,15 @@ the account owner. Requires the `sitetrackpro.in` DNS verification (user-side).
 
 | # | Sub-task | Action | Depends |
 |---|----------|--------|---------|
-| A1 | DNS + Resend verify | User adds 3 DNS records (DKIM TXT, SPF TXT, MX) → I verify in Resend (API `GET /domains/{id}` status=verified) | **user DNS** |
-| A2 | Flip `RESEND_FROM_EMAIL` | `.env.local` + Supabase EF secret → `SiteTrack <hello@sitetrackpro.in>` | A1 |
-| A3 | Live delivery test | Send to `boyapatirakesh7777@gmail.com` via Resend → 200 + `email.sent` webhook → `resend_delivery_events` row | A2 |
-| A4 | §8 manual confirm round-trip | Register a real org with routable inbox → click confirm link → sign in → onboarding plan step → trial banner visible | A2 |
+| A1 | DNS + Resend verify | ✅ 3 DNS records verified in Resend (DKIM TXT, SPF TXT, MX) + TrackingCAA `www` pending (optional) | user DNS |
+| A2 | Flip `RESEND_FROM_EMAIL` | ✅ EF secret + GoTrue SMTP → `SiteTrack <hello@sitetrackpro.in>` | A1 |
+| A3 | Live delivery test | ✅ API send 200 → `email.sent` webhook row in `resend_delivery_events` | A2 |
+| A4 | §8 manual confirm round-trip | 🟡 **user** — real Gmail→`hello@sitetrackpro.in`→forwarded→`boyapatirakesh7777@gmail.com` test + register an org with a routable inbox | A2 |
+| A5 | Inbound forwarder | ✅ `email.received` → `EMAIL_FORWARD_TO` (migration **255** + unpadded-secret fix) — signed replay 200, row landed; real inbound test = A4 | A2 |
 
 **Verify (A)**: tsc · eslint · vitest (efRegisterOrg/resend tests) · smoke ·
-Resend API send 200 · webhook row in DB · confirm link lands in the real inbox.
+Resend API send 200 · webhook row in DB · signed replay 200 · confirm link +
+forwarded mail land in the real inbox.
 
 ## Phase B — Signup-flow i18n parity (buildable now, independent)
 

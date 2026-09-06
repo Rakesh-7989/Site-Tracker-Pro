@@ -142,9 +142,15 @@ function buildAnchorCalldata(rootHex: string): string {
 
 Deno.serve(async (req) => {
   // ─ Auth ─────────────────────────────────────────────────────────────
+  // Fail CLOSED: without a configured CRON_SECRET nobody may trigger an
+  // anchor run (an open run lets anyone burn Polygon gas / spam pending
+  // anchor rows with service_role reads of the audit log).
   const cronSecret = Deno.env.get("CRON_SECRET");
+  if (!cronSecret) {
+    return new Response(JSON.stringify({ error: "cron-secret-not-configured" }), { status: 500 });
+  }
   const authHeader = req.headers.get("Authorization") || "";
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
   }
 

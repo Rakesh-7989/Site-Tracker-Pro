@@ -3285,6 +3285,22 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
   `review_signup_request` are already `SiteTrack <hello@sitetrackpro.in>`).
 - **Live test (2026-09-02)**: API send from `hello@sitetrackpro.in` →
   `boyapatirakesh7777@gmail.com` accepted by Resend (id `29bbf5e8-…`).
+- **Inbound forwarder WIRED + verified live (2026-09-06)**: `resend-webhook`
+  handles `email.received` → `resend_delivery_events` row + forwards to
+  `EMAIL_FORWARD_TO` (= `boyapatirakesh7777@gmail.com`, EF secret set). Two
+  fixes ship with the security-deep-dive batch (uncommitted): (1) **unpadded
+  signature secret** — Resend signs with an unpadded base64 `whsec_…`
+  (len%4==3); `decodeResendSecret` pads before `atob` (HMAC key 23 bytes);
+  (2) **migration 255** — drops/re-adds `resend_delivery_events_event_check`
+  to admit `'received'` (the old CHECK caused 500 `log-failed` on inbound).
+  **Verified live**: migration 255 applied + ledgered (constraint accepts
+  `received`); signed `email.received` replay → **200 `{ok:true}`**; row
+  landed (event `received`, payload captured); forward attempt reached
+  `received-fetch-422` (fake Resend email id — expected). `EMAIL_FORWARD_TO`
+  + `RESEND_WEBHOOK_SECRET` added to deploy `SYNC_WHITELIST` + `.env.example`.
+  Remaining user step: **real inbound round-trip** — send an email to
+  `hello@sitetrackpro.in` from Gmail → confirm it arrives at
+  `boyapatirakesh7777@gmail.com`.
 - ⚠️ Keep the `GMAIL_SMTP_USER`/`GMAIL_SMTP_PASS` EF secrets — still used by
   `send-staff-invite` and `invite_org_member` SMTP fallbacks.
 
@@ -3313,3 +3329,25 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 **Zero product loss** — every user-facing piece had already been ported INTO the main app before closure: RBAC profile clone+compare (#25), per-type industry dropdowns + richer create form (mig 248), signup-confirm recovery + onboarding persistence (mig 247, #24), trial owner-only gate, firm-type hidden.
 
 **Ship**: rebase over founder's prod→main sync (#26) → PR #27 → sync-merge origin/prod (eslint auto) → CI success → squash `5c14146` → live verified: ROOT/LOGIN 200, /v2/ now falls through to the MAIN app SPA (no separate v2 bundle exists), prod-smoke 3/3.
+
+---
+
+## Session � 2026-09-06 (3rd): Security deep-dive + P0/P1 fixes (founder-mandate, uncommitted)
+
+**User mandate (Telugu)**: "endpoints anni check, security/issues/cyber-attack/data-leak emaina unnai deep-dive chesi live production app ni fix cheyyali � nenu ela alochistano ala alochinchi plan chesi implement cheyi."
+
+**Deep-dive method**: 2 parallel explore agents ? full inventory (27 EFs, all routes, 5 buckets, 9 cron jobs, CORS/verify_jwt) + prioritized audit (P0�3, P1�2, P2�6, P3 notes). Every P0 verified against current file content before fixing.
+
+**Fixes (working tree, NOT yet committed/pushed � needs founder go to ship)**:
+- **P0-1 `razorpay-payment-link` JWT bypass ? CLOSED**: EF only checked Bearer *presence*, then used service_role to read ANY invoice + mint links (cross-tenant IDOR, Razorpay quota burn). Now `authenticate(req)` verifies the JWT, then enforces invoice-org membership (or platform staff) + rejects mismatched `project_id` hints. Tests: efRazorpay +3 (18/18).
+- **P0-2 org-admin plan self-upgrade ? CLOSED**: migration **254** `254_org_plan_change_guard.sql` � BEFORE UPDATE OF plan/billing_period trigger `guard_organization_plan_change()` (search_path pinned): no-op echoes pass (onboarding safe), real changes need `is_superadmin()`; `auth.uid() IS NULL` bypass keeps webhook/cron reconciliation working. updateOrg comment documents the gate. Tests: new `tests/db/orgPlanGuard.test.ts` (7/7 incl. anchor fail-closed contracts).
+- **P0-3 `anchor-digest` fail-open ? CLOSED**: `if (cronSecret && �)` meant no secret = no auth on a service_role EF. Now fail-closed (`cron-secret-not-configured` 500). Grep confirms it was the ONLY `Secret &&` fail-open gate in EFs.
+- **P1-4 `.env*` lockdown**: `.gitignore` `.env/.env.local/.env.mcp` ? `.env*` + `!.env.example` + `!.env.mcp.example`. Verified: .env.production/.env.staging now ignored, examples still tracked.
+- **P1-6 upload validation**: `validateDrawingFile`/`validateDeliverableFile` + `*_MAX_BYTES` (50 MB) + extension allowlist (blocks .html/.svg/.js/.exe) + `uploadPayloadSize`, enforced inside both upload fns AND instant UI pre-check + `accept` attr on both file inputs. Tests: d1/c3 +5 each (14/14).
+- **P2-7 resend-webhook forwarder hardened** (was uncommitted WIP): TEXT-ONLY forward (dropped `body.html = meta.html` relay), reply_to email-shape validation, subject/text caps. Tests +1.
+- **CSP**: `object-src '"'"'none'"'"'` + `upgrade-insecure-requests`; `interest-cohort` ? `browsing-topics`.
+- **Noted, not changed**: `_shared/resendWebhook.ts` base64-pad fix was already dirty in tree (parallel track, test-covered 13/13) � left untouched.
+
+**Gates**: vitest targeted 66/66 + related 162/162 � tsc clean � eslint clean (touched files) � smoke 471 � build clean. Full `vitest run` exceeded local 10-min timeout (env slowness; CI runs it in ~6 min) � targeted suites green.
+
+**To ship (founder steps)**: `npm run db:apply` (applies 254; trigger is additive, onboarding echoes unaffected) ? redeploy EFs `razorpay-payment-link --no-verify-jwt` (keeps gateway JWT off, in-code auth is now real) + `anchor-digest` + `resend-webhook --no-verify-jwt` ? commit ? PR main?prod ? verify prod-smoke 3/3. Dashboard-only (no code fix): Supabase Auth "Allow new users" OFF if signup is request-access-only (P1-5); plan/billing changes now superadmin-only at DB level regardless.

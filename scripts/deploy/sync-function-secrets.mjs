@@ -66,6 +66,8 @@ const SYNC_WHITELIST = [
   "ANTHROPIC_API_KEY",
   "SITETRACK_DRY_RUN",
   "SITETRACK_DIGEST_LIVE",
+  "RESEND_WEBHOOK_SECRET",
+  "EMAIL_FORWARD_TO",
 ];
 
 const args = process.argv.slice(2);

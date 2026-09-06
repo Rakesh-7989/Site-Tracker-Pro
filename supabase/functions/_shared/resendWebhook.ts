@@ -25,7 +25,12 @@ export const RESEND_WEBHOOK_TOLERANCE_SEC = 300;
 
 /** Base64-decode a Svix `whsec_...` signing secret → the raw HMAC key. */
 export function decodeResendSecret(secret: string): Uint8Array<ArrayBuffer> {
-  const b64 = secret.startsWith("whsec_") ? secret.slice("whsec_".length) : secret;
+  let b64 = secret.startsWith("whsec_") ? secret.slice("whsec_".length) : secret;
+  // Resend's create-webhook response returns the signing secret UNPADDED (e.g.
+  // 31 base64 chars). atob() throws on non-multiple-of-4 input, which would make
+  // signature verification permanently fail against those secrets — pad first.
+  const pad = b64.length % 4;
+  if (pad !== 0) b64 = b64.padEnd(b64.length + (4 - pad), "=");
   const bin = atob(b64);
   const out = new Uint8Array(new ArrayBuffer(bin.length));
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);

@@ -16,6 +16,46 @@ const dbe = (e: { message?: string }): Result<never> => ({ ok: false, error: Str
 /** The storage bucket used for both deliverables and drawings (mig 145). */
 export const DRAWING_BUCKET = "deliverables";
 
+/** Max upload size = the bucket file_size_limit (migrations 145/200): 50 MB. */
+export const DRAWING_MAX_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Allowed file extensions (SEC-P1-6): CAD + docs + site images only.
+ * Blocks stored-HTML/SVG/JS (.html/.svg/.js) that would run in the storage
+ * origin when opened, plus executables. Keep in sync with the file-input
+ * `accept` attr in DrawingsTab.
+ */
+export const DRAWING_ALLOWED_EXTENSIONS = [
+  "pdf", "dwg", "dxf", "dwf", "skp", "ifc", "rvt",
+  "png", "jpg", "jpeg", "webp",
+  "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv",
+] as const;
+
+/** `accept` attr value derived from the allowlist (dot-prefixed, comma-joined). */
+export const DRAWING_ACCEPT = DRAWING_ALLOWED_EXTENSIONS.map(e => `.${e}`).join(",");
+
+/**
+ * Pure pre-upload validation: extension allowlist + size cap.
+ * Returns an error message, or null when the file may be uploaded.
+ */
+export function validateDrawingFile(fileName: string, sizeBytes: number): string | null {
+  const ext = String(fileName ?? "").split(".").pop()?.toLowerCase() ?? "";
+  if (!ext || !(DRAWING_ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
+    return `File type .${ext || "?"} is not allowed. Allowed: ${DRAWING_ALLOWED_EXTENSIONS.join(", ")}.`;
+  }
+  if ((Number(sizeBytes) || 0) > DRAWING_MAX_BYTES) {
+    return `File is larger than ${formatBytes(DRAWING_MAX_BYTES)}.`;
+  }
+  return null;
+}
+
+/** Byte size of an upload payload (Blob | ArrayBuffer | string). */
+export function uploadPayloadSize(file: Blob | ArrayBuffer | string): number {
+  if (typeof file === "string") return file.length;
+  if (typeof Blob !== "undefined" && file instanceof Blob) return file.size;
+  return (file as ArrayBuffer).byteLength ?? 0;
+}
+
 /** Folder holding every file for one drawing: <project_id>/<drawing_id>. */
 export function drawingFolder(projectId: string, drawingId: string): string {
   return `${projectId}/${drawingId}`;
@@ -86,6 +126,8 @@ export async function uploadDrawingFile(
   fileName: string, opts?: { upsert?: boolean },
 ): Promise<Result<{ path: string }>> {
   try {
+    const rejected = validateDrawingFile(fileName, uploadPayloadSize(file));
+    if (rejected) return { ok: false, error: rejected };
     const path = drawingObjectPath(projectId, drawingId, fileName);
     const { error } = await client.storage.from(DRAWING_BUCKET).upload(path, file, {
       upsert: opts?.upsert ?? true,

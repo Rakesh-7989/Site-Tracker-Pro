@@ -11,7 +11,8 @@ import { useIsPartnerWriter } from "@/features/project/PartnerScopeContext";
 import { listDrawings, createDrawing, setDrawingStatus, setDrawingStage, setDrawingPreviewUrl, deleteDrawing, applyAutoSupersede, type Drawing, type DrawingStatus } from "@/app/queries/designQueries";
 import {
   listDrawingFiles, uploadDrawingFile, deleteDrawingFiles, drawingFileUrl,
-  drawingObjectPath, formatBytes, type DrawingFileRef,
+  drawingObjectPath, formatBytes, validateDrawingFile, DRAWING_ACCEPT,
+  type DrawingFileRef,
 } from "@/app/queries/drawingFileQueries";
 import { logDownloadEvent } from "@/app/queries/downloadAuditQueries";
 import { diffPairs, isRasterFileName } from "@/lib/drawingDiffPair";
@@ -116,6 +117,9 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
     if (!file || !targetDrawing) return;
     const drawingId = targetDrawing;
     setTargetDrawing(null);
+    // Instant client check (SEC-P1-6) — uploadDrawingFile re-validates too.
+    const rejected = validateDrawingFile(file.name, file.size);
+    if (rejected) { setFileError(rejected); return; }
     setUploading(drawingId); setFileError(null);
     const client = await getClient();
     if (!client) { setFileError("Backend not configured."); setUploading(null); return; }
@@ -205,7 +209,7 @@ export function DrawingsTab({ projectId }: { projectId: string }): JSX.Element {
         </Card>
       )}
       <input
-        ref={inputRef} type="file" className="hidden"
+        ref={inputRef} type="file" className="hidden" accept={DRAWING_ACCEPT}
         onChange={(e) => void onPickFile(e)}
       />
       {loading ? (
