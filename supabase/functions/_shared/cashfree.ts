@@ -10,9 +10,9 @@
 // gate exercises this file via `supabase functions test cashfree-webhook`.
 
 export const PLAN_META = {
-  basic:    { label: "Basic",    price: 999 },
-  pro:      { label: "Pro",      price: 2999 },
-  business: { label: "Business", price: 7999 },
+  basic:    { label: "Basic",    price: 7999 },
+  pro:      { label: "Pro",      price: 19999 },
+  business: { label: "Business", price: 43333 },
   custom:   { label: "Custom",   price: 0 },
 };
 

@@ -40,7 +40,7 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     question: "How does pricing work?",
     answer:
-      "Pricing is per organization, not per seat, and plans start at ₹5,999/month. Every plan includes a 14-day free trial with no credit card, and prices are exclusive of 18% GST which business subscribers claim as input credit.",
+      "Pricing is per organization, not per seat, and plans start at ₹7,999/month. Every plan includes a 14-day free trial with no credit card, and prices are exclusive of 18% GST which business subscribers claim as input credit.",
   },
   {
     question: "Is our data secure?",

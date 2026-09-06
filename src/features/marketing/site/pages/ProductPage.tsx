@@ -23,7 +23,7 @@ export function ProductPage(): JSX.Element {
         "Construction project software for Indian builders, contractors and architects — voice daily progress reports, RA bills with GST/TDS, RERA stage tracking, drawings, labour and client approvals in one workspace.",
       offers: {
         "@type": "Offer",
-        price: "5999",
+        price: "7999",
         priceCurrency: "INR",
         description: "Per organization, not per seat. 14-day free trial.",
       },
