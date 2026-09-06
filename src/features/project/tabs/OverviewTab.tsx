@@ -31,7 +31,7 @@ import { listIssues } from "@/app/queries/issueQueries";
 import { PartnerRiskCard } from "@/features/project/PartnerRiskCard";
 import { isTabVisible } from "@/features/project/tabs-config";
 import { localDateISO } from "@/lib/utils/dateLocal";
-import { RiskSignalsCard } from "@/features/project/RiskSignalsCard";
+import { ProjectHealthCard } from "@/features/project/ProjectHealthCard";
 import { usePartnerScope } from "@/features/project/PartnerScopeContext";
 import { resolveOrgType } from "@/auth/orgType";
 
@@ -159,8 +159,8 @@ export function OverviewTab({ project, members }: { project: ProjectDetail; memb
       {/* Statutory expiry hotspot (v4 D6) */}
       {visible("statutory") && <StatutoryExpiryAlert projectId={project.id} />}
 
-      {/* Deterministic risk signals (v4 Phase D) */}
-      <RiskSignalsCard project={project} />
+      {/* Deterministic project health (R4) */}
+      <ProjectHealthCard project={project} />
 
       {/* Membership summary */}
       <Card padding="lg" title={<h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">{t("overviewTab.teamComposition")}</h3>}>

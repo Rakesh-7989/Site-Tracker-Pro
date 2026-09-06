@@ -1,14 +1,18 @@
-// SiteTrack Pro — deterministic project "Risk signals" card (v4 Phase D).
+// SiteTrack Pro — deterministic "Project health" card (R4 — response plan row 4).
 // Prefers the nightly server snapshot (project_risk_signals — migrations
 // 225/226) when fresh; otherwise feeds milestones, expenses-vs-budget, open
-// issues and RFI lag into computeRiskSignals() on the fly. Renders the score
-// + signal list. Pure math (no external AI); shown on Overview for members.
+// issues and RFI lag into computeRiskSignals() on the fly. Presents the same
+// signals through a health framing: a headline score (100 − risk), per-dimension
+// sub-scores (schedule / cost / issues / documentation) and a deterministic
+// "N things need attention" list. Pure math (no external AI); shown on Overview.
 
 import { useCallback, useEffect, useState } from "react";
 import { getClient } from "@/lib/supabase/supabase";
 import { Card, Badge, Spinner, Icon, ProgressBar } from "@/components/ui/atoms";
 import {
   computeRiskSignals, getProjectRiskSnapshot, isSnapshotFresh,
+  healthScore, healthSubscores, topActionableSignals,
+  HEALTH_DIMENSIONS, HEALTH_DIMENSION_LABEL,
   type StoredRiskSnapshot, type RiskSignal, type RiskLevel,
 } from "@/app/queries/riskQueries";
 import { listMilestones } from "@/app/queries/milestoneQueries";
@@ -18,9 +22,19 @@ import { listRfis } from "@/app/queries/designQueries";
 import { localDateISO } from "@/lib/utils/dateLocal";
 import type { ProjectDetail } from "@/app/queries/queries";
 
-const LEVEL_TONE: Record<RiskLevel, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  low: "success", medium: "warning", high: "danger", critical: "danger",
+/** Risk level → health label + badge tone. */
+const LEVEL_HEALTH: Record<RiskLevel, { label: string; tone: "success" | "warning" | "danger" }> = {
+  low: { label: "Healthy", tone: "success" },
+  medium: { label: "Watching", tone: "warning" },
+  high: { label: "At risk", tone: "danger" },
+  critical: { label: "Critical", tone: "danger" },
 };
+
+const HEADLINE_TONE = (value: number): "emerald" | "orange" | "red" =>
+  value >= 80 ? "emerald" : value >= 50 ? "orange" : "red";
+
+const SUBSCORE_TONE = (value: number): "emerald" | "orange" | "red" =>
+  HEADLINE_TONE(value);
 
 type CardResult = ReturnType<typeof computeRiskSignals>;
 
@@ -40,7 +54,7 @@ function snapshotToResult(snap: StoredRiskSnapshot): CardResult {
   };
 }
 
-export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.Element {
+export function ProjectHealthCard({ project }: { project: ProjectDetail }): JSX.Element {
   const [loaded, setLoaded] = useState<{ res: CardResult; fromStore: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -89,28 +103,40 @@ export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.El
   const result = loaded?.res ?? null;
   const fromStore = loaded?.fromStore ?? false;
   if (!result) return <></>;
-  if (result.score === 0) {
-    return (
-      <Card padding="lg" title={<div className="flex items-center gap-2">
-        <Icon name="check" size={15} className="text-success" />
-        <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Risk signals</h3>
-      </div>} action={<Badge tone="success">Low</Badge>}>
-        <div className="text-sm text-fg-secondary">No active risk signals detected.</div>
-      </Card>
-    );
-  }
+  return <ProjectHealthBody result={result} fromStore={fromStore} />;
+}
+
+/** Pure card body (no hooks) — unit-testable without auth/org context. */
+export function ProjectHealthBody({ result, fromStore }: { result: CardResult; fromStore: boolean }): JSX.Element {
+  const score = healthScore(result.score);
+  const subscores = healthSubscores(result.signals);
+  const top = topActionableSignals(result.signals);
+  const health = LEVEL_HEALTH[result.level];
+  const attentionLabel = top.length === 0
+    ? "Nothing needs attention"
+    : top.length === 1
+      ? "1 thing needs attention"
+      : `${top.length} things need attention`;
 
   return (
-    <Card padding="lg" title={<div className="flex items-center gap-2">
-      <Icon name="alert" size={15} className="text-warning" />
-      <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Risk signals</h3>
-      <Badge tone={LEVEL_TONE[result.level]}>{result.level}</Badge>
-    </div>} action={<div className="flex items-center gap-2">
-      <ProgressBar value={result.score} color={result.level === "critical" ? "red" : result.level === "high" ? "red" : "orange"} className="w-24" />
-      <span className="text-sm font-bold text-fg-primary">{result.score}/100</span>
+    <div data-testid="project-health-card">
+      <Card padding="lg" title={<div className="flex items-center gap-2">
+      <Icon
+        name={score >= 80 ? "check" : "alert"}
+        size={15}
+        className={score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-error"}
+      />
+      <h3 className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary">Project health</h3>
+      <Badge tone={health.tone}>{health.label}</Badge>
     </div>}>
 
-      <div className="text-xs text-fg-secondary">
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-black leading-none tabular-nums text-fg-primary" data-testid="health-score">{score}</span>
+        <span className="text-xs font-semibold text-fg-tertiary">/ 100 health</span>
+      </div>
+      <ProgressBar value={score} color={HEADLINE_TONE(score)} className="mt-2" ariaLabel="Project health score" />
+
+      <div className="text-xs text-fg-secondary mt-2">
         {Math.round(result.delayProbability * 100)}% estimated delay probability
         {result.delayDays > 0 ? ` · ~${result.delayDays} day${result.delayDays === 1 ? "" : "s"} late` : ""}
         {fromStore ? " · nightly snapshot" : ""}
@@ -123,10 +149,33 @@ export function RiskSignalsCard({ project }: { project: ProjectDetail }): JSX.El
         </div>
       )}
 
-      <ul className="mt-3 space-y-1.5">
-        {result.signals.map(s => <SignalRow key={s.code} s={s} />)}
-      </ul>
-    </Card>
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {HEALTH_DIMENSIONS.map(dim => {
+          const value = subscores[dim];
+          return (
+            <div key={dim} className="rounded-lg bg-bg-secondary px-3 py-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-semibold text-fg-primary">{HEALTH_DIMENSION_LABEL[dim]}</span>
+                <span className="text-xs font-bold text-fg-primary tabular-nums" data-testid={`subscore-${dim}`}>{value}/100</span>
+              </div>
+              <ProgressBar value={value} color={SUBSCORE_TONE(value)} className="mt-1.5" ariaLabel={`${HEALTH_DIMENSION_LABEL[dim]} health`} />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4">
+        <div className="text-xs font-semibold tracking-[0.16em] uppercase text-fg-tertiary" data-testid="attention-label">
+          {attentionLabel}
+        </div>
+        {top.length > 0 && (
+          <ul className="mt-1.5 space-y-1.5">
+            {top.map(s => <SignalRow key={s.code} s={s} />)}
+          </ul>
+        )}
+      </div>
+      </Card>
+    </div>
   );
 }
 
