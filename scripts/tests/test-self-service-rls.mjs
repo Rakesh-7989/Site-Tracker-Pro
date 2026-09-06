@@ -41,7 +41,15 @@ const asAdmin = async () => {
   await c.query("set local role authenticated");
   await c.query(`select set_config('request.jwt.claims', '{"sub":"${U}","role":"authenticated"}', true)`);
 };
-const asOwner = async () => { await c.query("reset role"); };
+const asOwner = async () => {
+  await c.query("reset role");
+  // Clear the JWT-claims GUC (is_local=true persists for the tx). auth.uid()
+  // falls back to request.jwt.claims, so a stale sub would make this look like
+  // an in-scope authenticated user and migration 254 (org plan-change guard)
+  // would reject the downgrade. Empty claims ⇒ auth.uid() IS NULL ⇒ the
+  // backend/reconciliation path is allowed, exactly like cron/webhooks.
+  await c.query(`select set_config('request.jwt.claims', '{}', true)`);
+};
 async function tryInsert(sql, params) {
   try { await c.query("savepoint sp"); await c.query(sql, params); await c.query("release savepoint sp"); return true; }
   catch { await c.query("rollback to savepoint sp"); return false; }

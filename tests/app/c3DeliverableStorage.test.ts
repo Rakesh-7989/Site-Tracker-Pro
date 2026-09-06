@@ -4,7 +4,8 @@
 import { describe, it, expect } from "vitest";
 import {
   DELIVERABLE_BUCKET, deliverableFolder, deliverableObjectPath, projectIdFromPath,
-  sanitizeFileName, formatBytes,
+  sanitizeFileName, formatBytes, validateDeliverableFile, DELIVERABLE_ACCEPT,
+  DELIVERABLE_MAX_BYTES, uploadPayloadSize,
 } from "@/app/queries/deliverableStorageQueries";
 
 describe("deliverableStorage folder/path helpers", () => {
@@ -54,5 +55,35 @@ describe("formatBytes", () => {
 describe("bucket constant", () => {
   it("uses the `deliverables` bucket", () => {
     expect(DELIVERABLE_BUCKET).toBe("deliverables");
+  });
+});
+
+describe("validateDeliverableFile (SEC-P1-6)", () => {
+  it("accepts CAD/docs/image extensions", () => {
+    for (const name of ["report.pdf", "GFC.dwg", "site.dxf", "photo.jpeg", "sheet.xlsx"]) {
+      expect(validateDeliverableFile(name, 1024)).toBeNull();
+    }
+  });
+
+  it("rejects stored-XSS + executable types", () => {
+    for (const name of ["evil.html", "evil.svg", "evil.js", "run.exe", "noext"]) {
+      expect(validateDeliverableFile(name, 1024)).toMatch(/not allowed/);
+    }
+  });
+
+  it("rejects files over the 50 MB bucket cap", () => {
+    expect(validateDeliverableFile("report.pdf", DELIVERABLE_MAX_BYTES + 1)).toMatch(/larger than/);
+    expect(validateDeliverableFile("report.pdf", DELIVERABLE_MAX_BYTES)).toBeNull();
+  });
+
+  it("derives the input accept attr from the allowlist", () => {
+    expect(DELIVERABLE_ACCEPT).toContain(".pdf");
+    expect(DELIVERABLE_ACCEPT).not.toContain(".html");
+  });
+
+  it("measures Blob / ArrayBuffer / string payloads", () => {
+    expect(uploadPayloadSize(new Blob(["hello"]))).toBe(5);
+    expect(uploadPayloadSize(new Uint8Array(7).buffer)).toBe(7);
+    expect(uploadPayloadSize("abc")).toBe(3);
   });
 });

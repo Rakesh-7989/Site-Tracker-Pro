@@ -3,9 +3,12 @@ dist
 .vite
 .DS_Store
 *.log
-.env
-.env.local
-.env.mcp
+# Env files — NEVER commit live keys. `.env*` covers .env.production /
+# .env.staging / .env.*.local too (SEC-P1-4: only the .example templates
+# are tracked). See AGENTS.md Security Notes.
+.env*
+!.env.example
+!.env.mcp.example
 .vscode
 .idea
 # Playwright

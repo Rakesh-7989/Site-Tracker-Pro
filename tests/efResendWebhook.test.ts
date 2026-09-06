@@ -34,6 +34,32 @@ describe("resendWebhook shared helpers", () => {
     expect(b64).toBe(SECRET.replace(/^whsec_/, ""));
   });
 
+  it("decodeResendSecret handles Resend's UNPADDED signing secret (create-webhook response shape)", async () => {
+    // Resend returns the whsec_ value UNPADDED (e.g. 31 base64 chars → len % 4 === 3).
+    // atob() would throw on that; the decoder must pad to a multiple of 4 first.
+    const raw = new Uint8Array(Array.from({ length: 23 }, (_, i) => i));
+    const b64 = btoa(String.fromCharCode(...raw));
+    expect(b64.endsWith("=")).toBe(true); // padded form ends with one '='
+    const unpaddedSecret = `whsec_${b64.slice(0, -1)}`; // drop the pad → 31 base64 chars
+    expect(unpaddedSecret.length).toBe(37); // "whsec_" (6) + 31 chars — Resend's real shape
+    expect(unpaddedSecret.slice("whsec_".length).length % 4).toBe(3); // unpadded base64
+
+    const key = decodeResendSecret(unpaddedSecret);
+    expect(Array.from(key)).toEqual(Array.from(raw));
+
+    // AND the end-to-end verify path must succeed with the unpadded secret string.
+    const msgId = "msg_padded_ok";
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const body = JSON.stringify({ event: "email.delivered", data: { id: "re_pad", to: ["a@b.c"] } });
+    const signature = await hmacSign(key, `${msgId}.${timestamp}.${body}`);
+    const ok = await verifyResendWebhookSignature(
+      { msgId, timestamp, signature: `v1,${signature}` },
+      body,
+      unpaddedSecret,
+    );
+    expect(ok).toBe(true);
+  });
+
   it("verifyResendWebhookSignature accepts a genuine Svix-signed payload", async () => {
     const msgId = "msg_123";
     const timestamp = String(Math.floor(Date.now() / 1000));
@@ -141,5 +167,20 @@ describe("resend-webhook EF wiring (source contract)", () => {
   it("fails closed when the secret is missing", () => {
     expect(src).toMatch(/resend-webhook-secret-not-configured/);
     expect(src).toMatch(/500/);
+  });
+
+  it("forwards email.received events to the founder inbox", () => {
+    expect(src).toMatch(/email\.received/);
+    expect(src).toMatch(/EMAIL_FORWARD_TO/);
+    expect(src).toMatch(/FORWARD_TO_DEFAULT/);
+    expect(src).toMatch(/\/emails\/receiving\//);
+    expect(src).toMatch(/reply_to/);
+    expect(src).toMatch(/RESEND_API_KEY/);
+  });
+
+  it("forwards TEXT-ONLY and validates reply_to (SEC-P2-7: no HTML relay)", () => {
+    expect(src).not.toMatch(/body\.html = meta\.html/);
+    expect(src).toMatch(/TEXT-ONLY/);
+    expect(src).toMatch(/replyCandidate/);
   });
 });

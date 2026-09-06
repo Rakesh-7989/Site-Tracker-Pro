@@ -61,6 +61,22 @@ describe("razorpay-payment-link — create payment link (mig 253)", () => {
     expect(paymentLink).toMatch(/from\("invoices"\)\s*\n\s*\.select\("id, project_id, amount, status, razorpay_payment_link_id"\)/);
     expect(paymentLink).toMatch(/\.from\("projects"\)\s*\n\s*\.select\("org_id"\)\s*\n\s*\.eq\("id", invoice\.project_id\)/);
   });
+
+  it("verifies the JWT via authenticate() instead of a presence check (P0 IDOR fix)", () => {
+    expect(paymentLink).toContain('from "../_shared/auth.ts"');
+    expect(paymentLink).toMatch(/await authenticate\(req\)/);
+    expect(paymentLink).toContain("if (!auth.ok) return auth.response;");
+  });
+
+  it("enforces invoice-org membership (or platform staff) before minting", () => {
+    expect(paymentLink).toContain("not-org-member");
+    expect(paymentLink).toMatch(/auth\.orgMemberships\.some/);
+    expect(paymentLink).toContain("isPlatformStaff");
+  });
+
+  it("rejects a mismatched project_id hint (project-mismatch)", () => {
+    expect(paymentLink).toContain("project-mismatch");
+  });
 });
 
 describe("razorpay-webhook — nested payload + status mapping (mig 253)", () => {

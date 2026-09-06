@@ -4,7 +4,8 @@
 import { describe, it, expect } from "vitest";
 import {
   DRAWING_BUCKET, drawingFolder, drawingObjectPath, projectIdFromPath,
-  sanitizeFileName, formatBytes,
+  sanitizeFileName, formatBytes, validateDrawingFile, DRAWING_ACCEPT,
+  DRAWING_MAX_BYTES, uploadPayloadSize,
 } from "@/app/queries/drawingFileQueries";
 
 describe("drawingStorage folder/path helpers", () => {
@@ -54,5 +55,36 @@ describe("formatBytes", () => {
 describe("bucket constant", () => {
   it("reuses the `deliverables` bucket", () => {
     expect(DRAWING_BUCKET).toBe("deliverables");
+  });
+});
+
+describe("validateDrawingFile (SEC-P1-6)", () => {
+  it("accepts CAD/docs/image extensions", () => {
+    for (const name of ["plan.pdf", "GFC.dwg", "site.dxf", "model.skp", "photo.jpg", "photo.png", "spec.docx"]) {
+      expect(validateDrawingFile(name, 1024)).toBeNull();
+    }
+  });
+
+  it("rejects stored-XSS + executable types", () => {
+    for (const name of ["evil.html", "evil.htm", "evil.svg", "evil.js", "run.exe", "run.sh", "noext", ".htaccess"]) {
+      expect(validateDrawingFile(name, 1024)).toMatch(/not allowed/);
+    }
+  });
+
+  it("rejects files over the 50 MB bucket cap", () => {
+    expect(validateDrawingFile("plan.pdf", DRAWING_MAX_BYTES + 1)).toMatch(/larger than/);
+    expect(validateDrawingFile("plan.pdf", DRAWING_MAX_BYTES)).toBeNull();
+  });
+
+  it("derives the input accept attr from the allowlist", () => {
+    expect(DRAWING_ACCEPT).toContain(".pdf");
+    expect(DRAWING_ACCEPT).toContain(".dwg");
+    expect(DRAWING_ACCEPT).not.toContain(".html");
+  });
+
+  it("measures Blob / ArrayBuffer / string payloads", () => {
+    expect(uploadPayloadSize(new Blob(["hello"]))).toBe(5);
+    expect(uploadPayloadSize(new Uint8Array(7).buffer)).toBe(7);
+    expect(uploadPayloadSize("abc")).toBe(3);
   });
 });
