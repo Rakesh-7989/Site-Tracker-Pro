@@ -13,6 +13,12 @@
 //   BIZ-005  legal transitions by ordinary members still work (no over-block).
 //   BIZ-006  non-lifecycle column updates (rename) are NOT blocked by the
 //            trigger.
+//   BIZ-007  (migration 256) every LEGAL lifecycle transition appends exactly
+//            one immutable audit_log_v2 row (action UPDATE / resource project
+//            / before-after jsonb) AND one event_outbox row
+//            (project.status_changed | project.archived | project.restored,
+//            project_id + to_project_members:true) — while non-lifecycle
+//            updates (rename) emit neither.
 //
 // Usage: node scripts/test-project-lifecycle-rls.mjs
 
@@ -167,6 +173,73 @@ try {
   await asUser(U_M);
   ok(await tryUpdate(`update public.projects set name='Lifecycle Proj v2' where id=$1`, [P]),
      "pm CAN rename a project (non-lifecycle column not blocked)");
+
+  // ── BIZ-007: legal transitions emit audit + outbox events, renames don't ─
+  const qAud = (sql, extra = []) => c.query(sql, [P, ...extra]);
+
+  await asUser(U_A);
+  ok(await tryUpdate(`update public.projects set status='active', updated_at=now() where id=$1`, [P]),
+     "setup: orgadmin reactivates cancelled -> active (events baseline)");
+
+  const beforeAuditAll  = (await qAud(`select count(*)::int n from public.audit_log_v2 where project_id=$1`)).rows[0].n;
+  const beforeEventsAll = (await qAud(`select count(*)::int n from public.event_outbox where project_id=$1`)).rows[0].n;
+
+  await asUser(U_A);
+  ok(await tryUpdate(`update public.projects set status='paused', updated_at=now() where id=$1`, [P]),
+     "orgadmin CAN active -> paused (events checkpoint)");
+  const afterAuditAll  = (await qAud(`select count(*)::int n from public.audit_log_v2 where project_id=$1`)).rows[0].n;
+  const afterEventsAll = (await qAud(`select count(*)::int n from public.event_outbox where project_id=$1`)).rows[0].n;
+  ok(afterAuditAll === beforeAuditAll + 1, "legal status transition appends exactly 1 immutable audit row");
+  ok(afterEventsAll === beforeEventsAll + 1, "legal status transition appends exactly 1 outbox event");
+
+  const auditRow = (await qAud(`select message, action, resource, resource_id,
+        before->>'status' as bs, after->>'status' as ast, actor_id
+    from public.audit_log_v2
+    where project_id=$1 and action='UPDATE' and resource='project'
+      and before->>'status'='active' and after->>'status'='paused'
+      and actor_id=$2
+    order by ts desc limit 1`, [U_A])).rows[0];
+  ok(auditRow && auditRow.resource_id === String(P) && auditRow.actor_id === U_A
+     && auditRow.message === 'Project status changed: active -> paused',
+     "audit row: UPDATE project <id>, actor = current user, message describes transition");
+
+  const evRow = (await qAud(`select type, payload->>'kind' as kind,
+         (payload->>'to_project_members')::boolean as tpm, status
+    from public.event_outbox
+    where project_id=$1 and type='project.status_changed'
+    order by created_at desc, id desc limit 1`)).rows[0];
+  ok(evRow && evRow.kind === evRow.type && evRow.tpm === true && evRow.status === 'pending',
+     "outbox event: project.status_changed, project-member fan-out, awaits per-minute worker");
+
+  // archive/restore are typed distinctly
+  const beforeArch = (await qAud(`select count(*)::int n from public.event_outbox where project_id=$1 and type='project.archived'`)).rows[0].n;
+  const beforeRest = (await qAud(`select count(*)::int n from public.event_outbox where project_id=$1 and type='project.restored'`)).rows[0].n;
+  const beforeArchAudit = (await qAud(`select count(*)::int n from public.audit_log_v2
+       where project_id=$1 and before->>'archived_at' is null and after->>'archived_at' is not null`)).rows[0].n;
+  await asUser(U_A);
+  ok(await tryUpdate(`update public.projects set archived_at=null, updated_at=now() where id=$1`, [P]),
+     "orgadmin CAN restore (events checkpoint)");
+  ok((await qAud(`select count(*)::int n from public.event_outbox where project_id=$1 and type='project.restored'`)).rows[0].n === beforeRest + 1,
+     "restore emits exactly 1 project.restored event");
+  ok(await tryUpdate(`update public.projects set archived_at=now(), updated_at=now() where id=$1`, [P]),
+     "orgadmin CAN archive (events checkpoint)");
+  ok((await qAud(`select count(*)::int n from public.event_outbox where project_id=$1 and type='project.archived'`)).rows[0].n === beforeArch + 1,
+     "archive emits exactly 1 project.archived event");
+  const afterArchAudit = (await qAud(`select count(*)::int n from public.audit_log_v2
+       where project_id=$1 and before->>'archived_at' is null and after->>'archived_at' is not null`)).rows[0].n;
+  ok(afterArchAudit === beforeArchAudit + 1,
+     "archive appends exactly 1 uniquely-typed audit row (archived_at null -> set)");
+
+  // non-lifecycle updates emit nothing
+  const beforeAudit2  = (await qAud(`select count(*)::int n from public.audit_log_v2 where project_id=$1`)).rows[0].n;
+  const beforeEvents2 = (await qAud(`select count(*)::int n from public.event_outbox where project_id=$1`)).rows[0].n;
+  await asUser(U_M);
+  ok(await tryUpdate(`update public.projects set name='Lifecycle Proj v3' where id=$1`, [P]),
+     "pm CAN rename a project (non-lifecycle column not blocked)");
+  ok((await qAud(`select count(*)::int n from public.audit_log_v2 where project_id=$1`)).rows[0].n === beforeAudit2,
+     "rename appends NO audit row");
+  ok((await qAud(`select count(*)::int n from public.event_outbox where project_id=$1`)).rows[0].n === beforeEvents2,
+     "rename publishes NO outbox event");
 
   await c.query("rollback");
   console.log(`\nProject lifecycle RLS matrix: ${pass} passed, ${fail} failed`);
