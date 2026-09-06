@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { compareBindings, type ProfileBinding } from "@/auth/rbac2";
+import { compareBindings } from "@/app/rbacQueries";
+import type { ProfileBinding } from "@/auth/types";
 
 function b(capability: string, effect: "allow" | "deny"): ProfileBinding {
   return {

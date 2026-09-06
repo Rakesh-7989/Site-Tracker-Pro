@@ -1,4 +1,4 @@
-// RBAC V2 pure decision-logic tests (src/auth/rbac2/resolver.ts + queries.ts).
+// RBAC V2 pure decision-logic tests (src/auth/rbacLayers.ts + src/app/rbacQueries.ts).
 
 import { describe, expect, it } from "vitest";
 import type { Capability } from "@/auth/capabilities";
@@ -10,20 +10,20 @@ import {
   composeV2Caps,
   decideV2,
   profileCapabilities,
-} from "@/auth/rbac2/resolver";
+} from "@/auth/rbacLayers";
 import {
   auditSummary,
   normalizeAclEntry,
   normalizeCatalogEntry,
   normalizeRoleProfile,
   normalizeProfileBinding,
-} from "@/auth/rbac2/queries";
+} from "@/app/rbacQueries";
 import type {
   ProfileBinding,
-  Rbac2Context,
+  RbacLayerContext,
   ResourceAclEntry,
   RoleProfile,
-} from "@/auth/rbac2/types";
+} from "@/auth/types";
 
 const p = (id: string, code: string, sourceRole?: IdentityRole, isSystem = true): RoleProfile => ({
   id,
@@ -59,8 +59,7 @@ const acl = (partial: Partial<ResourceAclEntry>): ResourceAclEntry => ({
   createdAt: "",
 });
 
-const ctx = (partial: Partial<Rbac2Context> = {}): Rbac2Context => ({
-  mode: "enforce",
+const ctx = (partial: Partial<RbacLayerContext> = {}): RbacLayerContext => ({
   profiles: [],
   bindings: [],
   acl: [],
@@ -223,7 +222,7 @@ describe("decideV2 layered order", () => {
   });
 });
 
-describe("composeV2Caps enforce mode", () => {
+describe("composeV2Caps layered composition", () => {
   it("strips binding/ACL denies and adds profile/ACL allows", () => {
     const profiles = [p("p1", "drafter", "junior_architect")];
     const out = composeV2Caps({

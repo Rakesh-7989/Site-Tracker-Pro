@@ -49,6 +49,13 @@ const HIGH_BURN = 0.8;      // spent/allocated above → budget signal
 const OVER_BURN = 1.0;
 const LAG_DAYS = 3;         // open RFI older than this → lag
 
+/** Severity → score weight. Mirrored by the server-side scorer in 225. */
+export const SEVERITY_WEIGHT: Record<RiskSignal["severity"], number> = {
+  high: 34,
+  medium: 20,
+  low: 10,
+};
+
 /** Day difference (d1 − d2) in whole days for ISO date strings. */
 function diffDays(a: string, b: string): number {
   const A = new Date(a + "T00:00:00Z").getTime();
@@ -221,9 +228,7 @@ export function computeRiskSignals(input: RiskInput, today: string): RiskResult 
   }
   let weight = 0;
   for (const s of signals) {
-    if (s.severity === "high") weight += 34;
-    else if (s.severity === "medium") weight += 20;
-    else weight += 10;
+    weight += SEVERITY_WEIGHT[s.severity];
   }
   const score = Math.min(100, Math.round(weight));
   const level = riskLevel(score);
@@ -235,6 +240,64 @@ export function computeRiskSignals(input: RiskInput, today: string): RiskResult 
     stockOutDays: 0,
     stockOutCritical: false,
   };
+}
+
+// ── Project Health (R4) — headless framing over the same signals ─────────────
+// A health view of the risk model: a headline score (100 − risk), per-dimension
+// sub-scores (schedule / cost / issues / documentation) and a deterministic
+// "N things need attention" list. All pure + unit-testable.
+
+export type HealthDimension = "schedule" | "cost" | "issues" | "documentation";
+
+export const HEALTH_DIMENSIONS: readonly HealthDimension[] = [
+  "schedule", "cost", "issues", "documentation",
+];
+
+export const HEALTH_DIMENSION_LABEL: Record<HealthDimension, string> = {
+  schedule: "Schedule",
+  cost: "Cost",
+  issues: "Issues",
+  documentation: "Documentation",
+};
+
+/** Which signal code contributes to which health dimension. */
+export const SIGNAL_HEALTH_DIMENSION: Record<string, HealthDimension> = {
+  schedule_slip: "schedule",
+  budget_overrun: "cost",
+  budget_burn: "cost",
+  high_severity_issues: "issues",
+  rfi_lag: "documentation",
+};
+
+/** Invert a 0–100 risk score into a 0–100 health score (higher = healthier). */
+export function healthScore(riskScore: number): number {
+  return Math.max(0, Math.min(100, 100 - Math.round(riskScore)));
+}
+
+/** Per-dimension health = 100 − weighted contribution, capped 0–100. */
+export function healthSubscores(signals: RiskSignal[]): Record<HealthDimension, number> {
+  const contribution: Record<HealthDimension, number> = {
+    schedule: 0, cost: 0, issues: 0, documentation: 0,
+  };
+  for (const s of signals) {
+    const dim = SIGNAL_HEALTH_DIMENSION[s.code];
+    if (!dim) continue; // unknown/domain signals don't move a sub-score
+    contribution[dim] = Math.min(100, contribution[dim] + SEVERITY_WEIGHT[s.severity]);
+  }
+  return {
+    schedule: 100 - contribution.schedule,
+    cost: 100 - contribution.cost,
+    issues: 100 - contribution.issues,
+    documentation: 100 - contribution.documentation,
+  };
+}
+
+/** Deterministic "N things need attention" list: medium+ severity, high first, capped at `limit`. */
+export function topActionableSignals(signals: RiskSignal[], limit = 3): RiskSignal[] {
+  const actionable = signals
+    .filter(s => s.severity === "high" || s.severity === "medium")
+    .sort((a, b) => SEVERITY_WEIGHT[b.severity] - SEVERITY_WEIGHT[a.severity]);
+  return actionable.slice(0, Math.max(0, limit));
 }
 
 // ── Stored nightly snapshot (project_risk_signals — migrations 225/226) ─────

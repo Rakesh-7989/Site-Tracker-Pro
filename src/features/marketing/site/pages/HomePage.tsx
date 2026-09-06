@@ -12,9 +12,9 @@ import { FEATURE_GROUPS } from "../content";
 import { PageHero, Section, SectionHeading, FeatureTile, CtaBand, useSiteSeo } from "../ui";
 import { useSiteJsonLd } from "../seo";
 
-const TITLE = "SiteTrack Pro — Construction Project Software for India";
+const TITLE = "SiteTrack Pro — Construction Control Software for India";
 const DESCRIPTION =
-  "Construction project software for Indian builders, contractors and architects — daily progress reports, RA bills, RERA tracking, drawings and labour in one workspace.";
+  "A construction control system for Indian builders — daily progress, spend, drawings and risk from every site in one workspace, answered in Telugu, Hindi or English before the promoter asks.";
 
 interface FaqItem {
   question: string;
@@ -74,18 +74,18 @@ export function HomePage(): JSX.Element {
   return (
     <>
       <PageHero
-        eyebrow="India's construction workspace"
-        title="Construction project software for Indian builders, contractors and architects"
-        sub="SiteTrack Pro keeps field operations, construction finance, drawings and labour in one workspace — daily progress reports dictated in Telugu, Hindi or English, RA bills, RERA and GST compliance, and a client portal — all syncing even from sites with poor signal."
+        eyebrow="India's construction control system"
+        title="Your construction site, finally under control"
+        sub="Daily progress, spend, drawings and risk from every project in one workspace — dictated on site in Telugu, Hindi or English, and rolled into the answers your promoter needs every morning."
         primary={{ label: "Start free trial", to: "/signup" }}
         secondary={{ label: "See product", to: "/product" }}
       />
 
       <Section>
         <SectionHeading
-          eyebrow="Inside the workspace"
+          eyebrow="One record, no scavenger hunts"
           title="Six modules, one project record"
-          sub="Everything on a construction project lives in the same per-project record your whole team works from."
+          sub="Status, money, drawings and labour all read from the same per-project record — so nothing has to be stitched together from WhatsApp messages, Excel sheets and phone calls."
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURE_GROUPS.map((group) => (
@@ -179,9 +179,9 @@ export function HomePage(): JSX.Element {
       </Section>
 
       <CtaBand
-        title="Start your 14-day trial"
-        sub="Pick a plan, add your team, and put the first site on record."
-        primary={{ label: "Get Started", to: "/signup" }}
+        title="Your sites, under control — starting today"
+        sub="Start a 14-day free trial, add your team, and put the first site on record — no credit card."
+        primary={{ label: "Start free trial", to: "/signup" }}
         secondary={{ label: "Contact sales", to: "/contact" }}
       />
     </>

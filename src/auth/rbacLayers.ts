@@ -1,4 +1,4 @@
-// SiteTrack Pro — RBAC V2 pure decision logic (migrations 203–205).
+// SiteTrack Pro — RBAC layer pure decision logic (migrations 203–205).
 //
 // Layered authorization model. The v3 RoleResolver computes the MATRIX union
 // (identity + org tier + project tier + overrides). V2 layers on top:
@@ -12,10 +12,10 @@
 //   vendor scope     → allow (project-scoped vendor grant)
 //   matrix fallback  → allow iff the matrix union already grants it
 //
-// Deny wins over allow at every level. Mode gates what the resolver does:
-//   'matrix'  → V2 data ignored, matrix decides (back-compat default)
-//   'shadow'  → matrix decides, but the V2 outcome is computed + audited
-//   'enforce' → V2 outcome decides (composeV2Caps replaces the matrix set)
+// Deny wins over allow at every level. RBAC V2 is merged into the single
+// integrated RBAC path — the layered resolver is ALWAYS-ON (no matrix/shadow/
+// enforce modes). When the caller has no V2 context, the matrix union decides
+// exactly as before; a fetchError context is treated as deny-all (SEC-05).
 //
 // All functions are PURE (no client / no React) so they unit-test without a
 // Supabase client — the same pattern as RoleResolver / capabilityOverrides.
@@ -25,8 +25,8 @@ import { identityCapabilities } from "@/auth/permissions-matrix";
 import { isIdentityRole } from "@/auth/roles";
 import type {
   ProfileBinding,
-  Rbac2Context,
-  Rbac2Decision,
+  RbacLayerContext,
+  RbacLayerDecision,
   ResourceAclEntry,
   RoleProfile,
 } from "./types";
@@ -121,13 +121,13 @@ export function aclDecision(
 
 /**
  * Layered V2 decision for ONE capability. `matrixAllowed` is the v3 resolver's
- * matrix-union verdict. Returns the winning layer + whether V2 allows it.
+ * matrix-union verdict. Returns the winning layer + the effective verdict.
  */
 export function decideV2(input: {
   capability: Capability;
   matrixAllowed: boolean;
   isSuperadmin: boolean;
-  ctx: Rbac2Context;
+  ctx: RbacLayerContext;
   userId: string;
   identityRole: string;
   /** Present when the caller holds an org-admin tier for the context org. */
@@ -136,7 +136,7 @@ export function decideV2(input: {
   resource?: { type: string; id: string };
   /** Present for identity-role client users / client portal context. */
   clientEmail?: string;
-}): Rbac2Decision {
+}): RbacLayerDecision {
   const { capability, matrixAllowed, isSuperadmin, ctx, userId, identityRole, orgTier, resource, clientEmail } = input;
 
   if (isSuperadmin) {
@@ -185,13 +185,13 @@ export function decideV2(input: {
 }
 
 /**
- * Compose the EFFECTIVE capability set in 'enforce' mode: start from the
- * matrix union, add profile + ACL allows, strip profile + ACL denies.
- * Pure — used by resolveCapabilitiesV2 and unit tests.
+ * Compose the EFFECTIVE capability set in the always-on layered mode: start
+ * from the matrix union, add profile + ACL allows, strip profile + ACL denies.
+ * Pure — used by resolveCapabilities and unit tests.
  */
 export function composeV2Caps(input: {
   matrix: CapabilitySet;
-  ctx: Rbac2Context;
+  ctx: RbacLayerContext;
   userId: string;
   identityRole: string;
   orgTier?: "admin" | "pm" | null;

@@ -19,7 +19,7 @@ export const SITE_BASE_URL = "https://www.sitetrackpro.in";
 export const SITE_ORIGIN = "https://sitetrackpro.in";
 export const SITE_NAME = "SiteTrack Pro";
 export const SITE_DESCRIPTION =
-  "Construction project software for Indian builders, contractors and architects — RFIs, change orders, GST billing, drawings and labour in one workspace.";
+  "A construction control system for Indian builders — daily progress, spend, drawings and risk from every site in one workspace, answered in Telugu, Hindi or English before the promoter asks.";
 export const SITE_LOGO_URL = `${SITE_ORIGIN}/logo-horizontal.png`;
 
 /** Canonical URL for a site path; defaults to the current window pathname. */

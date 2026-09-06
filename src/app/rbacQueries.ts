@@ -1,15 +1,14 @@
-// SiteTrack Pro — RBAC V2 query layer (migrations 203–205).
+// SiteTrack Pro — RBAC layer query layer (migrations 203–205).
 //
 // CRUD for the V2 substrate: catalog, role profiles, bindings, assignments,
-// resource ACL, client portal permissions, vendor project scopes, org mode,
-// and the authorization audit log. Uses the client-injected Result<T> pattern
+// resource ACL, client portal permissions, vendor project scopes, and the
+// authorization audit log. Uses the client-injected Result<T> pattern
 // from src/app (like researchQueries.ts). Pure normalizers live here so the
 // query mappers + resolver share one row-shape contract.
 
 import { isCapability, type Capability } from "@/auth/capabilities";
 import { isIdentityRole } from "@/auth/roles";
 import type { IdentityRole } from "@/auth/roles";
-import type { Rbac2Mode } from "./types";
 import type {
   AuthorizationAuditEvent,
   CatalogEntry,
@@ -19,7 +18,7 @@ import type {
   ResourceAclEntry,
   RoleProfile,
   VendorProjectScope,
-} from "./types";
+} from "@/auth/types";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -408,33 +407,6 @@ export async function listVendorScopes(client: QueryClient, orgId: string): Prom
   }
 }
 
-// ── Org mode ──────────────────────────────────────────────────────────────────
-
-export async function getOrgRbacMode(client: QueryClient, orgId: string): Promise<Result<Rbac2Mode>> {
-  try {
-    const { data, error } = await client.from("org_rbac_settings").select("mode").eq("org_id", orgId).maybeSingle();
-    if (error) return dbe(error);
-    const mode = (data as Record<string, unknown> | null)?.mode;
-    return ok(mode === "shadow" || mode === "enforce" ? mode : "matrix");
-  } catch (e) {
-    return dbe(e as { message?: string });
-  }
-}
-
-export async function setOrgRbacMode(client: QueryClient, orgId: string, mode: Rbac2Mode): Promise<Result<Rbac2Mode>> {
-  try {
-    const { data, error } = await client.from("org_rbac_settings")
-      .upsert({ org_id: orgId, mode }, { onConflict: "org_id" })
-      .select()
-      .single();
-    if (error) return dbe(error);
-    const m = (data as Record<string, unknown>)?.mode;
-    return ok(m === "shadow" || m === "enforce" ? m : "matrix");
-  } catch (e) {
-    return dbe(e as { message?: string });
-  }
-}
-
 // ── Authorization audit ───────────────────────────────────────────────────────
 
 export async function writeAuditEvent(client: QueryClient, input: {
@@ -444,7 +416,6 @@ export async function writeAuditEvent(client: QueryClient, input: {
   resourceId?: string | null;
   capability: Capability;
   effect: "allow" | "deny";
-  mode: Rbac2Mode | "matrix";
   reason?: string | null;
 }): Promise<Result<null>> {
   try {
@@ -455,7 +426,7 @@ export async function writeAuditEvent(client: QueryClient, input: {
       resource_id: input.resourceId ?? null,
       capability: input.capability,
       effect: input.effect,
-      mode: input.mode,
+      mode: "matrix",
       reason: input.reason ?? null,
     });
     if (error) return dbe(error);

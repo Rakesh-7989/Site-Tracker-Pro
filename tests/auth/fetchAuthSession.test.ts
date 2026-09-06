@@ -8,7 +8,7 @@ import {
   pickActiveOrgId,
   buildAuthSession,
   fetchAuthSession,
-  fetchRbac2Context,
+  fetchRbacLayers,
 } from "@/auth/fetchAuthSession";
 
 describe("normalizeProfile", () => {
@@ -313,44 +313,61 @@ describe("fetchAuthSession staff areas (SEC-05)", () => {
   });
 });
 
-describe("fetchRbac2Context (SEC-05 fail-closed)", () => {
-  function rbacClient(modeRow: unknown, aclHandler: () => Promise<{ data: unknown; error: unknown }> = async () => ({ data: [], error: null })) {
+describe("fetchRbacLayers (always-on, SEC-05 fail-closed)", () => {
+  function rbacClient(aclHandler: () => Promise<{ data: unknown; error: unknown }> = async () => ({ data: [], error: null })) {
     return makeClient({
-      org_rbac_settings: async () => ({ data: modeRow, error: null }),
       rbac_profile_assignments: async () => ({ data: [], error: null }),
+      rbac_role_profiles: async () => ({ data: [], error: null }),
+      rbac_profile_bindings: async () => ({ data: [], error: null }),
       resource_acl_entries: aclHandler,
       client_portal_permissions: async () => ({ data: [], error: null }),
       vendor_project_scopes: async () => ({ data: [], error: null }),
     });
   }
 
-  it("returns undefined when no rbac mode row exists", async () => {
-    const ctx = await fetchRbac2Context(rbacClient(null), "u-1", "o-1");
+  it("returns undefined when no active org", async () => {
+    const ctx = await fetchRbacLayers(rbacClient(), "u-1", null);
     expect(ctx).toBeUndefined();
   });
 
-  it("returns undefined for matrix mode", async () => {
-    const ctx = await fetchRbac2Context(rbacClient({ mode: "matrix" }), "u-1", "o-1");
-    expect(ctx).toBeUndefined();
-  });
-
-  it("enforce mode with partial fetch failure returns enforce + fetchError", async () => {
-    const ctx = await fetchRbac2Context(
-      rbacClient({ mode: "enforce" }, async () => { throw new Error("acl query failed"); }),
+  it("any fetch failure → EMPTY_RBAC_LAYERS_FAIL (fetchError, empty arrays)", async () => {
+    const ctx = await fetchRbacLayers(
+      rbacClient(async () => { throw new Error("acl query failed"); }),
       "u-1",
       "o-1",
     );
     expect(ctx).toBeDefined();
-    expect(ctx!.mode).toBe("enforce");
     expect(ctx!.fetchError).toBe(true);
+    expect(ctx!.profiles).toEqual([]);
     expect(ctx!.bindings).toEqual([]);
     expect(ctx!.acl).toEqual([]);
+    expect(ctx!.clientPermissions).toEqual([]);
+    expect(ctx!.vendorScopes).toEqual([]);
   });
 
-  it("enforce mode on the happy path does NOT set fetchError", async () => {
-    const ctx = await fetchRbac2Context(rbacClient({ mode: "enforce" }), "u-1", "o-1");
+  it("happy path returns full normalized context without fetchError", async () => {
+    const c = makeClient({
+      rbac_profile_assignments: async () => ({ data: [{ profile_id: "prof-1" }], error: null }),
+      rbac_role_profiles: async () => ({
+        data: [{ id: "prof-1", code: "drafter", name: "Drafter", is_system: true, source_role: "junior_architect", scope: "project", org_id: null, created_at: "x" }],
+        error: null,
+      }),
+      rbac_profile_bindings: async () => ({
+        data: [{ id: "b1", profile_id: "prof-1", capability: "drawing:approve", effect: "deny", note: null }],
+        error: null,
+      }),
+      resource_acl_entries: async () => ({ data: [], error: null }),
+      client_portal_permissions: async () => ({ data: [], error: null }),
+      vendor_project_scopes: async () => ({ data: [], error: null }),
+    });
+    const ctx = await fetchRbacLayers(c, "u-1", "o-1");
     expect(ctx).toBeDefined();
-    expect(ctx!.mode).toBe("enforce");
     expect(ctx!.fetchError).toBeUndefined();
+    expect(ctx!.profiles.map((p) => p.code)).toEqual(["drafter"]);
+    expect(ctx!.profiles[0]?.sourceRole).toBe("junior_architect");
+    expect(ctx!.bindings[0]?.effect).toBe("deny");
+    expect(ctx!.acl).toEqual([]);
+    expect(ctx!.clientPermissions).toEqual([]);
+    expect(ctx!.vendorScopes).toEqual([]);
   });
 });
