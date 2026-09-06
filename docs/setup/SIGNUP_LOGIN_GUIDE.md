@@ -400,50 +400,17 @@ If you received a link instead of a temporary password:
 
 ---
 
-## 8. Demo Login
+## 8. Demo Mode
 
-> **IMPORTANT:** Demo mode is ONLY available in the local/evaluation build. In the live production environment (`VITE_BACKEND=supabase`), the demo login is completely hidden. Demo data exists purely for marketing and evaluation — it is NOT part of the live product.
+> The old "demo login" (one-click pick a demo role, password `demo1234`) has been **removed**.
+> The live product uses real account authentication only — see sections 2–7.
 
-**Who uses this:** Sales demos, evaluation, testing only.
+**What exists today:**
 
-**Password for all demo accounts:** `demo1234`
-
-### Steps
-
-```
-1. Open /login
-         |
-2. Click "Load Demo Data" (if visible)
-         |
-3. Select any role from the demo accounts list
-         |
-4. Click on the account
-         |
-5. You are logged in with demo data pre-loaded
-         ↓
-   Explore the app with sample project data
-```
-
-### Demo Accounts Available
-
-| Account Name | Role | Email |
-|-------------|------|-------|
-| Arjun Reddy | Architect | architect@demo.com |
-| Priya Sharma | Project Manager | pm@demo.com |
-| Karthik Builders | Contractor | contractor@demo.com |
-| Vikram Nair | Client | client@demo.com |
-| Mohan Boyapati | Firm Owner | orgadmin@demo.com |
-| Rakesh Boyapati | Super Admin | superadmin@demo.com |
-| Naveen Yadav | Project Admin | project_admin@demo.com |
-| Geetha Rao | Sales / BD | prospector@demo.com |
-| Suresh Kumar | MEP Consultant | mep_consultant@demo.com |
-| Bhargav Reddy | Site Engineer | site_engineer@demo.com |
-| Surya Prakash | Site Inspector | site_inspector@demo.com |
-| Sneha Iyer | Design Architect Interior | design_architect_interior@demo.com |
-| Vikas Joshi | Designer | designer@demo.com |
-| Dr. Rajesh Bhat | Consultant | consultant@demo.com |
-| Prabhu Reddy | Sub-contractor | sub_contractor@demo.com |
-| Vizag Steel Rep | Vendor | vendor@demo.com |
+| Demo surface | Where | How |
+|-------------|-------|-----|
+| **Demo project seed** | Live app | Org admins click **"Load demo project"** on `/projects` — the `seed_demo_project` RPC creates a "Demo Villa — Green Meadows" project (schedules, budget, expenses, issues) in the caller's own org so risk signals / burn display with real data. |
+| **Mock seed data** | Local / evaluation build only | `src/data/seed.demo.ts` (`VITE_BACKEND=local` mock mode) provides sample users and plan metadata for offline development and test harnesses. This is **not** part of the live product. |
 
 ---
 
