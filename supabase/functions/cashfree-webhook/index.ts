@@ -3,14 +3,19 @@
 // Cashfree POSTs two kinds of events here:
 //   (A) SUBSCRIPTION lifecycle events (mandate signed, payment succeeded,
 //       payment failed, subscription cancelled) → mapped onto the
-//       `subscriptions` row via applyWebhookEvent().
-//   (B) PAYMENT LINK events (type "PAYMENT_LINK_EVENT") — the one-time signup
-//       payment created by cashfree-checkout. Reconciled against the
-//       `signup_requests` row (payment_ref = Cashfree link_id, or the
-//       link_meta.signup_request_id echoed back) and marked paid when the link
-//       settles PAID. billing_history is seeded LATER at org creation
+//       `subscriptions` row via applyWebhookEvent(). An ACTIVE event also
+//       flips organizations.plan so caps follow the money.
+//   (B) PAYMENT LINK events (type "PAYMENT_LINK_EVENT") — one-time payments:
+//       (B1) signup links from cashfree-checkout → reconciled against the
+//            `signup_requests` row and marked paid (provisioning stays manual
+//            via review_signup_request).
+//       (B2) plan-upgrade links from cashfree-plan-link (link_meta.type =
+//            "plan_upgrade") → settled in `plan_payments` and ACTIVATED
+//            immediately (organizations.plan + subscriptions + billing_history)
+//            under service_role, which the 254 plan-guard explicitly allows.
+//       billing_history for B1 is still seeded at org creation
 //       (review_signup_request) because billing_history.org_id is NOT NULL and
-//       no org exists at payment time.
+//       no org exists at payment time; B2 has an org, so it writes history now.
 //
 // For every OTHER event: return 200 (ack) so Cashfree stops retrying — never
 // 4xx a well-formed, signature-valid event we simply don't act on.
@@ -115,6 +120,17 @@ Deno.serve(async (req) => {
     return text("upsert failed", 500);
   }
 
+  // The gate reads organizations.plan (not subscriptions) — an ACTIVE mandate
+  // must flip the org plan or caps stay on the old tier after payment.
+  if (String(next.status ?? "") === "active" && next.plan && next.org_id) {
+    const { error: planErr } = await supa
+      .from("organizations")
+      .update({ plan: String(next.plan) })
+      .eq("id", String(next.org_id));
+    if (planErr) console.error("organizations plan flip failed (subscription):", planErr);
+    else console.log("cashfree-webhook: org plan activated by subscription", { org_id: next.org_id, plan: next.plan });
+  }
+
   // Audit log — use the SECURITY DEFINER RPC so it goes through the
   // canonical write path (audit_log_v2 is append-only).
   await supa.rpc("record_audit_v2", {
@@ -159,12 +175,19 @@ async function handlePaymentLinkEvent(
     link_id?: string;
     link_status?: string;
     link_amount_paid?: string | number;
-    link_meta?: { signup_request_id?: string };
+    link_meta?: { signup_request_id?: string; type?: string; org_id?: string; plan?: string; period?: string };
     order?: { order_id?: string; transaction_status?: string; order_amount?: string | number };
   },
   opts: { resendKey?: string },
 ): Promise<Response> {
   const linkId = String(data.link_id ?? "");
+
+  // (B2) plan-upgrade links settle + activate an existing org's plan.
+  if (String(data.link_meta?.type ?? "") === "plan_upgrade") {
+    return handlePlanUpgrade(supa, data, { resendKey: opts.resendKey });
+  }
+
+  // (B1) signup links below.
   // The checkout echoes signup_request_id in link_meta; fall back to matching
   // the stashed payment_ref (= Cashfree link_id) stored by cashfree-checkout.
   const metaReqId = data.link_meta?.signup_request_id ? String(data.link_meta.signup_request_id) : null;
@@ -240,6 +263,133 @@ async function handlePaymentLinkEvent(
     console.warn("paid-email notification failed:", e),
   );
 
+  return text("ok", 200);
+}
+
+// (B2) Settle a plan-upgrade payment link and ACTIVATE the org's plan.
+//
+// Runs under service_role (no auth JWT), which the 254 plan-guard explicitly
+// allows (auth.uid() IS NULL bypass) — this is the single self-serve writer
+// of organizations.plan. Idempotent: re-delivered PAID events ack without
+// double-activating; non-PAID echoes never touch a paid row.
+async function handlePlanUpgrade(
+  supa: ReturnType<typeof createClient>,
+  data: {
+    link_id?: string;
+    link_status?: string;
+    link_amount_paid?: string | number;
+    link_meta?: { org_id?: string; plan?: string; period?: string };
+    order?: { order_id?: string; transaction_status?: string; order_amount?: string | number };
+  },
+  opts: { resendKey?: string },
+): Promise<Response> {
+  const linkId = String(data.link_id ?? "");
+  if (!linkId) return text("ok (no link id)", 200);
+
+  const { data: pay, error: findErr } = await supa
+    .from("plan_payments")
+    .select("id, org_id, plan, period, amount_paise, status")
+    .eq("link_id", linkId)
+    .maybeSingle();
+  if (findErr) {
+    console.error("plan_payments lookup failed:", findErr);
+    return text("db-error", 500);
+  }
+  if (!pay) {
+    console.warn("cashfree-webhook: plan-upgrade event for unknown link", { linkId });
+    return text("ok (orphan plan link)", 200);
+  }
+
+  const linkStatus = String(data.link_status ?? "").toUpperCase();
+  const orderStatus = String((data.order as Record<string, unknown> | undefined)?.transaction_status ?? "").toUpperCase();
+  const paid = linkStatus === "PAID" || orderStatus === "SUCCESS";
+  const alreadyPaid = String((pay as { status?: string }).status ?? "") === "paid";
+
+  if (!paid) {
+    if (!alreadyPaid) console.log("cashfree-webhook: plan link not paid", { linkId, linkStatus, orderStatus });
+    return text("ok", 200);
+  }
+  if (alreadyPaid) return text("ok (already paid)", 200);
+
+  const orgId = String((pay as { org_id?: string }).org_id ?? "");
+  const plan = String((pay as { plan?: string }).plan ?? "");
+  const period = String((pay as { period?: string }).period ?? "monthly");
+  const amountPaise = Number((pay as { amount_paise?: number }).amount_paise ?? 0);
+  const now = new Date().toISOString();
+  const periodEnd = new Date(
+    Date.now() + (period === "annual" ? 365 : 30) * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  // 1. Settle the payment row first (marks intent consumed).
+  const { error: settleErr } = await supa
+    .from("plan_payments")
+    .update({ status: "paid", paid_at: now })
+    .eq("id", String((pay as { id?: string }).id));
+  if (settleErr) {
+    console.error("plan_payments settle failed:", settleErr);
+    return text("settle failed", 500);
+  }
+
+  // 2. Activate the plan (service_role bypasses the 254 self-serve guard).
+  const { error: planErr } = await supa
+    .from("organizations")
+    .update({ plan, billing_period: period })
+    .eq("id", orgId);
+  if (planErr) {
+    console.error("organizations plan activation failed:", planErr);
+    return text("activation failed", 500);
+  }
+
+  // 3. Subscription state mirrors the active plan.
+  const { error: subErr } = await supa.from("subscriptions").upsert({
+    org_id: orgId,
+    provider: "cashfree",
+    external_id: linkId,
+    plan,
+    status: "active",
+    current_period_start: now,
+    current_period_end: periodEnd,
+    trial_ends_at: null,
+    updated_at: now,
+  }, { onConflict: "org_id" });
+  if (subErr) console.error("subscriptions activation upsert failed:", subErr);
+
+  // 4. Billing history (system of record for the charge).
+  const gstPaise = amountPaise > 0 ? amountPaise - Math.round(amountPaise / 1.18) : 0;
+  const { error: histErr } = await supa.from("billing_history").insert({
+    org_id: orgId,
+    provider: "cashfree",
+    external_id: linkId,
+    amount: amountPaise,
+    currency: "INR",
+    gst: gstPaise,
+    status: "succeeded",
+    paid_at: now,
+    receipt_no: linkId,
+    payload: { plan, period, link_status: linkStatus },
+  });
+  if (histErr) console.error("billing_history insert failed:", histErr);
+
+  // 5. Audit + admin email.
+  await supa.rpc("record_audit_v2", {
+    p_action: "PAYMENT",
+    p_resource: "subscription",
+    p_resource_id: orgId,
+    p_project_id: null,
+    p_before: null,
+    p_after: { plan, period, amount_paise: amountPaise, link_id: linkId },
+    p_message: `Plan activated by payment: ${orgId} → ${plan} (${period})`,
+  }).catch((e) => console.warn("audit failed:", e));
+
+  const { data: org } = await supa.from("organizations").select("name").eq("id", orgId).maybeSingle();
+  if (opts.resendKey) {
+    notifyOrgAdmins(
+      supa, orgId, String((org as { name?: string } | null)?.name || "workspace"),
+      "active", undefined, opts.resendKey,
+    ).catch((e) => console.warn("activation email failed:", e));
+  }
+
+  console.log("cashfree-webhook: org plan activated by payment", { orgId, plan, period, linkId });
   return text("ok", 200);
 }
 

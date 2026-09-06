@@ -5,8 +5,9 @@
 // savings are surfaced as a marketing hook (effective monthly + ₹ saved + %).
 //
 // The plan `id` must stay one of basic/pro/business/custom (matches the
-// signup_requests + plans table). Keep these numbers in sync with migration
-// 93_plans_pricing_2026.sql (the DB plans table).
+// signup_requests + plans table). Prices MUST match migration
+// 93_plans_pricing_2026.sql (the DB plans table — the charge truth used by
+// cashfree-checkout): Basic ₹7,999 / Pro ₹19,999 / Business ₹43,333.
 
 import type { SignupPlan } from "@/app/queries/signupQueries";
 
@@ -26,16 +27,16 @@ export const PLAN_TIERS: PlanTier[] = [
   {
     id: "basic",
     name: "Basic",
-    monthly: 5999,
-    annual: 59990,
+    monthly: 7999,
+    annual: 79990,
     tagline: "Small contractors getting organised",
     features: ["Up to 5 team members", "5 active projects", "Daily progress reports (DPR)", "Materials + attendance", "Issues + punch lists", "WhatsApp share + Telugu / Hindi", "5 GB storage"],
   },
   {
     id: "pro",
     name: "Pro",
-    monthly: 11999,
-    annual: 119990,
+    monthly: 19999,
+    annual: 199990,
     tagline: "Growing firms running multiple sites",
     features: ["Up to 20 members", "Unlimited projects", "Finance — POs, invoices, RA bills", "Approval chains", "Drawings + RFIs + change orders", "RERA / GST compliance tracking", "30-day audit log", "50 GB storage"],
     popular: true,
@@ -43,8 +44,8 @@ export const PLAN_TIERS: PlanTier[] = [
   {
     id: "business",
     name: "Business",
-    monthly: 19999,
-    annual: 199990,
+    monthly: 43333,
+    annual: 433330,
     tagline: "Established builders who need control",
     features: ["Up to 100 members", "Everything in Pro", "Custom roles & permissions", "Automated WhatsApp DPR + payments", "RERA / GSTN filing (rolling out)", "Org-wide audit log + export", "Priority support", "250 GB storage"],
   },

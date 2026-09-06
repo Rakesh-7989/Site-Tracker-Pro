@@ -144,6 +144,52 @@ Deno.serve(async (req: Request): Promise<Response> => {
     updates["paid_date"] = new Date().toISOString().split("T")[0];
   }
 
+  // Settle real money: post a payments receipt row + close the invoice when
+  // fully paid. (Previously only razorpay_status moved, so paid invoices
+  // still read as outstanding everywhere.)
+  if (newStatus === "paid" || newStatus === "partial") {
+    const paymentId = String(paymentEntity?.id || "");
+    const reference = paymentId || paymentLinkId || eventId || null;
+    let alreadySettled = false;
+    if (reference) {
+      const { data: dup } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("reference", reference)
+        .limit(1);
+      alreadySettled = Array.isArray(dup) && dup.length > 0;
+    }
+    if (!alreadySettled) {
+      const { data: inv } = await supabase
+        .from("invoices")
+        .select("project_id, amount")
+        .eq("id", invoiceId)
+        .maybeSingle();
+      // Razorpay amounts are paise; payments.amount is rupees (bigint).
+      const eventPaise = Number(paymentEntity?.amount ?? NaN);
+      const rupees = Number.isFinite(eventPaise) && eventPaise > 0
+        ? Math.round(eventPaise / 100)
+        : Math.round(Number((inv as { amount?: number } | null)?.amount ?? 0));
+      if (inv && rupees > 0 && (inv as { project_id?: string }).project_id) {
+        const { error: payErr } = await supabase.from("payments").insert({
+          project_id: String((inv as { project_id?: string }).project_id ?? ""),
+          target_type: "invoice",
+          target_id: invoiceId,
+          amount: rupees,
+          method: "razorpay",
+          reference,
+          notes: newStatus === "paid" ? "Razorpay auto-settlement (full)" : "Razorpay auto-settlement (partial)",
+        });
+        if (payErr) console.error("Failed to post settlement payment:", payErr);
+      }
+    }
+    // A fully-paid link covered the whole invoice amount → close it so
+    // registers stop showing it outstanding. Partials keep their status.
+    if (newStatus === "paid") {
+      updates["status"] = "paid";
+    }
+  }
+
   const { error } = await supabase
     .from("invoices")
     .update(updates)

@@ -8,6 +8,8 @@ import { Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { requestPlanUpgrade } from "@/app/queries/upgradeQueries";
+import { createPlanPaymentLink } from "@/app/queries/planPaymentQueries";
+import { PLAN_TIERS, priceFor, gstInclusive, formatINR, type BillingPeriod } from "@/features/marketing/plans";
 import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/queries/orgAdminQueries";
 import { fetchOrgQuota, usageRollup, type QuotaRollup } from "@/app/queries/quotaQueries";
 import { QuotaMeter } from "@/auth/QuotaGate";
@@ -183,6 +185,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
           </Card>
 
           {/* â”€â”€ Request upgrade card â”€â”€ */}
+          <PayUpgradeCard orgId={orgId} currentPlan={overview.plan} onChanged={() => void reload()} />
           <RequestUpgradeCard orgId={orgId} currentPlan={overview.plan} />
         </>
       )}
@@ -199,6 +202,97 @@ const BILLING_COLUMNS: Column<BillingHistoryItem>[] = [
 
 const ORDER = ["free", "basic", "pro", "business", "enterprise", "custom"];
 const UPGRADE_TARGETS = ["pro", "business", "enterprise"];
+const PAY_TARGETS = ["basic", "pro", "business"];
+
+/** Self-serve plan purchase: pay via Cashfree, plan activates automatically. */
+function PayUpgradeCard({ orgId, currentPlan, onChanged }: { orgId: string; currentPlan: string; onChanged: () => void }): JSX.Element {
+  const t = useT();
+  const [desired, setDesired] = useState("");
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [verifying, setVerifying] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("paid") === "1",
+  );
+
+  const curIdx = ORDER.indexOf(currentPlan);
+  const targets = curIdx === -1 ? [...PAY_TARGETS] : PAY_TARGETS.filter(pl => ORDER.indexOf(pl) >= curIdx);
+
+  // Returning from Cashfree (?paid=1): the webhook usually lands within
+  // seconds — show verifying state, then reload billing from the server.
+  useEffect(() => {
+    if (!verifying) return;
+    const timer = setTimeout(() => { setVerifying(false); onChanged(); }, 6000);
+    return () => clearTimeout(timer);
+  }, [verifying, onChanged]);
+
+  const tier = PLAN_TIERS.find(p => p.id === desired);
+  const base = tier ? (period === "annual" ? tier.annual : tier.monthly) : 0;
+  const total = base > 0 ? gstInclusive(base) : 0;
+
+  const pay = async () => {
+    setErr(null);
+    if (!tier) return setErr(t("billing.errPickPlan"));
+    setBusy(true);
+    const client = await getClient();
+    if (!client) { setBusy(false); return setErr(t("billing.backendError")); }
+    const res = await createPlanPaymentLink(client, orgId, tier.id, period);
+    setBusy(false);
+    if (!res.ok) return setErr(res.error);
+    setPending(true);
+    window.open(res.data.linkUrl, "_blank", "noopener,noreferrer");
+  };
+
+  if (targets.length === 0) {
+    return (
+      <Card padding="md" title={<div className="font-semibold text-fg-primary">{t("billing.payTitle")}</div>}>
+        <p className="text-[13px] text-fg-secondary mt-1">{t("billing.payEnterprise")}</p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card padding="md" title={<div>
+      <div className="font-semibold text-fg-primary">{t("billing.payTitle")}</div>
+      <div className="text-[13px] text-fg-secondary mt-0.5">{t("billing.paySub")}</div>
+    </div>}>
+      <div className="mt-4 space-y-3">
+        {verifying && <Alert variant="info">{t("billing.payVerifying")}</Alert>}
+        {pending && !verifying && <Alert variant="info">{t("billing.payPending")}</Alert>}
+        {err && <Alert variant="danger">{err}</Alert>}
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="block">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.moveToPlan")}</span>
+            <Select value={desired} onChange={e => { setDesired(e.target.value); setPending(false); }} className="mt-1" options={[{ value: "", label: t("billing.choosePlan") }, ...targets.map(pl => ({ value: pl, label: PLAN_LABEL[pl] ?? pl }))]} />
+          </label>
+          <div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.renewsEnds")}</span>
+            <div className="mt-1 inline-flex items-center gap-1 p-1 rounded-xl bg-secondary border border-default">
+              {(["monthly", "annual"] as const).map(p => (
+                <button key={p} type="button" onClick={() => { setPeriod(p); setPending(false); }}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition ${period === p ? "bg-panel text-fg-primary shadow-sm" : "text-fg-secondary hover:text-fg-primary"}`}>
+                  {p === "monthly" ? "Monthly" : "Annual"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        {tier && (
+          <p className="text-sm text-fg-secondary">
+            {priceFor(tier, period).amount} {period === "annual" ? "/year" : "/month"} + GST = <strong className="text-fg-primary">{formatINR(total)}</strong> total
+          </p>
+        )}
+        <div>
+          <Button onClick={() => void pay()} loading={busy} disabled={!tier}>
+            {t("billing.payNow", { amount: total > 0 ? formatINR(total) : "—" })}
+          </Button>
+        </div>
+        <p className="text-[12px] text-fg-tertiary">{t("billing.payEnterprise")}</p>
+      </div>
+    </Card>
+  );
+}
 
 function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan: string }): JSX.Element {
   const t = useT();

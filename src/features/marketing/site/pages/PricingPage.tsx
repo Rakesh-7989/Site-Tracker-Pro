@@ -26,9 +26,9 @@ export function PricingPage(): JSX.Element {
       applicationSubCategory: "Construction Project Management",
       inLanguage: ["en", "te", "hi"],
       offers: [
-        { "@type": "Offer", price: "5999", priceCurrency: "INR", name: "Basic", description: "Per organization, per month." },
-        { "@type": "Offer", price: "11999", priceCurrency: "INR", name: "Pro", description: "Per organization, per month." },
-        { "@type": "Offer", price: "19999", priceCurrency: "INR", name: "Business", description: "Per organization, per month." },
+        { "@type": "Offer", price: "7999", priceCurrency: "INR", name: "Basic", description: "Per organization, per month." },
+        { "@type": "Offer", price: "19999", priceCurrency: "INR", name: "Pro", description: "Per organization, per month." },
+        { "@type": "Offer", price: "43333", priceCurrency: "INR", name: "Business", description: "Per organization, per month." },
       ],
     },
     "pricing-software-app"

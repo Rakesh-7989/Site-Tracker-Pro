@@ -16,7 +16,7 @@ describe("formatINR", () => {
 describe("PLAN_TIERS", () => {
   it("has the 3 go-live tiers with the agreed monthly prices", () => {
     expect(PLAN_TIERS.map(t => [t.id, t.monthly])).toEqual([
-      ["basic", 5999], ["pro", 11999], ["business", 19999],
+      ["basic", 7999], ["pro", 19999], ["business", 43333],
     ]);
   });
   it("annual is exactly 10× monthly (2 months free)", () => {
@@ -32,7 +32,7 @@ describe("priceFor", () => {
 
   it("monthly → plain ₹/month, no savings fields", () => {
     const v = priceFor(pro, "monthly");
-    expect(v.amount).toBe("₹11,999");
+    expect(v.amount).toBe("₹19,999");
     expect(v.cadence).toBe("/month");
     expect(v.savingsAmount).toBeUndefined();
     expect(v.effectiveMonthly).toBeUndefined();
@@ -40,10 +40,10 @@ describe("priceFor", () => {
 
   it("annual → ₹/year + effective monthly + savings + ~17%", () => {
     const v = priceFor(pro, "annual");
-    expect(v.amount).toBe("₹1,19,990");
+    expect(v.amount).toBe("₹1,99,990");
     expect(v.cadence).toBe("/year");
-    expect(v.effectiveMonthly).toBe("₹9,999/mo billed annually");
-    expect(v.savingsAmount).toBe("₹23,998"); // 11999×12 − 119990
+    expect(v.effectiveMonthly).toBe("₹16,666/mo billed annually");
+    expect(v.savingsAmount).toBe("₹39,998"); // 19999×12 − 199990
     expect(v.savingsPct).toBe(17);           // round(2/12 × 100)
   });
 
@@ -55,8 +55,8 @@ describe("priceFor", () => {
 describe("gstInclusive", () => {
   it("adds 18% GST, rounded to whole rupees", () => {
     expect(GST_RATE).toBe(0.18);
-    expect(gstInclusive(11999)).toBe(14159);   // 11999 × 1.18 = 14158.82 → 14159
-    expect(gstInclusive(119990)).toBe(141588);  // Pro annual incl. GST
-    expect(gstInclusive(5999)).toBe(7079);      // 5999 × 1.18 = 7078.82 → 7079
+    expect(gstInclusive(19999)).toBe(23599);   // 19999 × 1.18 = 23598.82 → 23599
+    expect(gstInclusive(199990)).toBe(235988);  // Pro annual incl. GST
+    expect(gstInclusive(7999)).toBe(9439);      // 7999 × 1.18 = 9438.82 → 9439
   });
 });

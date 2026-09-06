@@ -3361,3 +3361,33 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 **Gates**: tsc/eslint clean, targeted vitest green, smoke 471, build clean, e2e-mock 11/11.
 
 **Deferred (founder/dashboard)**: restore drill, Sentry DSN, UptimeRobot, GoTrue allow-new-users, share-link attempt cap, rollup limits, Kannada bundle.
+
+---
+
+## Session — 2026-09-06 (5th): Phase 2.1 — project lifecycle audit + outbox events (PR #62 → squash `ada6f04`, complete)
+
+**Task**: `docs/planning/END_TO_END_PLAN_PRINCIPAL_SDE.md` Phase 2.1 `[x]` — `archiveProject`-style commands emit audit + outbox events so project lifecycle transitions (status/archive/restore) fan out to members via the event-outbox worker.
+
+**Shipped**:
+- **Migration 256** `scripts/supabase/256_lifecycle_events.sql`: AFTER `UPDATE OF status, archived_at` trigger `trg_projects_lifecycle_events` → SECURITY DEFINER `record_project_lifecycle_events()` (search_path pinned). Writes 1 durable `audit_log_v2` row (action UPDATE / resource project / before-after jsonb) + 1 `event_outbox` row (`project.status_changed` | `project.archived` | `project.restored`, `to_project_members:true`, swallow-wrapped insert). Guard trigger 223 untouched; `event_outbox.type` confirmed to have no CHECK. Applied live via `db:apply` (ledgered; only 15 benign pre-existing checksum drifts).
+- **Harness extended** `scripts/tests/test-project-lifecycle-rls.mjs` with BIZ-007 block (count increment + actor-filtered content + archive/restore typing + rename-silence; archive audit assertions use count-based approach since hooks mutate prior rows). One fix: audit-row SQL needed `actor_id=$2`. `npm run test:rls:lifecycle` → **35/35 green** (25 original + 10 BIZ-007).
+- **Full gate chain green**: test:rls 20, cross-tenant 516 (136 tables), isolation 16, teams 52, partners 22, versions 39, finance 18, quota 13, risk 26; `check:definer` 165 pinned / 0 unpinned-ours; `check:rls:coverage` 158/158; `check:columns` no drift.
+
+**PR lifecycle**: commit `14a3d03` → push → flagged BEHIND (prod ref `8dbe8d2` content-identical, different SHA) → sync merge `161fa89` → CI `test` failed on `npm run db:types -- --check` freshness (database.types.ts STALE vs live schema) → ran `npm run db:types` (158 tables / 182 fns / 338 FKs), committed `46febdb` `chore(db): regenerate` → all checks green → squash `ada6f04` onto prod.
+
+**Verified**: prod CI `ada6f04` success; Vercel production deployments on `14a3d03`/`161fa89`/`46febdb` all success; tree `55238b08` identical for `ada6f04` == `46febdb` (the built Vercel app carries migration 256); live prod-smoke on https://sitetrackpro.in **3/3**. Local refs: main=`46febdb`, prod=`ada6f04`.
+
+**Next (user/founder)**: visually confirm a status/archive/restore transition appears in the Activity feed + member notifications on prod UI; then the standing backlog (Phase A email round-trip confirm in Gmail, DXF visual test, `*.sitetrackpro.in` wildcard CNAME, TrackingCAA optional, WhatsApp/Meta/Twilio/push provider keys, mobile `.aab`, AI provider keys).
+---
+
+## Session — 2026-09-06 (5th): Paid plans self-serve activation — basic/pro/business pay & activate (uncommitted)
+
+**User mandate (Telugu)**: trial-only active undi; basic/pro/business/enterprise kuda active cheyi — payments flow implement cheyi.
+
+**Deep-dive findings**: upgrade = staff ticket, closed != activation; cashfree-subscription dead code (no UI caller, per-org creds, Business+ gate); webhook never flipped organizations.plan; prices drifted 3 ways (page 5999/11999/19999 vs DB-charge 7999/19999/43333 vs EF note 999/2999/7999); Razorpay paid invoices still read outstanding.
+
+**Fixes (working tree)**: mig 257 plan_payments + payments.method gateway values; prices aligned to DB-93 truth (plans.ts + PLAN_META + Pricing/Product/Home + tests); new EF cashfree-plan-link (orgadmin JWT, upgrade/renew-only, DB price + GST, per-org 5/hr throttle, plan_payments pending); cashfree-webhook plan_upgrade settle+activate (plan + subscriptions + billing_history, idempotent) + subscription-ACTIVE plan flip; razorpay-webhook settlement rows + status paid on full (partial keeps status); OrgBillingView PayUpgradeCard (?paid=1 verifying, GST preview, enterprise->ticket hint); billing pay* keys en/te/hi; smoke markers +4 (476).
+
+**Gates**: tsc/eslint clean, efPlanPayments 17/17 + plans/cashfree/i18n/paymentQueries green, smoke 476, build clean, e2e-mock 11/11.
+
+**Live infra needed**: db:apply 257 + deploy cashfree-plan-link (new) + cashfree-webhook + razorpay-webhook (--no-verify-jwt kept). Enterprise/custom stay manual (set_org_plan superadmin); downgrades support-handled.
