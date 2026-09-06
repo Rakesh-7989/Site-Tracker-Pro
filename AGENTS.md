@@ -3351,3 +3351,13 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 **Gates**: vitest targeted 66/66 + related 162/162 � tsc clean � eslint clean (touched files) � smoke 471 � build clean. Full `vitest run` exceeded local 10-min timeout (env slowness; CI runs it in ~6 min) � targeted suites green.
 
 **To ship (founder steps)**: `npm run db:apply` (applies 254; trigger is additive, onboarding echoes unaffected) ? redeploy EFs `razorpay-payment-link --no-verify-jwt` (keeps gateway JWT off, in-code auth is now real) + `anchor-digest` + `resend-webhook --no-verify-jwt` ? commit ? PR main?prod ? verify prod-smoke 3/3. Dashboard-only (no code fix): Supabase Auth "Allow new users" OFF if signup is request-access-only (P1-5); plan/billing changes now superadmin-only at DB level regardless.
+
+---
+
+## Session — 2026-09-06 (4th): Professional production-grade pass — first-run UX + abuse/SEO/perf (uncommitted)
+
+**Fixes (working tree):** VerifyEmail real resend (?email carry, cooldown, no fake timer); Register onSubmit + consent gate + CONSENT_VERSION; Onboarding dead steps 3-5 removed + honest progress + skip completes onboarding; cashfree-checkout 5/hr IP throttle; sitemap terms/privacy; 11 marketing pages lazy + SiteShell Suspense; BottomNav DPR + 44px + aria.
+
+**Gates**: tsc/eslint clean, targeted vitest green, smoke 471, build clean, e2e-mock 11/11.
+
+**Deferred (founder/dashboard)**: restore drill, Sentry DSN, UptimeRobot, GoTrue allow-new-users, share-link attempt cap, rollup limits, Kannada bundle.

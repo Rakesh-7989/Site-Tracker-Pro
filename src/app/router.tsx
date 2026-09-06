@@ -25,16 +25,6 @@ import { ShellLayout } from "@/features/shell/ShellLayout";
 import { StubGuard } from "@/auth/StubGuard";
 import { HomePage } from "@/features/marketing/site/pages/HomePage";
 import { SiteShell } from "@/features/marketing/site/SiteShell";
-import { ProductPage } from "@/features/marketing/site/pages/ProductPage";
-import { FeaturesPage } from "@/features/marketing/site/pages/FeaturesPage";
-import { PricingPage } from "@/features/marketing/site/pages/PricingPage";
-import { SolutionsOverviewPage, SolutionRolePage } from "@/features/marketing/site/pages/SolutionsPage";
-import { ResourcesPage } from "@/features/marketing/site/pages/ResourcesPage";
-import { BlogPage } from "@/features/marketing/site/pages/BlogPage";
-import { AboutPage } from "@/features/marketing/site/pages/AboutPage";
-import { SecurityPage } from "@/features/marketing/site/pages/SecurityPage";
-import { ContactPage } from "@/features/marketing/site/pages/ContactPage";
-import { LocalHyderabadPage } from "@/features/marketing/site/pages/LocalHyderabadPage";
 import { OrgRegisterView } from "@/features/auth/OrgRegisterView";
 import { VerifyEmailView } from "@/features/auth/VerifyEmailView";
 import { PayView } from "@/features/marketing/PayView";
@@ -59,6 +49,19 @@ const CalendarView = lazy(() => import("@/features/org/CalendarView").then(m => 
 const GlobalSearchView = lazy(() => import("@/features/org/GlobalSearchView").then(m => ({ default: m.GlobalSearchView })));
 const NotificationsView = lazy(() => import("@/features/org/NotificationsView").then(m => ({ default: m.NotificationsView })));
 const TeamChatView = lazy(() => import("@/features/org/TeamChatView").then(m => ({ default: m.TeamChatView })));
+// Public marketing pages (except first-paint HomePage) load on navigation
+// so crawlers + visitors to / don't pay for the whole site up front.
+const ProductPage = lazy(() => import("@/features/marketing/site/pages/ProductPage").then(m => ({ default: m.ProductPage })));
+const FeaturesPage = lazy(() => import("@/features/marketing/site/pages/FeaturesPage").then(m => ({ default: m.FeaturesPage })));
+const PricingPage = lazy(() => import("@/features/marketing/site/pages/PricingPage").then(m => ({ default: m.PricingPage })));
+const SolutionsOverviewPage = lazy(() => import("@/features/marketing/site/pages/SolutionsPage").then(m => ({ default: m.SolutionsOverviewPage })));
+const SolutionRolePage = lazy(() => import("@/features/marketing/site/pages/SolutionsPage").then(m => ({ default: m.SolutionRolePage })));
+const ResourcesPage = lazy(() => import("@/features/marketing/site/pages/ResourcesPage").then(m => ({ default: m.ResourcesPage })));
+const BlogPage = lazy(() => import("@/features/marketing/site/pages/BlogPage").then(m => ({ default: m.BlogPage })));
+const AboutPage = lazy(() => import("@/features/marketing/site/pages/AboutPage").then(m => ({ default: m.AboutPage })));
+const SecurityPage = lazy(() => import("@/features/marketing/site/pages/SecurityPage").then(m => ({ default: m.SecurityPage })));
+const ContactPage = lazy(() => import("@/features/marketing/site/pages/ContactPage").then(m => ({ default: m.ContactPage })));
+const LocalHyderabadPage = lazy(() => import("@/features/marketing/site/pages/LocalHyderabadPage").then(m => ({ default: m.LocalHyderabadPage })));
 // Legacy mention-notification links (/teams?c=&m=) keep working.
 function TeamsAliasRedirect(): JSX.Element {
   const location = useLocation();

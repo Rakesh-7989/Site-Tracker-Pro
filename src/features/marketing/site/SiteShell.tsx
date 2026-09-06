@@ -4,7 +4,7 @@
 // exposes <Outlet/> for the routed page. Authenticated users see "Open app"
 // CTAs that route to their dashboard lane instead of signup.
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { postLoginPathForSession, readStoredLoginLane, useAuth } from "@/auth";
 import { Icon } from "@/components/ui/atoms";
@@ -190,7 +190,9 @@ export function SiteShell(): JSX.Element {
       </header>
 
       <main className="flex-1">
-        <Outlet />
+        <Suspense fallback={<div role="status" aria-label="Loading page" className="max-w-6xl mx-auto px-5 py-16 space-y-3" aria-busy="true"><div className="h-8 bg-elevated rounded animate-pulse w-1/3" /><div className="h-4 bg-elevated rounded animate-pulse w-2/3" /><div className="h-4 bg-elevated rounded animate-pulse w-1/2" /></div>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <footer className="border-t border-default bg-panel">
