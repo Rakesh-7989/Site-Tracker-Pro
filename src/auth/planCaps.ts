@@ -17,8 +17,7 @@ export type PlanFeature =
   | "compliance_read" | "estimate" | "gantt" | "esign" | "material_aggregator"
   | "custom_roles" | "audit_unlimited" | "audit_export"
   | "rera_filing" | "gstn_filing" | "epfo_filing"
-  | "whatsapp_send" | "dpr_auto" | "cashfree_payments"
-  | "kiosks" | "ar_overlay" | "ai_forecast" | "priority_support"
+  | "whatsapp_send" | "dpr_auto" | "kiosks" | "ar_overlay" | "ai_forecast" | "priority_support"
   // v4 Phase C0 — consultancy / architecture / interior segment features
   | "time_tracking" | "fee_billing" | "deliverables" | "review_rounds"
   | "statutory" | "utilization" | "ffe" | "procurement"
@@ -67,7 +66,7 @@ export const FEATURE_MIN_PLAN: Record<PlanFeature, string> = {
   compliance_read: "pro", estimate: "pro", gantt: "pro", esign: "pro", material_aggregator: "pro",
   custom_roles: "business", audit_unlimited: "business", audit_export: "business",
   rera_filing: "business", gstn_filing: "business", epfo_filing: "business",
-  whatsapp_send: "business", dpr_auto: "business", cashfree_payments: "business",
+  whatsapp_send: "business", dpr_auto: "business",
   kiosks: "business", ar_overlay: "business", ai_forecast: "business", priority_support: "business",
   time_tracking: "pro", fee_billing: "pro", deliverables: "pro", review_rounds: "pro",
   ffe: "pro", statutory: "business", utilization: "business", procurement: "business",
@@ -88,7 +87,7 @@ export const PLAN_FEATURE_LABEL: Record<PlanFeature, string> = {
   custom_roles: "Custom roles", audit_unlimited: "Full audit log", audit_export: "Audit CSV export",
   rera_filing: "RERA filing", gstn_filing: "GSTN e-invoice", epfo_filing: "EPFO filing",
   whatsapp_send: "Automated WhatsApp send", dpr_auto: "Automated DPR (6 PM)",
-  cashfree_payments: "Cashfree payments", kiosks: "Site & labour kiosks", ar_overlay: "AR drawing overlay",
+  kiosks: "Site & labour kiosks", ar_overlay: "AR drawing overlay",
   ai_forecast: "AI cost forecast", priority_support: "Priority support",
   time_tracking: "Billable time tracking", fee_billing: "Fee & milestone billing",
   deliverables: "Deliverables register", review_rounds: "Design review rounds",
