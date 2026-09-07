@@ -1,10 +1,10 @@
 // SiteTrack Pro — org integrations (provider creds) queries. An org admin
-// stores their OWN 3rd-party creds (WhatsApp/AI/Razorpay/Cashfree). Status is
+// stores their OWN 3rd-party provider accounts. Status is
 // read via a booleans-only RPC (secrets never leave the DB); writes are direct
 // table upserts gated by RLS (org admin) — migration 83.
 
 export type IResult<T> = { ok: true; data: T } | { ok: false; error: string };
-export type ProviderId = "whatsapp" | "ai" | "razorpay" | "cashfree";
+export type ProviderId = "whatsapp" | "ai" | "razorpay";
 
 export interface ProviderMeta { id: ProviderId; label: string; icon: string; help: string; fields: Array<[string, string]>; policyNote?: string; }
 
@@ -12,11 +12,10 @@ export const PROVIDERS: ProviderMeta[] = [
   { id: "whatsapp", label: "WhatsApp Business", icon: "send", help: "Send DPRs + invoice links via the WhatsApp Business API (your own Meta account).", fields: [["phone_id", "Phone number ID"], ["token", "System user access token"], ["template_id", "Template ID"]], policyNote: "Paused under the zero-cost policy — WhatsApp Business API is a paid Meta service. Email + in-app notifications are active instead." },
   { id: "ai", label: "AI Insights", icon: "zap", help: "Powers AI Insights + cost forecaster. Your provider bills you for tokens.", fields: [["provider", "Provider (openai / anthropic)"], ["key", "API key"], ["model", "Model name"]] },
   { id: "razorpay", label: "Razorpay", icon: "credit-card", help: "Invoice payment links + UPI deep-links (your Razorpay merchant account).", fields: [["key_id", "Key ID"], ["key_secret", "Key secret"], ["vpa", "UPI VPA (optional)"]] },
-  { id: "cashfree", label: "Cashfree", icon: "credit-card", help: "Subscription billing + auto-debit (your Cashfree account).", fields: [["app_id", "App ID"], ["secret", "Secret key"], ["webhook", "Webhook URL"]] },
 ];
 
 // Which field names are secrets (rendered as password inputs).
-export const SECRET_FIELDS = new Set(["token", "key", "key_secret", "secret"]);
+export const SECRET_FIELDS = new Set(["token", "key", "key_secret"]);
 
 export type IntegrationStatus = Record<ProviderId, boolean>;
 
@@ -26,7 +25,7 @@ export async function getIntegrationStatus(client: any, orgId: string): Promise<
     const { data, error } = await client.rpc("org_integrations_status", { p_org: orgId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     const r = (data ?? {}) as Record<string, unknown>;
-    return { ok: true, data: { whatsapp: r.whatsapp === true, ai: r.ai === true, razorpay: r.razorpay === true, cashfree: r.cashfree === true } };
+    return { ok: true, data: { whatsapp: r.whatsapp === true, ai: r.ai === true, razorpay: r.razorpay === true } };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 

@@ -9,7 +9,7 @@ const rpcClient = (result: { data?: unknown; error?: unknown }): any => ({ rpc: 
 describe("getIntegrationStatus", () => {
   it("maps booleans (missing → false) + surfaces error", async () => {
     const r = await getIntegrationStatus(rpcClient({ data: { whatsapp: true, ai: false }, error: null }), "o");
-    expect(r.ok && r.data).toEqual({ whatsapp: true, ai: false, razorpay: false, cashfree: false });
+    expect(r.ok && r.data).toEqual({ whatsapp: true, ai: false, razorpay: false });
     const e = await getIntegrationStatus(rpcClient({ data: null, error: { message: "denied" } }), "o");
     expect(e).toEqual({ ok: false, error: "denied" });
   });
@@ -36,8 +36,8 @@ describe("saveProvider / clearProvider", () => {
 });
 
 describe("provider metadata", () => {
-  it("has 4 providers + secret fields flagged", () => {
-    expect(PROVIDERS.map(p => p.id).sort()).toEqual(["ai", "cashfree", "razorpay", "whatsapp"]);
+  it("has 3 providers + secret fields flagged", () => {
+    expect(PROVIDERS.map(p => p.id).sort()).toEqual(["ai", "razorpay", "whatsapp"]);
     expect(SECRET_FIELDS.has("key_secret")).toBe(true);
     expect(SECRET_FIELDS.has("phone_id")).toBe(false);
   });

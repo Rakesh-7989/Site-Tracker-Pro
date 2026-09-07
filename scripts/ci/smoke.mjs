@@ -559,7 +559,6 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "src/lib/integrations/orgIntegrations.ts",
   "src/lib/integrations/templates.ts",
   "tests/approvalChains.test.js",
-  "tests/orgIntegrations.test.js",
   "tests/templates.test.js",
   // Session 15 — Production gate (RLS + Cashfree)
   "src/lib/integrations/cashfree.ts",

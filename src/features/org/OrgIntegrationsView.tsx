@@ -59,7 +59,7 @@ function ProviderCard({ meta, configured, onSave, onClear, busy }: {
 }
 
 function Inner({ orgId, userId }: { orgId: string; userId: string }): JSX.Element {
-  const [status, setStatus] = useState<IntegrationStatus>({ whatsapp: false, ai: false, razorpay: false, cashfree: false });
+  const [status, setStatus] = useState<IntegrationStatus>({ whatsapp: false, ai: false, razorpay: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

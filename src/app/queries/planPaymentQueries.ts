@@ -1,8 +1,8 @@
-// SiteTrack Pro — self-serve plan purchase (Cashfree one-time links).
+// SiteTrack Pro — self-serve plan purchase (Razorpay one-time links).
 //
-// Thin client over the `cashfree-plan-link` Edge Function. The orgadmin picks
-// a plan + period, we mint a platform-level Cashfree payment link, the payer
-// completes it in a new tab, and cashfree-webhook activates the plan
+// Thin client over the `razorpay-plan-link` Edge Function. The orgadmin picks
+// a plan + period, we mint a platform-level Razorpay payment link, the payer
+// completes it in a new tab, and the webhook activates the plan
 // (organizations.plan + subscriptions + billing_history). Gateway secrets
 // never reach the browser — only the shareable link URL comes back.
 
@@ -18,7 +18,7 @@ export async function createPlanPaymentLink(
   | { ok: false; error: string }
 > {
   try {
-    const { data, error } = await client.functions.invoke("cashfree-plan-link", {
+    const { data, error } = await client.functions.invoke("razorpay-plan-link", {
       body: { org_id: orgId, plan, period },
     });
     if (error) {
