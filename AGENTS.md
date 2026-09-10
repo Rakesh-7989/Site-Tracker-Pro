@@ -1,3 +1,28 @@
+## Session — 2026-09-10: Option 1+2 — Security hardening + Performance pass (migrations 258/260, complete)
+
+**Option 1 — Security hardening (migration 258)**:
+- `ALTER VIEW public.orgs SET (security_invoker = true)` — closed P0 cross-tenant leak (orgs view ran as `postgres` owner, bypassing RLS → any signed-in user could list every org's plan/MRR). Verified live: `pg_class.reloptions` contains `security_invoker=true`.
+- `GRANT SELECT ON public.billing_history TO authenticated` — additive grant for authenticated reads.
+- Applied live via MCP, committed on main (`4bb0bc4`).
+
+**Option 2 — Performance pass (migration 260)**:
+- **62 RLS policies pinned**: bare `auth.uid()` → `(SELECT auth.uid())` (Supabase one-time-evaluation pattern) across ~30 tables (projects, drawings, invoices, dpr_messages, chat_messages, org_members, profiles, project_members, etc.). Verified live: 0 bare `auth.uid()` remaining.
+- **Duplicate indexes dropped**: `idx_project_members_profile_id` (duplicate of `project_members_profile_idx`) and `idx_projects_type` (duplicate of `projects_type_idx`) — confirmed dropped live.
+- **Paren-balance fix**: migration 260 originally had unbalanced parens in 2 of 56 DO blocks (block 16 `digest_subs_write` USING, block 39 `project_members_write` USING). Fixed by adding missing `)` in each. All 56 blocks verified depth=0.
+- Applied live via `db:apply`, committed on main (`ef64e5f`).
+
+**Live verification (2026-09-10)**:
+- `orgs` view: `security_invoker=true` ✅
+- `idx_project_members_profile_id` / `idx_projects_type`: absent ✅
+- 62 pinned policies: all `(SELECT auth.uid())` ✅
+- db:apply: 234 passed, 15 pre-existing checksum drifts (documented), 233 skipped
+
+**CI gates**: tsc clean · eslint 0 errors (4 pre-existing warnings) · smoke 475 · vitest 7/7 (267 tests).
+
+**Git state**: main has both `4bb0bc4` + `ef64e5f`. Push/prod deploy awaits founder go.
+
+---
+
 ## Session — 2026-09-02: `gstn-einvoice` same-bug fix shipped to prod (PR #48, complete)
 
 **Context**: Follow-up caught that the `gstn-einvoice` EF had the SAME latent bug just fixed in `razorpay-payment-link`: it referenced `invoice.org_id` — but **`invoices` has NO `org_id` column** (org is reached via `projects.org_id`; confirmed via `information_schema.columns`). The `requirePlanFeature(orgId || "", "gstn_filing")` plan gate was therefore running with an empty org id before the fix.
