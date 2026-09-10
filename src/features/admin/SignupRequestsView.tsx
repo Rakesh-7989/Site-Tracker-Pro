@@ -5,7 +5,7 @@ import { Input, Select } from "@/components/ui/forms";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { buildCsv, downloadCsv, csvDateStamp, type CsvColumn } from "@/lib/utils/genericCsv";
-import { listSignupRequests, reviewSignupRequest, markSignupPaid, createCheckoutLink, type SignupRequestRow, type SignupStatus } from "@/app/queries/signupAdminQueries";
+import { listSignupRequests, reviewSignupRequest, markSignupPaid, type SignupRequestRow, type SignupStatus } from "@/app/queries/signupAdminQueries";
 import { listStaff, assignSignupRequest, type StaffMember } from "@/app/queries/staffQueries";
 
 import { getClient } from "@/lib/supabase/supabase";
@@ -111,15 +111,6 @@ function Inner(): JSX.Element {
     })();
   }, [canAssign]);
 
-  const sendPayLink = async (r: SignupRequestRow) => {
-    setBusy(r.id); setError(null); setNotice(null);
-    const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
-    const res = await createCheckoutLink(client, r.id, "annual");
-    if (res.ok) setNotice(`Cashfree payment link (₹${res.data.amount}) emailed to ${r.email}. Marks paid automatically once they pay.`);
-    else setError(res.error.includes("not-configured") ? "Cashfree keys not set yet — add CASHFREE_APP_ID + CASHFREE_SECRET (sandbox) first." : res.error);
-    setBusy(null);
-  };
-
   const markPaid = async (r: SignupRequestRow, status: "unpaid" | "paid" | "waived") => {
     setBusy(r.id); setError(null);
     const client = await getClient(); if (!client) { setError("Backend not configured."); setBusy(null); return; }
@@ -207,10 +198,6 @@ function Inner(): JSX.Element {
                 <Button size="sm" variant="secondary" disabled={busy === r.id}
                   onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/pay/${r.id}`); setNotice(`UPI pay link copied — share it with ${r.email}.`); }}>
                   UPI
-                </Button>
-                <Button size="sm" variant="ghost" disabled={busy === r.id}
-                  onClick={() => void sendPayLink(r)}>
-                  Cashfree
                 </Button>
               </div>
               <div className="flex gap-1 flex-wrap">

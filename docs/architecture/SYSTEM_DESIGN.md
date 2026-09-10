@@ -562,7 +562,6 @@ Static assets served via Vercel Edge Network (CDN)
 | `VITE_BACKEND` | Vercel project settings | `src/lib/supabase/supabase.ts` → `isSupabaseEnabled()` |
 | `VITE_SUPABASE_URL` | Vercel project settings | Supabase client init |
 | `VITE_SUPABASE_ANON_KEY` | Vercel project settings | Supabase client init |
-| `VITE_RAZORPAY_KEY_ID` (future) | Vercel project settings | Razorpay client SDK |
 
 ### Release process
 

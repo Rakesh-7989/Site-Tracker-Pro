@@ -139,7 +139,6 @@ const app = [
   read("src/app/queries/planCapsQueries.ts"),
   read("src/app/queries/paymentQueries.ts"),
   read("scripts/supabase/201_signup_attempts.sql"),
-  read("src/app/queries/planPaymentQueries.ts"),
   read("src/features/org/OrgBillingView.tsx"),
   read("scripts/supabase/257_plan_payments.sql"),
 ].join("\n");
@@ -259,8 +258,6 @@ const vite = read("vite.config.js");
   "isCashfreeConfigured",
   "buildSubscriptionRequest",
   // Self-serve plan purchase (Cashfree one-time links + activation)
-  "PayUpgradeCard",
-  "createPlanPaymentLink",
   "plan_payments",
   "cashfree-plan-link",
   // Feature-flag catalog system

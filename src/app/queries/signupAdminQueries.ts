@@ -76,21 +76,7 @@ export async function reviewSignupRequest(client: any, requestId: string, action
     }
     if (data?.ok) return { ok: true, data: { ok: true, orgId: data.orgId, emailSent: data.emailSent, existingUser: data.existingUser } };
     return { ok: false, error: data?.message || data?.detail || data?.error || "Review failed." };
-  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
-}
-
-/** Create a Razorpay payment link for a signup (emailed to the customer). EF razorpay-signup-link. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createCheckoutLink(client: any, requestId: string, period: "monthly" | "annual" = "annual"): Promise<SAResult<{ linkUrl: string; amount: number }>> {
-  try {
-    const { data, error } = await client.functions.invoke("razorpay-signup-link", { body: { signupRequestId: requestId, period } });
-    if (error) {
-      let msg = String(error.message ?? "Checkout failed.");
-      try { const b = await error.context.json(); msg = b.message || b.error || msg; } catch { /* ignore */ }
-      return { ok: false, error: msg };
-    }
-    return data?.ok ? { ok: true, data: { linkUrl: String(data.linkUrl), amount: Number(data.amount) } } : { ok: false, error: String(data?.message ?? data?.error ?? "Checkout failed.") };
-  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+} catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
 /** Owner confirms (manual) payment for a paid-plan signup. RPC mark_signup_paid (mig 104/111). */
