@@ -7,6 +7,7 @@ import { useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input } from "@/components/ui/forms";
 import { fmtRupees } from "@/app/queries/financeQueries";
+import { listLabourMetrics, computeLabourMetrics, type LabourMetricsRow } from "@/app/queries/intelligenceQueries";
 import { listLabour, createLabour, deleteLabour, type LabourEntry } from "@/app/queries/siteAdminQueries";
 import { listAttendance, type AttendanceRow } from "@/app/queries/attendanceQueries";
 import { attendanceTally, wageSlip, SHIFT_BASE_HOURS, OVER_TIME_MULTIPLIER } from "@/app/queries/shiftQueries";
@@ -21,6 +22,9 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(""); const [trade, setTrade] = useState(""); const [wage, setWage] = useState(""); const [aadhaar, setAadhaar] = useState(""); const [epf, setEpf] = useState(""); const [esi, setEsi] = useState("");
+  const [metrics, setMetrics] = useState<LabourMetricsRow[]>([]);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [metricsBusy, setMetricsBusy] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -30,6 +34,20 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
     setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
+  const reloadMetrics = useCallback(async () => {
+    const client = await getClient(); if (!client) return;
+    const res = await listLabourMetrics(client, projectId);
+    if (res.ok) setMetrics(res.data); else setMetricsError(res.error);
+  }, [projectId]);
+  useEffect(() => { void reloadMetrics(); }, [reloadMetrics]);
+  const recomputeMetrics = async () => {
+    setMetricsBusy(true); setMetricsError(null);
+    const client = await getClient(); if (client) {
+      const res = await computeLabourMetrics(client, projectId);
+      if (res.ok) setMetrics(res.data); else setMetricsError(res.error);
+    }
+    setMetricsBusy(false);
+  };
   const { busy, run } = useAction(reload, setError);
   const add = async () => {
     if (!name.trim()) return;
@@ -83,6 +101,7 @@ export function LabourTab({ projectId }: { projectId: string }): JSX.Element {
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteLabour(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
               </div>
             </Card>))}</div>}
+      <LabourMetricsCard metrics={metrics} error={metricsError} onRecompute={activeOrg?.isAdmin === true ? recomputeMetrics : undefined} busy={metricsBusy} />
       <WageSummary labour={rows} attendance={attendance} />
     </div>
   );
@@ -114,6 +133,27 @@ function WageSummary({ labour, attendance }: { labour: LabourEntry[]; attendance
           <div className="col-span-full text-[11px] text-fg-tertiary">Escalated attendance (Σ days &amp; OT across records) × daily wage. OT at {OVER_TIME_MULTIPLIER}× over {SHIFT_BASE_HOURS}h base. Statutory % are estimates — verify against slabs.</div>
         </div>
       )}
+    </Card>
+  );
+}
+
+function LabourMetricsCard({ metrics, error, onRecompute, busy }: { metrics: LabourMetricsRow[]; error: string | null; onRecompute?: () => void; busy: boolean }): JSX.Element {
+  const week = metrics[0];
+  return (
+    <Card padding="sm" title={<h3 className="text-sm font-bold text-fg-primary">Labour metrics</h3>} action={onRecompute ? <Button size="sm" variant="secondary" onClick={() => void onRecompute?.()} disabled={busy}>{busy ? <Spinner size={14} /> : "Recompute"}</Button> : undefined}>
+      {error ? <Alert variant="danger">{error}</Alert>
+        : !week ? <div className="text-xs text-fg-secondary">No metrics yet — computed weekly. Run recompute to generate them now.</div>
+        : (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+              <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Attendance</div><div className="text-fg-primary font-semibold">{Math.round(week.attendanceRate * 100)}%</div></div>
+              <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Overtime</div><div className="text-fg-primary font-semibold">{Math.round(week.overtimeRatio * 100)}%</div></div>
+              <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Hours</div><div className="text-fg-primary font-semibold">{week.labourHours}h</div></div>
+              <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Labour cost</div><div className="text-fg-primary font-semibold">{fmtRupees(week.labourCost)}</div></div>
+            </div>
+            <div className="text-[11px] text-fg-tertiary">For the ISO week starting {week.weekStart}.</div>
+          </div>
+        )}
     </Card>
   );
 }

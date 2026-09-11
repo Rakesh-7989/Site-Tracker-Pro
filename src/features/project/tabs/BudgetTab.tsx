@@ -5,6 +5,7 @@ import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Button, Spinner, Alert, StatCard } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listExpenses, createExpense, setExpenseStatus, deleteExpense, fmtRupees, type Expense, type ExpenseStatus } from "@/app/queries/financeQueries";
+import { listCostForecast, computeCostForecast, type CostForecastRow } from "@/app/queries/intelligenceQueries";
 
  
 import { getClient } from "@/lib/supabase/supabase";
@@ -20,6 +21,9 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
   const [rows, setRows] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fc, setFc] = useState<CostForecastRow | null>(null);
+  const [fcError, setFcError] = useState<string | null>(null);
+  const [fcBusy, setFcBusy] = useState(false);
   const [cat, setCat] = useState("material"); const [desc, setDesc] = useState(""); const [amount, setAmount] = useState(""); const [paidTo, setPaidTo] = useState("");
 
   const reload = useCallback(async () => {
@@ -40,12 +44,45 @@ export function BudgetTab({ projectId }: { projectId: string }): JSX.Element {
     setDesc(""); setAmount(""); setPaidTo("");
   };
 
+  const reloadFc = useCallback(async () => {
+    setFcError(null);
+    const client = await getClient(); if (!client) { setFcError("Backend not configured."); return; }
+    const res = await listCostForecast(client, projectId);
+    if (res.ok) setFc(res.data[0] ?? null); else setFcError(res.error);
+  }, [projectId]);
+  useEffect(() => { void reloadFc(); }, [reloadFc]);
+  const recomputeFc = async () => {
+    setFcBusy(true); setFcError(null);
+    const client = await getClient(); if (!client) { setFcError("Backend not configured."); setFcBusy(false); return; }
+    const res = await computeCostForecast(client, projectId);
+    if (res.ok) setFc(res.data[0] ?? null); else setFcError(res.error);
+    setFcBusy(false);
+  };
+
   const total = rows.reduce((s, r) => s + r.amount, 0);
 
   return (
     <div className="space-y-4">
       <h2 className="font-display text-lg font-bold text-fg-primary">Budget &amp; expenses</h2>
       {error && <Alert variant="danger">{error}</Alert>}
+      {(fc || fcError) && (
+        <Card padding="sm" title={<h3 className="text-sm font-bold text-fg-primary">Cost forecast</h3>} action={activeOrg?.isAdmin === true
+          ? <Button size="sm" variant="secondary" disabled={fcBusy} onClick={() => void recomputeFc()}>{fcBusy ? <Spinner size={14} /> : "Recompute"}</Button>
+          : undefined}>
+          {fcError ? (
+            <div className="text-xs text-error">{fcError}</div>
+          ) : !fc ? (
+            <div className="text-xs text-fg-secondary">No cost forecast yet — computed on the 1st of each month. Run recompute to generate one now.</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+              <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Projected spend</div><div className="text-fg-primary font-semibold">{fmtRupees(fc.projectedSpend)}</div></div>
+              <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Projected overrun</div><div className={`font-semibold ${fc.projectedOverrun > 0 ? "text-error" : "text-success"}`}>{fc.projectedOverrun > 0 ? fmtRupees(fc.projectedOverrun) : "None"}</div></div>
+              <div><div className="text-[11px] font-semibold uppercase tracking-wider text-fg-tertiary">Confidence</div><div className="text-fg-primary font-semibold">{Math.round(fc.confidence * 100)}%</div></div>
+              <div className="col-span-full text-[11px] text-fg-tertiary">Forecast for {fc.forecastMonth}, extrapolated from the last 3 expense months.</div>
+            </div>
+          )}
+        </Card>
+      )}
       {rows.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 gap-3"><StatCard icon="credit-card" label="Total spent" value={fmtRupees(total)} accent="orange" /><StatCard icon="doc" label="Entries" value={rows.length} accent="blue" /></div>}
       {canEdit && (
         <Card className="p-3 flex gap-2 flex-wrap items-end">
