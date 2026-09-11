@@ -16,11 +16,12 @@ import { join } from "node:path";
 
 const paymentLink = readFileSync(join(process.cwd(), "supabase", "functions", "razorpay-payment-link", "index.ts"), "utf8");
 const webhook = readFileSync(join(process.cwd(), "supabase", "functions", "razorpay-webhook", "index.ts"), "utf8");
+const razorpayShared = readFileSync(join(process.cwd(), "supabase", "functions", "_shared", "razorpay.ts"), "utf8");
 
 describe("razorpay-payment-link — create payment link (mig 253)", () => {
   it("POSTs to the Razorpay Payment Links API with Basic key auth", () => {
     expect(paymentLink).toContain("RAZORPAY_BASE");
-    expect(paymentLink).toContain("https://api.razorpay.com/v1");
+    expect(razorpayShared).toContain("https://api.razorpay.com/v1");
     expect(paymentLink).toContain("RAZORPAY_KEY_ID");
     expect(paymentLink).toContain("RAZORPAY_KEY_SECRET");
     expect(paymentLink).toContain("Authorization: `Basic ${auth}`");
@@ -81,9 +82,9 @@ describe("razorpay-payment-link — create payment link (mig 253)", () => {
 
 describe("razorpay-webhook — nested payload + status mapping (mig 253)", () => {
   it("verifies the webhook signature with HMAC-SHA256 over the raw body", () => {
-    expect(webhook).toContain("crypto.subtle.importKey");
+    expect(razorpayShared).toContain("crypto.subtle.importKey");
     expect(webhook).toContain("x-razorpay-signature");
-    expect(webhook).toContain("HMAC");
+    expect(razorpayShared).toContain("HMAC");
   });
 
   it("rejects invalid signatures with 401", () => {
@@ -102,13 +103,13 @@ describe("razorpay-webhook — nested payload + status mapping (mig 253)", () =>
   });
 
   it("maps both payment_link.* and payment.* events to invoice statuses", () => {
-    expect(webhook).toContain("\"payment_link.paid\": \"paid\"");
-    expect(webhook).toContain("\"payment_link.cancelled\": \"cancelled\"");
-    expect(webhook).toContain("\"payment_link.expired\": \"expired\"");
-    expect(webhook).toContain("\"payment_link.partially_paid\": \"partial\"");
-    expect(webhook).toContain("\"payment.captured\": \"paid\"");
-    expect(webhook).toContain("\"payment.failed\": \"failed\"");
-    expect(webhook).toContain("[eventType] || \"pending\"");
+    expect(razorpayShared).toContain("\"payment_link.paid\": \"paid\"");
+    expect(razorpayShared).toContain("\"payment_link.cancelled\": \"cancelled\"");
+    expect(razorpayShared).toContain("\"payment_link.expired\": \"expired\"");
+    expect(razorpayShared).toContain("\"payment_link.partially_paid\": \"partial\"");
+    expect(razorpayShared).toContain("\"payment.captured\": \"paid\"");
+    expect(razorpayShared).toContain("\"payment.failed\": \"failed\"");
+    expect(razorpayShared).toContain("[eventType] || \"pending\"");
   });
 
   it("acks unknown events without erroring (Razorpay retry backstop)", () => {

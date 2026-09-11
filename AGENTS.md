@@ -1,3 +1,24 @@
+## Session — 2026-09-10 (2nd): Lifecycle emails LIVE — runtime recipient bug fixed + real E2E send (complete)
+
+**Task**: finish the §2.4 lifecycle-email automation live E2E: root-cause the runtime null-recipient bug, redeploy, get a real Resend send + `lifecycle_emails` row `status: sent`.
+
+**Root cause (FOUND + FIXED)**: `org_members` has **NO `created_at` column**; the REST call `order=created_at.asc` in `resolveOrgAdminEmail` returned HTTP 400 `42703` ("Perhaps you meant to reference the column org_members.accepted_at"), so the recipient lookup returned null → every due email was recorded `skipped "no admin recipient resolvable"` with null `recipient_email`. Data + schema were fine; it was a column-name bug. Verified via `information_schema` (sortable column is `accepted_at`, nullable, set on accept). `index.ts` ~line 347: `order=created_at.asc` → `order=accepted_at.asc`.
+
+**Shipped steps**:
+- Redeployed `lifecycle-emails-cron` via `supabase functions deploy` (bundles `index.ts` + `_shared/auth.ts`; the "Docker is not running" warning is benign — CLI bundled without Docker).
+- Deleted the 2 stale `skipped` rows for the single eligible org ("Walk with AI" `97be5fca-…`, admin profile `548395b5-…`, email `gangineniramakrishna766@gmail.com`) so they re-fire (idempotent `UNIQUE(org_id, template_key, sent_for_date)` + sent/skipped never re-fire).
+- Set **`SITETRACK_LIFECYCLE_LIVE=true`** on the project — the cron is now LIVE (it was dry-run only; checked only the test org is eligible before flipping).
+- Live trigger → **HTTP 200 `{ok:true, orgs_seen:1, due_events:2, sent:2, retried:0, failed:0, skipped:1, dry_run:false}`**.
+- Verified rows: **day1_welcome (2026-09-07) → `sent`, recipient resolved, msgid `2fb8828c-9e46-478b-ab8e-efd431211b5f`** + **day3_help_and_setup (2026-09-09) → `sent`, msgid `dd63ac1f-35c3-4fc8-b51a-7e91ce449df4`** — real Resend ids (not `dry.`-prefixed) at `sent_at 2026-09-10 17:49 UTC`. Both resolved through the `/auth/v1/admin/users/{pid}` leg too. (Day3 sent despite the org having 1 project — that matches the EF code as written.)
+
+**State**: `main` = `7379c5c` (pushed, origin synced — **not** on prod; prod ships via founder-approved main→prod PR); migrations **261** (`261_lifecycle_emails.sql`, immutable/applied) + **262** (`262_lifecycle_emails_recipient_nullable.sql`, applied cleanly) + the `supabase/functions/lifecycle-emails-cron/` EF were committed (`6daf1b5`), docs (`AGENTS.md` + `§2.4`) committed. 15 benign pre-existing checksum drifts (236 passed · 15 failed · 235 skipped) recur — ignore. Ops notes: the CLI's `supabase db execute` subcommand does NOT exist (use `db query` or MCP SQL); EF bearer = `notify_config.promoter_digest_cron_secret`; the next due event (day7 nudge, 2026-09-13) will fire on the existing cron job 356 @ 02:20 UTC.
+
+**Post-ship verification (2026-09-10)**: queried Resend API `GET /emails/{id}` for both msgids → **`last_event=delivered`** for both `2fb8828c-…` (subj "Welcome to SiteTrack Pro - your 14-day trial is live") and `dd63ac1f-…` (subj "Need a hand setting up your first project?"), to `gangineniramakrishna766@gmail.com`. System-side confirmation complete; **all 7 templates** (day1/3/7/10/14/21/weekly) are implemented in the EF and fire automatically as orgs age — §2.4 has **0 remaining build work**.
+
+**Remaining (founder/user steps only)**: visually confirm the two emails in Gmail (both already `delivered` per Resend); then the standing backlog (DXF visual test in Drawings, `*.sitetrackpro.in` wildcard CNAME at the registrar, TrackingCAA record, WhatsApp/Twilio/push/AI provider keys, mobile `.aab` via Android Studio). Lifecycle feature reaches prod via the next main→prod PR.
+
+---
+
 ## Session — 2026-09-10: Option 1+2 — Security hardening + Performance pass (migrations 258/260, complete)
 
 **Option 1 — Security hardening (migration 258)**:
@@ -3411,8 +3432,10 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 
 **Deep-dive findings**: upgrade = staff ticket, closed != activation; cashfree-subscription dead code (no UI caller, per-org creds, Business+ gate); webhook never flipped organizations.plan; prices drifted 3 ways (page 5999/11999/19999 vs DB-charge 7999/19999/43333 vs EF note 999/2999/7999); Razorpay paid invoices still read outstanding.
 
-**Fixes (working tree)**: mig 257 plan_payments + payments.method gateway values; prices aligned to DB-93 truth (plans.ts + PLAN_META + Pricing/Product/Home + tests); new EF cashfree-plan-link (orgadmin JWT, upgrade/renew-only, DB price + GST, per-org 5/hr throttle, plan_payments pending); cashfree-webhook plan_upgrade settle+activate (plan + subscriptions + billing_history, idempotent) + subscription-ACTIVE plan flip; razorpay-webhook settlement rows + status paid on full (partial keeps status); OrgBillingView PayUpgradeCard (?paid=1 verifying, GST preview, enterprise->ticket hint); billing pay* keys en/te/hi; smoke markers +4 (476).
+**Fixes (working tree)**: mig 257 plan_payments + payments.method gateway values; prices aligned to DB-93 truth (plans.ts + PLAN_META + Pricing/Product/Home + tests); new EF cashfree-plan-link (orgadmin JWT, upgrade/renew-only, DB price + GST, per-org 5/hr throttle, plan_payments pending); cashfree-webhook plan_upgrade settle+activate (plan + subscriptions + billing_history, idempotent) + subscription-ACTIVE plan flip; razorpay-webhook settlement rows + status paid on full (partial keeps status); billing pay* keys en/te/hi.
 
-**Gates**: tsc/eslint clean, efPlanPayments 17/17 + plans/cashfree/i18n/paymentQueries green, smoke 476, build clean, e2e-mock 11/11.
+**Frontend (verified 2026-09-11, working tree)**: `src/app/queries/planPaymentQueries.ts` (new — `mintPlanPaymentLink` mirroring upgradeQueries error-unwrap); `OrgBillingView.tsx` — new `PayUpgradeCard` (basic/pro/business upgrade targets only vs `ORDER`, BillingPeriod Select Monthly/Annual, GST-incl. preview via `formatINR(gstInclusive(raw))`, enterprise→ticket hint, mint → `window.open(linkUrl)` + `?paid=1`); OrgBillingInner gains `useSearchParams` + `verifying` state + a recursive [6s,6s,8s] reload timer that clears `?paid=1` after 3 cycles, with an info `Alert` `billing.payVerifying` during verification. smoke.mjs: `planPaymentQueries.ts` added to app-source scan + 4 markers (`mintPlanPaymentLink`/`PayUpgradeCard`/`PAY_PLAN_TARGETS`/`payVerifying`) → **477 checks** (was 473; the older "476" record was aspirational — the markers were never committed until now).
+
+**Gates (verified 2026-09-11)**: tsc clean · eslint clean (touched files) · smoke **477** · build clean (24.5s, pre-existing chunk warnings only) · vitest **145 files/1762 tests + 44 files/344 tests** (app/auth/db/i18n/lib/features/components/plugins/marketing/dpr/design) all green · e2e-mock **11/11**.
 
 **Live infra needed**: db:apply 257 + deploy cashfree-plan-link (new) + cashfree-webhook + razorpay-webhook (--no-verify-jwt kept). Enterprise/custom stay manual (set_org_plan superadmin); downgrades support-handled.

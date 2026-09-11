@@ -14,8 +14,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { authenticate } from "../_shared/auth.ts";
-
-const RAZORPAY_BASE = "https://api.razorpay.com/v1";
+import { RAZORPAY_BASE, base64Credentials } from "../_shared/razorpay.ts";
 
 interface RazorpayPaymentLink {
   id: string;
@@ -29,10 +28,6 @@ interface RequestBody {
   invoice_id: string;
   project_id?: string;
   mode?: "create" | "get";
-}
-
-function base64Credentials(keyId: string, secret: string): string {
-  return btoa(`${keyId}:${secret}`);
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {

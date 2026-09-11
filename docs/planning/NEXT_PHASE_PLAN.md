@@ -157,21 +157,23 @@ SiteTrack Pro is **feature-complete** for its core value proposition: a construc
 | **Public project showcase** | Optional: "Share a read-only project page" (marketing + viral) | 2 days |
 
 ### 2.4 Email/WhatsApp Lifecycle Automation
-**Current**: Only confirmation + welcome email. **Missing**: entire lifecycle.
+**Status**: Day-1/Day-3 **LIVE for real orgs** (2026-09-10); **ALL 7 templates are implemented** in the `lifecycle-emails-cron` EF and fire automatically as orgs age (no further build needed). WhatsApp delivery still needs Meta keys.
 
 | Email/WA | Trigger | Template |
 |---|---|---|
-| Day 1 | Signup confirmed | "Welcome + demo project link" |
-| Day 3 | No onboarding progress | "Stuck? Book a 15-min setup call" |
-| Day 7 | Trial halfway | "7 days used — here's what you've built" (usage stats) |
-| Day 10 | Trial ending soon | "3 days left — pick a plan, save 17% annually" |
-| Day 14 | Trial expired | "Trial ended — your data is safe, upgrade to continue" |
-| Day 21 | Expired, no upgrade | "We miss you — 50% off first month if you return" |
-| Weekly | Active trial | "Your weekly SiteTrack digest" (projects, DPRs, risks) |
+| Day 1 | Signup confirmed | "Welcome + demo project link" — ✅ **LIVE** |
+| Day 3 | No onboarding progress | "Stuck? Book a 15-min setup call" (zero-projects gate) — ✅ **LIVE** |
+| Day 7 | Trial halfway | "7 days used — here's what you've built" (usage stats) — implemented; fires at day0+7d |
+| Day 10 | Trial ending soon | "3 days left — pick a plan, save 17% annually" — implemented |
+| Day 14 | Trial expired | "Trial ended — your data is safe, upgrade to continue" — implemented |
+| Day 21 | Expired, no upgrade | "We miss you — 50% off first month if you return" — implemented |
+| Weekly | Active trial | "Your weekly SiteTrack digest" (projects, DPRs, risks) — implemented (stops when trial ends) |
 
-**Implementation**: New `lifecycle_emails` table + pg_cron job + Resend templates. WhatsApp via `notify-deliver` (already wired for DPR).
+**Implementation (shipped)**: `lifecycle_emails` table (migration **261**; `recipient_email` nullable via **262**) + `lifecycle-emails-cron` EF (pg_cron job 356 `lifecycle-emails-daily` @ 02:20 UTC; idempotent `UNIQUE(org_id, template_key, sent_for_date)`; `sent`/`skipped` rows never re-fire; Resend sends from `hello@sitetrackpro.in`). Runtime bug fixed before go-live: `org_members` has no `created_at` (REST 42703 in `resolveOrgAdminEmail`) → now orders by `accepted_at`. **`SITETRACK_LIFECYCLE_LIVE=true`** set so real orgs receive emails.
 
-**Effort**: 1 migration + 1 cron EF + 8 templates = **~3 days**
+**Verified live (2026-09-10)**: single eligible org ("Walk with AI") → day1 + day3 `status: sent`, real Resend msgids (`2fb8828c…`, `dd63ac1f…`) at `sent_at 17:49 UTC`. User step: confirm the two emails landed in the org admin's inbox (`gangineniramakrishna766@gmail.com`); day7 auto-fires 2026-09-13.
+
+**Effort**: implementation complete — **0 remaining build work**.
 
 ### 2.5 Demo / Sandbox Mode
 **Problem**: Prospects want to try before giving email.

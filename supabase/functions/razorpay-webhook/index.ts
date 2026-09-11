@@ -27,35 +27,10 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { verifyRazorpaySignature, mapRazorpayStatus } from "../_shared/razorpay.ts";
 
 const WEBHOOK_SECRET = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
 const RAZORPAY_WEBHOOK_SECRET_FALLBACK = Deno.env.get("RAZORPAY_KEY_SECRET");
-
-// Razorpay signs the raw webhook payload with HMAC-SHA256 and sends the
-// hex digest in the X-Razorpay-Signature header. Verify with the Web Crypto
-// API (Deno-native), matching the cashfree/_shared pattern.
-function bytesToHex(buf: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function verifySignature(rawBody: string, signature: string): Promise<boolean> {
-  const secret = WEBHOOK_SECRET || RAZORPAY_WEBHOOK_SECRET_FALLBACK;
-  if (!rawBody || !signature || !secret) return false;
-  try {
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-    const sigBuf = await crypto.subtle.sign("HMAC", key, enc.encode(rawBody));
-    const expected = bytesToHex(sigBuf);
-    if (expected.length !== signature.length) return false;
-    let mismatch = 0;
-    for (let i = 0; i < expected.length; i++) {
-      mismatch |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
-    }
-    return mismatch === 0;
-  } catch {
-    return false;
-  }
-}
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -69,7 +44,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const signature = req.headers.get("x-razorpay-signature") || "";
   const eventId = req.headers.get("x-razorpay-event-id") || "";
 
-  if (!(await verifySignature(rawBody, signature))) {
+  const secret = WEBHOOK_SECRET || RAZORPAY_WEBHOOK_SECRET_FALLBACK;
+  if (!(await verifyRazorpaySignature({ rawBody, signature, secret }))) {
     console.warn("Razorpay webhook signature invalid", { eventId, sigPrefix: signature.slice(0, 8) });
     return new Response("Invalid signature", { status: 401 });
   }
@@ -207,18 +183,3 @@ Deno.serve(async (req: Request): Promise<Response> => {
     headers: { "Content-Type": "application/json" },
   });
 });
-
-function mapRazorpayStatus(eventType: string): string {
-  const statusMap: Record<string, string> = {
-    "payment.captured": "paid",
-    "payment.failed": "failed",
-    "payment.expired": "expired",
-    "payment.refunded": "cancelled",
-    "payment.partially_refunded": "partial",
-    "payment_link.paid": "paid",
-    "payment_link.cancelled": "cancelled",
-    "payment_link.expired": "expired",
-    "payment_link.partially_paid": "partial",
-  };
-  return statusMap[eventType] || "pending";
-}

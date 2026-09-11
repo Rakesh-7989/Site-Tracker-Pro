@@ -13,6 +13,7 @@ import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { BrandingEffect } from "./BrandingEffect";
+import { GuidedTour } from "./GuidedTour";
 import { SubdomainBranding } from "./SubdomainBranding";
 import { SubscriptionBanner } from "@/features/org/SubscriptionBanner";
 import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
@@ -108,6 +109,7 @@ function GatedShell(): JSX.Element {
           </main>
         </div>
         <BottomNav />
+        <GuidedTour />
       </div>
   );
 }

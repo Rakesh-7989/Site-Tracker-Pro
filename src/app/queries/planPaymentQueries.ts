@@ -1,40 +1,47 @@
-// SiteTrack Pro — self-serve plan purchase (Razorpay one-time links).
+// SiteTrack Pro — cashfree self-serve plan-payment link query layer.
 //
-// Thin client over the `razorpay-plan-link` Edge Function. The orgadmin picks
-// a plan + period, we mint a platform-level Razorpay payment link, the payer
-// completes it in a new tab, and the webhook activates the plan
-// (organizations.plan + subscriptions + billing_history). Gateway secrets
-// never reach the browser — only the shareable link URL comes back.
+// Thin client over the `cashfree-plan-link` Edge Function. Cashfree keys NEVER
+// reach the browser: the EF validates org/plan/period, creates a hosted link
+// via the Cashfree PG API and returns the shareable payment_session_url. The
+// webhook writes `plan_payments` + activates the plan; the paying page just
+// shows `?paid=1`.
 
-import type { TypedSupabaseClient } from "@/lib/supabase/db";
+import type { UResult } from "./upgradeQueries";
 
-export async function createPlanPaymentLink(
-  client: TypedSupabaseClient,
-  orgId: string,
-  plan: string,
-  period: "monthly" | "annual",
-): Promise<
-  | { ok: true; data: { linkUrl: string; linkId: string; amount: number } }
-  | { ok: false; error: string }
-> {
+export type PlanPaymentPeriod = "monthly" | "annual";
+
+export interface PlanPaymentLink {
+  linkUrl: string;
+  linkId: string;
+  amount: number;
+  env: string;
+}
+
+export interface MintPlanPaymentLinkArgs {
+  orgId: string;
+  plan: string;
+  period: PlanPaymentPeriod;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function mintPlanPaymentLink(client: any, args: MintPlanPaymentLinkArgs): Promise<UResult<PlanPaymentLink>> {
   try {
-    const { data, error } = await client.functions.invoke("razorpay-plan-link", {
-      body: { org_id: orgId, plan, period },
+    const { data, error } = await client.functions.invoke("cashfree-plan-link", {
+      body: { org_id: args.orgId, plan: args.plan, period: args.period },
     });
     if (error) {
       let msg = String(error.message ?? "Payment link creation failed.");
-      try { const b = await error.context.json(); msg = b.message || b.error || msg; } catch { /* ignore */ }
+      try { const b = await error.context.json(); msg = b.error || b.detail || b.message || msg; } catch { /* ignore */ }
       return { ok: false, error: msg };
     }
-    if (!data?.ok || !data?.linkUrl) {
-      return { ok: false, error: String(data?.message ?? data?.error ?? "Payment link creation failed.") };
-    }
+    if (!data?.ok) return { ok: false, error: String(data?.error ?? data?.detail ?? "Payment link creation failed.") };
     return {
       ok: true,
       data: {
-        linkUrl: String(data.linkUrl),
-        linkId: String(data.linkId ?? ""),
+        linkUrl: String(data.link_url ?? data.linkUrl ?? ""),
+        linkId: String(data.link_id ?? data.linkId ?? ""),
         amount: Number(data.amount ?? 0),
+        env: String(data.env ?? "test"),
       },
     };
   } catch (e) {
