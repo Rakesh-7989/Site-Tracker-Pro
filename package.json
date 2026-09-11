@@ -64,6 +64,7 @@
     "test:rls:lifecycle": "node scripts/tests/test-project-lifecycle-rls.mjs",
     "test:rls:quota": "node scripts/tests/test-quota-toctou.mjs",
     "test:rls:risk": "node scripts/tests/test-risk-signals-cron.mjs",
+    "test:rls:intel": "node scripts/tests/test-intelligence-signals.mjs",
     "test:rls:teams": "node scripts/tests/test-team-channels-rls.mjs",
     "test:ux": "npx playwright test --config playwright.ux.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",

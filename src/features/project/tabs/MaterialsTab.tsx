@@ -6,6 +6,7 @@ import { Card, Button, Spinner, Alert } from "@/components/ui/atoms";
 import { Input, Select } from "@/components/ui/forms";
 import { listMaterials, createMaterial, setMaterialStatus, deleteMaterial, type Material, type MaterialStatus } from "@/app/queries/siteOpsQueries";
 import { listMaterialRequests, createMaterialRequest, setMaterialRequestStatus, deleteMaterialRequest, requestTotals, REQUEST_NEXT, REQUEST_STATUS_LABEL, type MaterialRequest, type RequestStatus } from "@/app/queries/materialRequestQueries";
+import { computeMaterialStockout, stockoutLabel, type MaterialStockoutRow } from "@/app/queries/intelligenceQueries";
 import { useIsPartnerWriter } from "@/features/project/PartnerScopeContext";
 
  
@@ -25,6 +26,9 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
   const [error, setError] = useState<string | null>(null);
   const [m, setM] = useState(""); const [qty, setQty] = useState(""); const [sup, setSup] = useState(""); const [dd, setDd] = useState("");
   const [rm, setRm] = useState(""); const [runit, setRunit] = useState(""); const [rqty, setRqty] = useState(""); const [rdd, setRdd] = useState(""); const [rreason, setRreason] = useState("");
+  const [stockout, setStockout] = useState<MaterialStockoutRow[]>([]);
+  const [stockoutError, setStockoutError] = useState<string | null>(null);
+  const [soReady, setSoReady] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -34,6 +38,13 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
     setLoading(false);
   }, [projectId]);
   useEffect(() => { void reload(); }, [reload]);
+  const reloadStockout = useCallback(async () => {
+    const client = await getClient(); if (!client) { setSoReady(true); return; }
+    const res = await computeMaterialStockout(client, projectId);
+    if (res.ok) { setStockout(res.data.filter(r => r.stockoutCritical)); setStockoutError(null); } else setStockoutError(res.error);
+    setSoReady(true);
+  }, [projectId]);
+  useEffect(() => { void reloadStockout(); }, [reloadStockout]);
   const { busy, run } = useAction(reload, setError);
   const add = async () => {
     if (!m.trim() || !session) return;
@@ -155,6 +166,21 @@ export function MaterialsTab({ projectId }: { projectId: string }): JSX.Element 
                 {canEdit && <Button size="sm" variant="ghost" onClick={() => void run(`d-${r.id}`, c => deleteMaterial(c, r.id), { apply: () => setRows(prev => prev.filter(x => x.id !== r.id)), rollback: () => setRows(prev => [...prev, r]) })}><span className="text-error">✕</span></Button>}
               </div>
             </Card>))}</div>}
+      {soReady && !stockoutError && stockout.length > 0 && (
+        <Card padding="sm" className="border border-warning" title={<h3 className="text-sm font-bold text-fg-primary">Stock-out risk</h3>} action={<span className="text-xs font-semibold text-warning">{stockout.length} critical</span>}>
+          <div className="space-y-2">
+            {stockout.map(r => (
+              <div key={r.material} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-fg-primary truncate">{r.material}<span className="text-fg-tertiary font-normal"> · {r.unit}</span></div>
+                  <div className="text-[11px] text-fg-tertiary truncate">Stock {r.currentStock} · consume {Math.round(r.monthlyConsumption)}/mo · lead {r.leadDays}d</div>
+                </div>
+                <div className={`text-xs font-semibold flex-shrink-0 ${r.daysRemaining == null ? "text-fg-tertiary" : r.daysRemaining <= 0 ? "text-error" : "text-warning"}`}>{stockoutLabel(r.daysRemaining)}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
