@@ -2,16 +2,19 @@
 // lifecycle management (view, cancel, reactivate), billing history, alerts.
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth, useCan, useOrgSwitcher } from "@/auth";
 import { Card, Badge, Button, Alert, AccessDenied, Icon } from "@/components/ui/atoms";
 import { Select } from "@/components/ui/forms";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { requestPlanUpgrade } from "@/app/queries/upgradeQueries";
+import { mintPlanPaymentLink } from "@/app/queries/planPaymentQueries";
 import { getOrgOverview, getOrgBillingFull, PLAN_LABEL, type OrgOverview, type BillingFull, type BillingHistoryItem } from "@/app/queries/orgAdminQueries";
 import { fetchOrgQuota, usageRollup, type QuotaRollup } from "@/app/queries/quotaQueries";
 import { QuotaMeter } from "@/auth/QuotaGate";
 import { useT } from "@/i18n/I18nProvider";
+import { PLAN_TIERS, formatINR, gstInclusive, type BillingPeriod } from "@/features/marketing/plans";
 
  
 import { getClient } from "@/lib/supabase/supabase";
@@ -41,6 +44,8 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
   const [action, setAction] = useState<{ kind: string } | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionResult, setActionResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [params, setParams] = useSearchParams();
+  const [verifying, setVerifying] = useState(params.get("paid") === "1");
 
   const reload = useCallback(async () => {
     setLoading(true); setError(null);
@@ -56,6 +61,20 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
     setLoading(false);
   }, [orgId, t]);
   useEffect(() => { void reload(); }, [reload]);
+
+  useEffect(() => {
+    if (params.get("paid") !== "1") return;
+    setVerifying(true);
+    let cancelled = false;
+    const ids: number[] = [];
+    const schedule = (i: number) => {
+      if (cancelled) return;
+      if (i >= 3) { setVerifying(false); setParams({}, { replace: true }); return; }
+      ids.push(window.setTimeout(() => { void reload(); schedule(i + 1); }, [6000, 6000, 8000][i]));
+    };
+    schedule(0);
+    return () => { cancelled = true; ids.forEach(id => window.clearTimeout(id)); };
+  }, [params, reload, setParams]);
 
   const performAction = async (kind: string) => {
     setActionResult(null); setActionBusy(true);
@@ -80,6 +99,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
     <div className="max-w-3xl mx-auto space-y-5 p-4 md:p-6">
       <h1 className="font-display text-xl md:text-2xl font-bold text-fg-primary">{t("billing.title")}</h1>
       {error && <Alert variant="danger">{error}</Alert>}
+      {verifying && <Alert variant="info">{t("billing.payVerifying")}</Alert>}
       {loading ? <div role="status" aria-label="Loading" aria-busy="true" className="space-y-2">
           {[0, 1, 2, 3].map(i => (
             <div key={i} className="bg-card rounded-2xl border border-default p-3 flex items-center gap-3">
@@ -183,6 +203,7 @@ function OrgBillingInner({ orgId }: { orgId: string }): JSX.Element {
           </Card>
 
           {/* â”€â”€ Request upgrade card â”€â”€ */}
+          <PayUpgradeCard orgId={orgId} currentPlan={overview.plan} />
           <RequestUpgradeCard orgId={orgId} currentPlan={overview.plan} />
         </>
       )}
@@ -247,6 +268,67 @@ function RequestUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan
           </div>
         </div>
       )}
+    </Card>
+  );
+}
+
+const PAY_PLAN_TARGETS = ["basic", "pro", "business"] as const;
+
+function PayUpgradeCard({ orgId, currentPlan }: { orgId: string; currentPlan: string }): JSX.Element {
+  const t = useT();
+  const [, setParams] = useSearchParams();
+  const [period, setPeriod] = useState<BillingPeriod>("annual");
+  const [desired, setDesired] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const curIdx = ORDER.indexOf(currentPlan);
+  const targets = PAY_PLAN_TARGETS.filter(pl => curIdx === -1 || ORDER.indexOf(pl) > curIdx);
+  if (targets.length === 0) return <></>;
+
+  const tier = PLAN_TIERS.find(pl => pl.id === desired) ?? null;
+  const raw = period === "annual" ? (tier?.annual ?? 0) : (tier?.monthly ?? 0);
+  const preview = formatINR(gstInclusive(raw));
+
+  const mint = async () => {
+    setErr(null);
+    if (!desired || !tier) return setErr(t("billing.errPickPlan"));
+    setBusy(true);
+    const client = await getClient();
+    if (!client) { setBusy(false); return setErr(t("billing.backendError")); }
+    const res = await mintPlanPaymentLink(client, { orgId, plan: desired, period });
+    setBusy(false);
+    if (!res.ok) return setErr(res.error);
+    window.open(res.data.linkUrl, "_blank", "noopener,noreferrer");
+    setParams({ paid: "1" }, { replace: true });
+  };
+
+  return (
+    <Card padding="md" title={<div>
+      <div className="font-semibold text-fg-primary">{t("billing.payTitle")}</div>
+      <div className="text-[13px] text-fg-secondary mt-0.5">{t("billing.paySub")}</div>
+    </div>}>
+      {err && <Alert variant="danger">{err}</Alert>}
+      <div className="mt-4 border-t border-default pt-4 space-y-3">
+        <label className="block">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">{t("billing.moveToPlan")}</span>
+          <Select value={desired} onChange={e => setDesired(e.target.value)} className="mt-1" options={[{ value: "", label: t("billing.choosePlan") }, ...targets.map(pl => ({ value: pl, label: PLAN_LABEL[pl] ?? pl }))]} />
+        </label>
+        <label className="block">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-tertiary">Billing period</span>
+          <Select value={period} onChange={e => setPeriod(e.target.value as BillingPeriod)} className="mt-1" options={[{ value: "monthly", label: "Monthly" }, { value: "annual", label: "Annual" }]} />
+        </label>
+        {tier && (
+          <div className="rounded-lg bg-bg-secondary border border-default p-3 text-sm">
+            <div className="font-semibold text-fg-primary">{formatINR(gstInclusive(raw))} <span className="text-[11px] font-normal text-fg-tertiary">GST incl.</span></div>
+            <div className="text-[12px] text-fg-secondary mt-0.5">{period === "annual" ? "billed yearly" : "billed monthly"}</div>
+          </div>
+        )}
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => void mint()} loading={busy} disabled={!desired || !tier}>{busy ? t("billing.payPending") : t("billing.payNow", { amount: preview })}</Button>
+        </div>
+        <p className="text-[12px] text-fg-tertiary">{t("billing.payEnterprise")}</p>
+      </div>
     </Card>
   );
 }

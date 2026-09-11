@@ -140,6 +140,7 @@ const app = [
   read("src/app/queries/paymentQueries.ts"),
   read("scripts/supabase/201_signup_attempts.sql"),
   read("src/features/org/OrgBillingView.tsx"),
+  read("src/app/queries/planPaymentQueries.ts"),
   read("scripts/supabase/257_plan_payments.sql"),
 ].join("\n");
 const pkg = JSON.parse(read("package.json"));
@@ -447,6 +448,10 @@ const vite = read("vite.config.js");
   "invitePartnerOrg",
   "acceptProjectPartnerInvite",
   "SharedProjectsCard",
+  "mintPlanPaymentLink",
+  "PayUpgradeCard",
+  "PAY_PLAN_TARGETS",
+  "payVerifying",
 ].forEach(marker => add(`App marker: ${marker}`, app.includes(marker)));
 
 [
