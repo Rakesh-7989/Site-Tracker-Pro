@@ -3451,3 +3451,23 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
 **Gates (verified 2026-09-11)**: tsc clean · eslint clean (touched files) · smoke **477** · build clean (24.5s, pre-existing chunk warnings only) · vitest **145 files/1762 tests + 44 files/344 tests** (app/auth/db/i18n/lib/features/components/plugins/marketing/dpr/design) all green · e2e-mock **11/11**.
 
 **Live infra needed**: db:apply 257 + deploy cashfree-plan-link (new) + cashfree-webhook + razorpay-webhook (--no-verify-jwt kept). Enterprise/custom stay manual (set_org_plan superadmin); downgrades support-handled.
+
+---
+
+## Session — 2026-09-11 (2nd): Intelligence signals — cost-forecast/labour-metrics/stockout pipelines (PR #68 → squash `7d825e3`)
+
+**Shipped**:
+- **Migrations 263/264/265** (already applied live before this session; verified live at 44/44 green):
+  - **263** `scripts/supabase/263_intelligence_themes.sql` — SECURITY DEFINER `compute_cost_forecast` / `compute_labour_metrics` / `compute_material_stockout` (+ `compute_org_material_stockout`), result tables with SELECT-only RLS, pg_cron `compute-cost-forecast` (monthly `30 2 1 * *` → `compute_all_cost_forecasts`) + `compute-labour-metrics` (weekly `30 23 * * 0` → `compute_all_labour_metrics`).
+  - **264** `scripts/supabase/264_harden_intelligence_rpc_acl.sql` — cost/labour org-admin-gated (`has_org_tier(…,'admin')`); stockout member-gated (`can_read_project`); unknown project → `project not found` (cost/labour) / `insufficient privileges` (stockout).
+  - **265** `scripts/supabase/265_fix_material_stockout_direction.sql` — sig-identical re-create (live truth for stockout): stock = Σ(inward/return ⊕ qty, outward ⊖ qty); monthly = out14/14×30; lead = min non-rejected quote (item_name LIKE %material%, project-null-or-match) fallback 14; days = stock/monthly×30 (NULL when monthly 0); critical = days NOT NULL AND (days ≤ 14 OR days ≤ lead).
+- **Frontend wiring**: `src/app/queries/intelligenceQueries.ts` (list/compute RPC connectors + `stockoutLabel`); BudgetTab cost-forecast card (projected spend/overrun/confidence; Recompute for org-admin); LabourTab labour-metrics card (attendance%, overtime%, hours, cost; weekly Recompute for org-admin); MaterialsTab Stock-out risk card (critical rows, lead/days/unit). `database.types.ts` regenerated (**162 tables**).
+- **Regression suite**: `scripts/tests/test-intelligence-signals.mjs` (`npm run test:rls:intel`) — live DB, tx + SAVEPOINTs, seeded orgA/orgB fixtures, **44/44** INT-001..005: cost math (280/30/0.8 + idempotent re-run + computed_at), labour (0.6 / 0.2222 / 27h / ₹1200 / NULL output cols), stockout (cement/paint/nails/sand/steel incl. quote-lead + unit coalesce), ACL + RLS row-visibility + INSERT-denied, pg_cron registration.
+
+**Gates**: test:rls:intel **44/44** · eslint 0 errors · tsc clean · db:types `--check` fresh · check:columns no drift · build clean · vitest **251 files/3146 tests** · e2e-mock **11/11** · prod:smoke **3/3** (`https://www.sitetrackpro.in`).
+
+**PR lifecycle**: commit `5e2cbee` → push → PR #68 ⚠️ CONFLICTING (prod squash `ecb6c5e` isn't an ancestor; only AGENTS.md + database.types.ts header conflicted) → sync merge `0a0d920` (kept ours via `git checkout --ours`) → MERGEABLE/CLEAN → squash **`7d825e3`**. Trees verified identical (`4e0ac9da` for both `0a0d920` and `7d825e3`).
+
+**Vercel deploy mechanism (re-confirmed)**: production alias follows **main** pushes (prod squashes → Preview; main → Production). `0a0d920` production build recorded success but the alias still served the pre-intelligence bundle (`org-BByCqQ6k.js`, no `Stock-out risk`/`Cost forecast` markers) — recovery = this docs push retriggers the main production build.
+
+**Next (user/founder)**: visually confirm the Cost-forecast / Labour-metrics / Stock-out-risk cards on a project's Budget/Labour/Materials tabs on prod UI; then the standing backlog (Phase A email round-trip confirm in Gmail, DXF visual test, `*.sitetrackpro.in` wildcard CNAME, TrackingCAA optional, WhatsApp/Meta/Twilio/push provider keys, mobile `.aab`, AI provider keys).
