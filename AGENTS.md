@@ -1,3 +1,15 @@
+## Session — 2026-09-11: Paid-plans frontend shipped to prod (PR #67 → squash `ecb6c5e`, complete)
+
+**Shipped**: paid-plans frontend (`f996b92`) via PR #67 main→prod. `f996b92` + sync merge `997a9a3` → squash **`ecb6c5e`** on prod. PR #67 also carried the Razorpay migration (#64/#65 squash already on prod), lifecycle emails (mig 261/262 + EF), and guided-tour §2.1 — all confirmed in prod's tree.
+
+**Frontend (canonical)**: `src/app/queries/planPaymentQueries.ts` (`mintPlanPaymentLink`); `OrgBillingView.tsx` — `PayUpgradeCard` (basic/pro/business targets vs `ORDER`, monthly/annual BillingPeriod, GST-incl. preview `formatINR(gstInclusive(raw))`, enterprise→ticket hint, mint → `window.open(linkUrl)` + `?paid=1`), OrgBillingInner `verifying` state + recursive [6s,6s,8s] reload timer clearing `?paid=1`, info `Alert` `billing.payVerifying`; smoke.mjs: connector added to scan + 4 markers (`mintPlanPaymentLink`/`PayUpgradeCard`/`PAY_PLAN_TARGETS`/`payVerifying`) → **smoke 477** (baseline was 473; earlier "476" record was aspirational — markers were never committed until `f996b92`).
+
+**Gates (2026-09-11, merged tree)**: tsc clean · eslint clean · smoke 477 · build clean · vitest 189 files/2106 tests · e2e-mock 11/11 · prod CI success on `ecb6c5e` · combined commit status success (CI + Vercel) · live prod-smoke **3/3** on https://sitetrackpro.in · trees identical (`origin/prod` == `main` `997a9a3`).
+
+**Sync-merge note**: PR #67 was initially CONFLICTING (prod had advanced via squash #65/#66); resolved by the repo-standard `git merge origin/prod` into main — only `AGENTS.md` conflicted (top-of-file session record insert), resolved keeping HEAD's block. After merge: auto-merge of OrgBillingView/smoke was correct (5 expected PayUpgradeCard/payVerifying/mintPlanPaymentLink matches; 4 smoke markers at smoke.mjs:452-454).
+
+**Next**: verify the human flow on prod — Org → Billing → "Pay & upgrade instantly" (mint → Cashfree checkout in new tab → back with `?paid=1` → payVerifying banner → plan flips live); then standing backlog (DXF visual test, `*.sitetrackpro.in` wildcard CNAME, TrackingCAA, WhatsApp/Twilio/push/AI provider keys, mobile `.aab`).
+
 ## Session — 2026-09-10 (2nd): Lifecycle emails LIVE — runtime recipient bug fixed + real E2E send (complete)
 
 **Task**: finish the §2.4 lifecycle-email automation live E2E: root-cause the runtime null-recipient bug, redeploy, get a real Resend send + `lifecycle_emails` row `status: sent`.
