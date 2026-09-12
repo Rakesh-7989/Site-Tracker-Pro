@@ -3481,3 +3481,30 @@ instead of hardcoded English — mirroring `LoginScreenV3`:
   - `compute_material_stockout(...)` → `[]` — correct: 0 materials / 0 `inventory_transactions` → nothing at risk.
   - All runs are idempotent upserts (same as the pg_cron writes) → left in place, no cleanup needed.
 - **Conclusion**: compute path (RPC → result tables → UI cards) fully verified end-to-end against real prod data; the only unverified step remains visual (user/founder browsers the cards on prod UI). Note: candidate-query first tried nonexistent `labour_entries`/`daily_reports` — labour source tables per migration 263 are `attendance`/`labour_register`/`shift_roster` (no-op cost, recorded for future probes).
+
+---
+
+## Session — 2026-09-12: Web Push notifications — self-hosted VAPID + aes128gcm delivery (PR #69 → squash `2a6748f`, ✅ shipped)
+
+Web Push for the notify stack, fully self-hosted (no external push provider): **RFC 8292 VAPID JWT** signing + **RFC 8291 aes128gcm** encryption implemented in a pure Deno/Node-agnostic module; `notify-deliver` gains a `push` channel that fires when no email/whatsapp rules match.
+
+**Code (commit `21f9ff2`)**:
+- **Migration 266** `scripts/supabase/266_push_subscription.sql` (already applied live before this session; verified via DB query): `profiles.push_endpoint` (text) + `profiles.push_keys` (jsonb) columns, `save_push_subscription`/`clear_push_subscription` SECURITY DEFINER RPCs, `notification_rules_channel_check` widened to include `'push'`, `profiles_push_keys_shape_check` (p256dh/auth shape) constraint.
+- **`supabase/functions/_shared/webpush.ts`** (new): pure VAPID + aes128gcm crypto — ES256 JWT (imports ECDSA key from JWK; converts Deno's DER signature → raw r∥s, passes Node's raw through), ECDH shared-secret → PRK/IKM/CEK/NONCE HKDF chains per RFC 8291, AES-128-GCM record with 16-byte random salt + record-size/eph-pub header as AAD. No Deno.env / Node Buffer imports → vitest-importable.
+- **`notify-deliver/index.ts`**: `sendPush(endpoint, keys, payload)` reads `PUSH_VAPID_PUBLIC_KEY`/`PUSH_VAPID_PRIVATE_KEY`/`PUSH_VAPID_SUBJECT` (subject fallback `mailto:hello@sitetrackpro.in`), calls `buildPushRequest` from `_shared/webpush.ts`, POSTs with `Authorization: vapid t=…, k=…` + `Content-Encoding: aes128gcm` + TTL/Urgency. Invoked in the fallback path (push + sms when no email/whatsapp rule matched) gated on `wantsChannel(profile, kind, "push")` + `push_endpoint`/`push_keys` present.
+- **Keypair validation**: `.env.local` `PUSH_VAPID_PUBLIC_KEY` = 65 bytes (0x04 prefix) / `PUSH_VAPID_PRIVATE_KEY` = 32 bytes, base64url; public key **matches** the hardcoded `VAPID_PUBLIC_KEY` in `src/lib/platform/pwa.ts` byte-for-byte — no regen needed.
+- **Frontend**: `pwa.ts` subscribe/unsubscribe (PushManager + `navigator.serviceWorker.ready`, persists endpoint+keys via the RPCs, handles PermissionState impossible-silently + notification-permission denied); `public/sw.js` `push` + `notificationclick` (focus + `postMessage` + `window.focus`) handlers; `NotificationPreferencesView.tsx` push toggle row.
+- **`sync-function-secrets.mjs`**: `PUSH_VAPID_PUBLIC_KEY`/`PUSH_VAPID_PRIVATE_KEY`/`PUSH_VAPID_SUBJECT` added to whitelist.
+- **`tests/webpush.test.ts`** (new): **9/9 vitest green**.
+
+**Gates**: tsc clean (full project typecheck) · eslint clean (touched files) · vitest 9/9 webpush · db:types fresh.
+
+**Live deploy**: EF secrets synced (`node scripts/deploy/sync-function-secrets.mjs --only PUSH_VAPID_PUBLIC_KEY,PUSH_VAPID_PRIVATE_KEY,PUSH_VAPID_SUBJECT` → 3 secrets) · `node scripts/deploy/deploy-edge-functions.mjs notify-deliver` → **v49**; live function fetched and confirmed to bundle `webpush.ts` + `sendPush`/`buildPushRequest` (v49 = the push-capable build).
+
+**PR lifecycle**: commit `21f9ff2` → push → PR #69 → CI `test` failed at the **db:types freshness gate** (`database.types.ts` STALE vs live schema — 266 added profile columns) → `npm run db:types` (162 tables / 193 fns / 342 FKs), commit `32e3433` → checks green → PR ⚠️ **CONFLICTING** (prod squash `7d825e3` not an ancestor; ONLY `source/lib/supabase/database.types.ts` conflicted — both sides regenerated against live) → sync merge-back `991d75b` resolving with ours (`git checkout --ours`, i.e. the live-regenerated **superset** carrying both intelligence 263/264/265 + push 266) → MERGEABLE/**CLEAN** → ALL checks green (test 6m18s + 7m9s, coverage, e2e-mock, Vercel, Supabase Preview) → squash **`2a6748f`** onto prod. Prod CI green (6m10s).
+
+**Vercel deploy mechanism (re-confirmed 3rd time)**: the squash `2a6748f` got a **Preview** deployment only; production alias follows **main** pushes. Live verification instead: served `https://sitetrackpro.in/sw.js` (apex 308→`www.`) now contains the push handlers (`self.addEventListener("push")` / `notificationclick` + the RFC 8291 aes128gcm comment) → **push frontend is LIVE**. (Mild trap: the "Production"-environment GitHub deployments `21f9ff2`/`32e3433`/`991d75b` all target **preview** URLs — the label is misleading; the prod alias is the only truth.)
+
+**Local refs**: main=`991d75b`, local prod=`2a6748f` (tracks origin/prod), working tree clean.
+
+**Next (user/founder)**: manual round-trip test — Settings → Notifications → enable **Push** → trigger any notification (e.g. a message/DPR) → confirm the push arrives on the subscribed device; then the standing backlog (Phase A Gmail round-trip confirm, DXF visual test, `*.sitetrackpro.in` wildcard CNAME, TrackingCAA optional, WhatsApp/Meta/Twilio keys, mobile `.aab`, AI provider keys).
