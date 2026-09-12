@@ -37,6 +37,64 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Web Push (RFC 8291 aes128gcm delivery). The EF sends { title, body, link }
+// as the encrypted JSON body; the browser decrypts it and hands us the payload.
+self.addEventListener("push", (event) => {
+  let title = "SiteTrack Pro";
+  let body = "";
+  let link = "/";
+  try {
+    const data = event.data ? event.data.json() : null;
+    if (data) {
+      if (typeof data.title === "string" && data.title) title = data.title;
+      if (typeof data.body === "string") body = data.body;
+      if (typeof data.link === "string" && data.link) link = data.link;
+    }
+  } catch {
+    // Non-JSON payload: fall back to the default title.
+    try {
+      const text = event.data ? event.data.text() : "";
+      if (text) body = text.slice(0, 200);
+    } catch {
+      /* ignore */
+    }
+  }
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: "/icon-512.svg",
+      badge: "/icon-512.svg",
+      tag: "sitetrack-push",
+      data: { link },
+    }),
+  );
+});
+
+// Tap-through: navigate+focus an existing window, else open one.
+self.addEventListener("notificationclick", (event) => {
+  const link = event.notification.data && event.notification.data.link;
+  event.notification.close();
+  const url = typeof link === "string" && link ? new URL(link, self.location.origin).href : self.location.origin;
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of all) {
+        if ("focus" in client) {
+          try {
+            if (client.url.startsWith(url)) {
+              await client.navigate(url).catch(() => {});
+              return client.focus();
+            }
+          } catch {
+            /* continue scanning */
+          }
+        }
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
+});
+
 const isAsset = (url) => url.pathname.startsWith("/assets/");
 const isSameOrigin = (url) => url.origin === self.location.origin;
 
