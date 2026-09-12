@@ -3508,3 +3508,11 @@ Web Push for the notify stack, fully self-hosted (no external push provider): **
 **Local refs**: main=`991d75b`, local prod=`2a6748f` (tracks origin/prod), working tree clean.
 
 **Next (user/founder)**: manual round-trip test — Settings → Notifications → enable **Push** → trigger any notification (e.g. a message/DPR) → confirm the push arrives on the subscribed device; then the standing backlog (Phase A Gmail round-trip confirm, DXF visual test, `*.sitetrackpro.in` wildcard CNAME, TrackingCAA optional, WhatsApp/Meta/Twilio keys, mobile `.aab`, AI provider keys).
+
+### Session 2026-09-12 (2nd) — Standing-backlog audit: everything remaining is founder-gated (✅ verifier, no code)
+- **Push**: shipped + verified live this session (only browser round-trip visual left = founder).
+- **EF secrets live (via `supabase secrets list`)**: `GMAIL_SMTP_USER/PASS`, `NOTIFY_INTERNAL_TOKEN`, `PUSH_VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_WEBHOOK_SECRET`. **Not present**: WhatsApp/Meta (`WHATSAPP_PHONE_NUMBER_ID` etc. empty in `.env.local`), Twilio, any AI keys → provider accounts required.
+- **`notify_config` (DB)**: only `deliver_token` + `deliver_url` + `promoter_digest_cron_secret` → no WhatsApp/Twilio/AI live config.
+- **Resend domain `b035d4cd-…`**: DKIM/SPF (MX+TXT)/Receiving MX/Tracking CNAME all **verified**; only **TrackingCAA pending** — value `0 issue "amazon.com"` (DNS is on Vercel DNS → founder adds CAA for `links1.resend-dns.com`). Phase A sending already verified live (opened).
+- **DNS snapshot (Vercel DNS, ns1/ns2.vercel-dns.com)**: apex A `76.76.21.21`, www CNAME `cname.vercel-dns.com` (→ 66.33.60.67/76.76.21.98). `foo.sitetrackpro.in` resolves to `216.198.79.1/216.198.79.65` — **NOT Vercel** (registrar/parking default) → `*.sitetrackpro.in` wildcard CNAME is NOT set on Vercel DNS → B6 white-label subdomains remain founder-gated (add wildcard CNAME → `cname.vercel-dns.com` in Vercel domain DNS).
+- **Founder-only remainder (cannot be done from this machine)**: add wildcard CNAME + TrackingCAA in Vercel dashboard; obtain Meta WhatsApp phone-ID/permanent-token, Twilio creds, AI provider keys; run Gmail visual confirm; run DXF visual test; browser push round-trip; mobile `.aab` via Android Studio. No autonomous build/ship item remains unblocked.
