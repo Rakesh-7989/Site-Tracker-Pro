@@ -21,6 +21,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { captureEdgeException } from "../_shared/sentry.ts";
+import { buildPushRequest } from "../_shared/webpush.ts";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -51,7 +52,7 @@ interface UserProfile {
 interface NotifRule {
   id: string;
   trigger: string;
-  channel: "in_app" | "email" | "whatsapp";
+  channel: "in_app" | "email" | "whatsapp" | "push";
   enabled: boolean;
 }
 
@@ -83,7 +84,7 @@ async function fetchOrgRules(supa: ReturnType<typeof createClient>, orgId: strin
 async function fetchTemplate(
   supa: ReturnType<typeof createClient>,
   trigger: string,
-  channel: "email" | "whatsapp",
+  channel: "email" | "whatsapp" | "push",
   lang: string
 ): Promise<TemplateRow | null> {
   const { data } = await supa
@@ -218,20 +219,28 @@ async function sendSms(to: string, body: string): Promise<{ ok: boolean; sid?: s
   return res.ok ? { ok: true, sid: j.sid } : { ok: false, error: j.message };
 }
 
+// --- Web Push: direct VAPID (RFC 8292 VAPID JWT + RFC 8291 aes128gcm encryption).
+// Crypto lives in the pure shared module (vitest-importable); this EF only wires env + fetch.
+
 async function sendPush(
   endpoint: string,
   keys: { p256dh: string; auth: string },
   payload: { title: string; body: string; link?: string },
 ): Promise<{ ok: boolean; error?: string }> {
-  const relay = Deno.env.get("PUSH_RELAY_URL");
-  const relayToken = Deno.env.get("PUSH_RELAY_TOKEN");
-  if (!relay) return { ok: false, error: "PUSH_RELAY_URL not set" };
-  const res = await fetch(relay, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(relayToken ? { "Authorization": `Bearer ${relayToken}` } : {}) },
-    body: JSON.stringify({ endpoint, keys, payload }),
-  });
-  return res.ok ? { ok: true } : { ok: false, error: `relay-${res.status}` };
+  try {
+    const req = await buildPushRequest({
+      endpoint,
+      keys,
+      payload,
+      publicKey: Deno.env.get("PUSH_VAPID_PUBLIC_KEY") || "",
+      privateKey: Deno.env.get("PUSH_VAPID_PRIVATE_KEY") || "",
+      subject: Deno.env.get("PUSH_VAPID_SUBJECT") || "mailto:hello@sitetrackpro.in",
+    });
+    const res = await fetch(req.url, { method: req.method, headers: req.headers, body: req.body });
+    return res.ok ? { ok: true } : { ok: false, error: `push-${res.status}` };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error && e.message ? `push-failed-${e.message}` : "push-failed" };
+  }
 }
 
 // WhatsApp template send using shared client logic (inline to avoid deps)
