@@ -258,9 +258,9 @@ const vite = read("vite.config.js");
   // Cashfree integration
   "isCashfreeConfigured",
   "buildSubscriptionRequest",
-  // Self-serve plan purchase (Cashfree one-time links + activation)
+  // Self-serve plan purchase (Razorpay one-time links + activation)
   "plan_payments",
-  "cashfree-plan-link",
+  "razorpay-plan-link",
   // Feature-flag catalog system
   "OrgFeaturesView",
   "FEATURE_CATALOG",

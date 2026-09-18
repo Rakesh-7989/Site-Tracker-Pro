@@ -1,10 +1,10 @@
-// SiteTrack Pro — cashfree self-serve plan-payment link query layer.
+// SiteTrack Pro — razorpay self-serve plan-payment link query layer.
 //
-// Thin client over the `cashfree-plan-link` Edge Function. Cashfree keys NEVER
+// Thin client over the `razorpay-plan-link` Edge Function. Razorpay keys NEVER
 // reach the browser: the EF validates org/plan/period, creates a hosted link
-// via the Cashfree PG API and returns the shareable payment_session_url. The
-// webhook writes `plan_payments` + activates the plan; the paying page just
-// shows `?paid=1`.
+// via the Razorpay Payment Links API and returns the shareable link_url. The
+// razorpay-webhook settles `plan_payments` + activates the plan; the paying
+// page just shows `?paid=1`.
 
 import type { UResult } from "./upgradeQueries";
 
@@ -26,7 +26,7 @@ export interface MintPlanPaymentLinkArgs {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function mintPlanPaymentLink(client: any, args: MintPlanPaymentLinkArgs): Promise<UResult<PlanPaymentLink>> {
   try {
-    const { data, error } = await client.functions.invoke("cashfree-plan-link", {
+    const { data, error } = await client.functions.invoke("razorpay-plan-link", {
       body: { org_id: args.orgId, plan: args.plan, period: args.period },
     });
     if (error) {
