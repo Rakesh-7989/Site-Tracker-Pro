@@ -163,8 +163,8 @@ Each role family below includes: who they are → what they see → daily workfl
 **What they see** (gated by `org:members:manage`):
 - `/org` — Org Dashboard (plan info, members count, active projects)
 - `/org/members` — Invite/edit/remove team members, bulk CSV import
-- `/org/billing` — Subscription plan, Cashfree status, invoice history
-- `/org/integrations` — Connect Cashfree, Razorpay, WhatsApp, AI provider
+- `/org/billing` — Subscription plan, Razorpay payment status, invoice history
+- `/org/integrations` — Connect Razorpay, WhatsApp, AI provider
 - `/org/templates` — Save project/BOQ templates for reuse
 - `/org/approvals` — Configure approval chains per resource + threshold
 - `/org/notifications` — Set auto-alert rules (in-app / email / WhatsApp)
@@ -581,11 +581,11 @@ Each role family below includes: who they are → what they see → daily workfl
    - Edit role / Deactivate (soft-delete, keeps audit history)
 2. **Billing panel:**
    - `/org/billing` → Current plan info
-   - "Upgrade" → Opens Cashfree UPI mandate → Approve in UPI app
+   - "Upgrade" → Opens Razorpay payment link → Pay
    - View invoice history → Download receipts
 3. **Integrations panel:**
    - `/org/integrations` → Connect external services
-   - Cashfree (App ID + Secret) → Razorpay → WhatsApp Business → AI Provider
+   - Razorpay (Key ID + Secret) → WhatsApp Business → AI Provider
    - Each integration verified before "Active" badge
 4. **Templates panel:**
    - `/org/templates` → Save current BOQ as template

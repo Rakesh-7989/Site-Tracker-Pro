@@ -52,7 +52,7 @@ async function main() {
         name: slug,
         body: code,
         entrypoint_path: ep,
-        verify_jwt: !slug.includes('webhook') && slug !== 'cashfree-checkout' && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org',
+        verify_jwt: !slug.includes('webhook') && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org',
       });
       console.log(`OK v${result.version}`);
       ok++;

@@ -103,7 +103,7 @@ function redactUser(u: Record<string, unknown> | null): Record<string, unknown> 
   };
 }
 
-const SENSITIVE_KEYS = /aadhaar|aadhar|pan|gst|gstin|password|secret|token|private_key|cashfree|api_key/i;
+const SENSITIVE_KEYS = /aadhaar|aadhar|pan|gst|gstin|password|secret|token|private_key|api_key/i;
 const SENSITIVE_VALUE = /(?:^|[^A-Za-z])(\d{12}|[A-Z]{5}[0-9]{4}[A-Z]|\d{2}[A-Z]{5}\d{4}[A-Z]\d[Z]\d)(?:$|[^A-Za-z])/;
 
 function scrubPII(obj: unknown, depth = 0): unknown {

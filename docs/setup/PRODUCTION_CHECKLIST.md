@@ -54,7 +54,7 @@ Last reviewed: **2026-06-30**.
 
 ### Payments
 - [ ] Razorpay test → live key swap with webhook signature verification.
-- [ ] Cashfree subscription endpoint wired for self-serve onboarding.
+- [x] Razorpay payment-link endpoint wired for self-serve onboarding.
 - [ ] Idempotent payment IDs to prevent double-charge.
 - [ ] Failed-payment retry + dunning flow.
 

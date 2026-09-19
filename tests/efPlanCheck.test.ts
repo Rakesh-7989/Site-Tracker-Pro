@@ -6,8 +6,8 @@
 //   2. source-contract-checks requirePlanFeature so a future edit can't
 //      silently flip any deny path back to an allow.
 //
-// The 4 EF consumers (cashfree-subscription, gstn-einvoice, whatsapp-send,
-// whatsapp_dpr_send) are also source-contract-checked for the 402 handling.
+// The 3 EF consumers (gstn-einvoice, whatsapp-send, whatsapp_dpr_send) are
+// also source-contract-checked for the 402 handling.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -18,7 +18,6 @@ import { capsAllow } from "../supabase/functions/_shared/planCheck";
 const src = readFileSync(join(process.cwd(), "supabase", "functions", "_shared", "planCheck.ts"), "utf8");
 
 const EF_FILES = [
-  ["cashfree-subscription", "cashfree-subscription/index.ts"],
   ["gstn-einvoice", "gstn-einvoice/index.ts"],
   ["whatsapp-send", "whatsapp-send/index.ts"],
   ["whatsapp_dpr_send", "whatsapp_dpr_send/index.ts"],

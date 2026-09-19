@@ -124,7 +124,7 @@ async function deployOne(slug, files) {
   const metadata = {
     name: slug,
     entrypoint_path: `index.ts`,
-    verify_jwt: !slug.includes('webhook') && slug !== 'cashfree-checkout' && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org',
+    verify_jwt: !slug.includes('webhook') && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org',
   };
 
   const boundary = '----boundary' + Math.random().toString(36).slice(2);

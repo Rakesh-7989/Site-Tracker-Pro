@@ -164,12 +164,11 @@ When every box is ticked, **you are live.** Onboard your first design partner.
 | Row isolation (RLS) | Express `SET app.tenant_id` | Supabase RLS policies |
 | Realtime | (none / polling) | Supabase realtime channels |
 | Daily 6 PM reports (cron) | node-cron in Express | Supabase pg_cron + Edge Function ⏭️ |
-| Payment webhooks | Express route | Supabase Edge Function (Cashfree) ⏭️ |
+| Payment webhooks | Express route | Supabase Edge Function (Razorpay) |
 
-The ⏭️ items are the only server-side pieces still to wire — they go in
-`supabase/functions/` (skeletons in `docs/setup/CASHFREE_ONBOARDING.md`). Until
-then the app is fully usable; those just automate the 6 PM DPR send and
-subscription webhooks.
+The remaining ⏭️ item (6 PM DPR send) is the last server-side piece still to
+wire — it lives in `supabase/functions/` alongside the already-live payment
+webhooks (Razorpay). Until then the app is fully usable.
 
 ---
 
@@ -204,7 +203,7 @@ is genuinely ₹0 until you have paying customers.
 
 - `docs/setup/HRMS_DEPLOYMENT_STUDY.md` — why this architecture (vs HRMS's)
 - `docs/setup/CONNECT_SUPABASE.md` — the database half, in detail
-- `docs/setup/CASHFREE_ONBOARDING.md` — payments + Edge Functions
+- `supabase/functions/README.md` — payments + Edge Functions
 - `docs/archive/WHATSAPP_BUSINESS_API.md` — WhatsApp (start the 8-week clock now)
 - `docs/setup/GOLIVE.md` — the original go-live checklist
 - `archive/marketing/README.md` — marketing-site-specific deploy notes

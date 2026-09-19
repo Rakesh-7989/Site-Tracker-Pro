@@ -2,7 +2,7 @@
 //
 // Firm owner fills a form → this EF creates the auth user, creates the org,
 // assigns them as orgadmin, and sends a welcome email. No superadmin approval
-// needed. Paid-plan registrations go through Cashfree checkout first.
+// needed. Paid-plan registrations go through the Razorpay checkout first.
 //
 // Deploy: `node scripts/deploy-edge-functions.mjs` (needs `supabase login`).
 

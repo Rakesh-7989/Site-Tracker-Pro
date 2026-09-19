@@ -1,4 +1,4 @@
-// Shared Razorpay helpers — mirror of _shared/cashfree.ts for the Deno runtime.
+// Shared Razorpay helpers for the Deno runtime.
 //
 // The Payment Links + Webhook EFs share three pieces that must stay in sync:
 // the API base, the Basic auth header, and the HMAC-SHA256 webhook signature
@@ -27,8 +27,7 @@ export function bytesToHex(buf: ArrayBuffer): string {
  * digest in the `X-Razorpay-Signature` header. The secret is
  * `RAZORPAY_WEBHOOK_SECRET` with a fallback to the API `RAZORPAY_KEY_SECRET`.
  *
- * Uses Web Crypto — available in both browsers and the Deno runtime (same
- * approach as `verifyWebhookSignature` in _shared/cashfree.ts).
+ * Uses Web Crypto — available in both browsers and the Deno runtime.
  */
 export async function verifyRazorpaySignature({
   rawBody,

@@ -245,7 +245,7 @@ function footerLabel(slide, color = C.ink400) {
     ], { x: x + 0.3, y: 5.1, w: w - 0.6, h: 0.4, fontFace: B, fontSize: 13 });
   });
 
-  s.addText("Cashfree UPI AutoPay billing. ARPU ₹3,000 at scale. LTV/CAC target 4×. Gross margin 88%.", {
+  s.addText("Razorpay payment links (one-off UPI / card / netbanking). ARPU ₹3,000 at scale. LTV/CAC target 4×. Gross margin 88%.", {
     x: 0.6, y: 6.55, w: 12, h: 0.35,
     fontFace: B, fontSize: 13, italic: true, color: C.ink500,
   });
@@ -277,7 +277,7 @@ function footerLabel(slide, color = C.ink400) {
   // Build narrative below
   const narrative = [
     "18 build sessions · 7 production-ready libs · 9 Org Admin panels · 3-layer feature catalog",
-    "Supabase schema + RLS Phase 1 deployed-ready · Cashfree subscription billing scaffolded",
+    "Supabase schema + RLS Phase 1 deployed-ready · Razorpay payment-link billing wired",
     "RLS test matrix: 42+ assertions across 6 roles · audit_log_v2 is provably append-only",
     "Onboarding wizard reduces time-to-value: 2 hours → 15 minutes",
   ];
@@ -321,7 +321,7 @@ function footerLabel(slide, color = C.ink400) {
     ["RA bills + retention math", "✓ Built-in",   "Add-on",            "Partial",      "✗"],
     ["RERA + GST auto-validate",  "✓ Live API",   "✗",                 "✗",            "✗"],
     ["WhatsApp Business native",  "✓ Auto-DPR",   "✗",                 "Manual",       "✗"],
-    ["UPI AutoPay subscription",  "✓ Cashfree",   "Card only",         "Card only",    "Card only"],
+    ["Plan payments (UPI / card)","✓ Razorpay links","Card only",     "Card only",    "Card only"],
     ["3-layer feature toggles",   "✓ 37 features","✗",                 "✗",            "✗"],
     ["Postgres RLS at DB layer",  "✓ Enforced",   "App-layer",         "App-layer",    "App-layer"],
     ["Starting price",            "₹999/org/mo",  "₹31k/user/mo",      "₹1.5k/user/mo","₹2k/user/mo"],

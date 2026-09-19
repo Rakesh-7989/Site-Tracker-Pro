@@ -51,7 +51,7 @@ The product is a module platform: each organisation enables the modules it needs
 - **Email delivery** — transactional + nightly promoter digests via Resend (`hello@sitetrackpro.in`); GoTrue SMTP confirmation/otp/reset emails.
 
 ### Billing & payments
-- 14-day trial on self-service signup ([register](https://sitetrackpro.in/register)) → plan upgrade via **Cashfree** subscription; one-off invoice payments via **Razorpay** payment links; GST invoicing through the GSTN e-invoice path.
+- 14-day trial on self-service signup ([register](https://sitetrackpro.in/register)) → plan upgrades + one-off invoice payments via **Razorpay** payment links; GST invoicing through the GSTN e-invoice path.
 
 ### Marketing site
 A public site (site data in `src/features/marketing/site/`) mirrors every shipped capability with honest copy — price cards match `src/auth/plans.ts`, roles match reality, and only shipped functionality is described. Landing pages for Solutions and a Hyderabad local page (`/construction-software-hyderabad`) are included, with SPA-safe SEO (titles/OG/JSON-LD) and `/sitemap.xml`, `/robots.txt`, `/llms.txt`.

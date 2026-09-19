@@ -45,7 +45,7 @@ async function deployOne(slug) {
     const result = await api('POST', `/${slug}/deploy`, {
       body: code,
       entrypoint_path: ep,
-      verify_jwt: !slug.includes('webhook') && !slug.includes('signup') && slug !== 'cashfree-checkout' && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite',
+      verify_jwt: !slug.includes('webhook') && !slug.includes('signup') && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite',
       import_map_path: null,
     });
     console.log(`✅ v${result.version}`);

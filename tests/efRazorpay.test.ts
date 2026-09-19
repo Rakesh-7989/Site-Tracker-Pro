@@ -24,7 +24,7 @@ describe("razorpay-payment-link — create payment link (mig 253)", () => {
     expect(razorpayShared).toContain("https://api.razorpay.com/v1");
     expect(paymentLink).toContain("RAZORPAY_KEY_ID");
     expect(paymentLink).toContain("RAZORPAY_KEY_SECRET");
-    expect(paymentLink).toContain("Authorization: `Basic ${auth}`");
+    expect(paymentLink).toContain("Authorization: `Basic ${credentials}`");
   });
 
   it("carries sitetrack_invoice_id in the payment-link notes", () => {

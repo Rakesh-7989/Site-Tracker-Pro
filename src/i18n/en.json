@@ -509,7 +509,7 @@
     "noHistory": "No billing history yet.",
     "backendError": "Backend not configured.",
     "payTitle": "Pay & upgrade instantly",
-    "paySub": "Pay by UPI, card or netbanking via Cashfree. Your plan activates automatically.",
+    "paySub": "Pay by UPI, card or netbanking via Razorpay. Your plan activates automatically.",
     "payNow": "Pay {amount}",
     "payPending": "Payment link opened in a new tab. Complete the payment there — your plan activates automatically within a minute.",
     "payVerifying": "Payment received — verifying and activating your plan…",

@@ -59,7 +59,7 @@ export async function updateOrg(
     // superadmin-gated server-side. Echoing the CURRENT values is a no-op
     // the trigger allows; a real change from a non-superadmin fails here
     // with 'organization_plan: ... require superadmin'. Plan upgrades must
-    // flow through the subscription lifecycle (Cashfree / superadmin).
+    // flow through the subscription lifecycle (Razorpay / superadmin).
     if (plan) patch.plan = plan;
     if (billingPeriod !== undefined && billingPeriod !== null) patch.billing_period = billingPeriod;
     if (orgType !== undefined) patch.org_type = orgType; // null clears back to segment-derived

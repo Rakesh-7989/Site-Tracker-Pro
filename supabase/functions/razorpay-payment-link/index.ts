@@ -151,7 +151,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
-  const auth = base64Credentials(keyId, secret);
+  const credentials = base64Credentials(keyId, secret);
 
   // "get" mode: return the existing link's live short_url + status from Razorpay
   // (no new link created). Falls back to creating one if none exists yet.
@@ -161,7 +161,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       try {
         const res = await fetch(`${RAZORPAY_BASE}/payment_links/${existingLinkId}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },
+          headers: { "Content-Type": "application/json", Authorization: `Basic ${credentials}` },
         });
         if (res.ok) {
           const pl = await res.json() as RazorpayPaymentLink;
@@ -221,7 +221,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${auth}`,
+        Authorization: `Basic ${credentials}`,
       },
       body: JSON.stringify(razorpayPayload),
     });

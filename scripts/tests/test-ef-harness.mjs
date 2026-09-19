@@ -69,25 +69,12 @@ async function signIn(email, password) {
 
 /* eslint-enable no-unused-vars */
 
-// ── Test: Static analysis of EF source files ────────────────────────────────
-
-async function testSignatureLogic() {
-  const src = readFileSync(join(root, "supabase/functions/_shared/cashfree.ts"), "utf8");
-  ok("cashfree.ts exports verifyWebhookSignature", src.includes("export async function verifyWebhookSignature"));
-  ok("cashfree.ts exports applyWebhookEvent", src.includes("export function applyWebhookEvent"));
-  ok("cashfree.ts exports mapCashfreeStatus", src.includes("export function mapCashfreeStatus"));
-  ok("cashfree.ts exports buildSubscriptionRequest", src.includes("export function buildSubscriptionRequest"));
-}
-
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
   if (!SUPABASE_URL) {
     console.log("⚠ SUPABASE_URL not set — skipping live EF tests. Set .env.local or env vars.\n");
   }
-
-  console.log("\n── EF Static Analysis ──\n");
-  await testSignatureLogic();
 
   if (SUPABASE_URL && ANON_KEY) {
     console.log("\n── EF Live Auth Tests (requires test users in DB) ──\n");

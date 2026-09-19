@@ -12,10 +12,10 @@ describe("getOrgOverview", () => {
   it("maps overview + nested subscription", async () => {
     const r = await getOrgOverview(rpcClient({ data: {
       name: "Sri Builders", slug: "sri", plan: "pro", projectCount: 4, memberCount: 7, createdAt: "2026-01-01",
-      sub: { provider: "cashfree", status: "active", plan: "pro", currentPeriodEnd: "2026-12-31", trialEndsAt: null },
+      sub: { provider: "razorpay", status: "active", plan: "pro", currentPeriodEnd: "2026-12-31", trialEndsAt: null },
     }, error: null }), "org1");
     expect(r.ok && r.data).toMatchObject({ name: "Sri Builders", plan: "pro", projectCount: 4, memberCount: 7 });
-    expect(r.ok && r.data?.sub).toMatchObject({ provider: "cashfree", status: "active", currentPeriodEnd: "2026-12-31", trialEndsAt: null });
+    expect(r.ok && r.data?.sub).toMatchObject({ provider: "razorpay", status: "active", currentPeriodEnd: "2026-12-31", trialEndsAt: null });
   });
 
   it("null data (not an org admin) returns ok with null", async () => {

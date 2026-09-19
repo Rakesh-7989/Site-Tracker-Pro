@@ -75,7 +75,7 @@ Pair this with:
 
 | Min | Activity | Founder note |
 |-----|----------|--------------|
-| 80–84 | Confirm Cashfree invoice for INR 35,398.82 (incl. 18% GST) will arrive within 24h. Demonstrate billing UI. | Pull up `https://app.cashfree.com` to show the actual invoice flow. |
+| 80–84 | Confirm Razorpay invoice for INR 35,398.82 (incl. 18% GST) will arrive within 24h. Demonstrate billing UI. | Walk through the Razorpay payment-link flow on Org → Billing. |
 | 84–87 | Schedule first weekly check-in for 1 week from today, same time. | Get it on both calendars before leaving. |
 | 87–90 | Thank the Builder POC + the supervisor + the promoter (if joining). Hand over founder business card with WhatsApp number on the back highlighted. | This is the lasting impression — make it warm not transactional. |
 
@@ -87,7 +87,7 @@ Pair this with:
 | Update with pilot status: ACTIVATED | Founder | [ ] |
 | Add row to <builder_name>.md` capturing: contact info, supervisor phone, promoter phone, project list, RERA #, SLO start date | Founder | [ ] |
 | Trigger seed-first-org for this Builder with their actual org name: `node pilot-org seeder (not present) --name "<Firm Name>" --slug "<firm-slug>"` (Sprint 2 deliverable) | Founder | [ ] |
-| Send Cashfree invoice via dashboard | Founder | [ ] |
+| Send Razorpay payment link / invoice via dashboard | Founder | [ ] |
 
 ## Post-activation week 1 daily check-ins
 
@@ -115,7 +115,7 @@ After Day 7: switch to weekly check-ins (founder rule, not contract).
 | Supervisor speaks neither Telugu nor Hindi | Switch to English. Confirm with Builder — different supervisor for the pilot? |
 | Promoter declines WhatsApp digest | Pivot: register the GM Projects's WhatsApp instead. Promoter can opt in later. |
 | Builder asks for a feature that's frozen | "We hide it because we haven't shipped the real version. Sprint 4 (Day 46–60). You're a design partner — your feedback shapes the priority." Be honest. |
-| Cashfree invoice fails to deliver | Send PI via email manually. Cashfree dashboard sometimes delays sandbox invoices. |
+| Razorpay payment link not received | Send PI via email manually and re-issue the link from Org → Billing. |
 | Supervisor's phone doesn't support `mediaDevices.getUserMedia` (very old Android) | Document it. Sprint 2 deliverable: low-end-device fallback (text-only DPR with attached photo via WhatsApp Web). |
 | Builder asks to back out at activation | Honour `PILOT_AGREEMENT_v1.md` clause 8: 30-day no-fault termination, refund pro-rated. Don't try to sell harder. |
 
@@ -130,7 +130,7 @@ After Day 7: switch to weekly check-ins (founder rule, not contract).
 - One scheduled weekly check-in completed by founder.
 - `VERIFIED_GAPS_MATRIX.md` updated with what this Builder said about
   Powerplay (per Group B interview Q5).
-- Cashfree invoice marked paid OR escalated.
+- Razorpay invoice marked paid OR escalated.
 
 If any of these fail: the founder visits the site personally on Day
 15. Don't fix it over WhatsApp.
