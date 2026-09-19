@@ -7,7 +7,7 @@
 // The plan `id` must stay one of basic/pro/business/custom (matches the
 // signup_requests + plans table). Prices MUST match migration
 // 93_plans_pricing_2026.sql (the DB plans table — the charge truth used by
-// cashfree-checkout): Basic ₹7,999 / Pro ₹19,999 / Business ₹43,333.
+// razorpay-plan-link): Basic ₹7,999 / Pro ₹19,999 / Business ₹43,333.
 
 import type { SignupPlan } from "@/app/queries/signupQueries";
 

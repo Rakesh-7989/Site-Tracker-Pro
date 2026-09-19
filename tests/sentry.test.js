@@ -1,4 +1,4 @@
-// SiteTrack Pro — Sentry lib unit tests.
+// SiteTrack Pro ï¿½ Sentry lib unit tests.
 //
 // We test only the pure-function PII scrubber + user redaction here. The
 // initSentry() lazy-load + Sentry SDK integration is exercised by an
@@ -9,7 +9,7 @@ import { _internal } from "../src/lib/integrations/sentry";
 
 const { scrubPII, redactUser } = _internal;
 
-describe("sentry — scrubPII", () => {
+describe("sentry ï¿½ scrubPII", () => {
   it("returns primitives unchanged", () => {
     expect(scrubPII(null)).toBe(null);
     expect(scrubPII(7)).toBe(7);
@@ -34,9 +34,9 @@ describe("sentry — scrubPII", () => {
     expect(out.normal).toBe("ok");
   });
 
-  it("redacts cashfree_secret nested keys", () => {
-    const out = scrubPII({ payload: { cashfree_secret: "abc", other: "ok" } });
-    expect(out.payload.cashfree_secret).toBe("[redacted]");
+  it("redacts [gateway]_secret nested keys", () => {
+    const out = scrubPII({ payload: { webhook_secret: "abc", other: "ok" } });
+    expect(out.payload.webhook_secret).toBe("[redacted]");
     expect(out.payload.other).toBe("ok");
   });
 
@@ -61,14 +61,14 @@ describe("sentry — scrubPII", () => {
   });
 
   it("preserves field names that LOOK sensitive but aren't (case-insensitive but specific)", () => {
-    // 'permission' has 'mission' — not sensitive.
+    // 'permission' has 'mission' ï¿½ not sensitive.
     const out = scrubPII({ permission: "ok", description: "ok" });
     expect(out.permission).toBe("ok");
     expect(out.description).toBe("ok");
   });
 });
 
-describe("sentry — redactUser", () => {
+describe("sentry ï¿½ redactUser", () => {
   it("returns null for null input", () => {
     expect(redactUser(null)).toBe(null);
   });

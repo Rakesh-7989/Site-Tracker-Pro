@@ -223,7 +223,7 @@ Before letting anyone else sign up, run through this checklist:
       — still all PASS.
 
 When every box is ticked, you're production-ready. See
-`docs/setup/CASHFREE_ONBOARDING.md` to wire payments next.
+`supabase/functions/README.md` to wire payments (Razorpay) next.
 
 ---
 
@@ -238,9 +238,9 @@ A: Yes — each Supabase project is a separate database. Run all 5 SQL files
 on every environment.
 
 **Q: Where do Edge Functions go?**
-A: `supabase/functions/cashfree-subscription/` and
-`supabase/functions/cashfree-webhook/` — see `docs/setup/CASHFREE_ONBOARDING.md`
-for skeletons. Deploy with `supabase functions deploy <name>`.
+A: `supabase/functions/razorpay-plan-link/` and
+`supabase/functions/razorpay-webhook/` — see `supabase/functions/README.md`
+for the payment functions. Deploy with `supabase functions deploy <name>`.
 
 **Q: What if the connection check passes but the dev server still shows
 localStorage mode?**
@@ -253,6 +253,6 @@ changes.
 ## Related runbooks
 
 - `docs/architecture/PRODUCTION_RLS.md` — RLS verification + failure response
-- `docs/setup/CASHFREE_ONBOARDING.md` — payments wire-up after database is live
+- `supabase/functions/README.md` — payments wire-up (Razorpay) after database is live
 - `docs/setup/GOLIVE.md` — end-to-end go-live checklist
 - `docs/archive/BACKEND_PLAN.md` — original schema design rationale

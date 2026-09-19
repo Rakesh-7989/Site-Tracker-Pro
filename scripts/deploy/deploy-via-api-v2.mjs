@@ -44,7 +44,7 @@ function makeForm(slug, filePath, ep) {
   const metadata = {
     name: slug,
     entrypoint_path: ep,
-    verify_jwt: !slug.includes('webhook') && slug !== 'cashfree-checkout' && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org',
+    verify_jwt: !slug.includes('webhook') && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org',
   };
   form.append('metadata', JSON.stringify(metadata));
   form.append('file', readFileSync(filePath), {

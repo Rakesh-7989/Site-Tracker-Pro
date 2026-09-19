@@ -25,7 +25,7 @@ Read `docs/qa/TESTING_STRATEGY.md` for full R&D. Here is the cheat sheet:
 **Edge Functions (Deno/Supabase):**
 | What To Test | Method | Tool |
 |-------------|--------|------|
-| Shared business logic | Browser mirror → vitest OR deno test | `tests/cashfree.test.js` |
+| Shared business logic | Browser mirror → vitest OR deno test | `tests/dpr/efInternals.test.ts` |
 | Auth/gating (JWT, plan checks) | HTTP test harness (script) | Node.js + fetch |
 | Webhook signature | Unit test (pure function) | vitest mirror |
 | DB upsert / idempotency | HTTP harness with ROLLBACK | Node.js + pg |

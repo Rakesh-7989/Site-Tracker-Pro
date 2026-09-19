@@ -67,11 +67,11 @@ Source: `src/app/config/nav-config.ts`. Nav items appear only if the user holds 
 |---|---|---|
 | `/org` | Org Home: read-only overview (plan, project + member counts, quick links). RPC `org_admin_overview` (mig 77). + DPDP danger-zone delete. | `org:members:manage` |
 | `/org/members` | HRMS Phase B. List active members, lookup existing user by email + add as member, change org-tier role, assign/remove custom (per-org) roles, deactivate/reactivate. Invite brand-new email via `invite_org_member` EF. | `org:members:manage` |
-| `/org/billing` | Read-only plan + seat usage + subscription snapshot. Actual changes go to Cashfree portal. | `org:billing:manage` |
+| `/org/billing` | Read-only plan + seat usage + subscription snapshot. Pay & upgrade via Razorpay payment links. | `org:billing:manage` |
 | `/org/templates` | Org-shared templates. Kinds: project / boq / checklist. Table `templates`. | `org:templates:manage` |
 | `/org/approvals` | Approval chains: one chain per resource (expense / po / ra_bill / change_order / invoice / drawing_release). Each is ordered rungs `(threshold_inr, approver_role)`. | `org:approvals:manage` |
 | `/org/notifications` | "When `<trigger>` alert `<channel>`" rules. Table `notification_rules` (mig 78). | `org:notifications:manage` |
-| `/org/integrations` | Connect Cashfree, GSTN, WhatsApp, RERA portals. Secrets write-only from UI; status booleans only. RPC `org_integrations_status`. | `org:integrations:manage` |
+| `/org/integrations` | Connect GSTN, WhatsApp, RERA portals + Razorpay. Secrets write-only from UI; status booleans only. RPC `org_integrations_status`. | `org:integrations:manage` |
 
 ### 2.6 Platform — superadmin
 
@@ -134,7 +134,7 @@ Source: `src/features/project/tabs-config.ts` + 28 real `tabs/*.tsx` (no placeho
 |---|---|---|---|
 | Org Home | `org:members:manage` | Read-only | RPC `org_admin_overview` |
 | Members | `org:members:manage` | Same. Sub-actions: `addOrgMember`, `setOrgTierRole`, `deactivateMember`, `reactivateMember`, `assignCustomRole`, `inviteNewOrgMember` (EF) | `org_members`, `org_member_roles`, RPCs, `invite_org_member` EF |
-| Billing | `org:billing:manage` | Read-only here; actual changes go to Cashfree portal | RPC `org_admin_overview` |
+| Billing | `org:billing:manage` | Read-only here; pay & upgrade via Razorpay payment links | RPC `org_admin_overview` |
 | Templates | `org:templates:manage` | Same. Kinds: project / boq / checklist | `templates` table |
 | Approvals | `org:approvals:manage` | Same. Resources: expense, po, ra_bill, change_order, invoice, drawing_release | `approval_chains` table |
 | Notifications | `org:notifications:manage` | Same. Trigger × channel rules | `notification_rules` table |
@@ -176,7 +176,7 @@ Pure-JS pipeline: `extractExif` → `validateGeotag` (Hyderabad bbox) → `gener
 IndexedDB-backed durable queue for DPR sends from basement parking on 2G. `enqueue` persists payload → `drain` walks pending items with exponential backoff → items >7 days old that still fail are GC'd. DB name: `sitetrack-offline-v1`.
 
 ### Audit log (`/activity` + `/audit`)
-Both render `OrgActivityView` reading `list_org_activity` RPC. Action tones colour-coded (CREATE/APPROVE green, DELETE/REJECT red, IMPERSONATE/PAYMENT amber). RLS scopes rows to the active org. EFs like `cashfree-webhook` write audit rows via SECURITY DEFINER RPCs.
+Both render `OrgActivityView` reading `list_org_activity` RPC. Action tones colour-coded (CREATE/APPROVE green, DELETE/REJECT red, IMPERSONATE/PAYMENT amber). RLS scopes rows to the active org. EFs like `razorpay-webhook` write audit rows via SECURITY DEFINER RPCs.
 
 ### RBAC (the most mature in the market)
 Three-tier composition resolved in `src/auth/RoleResolver.ts`:
@@ -215,10 +215,10 @@ SECURITY DEFINER RPC `delete_organization(p_org uuid)` gated on `is_superadmin()
 | `tg-rera-submit` | **Stub.** Telangana RERA filing scaffold (no working scraper). |
 | `ka-rera-submit` | **Stub.** Karnataka RERA filing, mirrors TG pattern; gated by `KA_RERA_SCRAPER_ENABLED` env. |
 | `mh-rera-submit` | **Stub.** Maharashtra RERA quarterly filing. |
-| `cashfree-subscription` | Browser POST `{org_id, plan, return_url}` — reads org's Cashfree creds from `org_integrations`, creates subscription session, upserts pending row to `subscriptions`. |
-| `cashfree-webhook` | Cashfree POSTs lifecycle events (mandate signed, payment succeeded/failed, subscription cancelled) — HMAC-verified, upserts `subscriptions`, writes audit row. Deployed `--no-verify-jwt`. |
+| `razorpay-plan-link` | Browser POST `{org_id, plan, period}` — org-admin JWT gate, upgrade/renew-only (no downgrade), price from `plans`, hosts a Razorpay payment link, upserts pending row to `plan_payments`. |
+| `razorpay-webhook` | Razorpay POSTs payment events — signature-verified, settles `plan_payments` + activates the org plan, writes `billing_history` + audit row + admin email. Deployed `--no-verify-jwt`. |
 
-Shared helpers: `_shared/auth.ts` (JWT + role checks), `_shared/budget.ts` (zero-spend budget guard), `_shared/cashfree.ts` (HMAC + REST helpers), `_shared/digest_renderer.ts` (pure digest payload), `_shared/retry.ts` (exponential backoff).
+Shared helpers: `_shared/auth.ts` (JWT + role checks), `_shared/budget.ts` (zero-spend budget guard), `_shared/digest_renderer.ts` (pure digest payload), `_shared/retry.ts` (exponential backoff).
 
 ---
 
@@ -260,6 +260,6 @@ From `src/lib/integrations/featureFlags.ts#STUB_VIEWS` + `scripts/supabase/49_fe
 
 5. **Plan check constraint** allows six values (`basic`, `pro`, `business`, `custom`, `free`, `enterprise`) while the public picker only offers three (`basic/pro/business`). Either tighten the constraint or surface custom/enterprise as a "Contact us" CTA.
 
-6. **Cashfree subscription flow is live in code** but requires `org_integrations` Cashfree creds. The only path to setting creds is via `/org/integrations` AFTER signup approval. For Sprint 1 offline-paying pilots this is fine; for self-serve later, dedicated billing-onboarding is needed.
+6. **Paid-plan upgrades go through Razorpay payment links** (`razorpay-plan-link` → hosted link → `razorpay-webhook` settle → plan activates). Requires live `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`; downgrades + enterprise/custom stay manual (superadmin `set_org_plan`).
 
 7. **Read-only viewers (clients, promoter) won't see BOQ / Estimate / RFI / Change Orders / Compliance tabs at all** because each tab gates on a write capability (`boq:edit`, etc). Either introduce paired `*:view` capabilities or soften the gates so stakeholders can read.

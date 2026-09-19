@@ -36,7 +36,7 @@ export const PRIVACY: LegalSection[] = [
     "Data is encrypted in transit (HTTPS) and at rest. Each organisation's data is isolated by database row-level security so one tenant cannot access another's records. Access is role-based and least-privilege.",
   ] },
   { heading: "6. Sub-processors", body: [
-    "We rely on trusted infrastructure providers who process data on our behalf: Supabase (database, authentication, hosting), Vercel (application hosting), and Resend (transactional email). Payment processing, where enabled, is handled by your chosen gateway (e.g. Razorpay/Cashfree). Each is bound by its own data-protection terms.",
+    "We rely on trusted infrastructure providers who process data on our behalf: Supabase (database, authentication, hosting), Vercel (application hosting), and Resend (transactional email). Payment processing, where enabled, is handled by your chosen gateway (e.g. Razorpay). Each is bound by its own data-protection terms.",
   ] },
   { heading: "7. Data retention", body: [
     "We retain your data for as long as your account is active. After account closure we delete or anonymise personal data within a reasonable period, except where we must retain certain records to meet legal or accounting obligations.",

@@ -30,7 +30,7 @@ describe("Edge Function CORS echo contract", () => {
       const usesSharedHelpers = src.includes("_shared/cors") || src.includes("_shared/auth");
       const computesFromRequest =
         /corsHeaders\(\s*req/.test(src) ||       // shared helper called with req
-        /corsHeadersFor\(/.test(src) ||          // local echo helper (cashfree-subscription)
+        /corsHeadersFor\(/.test(src) ||          // local echo helper
         /CORS\s*=\s*\(\)/.test(src);             // closure over captured REQ
       if (!usesSharedHelpers && !computesFromRequest) offenders.push(name);
     }

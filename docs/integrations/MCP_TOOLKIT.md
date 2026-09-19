@@ -5,7 +5,7 @@ and exactly how each maps to a real workflow in this codebase.
 
 SiteTrack's stack: **React 19 + Vite** (frontend) · **Supabase** (Postgres +
 auth + RLS + realtime + storage + edge functions) · **Vercel** (two static
-deploys) · **Cashfree + Razorpay** (payments) · **WhatsApp Business API** ·
+deploys) · **Razorpay** (payments) · **WhatsApp Business API** ·
 **GitHub + Playwright + Vitest** (dev + test).
 
 ---
@@ -137,7 +137,7 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
   - Supabase auth / magic-link failures
   - Offline-queue sync errors on reconnect
   - Lazy-chunk load failures (detail / org chunks)
-  - Cashfree webhook → subscription state transitions
+  - Razorpay webhook → plan/payment state transitions
   - PDF / DPR generation errors (client-side `exports.js`)
 - **How to wire (when you launch):**
   1. `npm i @sentry/react` and init in `src/main.tsx` with your DSN.
@@ -162,12 +162,12 @@ All four below are wired in `.mcp.json`. Fill `.env.mcp` to activate them.
     behaviour + config shape changes between majors
   - **Supabase JS v2** — auth + RLS + realtime APIs evolve
   - **React 19** lazy/Suspense patterns
-  - **Cashfree subscriptions API** — version `2025-01-01` headers
+  - **Razorpay Payment Links API** — hosted links + webhooks
   - When I write Edge Functions or upgrade a dep, Context7 gives me the correct
     current signatures instead of a plausible-but-wrong guess.
-- **How to use:** just add "use context7" to a request, e.g. "wire the Cashfree
+- **How to use:** just add "use context7" to a request, e.g. "wire the Razorpay
   webhook Edge Function — use context7" → it pulls current Supabase Edge +
-  Cashfree docs first.
+  Razorpay docs first.
 - **Verdict:** Low effort, real accuracy win. Connect whenever; especially
   before any dependency upgrade or Edge Function work.
 
@@ -244,7 +244,7 @@ Supabase auth (magic link)  →  Supabase MCP (auth.users)
 Vercel hosting (2 sites)    →  Vercel MCP
 GitHub repo + CI            →  GitHub MCP   ⭐
 Playwright E2E              →  Playwright MCP
-Cashfree / Razorpay         →  (no MCP — REST API in src/lib/)
+Razorpay                  →  (no MCP — REST API in src/lib/)
 WhatsApp Business API       →  (no MCP — Graph API)
 Production monitoring       →  Sentry MCP (post-launch)
 Library docs accuracy       →  Context7 MCP
@@ -253,8 +253,8 @@ Cross-session memory        →  Memory MCP (already on)
 
 ## Not available as MCP (use code, not a server)
 
-- **Cashfree / Razorpay** — no official MCP. The integration lives in
-  `src/lib/integrations/cashfree.ts` + `src/lib/integrations/razorpay.ts`. Test against their sandbox.
+- **Razorpay** — no official MCP. The integration lives in
+  `src/lib/integrations/razorpay.ts`. Test against the sandbox.
 - **WhatsApp Business** — no MCP. Graph API via Edge Function (see
   `docs/archive/WHATSAPP_BUSINESS_API.md`).
 

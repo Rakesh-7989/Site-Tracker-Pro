@@ -2,7 +2,7 @@
 // SiteTrack Pro — interactive deploy driver.
 //
 // Walks through every step needed to take the codebase from "local dev only"
-// to "fully live at sitetrackpro.in + Supabase + Cashfree EFs + GH Actions
+// to "fully live at sitetrackpro.in + Supabase + Razorpay EFs + GH Actions
 // CI". Each step:
 //   1. Detects current state via a quick probe.
 //   2. If already done, prints ✅ and moves on.
@@ -231,18 +231,16 @@ if (appStatus === 200 || appStatus === 401) {
   await pause();
 }
 
-// ── Step 10: Edge Functions (Cashfree) ────────────────────────────────
-step(10, "Deploy Cashfree Edge Functions");
+// ── Step 10: Edge Functions (Razorpay) ────────────────────────────────
+step(10, "Deploy Razorpay Edge Functions");
 action("Two EFs to deploy via Supabase Dashboard or CLI:");
-cmd("supabase functions deploy cashfree-subscription");
-cmd("supabase functions deploy cashfree-webhook");
+cmd("supabase functions deploy razorpay-plan-link");
+cmd("supabase functions deploy razorpay-webhook --no-verify-jwt");
 info("Then set secrets:");
-cmd("supabase secrets set CASHFREE_APP_ID=…");
-cmd("supabase secrets set CASHFREE_SECRET=…");
-cmd("supabase secrets set CASHFREE_WEBHOOK_SECRET=…");
-cmd("supabase secrets set CASHFREE_ENV=sandbox");
-cmd("supabase secrets set CASHFREE_ALLOWED_ORIGINS=https://sitetrackpro.in");
-info("Without Supabase CLI: paste files manually via Dashboard → Edge Functions");
+cmd("supabase secrets set RAZORPAY_KEY_ID=…");
+cmd("supabase secrets set RAZORPAY_KEY_SECRET=…");
+cmd("supabase secrets set RAZORPAY_WEBHOOK_SECRET=…");
+info("Webhook URL: https://<proj>.supabase.co/functions/v1/razorpay-webhook");
 await pause();
 
 // ── Step 11: Final live probe ──────────────────────────────────────────

@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
 
   // ── Security gate (Phase 5 hardening) ──
   // Two trusted callers:
-  //   1. Service-to-service (e.g. cashfree-webhook → whatsapp-send) presents
+  //   1. Service-to-service (e.g. notify-deliver → whatsapp-send) presents
   //      a matching X-Internal-Token. We trust it without a user JWT.
   //   2. The SPA presents a user JWT. Previously the EF only checked the
   //      Bearer header EXISTED (never verified it) — any string passed.

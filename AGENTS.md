@@ -1,3 +1,29 @@
+## Session — 2026-09-18 (2nd): Cashfree REMOVED — Razorpay is the only payment rail (complete, uncommitted)
+
+**User mandate (Telugu)**: "Cashfree full ga remove chesi 100% Razorpay cheyali" — remove Cashfree entirely from the product surface (code, EFs, DB objects, scripts/tests, config, docs); Razorpay is the single live payment rail. Changes stay uncommitted until the founder asks.
+
+**Shipped (working tree, uncommitted)**:
+- **Migration 267** `scripts/supabase/267_remove_cashfree.sql` — applied live via `npm run db:apply` (241 passed · 15 benign pre-existing checksum drifts · 240 skipped): `subscriptions_provider_check` → IN ('razorpay','manual') default razorpay; `billing_history_provider_check` → IN ('razorpay','manual','credit_note') default razorpay; `payments_method_check` → IN ('bank','cash','upi','cheque','other','razorpay') default bank; `record_cashfree_event()` RPC + `cashfree_events` table dropped. **Verified live** via pg probe (constants + defaults + absence). `src/lib/supabase/database.types.ts` regenerated (161 tables).
+- **Deleted from repo**: EFs `cashfree-checkout`/`cashfree-plan-link`/`cashfree-subscription`/`cashfree-webhook`, `supabase/functions/_shared/cashfree.ts`, `src/lib/integrations/cashfree.ts`, `tests/cashfree.test.js`, `tests/efPaymentPhase.test.ts`, `tests/efPlanPayments.test.ts`, `docs/setup/CASHFREE_ONBOARDING.md` (git rm). Grep: zero case-insensitive `cashfree` in `src/` + `tests/`.
+- **Docs/config**: `.env.example` (all `CASHFREE_*` removed); README.md; `supabase/functions/README.md` (Razorpay-only); reader-facing `docs/USER_GUIDE.md`, `docs/qa/TESTING_STRATEGY.md`, `docs/business/PRODUCT_TOUR.md`, `docs/sales/PILOT_ONBOARDING_RUNBOOK.md`, `docs/setup/PRODUCTION_CHECKLIST.md`, `docs/setup/PRODUCTION_GO_LIVE_CHECKLIST.md`, `docs/setup/README.md`, `docs/setup/DEPLOY_NOW.md`; `public/USER_GUIDE.md`; `docs/setup/CONNECT_SUPABASE.md` (226/241-242/256 — EF FAQ now re-points to razorpay-plan-link/razorpay-webhook + `supabase/functions/README.md`); `docs/integrations/MCP_TOOLKIT.md` (8/140/165/168-170/247/256-257 — Razorpay-only bullet). Scripts/tests: `deploy-all.mjs`, `sync-function-secrets.mjs`, `check-env-config.mjs`, sentry regex ×2, `test-ef-harness.mjs`, `ci/smoke.mjs`, i18n paySub ×3, orgAdminQueries fixture.
+- **kept**: `razorpay-payment-link` BOOT_ERROR fix (09-18 #1) + `mintPlanPaymentLink` → `razorpay-plan-link` (PR #70, live). Superseded: #1's `cashfree-webhook` 200-ack fix + 404-by-design EFs are moot (deleted).
+
+**Pending (blocked)**: live `CASHFREE_*` secrets + live `cashfree-plan-link`/`cashfree-webhook` deployments still on the Supabase project — re-verify `SUPABASE_ACCESS_TOKEN` (was 401 on logs API), then `supabase functions delete ...` + Management-API secret unset.
+
+**Gates (target)**: final repo grep clean (only archival: applied SQL comments, CHANGELOG.md, planning/architecture/research/archive docs, `.agents/`); tsc/eslint/build/smoke/vitest. Leave uncommitted until founder asks.
+
+## Session — 2026-09-18: Edge Functions health sweep — razorpay-payment-link BOOT_ERROR + cashfree-webhook 500 fixed (complete, uncommitted)
+
+**Trigger**: full 30-EF live probe sweep found 2 broken deployed functions out of 28 (both money-path/telemetry): `razorpay-payment-link` (paid-plan payment links) → **503 BOOT_ERROR**; `cashfree-webhook` (dormant Cashfree rail) → **500 Edge env not configured**.
+
+**Fix 1 — razorpay-payment-link** (`supabase/functions/razorpay-payment-link/index.ts`): duplicate `const auth` in the same `Deno.serve` scope → parse-time `SyntaxError` → function never boots (503). Line 46 `const auth = await authenticate(req);` (JWT gate) kept; line 154 declaration renamed `const credentials = base64Credentials(keyId, secret);`; refs at 164/224 updated to ``Basic ${credentials}``. **Verified live**: POST `{}` (no JWT) → **401 `{"ok":false,"error":"missing-bearer-token"}`** (was 503). Redeployed `--no-verify-jwt` (auth enforced in code).
+
+**Fix 2 — cashfree-webhook** (`supabase/functions/cashfree-webhook/index.ts`): guard returned 500 whenever `CASHFREE_WEBHOOK_SECRET` unset (current live state; Cashfree rail dormant). Missing secret now logs a warning and returns **200 ack** (`{ok:true, ignored:"secret-not-configured"}`) — fail-closed (nothing processed without a verifiable signature), matches the file's own "ack so Cashfree stops retrying" contract, avoids retry storm. `SUPABASE_URL`/`SERVICE_ROLE` still 500. **Verified live**: POST `{}` → **200**. Redeployed `--no-verify-jwt` (Cashfree POSTs carry no Supabase JWT).
+
+**Full sweep after fix (all 28 deployed EFs )**: only 401 (auth-gated) / 405 (POST-only) — **zero 500/503/502**. Repo-only never-deployed 404s unchanged: `cashfree-checkout`, `cashfree-subscription` (legacy dead code, no callers, intentional). Probe names `chat-ai-proxy`/`cors-check`/`health`/`ping`/`resend-confirmation` were bogus (no such functions; real one is `resend_confirmation` → 401 healthy).
+
+**Outstanding (founder steps)**: `CASHFREE_WEBHOOK_SECRET` still unset — ack-and-drop until the agent provides it (then webhook processing activates automatically). Working tree: 2 EF source edits uncommitted.
+
 ## Session — 2026-09-11: Paid-plans frontend shipped to prod (PR #67 → squash `ecb6c5e`, complete)
 
 **Shipped**: paid-plans frontend (`f996b92`) via PR #67 main→prod. `f996b92` + sync merge `997a9a3` → squash **`ecb6c5e`** on prod. PR #67 also carried the Razorpay migration (#64/#65 squash already on prod), lifecycle emails (mig 261/262 + EF), and guided-tour §2.1 — all confirmed in prod's tree.

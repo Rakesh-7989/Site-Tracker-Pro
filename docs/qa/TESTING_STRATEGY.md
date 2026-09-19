@@ -10,7 +10,7 @@ This document captures the research into what testing tools work for each layer 
 
 | Layer | Tool | What It Tests |
 |-------|------|---------------|
-| Pure logic | Vitest | Lib functions, permissions, formatting, cashfree helpers, i18n, feature flags |
+| Pure logic | Vitest | Lib functions, permissions, formatting, i18n, feature flags |
 | React components | Vitest + jsdom | Component rendering, state, events |
 | E2E flows | Playwright | Full browser flows: signup, role switching, auth panel |
 | Static analysis | TypeScript (`tsc --noEmit`) | Type errors, missing imports, shape mismatches |
@@ -72,7 +72,7 @@ describe("functionName", () => {
 
 Edge Functions are TypeScript files running on Deno. They CANNOT use Node.js APIs, `node_modules`, or vitest. Current approach:
 - Manual: `supabase functions serve` + curl
-- Shared logic tested via the browser mirror (`tests/cashfree.test.js` for `cashfree.ts`)
+- Shared logic tested via vitest when the module is Node-importable (e.g. `_shared/webpush.ts`); EF source contracts locked by `tests/ef*.test.ts`
 
 ### Deep R&D: Options
 
@@ -95,7 +95,7 @@ Deno.test("myFn returns expected value", () => {
 - Guard: smoke test checks both files exist; manually diff before deploy
 
 **Option C — HTTP test harness (for EF endpoint behavior):**
-- `Cashfree webhook tester (not present)` starts a server, sends mock Cashfree events
+- `Razorpay webhook tester (not present)` starts a server, sends mock Razorpay events
 - Asserts HTTP status + DB side-effects (read back via RPC)
 - Pattern from `scripts/ci/role-access-probe.mjs` and `scripts/tests/test-self-service-rls.mjs`
 

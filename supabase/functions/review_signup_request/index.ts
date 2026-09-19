@@ -217,7 +217,7 @@ async function seedBillingHistory(admin, orgId: string, reqRow: Record<string, u
 
   const { error } = await admin.from("billing_history").insert({
     org_id: orgId,
-    provider: "cashfree",
+    provider: "razorpay",
     external_id: reqRow.payment_ref == null ? null : String(reqRow.payment_ref),
     amount: Math.round(amountPaise),
     status: "succeeded",

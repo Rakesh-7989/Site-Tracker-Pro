@@ -229,7 +229,7 @@ After magic-link login, you'll see an **Onboarding Wizard** (5 steps):
 - Full (all 37 features — only if your firm uses everything)
 
 **Step 5: Connect integrations** (optional)
-- Cashfree (for billing)
+- Razorpay (for billing)
 - WhatsApp Business (for daily progress reports to client)
 - AI provider (OpenAI / Anthropic — for forecasting + Telugu/Hindi DPR summaries)
 
@@ -350,7 +350,7 @@ Get **daily WhatsApp summary** from your builder (if they enabled WhatsApp). No 
 **Monday morning**:
 1. **Sidebar → Org Admin (gear icon)**
 2. **Members** panel → review who joined / left this week
-3. **Billing** → check Cashfree subscription status, MRR
+3. **Billing** → check subscription status, MRR
 4. **Activity** → full org audit (every action across all projects)
 5. **PDF export** of weekly audit → letterhead applied → board email
 
@@ -609,8 +609,7 @@ When creating new project, pick a template → 80% pre-filled.
 
 Connect external services.
 
-- **Cashfree** (UPI AutoPay billing) — paste App ID + Secret
-- **Razorpay** (alternative payment gateway)
+- **Razorpay** (payment links for plan upgrades + invoices) — paste Key ID + Secret
 - **WhatsApp Business** (Meta Cloud API for client DPRs)
 - **OpenAI / Anthropic** (for AI forecasting + DPR summaries)
 - **Slack / Teams** (notifications, planned)
@@ -622,8 +621,8 @@ Each integration verified before "Active" badge appears.
 Subscription management.
 
 - Current plan: Free / Pro (₹999/mo) / Business (₹2,999/mo) / Enterprise (₹7,999/mo)
-- **Cashfree pill**: Live / Pending / Past due
-- Upgrade button → opens UPI mandate flow
+- **Razorpay payment pill**: Live / Pending / Past due
+- Upgrade button → Razorpay payment link (UPI / card / netbanking) opens in a new tab; plan activates once payment is confirmed
 - Invoice history (all past charges)
 - Receipt download per invoice
 
@@ -733,14 +732,14 @@ Hold phone at site → overlay current drawing on camera view → see real-world
 
 ## 11. Integrations
 
-### 11.1 Cashfree (UPI billing)
+### 11.1 Razorpay (payment links)
 
-Pay for your subscription via UPI AutoPay.
+Pay for your plan or an invoice via a secure Razorpay payment link.
 
-- Setup: Org Admin → Billing → click "Subscribe" → opens Cashfree UPI mandate
-- Approve in your UPI app (PhonePe / GPay / Paytm)
-- Auto-charged monthly
-- View invoices in Billing tab
+- Setup: Org Admin → Billing → click "Pay & upgrade instantly"
+- Pay via UPI / cards / netbanking in the Razorpay checkout
+- The plan activates automatically once the payment is verified
+- View invoices in the Billing tab
 
 ### 11.2 WhatsApp Business
 
@@ -932,7 +931,7 @@ A: Yes — 14-day free trial (1 project, 5 users, 1GB storage). After 14 days, c
 A: **Pro at ₹999/month** — 5 projects, 25 users, 20GB storage. Per-org pricing (not per-user) — disruptive vs Procore's $400/user/year.
 
 **Q: Can I cancel anytime?**
-A: Yes. UPI mandate cancel via Org Admin → Billing → Cancel. No prorated refund, but no further charges.
+A: Yes. Plan payments are one-off Razorpay payments (no recurring UPI mandate). To cancel or downgrade, raise a support request from Org Admin → Billing. No prorated refund for the current period, but no further charges.
 
 **Q: Do you take a cut from my vendor purchases?**
 A: No. Unlike BuildSupply, we don't take procurement margin. Your vendors are yours.

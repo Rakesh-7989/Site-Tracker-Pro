@@ -32,7 +32,6 @@ const app = [
   read("src/lib/platform/offline.ts"),
   read("src/lib/platform/offlineQueue.ts"),
   read("src/app/services/dprOfflineSync.ts"),
-  read("src/lib/integrations/cashfree.ts"),
   read("src/lib/integrations/upi.ts"),
   read("supabase/functions/razorpay-payment-link/index.ts"),
   read("src/lib/integrations/orgFeatureFlags.ts"),
@@ -255,9 +254,9 @@ const vite = read("vite.config.js");
   "kioskSiteEnabled",
   "kioskArEnabled",
   "tenantOnboardingMode",
-  // Cashfree integration
-  "isCashfreeConfigured",
-  "buildSubscriptionRequest",
+  // Razorpay integration
+  "PlanPaymentLink",
+  "linkUrl",
   // Self-serve plan purchase (Razorpay one-time links + activation)
   "plan_payments",
   "razorpay-plan-link",
@@ -562,9 +561,7 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "src/lib/integrations/templates.ts",
   "tests/approvalChains.test.js",
   "tests/templates.test.js",
-  // Session 15 — Production gate (RLS + Cashfree)
-  "src/lib/integrations/cashfree.ts",
-  "tests/cashfree.test.js",
+  // Session 15 — Production gate (RLS)
   "scripts/supabase/03_rls_phase1.sql",
   "scripts/supabase/05_rls_phase1_tests.sql",
   "scripts/supabase/167_material_requests_grn.sql",
@@ -585,7 +582,6 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   "scripts/supabase/212_drawing_auto_supersede.sql",
   "docs/architecture/DOMAIN_BOUNDARY_MAP.md",
   "docs/architecture/PRODUCTION_RLS.md",
-  "docs/setup/CASHFREE_ONBOARDING.md",
   // Session 16 — Feature-flag catalog system
   "src/lib/integrations/orgFeatureFlags.ts",
   "tests/orgFeatureFlags.test.js",
@@ -607,10 +603,6 @@ add("No legacy PERMS reference remains", !app.includes("const PERMS =") && !app.
   // can no longer render the whole app as a white screen.
   "src/components/errorBoundary.tsx",
   // Session 22 — major changes pack
-  "supabase/functions/_shared/cashfree.ts",
-  "supabase/functions/cashfree-subscription/index.ts",
-  "supabase/functions/cashfree-webhook/index.ts",
-  "supabase/functions/cashfree-plan-link/index.ts",
   // Resend delivery/bounce webhook receiver (Svix-signed, RESEND_WEBHOOK_SECRET)
   "supabase/functions/_shared/resendWebhook.ts",
   "supabase/functions/resend-webhook/index.ts",

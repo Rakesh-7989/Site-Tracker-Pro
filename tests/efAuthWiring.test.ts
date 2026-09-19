@@ -67,14 +67,7 @@ describe("EF auth wiring — internal-token-gated (fail-closed)", () => {
   }
 });
 
-describe("cashfree-subscription retains its orgadmin gate", () => {
-  it("verifies the caller is orgadmin/superadmin of the target org", () => {
-    const code = src("cashfree-subscription");
-    expect(code).toMatch(/getUser\(/);
-    expect(code).toMatch(/org_members/);
-    expect(code).toMatch(/superadmin|orgadmin/);
-  });
-});
+
 
 describe("review_signup_request repairs applicant profiles before membership", () => {
   it("ensures old auth users without profiles can still be approved", () => {

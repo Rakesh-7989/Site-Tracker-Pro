@@ -88,7 +88,7 @@ to close before flipping the "open for business" switch.*
 |-------|--------|-------|
 | Top-level error boundary (no white screen) | ✅ | ErrorBoundary in main.jsx |
 | Graceful "backend not configured" fallbacks | ✅ | Every query layer |
-| Idempotency on money/webhook paths | ✅ | Cashfree webhook, whatsapp_dpr |
+| Idempotency on money/webhook paths | ✅ | razorpay-webhook, whatsapp_dpr |
 | Retry/queue for offline writes | ⚠️ | offlineQueue — verify it flushes |
 | 404 + signed-out routing correct | ✅ | Public 404, login redirect |
 
@@ -140,7 +140,7 @@ to close before flipping the "open for business" switch.*
 | Check | Status | Notes |
 |-------|--------|-------|
 | **Real plan pricing** finalised | ⚠️ 🔵 | `plans.ts` has placeholders |
-| Billing/payment path (if charging at launch) | ⚠️ | Cashfree/Razorpay creds via Integrations panel |
+| Billing/payment path (if charging at launch) | ✅ | Razorpay creds via Integrations panel |
 | Support channel (email/WhatsApp) on the app | ✅ | Contact (mailto) link in landing footer + legal pages |
 | Onboarding runbook for first customer | ✅ | `PILOT_ONBOARDING_RUNBOOK.md` |
 | User-facing help/docs | ✅ | `public/USER_GUIDE.md` (link it in-app) |

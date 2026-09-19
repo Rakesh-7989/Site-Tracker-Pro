@@ -70,12 +70,6 @@ const EF_REQUIREMENTS = [
     optional: ["SITETRACK_DIGEST_LIVE"],
   },
   {
-    ef: "cashfree-webhook",
-    purpose: "Validate + record Cashfree subscription webhooks",
-    required: ["CASHFREE_APP_ID", "CASHFREE_SECRET", "CASHFREE_WEBHOOK_SECRET"],
-    optional: [],
-  },
-  {
     ef: "whatsapp-send (legacy)",
     purpose: "Generic WhatsApp Cloud API send (pre-DPR; superseded by whatsapp_dpr_send)",
     required: ["WHATSAPP_PERMANENT_TOKEN"],

@@ -38,7 +38,7 @@ async function deploy(slug, filePath, ep) {
   const form = new FormData();
   form.append('slug', slug);
   form.append('entrypoint_path', ep);
-  form.append('verify_jwt', String(!slug.includes('webhook') && slug !== 'cashfree-checkout' && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org'));
+  form.append('verify_jwt', String(!slug.includes('webhook') && slug !== 'create_org_with_admin' && slug !== 'redeem-staff-invite' && slug !== 'register_org'));
   form.append('body', readFileSync(filePath), {
     filename: 'index.ts',
     contentType: 'application/vnd.deno.script',

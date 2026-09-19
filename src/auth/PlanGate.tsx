@@ -4,7 +4,7 @@
 //   <PlanGate feature="finance"><FinanceTab /></PlanGate>
 //
 // Soft by design: hides the UI + offers an upgrade path. Hard enforcement for
-// dangerous/paid actions (RERA/GSTN/WhatsApp/Cashfree) is server-side
+// dangerous/paid actions (RERA/GSTN/WhatsApp) is server-side
 // (supabase/functions/_shared/planCheck.ts).
 
 import type { ReactNode } from "react";
