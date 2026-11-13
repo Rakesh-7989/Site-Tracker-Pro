@@ -5,7 +5,7 @@
 //
 // Usage: node scripts/ux-audit-live-auth.mjs [role]
 // Roles: orgadmin (default) | pm | client
-/* global document, window, HTMLElement, getComputedStyle */
+/* global document, window, getComputedStyle */
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";

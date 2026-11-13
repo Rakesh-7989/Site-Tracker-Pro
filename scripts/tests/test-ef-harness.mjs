@@ -31,7 +31,7 @@ const ANON_KEY = process.env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
 let pass = 0;
 let fail = 0;
 
-const ok = (label, cond, detail = "") => {
+const _ok = (label, cond, detail = "") => {
   if (cond) { pass++; console.log(`  PASS ${label}${detail ? " — " + detail : ""}`); }
   else { fail++; console.log(`  FAIL ${label}${detail ? " — " + detail : ""}`); }
 };

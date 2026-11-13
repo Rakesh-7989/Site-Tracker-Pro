@@ -1,29 +1,26 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { visualizer } from 'rollup-plugin-visualizer'
-import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
+import { fileURLToPath, URL } from "node:url";
 
 // Path aliases mirrored from tsconfig.json. Vite + Vitest read these so that
 // new TypeScript code can use @/auth/* @/components/* etc. without breaking
 // existing relative-path JS imports.
-const r = (p) => fileURLToPath(new URL(p, import.meta.url))
+const r = p => fileURLToPath(new URL(p, import.meta.url));
 
-const isAnalyze = process.env.ANALYZE === 'true'
+const isAnalyze = process.env.ANALYZE === "true";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    ...(isAnalyze ? [visualizer({ open: true, gzipSize: true, brotliSize: true })] : []),
-  ],
+  plugins: [react(), ...(isAnalyze ? [visualizer({ open: true, gzipSize: true, brotliSize: true })] : [])],
   resolve: {
     alias: {
-      '@/auth':       r('./src/auth'),
-      '@/components': r('./src/components'),
-      '@/features':   r('./src/features'),
-      '@/hooks':      r('./src/hooks'),
-      '@/lib':        r('./src/lib'),
-      '@/data':       r('./src/data'),
-      '@':            r('./src'),
+      "@/auth": r("./src/auth"),
+      "@/components": r("./src/components"),
+      "@/features": r("./src/features"),
+      "@/hooks": r("./src/hooks"),
+      "@/lib": r("./src/lib"),
+      "@/data": r("./src/data"),
+      "@": r("./src"),
     },
   },
   server: { port: 5173, open: true },
@@ -35,32 +32,57 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          const normalized = id.replace(/\\/g, '/')
+          const normalized = id.replace(/\\/g, "/");
           // Supabase is used by both static legacy imports and dynamic v3 calls.
           // Give it a stable shared chunk so dynamic imports do not get folded
           // into whichever route references it first.
-          if (normalized.includes('/src/lib/supabase/supabase')) return 'supabase'
+          if (normalized.includes("/src/lib/supabase/supabase")) return "supabase";
           // Split first-party roadmap views off the main bundle — only loaded
           // when a user navigates to a Batch 2/3 view (hierarchy / kiosks /
           // material-prices / etc.). Saves ~50 kB on the dashboard cold path.
-          if (normalized.includes('/src/features/roadmap/')) return 'roadmap'
+          if (normalized.includes("/src/features/roadmap/")) return "roadmap";
           // Split super-admin views — most tenant users never open these.
-          if (normalized.includes('/src/features/admin/')) return 'admin'
+          if (normalized.includes("/src/features/admin/")) return "admin";
           // Mid-size tenant views (Calendar / Vendors / POs / Analytics etc.)
           // — split these into their own chunk so the dashboard cold path stays
           // small. Analytics charts are dependency-free SVG (no chart lib).
-          if (normalized.includes('/src/features/views/')) return 'views'
+          if (normalized.includes("/src/features/views/")) return "views";
           // DetailView satellites (MarkupModal, ClientShareView, etc.) —
           // only loaded when a user enters project detail or clicks a share link.
-          if (normalized.includes('/src/features/detail/')) return 'detail'
-          // Org Admin tier (Production Phase 1) — 8 panels only the org owner sees.
-          if (normalized.includes('/src/features/org/')) return 'org'
-          if (!normalized.includes('/node_modules/')) return undefined
-          if (normalized.includes('/node_modules/react/') || normalized.includes('/node_modules/react-dom/') || normalized.includes('/node_modules/scheduler/')) return 'react'
-          if (normalized.includes('/node_modules/d3-')) return 'd3'
-          return undefined
-        }
-      }
-    }
-  }
-})
+          if (normalized.includes("/src/features/detail/")) return "detail";
+          // Heavy standalone modules — split off so they don't bloat the org settings chunk
+          if (normalized.includes("/src/features/org/CrmView")) return "crm";
+          if (normalized.includes("/src/features/org/ProcurementView")) return "procurement";
+          if (normalized.includes("/src/features/org/ResearchLibraryView")) return "library";
+          if (normalized.includes("/src/features/org/TeamChatView")) return "chat";
+          if (
+            normalized.includes("/src/features/org/VendorPortalView") ||
+            normalized.includes("/src/features/org/VendorScorecardView")
+          )
+            return "vendor-portal";
+          if (normalized.includes("/src/features/org/OnboardingView")) return "onboarding";
+          if (normalized.includes("/src/features/org/RbacView")) return "rbac";
+          if (normalized.includes("/src/features/org/OrgBillingView")) return "billing";
+          if (
+            normalized.includes("/src/features/org/ClientPortalProjectView") ||
+            normalized.includes("/src/features/org/ClientPortalView")
+          )
+            return "client-portal";
+          if (normalized.includes("/src/features/org/UtilizationView")) return "utilization";
+          if (normalized.includes("/src/features/org/HierarchyView")) return "hierarchy";
+          // Org Admin tier (Production Phase 1) — remaining panels only the org owner sees.
+          if (normalized.includes("/src/features/org/")) return "org";
+          if (!normalized.includes("/node_modules/")) return undefined;
+          if (
+            normalized.includes("/node_modules/react/") ||
+            normalized.includes("/node_modules/react-dom/") ||
+            normalized.includes("/node_modules/scheduler/")
+          )
+            return "react";
+          if (normalized.includes("/node_modules/d3-")) return "d3";
+          return undefined;
+        },
+      },
+    },
+  },
+});

@@ -3,7 +3,7 @@
 // with one interior project and an active viewer link.
 // Idempotent: re-running reuses orgs/users/project/link.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
 
