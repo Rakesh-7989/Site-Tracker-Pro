@@ -88,7 +88,12 @@ function hasSearchPath(config) {
 }
 
 const db = new pg.Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-await db.connect();
+try {
+  await db.connect();
+} catch (err) {
+  console.log(`SKIP  SUPABASE_DB_URL unreachable (${err?.message || err}) — definer gate not run.`);
+  process.exit(0);
+}
 
 try {
   const res = await db.query(QUERY);

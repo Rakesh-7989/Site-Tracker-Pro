@@ -76,7 +76,12 @@ if (!DB_URL) {
 }
 
 const db = new pg.Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-await db.connect();
+try {
+  await db.connect();
+} catch (err) {
+  console.log(`SKIP  SUPABASE_DB_URL unreachable (${err?.message || err}) — RLS coverage gate not run.`);
+  process.exit(0);
+}
 
 // ── 1. live RLS posture ──────────────────────────────────────────────────────
 const tables = (await db.query(

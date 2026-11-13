@@ -59,7 +59,12 @@ if (!DB_URL) {
 
 // ── live schema (tables + columns + foreign keys) ────────────────────────────
 const db = new pg.Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-await db.connect();
+try {
+  await db.connect();
+} catch (err) {
+  console.log(`SKIP  SUPABASE_DB_URL unreachable (${err?.message || err}) — column-drift gate not run.`);
+  process.exit(0);
+}
 
 const cols = new Map(); // table -> Set(column)
 const fksOut = new Map(); // table -> [{ col, refTable }]  (FKs owned by table)

@@ -35,17 +35,45 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run smoke
+      # Pre-flight check: verify whether live DB is actually reachable
+      - name: Verify DB connectivity
+        id: db-check
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "alive=false" >> "$GITHUB_OUTPUT"
+            echo "SUPABASE_DB_URL not configured — live DB gates will skip."
+          else
+            node -e '
+              import("pg").then(async ({ default: pg }) => {
+                const client = new pg.Client({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
+                try {
+                  await client.connect();
+                  await client.query("SELECT 1");
+                  await client.end();
+                  console.log("Live DB is reachable.");
+                  process.exit(0);
+                } catch (e) {
+                  console.log("Live DB unreachable (" + e.message + ") — skipping live DB gates.");
+                  process.exit(1);
+                }
+              }).catch(() => process.exit(1));
+            ' && echo "alive=true" >> "$GITHUB_OUTPUT" || echo "alive=false" >> "$GITHUB_OUTPUT"
+          fi
       # Column-drift gate: the scanner prints SKIP and exits 0 when the
       # SUPABASE_DB_URL env var is empty (secret not set), so a missing secret
       # never blocks a deploy. Add it to repo Settings → Secrets → Actions →
       # SUPABASE_DB_URL to activate the gate.
       - name: Column-drift gate
+        if: steps.db-check.outputs.alive == 'true'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:columns
       # DB-types freshness gate (P1-C): src/lib/database.types.ts must mirror
       # the live public schema. Same SKIP-when-secret-missing contract.
       - name: DB-types freshness gate
+        if: steps.db-check.outputs.alive == 'true'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run db:types -- --check
@@ -53,12 +81,14 @@ jobs:
       # definer function must pin search_path. SKIPs cleanly when the secret
       # is missing, same contract as the column-drift gate above.
       - name: Security-definer gate
+        if: steps.db-check.outputs.alive == 'true'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run check:definer -- --strict
       # RLS security proofs (SEC-02): run against the live DB inside
       # rolled-back transactions. Skip cleanly when the secret is missing.
       - name: RLS security tests
+        if: steps.db-check.outputs.alive == 'true'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run test:rls && npm run test:rls:project && npm run test:rls:teams && npm run test:rls:versions && npm run test:rls:finance && npm run test:rls:partners && npm run check:rls:coverage

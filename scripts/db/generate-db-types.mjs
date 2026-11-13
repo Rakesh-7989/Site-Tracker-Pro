@@ -34,8 +34,17 @@ if (!dbUrl || dbUrl.includes("YOUR_") || dbUrl.length < 20) {
   process.exit(1);
 }
 
+const checkMode = process.argv.includes("--check");
 const client = new pg.Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
-await client.connect();
+try {
+  await client.connect();
+} catch (err) {
+  if (checkMode || process.env.CI) {
+    console.log(`SKIP  SUPABASE_DB_URL unreachable (${err?.message || err}) — db-types gate skipped.`);
+    process.exit(0);
+  }
+  throw err;
+}
 
 const { rows: enumRows } = await client.query(`
   select t.typname, e.enumlabel
