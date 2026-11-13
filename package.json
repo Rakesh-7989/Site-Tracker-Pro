@@ -43,7 +43,7 @@
     "test:rls:versions": "node scripts/tests/test-versioned-concurrency.mjs",
     "test:rls:finance": "node scripts/tests/test-financial-invariants.mjs",
     "db:reset": "node scripts/db/apply-migrations.mjs --reset",
-    "lint": "eslint . --max-warnings=520",
+    "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

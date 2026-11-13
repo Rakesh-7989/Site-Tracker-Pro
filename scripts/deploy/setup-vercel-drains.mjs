@@ -19,7 +19,7 @@ if (!TOKEN || !ORG || !PROJECT) {
 
 const headers = { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" };
 const qTeam = `teamId=${encodeURIComponent(ORG)}`;
-const qTeamProject = `${qTeam}&projectId=${encodeURIComponent(PROJECT)}`;
+const _qTeamProject = `${qTeam}&projectId=${encodeURIComponent(PROJECT)}`;
 
 async function api(method, path, body) {
   const res = await fetch(`${API}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });

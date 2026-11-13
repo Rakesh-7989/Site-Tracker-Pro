@@ -54,7 +54,12 @@ let pass = 0, fail = 0, sp = 0;
 const ok = (cond, label) => { if (cond) { pass++; console.log(`  PASS ${label}`); } else { fail++; console.log(`  FAIL ${label}`); } };
 
 const c = new pg.Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-await c.connect();
+try {
+  await c.connect();
+} catch (err) {
+  console.log(`SKIP  SUPABASE_DB_URL unreachable (${err?.message || err}) — team channels RLS tests skipped.`);
+  process.exit(0);
+}
 
 /** Run a statement that MAY raise; keep the tx alive either way. */
 const attempt = async (sql, params) => {

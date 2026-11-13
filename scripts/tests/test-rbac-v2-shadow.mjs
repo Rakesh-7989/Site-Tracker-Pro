@@ -48,7 +48,12 @@ if (!DB_URL) {
 }
 
 const c = new pg.Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-await c.connect();
+try {
+  await c.connect();
+} catch (err) {
+  console.log(`SKIP  SUPABASE_DB_URL unreachable (${err?.message || err}) — RBAC v2 shadow tests skipped.`);
+  process.exit(0);
+}
 await c.query("reset role");
 
 const U = randomUUID();  // org admin

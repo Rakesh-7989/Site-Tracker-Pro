@@ -4,7 +4,7 @@
 //
 // `document`/`window`/`HTMLElement` below run INSIDE page.evaluate() (browser
 // context) - not in this Node process.
-/* global document, window, HTMLElement, getComputedStyle */
+/* global document, window, getComputedStyle */
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

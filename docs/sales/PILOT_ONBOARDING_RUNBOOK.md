@@ -22,12 +22,11 @@ Pair this with:
 | Confirm meeting time + venue with the Builder's POC | Founder | [ ] |
 | Print 2 copies of `docs/business/PILOT_AGREEMENT_v1.md` (if not yet signed) | Founder | [ ] |
 | Charge laptop + phone + battery pack to 100% | Founder | [ ] |
-| Confirm WHATSAPP_PERMANENT_TOKEN env var for this org's WhatsApp Cloud API access (if applicable) | Founder | [ ] |
-| Sync — which supervisor's phone we'll register | Founder | [ ] |
+| Sync — which supervisor's email/login we'll register in the pilot org | Founder | [ ] |
 | Pull `scripts/seeds/seed-first-org.mjs` config to point to pilot org name + slug | Founder | [ ] |
-| Bring on phone (offline-playable) | Founder | [ ] |
+| Bring on phone (offline-playable / PWA / Android APK ready) | Founder | [ ] |
 | Pack: business cards, single-page agreement summary, water, charger | Founder | [ ] |
-| WhatsApp message at 8 AM the morning of: "Coming to your office at [time]. Anything I should prep?" | Founder | [ ] |
+| SMS / call message the morning of: "Coming to your office at [time]. Anything I should prep?" | Founder | [ ] |
 
 ## Activation minute-by-minute (90 minutes)
 
@@ -59,16 +58,16 @@ Pair this with:
 
 | Min | Activity | Founder note |
 |-----|----------|--------------|
-| 40–45 | "Who's your site supervisor on this project? Get them on the call now." | If the supervisor is on-site (most common): WhatsApp video call from the Builder's office. Make this feel important. |
-| 45–55 | With the supervisor: register their WhatsApp number into the demo org via the pilot interest form on `/?view=dpr`. Walk them through the Sprint 2 flow in Telugu using `docs/sales/TELUGU_PHRASE_BANK_DPR.md`. | If supervisor speaks Hindi not Telugu: that's fine — use the Hindi-mix variant in the phrase bank. |
-| 55–60 | Share Telugu supervisor training video (`SUPERVISOR_TRAINING_TE.mp4`) via WhatsApp. | Confirm they received it. |
+| 40–45 | "Who's your site supervisor on this project? Get them on the call now." | If the supervisor is on-site (most common): call them directly from the Builder's office. Make this feel important. |
+| 45–55 | With the supervisor: install PWA or Android app on their phone, log in to the pilot org. Walk them through the voice DPR flow in Telugu using `docs/sales/TELUGU_PHRASE_BANK_DPR.md`. | If supervisor speaks Hindi not Telugu: that's fine — use the Hindi-mix variant in the phrase bank. |
+| 55–60 | Share Telugu supervisor training video (`SUPERVISOR_TRAINING_TE.mp4`) directly. | Confirm they watched it and tried dictating one DPR note. |
 
 ### Minutes 60–80 — Set up the promoter (the buyer)
 
 | Min | Activity | Founder note |
 |-----|----------|--------------|
-| 60–65 | Register the promoter's WhatsApp number for the daily 7 AM digest. | Confirm with the Builder that the promoter is OK receiving WhatsApp from this number daily. |
-| 65–72 | Show the promoter what a daily digest will look like (use a Loom + mock JSON from `voiceTranscribe.mockTranscribe`). | This is the value proposition the promoter pays for. |
+| 60–65 | Register the promoter's email for the daily 7 AM promoter digest email (automated via Resend). | Confirm with the Builder that the promoter receives company email digests. |
+| 65–72 | Show the promoter what a daily email digest looks like (clean executive summary of all sites). | This is the value proposition the promoter pays for. |
 | 72–80 | Explain SLOs from `docs/business/PILOT_AGREEMENT_v1.md` clause 3: 95% DPR delivery within 60 sec, 12h founder response, 1 month free per missed SLO. | Land this slow — it's the differentiator vs every other vendor. |
 
 ### Minutes 80–90 — Commit + handoff
@@ -77,21 +76,21 @@ Pair this with:
 |-----|----------|--------------|
 | 80–84 | Confirm Razorpay invoice for INR 35,398.82 (incl. 18% GST) will arrive within 24h. Demonstrate billing UI. | Walk through the Razorpay payment-link flow on Org → Billing. |
 | 84–87 | Schedule first weekly check-in for 1 week from today, same time. | Get it on both calendars before leaving. |
-| 87–90 | Thank the Builder POC + the supervisor + the promoter (if joining). Hand over founder business card with WhatsApp number on the back highlighted. | This is the lasting impression — make it warm not transactional. |
+| 87–90 | Thank the Builder POC + the supervisor + the promoter (if joining). Hand over founder business card with direct phone number highlighted. | This is the lasting impression — make it warm not transactional. |
 
 ## Post-activation (within 4 hours)
 
 | Task | Owner | Done |
 |------|-------|------|
-| WhatsApp follow-up: "Thank you for the 90 min today. [3 things we accomplished]. Next steps: [3 things they need to do this week]." | Founder | [ ] |
+| Email / SMS follow-up: "Thank you for the 90 min today. [3 things we accomplished]. Next steps: [3 things they need to do this week]." | Founder | [ ] |
 | Update with pilot status: ACTIVATED | Founder | [ ] |
-| Add row to <builder_name>.md` capturing: contact info, supervisor phone, promoter phone, project list, RERA #, SLO start date | Founder | [ ] |
+| Add row to <builder_name>.md` capturing: contact info, supervisor phone, promoter email, project list, RERA #, SLO start date | Founder | [ ] |
 | Trigger seed-first-org for this Builder with their actual org name: `node pilot-org seeder (not present) --name "<Firm Name>" --slug "<firm-slug>"` (Sprint 2 deliverable) | Founder | [ ] |
 | Send Razorpay payment link / invoice via dashboard | Founder | [ ] |
 
 ## Post-activation week 1 daily check-ins
 
-Day 1–7 after activation, founder WhatsApps the supervisor once a day:
+Day 1–7 after activation, founder calls or messages the supervisor once a day:
 
 ```
 "[Supervisor name] sir, ee roju DPR pampincharu ah? Eemi issue
@@ -103,7 +102,7 @@ not working.")
 
 Why: in Sprint 1 customer-research, the #1 reason pilots churn at
 Day 30 is "supervisor stopped using it on Day 4 and nobody knew". A
-30-second daily WhatsApp check-in prevents the silent abandonment.
+30-second daily check-in prevents the silent abandonment.
 
 After Day 7: switch to weekly check-ins (founder rule, not contract).
 
@@ -111,12 +110,12 @@ After Day 7: switch to weekly check-ins (founder rule, not contract).
 
 | Scenario | Founder response |
 |----------|------------------|
-| Builder POC not available on time | Wait 15 min in the lobby. Then WhatsApp once. Then leave (don't sit for 2 hours). Reschedule. |
+| Builder POC not available on time | Wait 15 min in the lobby. Call once. Then leave (don't sit for 2 hours). Reschedule. |
 | Supervisor speaks neither Telugu nor Hindi | Switch to English. Confirm with Builder — different supervisor for the pilot? |
-| Promoter declines WhatsApp digest | Pivot: register the GM Projects's WhatsApp instead. Promoter can opt in later. |
+| Promoter declines daily email digest | Pivot: register the GM Projects's email instead. Promoter can opt in later. |
 | Builder asks for a feature that's frozen | "We hide it because we haven't shipped the real version. Sprint 4 (Day 46–60). You're a design partner — your feedback shapes the priority." Be honest. |
 | Razorpay payment link not received | Send PI via email manually and re-issue the link from Org → Billing. |
-| Supervisor's phone doesn't support `mediaDevices.getUserMedia` (very old Android) | Document it. Sprint 2 deliverable: low-end-device fallback (text-only DPR with attached photo via WhatsApp Web). |
+| Supervisor's phone doesn't support `mediaDevices.getUserMedia` (very old Android) | Document it. Low-end-device fallback: text-only DPR with uploaded photo via mobile browser. |
 | Builder asks to back out at activation | Honour `PILOT_AGREEMENT_v1.md` clause 8: 30-day no-fault termination, refund pro-rated. Don't try to sell harder. |
 
 ## What success looks like (Day 14 post-activation)
