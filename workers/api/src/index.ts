@@ -19,8 +19,6 @@ export interface Env {
   RESEND_API_KEY?: string;
 }
 
-const DEFAULT_JWT_SECRET = "sitetrack-cloudflare-dev-jwt-secret-2026";
-
 function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
@@ -48,7 +46,33 @@ export default {
       });
     }
 
-    const jwtSecret = env.JWT_SECRET || DEFAULT_JWT_SECRET;
+    // Fail-closed: JWT_SECRET must be configured; never fall back to a
+    // hardcoded development value that an attacker could guess from source.
+    const jwtSecret = env.JWT_SECRET;
+    if (!jwtSecret) {
+      return json({ ok: false, error: "server misconfigured" }, 500);
+    }
+
+    // ── Auth helpers ──────────────────────────────────────────────────────────
+
+    async function authenticateRequest(req: Request): Promise<{
+      sub: string;
+      email: string;
+      org_id: string | null;
+      role: string;
+    } | null> {
+      const authHeader = req.headers.get("Authorization") || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (!token) return null;
+      const claims = await verifyJwt(token, jwtSecret);
+      if (!claims || !claims.sub) return null;
+      return {
+        sub: String(claims.sub),
+        email: String(claims.email || ""),
+        org_id: claims.org_id ? String(claims.org_id) : null,
+        role: String(claims.role || "user"),
+      };
+    }
 
     // 2. Health & Status
     if (url.pathname === "/api/health" || url.pathname === "/health") {
@@ -207,6 +231,10 @@ export default {
 
     // POST /api/payments/razorpay-link
     if (url.pathname === "/api/payments/razorpay-link" && request.method === "POST") {
+      const auth = await authenticateRequest(request);
+      if (!auth) {
+        return json({ ok: false, error: "authentication required" }, 401);
+      }
       if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
         return json({ ok: false, error: "Razorpay credentials not configured in Workers environment" }, 500);
       }
@@ -216,7 +244,13 @@ export default {
         description: string;
         customer?: { name?: string; email?: string; contact?: string };
         notes?: Record<string, string>;
+        org_id?: string;
       };
+
+      // Scoped payment link: caller may only mint links for their own org.
+      if (body.org_id && body.org_id !== auth.org_id) {
+        return json({ ok: false, error: "org scope mismatch" }, 403);
+      }
 
       const result = await mintRazorpayPaymentLink({
         keyId: env.RAZORPAY_KEY_ID,
@@ -248,9 +282,17 @@ export default {
 
     // POST /api/storage/upload
     if (url.pathname === "/api/storage/upload" && request.method === "POST") {
+      const auth = await authenticateRequest(request);
+      if (!auth) {
+        return json({ ok: false, error: "authentication required" }, 401);
+      }
       try {
         const contentType = request.headers.get("content-type") || "application/octet-stream";
         const filename = request.headers.get("x-filename") || `file_${crypto.randomUUID()}`;
+        // Reject path-traversal characters in client-supplied filenames.
+        if (/(\.\.|\\|%2f|%2F)/i.test(filename)) {
+          return json({ ok: false, error: "invalid filename" }, 400);
+        }
         const folder = request.headers.get("x-folder") || "uploads";
         const key = `${folder}/${filename}`;
 
@@ -275,6 +317,10 @@ export default {
 
     // GET /api/storage/files/*
     if (url.pathname.startsWith("/api/storage/files/") && request.method === "GET") {
+      const auth = await authenticateRequest(request);
+      if (!auth) {
+        return json({ ok: false, error: "authentication required" }, 401);
+      }
       const key = url.pathname.replace(/^\/api\/storage\/files\//, "");
       const file = await getFromR2(env.STORAGE, key);
 
@@ -286,7 +332,7 @@ export default {
         headers: {
           "Content-Type": file.contentType,
           "Content-Length": String(file.size),
-          "Cache-Control": "public, max-age=31536000, immutable",
+          "Cache-Control": "private, max-age=3600",
           "Access-Control-Allow-Origin": "*",
         },
       });
@@ -294,6 +340,10 @@ export default {
 
     // DELETE /api/storage/files/*
     if (url.pathname.startsWith("/api/storage/files/") && request.method === "DELETE") {
+      const auth = await authenticateRequest(request);
+      if (!auth) {
+        return json({ ok: false, error: "authentication required" }, 401);
+      }
       const key = url.pathname.replace(/^\/api\/storage\/files\//, "");
       await deleteFromR2(env.STORAGE, key);
       return json({ ok: true, deleted: key });
