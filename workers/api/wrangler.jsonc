@@ -8,7 +8,14 @@
     {
       "binding": "DB",
       "database_name": "sitetrack-production",
-      "database_id": "sitetrack-d1-placeholder"
+      "database_id": "d68e001c-4012-4670-ad92-403d57266a5f",
+      "migrations_dir": "../../cloudflare/database/migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "3f19ff7d0d3047e58e61d040b33cf3bb"
     }
   ],
   "r2_buckets": [
@@ -22,6 +29,13 @@
       {
         "binding": "NOTIFICATION_QUEUE",
         "queue": "sitetrack-notifications"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "sitetrack-notifications",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5
       }
     ]
   },
