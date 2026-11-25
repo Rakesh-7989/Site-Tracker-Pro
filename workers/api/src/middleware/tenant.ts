@@ -61,7 +61,7 @@ export async function assertTenantContext(
     orgId: targetOrgId,
     role: member.role,
     isAdmin: Boolean(member.is_admin),
-    partnerOrgIds: (partnerLinks.results || []).map((r) => r.project_id),
+    partnerOrgIds: (partnerLinks.results || []).map((r: { project_id: string }) => r.project_id),
   };
 }
 

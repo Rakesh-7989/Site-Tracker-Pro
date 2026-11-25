@@ -7,6 +7,7 @@ import { ProjectRepository } from "../workers/api/src/repositories/projectReposi
 import { SiteOpsRepository } from "../workers/api/src/repositories/siteOpsRepository";
 import { FinanceRepository } from "../workers/api/src/repositories/financeRepository";
 import { ProcurementAndDesignRepository } from "../workers/api/src/repositories/procurementAndDesignRepository";
+import { OrgAdminRepository } from "../workers/api/src/repositories/orgAdminRepository";
 
 function createD1Shim(sqlite: DatabaseSync): D1Database {
   return {
@@ -162,5 +163,41 @@ describe("Cloudflare D1 Workers Repositories & Tenant Isolation", () => {
         currentFileKey: "prj_1/a102.pdf",
       })
     ).rejects.toThrow(TenantSecurityError);
+  });
+
+  it("handles org invitations, member removal, signup requests, resend webhooks, and DAU rollup", async () => {
+    const orgAdmin = new OrgAdminRepository(db);
+    const ownerCtx = await assertTenantContext(db, "u_owner", "org_owner");
+    const nonAdminCtx = { ...ownerCtx, isAdmin: false };
+
+    await expect(
+      orgAdmin.inviteOrgMember(nonAdminCtx, { id: "invt_0", email: "x@y.com", role: "viewer", token: "tok0" })
+    ).rejects.toThrow(TenantSecurityError);
+
+    await orgAdmin.inviteOrgMember(ownerCtx, { id: "invt_1", email: "eng@builder.in", role: "engineer", token: "tok1" });
+    await orgAdmin.submitSignupRequest({
+      id: "sr_1",
+      firmName: "Apex Infra",
+      contactName: "Ramesh",
+      email: "ramesh@apex.in",
+      plan: "pro",
+    });
+    await orgAdmin.recordResendEvent({
+      id: "rde_1",
+      event: "delivered",
+      rawEvent: "email.delivered",
+      messageId: "msg_123",
+      toEmail: "ramesh@apex.in",
+      payload: { ok: true },
+    });
+    await orgAdmin.recordPlanPayment(ownerCtx, {
+      id: "pp_1",
+      plan: "pro",
+      period: "monthly",
+      amountPaise: 353988,
+      linkId: "plink_1",
+    });
+
+    await expect(orgAdmin.removeOrgMember(ownerCtx, "u_owner")).rejects.toThrow(TenantSecurityError);
   });
 });

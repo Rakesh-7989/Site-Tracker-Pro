@@ -264,5 +264,12 @@ export const cloudflareApi = {
   listNotifications: (orgId?: string) => cfRequest<{ notifications: unknown[] }>("/notifications", { orgId }),
   markNotificationRead: (notificationId: string, orgId?: string) =>
     cfRequest<{ id: string; read: boolean }>(`/notifications/${notificationId}/read`, { method: "PATCH", orgId }),
+
+  inviteOrgMember: (orgId: string, input: { email: string; role: string }) =>
+    cfRequest<{ id: string; token: string }>(`/orgs/${orgId}/invitations`, { method: "POST", orgId, body: input }),
+  removeOrgMember: (orgId: string, profileId: string) =>
+    cfRequest<{ removed: string }>(`/orgs/${orgId}/members/${profileId}`, { method: "DELETE", orgId }),
+  mintPlanPaymentLink: (input: { plan: "basic" | "pro" | "business"; period?: "monthly" | "annual" }, orgId?: string) =>
+    cfRequest<{ linkId: string; shortUrl: string }>("/payments/razorpay-plan-link", { method: "POST", orgId, body: input }),
 };
 

@@ -12,6 +12,7 @@ import { ProjectRepository } from "./repositories/projectRepository";
 import { SiteOpsRepository } from "./repositories/siteOpsRepository";
 import { FinanceRepository } from "./repositories/financeRepository";
 import { ProcurementAndDesignRepository } from "./repositories/procurementAndDesignRepository";
+import { OrgAdminRepository } from "./repositories/orgAdminRepository";
 
 export interface Env {
   DB: D1Database;
@@ -284,6 +285,108 @@ export default {
       return json({ ok: true, received: true });
     }
 
+    // POST /api/payments/razorpay-plan-link (ports razorpay-plan-link EF)
+    if (url.pathname === "/api/payments/razorpay-plan-link" && request.method === "POST") {
+      const auth = await authenticateRequest(request);
+      if (!auth) return json({ ok: false, error: "authentication required" }, 401);
+      if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+        return json({ ok: false, error: "Razorpay credentials not configured in Workers environment" }, 500);
+      }
+      const orgId = request.headers.get("X-Org-Id") || auth.org_id;
+      if (!orgId) return json({ ok: false, error: "org_id required" }, 400);
+
+      try {
+        const ctx = await assertTenantContext(env.DB, auth.sub, orgId);
+        const body = (await request.json()) as { plan?: "basic" | "pro" | "business"; period?: "monthly" | "annual" };
+        const plan = body.plan;
+        const period = body.period || "monthly";
+        const PLAN_PRICES_PAISE: Record<"basic" | "pro" | "business", Record<"monthly" | "annual", number>> = {
+          basic: { monthly: 117882, annual: 1178820 },
+          pro: { monthly: 353988, annual: 3539880 },
+          business: { monthly: 943988, annual: 9439880 },
+        };
+        if (!plan || !PLAN_PRICES_PAISE[plan]) {
+          return json({ ok: false, error: "Valid plan (basic|pro|business) required" }, 400);
+        }
+        const amountPaise = PLAN_PRICES_PAISE[plan][period];
+        const result = await mintRazorpayPaymentLink({
+          keyId: env.RAZORPAY_KEY_ID,
+          secret: env.RAZORPAY_KEY_SECRET,
+          amountInPaisa: amountPaise,
+          description: `SiteTrack Pro ${plan.toUpperCase()} (${period})`,
+          customer: { email: ctx.email },
+          notes: { org_id: ctx.orgId, plan, period },
+        });
+        if (!result.ok || !result.id) return json(result, 400);
+
+        await new OrgAdminRepository(env.DB).recordPlanPayment(ctx, {
+          id: `pp_${crypto.randomUUID()}`,
+          plan,
+          period,
+          amountPaise,
+          linkId: result.id,
+        });
+        return json({ ok: true, linkId: result.id, shortUrl: result.shortUrl });
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // POST /api/webhooks/resend (ports resend-webhook EF)
+    if (url.pathname === "/api/webhooks/resend" && request.method === "POST") {
+      try {
+        const body = (await request.json()) as {
+          type?: string;
+          data?: { email_id?: string; to?: string[]; subject?: string };
+        };
+        const rawType = body.type || "email.sent";
+        const shortEvent = rawType.replace(/^email\./, "");
+        await new OrgAdminRepository(env.DB).recordResendEvent({
+          id: `rde_${crypto.randomUUID()}`,
+          event: shortEvent,
+          rawEvent: rawType,
+          messageId: body.data?.email_id,
+          toEmail: body.data?.to?.[0],
+          subject: body.data?.subject,
+          payload: body,
+        });
+        return json({ ok: true, received: true });
+      } catch (err) {
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // POST /api/public/signup-requests (ports submit_signup_request EF)
+    if (url.pathname === "/api/public/signup-requests" && request.method === "POST") {
+      try {
+        const body = (await request.json()) as {
+          firmName?: string;
+          contactName?: string;
+          email?: string;
+          phone?: string;
+          plan?: string;
+          message?: string;
+        };
+        if (!body.firmName || !body.contactName || !body.email) {
+          return json({ ok: false, error: "firmName, contactName, and email are required" }, 400);
+        }
+        const id = `sr_${crypto.randomUUID()}`;
+        await new OrgAdminRepository(env.DB).submitSignupRequest({
+          id,
+          firmName: body.firmName,
+          contactName: body.contactName,
+          email: body.email,
+          phone: body.phone,
+          plan: body.plan,
+          message: body.message,
+        });
+        return json({ ok: true, id }, 201);
+      } catch (err) {
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
     // ── STORAGE & MEDIA (CLOUDFLARE R2) ─────────────────────────────────────
 
     // POST /api/storage/upload
@@ -454,6 +557,41 @@ export default {
           .bind(ctx.orgId)
           .all();
         return json({ ok: true, members: results || [] });
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // POST /api/orgs/:orgId/invitations (ports invite_org_member EF)
+    const orgInviteMatch = url.pathname.match(/^\/api\/orgs\/([^/]+)\/invitations$/);
+    if (orgInviteMatch && request.method === "POST") {
+      const auth = await authenticateRequest(request);
+      if (!auth) return json({ ok: false, error: "authentication required" }, 401);
+      try {
+        const ctx = await assertTenantContext(env.DB, auth.sub, orgInviteMatch[1]);
+        const body = (await request.json()) as { email?: string; role?: string };
+        if (!body.email || !body.role) return json({ ok: false, error: "email and role are required" }, 400);
+        const id = `invt_${crypto.randomUUID()}`;
+        const token = crypto.randomUUID().replace(/-/g, "");
+        await new OrgAdminRepository(env.DB).inviteOrgMember(ctx, { id, email: body.email, role: body.role, token });
+        return json({ ok: true, id, token }, 201);
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // DELETE /api/orgs/:orgId/members/:profileId (ports remove_org_member EF)
+    const orgMemberRemoveMatch = url.pathname.match(/^\/api\/orgs\/([^/]+)\/members\/([^/]+)$/);
+    if (orgMemberRemoveMatch && request.method === "DELETE") {
+      const auth = await authenticateRequest(request);
+      if (!auth) return json({ ok: false, error: "authentication required" }, 401);
+      try {
+        const ctx = await assertTenantContext(env.DB, auth.sub, orgMemberRemoveMatch[1]);
+        const removed = await new OrgAdminRepository(env.DB).removeOrgMember(ctx, orgMemberRemoveMatch[2]);
+        if (!removed) return json({ ok: false, error: "Member not found" }, 404);
+        return json({ ok: true, removed: orgMemberRemoveMatch[2] });
       } catch (err) {
         if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
         return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
@@ -749,5 +887,7 @@ export default {
         .bind(row.id)
         .run();
     }
+
+    await new OrgAdminRepository(env.DB).refreshDailyUsageRollup();
   },
 };
