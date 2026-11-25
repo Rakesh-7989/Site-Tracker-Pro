@@ -5,7 +5,18 @@
  * (Auth, D1, R2 Storage, Razorpay) with seamless fallback support.
  */
 
-const API_BASE = (import.meta.env?.VITE_CLOUDFLARE_API_URL as string) || "/api";
+export const CLOUDFLARE_API_DEFAULT_URL = "https://sitetrack-api.boyapatirakesh-mahespaddy.workers.dev/api";
+
+const API_BASE =
+  (import.meta.env?.VITE_CLOUDFLARE_API_URL as string) ||
+  (import.meta.env?.VITE_BACKEND_PROVIDER === "cloudflare" ? CLOUDFLARE_API_DEFAULT_URL : "/api");
+
+export function isCloudflareBackendEnabled(): boolean {
+  return (
+    import.meta.env?.VITE_BACKEND_PROVIDER === "cloudflare" ||
+    Boolean(import.meta.env?.VITE_CLOUDFLARE_API_URL)
+  );
+}
 
 export interface AuthSession {
   token: string;
@@ -41,6 +52,47 @@ export const cloudflareAuth = {
   clearToken(): void {
     if (typeof localStorage !== "undefined") {
       localStorage.removeItem(TOKEN_KEY);
+    }
+  },
+
+  async register(input: {
+    email: string;
+    password: string;
+    fullName?: string;
+    orgName: string;
+    orgSlug: string;
+    orgType?: string;
+  }): Promise<{ ok: boolean; session?: AuthSession; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        token?: string;
+        user?: AuthSession["user"];
+        organization?: { id: string; slug: string; name: string };
+        error?: string;
+      };
+      if (!res.ok || !data.ok || !data.token) {
+        return { ok: false, error: data.error || "Registration failed" };
+      }
+
+      this.setToken(data.token);
+      return {
+        ok: true,
+        session: {
+          token: data.token,
+          user: data.user!,
+          organizations: data.organization
+            ? [{ ...data.organization, plan: "basic", role: "admin", is_admin: true }]
+            : [],
+        },
+      };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
   },
 
