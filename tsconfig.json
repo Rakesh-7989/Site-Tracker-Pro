@@ -65,6 +65,7 @@
     "tests/**/*.ts",
     "tests/**/*.tsx",
     "supabase/functions/esm-shims.d.ts",
+    "workers/api/src/cloudflare.d.ts",
     "vite.config.ts",
     "vitest.config.ts"
   ],

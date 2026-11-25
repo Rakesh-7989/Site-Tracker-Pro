@@ -5,7 +5,18 @@
  * (Auth, D1, R2 Storage, Razorpay) with seamless fallback support.
  */
 
-const API_BASE = (import.meta.env?.VITE_CLOUDFLARE_API_URL as string) || "/api";
+export const CLOUDFLARE_API_DEFAULT_URL = "https://sitetrack-api.boyapatirakesh-mahespaddy.workers.dev/api";
+
+const API_BASE =
+  (import.meta.env?.VITE_CLOUDFLARE_API_URL as string) ||
+  (import.meta.env?.VITE_BACKEND_PROVIDER === "cloudflare" ? CLOUDFLARE_API_DEFAULT_URL : "/api");
+
+export function isCloudflareBackendEnabled(): boolean {
+  return (
+    import.meta.env?.VITE_BACKEND_PROVIDER === "cloudflare" ||
+    Boolean(import.meta.env?.VITE_CLOUDFLARE_API_URL)
+  );
+}
 
 export interface AuthSession {
   token: string;
@@ -41,6 +52,47 @@ export const cloudflareAuth = {
   clearToken(): void {
     if (typeof localStorage !== "undefined") {
       localStorage.removeItem(TOKEN_KEY);
+    }
+  },
+
+  async register(input: {
+    email: string;
+    password: string;
+    fullName?: string;
+    orgName: string;
+    orgSlug: string;
+    orgType?: string;
+  }): Promise<{ ok: boolean; session?: AuthSession; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        token?: string;
+        user?: AuthSession["user"];
+        organization?: { id: string; slug: string; name: string };
+        error?: string;
+      };
+      if (!res.ok || !data.ok || !data.token) {
+        return { ok: false, error: data.error || "Registration failed" };
+      }
+
+      this.setToken(data.token);
+      return {
+        ok: true,
+        session: {
+          token: data.token,
+          user: data.user!,
+          organizations: data.organization
+            ? [{ ...data.organization, plan: "basic", role: "admin", is_admin: true }]
+            : [],
+        },
+      };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
   },
 
@@ -117,5 +169,107 @@ export const cloudflareStorage = {
   getFileUrl(key: string): string {
     return `${API_BASE}/storage/files/${key}`;
   },
+};
+
+async function cfRequest<T>(
+  path: string,
+  options: { method?: string; orgId?: string; body?: unknown } = {}
+): Promise<{ ok: boolean; data?: T; error?: string }> {
+  const token = cloudflareAuth.getToken();
+  if (!token) return { ok: false, error: "authentication required" };
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+  };
+  if (options.orgId) headers["X-Org-Id"] = options.orgId;
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: options.method || "GET",
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    });
+    const json = (await res.json()) as { ok?: boolean; error?: string } & T;
+    if (!res.ok || json.ok === false) {
+      return { ok: false, error: json.error || `HTTP ${res.status}` };
+    }
+    return { ok: true, data: json };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export const cloudflareApi = {
+  listProjects: (orgId?: string) => cfRequest<{ projects: unknown[] }>("/projects", { orgId }),
+  createProject: (input: { name: string; type?: string; budget?: number }, orgId?: string) =>
+    cfRequest<{ id: string }>("/projects", { method: "POST", orgId, body: input }),
+  getProject: (projectId: string, orgId?: string) =>
+    cfRequest<{ project: unknown }>(`/projects/${projectId}`, { orgId }),
+
+  listTasks: (projectId: string, orgId?: string) =>
+    cfRequest<{ tasks: unknown[] }>(`/projects/${projectId}/tasks`, { orgId }),
+  createTask: (projectId: string, input: { title: string; description?: string; milestoneId?: string; priority?: string; dueDate?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/tasks`, { method: "POST", orgId, body: input }),
+  updateTaskStatus: (projectId: string, taskId: string, status: "todo" | "in_progress" | "review" | "done", orgId?: string) =>
+    cfRequest<{ id: string; status: string }>(`/projects/${projectId}/tasks/${taskId}`, { method: "PATCH", orgId, body: { status } }),
+
+  listMilestones: (projectId: string, orgId?: string) =>
+    cfRequest<{ milestones: unknown[] }>(`/projects/${projectId}/milestones`, { orgId }),
+  createMilestone: (projectId: string, input: { title: string; description?: string; dueDate?: string; weight?: number }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/milestones`, { method: "POST", orgId, body: input }),
+
+  listDprs: (projectId: string, orgId?: string) =>
+    cfRequest<{ dprs: unknown[] }>(`/projects/${projectId}/dpr`, { orgId }),
+  createDpr: (projectId: string, input: { transcriptText?: string; voiceAudioUrl?: string; photoLat?: number; photoLon?: number }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/dpr`, { method: "POST", orgId, body: input }),
+
+  listAttendance: (projectId: string, date?: string, orgId?: string) =>
+    cfRequest<{ attendance: unknown[] }>(`/projects/${projectId}/attendance${date ? `?date=${encodeURIComponent(date)}` : ""}`, { orgId }),
+  recordAttendance: (projectId: string, input: { attendeeKind: "labour" | "staff" | "visitor"; attendeeName: string; date?: string; status?: string; hours?: number }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/attendance`, { method: "POST", orgId, body: input }),
+
+  listInvoices: (projectId: string, orgId?: string) =>
+    cfRequest<{ invoices: unknown[] }>(`/projects/${projectId}/invoices`, { orgId }),
+  createInvoice: (projectId: string, input: { invoiceNumber: string; issueDate: string; dueDate?: string; subtotal: number; gstRate?: number; tdsRate?: number }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/invoices`, { method: "POST", orgId, body: input }),
+
+  listExpenses: (projectId: string, orgId?: string) =>
+    cfRequest<{ expenses: unknown[] }>(`/projects/${projectId}/expenses`, { orgId }),
+  createExpense: (projectId: string, input: { category: string; description: string; amount: number; gst?: number; paidTo?: string; paidVia?: string; refNo?: string; expenseDate?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/expenses`, { method: "POST", orgId, body: input }),
+
+  listOrgMembers: (orgId: string) =>
+    cfRequest<{ members: unknown[] }>(`/orgs/${orgId}/members`, { orgId }),
+
+  listVendors: (orgId?: string) => cfRequest<{ vendors: unknown[] }>("/vendors", { orgId }),
+  createVendor: (input: { name: string; contactPerson?: string; phone?: string; email?: string; gstin?: string; category?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>("/vendors", { method: "POST", orgId, body: input }),
+
+  listBoqItems: (projectId: string, orgId?: string) =>
+    cfRequest<{ items: unknown[] }>(`/projects/${projectId}/boq`, { orgId }),
+  createBoqItem: (projectId: string, input: { itemCode?: string; itemName: string; unit?: string; qty: number; rate: number }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/boq`, { method: "POST", orgId, body: input }),
+
+  listPurchaseOrders: (projectId: string, orgId?: string) =>
+    cfRequest<{ purchaseOrders: unknown[] }>(`/projects/${projectId}/purchase-orders`, { orgId }),
+  createPurchaseOrder: (projectId: string, input: { vendorId: string; poNumber: string; totalAmount: number; taxAmount?: number }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/purchase-orders`, { method: "POST", orgId, body: input }),
+
+  listDrawings: (projectId: string, orgId?: string) =>
+    cfRequest<{ drawings: unknown[] }>(`/projects/${projectId}/drawings`, { orgId }),
+  createDrawing: (projectId: string, input: { title: string; discipline?: string; drawingNumber: string; currentFileKey: string; fileFormat?: string; status?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/drawings`, { method: "POST", orgId, body: input }),
+
+  listNotifications: (orgId?: string) => cfRequest<{ notifications: unknown[] }>("/notifications", { orgId }),
+  markNotificationRead: (notificationId: string, orgId?: string) =>
+    cfRequest<{ id: string; read: boolean }>(`/notifications/${notificationId}/read`, { method: "PATCH", orgId }),
+
+  inviteOrgMember: (orgId: string, input: { email: string; role: string }) =>
+    cfRequest<{ id: string; token: string }>(`/orgs/${orgId}/invitations`, { method: "POST", orgId, body: input }),
+  removeOrgMember: (orgId: string, profileId: string) =>
+    cfRequest<{ removed: string }>(`/orgs/${orgId}/members/${profileId}`, { method: "DELETE", orgId }),
+  mintPlanPaymentLink: (input: { plan: "basic" | "pro" | "business"; period?: "monthly" | "annual" }, orgId?: string) =>
+    cfRequest<{ linkId: string; shortUrl: string }>("/payments/razorpay-plan-link", { method: "POST", orgId, body: input }),
 };
 
