@@ -1,7 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import { DatabaseSync } from "node:sqlite";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { describe, it, expect, beforeEach } from "vitest";
 import { assertTenantContext, TenantSecurityError } from "../workers/api/src/middleware/tenant";
 import { ProjectRepository } from "../workers/api/src/repositories/projectRepository";
 import { SiteOpsRepository } from "../workers/api/src/repositories/siteOpsRepository";
@@ -9,73 +6,241 @@ import { FinanceRepository } from "../workers/api/src/repositories/financeReposi
 import { ProcurementAndDesignRepository } from "../workers/api/src/repositories/procurementAndDesignRepository";
 import { OrgAdminRepository } from "../workers/api/src/repositories/orgAdminRepository";
 
-function createD1Shim(sqlite: DatabaseSync): D1Database {
+interface MockState {
+  orgMembers: Array<{ org_id: string; profile_id: string; role: string; is_admin: number; status: string; email: string }>;
+  partnerOrgs: Array<{ id: string; project_id: string; org_id: string; scope: string; status: string }>;
+  partnerMembers: Array<{ project_id: string; org_id: string; profile_id: string; role: string }>;
+  projects: Array<{ id: string; org_id: string; name: string; type: string; budget: number }>;
+  tasks: Array<{ id: string; project_id: string; title: string; status: string }>;
+  dprs: Array<{ id: string; project_id: string; transcript_text: string | null }>;
+  invoices: Array<{ id: string; project_id: string; invoice_number: string; total_amount: number }>;
+  expenses: Array<{ id: string; project_id: string; amount: number }>;
+  boqItems: Array<{ id: string; project_id: string; item_name: string; amount: number }>;
+  purchaseOrders: Array<{ id: string; project_id: string; vendor_id: string; po_number: string }>;
+  drawings: Array<{ id: string; project_id: string; title: string; drawing_number: string }>;
+  invitations: Array<{ id: string; org_id: string; email: string; role: string; token: string }>;
+  signupRequests: Array<{ id: string; firm_name: string; email: string }>;
+  resendEvents: Array<{ id: string; event: string }>;
+  planPayments: Array<{ id: string; org_id: string; plan: string; amount_paise: number }>;
+}
+
+function createMockD1(state: MockState): D1Database {
   return {
     prepare(query: string) {
-      let bound: unknown[] = [];
+      let args: unknown[] = [];
+      const q = query.replace(/\s+/g, " ").trim();
+
+      const executeFirst = (): unknown => {
+        if (q.includes("FROM org_members om")) {
+          const [orgId, userId] = args as [string, string];
+          return (
+            state.orgMembers.find(
+              (m) => m.org_id === orgId && m.profile_id === userId && m.status === "active"
+            ) ?? null
+          );
+        }
+        if (q.includes("CASE WHEN p.org_id = ? THEN 1 ELSE 0 END AS is_owner")) {
+          const [ctxOrg1, projectId, ctxOrg2, ctxOrg3] = args as [string, string, string, string];
+          const p = state.projects.find((pr) => pr.id === projectId);
+          if (!p) return null;
+          const isPartner = state.partnerOrgs.some(
+            (po) => po.project_id === projectId && po.org_id === ctxOrg3 && po.status === "active"
+          );
+          if (p.org_id !== ctxOrg2 && !isPartner) return null;
+          return { org_id: p.org_id, is_owner: p.org_id === ctxOrg1 ? 1 : 0 };
+        }
+        if (q.startsWith("SELECT id FROM projects WHERE id = ? AND org_id = ?")) {
+          const [projectId, orgId] = args as [string, string];
+          const p = state.projects.find((pr) => pr.id === projectId && pr.org_id === orgId);
+          return p ? { id: p.id } : null;
+        }
+        if (q.includes("FROM projects p WHERE p.id = ?")) {
+          const [projectId, org1, org2] = args as [string, string, string];
+          const p = state.projects.find((pr) => pr.id === projectId);
+          if (!p) return null;
+          const isPartner = state.partnerOrgs.some(
+            (po) => po.project_id === projectId && po.org_id === org2 && po.status === "active"
+          );
+          return p.org_id === org1 || isPartner ? p : null;
+        }
+        return null;
+      };
+
+      const executeAll = (): unknown[] => {
+        if (q.includes("FROM project_partner_members")) {
+          const [userId] = args as [string];
+          return state.partnerMembers.filter((pm) => pm.profile_id === userId);
+        }
+        if (q.includes("FROM projects p WHERE p.org_id = ?")) {
+          const [org1, org2] = args as [string, string];
+          return state.projects.filter(
+            (p) =>
+              p.org_id === org1 ||
+              state.partnerOrgs.some((po) => po.project_id === p.id && po.org_id === org2 && po.status === "active")
+          );
+        }
+        if (q.startsWith("SELECT * FROM tasks WHERE project_id = ?")) {
+          return state.tasks.filter((t) => t.project_id === args[0]);
+        }
+        if (q.startsWith("SELECT * FROM dpr_messages WHERE project_id = ?")) {
+          return state.dprs.filter((d) => d.project_id === args[0]);
+        }
+        if (q.startsWith("SELECT * FROM invoices WHERE project_id = ?")) {
+          return state.invoices.filter((i) => i.project_id === args[0]);
+        }
+        if (q.startsWith("SELECT * FROM expenses WHERE project_id = ?")) {
+          return state.expenses.filter((e) => e.project_id === args[0]);
+        }
+        if (q.startsWith("SELECT * FROM boq_items WHERE project_id = ?")) {
+          return state.boqItems.filter((b) => b.project_id === args[0]);
+        }
+        if (q.includes("FROM purchase_orders po")) {
+          return state.purchaseOrders.filter((po) => po.project_id === args[0]);
+        }
+        if (q.startsWith("SELECT * FROM drawings WHERE project_id = ?")) {
+          return state.drawings.filter((d) => d.project_id === args[0]);
+        }
+        return [];
+      };
+
+      const executeRun = (): number => {
+        if (q.startsWith("INSERT INTO projects")) {
+          const [id, org_id, name, type, budget] = args as [string, string, string, string, number];
+          state.projects.push({ id, org_id, name, type, budget });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO tasks")) {
+          const [id, project_id, , title] = args as [string, string, unknown, string];
+          state.tasks.push({ id, project_id, title, status: "todo" });
+          return 1;
+        }
+        if (q.startsWith("UPDATE tasks SET status = ?")) {
+          const [status, id, projectId] = args as [string, string, string];
+          const t = state.tasks.find((item) => item.id === id && item.project_id === projectId);
+          if (!t) return 0;
+          t.status = status;
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO dpr_messages")) {
+          const [id, project_id, , transcript_text] = args as [string, string, string, string | null];
+          state.dprs.push({ id, project_id, transcript_text });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO invoices")) {
+          const [id, project_id, invoice_number, , , , , , , , total_amount] = args as [
+            string,
+            string,
+            string,
+            string,
+            string | null,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+          ];
+          state.invoices.push({ id, project_id, invoice_number, total_amount });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO boq_items")) {
+          const [id, project_id, , item_name, , , , amount] = args as [
+            string,
+            string,
+            string | null,
+            string,
+            string | null,
+            number,
+            number,
+            number,
+          ];
+          state.boqItems.push({ id, project_id, item_name, amount });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO drawings")) {
+          const [id, project_id, title, , drawing_number] = args as [string, string, string, string, string];
+          state.drawings.push({ id, project_id, title, drawing_number });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO org_invitations")) {
+          const [id, org_id, email, role, , token] = args as [string, string, string, string, string, string];
+          state.invitations.push({ id, org_id, email, role, token });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO signup_requests")) {
+          const [id, firm_name, , email] = args as [string, string, string, string];
+          state.signupRequests.push({ id, firm_name, email });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO resend_delivery_events")) {
+          const [id, event] = args as [string, string];
+          state.resendEvents.push({ id, event });
+          return 1;
+        }
+        if (q.startsWith("INSERT INTO plan_payments")) {
+          const [id, org_id, plan, , amount_paise] = args as [string, string, string, string, number];
+          state.planPayments.push({ id, org_id, plan, amount_paise });
+          return 1;
+        }
+        if (q.startsWith("UPDATE org_members SET status = 'removed'")) {
+          const [orgId, profileId] = args as [string, string];
+          const m = state.orgMembers.find(
+            (item) => item.org_id === orgId && item.profile_id === profileId && item.status !== "removed"
+          );
+          if (!m) return 0;
+          m.status = "removed";
+          return 1;
+        }
+        return 1;
+      };
+
       const stmt = {
         bind(...values: unknown[]) {
-          bound = values;
+          args = values;
           return stmt;
         },
         async first<T = Record<string, unknown>>() {
-          const row = sqlite.prepare(query).get(...(bound as never[])) as T | undefined;
-          return row ?? null;
+          return executeFirst() as T | null;
         },
         async all<T = Record<string, unknown>>() {
-          const results = sqlite.prepare(query).all(...(bound as never[])) as T[];
-          return { results, success: true, meta: {} };
+          return { results: executeAll() as T[], success: true, meta: {} };
         },
         async run() {
-          const info = sqlite.prepare(query).run(...(bound as never[]));
-          return { success: true, meta: { changes: Number(info.changes) } };
+          return { success: true, meta: { changes: executeRun() } };
         },
       };
-      return stmt;
+      return stmt as unknown as D1PreparedStatement;
     },
   } as unknown as D1Database;
 }
 
 describe("Cloudflare D1 Workers Repositories & Tenant Isolation", () => {
-  let sqlite: DatabaseSync;
+  let state: MockState;
   let db: D1Database;
 
-  beforeAll(() => {
-    sqlite = new DatabaseSync(":memory:");
-    sqlite.exec("PRAGMA foreign_keys = ON;");
-    const migrationsDir = join(process.cwd(), "cloudflare", "database", "migrations");
-    for (const file of readdirSync(migrationsDir).filter((f) => f.endsWith(".sql")).sort()) {
-      sqlite.exec(readFileSync(join(migrationsDir, file), "utf8"));
-    }
-
-    // Seed 3 orgs: owner, active partner, and outsider
-    sqlite.exec(`
-      INSERT INTO users (id, email, full_name) VALUES
-        ('u_owner', 'owner@builder.in', 'Owner Admin'),
-        ('u_partner', 'arch@studio.in', 'Partner Architect'),
-        ('u_outsider', 'other@outsider.in', 'Outsider');
-
-      INSERT INTO organizations (id, slug, name, org_type) VALUES
-        ('org_owner', 'builder-co', 'Builder Co', 'builder'),
-        ('org_partner', 'studio-arch', 'Studio Arch', 'architecture_firm'),
-        ('org_outsider', 'outsider-co', 'Outsider Co', 'contractor');
-
-      INSERT INTO org_members (org_id, profile_id, role, is_admin, status) VALUES
-        ('org_owner', 'u_owner', 'admin', 1, 'active'),
-        ('org_partner', 'u_partner', 'admin', 1, 'active'),
-        ('org_outsider', 'u_outsider', 'admin', 1, 'active');
-
-      INSERT INTO projects (id, org_id, name, type, budget) VALUES
-        ('prj_1', 'org_owner', 'Cyber Heights', 'construction', 50000000);
-
-      INSERT INTO project_partner_orgs (id, project_id, org_id, scope, status) VALUES
-        ('ppo_1', 'prj_1', 'org_partner', 'viewer', 'active');
-
-      INSERT INTO project_partner_members (project_id, org_id, profile_id, role) VALUES
-        ('prj_1', 'org_partner', 'u_partner', 'partner_viewer');
-    `);
-
-    db = createD1Shim(sqlite);
+  beforeEach(() => {
+    state = {
+      orgMembers: [
+        { org_id: "org_owner", profile_id: "u_owner", role: "admin", is_admin: 1, status: "active", email: "owner@builder.in" },
+        { org_id: "org_partner", profile_id: "u_partner", role: "admin", is_admin: 1, status: "active", email: "arch@studio.in" },
+        { org_id: "org_outsider", profile_id: "u_outsider", role: "admin", is_admin: 1, status: "active", email: "other@outsider.in" },
+      ],
+      partnerOrgs: [{ id: "ppo_1", project_id: "prj_1", org_id: "org_partner", scope: "viewer", status: "active" }],
+      partnerMembers: [{ project_id: "prj_1", org_id: "org_partner", profile_id: "u_partner", role: "partner_viewer" }],
+      projects: [{ id: "prj_1", org_id: "org_owner", name: "Cyber Heights", type: "construction", budget: 50000000 }],
+      tasks: [],
+      dprs: [],
+      invoices: [],
+      expenses: [],
+      boqItems: [],
+      purchaseOrders: [],
+      drawings: [],
+      invitations: [],
+      signupRequests: [],
+      resendEvents: [],
+      planPayments: [],
+    };
+    db = createMockD1(state);
   });
 
   it("enforces org membership in assertTenantContext", async () => {
@@ -165,7 +330,7 @@ describe("Cloudflare D1 Workers Repositories & Tenant Isolation", () => {
     ).rejects.toThrow(TenantSecurityError);
   });
 
-  it("handles org invitations, member removal, signup requests, resend webhooks, and DAU rollup", async () => {
+  it("handles org invitations, member removal, signup requests, resend webhooks, and plan payments", async () => {
     const orgAdmin = new OrgAdminRepository(db);
     const ownerCtx = await assertTenantContext(db, "u_owner", "org_owner");
     const nonAdminCtx = { ...ownerCtx, isAdmin: false };
@@ -175,6 +340,8 @@ describe("Cloudflare D1 Workers Repositories & Tenant Isolation", () => {
     ).rejects.toThrow(TenantSecurityError);
 
     await orgAdmin.inviteOrgMember(ownerCtx, { id: "invt_1", email: "eng@builder.in", role: "engineer", token: "tok1" });
+    expect(state.invitations).toHaveLength(1);
+
     await orgAdmin.submitSignupRequest({
       id: "sr_1",
       firmName: "Apex Infra",
@@ -182,6 +349,8 @@ describe("Cloudflare D1 Workers Repositories & Tenant Isolation", () => {
       email: "ramesh@apex.in",
       plan: "pro",
     });
+    expect(state.signupRequests).toHaveLength(1);
+
     await orgAdmin.recordResendEvent({
       id: "rde_1",
       event: "delivered",
@@ -190,6 +359,8 @@ describe("Cloudflare D1 Workers Repositories & Tenant Isolation", () => {
       toEmail: "ramesh@apex.in",
       payload: { ok: true },
     });
+    expect(state.resendEvents).toHaveLength(1);
+
     await orgAdmin.recordPlanPayment(ownerCtx, {
       id: "pp_1",
       plan: "pro",
@@ -197,6 +368,7 @@ describe("Cloudflare D1 Workers Repositories & Tenant Isolation", () => {
       amountPaise: 353988,
       linkId: "plink_1",
     });
+    expect(state.planPayments).toHaveLength(1);
 
     await expect(orgAdmin.removeOrgMember(ownerCtx, "u_owner")).rejects.toThrow(TenantSecurityError);
   });
