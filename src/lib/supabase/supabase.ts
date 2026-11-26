@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TypedSupabaseClient } from "./db";
 import type { Database } from "./database.types";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "./supabasePublicConfig";
+import { cloudflareAuth, isCloudflareBackendEnabled } from "../api/cloudflareClient";
 
 const ENV: Record<string, string | undefined> = typeof import.meta !== "undefined" ? import.meta.env : {};
 
@@ -122,6 +123,10 @@ export async function signInWithMagicLink(email: string): Promise<AuthResult> {
 }
 
 export async function signOut(): Promise<void> {
+  if (isCloudflareBackendEnabled()) {
+    cloudflareAuth.logout();
+    return;
+  }
   const sb = await getSupabaseClient();
   if (!sb) return;
   await (sb as TypedSupabaseClient).auth.signOut();
@@ -197,6 +202,19 @@ export async function signUp({ email, password, firmName, userName, plan = "basi
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<AuthResultWithUser> {
+  if (isCloudflareBackendEnabled()) {
+    const res = await cloudflareAuth.login(String(email || "").trim(), String(password || ""));
+    if (!res.ok || !res.session) {
+      return { ok: false, error: res.error || "Login failed" };
+    }
+    return {
+      ok: true,
+      user: {
+        id: res.session.user.id,
+        email: res.session.user.email,
+      },
+    };
+  }
   const sb = await getSupabaseClient();
   if (!sb) return { ok: false, error: "backend-disabled" };
   const { data, error } = await (sb as TypedSupabaseClient).auth.signInWithPassword({

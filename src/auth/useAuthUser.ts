@@ -14,6 +14,12 @@ import { fetchAuthSession, fetchCapabilityOverrides, fetchCustomRoleOverrides, t
 import { defaultStorage, readActiveOrgId, writeActiveOrgId, preferredOrgIdForHost, type StorageLike } from "./activeOrgStore";
 import { resolveSubdomain } from "../lib/subdomain";
 import { setTenantContext } from "../lib/supabase/tenantContext";
+import {
+  CF_AUTH_EVENT,
+  cloudflareAuth,
+  isCloudflareBackendEnabled,
+  toAppAuthSession,
+} from "../lib/api/cloudflareClient";
 
 export type AuthStatus = "idle" | "loading" | "ready" | "signed-out" | "error";
 
@@ -125,6 +131,42 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     // load (and an explicit refresh()) shows the loading state.
     if (!silent) setStatus("loading");
     setError(null);
+
+    if (!optsRef.current.getClient && isCloudflareBackendEnabled()) {
+      try {
+        const token = cloudflareAuth.getToken();
+        if (!token) {
+          setSession(null);
+          setStatus("signed-out");
+          return null;
+        }
+        const me = await withRetry(() => cloudflareAuth.me(), 1, 8000);
+        if (!me.ok || !me.user) {
+          cloudflareAuth.clearToken();
+          setSession(null);
+          setStatus("signed-out");
+          return null;
+        }
+        const storedOrgId = readActiveOrgId(storageRef.current);
+        const subdomain = typeof window !== "undefined"
+          ? resolveSubdomain(window.location.hostname)?.subdomain ?? null
+          : null;
+        const preferredOrgId = preferredOrgIdForHost(storedOrgId, subdomain, storageRef.current);
+        const cfSession = toAppAuthSession(me.user, me.organizations ?? [], preferredOrgId);
+        setSession(cfSession);
+        setStatus("ready");
+        if (cfSession.activeOrgId !== preferredOrgId) {
+          writeActiveOrgId(cfSession.activeOrgId, storageRef.current);
+        }
+        return cfSession;
+      } catch (e) {
+        setSession(null);
+        setStatus("signed-out");
+        setError(e instanceof Error ? e.message : String(e));
+        return null;
+      }
+    }
+
     let client: unknown;
     try {
       // getClient() loads the Supabase SDK via dynamic import. Retry twice
@@ -207,6 +249,17 @@ export function useAuthUser(opts: UseAuthUserOptions = {}): UseAuthUserReturn {
     void (async () => {
       await hydrate();
       if (cancelled) return;
+      if (!optsRef.current.getClient && isCloudflareBackendEnabled() && typeof window !== "undefined") {
+        const onCfAuthChange = () => {
+          if (!cancelled) void hydrate(true);
+        };
+        window.addEventListener(CF_AUTH_EVENT, onCfAuthChange);
+        subscription = {
+          unsubscribe: () => window.removeEventListener(CF_AUTH_EVENT, onCfAuthChange),
+        };
+        if (cancelled) subscription.unsubscribe();
+        return;
+      }
       // Subscribe to subsequent auth changes (sign-in / sign-out).
       const client = await getClient();
       if (!client || cancelled) return;

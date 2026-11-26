@@ -1,6 +1,8 @@
 // SiteTrack Pro — finance queries (v3 port, Batch 3). DB-wired to
 // purchase_orders / invoices / expenses via the migration 74 bridge.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -36,6 +38,36 @@ const asPO = oneOf<POStatus>(["pending", "approved", "delivered", "cancelled"], 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listPOs(client: any, projectId: string): Promise<Result<PurchaseOrder[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listPurchaseOrders(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load purchase orders" };
+      const mapCfPoStatus = (s: unknown): POStatus => {
+        if (s === "issued") return "approved";
+        if (s === "fulfilled") return "delivered";
+        if (s === "cancelled") return "cancelled";
+        if (s === "draft" || s === "partially_received") return "pending";
+        return asPO(s);
+      };
+      return ok(((cf.data.purchaseOrders ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        poNo: String(r.po_number ?? r.po_no ?? ""),
+        items: r.items == null ? null : String(r.items),
+        amount: Number(r.total_amount ?? r.amount ?? 0),
+        status: mapCfPoStatus(r.status),
+        deliveryDate: r.delivery_date == null ? null : String(r.delivery_date),
+        vendorId: r.vendor_id == null ? null : String(r.vendor_id),
+        vendorName: r.vendor_name == null ? null : String(r.vendor_name),
+        quoteId: r.quote_id == null ? null : String(r.quote_id),
+        quoteItem: r.quote_item == null ? null : String(r.quote_item),
+        materialRequestId: r.material_request_id == null ? null : String(r.material_request_id),
+        materialRequestItem: r.material_request_item == null ? null : String(r.material_request_item),
+        requestedById: r.created_by == null ? (r.requested_by == null ? null : String(r.requested_by)) : String(r.created_by),
+        requestedByName: r.requested_by_name == null ? null : String(r.requested_by_name),
+        approvedById: r.approved_by == null ? null : String(r.approved_by),
+        approvedByName: r.approved_by_name == null ? null : String(r.approved_by_name),
+        approvedAt: r.approved_at == null ? (r.issued_at == null ? null : String(r.issued_at)) : String(r.approved_at),
+      })));
+    }
     const { data, error } = await client.from("purchase_orders")
       .select("id, po_no, items, amount, status, delivery_date, vendor_id, vendor:vendor_id(name), quote_id, quote:quote_id(item_name), material_request_id, material_request:material_request_id(item), requested_by, requested:requested_by(name), approved_by, approved:approved_by(name), approved_at")
       .eq("project_id", projectId)
@@ -56,6 +88,15 @@ export async function listPOs(client: any, projectId: string): Promise<Result<Pu
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createPO(client: any, input: { projectId: string; poNo: string; items?: string; amount: number; deliveryDate?: string | null; vendorId?: string | null; quoteId?: string | null; materialRequestId?: string | null }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createPurchaseOrder(input.projectId, {
+        vendorId: input.vendorId ?? "",
+        poNumber: input.poNo,
+        totalAmount: input.amount,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create purchase order" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("purchase_orders").insert({ project_id: input.projectId, po_no: input.poNo, items: input.items || null, amount: input.amount, delivery_date: input.deliveryDate || null, vendor_id: input.vendorId || null, quote_id: input.quoteId || null, material_request_id: input.materialRequestId || null }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
@@ -126,6 +167,33 @@ export function invoiceTaxBreakup(amount: number, gstPct: number, tdsPct: number
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listInvoices(client: any, projectId: string): Promise<Result<Invoice[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listInvoices(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load invoices" };
+      const mapCfInvoiceStatus = (s: unknown): InvoiceStatus => {
+        if (s === "paid") return "paid";
+        if (s === "void") return "cancelled";
+        if (s === "draft" || s === "unpaid" || s === "partially_paid") return "sent";
+        return asInv(s);
+      };
+      return ok(((cf.data.invoices ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        no: String(r.invoice_number ?? r.no ?? ""),
+        amount: Number(r.subtotal ?? r.amount ?? 0),
+        gst: Number(r.gst_rate ?? r.gst ?? 0),
+        tds: Number(r.tds_rate ?? r.tds ?? 0),
+        status: mapCfInvoiceStatus(r.status),
+        issuedDate: r.issue_date == null ? (r.issued_date == null ? null : String(r.issued_date)) : String(r.issue_date),
+        source: r.source == null ? null : asSource(r.source),
+        periodFrom: r.period_from == null ? null : String(r.period_from),
+        periodTo: r.period_to == null ? null : String(r.period_to),
+        retainerId: r.retainer_id == null ? null : String(r.retainer_id),
+        phaseId: r.phase_id == null ? null : String(r.phase_id),
+        razorpayPaymentLinkId: r.razorpay_payment_link_id == null ? null : String(r.razorpay_payment_link_id),
+        razorpayStatus: r.razorpay_status == null ? null : String(r.razorpay_status),
+        lines: mapLines(r.invoice_lines ?? r.lines),
+      })));
+    }
     const { data, error } = await client.from("invoices").select("id, no, amount, gst, tds, status, issued_date, source, period_from, period_to, retainer_id, phase_id, razorpay_payment_link_id, razorpay_status, invoice_lines(id, description, qty, unit_price, amount)").eq("project_id", projectId).order("issued_date", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
@@ -144,6 +212,17 @@ export async function listInvoices(client: any, projectId: string): Promise<Resu
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createInvoice(client: any, input: { projectId: string; no: string; amount: number; gst?: number; tds?: number; phaseId?: string | null }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createInvoice(input.projectId, {
+        invoiceNumber: input.no,
+        issueDate: new Date().toISOString().slice(0, 10),
+        subtotal: input.amount,
+        gstRate: input.gst ?? 18,
+        tdsRate: input.tds ?? 2,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create invoice" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("invoices").insert({ project_id: input.projectId, no: input.no, amount: input.amount, gst: input.gst ?? 18, tds: input.tds ?? 2, phase_id: input.phaseId ?? null, issued_date: new Date().toISOString().slice(0, 10) }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
@@ -161,6 +240,19 @@ const asExp = oneOf<ExpenseStatus>(["recorded", "reimbursed", "approved", "rejec
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listExpenses(client: any, projectId: string): Promise<Result<Expense[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listExpenses(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load expenses" };
+      return ok(((cf.data.expenses ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        category: String(r.category ?? ""),
+        description: String(r.description ?? ""),
+        amount: Number(r.amount ?? 0),
+        paidTo: r.paid_to == null ? null : String(r.paid_to),
+        expenseDate: r.expense_date == null ? null : String(r.expense_date),
+        status: asExp(r.status),
+      })));
+    }
     const { data, error } = await client.from("expenses").select("id, category, description, amount, paid_to, expense_date, status").eq("project_id", projectId).order("expense_date", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), category: String(r.category ?? ""), description: String(r.description ?? ""), amount: Number(r.amount ?? 0), paidTo: r.paid_to == null ? null : String(r.paid_to), expenseDate: r.expense_date == null ? null : String(r.expense_date), status: asExp(r.status) })));
@@ -169,6 +261,16 @@ export async function listExpenses(client: any, projectId: string): Promise<Resu
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createExpense(client: any, input: { projectId: string; category: string; description: string; amount: number; paidTo?: string; recordedBy: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createExpense(input.projectId, {
+        category: input.category,
+        description: input.description,
+        amount: input.amount,
+        paidTo: input.paidTo,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create expense" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("expenses").insert({ project_id: input.projectId, category: input.category, description: input.description, amount: input.amount, paid_to: input.paidTo || null, recorded_by: input.recordedBy }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
