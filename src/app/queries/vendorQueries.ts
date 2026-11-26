@@ -1,6 +1,8 @@
 // SiteTrack Pro — org vendor directory queries (material suppliers /
 // subcontractors). DB-wired to the `vendors` table (migration 84 bridge).
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type VResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export interface Vendor {
@@ -36,6 +38,23 @@ export function vendorOptionGroups(vendors: ReadonlyArray<{ id: string; name: st
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listVendors(client: any, orgId: string): Promise<VResult<Vendor[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listVendors(orgId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load vendors" };
+      return {
+        ok: true,
+        data: ((cf.data.vendors ?? []) as Array<Record<string, unknown>>).map(r => ({
+          id: String(r.id),
+          name: String(r.name ?? ""),
+          category: r.category == null ? null : String(r.category),
+          contact: r.contact_person != null ? String(r.contact_person) : (r.contact == null ? null : String(r.contact)),
+          phone: r.phone == null ? null : String(r.phone),
+          gst: r.gstin != null ? String(r.gstin) : (r.gst == null ? null : String(r.gst)),
+          rating: num(r.rating),
+          profile_id: r.profile_id == null ? null : String(r.profile_id),
+        })),
+      };
+    }
     const { data, error } = await client.from("vendors").select("id, name, category, contact, phone, gst, rating, profile_id").eq("org_id", orgId).order("name", { ascending: true });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
@@ -49,6 +68,20 @@ export async function listVendors(client: any, orgId: string): Promise<VResult<V
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createVendor(client: any, input: { orgId: string; name: string; category?: string; contact?: string; phone?: string; gst?: string; rating?: number }): Promise<VResult<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createVendor(
+        {
+          name: input.name,
+          category: input.category,
+          contactPerson: input.contact,
+          phone: input.phone,
+          gstin: input.gst,
+        },
+        input.orgId,
+      );
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create vendor" };
+      return { ok: true, data: { id: String(cf.data.id) } };
+    }
     const { data, error } = await client.from("vendors").insert({
       org_id: input.orgId, name: input.name, category: input.category || null, contact: input.contact || null,
       phone: input.phone || null, gst: input.gst || null, rating: input.rating ?? null,

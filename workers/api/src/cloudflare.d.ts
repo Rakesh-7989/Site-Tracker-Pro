@@ -69,3 +69,13 @@ interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
 }
+
+interface SendEmail {
+  send(message: {
+    to: string | string[];
+    from: string | { email: string; name?: string };
+    subject: string;
+    html?: string;
+    text?: string;
+  }): Promise<unknown>;
+}

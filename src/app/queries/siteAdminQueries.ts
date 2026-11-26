@@ -2,6 +2,8 @@
 // (v3 port, final batch). DB-wired via the migration 76 bridge (boq_items,
 // labour_register, compliance) + the 73 bridge (worklogs).
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -25,6 +27,20 @@ const asCat = oneOf<BoqCategory>(["Civil", "MEP", "Finishing", "External", "Othe
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listBoq(client: any, projectId: string): Promise<Result<BoqItem[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listBoqItems(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load BOQ items" };
+      return ok(((cf.data.items ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        code: r.item_code != null ? String(r.item_code) : (r.code == null ? null : String(r.code)),
+        description: String(r.item_name ?? r.description ?? ""),
+        unit: r.unit == null ? null : String(r.unit),
+        qty: num(r.qty),
+        rate: num(r.rate),
+        amount: num(r.amount),
+        category: asCat(r.category),
+      })));
+    }
     const { data, error } = await client.from("boq_items").select("id, code, description, unit, qty, rate, amount, category, sort_order").eq("project_id", projectId).order("sort_order", { ascending: true });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({ id: String(r.id), code: r.code == null ? null : String(r.code), description: String(r.description ?? ""), unit: r.unit == null ? null : String(r.unit), qty: num(r.qty), rate: num(r.rate), amount: num(r.amount), category: asCat(r.category) })));
@@ -33,6 +49,17 @@ export async function listBoq(client: any, projectId: string): Promise<Result<Bo
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createBoq(client: any, input: { projectId: string; description: string; code?: string; unit?: string; qty: number; rate: number; category?: BoqCategory; sortOrder?: number }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createBoqItem(input.projectId, {
+        itemCode: input.code,
+        itemName: input.description,
+        unit: input.unit,
+        qty: input.qty,
+        rate: input.rate,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create BOQ item" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("boq_items").insert({ project_id: input.projectId, description: input.description, code: input.code || null, unit: input.unit || null, qty: input.qty, rate: input.rate, category: input.category ?? "Other", sort_order: input.sortOrder ?? 0 }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }

@@ -23,7 +23,27 @@ export interface Env {
   RAZORPAY_KEY_ID?: string;
   RAZORPAY_KEY_SECRET?: string;
   RAZORPAY_WEBHOOK_SECRET?: string;
-  RESEND_API_KEY?: string;
+  EMAIL?: SendEmail;
+}
+
+async function sendTransactionalEmail(
+  env: Env,
+  params: { to: string | string[]; subject: string; html?: string; text?: string }
+): Promise<void> {
+  if (!env.EMAIL) {
+    console.log("[Email Service] EMAIL binding not configured; skipping send", {
+      to: params.to,
+      subject: params.subject,
+    });
+    return;
+  }
+  await env.EMAIL.send({
+    from: { email: "notifications@sitetrackpro.in", name: "SiteTrack Pro" },
+    to: params.to,
+    subject: params.subject,
+    html: params.html,
+    text: params.text,
+  });
 }
 
 function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
@@ -847,7 +867,16 @@ export default {
   },
 
   async queue(
-    batch: MessageBatch<{ userId: string; orgId?: string; projectId?: string; kind: string; title: string; body: string; link?: string }>,
+    batch: MessageBatch<{
+      userId: string;
+      orgId?: string;
+      projectId?: string;
+      kind: string;
+      title: string;
+      body: string;
+      link?: string;
+      toEmail?: string;
+    }>,
     env: Env
   ): Promise<void> {
     for (const msg of batch.messages) {
@@ -868,6 +897,14 @@ export default {
             p.link || null
           )
           .run();
+        if (p.toEmail) {
+          await sendTransactionalEmail(env, {
+            to: p.toEmail,
+            subject: p.title,
+            html: `<p>${p.body}</p>`,
+            text: p.body,
+          });
+        }
         msg.ack();
       } catch (err) {
         console.error("[Queue Consumer] Failed to process notification:", err);

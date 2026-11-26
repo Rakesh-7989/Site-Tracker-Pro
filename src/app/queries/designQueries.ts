@@ -7,6 +7,7 @@
 // applyAutoSupersede() mirrors that rule in the optimistic UI so the
 // released revision list updates instantly before a reload.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -47,6 +48,23 @@ const asDw = oneOf<DrawingStatus>(["current", "superseded"], "current");
 
 export async function listDrawings(client: TypedSupabaseClient, projectId: string): Promise<Result<Drawing[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listDrawings(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load drawings" };
+      return ok(((cf.data.drawings ?? []) as Array<Record<string, unknown>>).map((r: Record<string, unknown>) => ({
+        id: String(r.id),
+        projectId: String(r.project_id ?? projectId),
+        title: String(r.title ?? ""),
+        type: String(r.type ?? r.discipline ?? ""),
+        revision: String(r.revision ?? r.drawing_number ?? "Rev A"),
+        status: asDw(r.status === "superseded" ? "superseded" : "current"),
+        releaseDate: r.release_date != null ? String(r.release_date) : (r.updated_at == null ? null : String(r.updated_at)),
+        storagePath: r.storage_path != null ? String(r.storage_path) : (r.current_file_key == null ? null : String(r.current_file_key)),
+        previewUrl: r.preview_url == null ? null : String(r.preview_url),
+        designStage: String(r.design_stage ?? "concept"),
+        supersededBy: r.superseded_by == null ? null : String(r.superseded_by),
+      })));
+    }
     const { data, error } = await client.from("drawings").select("id, project_id, title, type, revision, status, release_date, storage_path, preview_url, design_stage, superseded_by").eq("project_id", projectId).order("release_date", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map((r: Record<string, unknown>) => ({
@@ -66,6 +84,17 @@ export async function listDrawings(client: TypedSupabaseClient, projectId: strin
 }
 export async function createDrawing(client: TypedSupabaseClient, input: { projectId: string; title: string; type: string; revision?: string; releasedBy: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createDrawing(input.projectId, {
+        title: input.title,
+        discipline: input.type || "architectural",
+        drawingNumber: input.revision || "Rev A",
+        currentFileKey: `${input.projectId}/pending`,
+        status: "current",
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create drawing" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("drawings").insert({ project_id: input.projectId, title: input.title, type: input.type, revision: input.revision || "Rev A", released_by: input.releasedBy }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
