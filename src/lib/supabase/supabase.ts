@@ -56,6 +56,7 @@ export async function getClient(): Promise<SupabaseClient | null> {
 }
 
 export async function getSupabaseClient(): Promise<SupabaseClient | null> {
+  if (isCloudflareBackendEnabled()) return null;
   if (!isSupabaseEnabled()) return null;
   if (_clientPromise) return _clientPromise;
   _clientPromise = (async () => {

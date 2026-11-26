@@ -8,6 +8,8 @@
 // Row-level drawings visibility is fixed in migration 149 (member read + the
 // client-released rule); this module only concerns file storage.
 
+import { cloudflareStorage, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -128,7 +130,14 @@ export async function uploadDrawingFile(
   try {
     const rejected = validateDrawingFile(fileName, uploadPayloadSize(file));
     if (rejected) return { ok: false, error: rejected };
+    const safeName = sanitizeFileName(fileName);
     const path = drawingObjectPath(projectId, drawingId, fileName);
+    if (isCloudflareBackendEnabled()) {
+      const blob = typeof Blob !== "undefined" && file instanceof Blob ? file : new Blob([file]);
+      const cf = await cloudflareStorage.upload(blob, drawingFolder(projectId, drawingId), safeName);
+      if (!cf.ok) return { ok: false, error: cf.error || "Upload failed" };
+      return ok({ path: cf.key ?? path });
+    }
     const { error } = await client.storage.from(DRAWING_BUCKET).upload(path, file, {
       upsert: opts?.upsert ?? true,
       cacheControl: "3600",
@@ -150,6 +159,9 @@ export async function deleteDrawingFiles(client: any, paths: string[]): Promise<
 /** Short-lived signed URL for one storage path (private bucket download). */
 export async function drawingFileUrl(client: any, path: string, expiresIn = 300): Promise<Result<string>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      return ok(cloudflareStorage.getFileUrl(path));
+    }
     const { data, error } = await client
       .storage.from(DRAWING_BUCKET).createSignedUrl(path, expiresIn);
     if (error) return dbe(error);

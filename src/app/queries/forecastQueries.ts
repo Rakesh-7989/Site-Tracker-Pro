@@ -1,6 +1,7 @@
 // SiteTrack Pro — forecast data queries for the v3 shell.
 // Tables: boq_items, ra_bills, inventory_transactions (ledger), site_updates, projects.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 import type { QueryResult } from "./queries";
 
 export interface ProjectForecastDetail {
@@ -86,6 +87,24 @@ export async function getProjectForecastDetail(client: any, projectId: string): 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getBoqForProject(client: any, projectId: string): Promise<QueryResult<BoqItem[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listBoqItems(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load BOQ items" };
+      const rows = (cf.data.items ?? []) as Array<Record<string, unknown>>;
+      return {
+        ok: true,
+        data: rows.map(r => ({
+          id: String(r.id),
+          code: r.item_code != null ? String(r.item_code) : (r.code == null ? null : String(r.code)),
+          description: String(r.item_name ?? r.description ?? ""),
+          unit: r.unit == null ? null : String(r.unit),
+          qty: r.qty == null ? null : Number(r.qty),
+          rate: r.rate == null ? null : Number(r.rate),
+          amount: r.amount == null ? null : Number(r.amount),
+          category: r.category == null ? null : String(r.category),
+        })),
+      };
+    }
     const { data, error } = await client
       .from("boq_items")
       .select("id, code, description, unit, qty, rate, amount, category")

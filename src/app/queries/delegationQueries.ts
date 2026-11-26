@@ -3,6 +3,7 @@
 
 import type { QueryResult } from "./queries";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export interface DelegationRow {
   id: string;
@@ -92,6 +93,23 @@ export async function listDelegations(client: TypedSupabaseClient, userId: strin
 
 export async function listOrgMembers(client: TypedSupabaseClient, orgId: string): Promise<QueryResult<OrgMemberRow[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listOrgMembers(orgId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load org members" };
+      const rows = (cf.data.members ?? []) as Array<Record<string, unknown>>;
+      return {
+        ok: true,
+        data: rows.map(r => {
+          const orgRole = String(r.role ?? "");
+          return {
+            id: String(r.profile_id ?? ""),
+            name: String(r.full_name ?? r.name ?? r.email ?? ""),
+            role: orgRole === "admin" || Boolean(r.is_admin) ? "admin" : "member",
+            status: String(r.status ?? "active"),
+          };
+        }),
+      };
+    }
     const { data, error } = await client
       .from("org_members")
       .select("profile_id, role, status, profiles:profile_id (name)")

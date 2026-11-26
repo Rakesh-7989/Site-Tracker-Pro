@@ -1,5 +1,6 @@
 
 import { orgTierForIdentityRole, type IdentityRole } from "@/auth";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
 
 export type MResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -22,6 +23,20 @@ export interface InviteCandidate {
 
 export async function listOrgMembers(client: TypedSupabaseClient, orgId: string): Promise<MResult<OrgMemberRow[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listOrgMembers(orgId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load org members." };
+      const rows = ((cf.data.members ?? []) as Array<Record<string, unknown>>).map(r => ({
+        profileId: String(r.profile_id ?? ""),
+        name: String(r.full_name ?? r.name ?? r.email ?? "Member"),
+        identityRole: String(r.role ?? r.identity_role ?? ""),
+        isAdmin: String(r.role ?? "") === "admin" || Boolean(r.is_admin),
+        joinedAt: String(r.joined_at ?? ""),
+        active: r.removed_at == null && r.status !== "removed",
+        customRoles: Array.isArray(r.custom_roles) ? (r.custom_roles as unknown[]).map(String) : [],
+      }));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client.rpc("list_org_members", { p_org_id: orgId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     const rows = ((data ?? []) as Array<Record<string, unknown>>).map(r => ({
@@ -44,6 +59,14 @@ export async function inviteNewOrgMember(
   input: { orgId: string; email: string; name?: string; sendCredentials?: boolean; identityRole?: string },
 ): Promise<MResult<{ invited: true; tempPassword?: string; emailSent?: boolean }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.inviteOrgMember(input.orgId, {
+        email: input.email,
+        role: input.identityRole ? orgTierForIdentityRole(input.identityRole as IdentityRole) : "client",
+      });
+      if (!cf.ok) return { ok: false, error: cf.error || "Invite failed." };
+      return { ok: true, data: { invited: true, emailSent: false } };
+    }
     const { data, error } = await client.functions.invoke("invite_org_member", { body: { ...input, orgRole: input.identityRole ? orgTierForIdentityRole(input.identityRole as IdentityRole) : "client" } });
     if (error) {
       let msg = error.message ?? "Could not send the invite.";
@@ -133,6 +156,11 @@ export async function setIdentityRole(
 
 export async function removeMember(client: TypedSupabaseClient, orgId: string, profileId: string): Promise<MResult<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.removeOrgMember(orgId, profileId);
+      if (!cf.ok) return { ok: false, error: cf.error || "Remove failed." };
+      return { ok: true, data: { ok: true } };
+    }
     const { data, error } = await client.functions.invoke("remove_org_member", { body: { orgId, profileId } });
     if (error) {
       let msg = error.message ?? "Could not remove member.";
