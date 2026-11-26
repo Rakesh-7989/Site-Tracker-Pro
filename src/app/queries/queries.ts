@@ -10,6 +10,7 @@ import { isProjectTierRole } from "@/auth";
 import type { ProjectLifecycleStatus } from "@/lib/projectLifecycle";
 import { isProjectLifecycleStatus } from "@/lib/projectLifecycle";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export interface ProjectSummary {
   id: string;
@@ -84,6 +85,30 @@ export async function listProjectsForOrg(
   scope: MemberProjectScope = { mode: "all" },
 ): Promise<QueryResult<ProjectSummary[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listProjects(orgId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load projects" };
+      const raw = (cf.data.projects ?? []) as Array<Record<string, unknown>>;
+      const filtered = scope.mode === "member"
+        ? raw.filter((r) => scope.projectIds.includes(String(r.id)))
+        : raw;
+      const projects: ProjectSummary[] = filtered.map((r) => ({
+        id: String(r.id),
+        name: String(r.name ?? "Untitled"),
+        type: (r.type as ProjectType) ?? "construction",
+        status: r.status == null ? null : String(r.status),
+        location: r.location == null ? null : String(r.location),
+        archivedAt: r.archived_at == null ? null : String(r.archived_at),
+        industrySubtype: r.industry_subtype == null ? null : (r.industry_subtype as ConstructionIndustry),
+        progress: Number(r.progress ?? 0),
+        budget: r.budget == null ? null : Number(r.budget),
+        startDate: r.start_date == null ? null : String(r.start_date),
+        expectedEndDate: r.expected_end_date == null ? null : String(r.expected_end_date),
+        clientName: r.client_name == null ? null : String(r.client_name),
+        description: r.description == null ? null : String(r.description),
+      }));
+      return { ok: true, data: projects };
+    }
     let query = client
       .from("projects")
       .select("id, name, type, status, location, archived_at, industry_subtype, progress, budget, start_date, expected_end_date, client_name, description")

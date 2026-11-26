@@ -1,6 +1,8 @@
 // SiteTrack Pro — notifications inbox queries. RLS scopes every row to the
 // current user (migration 89 GRANT). The unread badge uses an RPC.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type NResult<T> = { ok: true; data: T } | { ok: false; error: string };
 export interface Notification {
   id: string;
@@ -15,6 +17,16 @@ export interface Notification {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listNotifications(client: any, limit = 50): Promise<NResult<Notification[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listNotifications();
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load notifications" };
+      const rows = ((cf.data.notifications ?? []) as Array<Record<string, unknown>>).slice(0, limit);
+      return { ok: true, data: rows.map(r => ({
+        id: String(r.id), kind: String(r.kind ?? ""), title: String(r.title ?? ""),
+        body: r.body == null ? null : String(r.body), link: r.link == null ? null : String(r.link),
+        readAt: r.read_at == null ? null : String(r.read_at), createdAt: String(r.created_at ?? ""),
+      })) };
+    }
     const { data, error } = await client.from("notifications")
       .select("id, kind, title, body, link, read_at, created_at")
       .order("created_at", { ascending: false }).limit(limit);
@@ -29,7 +41,14 @@ export async function listNotifications(client: any, limit = 50): Promise<NResul
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function markRead(client: any, id: string): Promise<NResult<{ ok: true }>> {
-  try { const { error } = await client.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id); if (error) return { ok: false, error: String(error.message ?? error) }; return { ok: true, data: { ok: true } }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+  try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.markNotificationRead(id);
+      if (!cf.ok) return { ok: false, error: cf.error || "Failed to mark notification read" };
+      return { ok: true, data: { ok: true } };
+    }
+    const { error } = await client.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id); if (error) return { ok: false, error: String(error.message ?? error) }; return { ok: true, data: { ok: true } };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +58,14 @@ export async function markAllRead(client: any): Promise<NResult<{ ok: true }>> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function unreadCount(client: any): Promise<number> {
-  try { const { data, error } = await client.rpc("unread_notification_count"); if (error) return 0; return Number(data) || 0; } catch { return 0; }
+  try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listNotifications();
+      if (!cf.ok || !cf.data) return 0;
+      return ((cf.data.notifications ?? []) as Array<Record<string, unknown>>).filter(r => r.read_at == null).length;
+    }
+    const { data, error } = await client.rpc("unread_notification_count"); if (error) return 0; return Number(data) || 0;
+  } catch { return 0; }
 }
 
 // Payment notification kinds
@@ -55,6 +81,12 @@ export type PaymentNotificationKind = typeof PAYMENT_NOTIFICATION_KINDS[number];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listPaymentNotifications(client: any, limit = 50): Promise<NResult<Notification[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await listNotifications(client, limit);
+      if (!res.ok) return res;
+      const kinds = new Set<string>(PAYMENT_NOTIFICATION_KINDS);
+      return { ok: true, data: res.data.filter(n => kinds.has(n.kind)) };
+    }
     const { data, error } = await client.from("notifications")
       .select("id, kind, title, body, link, read_at, created_at")
       .in("kind", PAYMENT_NOTIFICATION_KINDS)

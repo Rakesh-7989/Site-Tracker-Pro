@@ -5,11 +5,16 @@
  * (Auth, D1, R2 Storage, Razorpay) with seamless fallback support.
  */
 
+import { isIdentityRole, type IdentityRole } from "@/auth/roles";
+
 export const CLOUDFLARE_API_DEFAULT_URL = "https://sitetrack-api.boyapatirakesh-mahespaddy.workers.dev/api";
+export const CF_AUTH_EVENT = "sitetrack-cf-auth-change";
 
 const API_BASE =
   (import.meta.env?.VITE_CLOUDFLARE_API_URL as string) ||
-  (import.meta.env?.VITE_BACKEND_PROVIDER === "cloudflare" ? CLOUDFLARE_API_DEFAULT_URL : "/api");
+  (import.meta.env?.VITE_BACKEND_PROVIDER === "cloudflare"
+    ? (typeof window !== "undefined" ? "/api" : CLOUDFLARE_API_DEFAULT_URL)
+    : "/api");
 
 export function isCloudflareBackendEnabled(): boolean {
   return (
@@ -18,21 +23,33 @@ export function isCloudflareBackendEnabled(): boolean {
   );
 }
 
+export interface CfUserPayload {
+  id: string;
+  email: string;
+  fullName?: string;
+  full_name?: string;
+  is_platform_admin?: number | boolean;
+}
+
+export interface CfOrgPayload {
+  id: string;
+  slug: string;
+  name: string;
+  plan: string;
+  role: string;
+  is_admin: boolean | number;
+}
+
 export interface AuthSession {
   token: string;
-  user: {
-    id: string;
-    email: string;
-    fullName?: string;
-  };
-  organizations: Array<{
-    id: string;
-    slug: string;
-    name: string;
-    plan: string;
-    role: string;
-    is_admin: boolean;
-  }>;
+  user: CfUserPayload;
+  organizations: CfOrgPayload[];
+}
+
+function emitAuthChange(signedIn: boolean): void {
+  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+    window.dispatchEvent(new CustomEvent(CF_AUTH_EVENT, { detail: { signedIn } }));
+  }
 }
 
 const TOKEN_KEY = "sitetrack_cf_token";
@@ -46,12 +63,14 @@ export const cloudflareAuth = {
   setToken(token: string): void {
     if (typeof localStorage !== "undefined") {
       localStorage.setItem(TOKEN_KEY, token);
+      emitAuthChange(true);
     }
   },
 
   clearToken(): void {
     if (typeof localStorage !== "undefined") {
       localStorage.removeItem(TOKEN_KEY);
+      emitAuthChange(false);
     }
   },
 
@@ -142,6 +161,53 @@ export const cloudflareAuth = {
     this.clearToken();
   },
 };
+
+export function toAppAuthSession(
+  user: CfUserPayload,
+  organizations: CfOrgPayload[],
+  preferredOrgId?: string | null,
+): import("@/auth/types").AuthSession {
+  const isStaff = Boolean(user.is_platform_admin);
+  const orgs: import("@/auth/types").OrgMembership[] = organizations.map((o) => ({
+    orgId: o.id,
+    orgName: o.name,
+    orgSlug: o.slug,
+    segment: null,
+    isAdmin: Boolean(o.is_admin),
+    joinedAt: new Date(0).toISOString(),
+    status: "active",
+  }));
+  const activeOrgId =
+    preferredOrgId && orgs.some((o) => o.orgId === preferredOrgId)
+      ? preferredOrgId
+      : (orgs[0]?.orgId ?? null);
+  const firstRole = organizations[0]?.role;
+  const identityRole: IdentityRole = isStaff
+    ? "superadmin"
+    : orgs.some((o) => o.isAdmin)
+      ? "orgadmin"
+      : isIdentityRole(firstRole)
+        ? firstRole
+        : "pm";
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      identityRole,
+      name: user.fullName || user.full_name || user.email.split("@")[0] || "User",
+      avatarUrl: null,
+      isStaff,
+      staffTier: isStaff ? "owner" : null,
+      profileCompleted: true,
+      mustChangePassword: false,
+    },
+    orgs,
+    activeOrgId,
+    projectMemberships: [],
+    capabilityOverrides: [],
+  };
+}
 
 export const cloudflareStorage = {
   async upload(file: File | Blob, folder = "uploads", filename?: string): Promise<{ ok: boolean; key?: string; url?: string; error?: string }> {

@@ -7,6 +7,7 @@
 // page just shows `?paid=1`.
 
 import type { UResult } from "./upgradeQueries";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type PlanPaymentPeriod = "monthly" | "annual";
 
@@ -26,6 +27,22 @@ export interface MintPlanPaymentLinkArgs {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function mintPlanPaymentLink(client: any, args: MintPlanPaymentLinkArgs): Promise<UResult<PlanPaymentLink>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const plan = (args.plan === "pro" || args.plan === "business" ? args.plan : "basic") as "basic" | "pro" | "business";
+      const res = await cloudflareApi.mintPlanPaymentLink({ plan, period: args.period }, args.orgId);
+      if (!res.ok || !res.data) {
+        return { ok: false, error: res.error || "Payment link creation failed." };
+      }
+      return {
+        ok: true,
+        data: {
+          linkUrl: String(res.data.shortUrl ?? ""),
+          linkId: String(res.data.linkId ?? ""),
+          amount: 0,
+          env: "live",
+        },
+      };
+    }
     const { data, error } = await client.functions.invoke("razorpay-plan-link", {
       body: { org_id: args.orgId, plan: args.plan, period: args.period },
     });
