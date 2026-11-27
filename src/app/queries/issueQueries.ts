@@ -1,6 +1,7 @@
 // SiteTrack Pro — issue queries (v3 port, Batch 1). DB-wired to `issues`.
 
 import { versionedUpdateOutcome, type VersionedUpdateOptions } from "@/lib/versionedUpdate";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type IssueSeverity = "high" | "medium" | "low";
 export type IssueStatus = "open" | "resolved";
@@ -26,6 +27,21 @@ const asStatus = (v: unknown): IssueStatus => (v === "resolved" ? "resolved" : "
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listIssues(client: any, projectId: string): Promise<IQResult<Issue[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listIssues(projectId);
+      if (!res.ok) return { ok: false, error: res.error || "Failed to load issues" };
+      const rows = ((res.data?.issues ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        title: String(r.title ?? "Untitled"),
+        description: r.description == null ? null : String(r.description),
+        severity: asSeverity(r.severity),
+        status: asStatus(r.status),
+        reportedDate: r.reported_date == null ? null : String(r.reported_date),
+        resolvedDate: r.resolved_date == null ? null : String(r.resolved_date),
+        version: typeof r.version === "number" ? r.version : 1,
+      }));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client
       .from("issues")
       .select("id, title, description, severity, status, reported_date, resolved_date, version")
@@ -54,6 +70,15 @@ export async function createIssue(
   input: { projectId: string; title: string; description?: string; severity?: IssueSeverity; reportedBy: string },
 ): Promise<IQResult<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.createIssue(input.projectId, {
+        title: input.title,
+        description: input.description,
+        severity: input.severity,
+      });
+      if (!res.ok || !res.data?.id) return { ok: false, error: res.error || "Failed to create issue" };
+      return { ok: true, data: { id: res.data.id } };
+    }
     const { data, error } = await client.from("issues").insert({
       project_id: input.projectId,
       title: input.title,

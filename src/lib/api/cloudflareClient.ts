@@ -473,5 +473,12 @@ export const cloudflareApi = {
     cfRequest<{ id: string }>(`/projects/${projectId}/issues`, { method: "POST", orgId, body: input }),
   updateIssueStatus: (projectId: string, issueId: string, status: string, orgId?: string) =>
     cfRequest<{ updated: boolean }>(`/projects/${projectId}/issues/${issueId}`, { method: "PATCH", orgId, body: { status } }),
+
+  listDelegations: (orgId?: string) =>
+    cfRequest<{ delegations: unknown[] }>("/delegations", { orgId }),
+  createDelegation: (input: { toUser: string; resource: string; startAt: string; endAt: string; reason?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>("/delegations", { method: "POST", orgId, body: input }),
+  revokeDelegation: (delegationId: string, orgId?: string) =>
+    cfRequest<{ revoked: boolean }>(`/delegations/${delegationId}/revoke`, { method: "POST", orgId }),
 };
 

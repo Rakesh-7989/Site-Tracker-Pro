@@ -1675,7 +1675,11 @@ export default {
 
     // ── PHASE 8 SITE CONTROLS ROUTES (RFI, CHANGE ORDERS, RA BILLS) ─────────
 
-    if (/^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts|issues)(\/|$)/.test(url.pathname)) {
+    if (
+      url.pathname === "/api/delegations" ||
+      /^\/api\/delegations\/[^/]+\/revoke$/.test(url.pathname) ||
+      /^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts|issues)(\/|$)/.test(url.pathname)
+    ) {
       const tenant = await requireTenantContext();
       if ("errorResponse" in tenant) return tenant.errorResponse;
       const { ctx } = tenant;
@@ -1684,6 +1688,33 @@ export default {
       try {
         if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS") {
           assertWriteRole(ctx);
+        }
+
+        if (url.pathname === "/api/delegations") {
+          if (request.method === "GET") {
+            return json({ ok: true, delegations: await sc8.listDelegations(ctx) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as { toUser?: string; resource?: string; startAt?: string; endAt?: string; reason?: string };
+            if (!body.toUser || !body.resource || !body.startAt || !body.endAt) {
+              return json({ ok: false, error: "toUser, resource, startAt, and endAt required" }, 400);
+            }
+            const created = await sc8.createDelegation(ctx, {
+              id: `dlg_${crypto.randomUUID()}`,
+              toUser: body.toUser,
+              resource: body.resource,
+              startAt: body.startAt,
+              endAt: body.endAt,
+              reason: body.reason,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+        }
+
+        const dlgRevokeMatch = url.pathname.match(/^\/api\/delegations\/([^/]+)\/revoke$/);
+        if (dlgRevokeMatch && request.method === "POST") {
+          const revoked = await sc8.revokeDelegation(ctx, dlgRevokeMatch[1]);
+          return json({ ok: true, revoked });
         }
 
         const rfiMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/rfi(?:\/([^/]+))?$/);

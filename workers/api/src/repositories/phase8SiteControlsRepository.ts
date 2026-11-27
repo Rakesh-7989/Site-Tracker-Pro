@@ -408,4 +408,57 @@ export class Phase8SiteControlsRepository {
       .run();
     return (res.meta?.changes ?? 0) > 0;
   }
+
+  // ── DELEGATIONS ────────────────────────────────────────────────────────────
+
+  async listDelegations(ctx: SecurityContext) {
+    const { results } = await this.db
+      .prepare(
+        `SELECT id, org_id, from_user, to_user, resource, start_at, end_at, reason, active, revoked_at, created_at
+         FROM delegations
+         WHERE org_id = ? AND from_user = ?
+         ORDER BY created_at DESC`
+      )
+      .bind(ctx.orgId, ctx.userId)
+      .all();
+    return results || [];
+  }
+
+  async createDelegation(
+    ctx: SecurityContext,
+    input: { id: string; toUser: string; resource: string; startAt: string; endAt: string; reason?: string }
+  ) {
+    assertWriteRole(ctx);
+    await this.db
+      .prepare(
+        `INSERT INTO delegations (id, org_id, from_user, to_user, resource, start_at, end_at, reason, active, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`
+      )
+      .bind(
+        input.id,
+        ctx.orgId,
+        ctx.userId,
+        input.toUser,
+        input.resource,
+        input.startAt,
+        input.endAt,
+        input.reason || null,
+        ctx.userId
+      )
+      .run();
+    return { id: input.id };
+  }
+
+  async revokeDelegation(ctx: SecurityContext, delegationId: string): Promise<boolean> {
+    assertWriteRole(ctx);
+    const res = await this.db
+      .prepare(
+        `UPDATE delegations
+         SET active = 0, revoked_at = datetime('now'), revoked_by = ?
+         WHERE id = ? AND org_id = ? AND (from_user = ? OR ? = 1)`
+      )
+      .bind(ctx.userId, delegationId, ctx.orgId, ctx.userId, ctx.isAdmin ? 1 : 0)
+      .run();
+    return (res.meta?.changes ?? 0) > 0;
+  }
 }
