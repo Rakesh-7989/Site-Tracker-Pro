@@ -1678,7 +1678,10 @@ export default {
     if (
       url.pathname === "/api/delegations" ||
       /^\/api\/delegations\/[^/]+\/revoke$/.test(url.pathname) ||
-      /^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts|issues|time-entries|deliverables)(\/|$)/.test(url.pathname)
+      /^\/api\/access-requests\/[^/]+\/(approve|reject)$/.test(url.pathname) ||
+      url.pathname === "/api/dpr" ||
+      /^\/api\/dpr\/[^/]+(\/delivery-log)?$/.test(url.pathname) ||
+      /^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts|issues|time-entries|deliverables|members|access-requests)(\/|$)/.test(url.pathname)
     ) {
       const tenant = await requireTenantContext();
       if ("errorResponse" in tenant) return tenant.errorResponse;
@@ -1686,7 +1689,10 @@ export default {
       const sc8 = new Phase8SiteControlsRepository(env.DB);
 
       try {
-        if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS") {
+        const isAccessRequestPost =
+          request.method === "POST" &&
+          /^\/api\/projects\/[^/]+\/access-requests$/.test(url.pathname);
+        if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS" && !isAccessRequestPost) {
           assertWriteRole(ctx);
         }
 
@@ -1934,6 +1940,58 @@ export default {
             const updated = await sc8.updateDeliverableStatus(ctx, projectId, delivId, body.status);
             return json({ ok: true, updated });
           }
+        }
+
+        const membersMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/members(?:\/([^/]+))?$/);
+        if (membersMatch) {
+          const [, projectId, profileId] = membersMatch;
+          if (!profileId && request.method === "POST") {
+            const body = (await request.json()) as { profileId?: string; role?: string };
+            if (!body.profileId || !body.role) {
+              return json({ ok: false, error: "profileId and role required" }, 400);
+            }
+            await sc8.addProjectMember(ctx, projectId, body.profileId, body.role);
+            return json({ ok: true }, 201);
+          }
+          if (profileId && request.method === "DELETE") {
+            const removed = await sc8.removeProjectMember(ctx, projectId, profileId);
+            return json({ ok: true, removed });
+          }
+        }
+
+        const accessReqMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/access-requests$/);
+        if (accessReqMatch) {
+          const [, projectId] = accessReqMatch;
+          if (request.method === "GET") {
+            return json({ ok: true, requests: await sc8.listPendingAccessRequests(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const id = `par_${crypto.randomUUID()}`;
+            await sc8.requestProjectAccess(ctx, projectId, id);
+            return json({ ok: true, id }, 201);
+          }
+        }
+
+        const reviewAccessMatch = url.pathname.match(/^\/api\/access-requests\/([^/]+)\/(approve|reject)$/);
+        if (reviewAccessMatch && request.method === "POST") {
+          const [, requestId, action] = reviewAccessMatch;
+          const updated = await sc8.reviewAccessRequest(ctx, requestId, action === "approve" ? "approved" : "rejected");
+          return json({ ok: true, updated });
+        }
+
+        if (url.pathname === "/api/dpr" && request.method === "GET") {
+          const limit = Number(url.searchParams.get("limit") || "50");
+          return json({ ok: true, messages: await sc8.listDprMessages(ctx, Number.isFinite(limit) ? limit : 50) });
+        }
+
+        const dprLogMatch = url.pathname.match(/^\/api\/dpr\/([^/]+)\/delivery-log$/);
+        if (dprLogMatch && request.method === "GET") {
+          return json({ ok: true, logs: await sc8.listDprDeliveryLog(ctx, dprLogMatch[1]) });
+        }
+
+        const dprGetMatch = url.pathname.match(/^\/api\/dpr\/([^/]+)$/);
+        if (dprGetMatch && request.method === "GET") {
+          return json({ ok: true, message: await sc8.getDprMessage(ctx, dprGetMatch[1]) });
         }
       } catch (err) {
         if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);

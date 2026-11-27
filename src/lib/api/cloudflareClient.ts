@@ -492,5 +492,25 @@ export const cloudflareApi = {
     cfRequest<{ id: string }>(`/projects/${projectId}/deliverables`, { method: "POST", orgId, body: input }),
   updateDeliverableStatus: (projectId: string, deliverableId: string, status: string, orgId?: string) =>
     cfRequest<{ updated: boolean }>(`/projects/${projectId}/deliverables/${deliverableId}`, { method: "PATCH", orgId, body: { status } }),
+
+  addProjectMember: (projectId: string, profileId: string, role: string, orgId?: string) =>
+    cfRequest<{ ok: boolean }>(`/projects/${projectId}/members`, { method: "POST", orgId, body: { profileId, role } }),
+  removeProjectMember: (projectId: string, profileId: string, orgId?: string) =>
+    cfRequest<{ removed: boolean }>(`/projects/${projectId}/members/${profileId}`, { method: "DELETE", orgId }),
+  requestProjectAccess: (projectId: string, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/access-requests`, { method: "POST", orgId }),
+  listPendingAccessRequests: (projectId: string, orgId?: string) =>
+    cfRequest<{ requests: unknown[] }>(`/projects/${projectId}/access-requests`, { orgId }),
+  approveAccessRequest: (requestId: string, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/access-requests/${requestId}/approve`, { method: "POST", orgId }),
+  rejectAccessRequest: (requestId: string, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/access-requests/${requestId}/reject`, { method: "POST", orgId }),
+
+  listDprMessages: (limit = 50, orgId?: string) =>
+    cfRequest<{ messages: unknown[] }>(`/dpr?limit=${encodeURIComponent(String(limit))}`, { orgId }),
+  getDprMessage: (id: string, orgId?: string) =>
+    cfRequest<{ message: unknown | null }>(`/dpr/${id}`, { orgId }),
+  listDprDeliveryLog: (dprMessageId: string, orgId?: string) =>
+    cfRequest<{ logs: unknown[] }>(`/dpr/${dprMessageId}/delivery-log`, { orgId }),
 };
 

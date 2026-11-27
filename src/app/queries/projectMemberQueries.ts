@@ -4,6 +4,7 @@
 
 import { isIdentityRole, type IdentityRole } from "@/auth";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 import type { MResult } from "./orgMemberQueries";
 
 type ProjectMemberRow = {
@@ -34,6 +35,18 @@ export async function listAvailableOrgMembers(
   excludeProfileIds: string[],
 ): Promise<MResult<OrgMemberOption[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listOrgMembers(orgId);
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to list org members" };
+      const rows = ((res.data.members ?? []) as Array<Record<string, unknown>>)
+        .map(r => ({
+          profileId: String(r.user_id ?? r.profile_id ?? r.id ?? ""),
+          name: String(r.name ?? "Member"),
+          identityRole: String(r.role ?? r.identity_role ?? ""),
+        }))
+        .filter(r => r.profileId && !excludeProfileIds.includes(r.profileId));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client.rpc("list_org_members", { p_org_id: orgId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     const rows = ((data ?? []) as Array<Record<string, unknown>>)
@@ -59,6 +72,11 @@ export async function addProjectMember(
     const projectRole = isIdentityRole(identityRole)
       ? defaultProjectRoleFor(identityRole as IdentityRole)
       : "client";
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.addProjectMember(projectId, profileId, projectRole);
+      if (!res.ok) return { ok: false, error: res.error ?? "Failed to add project member" };
+      return { ok: true, data: { ok: true } };
+    }
     const { error } = await client
       .from("project_members")
       .upsert(
@@ -78,6 +96,11 @@ export async function removeProjectMember(
   profileId: string,
 ): Promise<MResult<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.removeProjectMember(projectId, profileId);
+      if (!res.ok) return { ok: false, error: res.error ?? "Failed to remove project member" };
+      return { ok: true, data: { ok: true } };
+    }
     const { error } = await client
       .from("project_members")
       .update({ removed_at: new Date().toISOString() })
@@ -96,6 +119,11 @@ export async function requestProjectAccess(
   projectId: string,
 ): Promise<MResult<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.requestProjectAccess(projectId);
+      if (!res.ok) return { ok: false, error: res.error ?? "Failed to request project access" };
+      return { ok: true, data: { ok: true } };
+    }
     const { error } = await client.rpc("request_project_access", { p_project_id: projectId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: { ok: true } };
@@ -109,6 +137,19 @@ export async function listPendingRequests(
   projectId: string,
 ): Promise<MResult<PendingAccessRequest[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listPendingAccessRequests(projectId);
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to list pending access requests" };
+      const requests: PendingAccessRequest[] = ((res.data.requests ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        projectId: String(r.project_id ?? projectId),
+        requesterId: String(r.requester_id ?? ""),
+        requesterName: String(r.requester_name ?? "Member"),
+        requesterRole: String(r.requester_role ?? ""),
+        createdAt: String(r.created_at ?? ""),
+      }));
+      return { ok: true, data: requests };
+    }
     const { data, error } = await client
       .from("project_access_requests")
       .select("id, requester_id, created_at, profiles:requester_id (name, role)")
@@ -138,6 +179,11 @@ export async function approveRequest(
   requestId: string,
 ): Promise<MResult<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.approveAccessRequest(requestId);
+      if (!res.ok) return { ok: false, error: res.error ?? "Failed to approve access request" };
+      return { ok: true, data: { ok: true } };
+    }
     const { error } = await client.rpc("approve_project_access", { p_request_id: requestId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: { ok: true } };
@@ -151,6 +197,11 @@ export async function rejectRequest(
   requestId: string,
 ): Promise<MResult<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.rejectAccessRequest(requestId);
+      if (!res.ok) return { ok: false, error: res.error ?? "Failed to reject access request" };
+      return { ok: true, data: { ok: true } };
+    }
     const { error } = await client.rpc("reject_project_access", { p_request_id: requestId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     return { ok: true, data: { ok: true } };

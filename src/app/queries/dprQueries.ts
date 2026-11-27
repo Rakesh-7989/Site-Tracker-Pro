@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type DprStatus = "queued" | "sending" | "sent" | "delivered" | "read" | "failed";
 
@@ -65,7 +66,7 @@ function mapRow(r: Record<string, unknown>): DprMessageRow {
     photoAccuracyMetres: (r.photo_accuracy_metres ?? null) as number | null,
     status: (r.status ?? "queued") as DprStatus,
     promoterPhone: String(r.promoter_phone_e164 ?? ""),
-    supervisorName: (r.supervisor as Record<string, unknown> | null)?.name as string | null ?? null,
+    supervisorName: (r.supervisor as Record<string, unknown> | null)?.name as string | null ?? (r.supervisor_name == null ? null : String(r.supervisor_name)),
     language: (r.language ?? null) as string | null,
     clientToken: String(r.client_token ?? ""),
     attempts: (typeof r.attempts === "number" ? r.attempts : 0) as number,
@@ -82,6 +83,11 @@ function mapRow(r: Record<string, unknown>): DprMessageRow {
 
 export async function listDprMessages(client: TypedSupabaseClient, orgId: string, limit = 50): Promise<MResult<DprMessageRow[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listDprMessages(limit, orgId);
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to load DPR messages" };
+      return { ok: true, data: ((res.data.messages ?? []) as Record<string, unknown>[]).map(mapRow) };
+    }
     const { data, error } = await client
       .from("dpr_messages")
       .select(SELECT)
@@ -98,6 +104,11 @@ export async function listDprMessages(client: TypedSupabaseClient, orgId: string
 /** Fetch a single DPR message — org-scoped so a caller can't read cross-org rows. */
 export async function getDprMessage(client: TypedSupabaseClient, orgId: string, id: string): Promise<MResult<DprMessageRow | null>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.getDprMessage(id, orgId);
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to load DPR message" };
+      return { ok: true, data: res.data.message ? mapRow(res.data.message as Record<string, unknown>) : null };
+    }
     const { data, error } = await client
       .from("dpr_messages")
       .select(SELECT)
@@ -114,6 +125,22 @@ export async function getDprMessage(client: TypedSupabaseClient, orgId: string, 
 /** Per-attempt delivery log for one DPR message (attempt_number asc). */
 export async function listDprDeliveryLog(client: TypedSupabaseClient, dprMessageId: string): Promise<MResult<DprDeliveryLogRow[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listDprDeliveryLog(dprMessageId);
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to load DPR delivery log" };
+      const rows: DprDeliveryLogRow[] = ((res.data.logs ?? []) as Record<string, unknown>[]).map((r, idx) => ({
+        id: String(r.id),
+        dprMessageId: String(r.dpr_message_id ?? dprMessageId),
+        attemptNumber: Number(r.attempt_number ?? idx + 1),
+        attemptedAt: String(r.attempted_at ?? ""),
+        outcome: ((r.outcome === "sent" ? "success" : r.outcome) ?? "retry") as DprDeliveryLogRow["outcome"],
+        durationMs: (r.duration_ms ?? null) as number | null,
+        statusCode: (r.status_code ?? null) as number | null,
+        errorCode: (r.error_code ?? null) as string | null,
+        errorDetail: (r.error_detail ?? null) as string | null,
+      }));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client
       .from("dpr_delivery_log")
       .select("id, dpr_message_id, attempt_number, attempted_at, outcome, duration_ms, status_code, error_code, error_detail")
@@ -140,6 +167,9 @@ export async function listDprDeliveryLog(client: TypedSupabaseClient, dprMessage
 /** Latest BuildNow snapshot for a project (migration 52 RPC), shaped for the BuildNowBadge metadata. */
 export async function getBuildnowAnchor(client: TypedSupabaseClient, projectId: string): Promise<MResult<{ approval_status?: string; fetched_at?: string | number } | null>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      return { ok: true, data: null };
+    }
     const { data, error } = await client.rpc("buildnow_latest_for_project", { p_project_id: projectId });
     if (error) return { ok: false, error: String(error.message ?? error) };
     const row = Array.isArray(data) ? data[0] : data;

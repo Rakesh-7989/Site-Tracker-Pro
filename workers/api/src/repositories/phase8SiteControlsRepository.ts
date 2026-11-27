@@ -7,7 +7,7 @@
  *   - ra_bills
  */
 
-import { assertWriteRole, type SecurityContext } from "../middleware/tenant";
+import { assertWriteRole, TenantSecurityError, type SecurityContext } from "../middleware/tenant";
 import { assertProjectOwnerOrg, assertProjectReadable } from "./projectAccess";
 
 export type RfiStatus = "open" | "answered" | "closed" | "overdue";
@@ -555,5 +555,168 @@ export class Phase8SiteControlsRepository {
       .bind(status, deliverableId, projectId)
       .run();
     return (res.meta?.changes ?? 0) > 0;
+  }
+
+  // ── PROJECT MEMBERS & ACCESS REQUESTS ──────────────────────────────────────
+
+  async addProjectMember(ctx: SecurityContext, projectId: string, profileId: string, role: string): Promise<void> {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can manage project members.");
+    await this.db
+      .prepare(
+        `INSERT INTO project_members (project_id, profile_id, role, assigned_at, assigned_by, removed_at)
+         VALUES (?, ?, ?, datetime('now'), ?, NULL)
+         ON CONFLICT(project_id, profile_id) DO UPDATE SET
+           role = excluded.role,
+           assigned_at = datetime('now'),
+           assigned_by = excluded.assigned_by,
+           removed_at = NULL`
+      )
+      .bind(projectId, profileId, role, ctx.userId)
+      .run();
+  }
+
+  async removeProjectMember(ctx: SecurityContext, projectId: string, profileId: string): Promise<boolean> {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can remove project members.");
+    const res = await this.db
+      .prepare(
+        `UPDATE project_members
+         SET removed_at = datetime('now')
+         WHERE project_id = ? AND profile_id = ? AND removed_at IS NULL`
+      )
+      .bind(projectId, profileId)
+      .run();
+    return (res.meta?.changes ?? 0) > 0;
+  }
+
+  async requestProjectAccess(ctx: SecurityContext, projectId: string, requestId: string): Promise<void> {
+    const proj = await this.db
+      .prepare(`SELECT id FROM projects WHERE id = ? AND org_id = ?`)
+      .bind(projectId, ctx.orgId)
+      .first<{ id: string }>();
+    if (!proj) {
+      throw new TenantSecurityError("Forbidden: Project does not belong to your organization.");
+    }
+    await this.db
+      .prepare(
+        `INSERT INTO project_access_requests (id, project_id, requester_id, status)
+         VALUES (?, ?, ?, 'pending')
+         ON CONFLICT(project_id, requester_id) DO UPDATE SET
+           status = 'pending',
+           reviewed_by = NULL,
+           reviewed_at = NULL`
+      )
+      .bind(requestId, projectId, ctx.userId)
+      .run();
+  }
+
+  async listPendingAccessRequests(ctx: SecurityContext, projectId: string) {
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can view access requests.");
+    const { results } = await this.db
+      .prepare(
+        `SELECT r.id, r.project_id, r.requester_id, r.created_at,
+                u.name AS requester_name, m.role AS requester_role
+         FROM project_access_requests r
+         LEFT JOIN users u ON u.id = r.requester_id
+         LEFT JOIN memberships m ON m.user_id = r.requester_id AND m.org_id = ?
+         WHERE r.project_id = ? AND r.status = 'pending'
+         ORDER BY r.created_at ASC`
+      )
+      .bind(ctx.orgId, projectId)
+      .all();
+    return results || [];
+  }
+
+  async reviewAccessRequest(ctx: SecurityContext, requestId: string, decision: "approved" | "rejected"): Promise<boolean> {
+    assertWriteRole(ctx);
+    const reqRow = await this.db
+      .prepare(
+        `SELECT r.id, r.project_id, r.requester_id, m.role AS member_role
+         FROM project_access_requests r
+         JOIN projects p ON p.id = r.project_id
+         LEFT JOIN memberships m ON m.user_id = r.requester_id AND m.org_id = p.org_id
+         WHERE r.id = ? AND p.org_id = ?`
+      )
+      .bind(requestId, ctx.orgId)
+      .first<{ id: string; project_id: string; requester_id: string; member_role: string | null }>();
+    if (!reqRow) {
+      throw new TenantSecurityError("Forbidden: Access request not found in your organization.");
+    }
+    const res = await this.db
+      .prepare(
+        `UPDATE project_access_requests
+         SET status = ?, reviewed_by = ?, reviewed_at = datetime('now')
+         WHERE id = ?`
+      )
+      .bind(decision, ctx.userId, requestId)
+      .run();
+    if (decision === "approved") {
+      await this.db
+        .prepare(
+          `INSERT INTO project_members (project_id, profile_id, role, assigned_at, assigned_by, removed_at)
+           VALUES (?, ?, ?, datetime('now'), ?, NULL)
+           ON CONFLICT(project_id, profile_id) DO UPDATE SET
+             assigned_at = datetime('now'),
+             assigned_by = excluded.assigned_by,
+             removed_at = NULL`
+        )
+        .bind(reqRow.project_id, reqRow.requester_id, reqRow.member_role || "viewer", ctx.userId)
+        .run();
+    }
+    return (res.meta?.changes ?? 0) > 0;
+  }
+
+  // ── DPR MESSAGES & DELIVERY LOG ────────────────────────────────────────────
+
+  async listDprMessages(ctx: SecurityContext, limit = 50) {
+    const safeLimit = Math.min(Math.max(1, Math.floor(limit)), 200);
+    const { results } = await this.db
+      .prepare(
+        `SELECT d.id, p.org_id, d.project_id, d.transcript_text, d.voice_audio_url,
+                d.photo_lat, d.photo_lon, d.promoter_phone_e164, d.attempts,
+                d.sent_at, d.created_at, u.name AS supervisor_name
+         FROM dpr_messages d
+         JOIN projects p ON p.id = d.project_id
+         LEFT JOIN users u ON u.id = d.supervisor_id
+         WHERE p.org_id = ?
+         ORDER BY d.created_at DESC
+         LIMIT ?`
+      )
+      .bind(ctx.orgId, safeLimit)
+      .all();
+    return results || [];
+  }
+
+  async getDprMessage(ctx: SecurityContext, id: string) {
+    const row = await this.db
+      .prepare(
+        `SELECT d.id, p.org_id, d.project_id, d.transcript_text, d.voice_audio_url,
+                d.photo_lat, d.photo_lon, d.promoter_phone_e164, d.attempts,
+                d.sent_at, d.created_at, u.name AS supervisor_name
+         FROM dpr_messages d
+         JOIN projects p ON p.id = d.project_id
+         LEFT JOIN users u ON u.id = d.supervisor_id
+         WHERE d.id = ? AND p.org_id = ?`
+      )
+      .bind(id, ctx.orgId)
+      .first();
+    return row ?? null;
+  }
+
+  async listDprDeliveryLog(ctx: SecurityContext, dprMessageId: string) {
+    const { results } = await this.db
+      .prepare(
+        `SELECT l.id, l.message_id AS dpr_message_id, l.channel, l.status AS outcome,
+                l.error AS error_detail, l.created_at AS attempted_at
+         FROM dpr_delivery_log l
+         JOIN dpr_messages d ON d.id = l.message_id
+         JOIN projects p ON p.id = d.project_id
+         WHERE l.message_id = ? AND p.org_id = ?
+         ORDER BY l.created_at ASC`
+      )
+      .bind(dprMessageId, ctx.orgId)
+      .all();
+    return results || [];
   }
 }
