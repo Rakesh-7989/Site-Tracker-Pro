@@ -466,5 +466,12 @@ export const cloudflareApi = {
     cfRequest<{ shifts: unknown[] }>(`/projects/${projectId}/shifts${date ? `?date=${encodeURIComponent(date)}` : ""}`, { orgId }),
   createShift: (projectId: string, input: { labourId?: string; workerName?: string; shiftDate?: string; shiftName?: string; startTime?: string; endTime?: string; notes?: string }, orgId?: string) =>
     cfRequest<{ id: string }>(`/projects/${projectId}/shifts`, { method: "POST", orgId, body: input }),
+
+  listIssues: (projectId: string, orgId?: string) =>
+    cfRequest<{ issues: unknown[] }>(`/projects/${projectId}/issues`, { orgId }),
+  createIssue: (projectId: string, input: { title: string; description?: string; severity?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/issues`, { method: "POST", orgId, body: input }),
+  updateIssueStatus: (projectId: string, issueId: string, status: string, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/projects/${projectId}/issues/${issueId}`, { method: "PATCH", orgId, body: { status } }),
 };
 

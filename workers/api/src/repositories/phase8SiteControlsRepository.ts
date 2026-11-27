@@ -356,4 +356,56 @@ export class Phase8SiteControlsRepository {
       .run();
     return { id: input.id };
   }
+
+  // ── SITE ISSUES ────────────────────────────────────────────────────────────
+
+  async listIssues(ctx: SecurityContext, projectId: string) {
+    await assertProjectReadable(this.db, ctx, projectId);
+    const { results } = await this.db
+      .prepare(
+        `SELECT id, project_id, title, description, severity, status, reported_by, reported_date, resolved_by, resolved_date, version, updated_at
+         FROM issues
+         WHERE project_id = ?
+         ORDER BY updated_at DESC`
+      )
+      .bind(projectId)
+      .all();
+    return results || [];
+  }
+
+  async createIssue(
+    ctx: SecurityContext,
+    projectId: string,
+    input: { id: string; title: string; description?: string; severity?: string }
+  ) {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can report issues.");
+    await this.db
+      .prepare(
+        `INSERT INTO issues (id, project_id, title, description, severity, status, reported_by, reported_date)
+         VALUES (?, ?, ?, ?, ?, 'open', ?, date('now'))`
+      )
+      .bind(input.id, projectId, input.title.trim(), input.description || null, input.severity || "medium", ctx.userId)
+      .run();
+    return { id: input.id };
+  }
+
+  async updateIssueStatus(ctx: SecurityContext, projectId: string, issueId: string, status: string): Promise<boolean> {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can update issues.");
+    const isResolved = status === "resolved" || status === "closed";
+    const res = await this.db
+      .prepare(
+        `UPDATE issues
+         SET status = ?,
+             resolved_by = CASE WHEN ? = 1 THEN ? ELSE resolved_by END,
+             resolved_date = CASE WHEN ? = 1 THEN date('now') ELSE resolved_date END,
+             version = version + 1,
+             updated_at = datetime('now')
+         WHERE id = ? AND project_id = ?`
+      )
+      .bind(status, isResolved ? 1 : 0, ctx.userId, isResolved ? 1 : 0, issueId, projectId)
+      .run();
+    return (res.meta?.changes ?? 0) > 0;
+  }
 }

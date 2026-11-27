@@ -4,6 +4,8 @@
 // attendanceQueries / siteAdminQueries pattern: client-injected Result<T>,
 // camelCase mappers, pure helpers.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -86,6 +88,20 @@ export function attendanceTally(rows: Array<{ attendeeName: string; status: stri
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listShiftRoster(client: any, projectId: string): Promise<Result<ShiftRoster[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listShifts(projectId);
+      if (!res.ok) return dbe({ message: res.error || "Failed to load shifts" });
+      return ok(((res.data?.shifts ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        labourId: r.labour_id == null ? null : String(r.labour_id),
+        workerName: r.worker_name == null ? null : String(r.worker_name),
+        shiftDate: String(r.shift_date ?? ""),
+        shiftName: asShift(r.shift_name),
+        startTime: r.start_time == null ? null : String(r.start_time),
+        endTime: r.end_time == null ? null : String(r.end_time),
+        notes: r.notes == null ? null : String(r.notes),
+      })));
+    }
     const { data, error } = await client.from("shift_roster")
       .select("id, labour_id, worker_name, shift_date, shift_name, start_time, end_time, notes")
       .eq("project_id", projectId)
@@ -100,8 +116,19 @@ export async function listShiftRoster(client: any, projectId: string): Promise<R
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createShiftRoster(client: any, input: { projectId: string; workerName: string; shiftDate: string; shiftName?: ShiftName; startTime?: string; endTime?: string; notes?: string }): Promise<Result<{ id: string }>> {
-   
+export async function createShiftRoster(client: any, input: { projectId: string; workerName: string; shiftDate: string; shiftName?: ShiftName; startTime?: string; endTime?: string; notes?: string }): Promise<Result<{ id: string }>> {
+  if (isCloudflareBackendEnabled()) {
+    const res = await cloudflareApi.createShift(input.projectId, {
+      workerName: input.workerName,
+      shiftDate: input.shiftDate,
+      shiftName: input.shiftName,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      notes: input.notes,
+    });
+    if (!res.ok || !res.data?.id) return dbe({ message: res.error || "Failed to create shift" });
+    return ok({ id: res.data.id });
+  }
   const chain = client.from("shift_roster").insert({
     project_id: input.projectId, worker_name: input.workerName, shift_date: input.shiftDate, shift_name: input.shiftName || "day",
     start_time: input.startTime || null, end_time: input.endTime || null, notes: input.notes || null,

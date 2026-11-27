@@ -1675,7 +1675,7 @@ export default {
 
     // ── PHASE 8 SITE CONTROLS ROUTES (RFI, CHANGE ORDERS, RA BILLS) ─────────
 
-    if (/^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts)(\/|$)/.test(url.pathname)) {
+    if (/^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts|issues)(\/|$)/.test(url.pathname)) {
       const tenant = await requireTenantContext();
       if ("errorResponse" in tenant) return tenant.errorResponse;
       const { ctx } = tenant;
@@ -1827,6 +1827,31 @@ export default {
             return json({ ok: true, ...created }, 201);
           }
         }
+
+        const issueMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/issues(?:\/([^/]+))?$/);
+        if (issueMatch) {
+          const [, projectId, issueId] = issueMatch;
+          if (!issueId && request.method === "GET") {
+            return json({ ok: true, issues: await sc8.listIssues(ctx, projectId) });
+          }
+          if (!issueId && request.method === "POST") {
+            const body = (await request.json()) as { title?: string; description?: string; severity?: string };
+            if (!body.title) return json({ ok: false, error: "title required" }, 400);
+            const created = await sc8.createIssue(ctx, projectId, {
+              id: `iss_${crypto.randomUUID()}`,
+              title: body.title,
+              description: body.description,
+              severity: body.severity,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+          if (issueId && request.method === "PATCH") {
+            const body = (await request.json()) as { status?: string };
+            if (!body.status) return json({ ok: false, error: "status required" }, 400);
+            const updated = await sc8.updateIssueStatus(ctx, projectId, issueId, body.status);
+            return json({ ok: true, updated });
+          }
+        }
       } catch (err) {
         if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
         return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
@@ -1916,6 +1941,20 @@ export default {
     ).all<{ id: string; type: string; org_id: string | null; project_id: string | null; payload: string }>();
 
     for (const row of pending.results || []) {
+      if (env.NOTIFICATION_QUEUE && row.payload) {
+        try {
+          const parsed = JSON.parse(row.payload) as Record<string, unknown>;
+          if (parsed.userId || parsed.to) {
+            await env.NOTIFICATION_QUEUE.send({
+              ...parsed,
+              orgId: row.org_id || undefined,
+              projectId: row.project_id || undefined,
+            });
+          }
+        } catch (err) {
+          console.warn("[Cron Trigger] Failed to enqueue outbox row", { id: row.id, err: String(err) });
+        }
+      }
       await env.DB.prepare(`UPDATE event_outbox SET status = 'delivered', delivered_at = datetime('now') WHERE id = ?`)
         .bind(row.id)
         .run();
