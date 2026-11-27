@@ -2,6 +2,8 @@
 // Calls the submit_signup_request Edge Function (public, --no-verify-jwt) via
 // the anon Supabase client. No session required.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type SignupPlan = "basic" | "pro" | "business" | "custom";
 export interface SignupInput {
   firmName: string;
@@ -30,6 +32,18 @@ export async function submitSignupRequest(
   injectedClient?: any,
 ): Promise<SignupResult> {
   try {
+    if (!injectedClient && isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.submitSignupRequest({
+        firmName: input.firmName,
+        contactName: input.contactName,
+        email: input.email,
+        phone: input.phone,
+        plan: input.plan,
+        message: input.message,
+      });
+      if (!res.ok) return { ok: false, error: res.error || "Could not submit your request." };
+      return { ok: true };
+    }
     const client = injectedClient ?? (await getClient());
     if (!client) return { ok: false, error: "Backend not configured." };
     const { data, error } = await client.functions.invoke("submit_signup_request", { body: input });

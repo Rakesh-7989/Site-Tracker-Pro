@@ -5,6 +5,7 @@
 
 import { workflowNextMap } from "../engines/workflowEngine";
 import { MATERIAL_REQUEST_WORKFLOW } from "../engines/workflowDefinitions";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -49,6 +50,24 @@ export function isOpenRequest(status: RequestStatus): boolean {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listMaterialRequests(client: any, projectId: string): Promise<Result<MaterialRequest[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listMaterialRequests(projectId);
+      if (!res.ok) return dbe({ message: res.error || "Failed to load material requests" });
+      return ok(((res.data?.materialRequests ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        item: String(r.item ?? ""),
+        unit: r.unit == null ? null : String(r.unit),
+        qty: Number(r.qty ?? 0),
+        needDate: r.need_date == null ? null : String(r.need_date),
+        reason: r.reason == null ? null : String(r.reason),
+        status: asReqStatus(r.status),
+        requestedByName: r.requested_by_name == null ? null : String(r.requested_by_name),
+        approvedByName: r.approved_by_name == null ? null : String(r.approved_by_name),
+        poId: r.po_id == null ? null : String(r.po_id),
+        notes: r.notes == null ? null : String(r.notes),
+        createdAt: String(r.created_at ?? ""),
+      })));
+    }
     const { data, error } = await client.from("material_requests")
       .select("id, item, unit, qty, need_date, reason, status, requested_by:requested_by(name), approved_by:approved_by(name), po_id, notes, created_at")
       .eq("project_id", projectId)
@@ -69,6 +88,18 @@ export async function listMaterialRequests(client: any, projectId: string): Prom
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createMaterialRequest(client: any, input: { projectId: string; item: string; unit?: string; qty: number; needDate?: string | null; reason?: string | null; notes?: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.createMaterialRequest(input.projectId, {
+        item: input.item,
+        unit: input.unit,
+        qty: input.qty,
+        needDate: input.needDate ?? undefined,
+        reason: input.reason ?? undefined,
+        notes: input.notes,
+      });
+      if (!res.ok || !res.data?.id) return dbe({ message: res.error || "Failed to create material request" });
+      return ok({ id: res.data.id });
+    }
     const { data, error } = await client.from("material_requests").insert({
       project_id: input.projectId, item: input.item, unit: input.unit || null, qty: input.qty,
       need_date: input.needDate || null, reason: input.reason || null, status: "requested", notes: input.notes || null,

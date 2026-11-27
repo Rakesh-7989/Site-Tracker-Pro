@@ -7,7 +7,9 @@ import {
   isTokenRevoked,
   issueOneTimeToken,
   revokeToken,
+  verifySvixSignature,
 } from "../workers/api/src/middleware/authSecurity";
+import { assertWriteRole, TenantSecurityError, type SecurityContext } from "../workers/api/src/middleware/tenant";
 
 function createMockKV(): KVNamespace {
   const store = new Map<string, string>();
@@ -77,5 +79,28 @@ describe("Audit P1 Fixes (Backend Config & Auth Security)", () => {
     // Single-use: second consume returns null
     const replay = await consumeOneTimeToken(kv, "magic", magicToken);
     expect(replay).toBeNull();
+  });
+
+  it("P1: verifies Svix Resend webhook signatures and blocks read-only write roles", async () => {
+    const rawKey = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
+    const secret = "whsec_" + btoa(String.fromCharCode(...rawKey)).replace(/=+$/, "");
+    const msgId = "msg_123";
+    const ts = "1700000000";
+    const body = '{"type":"email.delivered"}';
+    const key = await crypto.subtle.importKey("raw", rawKey, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const sigBuf = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${msgId}.${ts}.${body}`));
+    const sig = "v1," + btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+
+    expect(
+      await verifySvixSignature({ msgId, timestamp: ts, signature: sig, rawBody: body, secret, nowSec: 1700000010 })
+    ).toBe(true);
+    expect(
+      await verifySvixSignature({ msgId, timestamp: ts, signature: sig, rawBody: '{"type":"tampered"}', secret, nowSec: 1700000010 })
+    ).toBe(false);
+
+    const viewerCtx: SecurityContext = { userId: "u1", email: "v@o.in", orgId: "o1", role: "viewer", isAdmin: false, partnerOrgIds: [] };
+    const engineerCtx: SecurityContext = { ...viewerCtx, role: "engineer" };
+    expect(() => assertWriteRole(viewerCtx)).toThrow(TenantSecurityError);
+    expect(() => assertWriteRole(engineerCtx)).not.toThrow();
   });
 });

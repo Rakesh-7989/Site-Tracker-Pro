@@ -431,5 +431,7 @@ export const cloudflareApi = {
     cfRequest<{ removed: string }>(`/orgs/${orgId}/members/${profileId}`, { method: "DELETE", orgId }),
   mintPlanPaymentLink: (input: { plan: "basic" | "pro" | "business"; period?: "monthly" | "annual" }, orgId?: string) =>
     cfRequest<{ linkId: string; shortUrl: string }>("/payments/razorpay-plan-link", { method: "POST", orgId, body: input }),
+  submitSignupRequest: (input: { firmName: string; contactName: string; email: string; phone?: string; plan?: string; message?: string }) =>
+    cfRequest<{ id: string }>("/public/signup-requests", { method: "POST", body: input }),
 };
 

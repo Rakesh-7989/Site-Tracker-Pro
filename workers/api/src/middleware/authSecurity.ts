@@ -77,3 +77,42 @@ export async function consumeOneTimeToken<T extends Record<string, unknown>>(
     return null;
   }
 }
+
+export async function verifySvixSignature(opts: {
+  msgId: string;
+  timestamp: string;
+  signature: string;
+  rawBody: string;
+  secret: string;
+  nowSec?: number;
+}): Promise<boolean> {
+  const { msgId, timestamp, signature, rawBody, secret, nowSec = Math.floor(Date.now() / 1000) } = opts;
+  if (!msgId || !timestamp || !signature || !secret) return false;
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts) || Math.abs(nowSec - ts) > 300) return false;
+
+  try {
+    let b64 = secret.startsWith("whsec_") ? secret.slice("whsec_".length) : secret;
+    const pad = b64.length % 4;
+    if (pad !== 0) b64 = b64.padEnd(b64.length + (4 - pad), "=");
+    const bin = atob(b64);
+    const keyBytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) keyBytes[i] = bin.charCodeAt(i);
+
+    const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const sigBuf = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${msgId}.${timestamp}.${rawBody}`));
+    const expected = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+
+    for (const part of signature.trim().split(/\s+/)) {
+      const [version, sig] = part.split(",", 2);
+      if (version === "v1" && sig && sig.length === expected.length) {
+        let diff = 0;
+        for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ sig.charCodeAt(i);
+        if (diff === 0) return true;
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}

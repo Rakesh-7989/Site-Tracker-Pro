@@ -7,13 +7,14 @@
 import { hashPassword, verifyPassword, signJwt, verifyJwt } from "./services/authService";
 import { mintRazorpayPaymentLink, verifyRazorpaySignature } from "./services/paymentService";
 import { uploadToR2, getFromR2, deleteFromR2 } from "./services/storageService";
-import { assertTenantContext, TenantSecurityError, type SecurityContext } from "./middleware/tenant";
+import { assertTenantContext, assertWriteRole, TenantSecurityError, type SecurityContext } from "./middleware/tenant";
 import {
   checkAuthRateLimit,
   consumeOneTimeToken,
   isTokenRevoked,
   issueOneTimeToken,
   revokeToken,
+  verifySvixSignature,
 } from "./middleware/authSecurity";
 import {
   MAX_UPLOAD_BYTES,
@@ -42,6 +43,7 @@ export interface Env {
   RAZORPAY_KEY_ID?: string;
   RAZORPAY_KEY_SECRET?: string;
   RAZORPAY_WEBHOOK_SECRET?: string;
+  RESEND_WEBHOOK_SECRET?: string;
   EMAIL?: SendEmail;
 }
 
@@ -529,7 +531,20 @@ export default {
     // POST /api/webhooks/resend (ports resend-webhook EF)
     if (url.pathname === "/api/webhooks/resend" && request.method === "POST") {
       try {
-        const body = (await request.json()) as {
+        const rawBody = await request.text();
+        if (env.RESEND_WEBHOOK_SECRET) {
+          const valid = await verifySvixSignature({
+            msgId: request.headers.get("svix-id") || "",
+            timestamp: request.headers.get("svix-timestamp") || "",
+            signature: request.headers.get("svix-signature") || "",
+            rawBody,
+            secret: env.RESEND_WEBHOOK_SECRET,
+          });
+          if (!valid) {
+            return json({ ok: false, error: "Invalid webhook signature" }, 401);
+          }
+        }
+        const body = JSON.parse(rawBody) as {
           type?: string;
           data?: { email_id?: string; to?: string[]; subject?: string };
         };
@@ -740,11 +755,17 @@ export default {
         return json({ ok: true, projects });
       }
       if (request.method === "POST") {
-        const body = (await request.json()) as { name?: string; type?: string; budget?: number };
-        if (!body.name) return json({ ok: false, error: "name is required" }, 400);
-        const id = `prj_${crypto.randomUUID()}`;
-        await repo.createProject(resolved.ctx, { id, name: body.name, type: body.type || "construction", budget: body.budget });
-        return json({ ok: true, id }, 201);
+        try {
+          assertWriteRole(resolved.ctx);
+          const body = (await request.json()) as { name?: string; type?: string; budget?: number };
+          if (!body.name) return json({ ok: false, error: "name is required" }, 400);
+          const id = `prj_${crypto.randomUUID()}`;
+          await repo.createProject(resolved.ctx, { id, name: body.name, type: body.type || "construction", budget: body.budget });
+          return json({ ok: true, id }, 201);
+        } catch (err) {
+          if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+          return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+        }
       }
     }
 
@@ -757,18 +778,24 @@ export default {
         return json({ ok: true, vendors: await procurement.listVendors(resolved.ctx) });
       }
       if (request.method === "POST") {
-        const body = (await request.json()) as {
-          name?: string;
-          contactPerson?: string;
-          phone?: string;
-          email?: string;
-          gstin?: string;
-          category?: string;
-        };
-        if (!body.name) return json({ ok: false, error: "name is required" }, 400);
-        const id = `vnd_${crypto.randomUUID()}`;
-        await procurement.createVendor(resolved.ctx, { id, name: body.name, ...body });
-        return json({ ok: true, id }, 201);
+        try {
+          assertWriteRole(resolved.ctx);
+          const body = (await request.json()) as {
+            name?: string;
+            contactPerson?: string;
+            phone?: string;
+            email?: string;
+            gstin?: string;
+            category?: string;
+          };
+          if (!body.name) return json({ ok: false, error: "name is required" }, 400);
+          const id = `vnd_${crypto.randomUUID()}`;
+          await procurement.createVendor(resolved.ctx, { id, name: body.name, ...body });
+          return json({ ok: true, id }, 201);
+        } catch (err) {
+          if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+          return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+        }
       }
     }
 

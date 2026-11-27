@@ -45,23 +45,29 @@ export async function assertTenantContext(
     throw new TenantSecurityError("Forbidden: User does not belong to the requested organization.");
   }
 
-  // Query partner org memberships for cross-org collaboration (Moat)
-  const partnerLinks = await db
-    .prepare(
-      `SELECT DISTINCT project_id 
-       FROM project_partner_members 
-       WHERE profile_id = ?`
-    )
-    .bind(userId)
-    .all<{ project_id: string }>();
-
   return {
     userId,
     email: member.email,
     orgId: targetOrgId,
     role: member.role,
     isAdmin: Boolean(member.is_admin),
-    partnerOrgIds: (partnerLinks.results || []).map((r: { project_id: string }) => r.project_id),
+    partnerOrgIds: [],
   };
+}
+
+const READ_ONLY_ROLES = new Set(["viewer", "client", "guest"]);
+
+/**
+ * Ensures the caller holds a write-capable role in the active organization.
+ * Read-only roles (viewer, client, guest) are blocked from mutating domain data.
+ */
+export function assertWriteRole(
+  ctx: SecurityContext,
+  reason = "Forbidden: Read-only role cannot perform write operations."
+): void {
+  if (ctx.isAdmin) return;
+  if (READ_ONLY_ROLES.has(ctx.role.toLowerCase())) {
+    throw new TenantSecurityError(reason);
+  }
 }
 
