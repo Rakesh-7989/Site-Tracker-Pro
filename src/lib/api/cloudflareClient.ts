@@ -433,5 +433,26 @@ export const cloudflareApi = {
     cfRequest<{ linkId: string; shortUrl: string }>("/payments/razorpay-plan-link", { method: "POST", orgId, body: input }),
   submitSignupRequest: (input: { firmName: string; contactName: string; email: string; phone?: string; plan?: string; message?: string }) =>
     cfRequest<{ id: string }>("/public/signup-requests", { method: "POST", body: input }),
+
+  listRfis: (projectId: string, orgId?: string) =>
+    cfRequest<{ rfis: unknown[] }>(`/projects/${projectId}/rfi`, { orgId }),
+  createRfi: (projectId: string, input: { no: string; subject: string; question: string; category?: string; dueDate?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/rfi`, { method: "POST", orgId, body: input }),
+  updateRfi: (projectId: string, rfiId: string, input: { status?: string; response?: string }, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/projects/${projectId}/rfi/${rfiId}`, { method: "PATCH", orgId, body: input }),
+
+  listChangeOrders: (projectId: string, orgId?: string) =>
+    cfRequest<{ changeOrders: unknown[] }>(`/projects/${projectId}/change-orders`, { orgId }),
+  createChangeOrder: (projectId: string, input: { no: string; description: string; scopeChange?: string; costImpact?: number; scheduleImpact?: number; reason?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/change-orders`, { method: "POST", orgId, body: input }),
+  updateChangeOrderStatus: (projectId: string, coId: string, status: string, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/projects/${projectId}/change-orders/${coId}`, { method: "PATCH", orgId, body: { status } }),
+
+  listRaBills: (projectId: string, orgId?: string) =>
+    cfRequest<{ raBills: unknown[] }>(`/projects/${projectId}/ra-bills`, { orgId }),
+  createRaBill: (projectId: string, input: { no: string; subcontractor?: string; scope?: string; billAmount: number; cumulative?: number; retentionPct?: number; billDate?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/ra-bills`, { method: "POST", orgId, body: input }),
+  updateRaBillStatus: (projectId: string, billId: string, input: { status: string; paidAmount?: number }, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/projects/${projectId}/ra-bills/${billId}`, { method: "PATCH", orgId, body: input }),
 };
 

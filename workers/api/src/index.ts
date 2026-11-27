@@ -33,6 +33,7 @@ import { TaskAndMilestoneRepository } from "./repositories/taskAndMilestoneRepos
 import { SiteOpsExtendedRepository } from "./repositories/siteOpsExtendedRepository";
 import { CrmAndPortalRepository } from "./repositories/crmAndPortalRepository";
 import { Phase7OperationsRepository, type AttendanceKind, type AttendanceStatus, type BoqStatus, type InventoryDirection } from "./repositories/phase7OperationsRepository";
+import { Phase8SiteControlsRepository, type ChangeOrderStatus, type RaBillStatus, type RfiStatus } from "./repositories/phase8SiteControlsRepository";
 
 export interface Env {
   DB: D1Database;
@@ -1493,6 +1494,9 @@ export default {
       const ops7 = new Phase7OperationsRepository(env.DB);
 
       try {
+        if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS") {
+          assertWriteRole(ctx);
+        }
         if (url.pathname === "/api/chat/channels") {
           if (request.method === "GET") {
             return json({ ok: true, channels: await ops7.listChatChannels(ctx) });
@@ -1653,6 +1657,116 @@ export default {
               source: body.source,
             });
             return json({ ok: true, ...created }, 201);
+          }
+        }
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // ── PHASE 8 SITE CONTROLS ROUTES (RFI, CHANGE ORDERS, RA BILLS) ─────────
+
+    if (/^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills)(\/|$)/.test(url.pathname)) {
+      const tenant = await requireTenantContext();
+      if ("errorResponse" in tenant) return tenant.errorResponse;
+      const { ctx } = tenant;
+      const sc8 = new Phase8SiteControlsRepository(env.DB);
+
+      try {
+        if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS") {
+          assertWriteRole(ctx);
+        }
+
+        const rfiMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/rfi(?:\/([^/]+))?$/);
+        if (rfiMatch) {
+          const [, projectId, rfiId] = rfiMatch;
+          if (!rfiId && request.method === "GET") {
+            return json({ ok: true, rfis: await sc8.listRfis(ctx, projectId) });
+          }
+          if (!rfiId && request.method === "POST") {
+            const body = (await request.json()) as { no?: string; subject?: string; question?: string; category?: string; dueDate?: string };
+            if (!body.no || !body.subject || !body.question) {
+              return json({ ok: false, error: "no, subject, and question required" }, 400);
+            }
+            const created = await sc8.createRfi(ctx, projectId, {
+              id: `rfi_${crypto.randomUUID()}`,
+              no: body.no,
+              subject: body.subject,
+              question: body.question,
+              category: body.category,
+              dueDate: body.dueDate,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+          if (rfiId && request.method === "PATCH") {
+            const body = (await request.json()) as { status?: RfiStatus; response?: string };
+            const updated = await sc8.updateRfi(ctx, projectId, rfiId, body);
+            return json({ ok: true, updated });
+          }
+        }
+
+        const coMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/change-orders(?:\/([^/]+))?$/);
+        if (coMatch) {
+          const [, projectId, coId] = coMatch;
+          if (!coId && request.method === "GET") {
+            return json({ ok: true, changeOrders: await sc8.listChangeOrders(ctx, projectId) });
+          }
+          if (!coId && request.method === "POST") {
+            const body = (await request.json()) as { no?: string; description?: string; scopeChange?: string; costImpact?: number; scheduleImpact?: number; reason?: string };
+            if (!body.no || !body.description) {
+              return json({ ok: false, error: "no and description required" }, 400);
+            }
+            const created = await sc8.createChangeOrder(ctx, projectId, {
+              id: `co_${crypto.randomUUID()}`,
+              no: body.no,
+              description: body.description,
+              scopeChange: body.scopeChange,
+              costImpact: body.costImpact,
+              scheduleImpact: body.scheduleImpact,
+              reason: body.reason,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+          if (coId && request.method === "PATCH") {
+            const body = (await request.json()) as { status?: ChangeOrderStatus };
+            if (!body.status) return json({ ok: false, error: "status required" }, 400);
+            const updated = await sc8.updateChangeOrderStatus(ctx, projectId, coId, body.status);
+            return json({ ok: true, updated });
+          }
+        }
+
+        const raMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/ra-bills(?:\/([^/]+))?$/);
+        if (raMatch) {
+          const [, projectId, billId] = raMatch;
+          if (!billId && request.method === "GET") {
+            return json({ ok: true, raBills: await sc8.listRaBills(ctx, projectId) });
+          }
+          if (!billId && request.method === "POST") {
+            const body = (await request.json()) as { no?: string; subcontractor?: string; scope?: string; billAmount?: number; cumulative?: number; retentionPct?: number; billDate?: string };
+            if (!body.no || typeof body.billAmount !== "number") {
+              return json({ ok: false, error: "no and billAmount required" }, 400);
+            }
+            const created = await sc8.createRaBill(ctx, projectId, {
+              id: `ra_${crypto.randomUUID()}`,
+              no: body.no,
+              subcontractor: body.subcontractor,
+              scope: body.scope,
+              billAmount: body.billAmount,
+              cumulative: body.cumulative,
+              retentionPct: body.retentionPct,
+              billDate: body.billDate,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+          if (billId && request.method === "PATCH") {
+            const body = (await request.json()) as { status?: RaBillStatus; paidAmount?: number };
+            if (!body.status) return json({ ok: false, error: "status required" }, 400);
+            const updated = await sc8.updateRaBillStatus(ctx, projectId, billId, {
+              status: body.status,
+              paidAmount: body.paidAmount,
+            });
+            return json({ ok: true, updated });
           }
         }
       } catch (err) {
