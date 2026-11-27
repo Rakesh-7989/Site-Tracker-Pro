@@ -130,6 +130,20 @@ const asRfi = oneOf<RfiStatus>(["open", "answered", "closed", "overdue"], "open"
 
 export async function listRfis(client: TypedSupabaseClient, projectId: string): Promise<Result<Rfi[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listRfis(projectId);
+      if (!res.ok) return dbe({ message: res.error || "Failed to load RFIs" });
+      return ok(((res.data?.rfis ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        no: String(r.no ?? ""),
+        subject: String(r.subject ?? ""),
+        question: String(r.question ?? ""),
+        category: r.category == null ? null : String(r.category),
+        status: asRfi(r.status),
+        response: r.response == null ? null : String(r.response),
+        askedAt: r.asked_at == null ? null : String(r.asked_at),
+      })));
+    }
     const { data, error } = await client.from("rfi").select("id, no, subject, question, category, status, response, asked_at").eq("project_id", projectId).order("asked_at", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map((r: Record<string, unknown>) => ({ id: String(r.id), no: String(r.no ?? ""), subject: String(r.subject ?? ""), question: String(r.question ?? ""), category: r.category == null ? null : String(r.category), status: asRfi(r.status), response: r.response == null ? null : String(r.response), askedAt: r.asked_at == null ? null : String(r.asked_at) })));
@@ -137,6 +151,16 @@ export async function listRfis(client: TypedSupabaseClient, projectId: string): 
 }
 export async function createRfi(client: TypedSupabaseClient, input: { projectId: string; no: string; subject: string; question: string; category?: string; askedBy: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.createRfi(input.projectId, {
+        no: input.no,
+        subject: input.subject,
+        question: input.question,
+        category: input.category,
+      });
+      if (!res.ok || !res.data?.id) return dbe({ message: res.error || "Failed to create RFI" });
+      return ok({ id: res.data.id });
+    }
     const { data, error } = await client.from("rfi").insert({ project_id: input.projectId, no: input.no, subject: input.subject, question: input.question, category: input.category || null, asked_by: input.askedBy }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }
@@ -153,6 +177,19 @@ const asCo = oneOf<CoStatus>(["submitted", "approved", "rejected", "cancelled"],
 
 export async function listChangeOrders(client: TypedSupabaseClient, projectId: string): Promise<Result<ChangeOrder[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listChangeOrders(projectId);
+      if (!res.ok) return dbe({ message: res.error || "Failed to load change orders" });
+      return ok(((res.data?.changeOrders ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        no: String(r.no ?? ""),
+        description: String(r.description ?? ""),
+        costImpact: r.cost_impact == null ? null : Number(r.cost_impact),
+        scheduleImpact: r.schedule_impact == null ? null : Number(r.schedule_impact),
+        reason: r.reason == null ? null : String(r.reason),
+        status: asCo(r.status),
+      })));
+    }
     const { data, error } = await client.from("change_orders").select("id, no, description, cost_impact, schedule_impact, reason, status").eq("project_id", projectId).order("raised_at", { ascending: false });
     if (error) return dbe(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map((r: Record<string, unknown>) => ({ id: String(r.id), no: String(r.no ?? ""), description: String(r.description ?? ""), costImpact: r.cost_impact == null ? null : Number(r.cost_impact), scheduleImpact: r.schedule_impact == null ? null : Number(r.schedule_impact), reason: r.reason == null ? null : String(r.reason), status: asCo(r.status) })));
@@ -160,6 +197,17 @@ export async function listChangeOrders(client: TypedSupabaseClient, projectId: s
 }
 export async function createChangeOrder(client: TypedSupabaseClient, input: { projectId: string; no: string; description: string; costImpact?: number; scheduleImpact?: number; reason?: string; raisedBy: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.createChangeOrder(input.projectId, {
+        no: input.no,
+        description: input.description,
+        costImpact: input.costImpact,
+        scheduleImpact: input.scheduleImpact,
+        reason: input.reason,
+      });
+      if (!res.ok || !res.data?.id) return dbe({ message: res.error || "Failed to create change order" });
+      return ok({ id: res.data.id });
+    }
     const { data, error } = await client.from("change_orders").insert({ project_id: input.projectId, no: input.no, description: input.description, cost_impact: input.costImpact ?? null, schedule_impact: input.scheduleImpact ?? null, reason: input.reason || null, raised_by: input.raisedBy }).select("id").single();
     if (error) return dbe(error); return ok({ id: String(data.id) });
   } catch (e) { return er(e); }

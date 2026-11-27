@@ -35,6 +35,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run smoke
+      - name: Validate Cloudflare D1 local migrations
+        run: npx wrangler d1 migrations apply sitetrack-production --local --config workers/api/wrangler.jsonc
       # Pre-flight check: verify whether live DB is actually reachable
       - name: Verify DB connectivity
         id: db-check
