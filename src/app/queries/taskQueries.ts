@@ -1,6 +1,7 @@
 // SiteTrack Pro — task queries (v3 port, Batch 1). DB-wired to `tasks`.
 
 import { versionedUpdateOutcome, type VersionedUpdateOptions } from "@/lib/versionedUpdate";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type TaskStatus = "pending" | "in_progress" | "completed";
 export type TaskPriority = "high" | "medium" | "low";
@@ -21,6 +22,13 @@ export type TQResult<T> = { ok: true; data: T } | { ok: false; error: string; co
 const ST: TaskStatus[] = ["pending", "in_progress", "completed"];
 const PR: TaskPriority[] = ["high", "medium", "low"];
 const asStatus = (v: unknown): TaskStatus => (ST.includes(v as TaskStatus) ? (v as TaskStatus) : "pending");
+const mapCfTaskStatus = (v: unknown): TaskStatus => {
+  if (v === "done" || v === "completed") return "completed";
+  if (v === "in_progress" || v === "review") return "in_progress";
+  return "pending";
+};
+const toCfTaskStatus = (s: TaskStatus): "todo" | "in_progress" | "done" =>
+  s === "completed" ? "done" : s === "in_progress" ? "in_progress" : "todo";
 const asPriority = (v: unknown): TaskPriority => (PR.includes(v as TaskPriority) ? (v as TaskPriority) : "medium");
 
 export function nextTaskStatus(s: TaskStatus): TaskStatus {
@@ -30,6 +38,20 @@ export function nextTaskStatus(s: TaskStatus): TaskStatus {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listTasks(client: any, projectId: string): Promise<TQResult<Task[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listTasks(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load tasks" };
+      const rows = ((cf.data.tasks ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        title: String(r.title ?? "Untitled"),
+        assigneeName: r.assignee_name == null ? null : String(r.assignee_name),
+        dueDate: r.due_date == null ? null : String(r.due_date),
+        priority: r.priority === "critical" ? "high" : asPriority(r.priority),
+        status: mapCfTaskStatus(r.status),
+        version: typeof r.version === "number" ? r.version : 1,
+      }));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client
       .from("tasks")
       .select("id, title, assignee_name, due_date, priority, status, version")
@@ -57,6 +79,15 @@ export async function createTask(
   input: { projectId: string; title: string; assigneeName?: string; dueDate?: string | null; priority?: TaskPriority },
 ): Promise<TQResult<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createTask(input.projectId, {
+        title: input.title,
+        dueDate: input.dueDate ?? undefined,
+        priority: input.priority,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create task" };
+      return { ok: true, data: { id: String(cf.data.id) } };
+    }
     const { data, error } = await client.from("tasks").insert({
       project_id: input.projectId,
       title: input.title,
@@ -77,9 +108,14 @@ export async function setTaskStatus(
   client: any,
   id: string,
   status: TaskStatus,
-  opts?: VersionedUpdateOptions,
+  opts?: VersionedUpdateOptions & { projectId?: string },
 ): Promise<TQResult<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.updateTaskStatus(opts?.projectId ?? "", id, toCfTaskStatus(status));
+      if (!cf.ok) return { ok: false, error: cf.error || "Failed to update task status" };
+      return { ok: true, data: { ok: true } };
+    }
     const q = client.from("tasks").update({ status }).eq("id", id);
     const guarded = opts?.expectedVersion != null;
     if (guarded) q.eq("version", opts.expectedVersion);

@@ -48,7 +48,7 @@ export function getCanonicalAppUrl(): string {
 }
 
 export function isSupabaseEnabled(): boolean {
-  return BACKEND_MODE === "supabase" && !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
+  return !isCloudflareBackendEnabled() && BACKEND_MODE === "supabase" && !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
 }
 
 export async function getClient(): Promise<SupabaseClient | null> {

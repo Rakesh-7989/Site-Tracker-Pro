@@ -6,6 +6,7 @@
 
 import { versionedUpdateOutcome, type VersionedUpdateOptions } from "@/lib/versionedUpdate";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type MilestoneStatus = "pending" | "in_progress" | "completed";
 
@@ -27,6 +28,20 @@ const asStatus = (v: unknown): MilestoneStatus => (STATUSES.includes(v as Milest
 
 export async function listMilestones(client: TypedSupabaseClient, projectId: string): Promise<MQResult<Milestone[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listMilestones(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load milestones" };
+      const rows = ((cf.data.milestones ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        title: String(r.title ?? "Untitled"),
+        status: asStatus(r.status),
+        dueDate: r.due_date == null ? null : String(r.due_date),
+        completedDate: r.completed_date == null ? null : String(r.completed_date),
+        sortOrder: Number(r.sort_order ?? r.order_index ?? 0),
+        version: typeof r.version === "number" ? r.version : 1,
+      }));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client
       .from("milestones")
       .select("id, title, status, due_date, completed_date, sort_order, version")
@@ -54,6 +69,15 @@ export async function createMilestone(
   input: { projectId: string; title: string; dueDate?: string | null; sortOrder?: number },
 ): Promise<MQResult<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createMilestone(input.projectId, {
+        title: input.title,
+        dueDate: input.dueDate ?? undefined,
+        orderIndex: input.sortOrder,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create milestone" };
+      return { ok: true, data: { id: String(cf.data.id) } };
+    }
     const { data, error } = await client
       .from("milestones")
       .insert({
@@ -75,9 +99,14 @@ export async function setMilestoneStatus(
   client: TypedSupabaseClient,
   id: string,
   status: MilestoneStatus,
-  opts?: VersionedUpdateOptions,
+  opts?: VersionedUpdateOptions & { projectId?: string },
 ): Promise<MQResult<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.updateMilestoneStatus(opts?.projectId ?? "", id, status);
+      if (!cf.ok) return { ok: false, error: cf.error || "Failed to update milestone status" };
+      return { ok: true, data: { ok: true } };
+    }
     const patch = {
       status,
       completed_date: status === "completed" ? new Date().toISOString().slice(0, 10) : null,

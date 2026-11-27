@@ -9,6 +9,7 @@
 import { netReceivable, outstanding, paymentStatusFrom } from "./crossInvoiceQueries";
 import type { TypedSupabaseClient } from "@/lib/supabase/db";
 import type { ApprovalStatus } from "./approvalQueries";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type PResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -71,6 +72,22 @@ type ActivityRow = {
 
 export async function listClientProjects(client: TypedSupabaseClient, email: string): Promise<PResult<ProjectBrief[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listProjects();
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load projects" };
+      const rows = ((cf.data.projects ?? []) as ProjectRow[])
+        .filter(r => !r.client_email || r.client_email.toLowerCase() === email.toLowerCase())
+        .map(r => ({
+          id: String(r.id),
+          name: String(r.name ?? ""),
+          location: r.location ?? null,
+          status: String(r.status ?? "active"),
+          progress: Number(r.progress ?? 0),
+          client_email: r.client_email ?? null,
+          type: String(r.type ?? "construction"),
+        }));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client.from("projects")
       .select("id, name, location, status, progress, client_email, type")
       .eq("client_email", email)
@@ -82,6 +99,17 @@ export async function listClientProjects(client: TypedSupabaseClient, email: str
 
 export async function listClientNotifications(client: TypedSupabaseClient): Promise<PResult<NotificationBrief[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listNotifications();
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load notifications" };
+      const rows = ((cf.data.notifications ?? []) as NotificationRow[]).slice(0, 20).map(r => ({
+        id: String(r.id),
+        title: r.title ?? "",
+        body: r.body ?? "",
+        read: r.read_at != null,
+      }));
+      return { ok: true, data: rows };
+    }
     const { data, error } = await client.from("notifications")
       .select("id, title, body, read_at")
       .order("created_at", { ascending: false })
@@ -238,6 +266,23 @@ export function buildActivityFeed(updates: ClientUpdate[], activity: Array<{ id:
 
 export async function getClientProject(client: TypedSupabaseClient, projectId: string, email: string): Promise<PResult<ClientProjectHeader>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.getProject(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Project not found or not assigned to your account." };
+      const r = (cf.data.project ?? null) as Record<string, unknown> | null;
+      if (!r) return { ok: false, error: "Project not found or not assigned to your account." };
+      return { ok: true, data: {
+        id: String(r.id),
+        name: String(r.name ?? "Untitled"),
+        type: String(r.type ?? "construction"),
+        status: String(r.status ?? "active"),
+        location: r.location == null ? null : String(r.location),
+        progress: Number(r.progress ?? 0),
+        clientName: r.client_name == null ? null : String(r.client_name),
+        description: r.description == null ? null : String(r.description),
+        expectedEndDate: r.expected_end_date == null ? null : String(r.expected_end_date),
+      } };
+    }
     const { data, error } = await client.from("projects")
       .select("id, name, type, status, location, progress, client_name, description, expected_end_date")
       .eq("id", projectId)
@@ -322,6 +367,17 @@ export async function listClientInvoices(client: TypedSupabaseClient, projectId:
 
 export async function listClientMilestones(client: TypedSupabaseClient, projectId: string): Promise<PResult<ClientMilestone[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listMilestones(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load milestones" };
+      return { ok: true, data: ((cf.data.milestones ?? []) as MilestoneRow[]).map(r => ({
+        id: String(r.id),
+        title: String(r.title ?? ""),
+        status: (r.status === "in_progress" || r.status === "completed" ? r.status : "pending"),
+        dueDate: r.due_date == null ? null : String(r.due_date),
+        completedDate: r.completed_date == null ? null : String(r.completed_date),
+      })) };
+    }
     const { data, error } = await client.from("milestones")
       .select("id, title, status, due_date, completed_date")
       .eq("project_id", projectId)
@@ -339,6 +395,20 @@ export async function listClientMilestones(client: TypedSupabaseClient, projectI
 
 export async function listClientDrawings(client: TypedSupabaseClient, projectId: string): Promise<PResult<ClientDrawing[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listDrawings(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load drawings" };
+      return { ok: true, data: ((cf.data.drawings ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        title: String(r.title ?? ""),
+        type: String(r.type ?? r.discipline ?? "drawing"),
+        revision: String(r.revision ?? r.drawing_number ?? "Rev A"),
+        notes: r.notes == null ? null : String(r.notes),
+        releaseDate: r.release_date != null ? String(r.release_date) : (r.updated_at == null ? null : String(r.updated_at)),
+        approvalStatus: (r.approval_status ?? "not_requested") as ApprovalStatus,
+        previewUrl: r.preview_url == null ? null : String(r.preview_url),
+      })) };
+    }
     const { data, error } = await client.from("drawings")
       .select("id, title, type, revision, notes, release_date, approval_status, preview_url")
       .eq("project_id", projectId)

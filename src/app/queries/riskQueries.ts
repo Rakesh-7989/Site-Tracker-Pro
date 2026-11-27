@@ -300,6 +300,8 @@ export function topActionableSignals(signals: RiskSignal[], limit = 3): RiskSign
   return actionable.slice(0, Math.max(0, limit));
 }
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 // ── Stored nightly snapshot (project_risk_signals — migrations 225/226) ─────
 // The pg_cron job `compute-risk-signals` persists per-project rows nightly.
 // Read-side helpers below let the UI card prefer a fresh server snapshot and
@@ -339,7 +341,7 @@ type RiskSignalsRow = {
   risk_level: string | null;
   delay_probability: number | string | null;
   delay_days: number | null;
-  burn_accelerating: boolean | null;
+  burn_accelerating: boolean | number | null;
   signals: unknown;
   updated_at: string | null;
 };
@@ -348,9 +350,13 @@ type RiskSignalsRow = {
 export function mapRiskSignalsRow(row: RiskSignalsRow): StoredRiskSnapshot | null {
   if (!row || typeof row.project_id !== "string") return null;
   const level = riskLevel(Number(row.risk_score ?? 0));
+  let rawSignals: unknown = row.signals;
+  if (typeof rawSignals === "string") {
+    try { rawSignals = JSON.parse(rawSignals); } catch { rawSignals = []; }
+  }
   let signals: StoredRiskSignal[] = [];
-  if (Array.isArray(row.signals)) {
-    signals = row.signals
+  if (Array.isArray(rawSignals)) {
+    signals = rawSignals
       .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
       .map(s => ({
         code: typeof s.code === "string" ? s.code : "unknown",
@@ -365,7 +371,7 @@ export function mapRiskSignalsRow(row: RiskSignalsRow): StoredRiskSnapshot | nul
     level,
     delayProbability: Math.max(0, Math.min(0.9, Number(row.delay_probability ?? 0))),
     delayDays: Math.max(0, Number(row.delay_days ?? 0)),
-    burnAccelerating: row.burn_accelerating === true,
+    burnAccelerating: row.burn_accelerating === true || row.burn_accelerating === 1,
     signals,
     computedAt: typeof row.updated_at === "string" ? row.updated_at : "",
   };
@@ -377,6 +383,12 @@ export type RiskQueryResult<T> = { ok: true; data: T } | { ok: false; error: str
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getProjectRiskSnapshot(client: any, projectId: string): Promise<RiskQueryResult<StoredRiskSnapshot | null>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listRiskSignals(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "risk snapshot fetch failed" };
+      const rows = (cf.data.signals ?? []) as RiskSignalsRow[];
+      return { ok: true, data: rows[0] ? mapRiskSignalsRow(rows[0]) : null };
+    }
     const { data, error } = await client.from("project_risk_signals")
       .select("project_id,risk_score,risk_level,delay_probability,delay_days,burn_accelerating,signals,updated_at")
       .eq("project_id", projectId)

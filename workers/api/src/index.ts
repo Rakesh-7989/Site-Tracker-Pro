@@ -8,11 +8,30 @@ import { hashPassword, verifyPassword, signJwt, verifyJwt } from "./services/aut
 import { mintRazorpayPaymentLink, verifyRazorpaySignature } from "./services/paymentService";
 import { uploadToR2, getFromR2, deleteFromR2 } from "./services/storageService";
 import { assertTenantContext, TenantSecurityError, type SecurityContext } from "./middleware/tenant";
+import {
+  checkAuthRateLimit,
+  consumeOneTimeToken,
+  isTokenRevoked,
+  issueOneTimeToken,
+  revokeToken,
+} from "./middleware/authSecurity";
+import {
+  MAX_UPLOAD_BYTES,
+  assertStorageDeleteAccess,
+  assertStorageReadAccess,
+  buildTenantStorageKey,
+} from "./middleware/storageAuth";
+import { assertProjectOwnerOrg } from "./repositories/projectAccess";
+import { PaymentSettlementRepository, type RazorpayWebhookPayload } from "./repositories/paymentSettlementRepository";
 import { ProjectRepository } from "./repositories/projectRepository";
 import { SiteOpsRepository } from "./repositories/siteOpsRepository";
 import { FinanceRepository } from "./repositories/financeRepository";
 import { ProcurementAndDesignRepository } from "./repositories/procurementAndDesignRepository";
 import { OrgAdminRepository } from "./repositories/orgAdminRepository";
+import { TaskAndMilestoneRepository } from "./repositories/taskAndMilestoneRepository";
+import { SiteOpsExtendedRepository } from "./repositories/siteOpsExtendedRepository";
+import { CrmAndPortalRepository } from "./repositories/crmAndPortalRepository";
+import { Phase7OperationsRepository, type AttendanceKind, type AttendanceStatus, type BoqStatus, type InventoryDirection } from "./repositories/phase7OperationsRepository";
 
 export interface Env {
   DB: D1Database;
@@ -29,13 +48,17 @@ export interface Env {
 async function sendTransactionalEmail(
   env: Env,
   params: { to: string | string[]; subject: string; html?: string; text?: string }
-): Promise<void> {
+): Promise<{ ok: boolean; queued?: boolean; error?: string }> {
   if (!env.EMAIL) {
-    console.log("[Email Service] EMAIL binding not configured; skipping send", {
+    if (env.NOTIFICATION_QUEUE) {
+      await env.NOTIFICATION_QUEUE.send({ type: "transactional_email", ...params });
+      return { ok: true, queued: true };
+    }
+    console.error("[Email Service] Neither EMAIL binding nor NOTIFICATION_QUEUE configured", {
       to: params.to,
       subject: params.subject,
     });
-    return;
+    return { ok: false, error: "email-transport-not-configured" };
   }
   await env.EMAIL.send({
     from: { email: "notifications@sitetrackpro.in", name: "SiteTrack Pro" },
@@ -44,6 +67,7 @@ async function sendTransactionalEmail(
     html: params.html,
     text: params.text,
   });
+  return { ok: true };
 }
 
 function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
@@ -91,6 +115,7 @@ export default {
       const authHeader = req.headers.get("Authorization") || "";
       const token = authHeader.replace(/^Bearer\s+/i, "");
       if (!token) return null;
+      if (await isTokenRevoked(env.CACHE, token)) return null;
       const claims = await verifyJwt(token, jwtSecret);
       if (!claims || !claims.sub) return null;
       return {
@@ -100,6 +125,8 @@ export default {
         role: String(claims.role || "user"),
       };
     }
+
+    const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown";
 
     // 2. Health & Status
     if (url.pathname === "/api/health" || url.pathname === "/health") {
@@ -115,6 +142,10 @@ export default {
     // POST /api/auth/register
     if (url.pathname === "/api/auth/register" && request.method === "POST") {
       try {
+        const rl = await checkAuthRateLimit(env.CACHE, `reg:${clientIp}`, 5, 600);
+        if (!rl.allowed) {
+          return json({ ok: false, error: "Too many registration attempts. Please try again later." }, 429);
+        }
         const body = (await request.json()) as {
           email?: string;
           password?: string;
@@ -175,11 +206,16 @@ export default {
         if (!body.email || !body.password) {
           return json({ ok: false, error: "Email and password required" }, 400);
         }
+        const normalizedEmail = body.email.toLowerCase().trim();
+        const rl = await checkAuthRateLimit(env.CACHE, `login:${clientIp}:${normalizedEmail}`, 10, 300);
+        if (!rl.allowed) {
+          return json({ ok: false, error: "Too many login attempts. Please try again in 5 minutes." }, 429);
+        }
 
         const user = await env.DB.prepare(
           `SELECT id, email, password_hash, full_name, is_platform_admin FROM users WHERE email = ?`
         )
-          .bind(body.email.toLowerCase().trim())
+          .bind(normalizedEmail)
           .first<{ id: string; email: string; password_hash: string; full_name: string; is_platform_admin: number }>();
 
         if (!user || !user.password_hash) {
@@ -254,6 +290,133 @@ export default {
       return json({ ok: true, user, organizations: orgs.results || [] });
     }
 
+    // POST /api/auth/logout (revokes current JWT in KV)
+    if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+      const authHeader = request.headers.get("Authorization") || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token) {
+        await revokeToken(env.CACHE, token);
+      }
+      return json({ ok: true });
+    }
+
+    // POST /api/auth/magic-link (request single-use login link)
+    if (url.pathname === "/api/auth/magic-link" && request.method === "POST") {
+      try {
+        const body = (await request.json()) as { email?: string; redirectTo?: string };
+        const email = body.email?.toLowerCase().trim();
+        if (!email) return json({ ok: false, error: "Email required" }, 400);
+
+        const rl = await checkAuthRateLimit(env.CACHE, `magic:${clientIp}:${email}`, 5, 600);
+        if (!rl.allowed) return json({ ok: false, error: "Too many requests" }, 429);
+
+        const user = await env.DB.prepare(`SELECT id, email FROM users WHERE email = ?`)
+          .bind(email)
+          .first<{ id: string; email: string }>();
+
+        if (user) {
+          const token = await issueOneTimeToken(env.CACHE, "magic", { userId: user.id, email: user.email }, 900);
+          const origin = body.redirectTo || "https://sitetrackpro.in";
+          const link = `${origin.replace(/\/$/, "")}/login?magic_token=${encodeURIComponent(token)}`;
+          const sent = await sendTransactionalEmail(env, {
+            to: user.email,
+            subject: "Your SiteTrack Pro sign-in link",
+            html: `<p>Click to sign in (valid for 15 minutes): <a href="${link}">${link}</a></p>`,
+          });
+          if (!sent.ok) {
+            return json({ ok: false, error: sent.error || "Failed to send magic link" }, 503);
+          }
+        }
+        return json({ ok: true, message: "If an account exists, a sign-in link has been sent." });
+      } catch (err) {
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // POST /api/auth/verify-magic-link
+    if (url.pathname === "/api/auth/verify-magic-link" && request.method === "POST") {
+      try {
+        const body = (await request.json()) as { token?: string };
+        if (!body.token) return json({ ok: false, error: "Token required" }, 400);
+
+        const data = await consumeOneTimeToken<{ userId: string; email: string }>(env.CACHE, "magic", body.token);
+        if (!data) return json({ ok: false, error: "Invalid or expired magic link" }, 401);
+
+        const user = await env.DB.prepare(
+          `SELECT id, email, full_name, is_platform_admin FROM users WHERE id = ?`
+        )
+          .bind(data.userId)
+          .first<{ id: string; email: string; full_name: string; is_platform_admin: number }>();
+        if (!user) return json({ ok: false, error: "User not found" }, 404);
+
+        const orgs = await env.DB.prepare(
+          `SELECT o.id, o.slug, o.name, o.plan, om.role, om.is_admin
+           FROM organizations o
+           JOIN org_members om ON om.org_id = o.id
+           WHERE om.profile_id = ? AND om.status = 'active'`
+        )
+          .bind(user.id)
+          .all();
+
+        const primaryOrg = orgs.results?.[0] as { id: string; role: string } | undefined;
+        const jwt = await signJwt(
+          { sub: user.id, email: user.email, org_id: primaryOrg?.id || null, role: primaryOrg?.role || "user" },
+          jwtSecret
+        );
+        return json({
+          ok: true,
+          user: { id: user.id, email: user.email, fullName: user.full_name },
+          organizations: orgs.results || [],
+          token: jwt,
+        });
+      } catch (err) {
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // POST /api/auth/reset-password (request reset OR confirm with token + newPassword)
+    if (url.pathname === "/api/auth/reset-password" && request.method === "POST") {
+      try {
+        const body = (await request.json()) as { email?: string; token?: string; newPassword?: string };
+        if (body.token && body.newPassword) {
+          if (body.newPassword.length < 8) {
+            return json({ ok: false, error: "Password must be at least 8 characters" }, 400);
+          }
+          const data = await consumeOneTimeToken<{ userId: string }>(env.CACHE, "reset", body.token);
+          if (!data) return json({ ok: false, error: "Invalid or expired reset token" }, 401);
+          const pwdHash = await hashPassword(body.newPassword);
+          await env.DB.prepare(`UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?`)
+            .bind(pwdHash, data.userId)
+            .run();
+          return json({ ok: true });
+        }
+
+        const email = body.email?.toLowerCase().trim();
+        if (!email) return json({ ok: false, error: "Email required" }, 400);
+        const rl = await checkAuthRateLimit(env.CACHE, `reset:${clientIp}:${email}`, 5, 600);
+        if (!rl.allowed) return json({ ok: false, error: "Too many requests" }, 429);
+
+        const user = await env.DB.prepare(`SELECT id, email FROM users WHERE email = ?`)
+          .bind(email)
+          .first<{ id: string; email: string }>();
+        if (user) {
+          const token = await issueOneTimeToken(env.CACHE, "reset", { userId: user.id }, 900);
+          const link = `https://sitetrackpro.in/reset-password?token=${encodeURIComponent(token)}`;
+          const sent = await sendTransactionalEmail(env, {
+            to: user.email,
+            subject: "Reset your SiteTrack Pro password",
+            html: `<p>Reset your password (valid for 15 minutes): <a href="${link}">${link}</a></p>`,
+          });
+          if (!sent.ok) {
+            return json({ ok: false, error: sent.error || "Failed to send reset email" }, 503);
+          }
+        }
+        return json({ ok: true, message: "If an account exists, a password reset link has been sent." });
+      } catch (err) {
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
     // ── PAYMENTS & WEBHOOKS (RAZORPAY) ───────────────────────────────────────
 
     // POST /api/payments/razorpay-link
@@ -295,14 +458,22 @@ export default {
     if (url.pathname === "/api/webhooks/razorpay" && request.method === "POST") {
       const rawBody = await request.text();
       const signature = request.headers.get("x-razorpay-signature") || "";
+      const eventId = request.headers.get("x-razorpay-event-id") || "";
       const secret = env.RAZORPAY_WEBHOOK_SECRET || env.RAZORPAY_KEY_SECRET || "";
 
       if (!secret || !(await verifyRazorpaySignature({ rawBody, signature, secret }))) {
         return json({ ok: false, error: "Invalid signature" }, 401);
       }
 
-      // Return 200 ack to Razorpay immediately
-      return json({ ok: true, received: true });
+      let parsed: RazorpayWebhookPayload;
+      try {
+        parsed = JSON.parse(rawBody) as RazorpayWebhookPayload;
+      } catch {
+        return json({ ok: false, error: "Invalid JSON" }, 400);
+      }
+
+      const result = await new PaymentSettlementRepository(env.DB).settleWebhook(parsed, eventId);
+      return json(result);
     }
 
     // POST /api/payments/razorpay-plan-link (ports razorpay-plan-link EF)
@@ -320,27 +491,23 @@ export default {
         const body = (await request.json()) as { plan?: "basic" | "pro" | "business"; period?: "monthly" | "annual" };
         const plan = body.plan;
         const period = body.period || "monthly";
-        const PLAN_PRICES_PAISE: Record<"basic" | "pro" | "business", Record<"monthly" | "annual", number>> = {
-          basic: { monthly: 117882, annual: 1178820 },
-          pro: { monthly: 353988, annual: 3539880 },
-          business: { monthly: 943988, annual: 9439880 },
-        };
-        if (!plan || !PLAN_PRICES_PAISE[plan]) {
+        if (!plan || !["basic", "pro", "business"].includes(plan)) {
           return json({ ok: false, error: "Valid plan (basic|pro|business) required" }, 400);
         }
-        const amountPaise = PLAN_PRICES_PAISE[plan][period];
+        const amountPaise = await new PaymentSettlementRepository(env.DB).resolvePlanAmountPaise(plan, period);
+        const ppId = `pp_${crypto.randomUUID()}`;
         const result = await mintRazorpayPaymentLink({
           keyId: env.RAZORPAY_KEY_ID,
           secret: env.RAZORPAY_KEY_SECRET,
           amountInPaisa: amountPaise,
           description: `SiteTrack Pro ${plan.toUpperCase()} (${period})`,
           customer: { email: ctx.email },
-          notes: { org_id: ctx.orgId, plan, period },
+          notes: { sitetrack_plan_payment_id: ppId, org_id: ctx.orgId, plan, period },
         });
         if (!result.ok || !result.id) return json(result, 400);
 
         await new OrgAdminRepository(env.DB).recordPlanPayment(ctx, {
-          id: `pp_${crypto.randomUUID()}`,
+          id: ppId,
           plan,
           period,
           amountPaise,
@@ -415,22 +582,45 @@ export default {
       if (!auth) {
         return json({ ok: false, error: "authentication required" }, 401);
       }
+      const orgId = request.headers.get("X-Org-Id") || url.searchParams.get("org_id") || auth.org_id;
+      if (!orgId) {
+        return json({ ok: false, error: "org_id required" }, 400);
+      }
       try {
+        const ctx = await assertTenantContext(env.DB, auth.sub, orgId);
+        const projectId = request.headers.get("x-project-id") || url.searchParams.get("project_id");
+        if (projectId) {
+          await assertProjectOwnerOrg(env.DB, ctx, projectId, "Forbidden: Only the owner organization can upload project files.");
+        }
+
         const contentType = request.headers.get("content-type") || "application/octet-stream";
         const filename = request.headers.get("x-filename") || `file_${crypto.randomUUID()}`;
-        // Reject path-traversal characters in client-supplied filenames.
         if (/(\.\.|\\|%2f|%2F)/i.test(filename)) {
           return json({ ok: false, error: "invalid filename" }, 400);
         }
-        const folder = request.headers.get("x-folder") || "uploads";
-        const key = `${folder}/${filename}`;
-
         const arrayBuffer = await request.arrayBuffer();
+        if (arrayBuffer.byteLength > MAX_UPLOAD_BYTES) {
+          return json({ ok: false, error: "Payload too large (max 25 MB)" }, 413);
+        }
+
+        const folder = request.headers.get("x-folder") || "uploads";
+        const key = buildTenantStorageKey({
+          orgId: ctx.orgId,
+          projectId,
+          folder,
+          filename,
+        });
+
         const uploaded = await uploadToR2({
           bucket: env.STORAGE,
           key,
           data: arrayBuffer,
           contentType,
+          metadata: {
+            org_id: ctx.orgId,
+            ...(projectId ? { project_id: projectId } : {}),
+            uploaded_by: ctx.userId,
+          },
         });
 
         return json({
@@ -440,6 +630,7 @@ export default {
           url: `/api/storage/files/${uploaded.key}`,
         });
       } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
         return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
       }
     }
@@ -450,21 +641,34 @@ export default {
       if (!auth) {
         return json({ ok: false, error: "authentication required" }, 401);
       }
-      const key = url.pathname.replace(/^\/api\/storage\/files\//, "");
-      const file = await getFromR2(env.STORAGE, key);
-
-      if (!file) {
-        return json({ ok: false, error: "File not found" }, 404);
+      const orgId = request.headers.get("X-Org-Id") || url.searchParams.get("org_id") || auth.org_id;
+      if (!orgId) {
+        return json({ ok: false, error: "org_id required" }, 400);
       }
+      try {
+        const ctx = await assertTenantContext(env.DB, auth.sub, orgId);
+        const key = decodeURIComponent(url.pathname.replace(/^\/api\/storage\/files\//, ""));
+        await assertStorageReadAccess(env.DB, ctx, key);
+        const file = await getFromR2(env.STORAGE, key);
 
-      return new Response(file.body, {
-        headers: {
-          "Content-Type": file.contentType,
-          "Content-Length": String(file.size),
-          "Cache-Control": "private, max-age=3600",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
+        if (!file) {
+          return json({ ok: false, error: "File not found" }, 404);
+        }
+
+        return withCors(
+          new Response(file.body, {
+            headers: {
+              "Content-Type": file.contentType,
+              "Content-Length": String(file.size),
+              "Cache-Control": "private, max-age=3600",
+              "X-Content-Type-Options": "nosniff",
+            },
+          })
+        );
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
     }
 
     // DELETE /api/storage/files/*
@@ -473,9 +677,20 @@ export default {
       if (!auth) {
         return json({ ok: false, error: "authentication required" }, 401);
       }
-      const key = url.pathname.replace(/^\/api\/storage\/files\//, "");
-      await deleteFromR2(env.STORAGE, key);
-      return json({ ok: true, deleted: key });
+      const orgId = request.headers.get("X-Org-Id") || url.searchParams.get("org_id") || auth.org_id;
+      if (!orgId) {
+        return json({ ok: false, error: "org_id required" }, 400);
+      }
+      try {
+        const ctx = await assertTenantContext(env.DB, auth.sub, orgId);
+        const key = decodeURIComponent(url.pathname.replace(/^\/api\/storage\/files\//, ""));
+        await assertStorageDeleteAccess(env.DB, ctx, key);
+        await deleteFromR2(env.STORAGE, key);
+        return json({ ok: true, deleted: key });
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
     }
 
     // ── TENANT-SCOPED DOMAIN ROUTES (PROJECTS, SITE OPS, FINANCE) ────────────
@@ -560,6 +775,168 @@ export default {
       return json({ ok: true, id: notifReadMatch[1], read: true });
     }
 
+    // GET/POST /api/drawings/:drawingId/comments & PATCH /api/drawings/:drawingId/comments/:commentId
+    const drawingCommentsMatch = url.pathname.match(/^\/api\/drawings\/([^/]+)\/comments(?:\/([^/]+))?$/);
+    if (drawingCommentsMatch) {
+      const resolved = await requireTenantContext();
+      if ("errorResponse" in resolved) return resolved.errorResponse;
+      const [, drawingId, commentId] = drawingCommentsMatch;
+      const crmAndPortal = new CrmAndPortalRepository(env.DB);
+      try {
+        if (!commentId && request.method === "GET") {
+          return json({ ok: true, comments: await crmAndPortal.listDrawingComments(resolved.ctx, drawingId) });
+        }
+        if (!commentId && request.method === "POST") {
+          const body = (await request.json()) as {
+            parentId?: string;
+            x?: number;
+            y?: number;
+            body?: string;
+            status?: "open" | "in_progress" | "resolved" | "closed";
+          };
+          if (!body.body) return json({ ok: false, error: "body is required" }, 400);
+          const id = `dcm_${crypto.randomUUID()}`;
+          await crmAndPortal.createDrawingComment(resolved.ctx, drawingId, {
+            id,
+            parentId: body.parentId,
+            x: body.x,
+            y: body.y,
+            body: body.body,
+            status: body.status,
+          });
+          return json({ ok: true, id }, 201);
+        }
+        if (commentId && request.method === "PATCH") {
+          const body = (await request.json()) as {
+            body?: string;
+            status?: "open" | "in_progress" | "resolved" | "closed";
+          };
+          const updated = await crmAndPortal.updateDrawingComment(resolved.ctx, drawingId, commentId, body);
+          if (!updated) return json({ ok: false, error: "Drawing comment not found" }, 404);
+          return json({ ok: true, id: commentId });
+        }
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // GET/POST /api/crm/leads
+    if (url.pathname === "/api/crm/leads") {
+      const resolved = await requireTenantContext();
+      if ("errorResponse" in resolved) return resolved.errorResponse;
+      const crmAndPortal = new CrmAndPortalRepository(env.DB);
+      try {
+        if (request.method === "GET") {
+          const stage = url.searchParams.get("stage") || undefined;
+          return json({ ok: true, leads: await crmAndPortal.listLeads(resolved.ctx, stage) });
+        }
+        if (request.method === "POST") {
+          const body = (await request.json()) as {
+            name?: string;
+            company?: string;
+            phone?: string;
+            email?: string;
+            source?: string;
+            budget?: number;
+            stage?: string;
+            notes?: string;
+            ownerId?: string;
+          };
+          if (!body.name) return json({ ok: false, error: "name is required" }, 400);
+          const id = `led_${crypto.randomUUID()}`;
+          await crmAndPortal.createLead(resolved.ctx, {
+            id,
+            name: body.name,
+            company: body.company,
+            phone: body.phone,
+            email: body.email,
+            source: body.source,
+            budget: body.budget,
+            stage: body.stage,
+            notes: body.notes,
+            ownerId: body.ownerId,
+          });
+          return json({ ok: true, id }, 201);
+        }
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // PATCH /api/crm/leads/:leadId
+    const crmLeadMatch = url.pathname.match(/^\/api\/crm\/leads\/([^/]+)$/);
+    if (crmLeadMatch && request.method === "PATCH") {
+      const resolved = await requireTenantContext();
+      if ("errorResponse" in resolved) return resolved.errorResponse;
+      const crmAndPortal = new CrmAndPortalRepository(env.DB);
+      try {
+        const body = (await request.json()) as {
+          name?: string;
+          company?: string | null;
+          phone?: string | null;
+          email?: string | null;
+          source?: string | null;
+          budget?: number | null;
+          stage?: string;
+          notes?: string | null;
+          ownerId?: string | null;
+          wonAmount?: number | null;
+          lostReason?: string | null;
+        };
+        const updated = await crmAndPortal.updateLead(resolved.ctx, crmLeadMatch[1], body);
+        if (!updated) return json({ ok: false, error: "Lead not found" }, 404);
+        return json({ ok: true, id: crmLeadMatch[1] });
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // GET/POST /api/crm/leads/:leadId/quotations & PATCH /api/crm/leads/:leadId/quotations/:quotationId
+    const crmQuotationsMatch = url.pathname.match(/^\/api\/crm\/leads\/([^/]+)\/quotations(?:\/([^/]+))?$/);
+    if (crmQuotationsMatch) {
+      const resolved = await requireTenantContext();
+      if ("errorResponse" in resolved) return resolved.errorResponse;
+      const [, leadId, quotationId] = crmQuotationsMatch;
+      const crmAndPortal = new CrmAndPortalRepository(env.DB);
+      try {
+        if (!quotationId && request.method === "GET") {
+          return json({ ok: true, quotations: await crmAndPortal.listLeadQuotations(resolved.ctx, leadId) });
+        }
+        if (!quotationId && request.method === "POST") {
+          const body = (await request.json()) as {
+            amount?: number;
+            status?: string;
+            validUntil?: string;
+          };
+          if (typeof body.amount !== "number") return json({ ok: false, error: "amount is required" }, 400);
+          const id = `qtn_${crypto.randomUUID()}`;
+          await crmAndPortal.createLeadQuotation(resolved.ctx, leadId, {
+            id,
+            amount: body.amount,
+            status: body.status,
+            validUntil: body.validUntil,
+          });
+          return json({ ok: true, id }, 201);
+        }
+        if (quotationId && request.method === "PATCH") {
+          const body = (await request.json()) as {
+            amount?: number;
+            status?: string;
+            validUntil?: string | null;
+          };
+          const updated = await crmAndPortal.updateLeadQuotation(resolved.ctx, leadId, quotationId, body);
+          if (!updated) return json({ ok: false, error: "Quotation not found" }, 404);
+          return json({ ok: true, id: quotationId });
+        }
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
     // GET /api/orgs/:orgId/members
     const orgMembersMatch = url.pathname.match(/^\/api\/orgs\/([^/]+)\/members$/);
     if (orgMembersMatch && request.method === "GET") {
@@ -631,6 +1008,9 @@ export default {
         const siteOps = new SiteOpsRepository(env.DB);
         const finance = new FinanceRepository(env.DB);
         const procurement = new ProcurementAndDesignRepository(env.DB);
+        const taskAndMilestone = new TaskAndMilestoneRepository(env.DB);
+        const siteOpsExtended = new SiteOpsExtendedRepository(env.DB);
+        const crmAndPortal = new CrmAndPortalRepository(env.DB);
 
         if (!subresource && request.method === "GET") {
           const project = await projectRepo.getProjectById(ctx, projectId);
@@ -640,19 +1020,34 @@ export default {
 
         if (subresource === "tasks") {
           if (request.method === "GET") {
-            return json({ ok: true, tasks: await siteOps.listTasks(ctx, projectId) });
+            return json({ ok: true, tasks: await taskAndMilestone.listTasks(ctx, projectId) });
           }
           if (request.method === "POST") {
-            const body = (await request.json()) as { title?: string; description?: string; milestoneId?: string; priority?: string; dueDate?: string };
+            const body = (await request.json()) as {
+              title?: string;
+              description?: string;
+              milestoneId?: string;
+              assigneeId?: string;
+              priority?: "low" | "medium" | "high" | "critical";
+              dueDate?: string;
+            };
             if (!body.title) return json({ ok: false, error: "title is required" }, 400);
             const id = `tsk_${crypto.randomUUID()}`;
-            await siteOps.createTask(ctx, projectId, { id, title: body.title, description: body.description, milestoneId: body.milestoneId, priority: body.priority, dueDate: body.dueDate });
+            await taskAndMilestone.createTask(ctx, projectId, {
+              id,
+              title: body.title,
+              description: body.description,
+              milestoneId: body.milestoneId,
+              assigneeId: body.assigneeId,
+              priority: body.priority,
+              dueDate: body.dueDate,
+            });
             return json({ ok: true, id }, 201);
           }
           if (request.method === "PATCH" && itemId) {
             const body = (await request.json()) as { status?: "todo" | "in_progress" | "review" | "done" };
             if (!body.status) return json({ ok: false, error: "status is required" }, 400);
-            const updated = await siteOps.updateTaskStatus(ctx, projectId, itemId, body.status);
+            const updated = await taskAndMilestone.updateTaskStatus(ctx, projectId, itemId, body.status);
             if (!updated) return json({ ok: false, error: "Task not found" }, 404);
             return json({ ok: true, id: itemId, status: body.status });
           }
@@ -660,13 +1055,254 @@ export default {
 
         if (subresource === "milestones") {
           if (request.method === "GET") {
-            return json({ ok: true, milestones: await siteOps.listMilestones(ctx, projectId) });
+            return json({ ok: true, milestones: await taskAndMilestone.listMilestones(ctx, projectId) });
           }
           if (request.method === "POST") {
-            const body = (await request.json()) as { title?: string; description?: string; dueDate?: string; weight?: number };
+            const body = (await request.json()) as {
+              title?: string;
+              description?: string;
+              dueDate?: string;
+              weight?: number;
+              orderIndex?: number;
+            };
             if (!body.title) return json({ ok: false, error: "title is required" }, 400);
             const id = `mst_${crypto.randomUUID()}`;
-            await siteOps.createMilestone(ctx, projectId, { id, title: body.title, description: body.description, dueDate: body.dueDate, weight: body.weight });
+            await taskAndMilestone.createMilestone(ctx, projectId, {
+              id,
+              title: body.title,
+              description: body.description,
+              dueDate: body.dueDate,
+              weight: body.weight,
+              orderIndex: body.orderIndex,
+            });
+            return json({ ok: true, id }, 201);
+          }
+          if (request.method === "PATCH" && itemId) {
+            const body = (await request.json()) as { status?: "pending" | "in_progress" | "completed" | "blocked" };
+            if (!body.status) return json({ ok: false, error: "status is required" }, 400);
+            const updated = await taskAndMilestone.updateMilestoneStatus(ctx, projectId, itemId, body.status);
+            if (!updated) return json({ ok: false, error: "Milestone not found" }, 404);
+            return json({ ok: true, id: itemId, status: body.status });
+          }
+        }
+
+        if (subresource === "risk-signals" && request.method === "GET") {
+          return json({ ok: true, riskSignals: await taskAndMilestone.listRiskSignals(ctx, projectId) });
+        }
+
+        if (subresource === "material-requests") {
+          if (request.method === "GET") {
+            return json({ ok: true, materialRequests: await siteOpsExtended.listMaterialRequests(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              item?: string;
+              unit?: string;
+              qty?: number;
+              needDate?: string;
+              reason?: string;
+              notes?: string;
+            };
+            if (!body.item || typeof body.qty !== "number") {
+              return json({ ok: false, error: "item and qty are required" }, 400);
+            }
+            const id = `mrq_${crypto.randomUUID()}`;
+            await siteOpsExtended.createMaterialRequest(ctx, projectId, {
+              id,
+              item: body.item,
+              unit: body.unit,
+              qty: body.qty,
+              needDate: body.needDate,
+              reason: body.reason,
+              notes: body.notes,
+            });
+            return json({ ok: true, id }, 201);
+          }
+        }
+
+        if (subresource === "safety") {
+          if (request.method === "GET") {
+            return json({ ok: true, incidents: await siteOpsExtended.listSafetyIncidents(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              description?: string;
+              severity?: "near_miss" | "first_aid" | "minor" | "major" | "fatal";
+              category?: string;
+              location?: string;
+              actionTaken?: string;
+              incidentDate?: string;
+            };
+            if (!body.description || !body.severity) {
+              return json({ ok: false, error: "description and severity are required" }, 400);
+            }
+            const id = `saf_${crypto.randomUUID()}`;
+            await siteOpsExtended.createSafetyIncident(ctx, projectId, {
+              id,
+              description: body.description,
+              severity: body.severity,
+              category: body.category,
+              location: body.location,
+              actionTaken: body.actionTaken,
+              incidentDate: body.incidentDate,
+            });
+            return json({ ok: true, id }, 201);
+          }
+        }
+
+        if (subresource === "inspections") {
+          if (request.method === "GET") {
+            return json({ ok: true, inspections: await siteOpsExtended.listInspections(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              type?: string;
+              scope?: string;
+              scheduledDate?: string;
+              inspectorName?: string;
+              observations?: string;
+            };
+            if (!body.type) return json({ ok: false, error: "type is required" }, 400);
+            const id = `ins_${crypto.randomUUID()}`;
+            await siteOpsExtended.createInspection(ctx, projectId, {
+              id,
+              type: body.type,
+              scope: body.scope,
+              scheduledDate: body.scheduledDate,
+              inspectorName: body.inspectorName,
+              observations: body.observations,
+            });
+            return json({ ok: true, id }, 201);
+          }
+        }
+
+        if (subresource === "punch") {
+          if (request.method === "GET") {
+            return json({ ok: true, punchItems: await siteOpsExtended.listPunchItems(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              location?: string;
+              defect?: string;
+              trade?: string;
+              severity?: string;
+              unitId?: string;
+              assignedTo?: string;
+              dueDate?: string;
+            };
+            if (!body.location || !body.defect) {
+              return json({ ok: false, error: "location and defect are required" }, 400);
+            }
+            const id = `pnc_${crypto.randomUUID()}`;
+            await siteOpsExtended.createPunchItem(ctx, projectId, {
+              id,
+              location: body.location,
+              defect: body.defect,
+              trade: body.trade,
+              severity: body.severity,
+              unitId: body.unitId,
+              assignedTo: body.assignedTo,
+              dueDate: body.dueDate,
+            });
+            return json({ ok: true, id }, 201);
+          }
+        }
+
+        if (subresource === "measurement-book") {
+          if (request.method === "GET") {
+            return json({ ok: true, entries: await siteOpsExtended.listMeasurementBook(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              mbNo?: string;
+              pageNo?: number;
+              boqItemId?: string;
+              description?: string;
+              location?: string;
+              blockId?: string;
+              floorId?: string;
+              unit?: string;
+              length?: number;
+              breadth?: number;
+              depth?: number;
+              qty?: number;
+              rate?: number;
+              notes?: string;
+            };
+            if (!body.mbNo || !body.description || typeof body.qty !== "number") {
+              return json({ ok: false, error: "mbNo, description, and qty are required" }, 400);
+            }
+            const id = `mb_${crypto.randomUUID()}`;
+            await siteOpsExtended.createMeasurementBookEntry(ctx, projectId, {
+              id,
+              mbNo: body.mbNo,
+              pageNo: body.pageNo,
+              boqItemId: body.boqItemId,
+              description: body.description,
+              location: body.location,
+              blockId: body.blockId,
+              floorId: body.floorId,
+              unit: body.unit,
+              length: body.length,
+              breadth: body.breadth,
+              depth: body.depth,
+              qty: body.qty,
+              rate: body.rate,
+              notes: body.notes,
+            });
+            return json({ ok: true, id }, 201);
+          }
+        }
+
+        if (subresource === "share-links") {
+          if (request.method === "GET") {
+            return json({ ok: true, shareLinks: await crmAndPortal.listShareLinks(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              token?: string;
+              label?: string;
+              passwordHash?: string;
+              expiresAt?: string;
+              allowDownload?: boolean;
+              maxViews?: number;
+            };
+            const id = `shl_${crypto.randomUUID()}`;
+            const token = body.token || crypto.randomUUID().replace(/-/g, "");
+            await crmAndPortal.createShareLink(ctx, projectId, {
+              id,
+              token,
+              label: body.label,
+              passwordHash: body.passwordHash,
+              expiresAt: body.expiresAt,
+              allowDownload: body.allowDownload,
+              maxViews: body.maxViews,
+            });
+            return json({ ok: true, id, token }, 201);
+          }
+          if (request.method === "PATCH" && itemId) {
+            const body = (await request.json()) as {
+              label?: string | null;
+              expiresAt?: string | null;
+              allowDownload?: boolean;
+              maxViews?: number | null;
+              revokedAt?: string | null;
+            };
+            const updated = await crmAndPortal.updateShareLink(ctx, projectId, itemId, body);
+            if (!updated) return json({ ok: false, error: "Share link not found" }, 404);
+            return json({ ok: true, id: itemId });
+          }
+        }
+
+        if (subresource === "handover-signatures") {
+          if (request.method === "GET") {
+            return json({ ok: true, signatures: await crmAndPortal.listHandoverSignatures(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as { signatureData?: string };
+            if (!body.signatureData) return json({ ok: false, error: "signatureData is required" }, 400);
+            const id = `hnd_${crypto.randomUUID()}`;
+            await crmAndPortal.createHandoverSignature(ctx, projectId, { id, signatureData: body.signatureData });
             return json({ ok: true, id }, 201);
           }
         }
@@ -854,6 +1490,186 @@ export default {
               status: body.status,
             });
             return json({ ok: true, id }, 201);
+          }
+        }
+      } catch (err) {
+        if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
+        return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    // ── PHASE 7 OPERATIONS ROUTES (BOQ, INVENTORY, LABOUR, ATTENDANCE, CHAT) ─
+
+    if (
+      url.pathname.startsWith("/api/chat/") ||
+      /^\/api\/projects\/[^/]+\/(boq|inventory|labour|attendance)(\/|$)/.test(url.pathname)
+    ) {
+      const tenant = await requireTenantContext();
+      if ("errorResponse" in tenant) return tenant.errorResponse;
+      const { ctx } = tenant;
+      const ops7 = new Phase7OperationsRepository(env.DB);
+
+      try {
+        if (url.pathname === "/api/chat/channels") {
+          if (request.method === "GET") {
+            return json({ ok: true, channels: await ops7.listChatChannels(ctx) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as { name?: string; description?: string };
+            if (!body.name) return json({ ok: false, error: "name required" }, 400);
+            const created = await ops7.createChatChannel(ctx, {
+              id: `ch_${crypto.randomUUID()}`,
+              name: body.name,
+              description: body.description,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+        }
+
+        const chatMsgMatch = url.pathname.match(/^\/api\/chat\/channels\/([^/]+)\/messages$/);
+        if (chatMsgMatch) {
+          const channelId = chatMsgMatch[1];
+          if (request.method === "GET") {
+            return json({ ok: true, messages: await ops7.listChatMessages(ctx, channelId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as { body?: string; parentId?: string; senderName?: string; mentions?: string[] };
+            if (!body.body) return json({ ok: false, error: "body required" }, 400);
+            const posted = await ops7.postChatMessage(ctx, channelId, {
+              id: `msg_${crypto.randomUUID()}`,
+              body: body.body,
+              parentId: body.parentId,
+              senderName: body.senderName,
+              mentions: body.mentions,
+            });
+            return json({ ok: true, ...posted }, 201);
+          }
+        }
+
+        const boqMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/boq(?:\/([^/]+))?$/);
+        if (boqMatch) {
+          const [, projectId, itemId] = boqMatch;
+          if (!itemId && request.method === "GET") {
+            return json({ ok: true, items: await ops7.listBoqItems(ctx, projectId) });
+          }
+          if (!itemId && request.method === "POST") {
+            const body = (await request.json()) as { itemCode?: string; itemName?: string; unit?: string; qty?: number; rate?: number; status?: BoqStatus };
+            if (!body.itemName || body.qty === undefined || body.rate === undefined) {
+              return json({ ok: false, error: "itemName, qty, and rate required" }, 400);
+            }
+            const created = await ops7.createBoqItem(ctx, projectId, {
+              id: `boq_${crypto.randomUUID()}`,
+              itemCode: body.itemCode,
+              itemName: body.itemName,
+              unit: body.unit,
+              qty: Number(body.qty),
+              rate: Number(body.rate),
+              status: body.status,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+          if (itemId && request.method === "PATCH") {
+            const body = (await request.json()) as { status?: BoqStatus };
+            if (!body.status) return json({ ok: false, error: "status required" }, 400);
+            const updated = await ops7.updateBoqItemStatus(ctx, projectId, itemId, body.status);
+            return json({ ok: true, updated });
+          }
+        }
+
+        const invMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/inventory$/);
+        if (invMatch) {
+          const projectId = invMatch[1];
+          if (request.method === "GET") {
+            return json({ ok: true, transactions: await ops7.listInventoryTransactions(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              txnDate?: string;
+              material?: string;
+              unit?: string;
+              qty?: number;
+              direction?: InventoryDirection;
+              source?: string;
+              refNo?: string;
+              poId?: string;
+              notes?: string;
+            };
+            if (!body.material || !body.qty || !body.direction) {
+              return json({ ok: false, error: "material, qty, and direction required" }, 400);
+            }
+            const created = await ops7.recordInventoryTransaction(ctx, projectId, {
+              id: `invtx_${crypto.randomUUID()}`,
+              txnDate: body.txnDate,
+              material: body.material,
+              unit: body.unit,
+              qty: Number(body.qty),
+              direction: body.direction,
+              source: body.source,
+              refNo: body.refNo,
+              poId: body.poId,
+              notes: body.notes,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+        }
+
+        const labMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/labour$/);
+        if (labMatch) {
+          const projectId = labMatch[1];
+          if (request.method === "GET") {
+            return json({ ok: true, workers: await ops7.listLabourRegister(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as { name?: string; trade?: string; wage?: number; joined?: string };
+            if (!body.name) return json({ ok: false, error: "name required" }, 400);
+            const created = await ops7.createLabourWorker(ctx, projectId, {
+              id: `lab_${crypto.randomUUID()}`,
+              name: body.name,
+              trade: body.trade,
+              wage: body.wage,
+              joined: body.joined,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+        }
+
+        const attMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/attendance$/);
+        if (attMatch) {
+          const projectId = attMatch[1];
+          if (request.method === "GET") {
+            const date = url.searchParams.get("date") || undefined;
+            return json({ ok: true, records: await ops7.listAttendance(ctx, projectId, date) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as {
+              attendeeKind?: AttendanceKind;
+              labourId?: string;
+              profileId?: string;
+              attendeeName?: string;
+              date?: string;
+              status?: AttendanceStatus;
+              inTime?: string;
+              outTime?: string;
+              hours?: number;
+              source?: string;
+            };
+            if (!body.attendeeKind || !body.attendeeName) {
+              return json({ ok: false, error: "attendeeKind and attendeeName required" }, 400);
+            }
+            const created = await ops7.recordAttendance(ctx, projectId, {
+              id: `att_${crypto.randomUUID()}`,
+              attendeeKind: body.attendeeKind,
+              labourId: body.labourId,
+              profileId: body.profileId,
+              attendeeName: body.attendeeName,
+              date: body.date,
+              status: body.status,
+              inTime: body.inTime,
+              outTime: body.outTime,
+              hours: body.hours,
+              source: body.source,
+            });
+            return json({ ok: true, ...created }, 201);
           }
         }
       } catch (err) {

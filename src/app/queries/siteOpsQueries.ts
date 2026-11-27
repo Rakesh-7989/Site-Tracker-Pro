@@ -1,6 +1,8 @@
 // SiteTrack Pro — site-ops queries (v3 port, Batch 2). DB-wired to materials /
 // safety / inspections / punch via the migration 72+73 bridge.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(data: T): Result<T> => ({ ok: true, data });
 const err = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -45,6 +47,14 @@ const asSafetyStatus = oneOf<SafetyStatus>(["open", "resolved", "escalated"], "o
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listSafety(client: any, projectId: string): Promise<Result<SafetyIncident[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listSafetyIncidents(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load safety incidents" };
+      return ok(((cf.data.incidents ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id), description: String(r.description ?? ""), severity: asSev(r.severity), category: r.category == null ? null : String(r.category),
+        location: r.location == null ? null : String(r.location), actionTaken: r.action_taken == null ? null : String(r.action_taken), status: asSafetyStatus(r.status), incidentDate: String(r.incident_date ?? ""),
+      })));
+    }
     const { data, error } = await client.from("safety").select("id, description, severity, category, location, action_taken, status, incident_date").eq("project_id", projectId).order("incident_date", { ascending: false });
     if (error) return dbErr(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
@@ -56,6 +66,13 @@ export async function listSafety(client: any, projectId: string): Promise<Result
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createSafety(client: any, input: { projectId: string; description: string; severity: SafetySeverity; category?: string; location?: string; actionTaken?: string; reportedBy: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createSafetyIncident(input.projectId, {
+        description: input.description, severity: input.severity, category: input.category, location: input.location, actionTaken: input.actionTaken,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create safety incident" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("safety").insert({ project_id: input.projectId, description: input.description, severity: input.severity, category: input.category || null, location: input.location || null, action_taken: input.actionTaken || null, reported_by: input.reportedBy }).select("id").single();
     if (error) return dbErr(error); return ok({ id: String(data.id) });
   } catch (e) { return err(e); }
@@ -73,6 +90,14 @@ const asResult = oneOf<InspectionResult>(["pending", "pass", "fail", "conditiona
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listInspections(client: any, projectId: string): Promise<Result<Inspection[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listInspections(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load inspections" };
+      return ok(((cf.data.inspections ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id), type: String(r.type ?? ""), scope: r.scope == null ? null : String(r.scope),
+        inspectorName: r.inspector_name == null ? null : String(r.inspector_name), scheduledDate: r.scheduled_date == null ? null : String(r.scheduled_date), result: asResult(r.result),
+      })));
+    }
     const { data, error } = await client.from("inspections").select("id, type, scope, inspector_name, scheduled_date, result").eq("project_id", projectId).order("scheduled_date", { ascending: false });
     if (error) return dbErr(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
@@ -84,6 +109,13 @@ export async function listInspections(client: any, projectId: string): Promise<R
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createInspection(client: any, input: { projectId: string; type: string; scope?: string; scheduledDate?: string | null; inspectorId: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createInspection(input.projectId, {
+        type: input.type, scope: input.scope, scheduledDate: input.scheduledDate ?? undefined,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create inspection" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("inspections").insert({ project_id: input.projectId, type: input.type, scope: input.scope || null, scheduled_date: input.scheduledDate || null, inspector_id: input.inspectorId, result: "pending" }).select("id").single();
     if (error) return dbErr(error); return ok({ id: String(data.id) });
   } catch (e) { return err(e); }
@@ -105,6 +137,14 @@ const asPunchStatus = oneOf<PunchStatus>(["open", "in_progress", "resolved", "ve
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listPunch(client: any, projectId: string): Promise<Result<PunchItem[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listPunchItems(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load punch items" };
+      return ok(((cf.data.punchItems ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id), location: String(r.location ?? ""), defect: String(r.defect ?? ""), trade: r.trade == null ? null : String(r.trade),
+        severity: asPunchSev(r.severity), assignedTo: r.assigned_to == null ? null : String(r.assigned_to), status: asPunchStatus(r.status),
+      })));
+    }
     const { data, error } = await client.from("punch").select("id, location, defect, trade, severity, assigned_to, status").eq("project_id", projectId).order("created_at", { ascending: false });
     if (error) return dbErr(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
@@ -116,6 +156,13 @@ export async function listPunch(client: any, projectId: string): Promise<Result<
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createPunch(client: any, input: { projectId: string; location: string; defect: string; trade?: string; severity: PunchSeverity; reportedBy: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createPunchItem(input.projectId, {
+        location: input.location, defect: input.defect, trade: input.trade, severity: input.severity,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create punch item" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("punch").insert({ project_id: input.projectId, location: input.location, defect: input.defect, trade: input.trade || null, severity: input.severity, reported_by: input.reportedBy }).select("id").single();
     if (error) return dbErr(error); return ok({ id: String(data.id) });
   } catch (e) { return err(e); }
@@ -254,6 +301,13 @@ const asMbStatus = oneOf<MbStatus>(["recorded", "verified", "billed", "disputed"
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listMeasurementBook(client: any, projectId: string): Promise<Result<MbEntry[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listMeasurementBook(projectId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load measurement book" };
+      return ok(((cf.data.entries ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id), mbNo: String(r.mb_no ?? ""), pageNo: r.page_no == null ? null : Number(r.page_no), description: String(r.description ?? ""), location: r.location == null ? null : String(r.location), unit: r.unit == null ? null : String(r.unit), length: r.length == null ? null : Number(r.length), breadth: r.breadth == null ? null : Number(r.breadth), depth: r.depth == null ? null : Number(r.depth), qty: Number(r.qty ?? 0), rate: r.rate == null ? null : Number(r.rate), amount: r.amount == null ? null : Number(r.amount), status: asMbStatus(r.status), measuredAt: String(r.measured_at ?? ""), verifiedAt: r.verified_at == null ? null : String(r.verified_at), notes: r.notes == null ? null : String(r.notes),
+      })));
+    }
     const { data, error } = await client.from("measurement_book").select("id, mb_no, page_no, description, location, unit, length, breadth, depth, qty, rate, amount, status, measured_at, verified_at, notes").eq("project_id", projectId).order("measured_at", { ascending: false }).limit(100);
     if (error) return dbErr(error);
     return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
@@ -264,6 +318,14 @@ export async function listMeasurementBook(client: any, projectId: string): Promi
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createMbEntry(client: any, input: { projectId: string; mbNo: string; pageNo?: number; description: string; location?: string; unit?: string; length?: number; breadth?: number; depth?: number; qty: number; rate?: number; notes?: string }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createMeasurementBookEntry(input.projectId, {
+        mbNo: input.mbNo, pageNo: input.pageNo, description: input.description, location: input.location, unit: input.unit,
+        length: input.length, breadth: input.breadth, depth: input.depth, qty: input.qty, rate: input.rate, notes: input.notes,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create measurement book entry" };
+      return ok({ id: String(cf.data.id) });
+    }
     const { data, error } = await client.from("measurement_book").insert({
       project_id: input.projectId, mb_no: input.mbNo, page_no: input.pageNo ?? null, description: input.description, location: input.location || null, unit: input.unit || null,
       length: input.length ?? null, breadth: input.breadth ?? null, depth: input.depth ?? null, qty: input.qty, rate: input.rate ?? null, notes: input.notes || null,

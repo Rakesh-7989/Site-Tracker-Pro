@@ -8,6 +8,7 @@
 import { createProject } from "./queries";
 import { workflowNextMap } from "../engines/workflowEngine";
 import { LEAD_WORKFLOW } from "../engines/workflowDefinitions";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -164,7 +165,12 @@ export function crmRollup(leads: Lead[]): CrmRollup {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listOrgLeads(client: any, orgId: string): Promise<Result<Lead[]>> {
   try {
-const { data, error } = await client
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listLeads(orgId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load leads" };
+      return ok(((cf.data.leads ?? []) as Array<Record<string, unknown>>).map(r => mapLead(r)));
+    }
+    const { data, error } = await client
       .from("leads")
       .select("id, org_id, name, company, phone, email, source, budget, stage, notes, owner_id, owner:owner_id(name), won_amount, lost_reason, created_at, updated_at")
       .eq("org_id", orgId)
@@ -209,6 +215,39 @@ export interface LeadInput {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createLead(client: any, orgId: string, input: LeadInput): Promise<Result<Lead>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createLead({
+        name: input.name ?? "",
+        company: input.company ?? undefined,
+        phone: input.phone ?? undefined,
+        email: input.email ?? undefined,
+        source: input.source ?? undefined,
+        budget: input.budget ?? undefined,
+        stage: input.stage,
+        notes: input.notes ?? undefined,
+        ownerId: input.ownerId ?? undefined,
+      }, orgId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create lead" };
+      const now = new Date().toISOString();
+      return ok({
+        id: String(cf.data.id),
+        orgId,
+        name: input.name ?? "",
+        company: input.company ?? null,
+        phone: input.phone ?? null,
+        email: input.email ?? null,
+        source: input.source ?? null,
+        budget: input.budget ?? null,
+        stage: asStage(input.stage ?? "new"),
+        notes: input.notes ?? null,
+        ownerId: input.ownerId ?? null,
+        ownerName: null,
+        wonAmount: input.wonAmount ?? null,
+        lostReason: input.lostReason ?? null,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
     const { data, error } = await client
       .from("leads")
       .insert({ org_id: orgId, name: input.name, company: input.company ?? null, phone: input.phone ?? null, email: input.email ?? null, source: input.source ?? null, budget: input.budget ?? null, stage: input.stage ?? "new", notes: input.notes ?? null, owner_id: input.ownerId ?? null })
@@ -223,6 +262,19 @@ export async function createLead(client: any, orgId: string, input: LeadInput): 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateLead(client: any, leadId: string, patch: Partial<LeadInput>): Promise<Result<Lead>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      if (Object.keys(patch).length === 0) return ok(null as unknown as Lead);
+      const cf = await cloudflareApi.updateLead(leadId, patch);
+      if (!cf.ok) return { ok: false, error: cf.error || "Failed to update lead" };
+      return ok(mapLead({
+        id: leadId,
+        ...patch,
+        owner_id: patch.ownerId,
+        won_amount: patch.wonAmount,
+        lost_reason: patch.lostReason,
+        updated_at: new Date().toISOString(),
+      }));
+    }
     const body: Record<string, unknown> = {};
     if (patch.name !== undefined) body.name = patch.name;
     if (patch.company !== undefined) body.company = patch.company;
@@ -360,6 +412,11 @@ function meetingRow(r: any): LeadMeeting {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listLeadQuotations(client: any, leadId: string): Promise<Result<LeadQuotation[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listLeadQuotations(leadId);
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load quotations" };
+      return ok(((cf.data.quotations ?? []) as Array<Record<string, unknown>>).map(r => quotationRow(r)));
+    }
     const { data, error } = await client
       .from("lead_quotations")
       .select("id, lead_id, title, amount, status, valid_until, sent_at, created_by, created_at")
@@ -379,6 +436,25 @@ export async function listLeadQuotations(client: any, leadId: string): Promise<R
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function addQuotation(client: any, leadId: string, q: { title?: string | null; amount: number; validUntil?: string | null }): Promise<Result<LeadQuotation>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createLeadQuotation(leadId, {
+        amount: q.amount,
+        status: "draft",
+        validUntil: q.validUntil ?? undefined,
+      });
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to create quotation" };
+      return ok({
+        id: String(cf.data.id),
+        leadId,
+        title: q.title ?? null,
+        amount: q.amount,
+        status: "draft",
+        validUntil: q.validUntil ?? null,
+        sentAt: null,
+        createdBy: null,
+        createdAt: new Date().toISOString(),
+      });
+    }
     const { data, error } = await client
       .from("lead_quotations")
       .insert({ lead_id: leadId, title: q.title ?? null, amount: q.amount, valid_until: q.validUntil ?? null, status: "draft" })

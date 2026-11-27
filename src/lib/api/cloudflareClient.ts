@@ -16,10 +16,24 @@ const API_BASE =
     ? (typeof window !== "undefined" ? "/api" : CLOUDFLARE_API_DEFAULT_URL)
     : "/api");
 
+export function resolveCloudflareBackendEnabled(env: {
+  VITE_BACKEND_PROVIDER?: string;
+  VITE_BACKEND?: string;
+  VITE_CLOUDFLARE_API_URL?: string;
+}): boolean {
+  const explicit = (env.VITE_BACKEND_PROVIDER || env.VITE_BACKEND || "").toLowerCase();
+  if (explicit === "supabase" || explicit === "local") return false;
+  if (explicit === "cloudflare") return true;
+  return Boolean(env.VITE_CLOUDFLARE_API_URL);
+}
+
 export function isCloudflareBackendEnabled(): boolean {
-  return (
-    import.meta.env?.VITE_BACKEND_PROVIDER === "cloudflare" ||
-    Boolean(import.meta.env?.VITE_CLOUDFLARE_API_URL)
+  return resolveCloudflareBackendEnabled(
+    (import.meta.env ?? {}) as {
+      VITE_BACKEND_PROVIDER?: string;
+      VITE_BACKEND?: string;
+      VITE_CLOUDFLARE_API_URL?: string;
+    }
   );
 }
 
@@ -282,8 +296,60 @@ export const cloudflareApi = {
 
   listMilestones: (projectId: string, orgId?: string) =>
     cfRequest<{ milestones: unknown[] }>(`/projects/${projectId}/milestones`, { orgId }),
-  createMilestone: (projectId: string, input: { title: string; description?: string; dueDate?: string; weight?: number }, orgId?: string) =>
+  createMilestone: (projectId: string, input: { title: string; description?: string; dueDate?: string; weight?: number; orderIndex?: number }, orgId?: string) =>
     cfRequest<{ id: string }>(`/projects/${projectId}/milestones`, { method: "POST", orgId, body: input }),
+  updateMilestoneStatus: (projectId: string, milestoneId: string, status: "pending" | "in_progress" | "completed" | "blocked", orgId?: string) =>
+    cfRequest<{ id: string; status: string }>(`/projects/${projectId}/milestones/${milestoneId}`, { method: "PATCH", orgId, body: { status } }),
+
+  listRiskSignals: (projectId: string, orgId?: string) =>
+    cfRequest<{ signals: unknown[] }>(`/projects/${projectId}/risk-signals`, { orgId }),
+
+  listMaterialRequests: (projectId: string, orgId?: string) =>
+    cfRequest<{ materialRequests: unknown[] }>(`/projects/${projectId}/material-requests`, { orgId }),
+  createMaterialRequest: (projectId: string, input: { item: string; unit?: string; qty: number; needDate?: string; reason?: string; notes?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/material-requests`, { method: "POST", orgId, body: input }),
+
+  listSafetyIncidents: (projectId: string, orgId?: string) =>
+    cfRequest<{ incidents: unknown[] }>(`/projects/${projectId}/safety`, { orgId }),
+  createSafetyIncident: (projectId: string, input: { description: string; severity: "near_miss" | "first_aid" | "minor" | "major" | "fatal"; category?: string; location?: string; actionTaken?: string; incidentDate?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/safety`, { method: "POST", orgId, body: input }),
+
+  listInspections: (projectId: string, orgId?: string) =>
+    cfRequest<{ inspections: unknown[] }>(`/projects/${projectId}/inspections`, { orgId }),
+  createInspection: (projectId: string, input: { type: string; scope?: string; scheduledDate?: string; inspectorName?: string; observations?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/inspections`, { method: "POST", orgId, body: input }),
+
+  listPunchItems: (projectId: string, orgId?: string) =>
+    cfRequest<{ punchItems: unknown[] }>(`/projects/${projectId}/punch`, { orgId }),
+  createPunchItem: (projectId: string, input: { location: string; defect: string; trade?: string; severity?: string; unitId?: string; assignedTo?: string; dueDate?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/punch`, { method: "POST", orgId, body: input }),
+
+  listMeasurementBook: (projectId: string, orgId?: string) =>
+    cfRequest<{ entries: unknown[] }>(`/projects/${projectId}/measurement-book`, { orgId }),
+  createMeasurementBookEntry: (projectId: string, input: { mbNo: string; pageNo?: number; boqItemId?: string; description: string; location?: string; blockId?: string; floorId?: string; unit?: string; length?: number; breadth?: number; depth?: number; qty: number; rate?: number; notes?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/measurement-book`, { method: "POST", orgId, body: input }),
+
+  listLeads: (orgId?: string, stage?: string) =>
+    cfRequest<{ leads: unknown[] }>(`/leads${stage ? `?stage=${encodeURIComponent(stage)}` : ""}`, { orgId }),
+  createLead: (input: { name: string; company?: string; phone?: string; email?: string; source?: string; budget?: number; stage?: string; notes?: string; ownerId?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>("/leads", { method: "POST", orgId, body: input }),
+  updateLead: (leadId: string, patch: { name?: string; company?: string | null; phone?: string | null; email?: string | null; source?: string | null; budget?: number | null; stage?: string; notes?: string | null; ownerId?: string | null; wonAmount?: number | null; lostReason?: string | null }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/leads/${leadId}`, { method: "PATCH", orgId, body: patch }),
+
+  listLeadQuotations: (leadId: string, orgId?: string) =>
+    cfRequest<{ quotations: unknown[] }>(`/leads/${leadId}/quotations`, { orgId }),
+  createLeadQuotation: (leadId: string, input: { amount: number; status?: string; validUntil?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/leads/${leadId}/quotations`, { method: "POST", orgId, body: input }),
+
+  listShareLinks: (projectId: string, orgId?: string) =>
+    cfRequest<{ shareLinks: unknown[] }>(`/projects/${projectId}/share-links`, { orgId }),
+  createShareLink: (projectId: string, input: { label?: string; passwordHash?: string; expiresAt?: string; allowDownload?: boolean; maxViews?: number }, orgId?: string) =>
+    cfRequest<{ id: string; token: string }>(`/projects/${projectId}/share-links`, { method: "POST", orgId, body: input }),
+
+  listHandoverSignatures: (projectId: string, orgId?: string) =>
+    cfRequest<{ signatures: unknown[] }>(`/projects/${projectId}/handover-signatures`, { orgId }),
+  createHandoverSignature: (projectId: string, input: { signatureData: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/handover-signatures`, { method: "POST", orgId, body: input }),
 
   listDprs: (projectId: string, orgId?: string) =>
     cfRequest<{ dprs: unknown[] }>(`/projects/${projectId}/dpr`, { orgId }),
