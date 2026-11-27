@@ -164,7 +164,7 @@ export function DeliverablesTab({ projectId }: { projectId: string }): JSX.Eleme
   };
 
   const setStatus = (d: Deliverable, ns: DeliverableStatus) => {
-    void run(`s-${d.id}`, c => setDeliverableStatus(c, d.id, ns), {
+    void run(`s-${d.id}`, c => setDeliverableStatus(c, d.id, ns, projectId), {
       apply: () => setRows(prev => prev.map(x => x.id === d.id ? { ...x, status: ns } : x)),
       rollback: () => setRows(prev => prev.map(x => x.id === d.id ? { ...x, status: d.status } : x)),
     });

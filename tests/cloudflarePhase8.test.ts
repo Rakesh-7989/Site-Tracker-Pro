@@ -8,6 +8,8 @@ interface Phase8MockState {
   rfis: Array<{ id: string; project_id: string; no: string; subject: string; status: string; response: string | null }>;
   changeOrders: Array<{ id: string; project_id: string; no: string; description: string; status: string }>;
   raBills: Array<{ id: string; project_id: string; no: string; bill_amount: number; paid_amount: number; status: string }>;
+  timeEntries: Array<{ id: string; project_id: string; profile_id: string; activity: string; hours: number }>;
+  deliverables: Array<{ id: string; project_id: string; title: string; doc_type: string; status: string }>;
 }
 
 function createPhase8MockD1(state: Phase8MockState): D1Database {
@@ -53,6 +55,14 @@ function createPhase8MockD1(state: Phase8MockState): D1Database {
             const [projectId] = args as [string];
             return { results: state.raBills.filter((b) => b.project_id === projectId), success: true, meta: {} };
           }
+          if (q.includes("FROM time_entries")) {
+            const [projectId] = args as [string];
+            return { results: state.timeEntries.filter((t) => t.project_id === projectId), success: true, meta: {} };
+          }
+          if (q.includes("FROM deliverables")) {
+            const [projectId] = args as [string];
+            return { results: state.deliverables.filter((d) => d.project_id === projectId), success: true, meta: {} };
+          }
           return { results: [], success: true, meta: {} };
         },
         async run() {
@@ -96,6 +106,22 @@ function createPhase8MockD1(state: Phase8MockState): D1Database {
             }
             return { success: true, meta: { changes: row ? 1 : 0 } };
           }
+          if (q.startsWith("INSERT INTO time_entries")) {
+            const [id, projectId, profileId, , activity, hours] = args as [string, string, string, unknown, string, number];
+            state.timeEntries.push({ id, project_id: projectId, profile_id: profileId, activity, hours });
+            return { success: true, meta: { changes: 1 } };
+          }
+          if (q.startsWith("INSERT INTO deliverables")) {
+            const [id, projectId, , title, docType] = args as [string, string, unknown, string, string];
+            state.deliverables.push({ id, project_id: projectId, title, doc_type: docType, status: "draft" });
+            return { success: true, meta: { changes: 1 } };
+          }
+          if (q.startsWith("UPDATE deliverables")) {
+            const [status, deliverableId, projectId] = args as [string, string, string];
+            const row = state.deliverables.find((d) => d.id === deliverableId && d.project_id === projectId);
+            if (row) row.status = status;
+            return { success: true, meta: { changes: row ? 1 : 0 } };
+          }
           return { success: true, meta: { changes: 0 } };
         },
       };
@@ -118,6 +144,8 @@ describe("Cloudflare Phase 8 Site Controls Repository", () => {
       rfis: [],
       changeOrders: [],
       raBills: [],
+      timeEntries: [],
+      deliverables: [],
     };
     repo = new Phase8SiteControlsRepository(createPhase8MockD1(state));
   });
@@ -150,6 +178,23 @@ describe("Cloudflare Phase 8 Site Controls Repository", () => {
     ).rejects.toThrow(TenantSecurityError);
     await expect(
       repo.createRaBill(ctxViewer, "proj_1", { id: "ra_x", no: "RA-X", billAmount: 1000 })
+    ).rejects.toThrow(TenantSecurityError);
+  });
+
+  it("supports consultancy time entries and deliverables CRUD with tenant isolation", async () => {
+    await repo.createTimeEntry(ctxOwner, "proj_1", { id: "te_1", activity: "Site inspection", hours: 4.5, billable: true, rate: 1500 });
+    expect(await repo.listTimeEntries(ctxPartner, "proj_1")).toHaveLength(1);
+
+    await repo.createDeliverable(ctxOwner, "proj_1", { id: "del_1", title: "GFC Foundation Plan", docType: "drawing" });
+    expect(await repo.updateDeliverableStatus(ctxOwner, "proj_1", "del_1", "in_review")).toBe(true);
+    expect(state.deliverables[0].status).toBe("in_review");
+    expect(await repo.listDeliverables(ctxPartner, "proj_1")).toHaveLength(1);
+
+    await expect(
+      repo.createTimeEntry(ctxOwner, "proj_1", { id: "te_bad", activity: "Invalid", hours: 30 })
+    ).rejects.toThrow("hours must be between 0 and 24");
+    await expect(
+      repo.createDeliverable(ctxViewer, "proj_1", { id: "del_x", title: "X", docType: "report" })
     ).rejects.toThrow(TenantSecurityError);
   });
 });

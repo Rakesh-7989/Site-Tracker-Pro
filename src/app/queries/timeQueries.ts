@@ -5,6 +5,8 @@
 // time:manage (admins, heads); approvals run through the manager-gated
 // approve_time_entry RPC (time:approve).
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -35,9 +37,35 @@ export interface TimeEntry {
   phaseId: string | null;
 }
 
+function mapTimeEntry(r: Record<string, unknown>): TimeEntry {
+  return {
+    id: String(r.id),
+    profileId: String(r.profile_id ?? ""),
+    memberName: (r.profile as { name?: string } | null | undefined)?.name ?? null,
+    date: String(r.date ?? ""),
+    activity: String(r.activity ?? ""),
+    hours: Number(r.hours ?? 0),
+    billable: Boolean(r.billable),
+    rate: r.rate == null ? null : Number(r.rate),
+    notes: r.notes == null ? null : String(r.notes),
+    approvalStatus: asApprovalStatus(r.approval_status),
+    approvedBy: r.approved_by == null ? null : String(r.approved_by),
+    approvedAt: r.approved_at == null ? null : String(r.approved_at),
+    billed: Boolean(r.billed),
+    billedInvoiceId: r.billed_invoice_id == null ? null : String(r.billed_invoice_id),
+    createdAt: String(r.created_at ?? ""),
+    phaseId: r.phase_id == null ? null : String(r.phase_id),
+  };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listTimeEntries(client: any, projectId: string): Promise<Result<TimeEntry[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listTimeEntries(projectId);
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to load time entries" };
+      return ok(((res.data.entries ?? []) as Array<Record<string, unknown>>).map(mapTimeEntry));
+    }
     const { data, error } = await client
       .from("time_entries")
       .select("id, profile_id, date, activity, hours, billable, rate, notes, approval_status, approved_by, approved_at, billed, billed_invoice_id, created_at, profile:profile_id(name), phase_id")
@@ -45,24 +73,7 @@ export async function listTimeEntries(client: any, projectId: string): Promise<R
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
-      id: String(r.id),
-      profileId: String(r.profile_id ?? ""),
-      memberName: (r.profile as { name?: string } | null | undefined)?.name ?? null,
-      date: String(r.date ?? ""),
-      activity: String(r.activity ?? ""),
-      hours: Number(r.hours ?? 0),
-      billable: Boolean(r.billable),
-      rate: r.rate == null ? null : Number(r.rate),
-      notes: r.notes == null ? null : String(r.notes),
-      approvalStatus: asApprovalStatus(r.approval_status),
-      approvedBy: r.approved_by == null ? null : String(r.approved_by),
-      approvedAt: r.approved_at == null ? null : String(r.approved_at),
-      billed: Boolean(r.billed),
-      billedInvoiceId: r.billed_invoice_id == null ? null : String(r.billed_invoice_id),
-      createdAt: String(r.created_at ?? ""),
-      phaseId: r.phase_id == null ? null : String(r.phase_id),
-    })));
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(mapTimeEntry));
   } catch (e) { return er(e); }
 }
 
@@ -73,6 +84,18 @@ export async function createTimeEntry(client: any, input: {
   phaseId?: string | null;
 }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.createTimeEntry(input.projectId, {
+        date: input.date,
+        activity: input.activity,
+        hours: input.hours,
+        billable: input.billable ?? true,
+        rate: input.rate ?? undefined,
+        notes: input.notes || undefined,
+      });
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to create time entry" };
+      return ok({ id: res.data.id });
+    }
     const { data, error } = await client
       .from("time_entries")
       .insert({

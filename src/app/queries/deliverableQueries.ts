@@ -4,6 +4,8 @@
 // close = managers (deliverable:approve / review:manage). UI gating via the
 // corresponding capabilities.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
 const er = (e: unknown): Result<never> => ({ ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -48,9 +50,28 @@ export interface ReviewRound {
 
 // ── Deliverables ────────────────────────────────────────────────────────────
 
+function mapDeliverable(r: Record<string, unknown>): Deliverable {
+  return {
+    id: String(r.id),
+    phaseId: r.phase_id == null ? null : String(r.phase_id),
+    title: String(r.title ?? ""),
+    docType: asDocType(r.doc_type),
+    status: asDelStatus(r.status),
+    dueDate: r.due_date == null ? null : String(r.due_date),
+    ownerId: r.owner_id == null ? null : String(r.owner_id),
+    ownerName: (r.profiles as { name?: string } | null | undefined)?.name ?? null,
+    createdAt: String(r.created_at ?? ""),
+  };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listDeliverables(client: any, projectId: string): Promise<Result<Deliverable[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listDeliverables(projectId);
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to load deliverables" };
+      return ok(((res.data.deliverables ?? []) as Array<Record<string, unknown>>).map(mapDeliverable));
+    }
     const { data, error } = await client
       .from("deliverables")
       .select("id, phase_id, title, doc_type, status, due_date, owner_id, created_at, profiles(name)")
@@ -58,17 +79,7 @@ export async function listDeliverables(client: any, projectId: string): Promise<
       .order("due_date", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) return dbe(error);
-    return ok(((data ?? []) as Array<Record<string, unknown>>).map(r => ({
-      id: String(r.id),
-      phaseId: r.phase_id == null ? null : String(r.phase_id),
-      title: String(r.title ?? ""),
-      docType: asDocType(r.doc_type),
-      status: asDelStatus(r.status),
-      dueDate: r.due_date == null ? null : String(r.due_date),
-      ownerId: r.owner_id == null ? null : String(r.owner_id),
-      ownerName: (r.profiles as { name?: string } | null | undefined)?.name ?? null,
-      createdAt: String(r.created_at ?? ""),
-    })));
+    return ok(((data ?? []) as Array<Record<string, unknown>>).map(mapDeliverable));
   } catch (e) { return er(e); }
 }
 
@@ -78,6 +89,16 @@ export async function createDeliverable(client: any, input: {
   dueDate?: string | null; ownerId?: string | null;
 }): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.createDeliverable(input.projectId, {
+        phaseId: input.phaseId ?? undefined,
+        title: input.title,
+        docType: input.docType ?? "other",
+        dueDate: input.dueDate ?? undefined,
+      });
+      if (!res.ok || !res.data) return { ok: false, error: res.error ?? "Failed to create deliverable" };
+      return ok({ id: res.data.id });
+    }
     const { data, error } = await client
       .from("deliverables")
       .insert({
@@ -94,8 +115,13 @@ export async function createDeliverable(client: any, input: {
 export async function updateDeliverable(client: any, id: string, patch: {
   title?: string; docType?: DocType; phaseId?: string | null; dueDate?: string | null;
   ownerId?: string | null; status?: DeliverableStatus;
-}): Promise<Result<{ ok: true }>> {
+}, projectId?: string): Promise<Result<{ ok: true }>> {
   try {
+    if (isCloudflareBackendEnabled() && projectId && patch.status !== undefined) {
+      const res = await cloudflareApi.updateDeliverableStatus(projectId, id, patch.status);
+      if (!res.ok) return { ok: false, error: res.error ?? "Failed to update deliverable" };
+      return ok({ ok: true });
+    }
     const row: Record<string, unknown> = {};
     if (patch.title !== undefined) row.title = patch.title;
     if (patch.docType !== undefined) row.doc_type = patch.docType;
@@ -110,8 +136,8 @@ export async function updateDeliverable(client: any, id: string, patch: {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const setDeliverableStatus = (client: any, id: string, status: DeliverableStatus) =>
-  updateDeliverable(client, id, { status });
+export const setDeliverableStatus = (client: any, id: string, status: DeliverableStatus, projectId?: string) =>
+  updateDeliverable(client, id, { status }, projectId);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deleteDeliverable(client: any, id: string): Promise<Result<{ ok: true }>> {
