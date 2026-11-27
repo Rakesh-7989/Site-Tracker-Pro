@@ -53,6 +53,28 @@ function toJsScope(dbResource: string): string {
 
 export async function listDelegations(client: TypedSupabaseClient, userId: string): Promise<QueryResult<DelegationRow[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.listDelegations();
+      if (!cf.ok || !cf.data) return { ok: false, error: cf.error || "Failed to load delegations" };
+      const rows = (cf.data.delegations ?? []) as Array<Record<string, unknown>>;
+      return {
+        ok: true,
+        data: rows.map(r => ({
+          id: String(r.id),
+          fromUserId: String(r.from_user ?? userId),
+          fromUserName: String(r.from_user_name ?? ""),
+          toUserId: String(r.to_user ?? ""),
+          toUserName: String(r.to_user_name ?? ""),
+          scope: toJsScope(String(r.resource ?? "*")),
+          start: String(r.start_at ?? ""),
+          end: String(r.end_at ?? ""),
+          reason: r.reason == null ? null : String(r.reason),
+          active: Boolean(r.active),
+          createdAt: String(r.created_at ?? ""),
+          revokedAt: r.revoked_at == null ? null : String(r.revoked_at),
+        })),
+      };
+    }
     const { data, error } = await client
       .from("delegations")
       .select(`
@@ -140,6 +162,20 @@ export async function createDelegation(
   input: { orgId: string; fromUserId: string; toUserId: string; scope: string; start: string; end: string; reason: string; createdBy: string },
 ): Promise<QueryResult<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.createDelegation(
+        {
+          toUser: input.toUserId,
+          resource: toDbScope(input.scope),
+          startAt: input.start,
+          endAt: input.end,
+          reason: input.reason || undefined,
+        },
+        input.orgId
+      );
+      if (!cf.ok || !cf.data?.id) return { ok: false, error: cf.error || "Failed to create delegation" };
+      return { ok: true, data: { id: cf.data.id } };
+    }
     const { data, error } = await client
       .from("delegations")
       .insert({
@@ -163,6 +199,11 @@ export async function createDelegation(
 
 export async function revokeDelegation(client: TypedSupabaseClient, delegationId: string, revokedBy: string): Promise<QueryResult<null>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const cf = await cloudflareApi.revokeDelegation(delegationId);
+      if (!cf.ok) return { ok: false, error: cf.error || "Failed to revoke delegation" };
+      return { ok: true, data: null };
+    }
     const { error } = await client
       .from("delegations")
       .update({ active: false, revoked_at: new Date().toISOString(), revoked_by: revokedBy })

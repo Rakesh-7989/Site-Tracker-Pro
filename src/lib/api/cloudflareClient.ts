@@ -480,5 +480,17 @@ export const cloudflareApi = {
     cfRequest<{ id: string }>("/delegations", { method: "POST", orgId, body: input }),
   revokeDelegation: (delegationId: string, orgId?: string) =>
     cfRequest<{ revoked: boolean }>(`/delegations/${delegationId}/revoke`, { method: "POST", orgId }),
+
+  listTimeEntries: (projectId: string, orgId?: string) =>
+    cfRequest<{ entries: unknown[] }>(`/projects/${projectId}/time-entries`, { orgId }),
+  createTimeEntry: (projectId: string, input: { date?: string; activity: string; hours: number; billable?: boolean; rate?: number; notes?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/time-entries`, { method: "POST", orgId, body: input }),
+
+  listDeliverables: (projectId: string, orgId?: string) =>
+    cfRequest<{ deliverables: unknown[] }>(`/projects/${projectId}/deliverables`, { orgId }),
+  createDeliverable: (projectId: string, input: { phaseId?: string; title: string; docType: string; dueDate?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/deliverables`, { method: "POST", orgId, body: input }),
+  updateDeliverableStatus: (projectId: string, deliverableId: string, status: string, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/projects/${projectId}/deliverables/${deliverableId}`, { method: "PATCH", orgId, body: { status } }),
 };
 

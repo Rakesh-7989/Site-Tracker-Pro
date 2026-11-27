@@ -461,4 +461,99 @@ export class Phase8SiteControlsRepository {
       .run();
     return (res.meta?.changes ?? 0) > 0;
   }
+
+  // ── CONSULTANCY: TIME ENTRIES & DELIVERABLES ───────────────────────────────
+
+  async listTimeEntries(ctx: SecurityContext, projectId: string) {
+    await assertProjectReadable(this.db, ctx, projectId);
+    const { results } = await this.db
+      .prepare(
+        `SELECT id, project_id, profile_id, date, activity, hours, billable, rate, notes, created_at
+         FROM time_entries
+         WHERE project_id = ?
+         ORDER BY date DESC, created_at DESC`
+      )
+      .bind(projectId)
+      .all();
+    return results || [];
+  }
+
+  async createTimeEntry(
+    ctx: SecurityContext,
+    projectId: string,
+    input: { id: string; date?: string; activity: string; hours: number; billable?: boolean; rate?: number; notes?: string }
+  ) {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can log time entries.");
+    if (!(input.hours > 0 && input.hours <= 24)) {
+      throw new Error("hours must be between 0 and 24");
+    }
+    await this.db
+      .prepare(
+        `INSERT INTO time_entries (id, project_id, profile_id, date, activity, hours, billable, rate, notes)
+         VALUES (?, ?, ?, COALESCE(?, date('now')), ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        input.id,
+        projectId,
+        ctx.userId,
+        input.date || null,
+        input.activity.trim(),
+        input.hours,
+        input.billable === false ? 0 : 1,
+        input.rate ?? null,
+        input.notes || null
+      )
+      .run();
+    return { id: input.id };
+  }
+
+  async listDeliverables(ctx: SecurityContext, projectId: string) {
+    await assertProjectReadable(this.db, ctx, projectId);
+    const { results } = await this.db
+      .prepare(
+        `SELECT id, project_id, phase_id, title, doc_type, status, due_date, owner_id, created_at
+         FROM deliverables
+         WHERE project_id = ?
+         ORDER BY due_date ASC, created_at DESC`
+      )
+      .bind(projectId)
+      .all();
+    return results || [];
+  }
+
+  async createDeliverable(
+    ctx: SecurityContext,
+    projectId: string,
+    input: { id: string; phaseId?: string; title: string; docType: string; dueDate?: string }
+  ) {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can create deliverables.");
+    await this.db
+      .prepare(
+        `INSERT INTO deliverables (id, project_id, phase_id, title, doc_type, status, due_date, owner_id)
+         VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)`
+      )
+      .bind(
+        input.id,
+        projectId,
+        input.phaseId || null,
+        input.title.trim(),
+        input.docType,
+        input.dueDate || null,
+        ctx.userId
+      )
+      .run();
+    return { id: input.id };
+  }
+
+  async updateDeliverableStatus(ctx: SecurityContext, projectId: string, deliverableId: string, status: string): Promise<boolean> {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can update deliverables.");
+    const res = await this.db
+      .prepare(`UPDATE deliverables SET status = ? WHERE id = ? AND project_id = ?`)
+      .bind(status, deliverableId, projectId)
+      .run();
+    return (res.meta?.changes ?? 0) > 0;
+  }
 }

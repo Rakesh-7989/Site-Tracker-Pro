@@ -1678,7 +1678,7 @@ export default {
     if (
       url.pathname === "/api/delegations" ||
       /^\/api\/delegations\/[^/]+\/revoke$/.test(url.pathname) ||
-      /^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts|issues)(\/|$)/.test(url.pathname)
+      /^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts|issues|time-entries|deliverables)(\/|$)/.test(url.pathname)
     ) {
       const tenant = await requireTenantContext();
       if ("errorResponse" in tenant) return tenant.errorResponse;
@@ -1883,6 +1883,58 @@ export default {
             return json({ ok: true, updated });
           }
         }
+
+        const timeMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/time-entries$/);
+        if (timeMatch) {
+          const projectId = timeMatch[1];
+          if (request.method === "GET") {
+            return json({ ok: true, entries: await sc8.listTimeEntries(ctx, projectId) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as { date?: string; activity?: string; hours?: number; billable?: boolean; rate?: number; notes?: string };
+            if (!body.activity || typeof body.hours !== "number") {
+              return json({ ok: false, error: "activity and hours required" }, 400);
+            }
+            const created = await sc8.createTimeEntry(ctx, projectId, {
+              id: `te_${crypto.randomUUID()}`,
+              date: body.date,
+              activity: body.activity,
+              hours: body.hours,
+              billable: body.billable,
+              rate: body.rate,
+              notes: body.notes,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+        }
+
+        const delivMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/deliverables(?:\/([^/]+))?$/);
+        if (delivMatch) {
+          const [, projectId, delivId] = delivMatch;
+          if (!delivId && request.method === "GET") {
+            return json({ ok: true, deliverables: await sc8.listDeliverables(ctx, projectId) });
+          }
+          if (!delivId && request.method === "POST") {
+            const body = (await request.json()) as { phaseId?: string; title?: string; docType?: string; dueDate?: string };
+            if (!body.title || !body.docType) {
+              return json({ ok: false, error: "title and docType required" }, 400);
+            }
+            const created = await sc8.createDeliverable(ctx, projectId, {
+              id: `dlv_${crypto.randomUUID()}`,
+              phaseId: body.phaseId,
+              title: body.title,
+              docType: body.docType,
+              dueDate: body.dueDate,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+          if (delivId && request.method === "PATCH") {
+            const body = (await request.json()) as { status?: string };
+            if (!body.status) return json({ ok: false, error: "status required" }, 400);
+            const updated = await sc8.updateDeliverableStatus(ctx, projectId, delivId, body.status);
+            return json({ ok: true, updated });
+          }
+        }
       } catch (err) {
         if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
         return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
@@ -1896,23 +1948,23 @@ export default {
   async queue(
     batch: MessageBatch<
       | {
-          type?: "notification";
-          userId: string;
-          orgId?: string;
-          projectId?: string;
-          kind: string;
-          title: string;
-          body: string;
-          link?: string;
-          toEmail?: string;
-        }
+        type?: "notification";
+        userId: string;
+        orgId?: string;
+        projectId?: string;
+        kind: string;
+        title: string;
+        body: string;
+        link?: string;
+        toEmail?: string;
+      }
       | {
-          type: "transactional_email";
-          to: string | string[];
-          subject: string;
-          html?: string;
-          text?: string;
-        }
+        type: "transactional_email";
+        to: string | string[];
+        subject: string;
+        html?: string;
+        text?: string;
+      }
     >,
     env: Env
   ): Promise<void> {
