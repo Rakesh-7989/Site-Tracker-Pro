@@ -13,6 +13,9 @@ import { assertProjectOwnerOrg, assertProjectReadable } from "./projectAccess";
 export type RfiStatus = "open" | "answered" | "closed" | "overdue";
 export type ChangeOrderStatus = "submitted" | "approved" | "rejected" | "cancelled";
 export type RaBillStatus = "submitted" | "approved" | "paid" | "rejected";
+export type CorrectivePriority = "low" | "medium" | "high" | "critical";
+export type CorrectiveStatus = "open" | "in_progress" | "resolved" | "verified";
+export type ShiftName = "day" | "night" | "general" | "special";
 
 export class Phase8SiteControlsRepository {
   constructor(private db: D1Database) {}
@@ -232,5 +235,125 @@ export class Phase8SiteControlsRepository {
       .bind(input.status, input.paidAmount ?? null, billId, projectId)
       .run();
     return (res.meta?.changes ?? 0) > 0;
+  }
+
+  // ── CORRECTIVE ACTIONS (QUALITY) ───────────────────────────────────────────
+
+  async listCorrectiveActions(ctx: SecurityContext, projectId: string) {
+    await assertProjectReadable(this.db, ctx, projectId);
+    const { results } = await this.db
+      .prepare(
+        `SELECT id, project_id, inspection_id, description, priority, status, assigned_to, due_date, opened_by, opened_at, verified_by, verified_at
+         FROM corrective_actions
+         WHERE project_id = ?
+         ORDER BY opened_at DESC`
+      )
+      .bind(projectId)
+      .all();
+    return results || [];
+  }
+
+  async createCorrectiveAction(
+    ctx: SecurityContext,
+    projectId: string,
+    input: { id: string; description: string; priority?: CorrectivePriority; assignedTo?: string; dueDate?: string; inspectionId?: string }
+  ) {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can create corrective actions.");
+    await this.db
+      .prepare(
+        `INSERT INTO corrective_actions (id, project_id, inspection_id, description, priority, status, assigned_to, due_date, opened_by)
+         VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?)`
+      )
+      .bind(
+        input.id,
+        projectId,
+        input.inspectionId || null,
+        input.description.trim(),
+        input.priority || "medium",
+        input.assignedTo || null,
+        input.dueDate || null,
+        ctx.userId
+      )
+      .run();
+    return { id: input.id };
+  }
+
+  async updateCorrectiveActionStatus(
+    ctx: SecurityContext,
+    projectId: string,
+    actionId: string,
+    status: CorrectiveStatus
+  ): Promise<boolean> {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can update corrective actions.");
+    const res = await this.db
+      .prepare(
+        `UPDATE corrective_actions
+         SET status = ?,
+             verified_by = CASE WHEN ? = 'verified' THEN ? ELSE verified_by END,
+             verified_at = CASE WHEN ? = 'verified' THEN datetime('now') ELSE verified_at END,
+             updated_at = datetime('now')
+         WHERE id = ? AND project_id = ?`
+      )
+      .bind(status, status, ctx.userId, status, actionId, projectId)
+      .run();
+    return (res.meta?.changes ?? 0) > 0;
+  }
+
+  // ── SHIFT ROSTER ───────────────────────────────────────────────────────────
+
+  async listShifts(ctx: SecurityContext, projectId: string, shiftDate?: string) {
+    await assertProjectReadable(this.db, ctx, projectId);
+    if (shiftDate) {
+      const { results } = await this.db
+        .prepare(
+          `SELECT id, project_id, labour_id, worker_name, shift_date, shift_name, start_time, end_time, notes, created_by, created_at
+           FROM shift_roster
+           WHERE project_id = ? AND shift_date = ?
+           ORDER BY created_at DESC`
+        )
+        .bind(projectId, shiftDate)
+        .all();
+      return results || [];
+    }
+    const { results } = await this.db
+      .prepare(
+        `SELECT id, project_id, labour_id, worker_name, shift_date, shift_name, start_time, end_time, notes, created_by, created_at
+         FROM shift_roster
+         WHERE project_id = ?
+         ORDER BY shift_date DESC, created_at DESC`
+      )
+      .bind(projectId)
+      .all();
+    return results || [];
+  }
+
+  async createShift(
+    ctx: SecurityContext,
+    projectId: string,
+    input: { id: string; labourId?: string; workerName?: string; shiftDate?: string; shiftName?: ShiftName; startTime?: string; endTime?: string; notes?: string }
+  ) {
+    assertWriteRole(ctx);
+    await assertProjectOwnerOrg(this.db, ctx, projectId, "Forbidden: Only the owner organization can schedule shifts.");
+    await this.db
+      .prepare(
+        `INSERT INTO shift_roster (id, project_id, labour_id, worker_name, shift_date, shift_name, start_time, end_time, notes, created_by)
+         VALUES (?, ?, ?, ?, COALESCE(?, date('now')), ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        input.id,
+        projectId,
+        input.labourId || null,
+        input.workerName || null,
+        input.shiftDate || null,
+        input.shiftName || "day",
+        input.startTime || null,
+        input.endTime || null,
+        input.notes || null,
+        ctx.userId
+      )
+      .run();
+    return { id: input.id };
   }
 }

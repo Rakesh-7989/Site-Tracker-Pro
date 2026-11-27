@@ -33,7 +33,15 @@ import { TaskAndMilestoneRepository } from "./repositories/taskAndMilestoneRepos
 import { SiteOpsExtendedRepository } from "./repositories/siteOpsExtendedRepository";
 import { CrmAndPortalRepository } from "./repositories/crmAndPortalRepository";
 import { Phase7OperationsRepository, type AttendanceKind, type AttendanceStatus, type BoqStatus, type InventoryDirection } from "./repositories/phase7OperationsRepository";
-import { Phase8SiteControlsRepository, type ChangeOrderStatus, type RaBillStatus, type RfiStatus } from "./repositories/phase8SiteControlsRepository";
+import {
+  Phase8SiteControlsRepository,
+  type ChangeOrderStatus,
+  type CorrectivePriority,
+  type CorrectiveStatus,
+  type RaBillStatus,
+  type RfiStatus,
+  type ShiftName,
+} from "./repositories/phase8SiteControlsRepository";
 
 export interface Env {
   DB: D1Database;
@@ -1667,7 +1675,7 @@ export default {
 
     // ── PHASE 8 SITE CONTROLS ROUTES (RFI, CHANGE ORDERS, RA BILLS) ─────────
 
-    if (/^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills)(\/|$)/.test(url.pathname)) {
+    if (/^\/api\/projects\/[^/]+\/(rfi|change-orders|ra-bills|corrective-actions|shifts)(\/|$)/.test(url.pathname)) {
       const tenant = await requireTenantContext();
       if ("errorResponse" in tenant) return tenant.errorResponse;
       const { ctx } = tenant;
@@ -1767,6 +1775,56 @@ export default {
               paidAmount: body.paidAmount,
             });
             return json({ ok: true, updated });
+          }
+        }
+
+        const caMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/corrective-actions(?:\/([^/]+))?$/);
+        if (caMatch) {
+          const [, projectId, actionId] = caMatch;
+          if (!actionId && request.method === "GET") {
+            return json({ ok: true, actions: await sc8.listCorrectiveActions(ctx, projectId) });
+          }
+          if (!actionId && request.method === "POST") {
+            const body = (await request.json()) as { description?: string; priority?: CorrectivePriority; assignedTo?: string; dueDate?: string; inspectionId?: string };
+            if (!body.description) return json({ ok: false, error: "description required" }, 400);
+            const created = await sc8.createCorrectiveAction(ctx, projectId, {
+              id: `ca_${crypto.randomUUID()}`,
+              description: body.description,
+              priority: body.priority,
+              assignedTo: body.assignedTo,
+              dueDate: body.dueDate,
+              inspectionId: body.inspectionId,
+            });
+            return json({ ok: true, ...created }, 201);
+          }
+          if (actionId && request.method === "PATCH") {
+            const body = (await request.json()) as { status?: CorrectiveStatus };
+            if (!body.status) return json({ ok: false, error: "status required" }, 400);
+            const updated = await sc8.updateCorrectiveActionStatus(ctx, projectId, actionId, body.status);
+            return json({ ok: true, updated });
+          }
+        }
+
+        const shiftMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/shifts$/);
+        if (shiftMatch) {
+          const projectId = shiftMatch[1];
+          if (request.method === "GET") {
+            const date = url.searchParams.get("date") || undefined;
+            return json({ ok: true, shifts: await sc8.listShifts(ctx, projectId, date) });
+          }
+          if (request.method === "POST") {
+            const body = (await request.json()) as { labourId?: string; workerName?: string; shiftDate?: string; shiftName?: ShiftName; startTime?: string; endTime?: string; notes?: string };
+            const created = await sc8.createShift(ctx, projectId, {
+              id: `shf_${crypto.randomUUID()}`,
+              labourId: body.labourId,
+              workerName: body.workerName,
+              shiftDate: body.shiftDate,
+              shiftName: body.shiftName,
+              startTime: body.startTime,
+              endTime: body.endTime,
+              notes: body.notes,
+            });
+            return json({ ok: true, ...created }, 201);
           }
         }
       } catch (err) {

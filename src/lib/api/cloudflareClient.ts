@@ -454,5 +454,17 @@ export const cloudflareApi = {
     cfRequest<{ id: string }>(`/projects/${projectId}/ra-bills`, { method: "POST", orgId, body: input }),
   updateRaBillStatus: (projectId: string, billId: string, input: { status: string; paidAmount?: number }, orgId?: string) =>
     cfRequest<{ updated: boolean }>(`/projects/${projectId}/ra-bills/${billId}`, { method: "PATCH", orgId, body: input }),
+
+  listCorrectiveActions: (projectId: string, orgId?: string) =>
+    cfRequest<{ actions: unknown[] }>(`/projects/${projectId}/corrective-actions`, { orgId }),
+  createCorrectiveAction: (projectId: string, input: { description: string; priority?: string; assignedTo?: string; dueDate?: string; inspectionId?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/corrective-actions`, { method: "POST", orgId, body: input }),
+  updateCorrectiveActionStatus: (projectId: string, actionId: string, status: string, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/projects/${projectId}/corrective-actions/${actionId}`, { method: "PATCH", orgId, body: { status } }),
+
+  listShifts: (projectId: string, date?: string, orgId?: string) =>
+    cfRequest<{ shifts: unknown[] }>(`/projects/${projectId}/shifts${date ? `?date=${encodeURIComponent(date)}` : ""}`, { orgId }),
+  createShift: (projectId: string, input: { labourId?: string; workerName?: string; shiftDate?: string; shiftName?: string; startTime?: string; endTime?: string; notes?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/shifts`, { method: "POST", orgId, body: input }),
 };
 

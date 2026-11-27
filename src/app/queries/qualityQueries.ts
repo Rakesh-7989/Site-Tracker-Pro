@@ -4,6 +4,7 @@
 
 import { workflowNextMap } from "../engines/workflowEngine";
 import { CORRECTIVE_ACTION_WORKFLOW } from "../engines/workflowDefinitions";
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 const ok = <T>(d: T): Result<T> => ({ ok: true, data: d });
@@ -49,6 +50,22 @@ export function correctiveRollup(rows: CorrectiveAction[]): {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listCorrectiveActions(client: any, projectId: string): Promise<Result<CorrectiveAction[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listCorrectiveActions(projectId);
+      if (!res.ok) return dbe({ message: res.error || "Failed to load corrective actions" });
+      return ok(((res.data?.actions ?? []) as Array<Record<string, unknown>>).map(r => ({
+        id: String(r.id),
+        projectId: String(r.project_id ?? projectId),
+        inspectionId: r.inspection_id == null ? null : String(r.inspection_id),
+        description: String(r.description ?? ""),
+        priority: asPrio(r.priority),
+        status: asStatus(r.status),
+        assignedTo: r.assigned_to == null ? null : String(r.assigned_to),
+        dueDate: r.due_date == null ? null : String(r.due_date),
+        openedByName: r.opened_by_name == null ? null : String(r.opened_by_name),
+        openedAt: String(r.opened_at ?? ""),
+      })));
+    }
     const { data, error } = await client.from("corrective_actions")
       .select("id, project_id, inspection_id, description, priority, status, assigned_to, due_date, opened_by:opened_by(name), opened_at")
       .eq("project_id", projectId)
@@ -65,8 +82,18 @@ export async function listCorrectiveActions(client: any, projectId: string): Pro
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createCorrectiveAction(client: any, input: { projectId: string; description: string; priority?: CorrectivePriority; assignedTo?: string; dueDate?: string | null; inspectionId?: string | null }): Promise<Result<{ id: string }>> {
-   
+export async function createCorrectiveAction(client: any, input: { projectId: string; description: string; priority?: CorrectivePriority; assignedTo?: string; dueDate?: string | null; inspectionId?: string | null }): Promise<Result<{ id: string }>> {
+  if (isCloudflareBackendEnabled()) {
+    const res = await cloudflareApi.createCorrectiveAction(input.projectId, {
+      description: input.description,
+      priority: input.priority,
+      assignedTo: input.assignedTo,
+      dueDate: input.dueDate ?? undefined,
+      inspectionId: input.inspectionId ?? undefined,
+    });
+    if (!res.ok || !res.data?.id) return dbe({ message: res.error || "Failed to create corrective action" });
+    return ok({ id: res.data.id });
+  }
   const chain = client.from("corrective_actions").insert({
     project_id: input.projectId, description: input.description, priority: input.priority || "medium",
     assigned_to: input.assignedTo || null, due_date: input.dueDate || null, inspection_id: input.inspectionId || null, status: "open",
