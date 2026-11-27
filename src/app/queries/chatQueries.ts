@@ -5,6 +5,8 @@
 // are resolved client-side against the org member list and stored as uuid[];
 // the notify_chat_mentions trigger fans out /chat deep-link notifications.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type CResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export type ChatChannelKind = "channel" | "dm";
@@ -70,6 +72,24 @@ export async function listChannels(
   orgId: string,
 ): Promise<CResult<ChatChannel[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listChatChannels(orgId);
+      if (!res.ok) return { ok: false, error: res.error || "Failed to load channels" };
+      return {
+        ok: true,
+        data: ((res.data?.channels ?? []) as Array<Record<string, unknown>>).map(r => ({
+          id: String(r.id),
+          name: String(r.name ?? ""),
+          description: r.description == null ? null : String(r.description),
+          isArchived: Boolean(r.is_archived),
+          kind: (r.kind === "dm" ? "dm" : "channel") as ChatChannelKind,
+          scope: (r.scope === "project" ? "project" : "org") as ChatChannelScope,
+          projectId: r.project_id == null ? null : String(r.project_id),
+          visibility: (["open", "managers", "private"].includes(String(r.visibility)) ? String(r.visibility) : "open") as ChatChannel["visibility"],
+          createdAt: String(r.created_at ?? ""),
+        })),
+      };
+    }
     const { data, error } = await client.from("chat_channels")
       .select("id, name, description, is_archived, kind, scope, project_id, visibility, created_at")
       .eq("org_id", orgId)
@@ -162,6 +182,11 @@ export async function createChannel(
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Channel name is required." };
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.createChatChannel({ name, description: input.description }, input.orgId);
+      if (!res.ok || !res.data?.id) return { ok: false, error: res.error || "Failed to create channel" };
+      return { ok: true, data: { id: res.data.id } };
+    }
     const isProject = !!input.projectId;
     const { data, error } = await client.from("chat_channels")
       .insert({
@@ -213,6 +238,17 @@ export async function listChannelMessages(
   limit = 200,
 ): Promise<CResult<ChatMessage[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listChatMessages(channelId);
+      if (!res.ok) return { ok: false, error: res.error || "Failed to load messages" };
+      const all = ((res.data?.messages ?? []) as Array<Record<string, unknown>>).map(r => ({
+        ...mapMessage(r),
+        mentions: typeof r.mentions === "string"
+          ? (() => { try { return JSON.parse(r.mentions) as string[]; } catch { return []; } })()
+          : Array.isArray(r.mentions) ? (r.mentions as unknown[]).map(String) : [],
+      }));
+      return { ok: true, data: all.filter(m => !m.parentId).slice(-limit) };
+    }
     const { data, error } = await client.from("chat_messages")
       .select(CHAT_SELECT)
       .eq("channel_id", channelId)
@@ -240,6 +276,20 @@ export async function postChannelMessage(
   const body = input.body.trim();
   if (!body) return { ok: false, error: "Message cannot be empty." };
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.postChatMessage(
+        input.channelId,
+        {
+          body,
+          ...(input.parentId ? { parentId: input.parentId } : {}),
+          senderName: input.senderName,
+          mentions: input.mentionIds ?? [],
+        },
+        input.orgId
+      );
+      if (!res.ok || !res.data?.id) return { ok: false, error: res.error || "Failed to post message" };
+      return { ok: true, data: { id: res.data.id } };
+    }
     const { data, error } = await client.from("chat_messages")
       .insert({
         org_id: input.orgId,

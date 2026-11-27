@@ -99,10 +99,10 @@ export default {
 
     // Fail-closed: JWT_SECRET must be configured; never fall back to a
     // hardcoded development value that an attacker could guess from source.
-    const jwtSecret = env.JWT_SECRET;
-    if (!jwtSecret) {
+    if (!env.JWT_SECRET) {
       return json({ ok: false, error: "server misconfigured" }, 500);
     }
+    const jwtSecret: string = env.JWT_SECRET;
 
     // ── Auth helpers ──────────────────────────────────────────────────────────
 
@@ -250,7 +250,7 @@ export default {
 
         return json({
           ok: true,
-          user: { id: user.id, email: user.email, fullName: user.full_name },
+          user: { id: user.id, email: user.email, fullName: user.full_name, is_platform_admin: Boolean(user.is_platform_admin) },
           organizations: orgs.results || [],
           token,
         });
@@ -261,12 +261,8 @@ export default {
 
     // GET /api/auth/me
     if (url.pathname === "/api/auth/me" && request.method === "GET") {
-      const authHeader = request.headers.get("Authorization") || "";
-      const token = authHeader.replace(/^Bearer\s+/i, "");
-      if (!token) return json({ ok: false, error: "Missing bearer token" }, 401);
-
-      const claims = await verifyJwt(token, jwtSecret);
-      if (!claims || !claims.sub) {
+      const claims = await authenticateRequest(request);
+      if (!claims) {
         return json({ ok: false, error: "Invalid or expired token" }, 401);
       }
 
@@ -316,8 +312,15 @@ export default {
 
         if (user) {
           const token = await issueOneTimeToken(env.CACHE, "magic", { userId: user.id, email: user.email }, 900);
-          const origin = body.redirectTo || "https://sitetrackpro.in";
-          const link = `${origin.replace(/\/$/, "")}/login?magic_token=${encodeURIComponent(token)}`;
+          const allowedOrigins = new Set(["https://sitetrackpro.in", "https://www.sitetrackpro.in", "http://localhost:5173"]);
+          let origin = "https://sitetrackpro.in";
+          if (body.redirectTo) {
+            try {
+              const parsedOrigin = new URL(body.redirectTo).origin;
+              if (allowedOrigins.has(parsedOrigin)) origin = parsedOrigin;
+            } catch { /* fallback to default */ }
+          }
+          const link = `${origin}/login?magic_token=${encodeURIComponent(token)}`;
           const sent = await sendTransactionalEmail(env, {
             to: user.email,
             subject: "Your SiteTrack Pro sign-in link",
@@ -488,6 +491,9 @@ export default {
 
       try {
         const ctx = await assertTenantContext(env.DB, auth.sub, orgId);
+        if (!ctx.isAdmin) {
+          return json({ ok: false, error: "Forbidden: Only organization admins can initiate plan upgrades." }, 403);
+        }
         const body = (await request.json()) as { plan?: "basic" | "pro" | "business"; period?: "monthly" | "annual" };
         const plan = body.plan;
         const period = body.period || "monthly";
@@ -547,6 +553,10 @@ export default {
     // POST /api/public/signup-requests (ports submit_signup_request EF)
     if (url.pathname === "/api/public/signup-requests" && request.method === "POST") {
       try {
+        const rl = await checkAuthRateLimit(env.CACHE, `signup:${clientIp}`, 5, 600);
+        if (!rl.allowed) {
+          return json({ ok: false, error: "Too many signup requests. Please try again later." }, 429);
+        }
         const body = (await request.json()) as {
           firmName?: string;
           contactName?: string;
@@ -647,7 +657,12 @@ export default {
       }
       try {
         const ctx = await assertTenantContext(env.DB, auth.sub, orgId);
-        const key = decodeURIComponent(url.pathname.replace(/^\/api\/storage\/files\//, ""));
+        let key: string;
+        try {
+          key = decodeURIComponent(url.pathname.replace(/^\/api\/storage\/files\//, ""));
+        } catch {
+          return json({ ok: false, error: "Invalid storage key encoding" }, 400);
+        }
         await assertStorageReadAccess(env.DB, ctx, key);
         const file = await getFromR2(env.STORAGE, key);
 
@@ -655,16 +670,15 @@ export default {
           return json({ ok: false, error: "File not found" }, 404);
         }
 
-        return withCors(
-          new Response(file.body, {
-            headers: {
-              "Content-Type": file.contentType,
-              "Content-Length": String(file.size),
-              "Cache-Control": "private, max-age=3600",
-              "X-Content-Type-Options": "nosniff",
-            },
-          })
-        );
+        return new Response(file.body, {
+          headers: {
+            "Content-Type": file.contentType,
+            "Content-Length": String(file.size),
+            "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
       } catch (err) {
         if (err instanceof TenantSecurityError) return json({ ok: false, error: err.message }, 403);
         return json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
@@ -1087,7 +1101,8 @@ export default {
         }
 
         if (subresource === "risk-signals" && request.method === "GET") {
-          return json({ ok: true, riskSignals: await taskAndMilestone.listRiskSignals(ctx, projectId) });
+          const signals = await taskAndMilestone.listRiskSignals(ctx, projectId);
+          return json({ ok: true, signals, riskSignals: signals });
         }
 
         if (subresource === "material-requests") {
@@ -1319,43 +1334,6 @@ export default {
           }
         }
 
-        if (subresource === "attendance") {
-          if (request.method === "GET") {
-            const date = url.searchParams.get("date") || undefined;
-            return json({ ok: true, attendance: await siteOps.listAttendance(ctx, projectId, date) });
-          }
-          if (request.method === "POST") {
-            const body = (await request.json()) as {
-              attendeeKind?: "labour" | "staff" | "visitor";
-              attendeeName?: string;
-              labourId?: string;
-              profileId?: string;
-              date?: string;
-              status?: string;
-              inTime?: string;
-              outTime?: string;
-              hours?: number;
-            };
-            if (!body.attendeeKind || !body.attendeeName) {
-              return json({ ok: false, error: "attendeeKind and attendeeName are required" }, 400);
-            }
-            const id = `att_${crypto.randomUUID()}`;
-            await siteOps.recordAttendance(ctx, projectId, {
-              id,
-              attendeeKind: body.attendeeKind,
-              attendeeName: body.attendeeName,
-              labourId: body.labourId,
-              profileId: body.profileId,
-              date: body.date,
-              status: body.status,
-              inTime: body.inTime,
-              outTime: body.outTime,
-              hours: body.hours,
-            });
-            return json({ ok: true, id }, 201);
-          }
-        }
-
         if (subresource === "invoices") {
           if (request.method === "GET") {
             return json({ ok: true, invoices: await finance.listInvoices(ctx, projectId) });
@@ -1415,28 +1393,6 @@ export default {
               paidVia: body.paidVia,
               refNo: body.refNo,
               expenseDate: body.expenseDate,
-            });
-            return json({ ok: true, id }, 201);
-          }
-        }
-
-        if (subresource === "boq") {
-          if (request.method === "GET") {
-            return json({ ok: true, items: await procurement.listBoqItems(ctx, projectId) });
-          }
-          if (request.method === "POST") {
-            const body = (await request.json()) as { itemCode?: string; itemName?: string; unit?: string; qty?: number; rate?: number };
-            if (!body.itemName || typeof body.qty !== "number" || typeof body.rate !== "number") {
-              return json({ ok: false, error: "itemName, qty, and rate are required" }, 400);
-            }
-            const id = `boq_${crypto.randomUUID()}`;
-            await procurement.createBoqItem(ctx, projectId, {
-              id,
-              itemCode: body.itemCode,
-              itemName: body.itemName,
-              unit: body.unit,
-              qty: body.qty,
-              rate: body.rate,
             });
             return json({ ok: true, id }, 201);
           }
@@ -1683,21 +1639,46 @@ export default {
   },
 
   async queue(
-    batch: MessageBatch<{
-      userId: string;
-      orgId?: string;
-      projectId?: string;
-      kind: string;
-      title: string;
-      body: string;
-      link?: string;
-      toEmail?: string;
-    }>,
+    batch: MessageBatch<
+      | {
+          type?: "notification";
+          userId: string;
+          orgId?: string;
+          projectId?: string;
+          kind: string;
+          title: string;
+          body: string;
+          link?: string;
+          toEmail?: string;
+        }
+      | {
+          type: "transactional_email";
+          to: string | string[];
+          subject: string;
+          html?: string;
+          text?: string;
+        }
+    >,
     env: Env
   ): Promise<void> {
     for (const msg of batch.messages) {
       try {
         const p = msg.body;
+        if (p.type === "transactional_email") {
+          if (env.EMAIL) {
+            await env.EMAIL.send({
+              from: { email: "notifications@sitetrackpro.in", name: "SiteTrack Pro" },
+              to: p.to,
+              subject: p.subject,
+              html: p.html,
+              text: p.text,
+            });
+          } else {
+            console.warn("[Queue Consumer] EMAIL binding missing; dropping queued email", { to: p.to, subject: p.subject });
+          }
+          msg.ack();
+          continue;
+        }
         await env.DB.prepare(
           `INSERT INTO notifications (id, user_id, project_id, org_id, kind, title, body, link, delivered_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`

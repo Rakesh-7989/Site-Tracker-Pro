@@ -172,6 +172,13 @@ export const cloudflareAuth = {
   },
 
   logout(): void {
+    const token = this.getToken();
+    if (token) {
+      fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     this.clearToken();
   },
 };
@@ -330,16 +337,16 @@ export const cloudflareApi = {
     cfRequest<{ id: string }>(`/projects/${projectId}/measurement-book`, { method: "POST", orgId, body: input }),
 
   listLeads: (orgId?: string, stage?: string) =>
-    cfRequest<{ leads: unknown[] }>(`/leads${stage ? `?stage=${encodeURIComponent(stage)}` : ""}`, { orgId }),
+    cfRequest<{ leads: unknown[] }>(`/crm/leads${stage ? `?stage=${encodeURIComponent(stage)}` : ""}`, { orgId }),
   createLead: (input: { name: string; company?: string; phone?: string; email?: string; source?: string; budget?: number; stage?: string; notes?: string; ownerId?: string }, orgId?: string) =>
-    cfRequest<{ id: string }>("/leads", { method: "POST", orgId, body: input }),
+    cfRequest<{ id: string }>("/crm/leads", { method: "POST", orgId, body: input }),
   updateLead: (leadId: string, patch: { name?: string; company?: string | null; phone?: string | null; email?: string | null; source?: string | null; budget?: number | null; stage?: string; notes?: string | null; ownerId?: string | null; wonAmount?: number | null; lostReason?: string | null }, orgId?: string) =>
-    cfRequest<{ id: string }>(`/leads/${leadId}`, { method: "PATCH", orgId, body: patch }),
+    cfRequest<{ id: string }>(`/crm/leads/${leadId}`, { method: "PATCH", orgId, body: patch }),
 
   listLeadQuotations: (leadId: string, orgId?: string) =>
-    cfRequest<{ quotations: unknown[] }>(`/leads/${leadId}/quotations`, { orgId }),
+    cfRequest<{ quotations: unknown[] }>(`/crm/leads/${leadId}/quotations`, { orgId }),
   createLeadQuotation: (leadId: string, input: { amount: number; status?: string; validUntil?: string }, orgId?: string) =>
-    cfRequest<{ id: string }>(`/leads/${leadId}/quotations`, { method: "POST", orgId, body: input }),
+    cfRequest<{ id: string }>(`/crm/leads/${leadId}/quotations`, { method: "POST", orgId, body: input }),
 
   listShareLinks: (projectId: string, orgId?: string) =>
     cfRequest<{ shareLinks: unknown[] }>(`/projects/${projectId}/share-links`, { orgId }),
@@ -357,9 +364,14 @@ export const cloudflareApi = {
     cfRequest<{ id: string }>(`/projects/${projectId}/dpr`, { method: "POST", orgId, body: input }),
 
   listAttendance: (projectId: string, date?: string, orgId?: string) =>
-    cfRequest<{ attendance: unknown[] }>(`/projects/${projectId}/attendance${date ? `?date=${encodeURIComponent(date)}` : ""}`, { orgId }),
-  recordAttendance: (projectId: string, input: { attendeeKind: "labour" | "staff" | "visitor"; attendeeName: string; date?: string; status?: string; hours?: number }, orgId?: string) =>
+    cfRequest<{ records?: unknown[]; attendance?: unknown[] }>(`/projects/${projectId}/attendance${date ? `?date=${encodeURIComponent(date)}` : ""}`, { orgId }),
+  recordAttendance: (projectId: string, input: { attendeeKind: "labour" | "staff" | "visitor"; labourId?: string; profileId?: string; attendeeName: string; date?: string; status?: string; hours?: number; inTime?: string; outTime?: string; source?: string }, orgId?: string) =>
     cfRequest<{ id: string }>(`/projects/${projectId}/attendance`, { method: "POST", orgId, body: input }),
+
+  listLabourRegister: (projectId: string, orgId?: string) =>
+    cfRequest<{ workers: unknown[] }>(`/projects/${projectId}/labour`, { orgId }),
+  createLabourWorker: (projectId: string, input: { name: string; trade?: string; wage?: number; joined?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/labour`, { method: "POST", orgId, body: input }),
 
   listInvoices: (projectId: string, orgId?: string) =>
     cfRequest<{ invoices: unknown[] }>(`/projects/${projectId}/invoices`, { orgId }),
@@ -381,7 +393,23 @@ export const cloudflareApi = {
   listBoqItems: (projectId: string, orgId?: string) =>
     cfRequest<{ items: unknown[] }>(`/projects/${projectId}/boq`, { orgId }),
   createBoqItem: (projectId: string, input: { itemCode?: string; itemName: string; unit?: string; qty: number; rate: number }, orgId?: string) =>
-    cfRequest<{ id: string }>(`/projects/${projectId}/boq`, { method: "POST", orgId, body: input }),
+    cfRequest<{ id: string; amount?: number }>(`/projects/${projectId}/boq`, { method: "POST", orgId, body: input }),
+  updateBoqItemStatus: (projectId: string, itemId: string, status: string, orgId?: string) =>
+    cfRequest<{ updated: boolean }>(`/projects/${projectId}/boq/${itemId}`, { method: "PATCH", orgId, body: { status } }),
+
+  listInventoryTransactions: (projectId: string, orgId?: string) =>
+    cfRequest<{ transactions: unknown[] }>(`/projects/${projectId}/inventory`, { orgId }),
+  recordInventoryTransaction: (projectId: string, input: { txnDate?: string; material: string; unit?: string; qty: number; direction: "inward" | "outward" | "return" | "wastage"; source?: string; refNo?: string; poId?: string; notes?: string }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/projects/${projectId}/inventory`, { method: "POST", orgId, body: input }),
+
+  listChatChannels: (orgId?: string) =>
+    cfRequest<{ channels: unknown[] }>("/chat/channels", { orgId }),
+  createChatChannel: (input: { name: string; description?: string }, orgId?: string) =>
+    cfRequest<{ id: string; name: string }>("/chat/channels", { method: "POST", orgId, body: input }),
+  listChatMessages: (channelId: string, orgId?: string) =>
+    cfRequest<{ messages: unknown[] }>(`/chat/channels/${channelId}/messages`, { orgId }),
+  postChatMessage: (channelId: string, input: { body: string; parentId?: string; senderName?: string; mentions?: string[] }, orgId?: string) =>
+    cfRequest<{ id: string }>(`/chat/channels/${channelId}/messages`, { method: "POST", orgId, body: input }),
 
   listPurchaseOrders: (projectId: string, orgId?: string) =>
     cfRequest<{ purchaseOrders: unknown[] }>(`/projects/${projectId}/purchase-orders`, { orgId }),

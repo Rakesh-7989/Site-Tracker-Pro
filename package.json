@@ -67,7 +67,7 @@
     "test:rls:intel": "node scripts/tests/test-intelligence-signals.mjs",
     "test:rls:teams": "node scripts/tests/test-team-channels-rls.mjs",
     "test:ux": "npx playwright test --config playwright.ux.config.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p workers/api/tsconfig.json",
     "analyze": "ANALYZE=true vite build",
     "test": "npm run lint && npm run typecheck && npm run build && npm run smoke && npm run test:unit",
     "db:types": "node scripts/db/generate-db-types.mjs",

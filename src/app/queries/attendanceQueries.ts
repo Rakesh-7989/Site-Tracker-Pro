@@ -1,6 +1,8 @@
 // SiteTrack Pro — attendance queries (v3 port, Batch 2/3). DB-wired to
 // `attendance` via the migration 73 bridge.
 
+import { cloudflareApi, isCloudflareBackendEnabled } from "@/lib/api/cloudflareClient";
+
 export type AttendanceStatus = "present" | "absent" | "half_day" | "leave" | "on_site_late" | "off_site";
 export type AttendeeKind = "labour" | "staff" | "visitor";
 
@@ -25,6 +27,24 @@ const asKind = (v: unknown): AttendeeKind => (KINDS.includes(v as AttendeeKind) 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function listAttendance(client: any, projectId: string): Promise<Result<AttendanceRow[]>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.listAttendance(projectId);
+      if (!res.ok) return { ok: false, error: res.error || "Failed to load attendance" };
+      const rows = (res.data?.records ?? res.data?.attendance ?? []) as Array<Record<string, unknown>>;
+      return {
+        ok: true,
+        data: rows.map(r => ({
+          id: String(r.id),
+          attendeeName: String(r.attendee_name ?? ""),
+          kind: asKind(r.attendee_kind),
+          date: String(r.date ?? ""),
+          status: asStatus(r.status),
+          hours: r.hours == null ? null : Number(r.hours),
+          overtime: r.overtime == null ? null : Number(r.overtime),
+          locationId: r.location_id == null ? null : String(r.location_id),
+        })),
+      };
+    }
     const { data, error } = await client
       .from("attendance")
       .select("id, attendee_name, attendee_kind, date, status, hours, overtime, location_id")
@@ -54,6 +74,17 @@ export async function createAttendance(
   input: { projectId: string; attendeeName: string; kind: AttendeeKind; status: AttendanceStatus; hours?: number | null; overtime?: number | null; date?: string; recordedBy: string; locationId?: string | null },
 ): Promise<Result<{ id: string }>> {
   try {
+    if (isCloudflareBackendEnabled()) {
+      const res = await cloudflareApi.recordAttendance(input.projectId, {
+        attendeeKind: input.kind,
+        attendeeName: input.attendeeName,
+        status: input.status,
+        ...(input.hours != null ? { hours: input.hours } : {}),
+        ...(input.date ? { date: input.date } : {}),
+      });
+      if (!res.ok || !res.data?.id) return { ok: false, error: res.error || "Failed to record attendance" };
+      return { ok: true, data: { id: res.data.id } };
+    }
     const { data, error } = await client.from("attendance").insert({
       project_id: input.projectId,
       attendee_kind: input.kind,

@@ -70,8 +70,6 @@ export default defineConfig({
             return "client-portal";
           if (normalized.includes("/src/features/org/UtilizationView")) return "utilization";
           if (normalized.includes("/src/features/org/HierarchyView")) return "hierarchy";
-          // Org Admin tier (Production Phase 1) — remaining panels only the org owner sees.
-          if (normalized.includes("/src/features/org/")) return "org";
           if (!normalized.includes("/node_modules/")) return undefined;
           if (
             normalized.includes("/node_modules/react/") ||
